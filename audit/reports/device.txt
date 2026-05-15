@@ -1,0 +1,2 @@
+app/(os)/settings/bug-report.tsx:import * as Device from 'expo-device';
+app/(os)/settings/permissions.tsx:import * as Notifications from 'expo-notifications';

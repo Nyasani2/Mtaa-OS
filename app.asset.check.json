@@ -1,0 +1,7 @@
+{
+  "assets_required": [
+    "./assets/icon.png",
+    "./assets/adaptive-icon.png",
+    "./assets/mtaa_splashscreen.jpeg"
+  ]
+}

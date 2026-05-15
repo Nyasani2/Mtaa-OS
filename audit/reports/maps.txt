@@ -1,0 +1,4 @@
+components/mtruck/maps/live-fleet-map.tsx:import MapView, { Marker } from "react-native-maps";
+components/mtruck/maps/live-fleet-map.tsx:    <MapView
+components/mtruck/maps/live-fleet-map.tsx:        <Marker
+components/mtruck/maps/live-fleet-map.tsx:    </MapView>

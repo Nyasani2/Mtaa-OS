@@ -1,0 +1,31 @@
+{
+  "app_id": "hookup",
+  "version": "2.0.0",
+  "type": "standalone_ai_social_system",
+
+  "capabilities": [
+    "ai_matching",
+    "personality_simulation",
+    "voice_video_rooms",
+    "live_map",
+    "events",
+    "fraud_detection",
+    "identity_passport",
+    "ecosystem_sync",
+    "self_optimization"
+  ],
+
+  "permissions": [
+    "location",
+    "camera",
+    "microphone",
+    "wallet",
+    "identity",
+    "realtime",
+    "cross_app_events"
+  ],
+
+  "deployment": "global_multi_region",
+  "sandboxed": true,
+  "mtaa_integrated": true
+}

@@ -1,0 +1,89 @@
+export type InstalledApp = {
+  id: string;
+  name: string;
+  icon: string;
+  route: string;
+  color: string;
+};
+
+export type InstalledAppV2 = {
+  id: string;
+  name: string;
+  icon: string;
+  route: string;
+  color: string;
+  version?: string;
+  installedAt?: number;
+  category?: "system" | "user";
+};
+
+import { osEvents } from "./os-events";
+
+const STORAGE_KEY = "mtaa_installed_apps_v2";
+const memoryStore: Record<string, InstalledAppV2[]> = {};
+
+const normalizeApp = (app: InstalledAppV2): InstalledAppV2 => {
+  return {
+    id: app.id.trim(),
+    name: app.name.trim(),
+    icon: app.icon || app.name[0] || "A",
+    route: app.route,
+    color: app.color || "#888",
+    version: app.version || "1.0.0",
+    installedAt: Date.now(),
+    category: app.category || "user",
+  };
+};
+
+const getStore = async (): Promise<InstalledAppV2[]> => {
+  if (typeof window === "undefined") return memoryStore[STORAGE_KEY] || [];
+
+  const raw = window.localStorage.getItem(STORAGE_KEY);
+  return raw ? JSON.parse(raw) : [];
+};
+
+const saveStore = async (apps: InstalledAppV2[]) => {
+  if (typeof window === "undefined") {
+    memoryStore[STORAGE_KEY] = apps;
+    return;
+  }
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
+};
+
+export const AppRegistry = {
+  async getInstalled(): Promise<InstalledAppV2[]> {
+    const apps = await getStore();
+    return apps.filter(a => a && a.id && a.route);
+  },
+
+  async install(app: InstalledAppV2) {
+    const apps = await getStore();
+
+    const normalized = normalizeApp(app);
+    const exists = apps.find(a => a.id === normalized.id);
+    if (exists) return apps;
+
+    const updated = [...apps, normalized];
+    await saveStore(updated);
+
+    osEvents.emit("apps_changed");
+
+    return updated;
+  },
+
+  async uninstall(appId: string) {
+    const apps = await getStore();
+    const filtered = apps.filter(a => a.id !== appId);
+    await saveStore(filtered);
+
+    osEvents.emit("apps_changed");
+
+    return filtered;
+  },
+
+  async clear() {
+    await saveStore([]);
+    osEvents.emit("apps_changed");
+  },
+};

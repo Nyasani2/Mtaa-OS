@@ -1,0 +1,28 @@
+import { createClient } from '@supabase/supabase-js';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+(globalThis as any).Deno?.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  try {
+    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL')!, (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data, error } = await supabase.rpc('mtaa_realtime_metrics');
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify(data), {
+      status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

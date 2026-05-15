@@ -1,0 +1,3 @@
+app/(wallet)/receive/index.tsx:import QRCode from 'react-native-qrcode-svg';
+app/(wallet)/receive/index.tsx:          <QRCode
+app/(os)/settings/licenses.tsx:  { name: 'React Native QRCode SVG', license: 'MIT', author: 'AwesomeProject' },

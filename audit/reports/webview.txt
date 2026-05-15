@@ -1,0 +1,2 @@
+app/(os)/documents/preview.tsx:import { WebView } from 'react-native-webview';
+app/(os)/documents/preview.tsx:          <WebView source={{ uri: doc.url }} style={styles.webview} />

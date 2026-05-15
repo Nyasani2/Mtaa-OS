@@ -1,0 +1,18 @@
+[
+  {
+    "id": "wallet",
+    "path": "apps/wallet/mtaa.app"
+  },
+  {
+    "id": "appstore",
+    "path": "apps/appstore/mtaa.app"
+  },
+  {
+    "id": "civic",
+    "path": "apps/civic/mtaa.app"
+  },
+  {
+    "id": "streets",
+    "path": "apps/streets/mtaa.app"
+  }
+]
