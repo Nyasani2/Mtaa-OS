@@ -1,9 +1,7 @@
 "use client";
 
-import RoleSwitcher from "@/components/role-switcher";
+import RoleSwitcher from "./role-switcher";
 
 export default function ClientRoleWrapper() {
-  return (
-    <RoleSwitcher onChange={(r) => console.log("role:", r)} />
-  );
+  return <RoleSwitcher />;
 }
