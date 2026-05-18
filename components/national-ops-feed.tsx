@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 
 export default function NationalOpsFeed() {
@@ -11,7 +13,6 @@ export default function NationalOpsFeed() {
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-
       <h2 className="text-sm text-zinc-400 mb-4">
         National Operations Feed
       </h2>
@@ -29,7 +30,6 @@ export default function NationalOpsFeed() {
           </motion.div>
         ))}
       </div>
-
     </div>
   );
 }
