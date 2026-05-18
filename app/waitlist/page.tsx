@@ -1,6 +1,5 @@
 "use client";
-
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/navbar";
 import { useState } from "react";
 
 export default function WaitlistPage() {

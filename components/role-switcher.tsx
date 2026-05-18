@@ -7,13 +7,13 @@ type Role = "citizen" | "governor" | "president" | "investor";
 export default function RoleSwitcher({
   onChange,
 }: {
-  onChange: (role: Role) => void;
+  onChange?: (role: Role) => void;
 }) {
   const [active, setActive] = useState<Role>("citizen");
 
   const setRole = (r: Role) => {
     setActive(r);
-    onChange(r);
+    onChange?.(r);
   };
 
   const roles = [
@@ -29,12 +29,11 @@ export default function RoleSwitcher({
         <button
           key={r.id}
           onClick={() => setRole(r.id as Role)}
-          className={`px-5 py-2 rounded-full text-sm border transition
-            ${
-              active === r.id
-                ? "bg-white text-black"
-                : "border-white/10 text-zinc-400 hover:bg-white/10"
-            }`}
+          className={`px-5 py-2 rounded-full text-sm border transition ${
+            active === r.id
+              ? "bg-white text-black"
+              : "border-white/10 text-zinc-400 hover:bg-white/10"
+          }`}
         >
           {r.label}
         </button>
