@@ -5,3 +5,5 @@ node_modules
 dist
 out
 .DS_Store
+.vercel
+.env*.local
