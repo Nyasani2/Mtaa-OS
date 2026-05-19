@@ -1,8 +1,8 @@
+import Footer from "@/components/Footer";
 import Navbar from "@/components/navbar";
 import EcosystemCard from "@/components/ecosystem-card";
 import FloatingOrbs from "@/components/floating-orbs";
 
-import OSShell from "@/components/os-shell";
 import PresidentPreview from "@/components/president-preview";
 
 import AfricaMap from "@/components/africa-map";
@@ -21,12 +21,12 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#050816] text-white relative overflow-hidden">
 
-      {/* BACKGROUND SYSTEM */}
       <FloatingOrbs />
       <Navbar />
 
       {/* HERO */}
       <section className="text-center px-6 py-28 relative z-10">
+
         <p className="text-xs tracking-[0.3em] text-blue-400 mb-6 uppercase">
           Civilization Scale Operating System
         </p>
@@ -35,29 +35,42 @@ export default function HomePage() {
           Africa Runs Here.
         </h1>
 
-        <p className="text-zinc-400 max-w-3xl mx-auto mt-6 text-lg">
+        <p className="text-zinc-400 max-w-3xl mx-auto mt-6 text-lg leading-relaxed">
           Communication. Commerce. Infrastructure. Governance. Identity.
           <br />
           One unified digital operating system for the African century.
         </p>
 
         <div className="mt-10 flex gap-4 justify-center flex-wrap">
-          <button className="px-7 py-3 bg-white text-black rounded-full font-semibold">
+
+          <a
+            href="/ecosystem"
+            className="px-7 py-3 bg-white text-black rounded-full font-semibold hover:scale-105 transition"
+          >
             Explore Ecosystem
-          </button>
+          </a>
 
-          <button className="px-7 py-3 border border-white/10 rounded-full">
+          <a
+            href="/demo"
+            className="px-7 py-3 border border-white/10 rounded-full hover:bg-white/10 transition"
+          >
             Enter Simulation Demo
-          </button>
+          </a>
 
-          <button className="px-7 py-3 border border-blue-500/30 rounded-full text-blue-300">
-            MTAA Coming Soon
-          </button>
+          <a
+            href="/waitlist"
+            className="px-7 py-3 border border-blue-500/30 rounded-full text-blue-300 hover:bg-blue-500/10 transition"
+          >
+            Join Waitlist
+          </a>
+
         </div>
+
       </section>
 
       {/* BIG IDEA */}
       <section className="px-6 py-16 max-w-5xl mx-auto relative z-10">
+
         <div className="rounded-[28px] border border-white/10 bg-white/5 backdrop-blur-xl p-10 text-center">
 
           <p className="text-xs tracking-[0.3em] text-zinc-500 mb-4 uppercase">
@@ -76,15 +89,21 @@ export default function HomePage() {
           </p>
 
         </div>
+
       </section>
 
       {/* SOCIAL */}
       <section className="px-6 py-20 max-w-7xl mx-auto relative z-10">
+
         <div className="mb-10">
           <p className="text-cyan-400 text-xs tracking-[0.3em] uppercase mb-3">
             Social Layer
           </p>
-          <h2 className="text-4xl font-bold mb-3">People Connect Here</h2>
+
+          <h2 className="text-4xl font-bold mb-3">
+            People Connect Here
+          </h2>
+
           <p className="text-zinc-400 max-w-2xl">
             Communication, culture, communities, creators, and real-time interaction.
           </p>
@@ -95,15 +114,21 @@ export default function HomePage() {
             <EcosystemCard key={a.title} {...a} />
           ))}
         </div>
+
       </section>
 
-      {/* COMMERCIAL */}
+      {/* ECONOMY */}
       <section className="px-6 py-20 max-w-7xl mx-auto relative z-10">
+
         <div className="mb-10">
           <p className="text-green-400 text-xs tracking-[0.3em] uppercase mb-3">
             Economic Layer
           </p>
-          <h2 className="text-4xl font-bold mb-3">People Work & Earn Here</h2>
+
+          <h2 className="text-4xl font-bold mb-3">
+            People Work & Earn Here
+          </h2>
+
           <p className="text-zinc-400 max-w-2xl">
             Jobs, payments, mobility, logistics, trade, and commerce infrastructure.
           </p>
@@ -114,15 +139,21 @@ export default function HomePage() {
             <EcosystemCard key={a.title} {...a} />
           ))}
         </div>
+
       </section>
 
       {/* CIVIC */}
       <section className="px-6 py-20 max-w-7xl mx-auto relative z-10">
+
         <div className="mb-10">
           <p className="text-orange-400 text-xs tracking-[0.3em] uppercase mb-3">
             Civic Layer
           </p>
-          <h2 className="text-4xl font-bold mb-3">Governments Operate Here</h2>
+
+          <h2 className="text-4xl font-bold mb-3">
+            Governments Operate Here
+          </h2>
+
           <p className="text-zinc-400 max-w-2xl">
             Treasury, revenue, police, courts, ports, infrastructure, national systems.
           </p>
@@ -133,6 +164,7 @@ export default function HomePage() {
             <EcosystemCard key={a.title} {...a} />
           ))}
         </div>
+
       </section>
 
       {/* MAP */}
@@ -142,34 +174,44 @@ export default function HomePage() {
 
       {/* LIVE SYSTEMS */}
       <section className="px-6 py-10 max-w-6xl mx-auto relative z-10">
+
         <div className="grid md:grid-cols-2 gap-6">
           <LiveFlows />
           <GovernanceAI />
         </div>
+
       </section>
 
       {/* APP WINDOW */}
       <section className="px-6 py-10 max-w-6xl mx-auto relative z-10">
+
         <AppWindow title="MTaxi — National Mobility System">
+
           <div className="text-sm text-zinc-400 space-y-2">
             <p>🚖 Driver allocation active</p>
             <p>📍 1,240 vehicles online</p>
             <p>📊 Demand spike detected</p>
             <p>⚡ Optimizing routes</p>
           </div>
+
         </AppWindow>
+
       </section>
 
-      {/* ROLE SWITCHER (FIXED - NO EVENT HANDLER PASSED) */}
+      {/* COMMAND CENTER */}
       <section className="px-6 py-10 max-w-6xl mx-auto relative z-10">
+
         <RoleSwitcher />
+
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           <NationMap />
           <NationFeed />
         </div>
+
         <div className="mt-6">
           <MtaaAI />
         </div>
+
       </section>
 
       {/* PRESIDENT */}
@@ -179,6 +221,7 @@ export default function HomePage() {
 
       {/* STATS */}
       <section className="px-6 py-20 max-w-6xl mx-auto relative z-10">
+
         <div className="grid md:grid-cols-4 gap-5">
 
           <div className="border border-white/10 rounded-3xl p-6 bg-white/5">
@@ -202,10 +245,12 @@ export default function HomePage() {
           </div>
 
         </div>
+
       </section>
 
-      {/* DEMO */}
+      {/* CTA */}
       <section className="text-center py-28 px-6 relative z-10">
+
         <h2 className="text-5xl font-bold mb-5">
           Enter a Living Digital Nation
         </h2>
@@ -214,15 +259,16 @@ export default function HomePage() {
           Governance, economy, and society operating as one system.
         </p>
 
-        <button className="px-10 py-4 bg-white text-black rounded-full font-semibold">
+        <a
+          href="/demo"
+          className="inline-block px-10 py-4 bg-white text-black rounded-full font-semibold hover:scale-105 transition"
+        >
           Launch Simulation
-        </button>
+        </a>
+
       </section>
 
-      {/* FOOTER */}
-      <footer className="text-center py-10 text-zinc-500 text-sm border-t border-white/5 relative z-10">
-        © 2026 MTAA AFRIQ — Civilization OS
-      </footer>
+      <Footer />
 
     </main>
   );
