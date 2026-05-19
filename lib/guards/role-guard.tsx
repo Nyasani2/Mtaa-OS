@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 export function withRoleGuard(
   WrappedComponent: any,

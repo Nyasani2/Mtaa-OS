@@ -1,140 +1,133 @@
-import { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, StyleSheet, 
-  ActivityIndicator, Alert 
-} from 'react-native';
-import { router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import React, { useState } from "react";
+import { View, Text, TextInput, Pressable, Alert, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { createClient } from "@supabase/supabase-js";
 
-export default function ChangePasswordSettingsScreen() {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+// IMPORTANT: ensure you already have a central supabase client in your project
+import { supabase } from "../../../lib/supabase";
+
+export default function ChangePasswordScreen() {
+  const router = useRouter();
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Missing Fields', 'Please fill in all fields');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      Alert.alert('Too Short', 'New password must be at least 6 characters');
-      return;
+  const validate = () => {
+    if (!newPassword || newPassword.length < 6) {
+      Alert.alert("Error", "Password must be at least 6 characters");
+      return false;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert('Mismatch', 'New passwords do not match');
-      return;
+      Alert.alert("Error", "Passwords do not match");
+      return false;
     }
+
+    return true;
+  };
+
+  const handleChangePassword = async () => {
+    if (!validate()) return;
 
     setLoading(true);
 
-    // First verify current password by re-authenticating
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) {
-      Alert.alert('Error', 'No user session found');
-      setLoading(false);
-      return;
-    }
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
 
-    // Update password directly (Supabase handles re-auth internally for recent sessions)
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-    setLoading(false);
-
-    if (error) {
-      if (error.message.includes('reauthentication')) {
-        Alert.alert(
-          'Session Expired',
-          'For security, please log out and log back in, then try again.'
-        );
-      } else {
-        Alert.alert('Update Failed', error.message);
+      if (error) {
+        throw error;
       }
-      return;
-    }
 
-    Alert.alert(
-      'Password Updated',
-      'Your password has been changed successfully.',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      // Force session refresh safety (important for your wallet system)
+      await supabase.auth.refreshSession();
+
+      Alert.alert(
+        "Success",
+        "Password updated successfully. Please log in again.",
+        [
+          {
+            text: "OK",
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace("/login");
+            },
+          },
+        ]
+      );
+    } catch (err: any) {
+      Alert.alert("Password Update Failed", err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Change Password</Text>
-      <Text style={styles.subtitle}>Update your account password</Text>
+    <View style={{ flex: 1, padding: 20, backgroundColor: "#0b0b0b" }}>
+      <Text style={{ color: "white", fontSize: 22, fontWeight: "700", marginBottom: 20 }}>
+        Change Password
+      </Text>
 
+      <Text style={{ color: "#aaa", marginBottom: 8 }}>New Password</Text>
       <TextInput
-        style={styles.input}
-        placeholder="Current Password"
-        placeholderTextColor="#888"
-        secureTextEntry
-        value={currentPassword}
-        onChange={setCurrentPassword}
-        editable={!loading}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="New Password"
-        placeholderTextColor="#888"
-        secureTextEntry
         value={newPassword}
-        onChange={setNewPassword}
-        editable={!loading}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm New Password"
-        placeholderTextColor="#888"
+        onChangeText={setNewPassword}
         secureTextEntry
-        value={confirmPassword}
-        onChange={setConfirmPassword}
-        editable={!loading}
+        placeholder="Enter new password"
+        placeholderTextColor="#555"
+        style={{
+          backgroundColor: "#1a1a1a",
+          padding: 14,
+          borderRadius: 10,
+          color: "white",
+          marginBottom: 15,
+        }}
       />
 
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
-        onPress={handleChange} 
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Update Password</Text>}
-      </TouchableOpacity>
+      <Text style={{ color: "#aaa", marginBottom: 8 }}>Confirm Password</Text>
+      <TextInput
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        placeholder="Confirm password"
+        placeholderTextColor="#555"
+        style={{
+          backgroundColor: "#1a1a1a",
+          padding: 14,
+          borderRadius: 10,
+          color: "white",
+          marginBottom: 25,
+        }}
+      />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()} disabled={loading}>
-        <Text style={styles.backText}>← Cancel</Text>
-      </TouchableOpacity>
+      <Pressable
+        onPress={handleChangePassword}
+        disabled={loading}
+        style={{
+          backgroundColor: loading ? "#333" : "#4f46e5",
+          padding: 14,
+          borderRadius: 10,
+          alignItems: "center",
+        }}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={{ color: "white", fontWeight: "600" }}>
+            Update Password
+          </Text>
+        )}
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.back()}
+        style={{ marginTop: 15, alignItems: "center" }}
+      >
+        <Text style={{ color: "#888" }}>Cancel</Text>
+      </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#0a0a0a' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#888', marginBottom: 32 },
-  input: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    color: '#fff',
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  button: {
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  backButton: { marginTop: 16, alignItems: 'center' },
-  backText: { color: '#888', fontSize: 14 },
-});

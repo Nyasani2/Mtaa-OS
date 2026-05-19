@@ -21,17 +21,17 @@ import {
 } from 'lucide-react-native';
 
 import { useNotification } from '@/lib/kernel/notification-engine';
-import { useAuth } from '@/lib/stores/auth-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import { Colors } from '@/constants/Colors';
 
 export default function NotificationInboxScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthstore();
   const n = useNotification(user?.id);
 
   const [search, setSearch] = useState('');
 
-  const filtered = n.notifications.filter(i =>
+const filtered = (n?.notifications ?? []).filter(i =>
     i.title.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -45,7 +45,7 @@ export default function NotificationInboxScreen() {
         <TextInput
           placeholder="Search..."
           value={search}
-          onChange={setSearch}
+          onChangeText={setSearch}
           style={{
             backgroundColor: '#eee',
             padding: 10,
@@ -55,9 +55,10 @@ export default function NotificationInboxScreen() {
         />
       </View>
 
+
       <FlatList
-        data={filtered}
-        keyExtractor={i => i.id}
+data={filtered ?? []}
+keyExtractor={(i) => i?.id?.toString() ?? Math.random().toString()}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={{

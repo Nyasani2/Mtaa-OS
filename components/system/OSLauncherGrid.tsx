@@ -1,10 +1,11 @@
-/**
- * MTAA OS — Launcher Grid (React Native)
- * Core system apps loaded from registry. NOT hardcoded manually.
- */
-
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { useInstalledApps } from '@/hooks/useInstalledApps';
 import { AppManifest } from '@/lib/kernel/registry/kernel-registry';
@@ -26,7 +27,92 @@ export function OSLauncherGrid() {
     );
   }
 
-  const sorted = [...apps].sort((a, b) => {
+  const systemApps = [
+    {
+      id: 'app-store',
+      name: 'App Store',
+      icon: '🛒',
+      domain: '(os)/app-store',
+      systemApp: true,
+      color: '#2563eb',
+    },
+    {
+      id: 'settings',
+      name: 'Settings',
+      icon: '⚙️',
+      domain: '(os)/settings',
+      systemApp: true,
+      color: '#475569',
+    },
+    {
+      id: 'gallery',
+      name: 'Gallery',
+      icon: '🖼️',
+      domain: '(os)/gallery',
+      systemApp: true,
+      color: '#db2777',
+    },
+    {
+      id: 'documents',
+      name: 'Documents',
+      icon: '📁',
+      domain: '(os)/documents',
+      systemApp: true,
+      color: '#ca8a04',
+    },
+    {
+      id: 'calendar',
+      name: 'Calendar',
+      icon: '📅',
+      domain: '(os)/calendar',
+      systemApp: true,
+      color: '#7c3aed',
+    },
+    {
+      id: 'wifi',
+      name: 'WiFi',
+      icon: '📶',
+      domain: '(os)/wifi',
+      systemApp: true,
+      color: '#0891b2',
+    },
+    {
+      id: 'phone',
+      name: 'Phone',
+      icon: '📞',
+      domain: '(os)/phone',
+      systemApp: true,
+      color: '#16a34a',
+    },
+    {
+      id: 'messages',
+      name: 'Messages',
+      icon: '💬',
+      domain: '(os)/messages',
+      systemApp: true,
+      color: '#0f766e',
+    },
+    {
+      id: 'sim',
+      name: 'SIM',
+      icon: '📡',
+      domain: '(os)/sim',
+      systemApp: true,
+      color: '#ea580c',
+    },
+    {
+      id: 'clock',
+      name: 'Clock',
+      icon: '🕒',
+      domain: '(os)/clock',
+      systemApp: true,
+      color: '#9333ea',
+    },
+  ];
+
+  const mergedApps = [...systemApps, ...apps];
+
+  const sorted = mergedApps.sort((a, b) => {
     if (a.systemApp && !b.systemApp) return -1;
     if (!a.systemApp && b.systemApp) return 1;
     return a.name.localeCompare(b.name);
@@ -36,41 +122,143 @@ export function OSLauncherGrid() {
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.title}>APPS</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/launcher')}>
-          <Text style={styles.seeAll}>See All →</Text>
+
+        <TouchableOpacity
+          onPress={() => router.push('/(os)/launcher')}
+        >
+          <Text style={styles.seeAll}>
+            See All →
+          </Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.grid}>
-        {sorted.slice(0, 10).map((app) => (
-          <AppIcon key={app.id} app={app} onPress={() => router.push(`/${app.domain}`)} />
+        {sorted.slice(0, 12).map((app: any) => (
+          <AppIcon
+            key={app.id}
+            app={app}
+            onPress={() =>
+              router.push(`/${app.domain}`)
+            }
+          />
         ))}
       </View>
     </View>
   );
 }
 
-function AppIcon({ app, onPress }: { app: AppManifest; onPress: () => void }) {
+function AppIcon({
+  app,
+  onPress,
+}: {
+  app: AppManifest | any;
+  onPress: () => void;
+}) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.appBtn} activeOpacity={0.7}>
-      <View style={[styles.appIcon, { backgroundColor: app.color || '#475569' }]}>
-        <Text style={styles.appIconText}>{app.icon || '◆'}</Text>
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.appBtn}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[
+          styles.appIcon,
+          {
+            backgroundColor:
+              app.color || '#475569',
+          },
+        ]}
+      >
+        <Text style={styles.appIconText}>
+          {app.icon || '◆'}
+        </Text>
       </View>
-      <Text style={styles.appLabel}>{app.name}</Text>
+
+      <Text style={styles.appLabel}>
+        {app.name}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', padding: 16, marginBottom: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.7)', letterSpacing: 1 },
-  seeAll: { fontSize: 12, color: '#60a5fa' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  appBtn: { width: '22%', alignItems: 'center', paddingVertical: 8 },
-  appIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-  appIconText: { fontSize: 20 },
-  appLabel: { fontSize: 10, color: 'rgba(255,255,255,0.8)', textAlign: 'center' },
-  skeleton: { width: '22%', alignItems: 'center', paddingVertical: 8 },
-  skeletonIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 4 },
-  skeletonText: { width: 40, height: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 4 },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    padding: 16,
+    marginBottom: 16,
+  },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+
+  title: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 1,
+  },
+
+  seeAll: {
+    fontSize: 12,
+    color: '#60a5fa',
+  },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+
+  appBtn: {
+    width: '22%',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  appIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+
+  appIconText: {
+    fontSize: 20,
+  },
+
+  appLabel: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+  },
+
+  skeleton: {
+    width: '22%',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+
+  skeletonIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 4,
+  },
+
+  skeletonText: {
+    width: 40,
+    height: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 4,
+  },
 });

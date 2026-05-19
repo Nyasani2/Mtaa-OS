@@ -1,0 +1,206 @@
+                                       List of relations
+       Schema       |            Name            |       Type        |          Owner           
+--------------------+----------------------------+-------------------+--------------------------
+ _realtime          | extensions                 | table             | supabase_admin
+ _realtime          | schema_migrations          | table             | supabase_admin
+ _realtime          | tenants                    | table             | supabase_admin
+ auth               | audit_log_entries          | table             | supabase_auth_admin
+ auth               | custom_oauth_providers     | table             | supabase_auth_admin
+ auth               | flow_state                 | table             | supabase_auth_admin
+ auth               | identities                 | table             | supabase_auth_admin
+ auth               | instances                  | table             | supabase_auth_admin
+ auth               | mfa_amr_claims             | table             | supabase_auth_admin
+ auth               | mfa_challenges             | table             | supabase_auth_admin
+ auth               | mfa_factors                | table             | supabase_auth_admin
+ auth               | oauth_authorizations       | table             | supabase_auth_admin
+ auth               | oauth_client_states        | table             | supabase_auth_admin
+ auth               | oauth_clients              | table             | supabase_auth_admin
+ auth               | oauth_consents             | table             | supabase_auth_admin
+ auth               | one_time_tokens            | table             | supabase_auth_admin
+ auth               | refresh_tokens             | table             | supabase_auth_admin
+ auth               | saml_providers             | table             | supabase_auth_admin
+ auth               | saml_relay_states          | table             | supabase_auth_admin
+ auth               | schema_migrations          | table             | supabase_auth_admin
+ auth               | sessions                   | table             | supabase_auth_admin
+ auth               | sso_domains                | table             | supabase_auth_admin
+ auth               | sso_providers              | table             | supabase_auth_admin
+ auth               | users                      | table             | supabase_auth_admin
+ auth               | webauthn_challenges        | table             | supabase_auth_admin
+ auth               | webauthn_credentials       | table             | supabase_auth_admin
+ information_schema | sql_features               | table             | supabase_admin
+ information_schema | sql_implementation_info    | table             | supabase_admin
+ information_schema | sql_parts                  | table             | supabase_admin
+ information_schema | sql_sizing                 | table             | supabase_admin
+ net                | _http_response             | table             | supabase_admin
+ net                | http_request_queue         | table             | supabase_admin
+ pg_catalog         | pg_aggregate               | table             | supabase_admin
+ pg_catalog         | pg_am                      | table             | supabase_admin
+ pg_catalog         | pg_amop                    | table             | supabase_admin
+ pg_catalog         | pg_amproc                  | table             | supabase_admin
+ pg_catalog         | pg_attrdef                 | table             | supabase_admin
+ pg_catalog         | pg_attribute               | table             | supabase_admin
+ pg_catalog         | pg_auth_members            | table             | supabase_admin
+ pg_catalog         | pg_authid                  | table             | supabase_admin
+ pg_catalog         | pg_cast                    | table             | supabase_admin
+ pg_catalog         | pg_class                   | table             | supabase_admin
+ pg_catalog         | pg_collation               | table             | supabase_admin
+ pg_catalog         | pg_constraint              | table             | supabase_admin
+ pg_catalog         | pg_conversion              | table             | supabase_admin
+ pg_catalog         | pg_database                | table             | supabase_admin
+ pg_catalog         | pg_db_role_setting         | table             | supabase_admin
+ pg_catalog         | pg_default_acl             | table             | supabase_admin
+ pg_catalog         | pg_depend                  | table             | supabase_admin
+ pg_catalog         | pg_description             | table             | supabase_admin
+ pg_catalog         | pg_enum                    | table             | supabase_admin
+ pg_catalog         | pg_event_trigger           | table             | supabase_admin
+ pg_catalog         | pg_extension               | table             | supabase_admin
+ pg_catalog         | pg_foreign_data_wrapper    | table             | supabase_admin
+ pg_catalog         | pg_foreign_server          | table             | supabase_admin
+ pg_catalog         | pg_foreign_table           | table             | supabase_admin
+ pg_catalog         | pg_index                   | table             | supabase_admin
+ pg_catalog         | pg_inherits                | table             | supabase_admin
+ pg_catalog         | pg_init_privs              | table             | supabase_admin
+ pg_catalog         | pg_language                | table             | supabase_admin
+ pg_catalog         | pg_largeobject             | table             | supabase_admin
+ pg_catalog         | pg_largeobject_metadata    | table             | supabase_admin
+ pg_catalog         | pg_namespace               | table             | supabase_admin
+ pg_catalog         | pg_opclass                 | table             | supabase_admin
+ pg_catalog         | pg_operator                | table             | supabase_admin
+ pg_catalog         | pg_opfamily                | table             | supabase_admin
+ pg_catalog         | pg_parameter_acl           | table             | supabase_admin
+ pg_catalog         | pg_partitioned_table       | table             | supabase_admin
+ pg_catalog         | pg_policy                  | table             | supabase_admin
+ pg_catalog         | pg_proc                    | table             | supabase_admin
+ pg_catalog         | pg_publication             | table             | supabase_admin
+ pg_catalog         | pg_publication_namespace   | table             | supabase_admin
+ pg_catalog         | pg_publication_rel         | table             | supabase_admin
+ pg_catalog         | pg_range                   | table             | supabase_admin
+ pg_catalog         | pg_replication_origin      | table             | supabase_admin
+ pg_catalog         | pg_rewrite                 | table             | supabase_admin
+ pg_catalog         | pg_seclabel                | table             | supabase_admin
+ pg_catalog         | pg_sequence                | table             | supabase_admin
+ pg_catalog         | pg_shdepend                | table             | supabase_admin
+ pg_catalog         | pg_shdescription           | table             | supabase_admin
+ pg_catalog         | pg_shseclabel              | table             | supabase_admin
+ pg_catalog         | pg_statistic               | table             | supabase_admin
+ pg_catalog         | pg_statistic_ext           | table             | supabase_admin
+ pg_catalog         | pg_statistic_ext_data      | table             | supabase_admin
+ pg_catalog         | pg_subscription            | table             | supabase_admin
+ pg_catalog         | pg_subscription_rel        | table             | supabase_admin
+ pg_catalog         | pg_tablespace              | table             | supabase_admin
+ pg_catalog         | pg_transform               | table             | supabase_admin
+ pg_catalog         | pg_trigger                 | table             | supabase_admin
+ pg_catalog         | pg_ts_config               | table             | supabase_admin
+ pg_catalog         | pg_ts_config_map           | table             | supabase_admin
+ pg_catalog         | pg_ts_dict                 | table             | supabase_admin
+ pg_catalog         | pg_ts_parser               | table             | supabase_admin
+ pg_catalog         | pg_ts_template             | table             | supabase_admin
+ pg_catalog         | pg_type                    | table             | supabase_admin
+ pg_catalog         | pg_user_mapping            | table             | supabase_admin
+ pg_toast           | pg_toast_1213              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1247              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1255              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1260              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1262              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_13448             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_13453             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_13458             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_13463             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1417              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_1418              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16458             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_16470             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_16481             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_16488             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_16608             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16668             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16675             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16712             | TOAST table       | supabase_functions_admin
+ pg_toast           | pg_toast_16721             | TOAST table       | supabase_functions_admin
+ pg_toast           | pg_toast_16742             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16751             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16829             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_16991             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_17003             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_17015             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_17027             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_17039             | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_17059             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17069             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17118             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17132             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17178             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17189             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17205             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17229             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17239             | TOAST table       | supabase_storage_admin
+ pg_toast           | pg_toast_17313             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17343             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17377             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17390             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17402             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17420             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17429             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17444             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17462             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17515             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17565             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17597             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17627             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17660             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17700             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17710             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17752             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_17775             | TOAST table       | supabase_auth_admin
+ pg_toast           | pg_toast_2328              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2396              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2600              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2604              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2606              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2609              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2612              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2615              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2618              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2619              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2620              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_2964              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3079              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3118              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3256              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3350              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3381              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3394              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3429              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3456              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3466              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3592              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3596              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_3600              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_6000              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_6100              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_6106              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_6243              | TOAST table       | supabase_admin
+ pg_toast           | pg_toast_826               | TOAST table       | supabase_admin
+ realtime           | messages                   | partitioned table | supabase_realtime_admin
+ realtime           | messages_2026_05_16        | table             | supabase_admin
+ realtime           | messages_2026_05_17        | table             | supabase_admin
+ realtime           | messages_2026_05_18        | table             | supabase_admin
+ realtime           | messages_2026_05_19        | table             | supabase_admin
+ realtime           | messages_2026_05_20        | table             | supabase_admin
+ realtime           | schema_migrations          | table             | supabase_admin
+ realtime           | subscription               | table             | supabase_admin
+ storage            | buckets                    | table             | supabase_storage_admin
+ storage            | buckets_analytics          | table             | supabase_storage_admin
+ storage            | buckets_vectors            | table             | supabase_storage_admin
+ storage            | iceberg_namespaces         | table             | supabase_storage_admin
+ storage            | iceberg_tables             | table             | supabase_storage_admin
+ storage            | migrations                 | table             | supabase_storage_admin
+ storage            | objects                    | table             | supabase_storage_admin
+ storage            | s3_multipart_uploads       | table             | supabase_storage_admin
+ storage            | s3_multipart_uploads_parts | table             | supabase_storage_admin
+ storage            | vector_indexes             | table             | supabase_storage_admin
+ supabase_functions | hooks                      | table             | supabase_functions_admin
+ supabase_functions | migrations                 | table             | supabase_functions_admin
+ vault              | secrets                    | table             | supabase_admin
+(201 rows)
+

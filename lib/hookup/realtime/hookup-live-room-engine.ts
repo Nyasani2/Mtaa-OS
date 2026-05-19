@@ -1,43 +1,59 @@
 import { supabase } from "../../supabase";
 
-export async function createLiveRoom(
-  host_id: string,
-  type: "VOICE" | "VIDEO",
-  is_private: boolean
-) {
+export class HookupLiveRoomEngine {
+  roomId: string;
+  userId: string;
 
-  const { data, error } =
-    await supabase
-      .from("hookup_live_rooms")
-      .insert({
-        host_id,
-        room_type: type,
-        is_private,
-        status: "ACTIVE",
-      })
-      .select()
-      .single();
+  constructor(roomId: string, userId: string) {
+    this.roomId = roomId;
+    this.userId = userId;
+  }
 
-  if (error) throw error;
+  async join() {
+    const { data, error } =
+      await supabase
+        .from("hookup_live_participants")
+        .insert({
+          room_id: this.roomId,
+          user_id: this.userId,
+          role: "LISTENER",
+        });
 
-  return data;
-}
+    if (error) {
+      throw error;
+    }
 
-export async function joinRoom(
-  room_id: string,
-  user_id: string
-) {
+    return data;
+  }
 
-  const { data, error } =
-    await supabase
-      .from("hookup_live_participants")
-      .insert({
-        room_id,
-        user_id,
-        role: "LISTENER",
-      });
+  async rejoin() {
+    return this.join();
+  }
 
-  if (error) throw error;
+  async leave() {
+    return true;
+  }
 
-  return data;
+  async createRoom(
+    type: "VOICE" | "VIDEO" = "VIDEO",
+    is_private: boolean = false
+  ) {
+    const { data, error } =
+      await supabase
+        .from("hookup_live_rooms")
+        .insert({
+          host_id: this.userId,
+          room_type: type,
+          is_private,
+          status: "ACTIVE",
+        })
+        .select()
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
 }

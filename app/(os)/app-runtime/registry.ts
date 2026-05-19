@@ -1,62 +1,74 @@
-export type MTAAApp = {
+export type OSApp = {
   id: string
   name: string
   icon: string
   route: string
-  system?: boolean
-  installed?: boolean
-  permissions?: string[]
+  installed: boolean
 }
 
-export const appRegistry: MTAAApp[] = [
+export const APP_REGISTRY: OSApp[] = [
   {
-    name: 'Wallet',
-    system: true,
+    id: 'launcher',
+    name: 'Home',
+    icon: 'apps-outline',
+    route: '/(os)/launcher',
     installed: true,
-    permissions: ['payments'],
   },
   {
-    id: 'appstore',
+    id: 'wallet',
+    name: 'Wallet',
+    icon: 'wallet-outline',
+    route: '/(os)/apps/wallet',
+    installed: true,
+  },
+  {
+    id: 'messages',
+    name: 'Messages',
+    icon: 'chatbubble-ellipses-outline',
+    route: '/(os)/messages',
+    installed: true,
+  },
+  {
+    id: 'phone',
+    name: 'Calls',
+    icon: 'call-outline',
+    route: '/(os)/phone',
+    installed: true,
+  },
+  {
+    id: 'files',
+    name: 'Files',
+    icon: 'folder-outline',
+    route: '/(os)/documents',
+    installed: true,
+  },
+  {
+    id: 'gallery',
+    name: 'Gallery',
+    icon: 'images-outline',
+    route: '/(os)/gallery',
+    installed: true,
+  },
+  {
+    id: 'settings',
+    name: 'Settings',
+    icon: 'settings-outline',
+    route: '/(os)/settings',
+    installed: true,
+  },
+  {
+    id: 'store',
     name: 'App Store',
     icon: 'grid-outline',
-    route: '/(os)/apps/store',
-    system: true,
-    installed: true,
-  },
-  {
-    id: 'civic',
-    name: 'Civic',
-    icon: 'business-outline',
-    route: '/(os)/apps/civic',
-    installed: true,
-  },
-  {
-    id: 'streets',
-    name: 'Streets',
-    icon: 'map-outline',
-    route: '/(os)/apps/streets',
-    installed: true,
-  },
-  {
-    id: 'mtaxi',
-    name: 'MTAXI',
-    icon: 'car-outline',
-    route: '/(os)/apps/mtaxi',
-    installed: true,
-  },
-  {
-    id: 'hookup',
-    name: 'Hookup',
-    icon: 'people-outline',
-    route: '/(os)/apps/hookup',
-    installed: true,
-  },
-  {
-    id: 'health',
-    name: 'Health',
-    icon: 'medkit-outline',
-    route: '/(os)/apps/health',
+    route: '/(os)/app-store',
     installed: true,
   },
 ]
 
+export function getInstalledApps() {
+  return APP_REGISTRY.filter(app => app.installed)
+}
+
+export function getAppById(id: string) {
+  return APP_REGISTRY.find(app => app.id === id)
+}

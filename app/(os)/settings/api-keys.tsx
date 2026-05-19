@@ -149,7 +149,7 @@ export default function ApiKeysScreen() {
             placeholder="Key name (e.g. Production)"
             placeholderTextColor="#888"
             value={newKeyName}
-            onChange={setNewKeyName}
+            onChangeText={setNewKeyName}
           />
           <View style={styles.createActions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreate(false)}>

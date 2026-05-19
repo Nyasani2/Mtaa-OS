@@ -1,17 +1,32 @@
-import { Stack } from "expo-router";
-import { View, ImageBackground } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Stack, View, PanResponder } from "react-native";
 
-export default function Layout() {
+import OSLaunchTransitionProvider from "./_layout/OSLaunchTransition";
+import { walletCoreEngine } from "@/lib/hookup/wallet-bridge/walletCoreEngine";
+import { gestureEngine } from "@/lib/shell/gestures/gesture-engine";
+
+export default function OSLayout() {
+  useEffect(() => {
+    walletCoreEngine?.start?.();
+
+    return () => {
+      walletCoreEngine?.stop?.();
+    };
+  }, []);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: (_, g) => gestureEngine?.onTouchStart?.(g.y0),
+      onPanResponderRelease: (_, g) => gestureEngine?.onTouchEnd?.(g.moveY),
+    })
+  ).current;
+
   return (
-    <ImageBackground
-      source={{
-        uri: "https://dummyimage.com/1080x1920/000/111&text=MTAA+OS",
-      }}
-      style={{ flex: 1 }}
-    >
-      <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+      <OSLaunchTransitionProvider>
         <Stack screenOptions={{ headerShown: false }} />
-      </View>
-    </ImageBackground>
+      </OSLaunchTransitionProvider>
+    </View>
   );
 }

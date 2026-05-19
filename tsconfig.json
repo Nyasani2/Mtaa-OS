@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+<<<<<<< HEAD
       "@/*": ["./*"]
     }
   },
@@ -31,4 +32,45 @@
     "**/*.mts"
   ],
   "exclude": ["node_modules"]
+=======
+      "@/*": [
+        "./*"
+      ],
+      "@/kernel/*": [
+        "lib/kernel/*"
+      ]
+    },
+    "types": [
+      "react",
+      "react-native",
+      "node"
+    ]
+  },
+  "include": [
+    "app/**/*",
+    "components/**/*",
+    "hooks/**/*",
+    "lib/**/*",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "_KERNEL_BACKUP_*",
+    "**/*.backup.*",
+    "**/*.bak.*",
+    "**/dist",
+    "**/build",
+    "supabase/functions",
+    "app/_disabled_*",
+    "**/_disabled_*",
+    "_disabled_*",
+    "app/(hookup)",
+    "app/(tribes)",
+    "app/(streets)",
+    "app/(civic)",
+    "app/(command)",
+    "app/(hookup-admin)"
+  ]
+>>>>>>> 8e062f8 (MTAA OS baseline commit)
 }

@@ -1,15 +1,15 @@
 /**
- * MTAA OS — System Status Page (Expo Router)
+ * MTAA OS — System Status Page
  */
 
-import React from 'react';
-import { View } from 'react-native';
-import { SystemHealthDashboard } from '@/components/system/SystemHealthDashboard';
+import React from "react";
+import { View } from "react-native";
+import { SystemPanels } from "@/components/system/SystemPanels";
 
 export default function SystemStatusPage() {
   return (
     <View style={{ flex: 1 }}>
-      <SystemHealthDashboard />
+      <SystemPanels />
     </View>
   );
 }

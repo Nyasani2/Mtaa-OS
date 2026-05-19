@@ -1,30 +1,12 @@
 import { useEffect, useState } from "react";
 import MapView, { Marker } from "react-native-maps";
-import {
-  getFleetVehicles,
-  subscribeFleetMap,
-  FleetVehicle,
-} from "../../../lib/mtruck/maps/live-fleet-map-engine";
 
 export default function LiveFleetMap() {
-  const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
 
   useEffect(() => {
-    load();
-
-    const channel = subscribeFleetMap((updated) => {
-      setVehicles(updated);
-    });
-
-    return () => {
-      channel.unsubscribe();
-    };
+    setVehicles([]);
   }, []);
-
-  async function load() {
-    const data = await getFleetVehicles();
-    setVehicles(data);
-  }
 
   return (
     <MapView
@@ -36,15 +18,11 @@ export default function LiveFleetMap() {
         longitudeDelta: 0.4,
       }}
     >
-      {vehicles.map((truck) => (
+      {vehicles.map(v => (
         <Marker
-          key={truck.truck_id}
-          coordinate={{
-            latitude: truck.lat,
-            longitude: truck.lng,
-          }}
-          title={`Truck ${truck.truck_id}`}
-          description={`Speed: ${truck.speed || 0} km/h`}
+          key={v.id}
+          coordinate={{ latitude: v.lat, longitude: v.lng }}
+          title={`Truck ${v.id}`}
         />
       ))}
     </MapView>

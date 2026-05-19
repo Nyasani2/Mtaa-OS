@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useAuthStore } from '@/lib/store/auth-store';
+import { useAuthStore } from '@/lib/stores/auth-store';
 
 type Module = {
   id: string;

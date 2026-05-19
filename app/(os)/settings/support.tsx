@@ -45,8 +45,8 @@ export default function SupportScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Support</Text>
 
-      <TextInput value={subject} onChange={setSubject} placeholder="Subject" placeholderTextColor="#888" style={styles.input} />
-      <TextInput value={message} onChange={setMessage} placeholder="Message" placeholderTextColor="#888" style={styles.input} />
+      <TextInput value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor="#888" style={styles.input} />
+      <TextInput value={message} onChangeText={setMessage} placeholder="Message" placeholderTextColor="#888" style={styles.input} />
 
       <TouchableOpacity onPress={create} style={styles.btn}>
         <Text style={{ color: '#fff' }}>Submit</Text>

@@ -1,25 +1,28 @@
-export function initVideoRoom(
-  room_id: string,
-  user_id: string
-) {
+export class HookupVideoEngine {
+  userId: string;
 
-  // WebRTC video session placeholder
-  // Will later connect to signaling server
+  constructor(userId: string) {
+    this.userId = userId;
+  }
 
-  return {
-    room_id,
-    user_id,
-    video: "CONNECTED",
-  };
-}
+  async init() {
+    return true;
+  }
 
-export function toggleCamera(
-  enabled: boolean
-) {
+  async startLocalStream() {
+    return {
+      status: "STREAM_STARTED",
+      user_id: this.userId,
+    };
+  }
 
-  return {
-    camera: enabled
-      ? "ON"
-      : "OFF",
-  };
+  async stopStream() {
+    return true;
+  }
+
+  toggleCamera(enabled: boolean) {
+    return {
+      camera: enabled ? "ON" : "OFF",
+    };
+  }
 }

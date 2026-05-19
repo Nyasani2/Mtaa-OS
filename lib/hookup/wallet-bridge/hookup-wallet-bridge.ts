@@ -1,5 +1,8 @@
-import { supabase } from "../../supabase";
 
+import { supabase } from "../../supabase";
+import { walletExecutionService } from './walletExecutionService'
+
+walletExecutionService.init()
 export async function linkPaymentToHookup(
   user_id: string,
   amount: number,

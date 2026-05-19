@@ -1,4 +1,4 @@
-import { AppRegistry, InstalledAppV2 } from "./app-registry";
+import { InstalledAppV2 } from "./app-registry";
 
 export type AppItem = InstalledAppV2;
 
@@ -19,11 +19,7 @@ export const defaultApps: AppItem[] = [
 ];
 
 export function useOS() {
-  const registry = new AppRegistry();
-
-  defaultApps.forEach(app => registry.register(app));
-
   return {
-    apps: registry.getApps(),
+    apps: defaultApps,
   };
 }

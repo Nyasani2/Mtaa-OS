@@ -108,7 +108,7 @@ export default function DocumentsScreen() {
         placeholder="Search documents..."
         placeholderTextColor="#888"
         value={search}
-        onChange={setSearch}
+        onChangeText={setSearch}
       />
 
       {currentFolder !== 'root' && (

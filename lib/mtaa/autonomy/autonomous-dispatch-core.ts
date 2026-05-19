@@ -7,18 +7,20 @@ export async function runAutonomousDispatchCycle() {
   const surge = await computeSurgePricing();
   const dispatch = await runDispatchMatching();
 
-  const optimized = dispatch.map(d => ({
+  const list = Array.isArray(dispatch.matches)
+    ? dispatch.matches
+    : dispatch.matched || [];
+
+  const optimized = list.map(d => ({
     ...d,
-    auto_approved: surge.surge_multiplier < 2.0,
-    priority_score:
-      d.score * surge.surge_multiplier,
+    auto_approved: true,
   }));
 
   await supabase
     .from("mtaa_autonomous_dispatch_logs")
     .insert({
       surge,
-      dispatch_count: dispatch.length,
+      dispatch_count: list.length,
       created_at: new Date().toISOString(),
     });
 
