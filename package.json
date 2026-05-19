@@ -1,21 +1,16 @@
 {
-  "name": "mtaa-afriq-web",
+  "name": "mtaa-os-v10",
   "version": "0.1.0",
   "private": true,
+  "main": "expo-router/entry",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "lint": "eslint ."
   },
   "dependencies": {
-<<<<<<< HEAD
-    "framer-motion": "^12.39.0",
-    "lucide-react": "^1.16.0",
-    "next": "16.2.6",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-=======
     "@expo/vector-icons": "~14.0.4",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-community/netinfo": "11.4.1",
@@ -56,18 +51,11 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "zustand": "^5.0.13"
->>>>>>> 8e062f8 (MTAA OS baseline commit)
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "autoprefixer": "^10.5.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
-    "postcss": "^8.5.14",
-    "tailwindcss": "^4.3.0",
-    "typescript": "^5"
+    "@babel/core": "^7.25.2",
+    "@types/react": "~18.3.12",
+    "eslint": "^9.39.4",
+    "typescript": "^5.3.3"
   }
 }

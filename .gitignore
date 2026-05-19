@@ -7,3 +7,20 @@ out
 .DS_Store
 .vercel
 .env*.local
+civic-apps-v1/
+
+# builds
+.next
+dist
+build
+.expo
+node_modules
+
+# dumps
+*.txt
+audit_*
+mtaa_*dump*
+
+# nested repos
+civic-apps-v1/.git
+
