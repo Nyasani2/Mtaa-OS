@@ -1,8 +1,0 @@
-app/(streets)/live/start.tsx:          <Text style={styles.previewText}>Camera Preview</Text>
-app/(os)/settings/permissions.tsx:import * as Camera from 'expo-camera';
-app/(os)/settings/permissions.tsx:    const cam = await Camera.getCameraPermissionsAsync();
-app/(os)/settings/permissions.tsx:        result = await Camera.requestCameraPermissionsAsync();
-app/(os)/settings/permissions.tsx:    { key: 'camera' as const, label: 'Camera', desc: 'Take photos and scan QR codes', icon: '📷' },
-lib/hookup/video-rooms/hookup-video-engine.ts:export function toggleCamera(
-lib/hookup/video/hookup-video-engine.ts:export function toggleCamera(
-lib/hookup/profile/hookup-verification-engine.ts:    await ImagePicker.launchCameraAsync({

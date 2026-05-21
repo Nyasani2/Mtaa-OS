@@ -1,5 +1,0 @@
-app/(os)/settings/storage.tsx:import * as FileSystem from 'expo-file-system';
-app/(os)/settings/storage.tsx:    const docDir = FileSystem.documentDirectory;
-app/(os)/settings/storage.tsx:      const info = await FileSystem.getInfoAsync(docDir);
-app/(os)/settings/storage.tsx:    const cacheDir = FileSystem.cacheDirectory;
-app/(os)/settings/storage.tsx:      const info = await FileSystem.getInfoAsync(cacheDir);
