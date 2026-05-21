@@ -1,0 +1,1 @@
+export const streetsManifest = { id:'streets', name:'Streets', version:'1.0.0', icon:'map-pin', category:'navigation', description:'Street navigation, reporting, and services', entryRoute:'/(apps)/streets', permissions:['location','camera','notifications'], minKycLevel:1, sizeMb:15, dependencies:['location','notifications'], enabled:true };

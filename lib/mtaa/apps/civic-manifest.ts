@@ -1,0 +1,1 @@
+export const civicManifest = { id:'civic', name:'Civic Services', version:'1.0.0', icon:'shield', category:'government', description:'Police, courts, prisons, border control', entryRoute:'/(apps)/civic', permissions:['location','camera','notifications','contacts'], minKycLevel:2, sizeMb:24, dependencies:['identity','notifications','location'], enabled:true };

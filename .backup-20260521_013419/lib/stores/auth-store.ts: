@@ -1,0 +1,28 @@
+import { create } from 'zustand';
+
+type User = {
+  id: string;
+  email?: string;
+};
+
+type AuthState = {
+  user: User | null;
+  hydrated: boolean;
+
+  setUser: (u: User | null) => void;
+  setHydrated: (v: boolean) => void;
+  signOut: () => void;
+};
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  hydrated: false,
+
+  setUser: (user) => set({ user }),
+  setHydrated: (v) => set({ hydrated: v }),
+
+  signOut: () =>
+    set({
+      user: null,
+    }),
+}));

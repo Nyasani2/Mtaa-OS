@@ -1,217 +1,109 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MTAA Phase 0 Fix Package - Complete Build
 
-## Getting Started
+## Files Included (68 files)
 
-First, run the development server:
+### Auth & User Layer
+- `hooks/useAuth.ts` - Real Supabase auth hook with session management
+- `hooks/useUser.ts` - User data hook with profile fetching/updating
+- `hooks/useAuthStore.ts` - Zustand auth state store
+- `app/auth/login.tsx` - Login screen with email/password + biometric
+- `app/auth/register.tsx` - Registration flow (2-step: account + profile)
+- `app/auth/_layout.tsx` - Auth route layout
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Health Module (Native React Native)
+- `lib/health/types.ts` - Complete TypeScript types for all health tables
+- `lib/health/services/` - Patient, Appointment, Hospital, EHR, Ambulance services
+- `lib/health/hooks/` - useHealthPatient, useHospital hooks
+- `lib/health/controllers/health.controller.ts` - Business logic controller
+- `app/(os)/health/index.tsx` - Health home dashboard
+- `app/(os)/health/appointments.tsx` - Appointment list + booking
+- `app/(os)/health/hospitals.tsx` - Hospital finder with search/filter
+- `app/(os)/health/ambulance.tsx` - Emergency ambulance request (3-step flow)
+- `app/(os)/health/records.tsx` - Medical records with type filtering
+- `app/(os)/health/lab-tests.tsx` - Lab results viewer
+- `app/(os)/health/insurance.tsx` - Insurance policy management
+- `app/(os)/health/vaccinations.tsx` - Vaccination records
+- `app/(os)/health/pharmacy.tsx` - Pharmacy orders
+- `app/(os)/health/profile.tsx` - Health profile editor
+- `app/(os)/health/book-appointment.tsx` - Multi-step booking wizard
+- `app/(os)/health/_layout.tsx` - Health route layout
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Wallet Module
+- `lib/wallet/store.ts` - Zustand wallet store (accounts, transactions, payment methods, escrow)
+- `app/(os)/wallet/index.tsx` - Wallet dashboard with balance, actions, recent tx
+- `app/(os)/wallet/deposit.tsx` - Deposit screen with method selection
+- `app/(os)/wallet/_layout.tsx` - Wallet route layout
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Settings Module (All Working Buttons)
+- `app/(os)/settings/index.tsx` - Settings home with all navigation
+- `app/(os)/settings/profile.tsx` - Profile viewer/editor with KYC info
+- `app/(os)/settings/change-password.tsx` - Password change with validation
+- `app/(os)/settings/payment-methods.tsx` - Payment methods list (native)
+- `app/(os)/settings/notifications.tsx` - Per-app notification toggles
+- `app/(os)/settings/tx-alerts.tsx` - Transaction alert configuration
+- `app/(os)/settings/help.tsx` - Help center with searchable articles
+- `app/(os)/settings/bug-report.tsx` - Bug report form with categories
+- `app/(os)/settings/about.tsx` - App info + social links
+- `app/(os)/settings/privacy.tsx` - Full privacy policy
+- `app/(os)/settings/terms.tsx` - Full terms of service
+- `app/(os)/settings/_layout.tsx` - Settings route layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### AppStore Module
+- `lib/kernel/services/rail.service.ts` - App registry, install/uninstall, updates
+- `app/(os)/appstore/index.tsx` - App Store with categories, search, install buttons
+- `app/(os)/appstore/_layout.tsx` - AppStore route layout
 
-## Learn More
+### Kernel / OS Layer
+- `lib/kernel/kernel-init.ts` - Kernel initializer with module dependency resolution
+- `lib/kernel/kernel-bootloader.ts` - Module registration (auth, wallet, health, appstore, analytics, search)
+- `lib/kernel/kernel-panic-handler.ts` - Crash recovery + safe mode
+- `lib/kernel/kernel-safe-mode.ts` - Safe mode manager with feature flags
+- `lib/kernel/kernel-service-manager.ts` - Dependency injection container
+- `lib/kernel/kernel-state-machine.ts` - App-level state machine (booting -> ready)
+- `lib/kernel/runtime/BootGate.tsx` - Boot gate component with progress
+- `lib/kernel/runtime/BootScreen.tsx` - Animated splash screen
+- `lib/kernel/runtime/ModuleBoundary.tsx` - Error boundary per module
+- `lib/kernel/services/telemetry.service.ts` - Event tracking + metrics
 
-To learn more about Next.js, take a look at the following resources:
+### Shell / Routing
+- `app/(os)/_layout.tsx` - OS layout with BootGate wrapper
+- `app/(os)/index.tsx` - Home dashboard with quick actions
+- `app/_layout.tsx` - Root layout with auth state
+- `app/index.tsx` - Root redirect
+- `lib/index.ts` - Barrel exports
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-=======
-# Supabase CLI
-
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=develop)](https://coveralls.io/github/supabase/cli?branch=develop) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
-
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
-
-This repository contains all the functionality for Supabase CLI.
-
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
-
-## Getting started
-
-### Install the CLI
-
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
-
-```bash
-npm i supabase --save-dev
-```
-
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
-
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
-
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
-
-<details>
-  <summary><b>macOS</b></summary>
-
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
+## Installation
 
 ```bash
-supabase bootstrap
+# Extract to your project root
+unzip mtaa_phase0_fix_complete.zip -d .
+
+# Install dependencies if needed
+npm install zustand @supabase/supabase-js expo-router react-native
+
+# Ensure tsconfig paths are set:
+# "@/*": ["./*"] or "@/*": ["src/*"]
 ```
 
-Or using npx:
+## What This Fixes
+1. ✅ useAuth hook created (real Supabase auth)
+2. ✅ useUser hook created (profile data management)
+3. ✅ Health module converted to native React Native
+4. ✅ Wallet store path fixed + real schema types
+5. ✅ Settings layout mismatch fixed
+6. ✅ useAuthstore typo fixed (useAuthStore)
+7. ✅ Duplicate exports removed (barrel files clean)
+8. ✅ Payment methods converted to native
+9. ✅ Install button wired to real Supabase endpoints
+10. ✅ Rail registry + monitor created
+11. ✅ All settings buttons connect to real screens
+12. ✅ Analytics + telemetry foundation built
+13. ✅ Kernel boot system with safe mode
+14. ✅ Module boundaries + error recovery
+15. ✅ State machine for app lifecycle
 
-```bash
-npx supabase bootstrap
-```
-
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
-
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
-```
->>>>>>> 8e062f8 (MTAA OS baseline commit)
+## Next Steps
+- Deploy edge functions for wallet operations (deposit/withdraw/transfer/escrow)
+- Add RLS policies to remaining tables (46 tables noted)
+- Replace any remaining placeholder images with local assets
+- Test each screen against live Supabase instance

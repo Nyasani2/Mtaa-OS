@@ -1,0 +1,12 @@
+// Add this to your existing app/(tabs)/_layout.tsx inside the <Tabs> component:
+
+<Tabs.Screen
+  name="streets"
+  options={{
+    title: 'Streets',
+    headerShown: false,
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="videocam-outline" size={size} color={color} />
+    ),
+  }}
+/>

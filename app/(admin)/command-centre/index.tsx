@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { railMonitor } from '@/lib/integrations/monitoring/rail-status';
+import { railMonitor } from '@/lib/integrations/rails/rail-registry';
 
 export default function CommandHome() {
   const rails = railMonitor.all();

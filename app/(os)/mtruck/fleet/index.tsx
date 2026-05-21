@@ -1,0 +1,36 @@
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useFleetStore } from "@/lib/mtruck/hooks/use-fleet-store";
+import { TruckCard } from "@/lib/mtruck/components/TruckCard";
+
+export default function FleetScreen() {
+  const { trucks } = useFleetStore();
+  const stats = {
+    active: trucks.filter((t) => t.status === "active").length,
+    idle: trucks.filter((t) => t.status === "idle").length,
+    maintenance: trucks.filter((t) => t.status === "maintenance").length,
+    offline: trucks.filter((t) => t.status === "offline").length,
+  };
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.statsRow}>
+        {Object.entries(stats).map(([status, count]) => (
+          <View key={status} style={styles.statBox}>
+            <Text style={styles.statValue}>{count}</Text>
+            <Text style={styles.statLabel}>{status.toUpperCase()}</Text>
+          </View>
+        ))}
+      </View>
+      <Text style={styles.sectionTitle}>All Trucks</Text>
+      {trucks.map((truck) => <TruckCard key={truck.id} truck={truck} />)}
+    </ScrollView>
+  );
+}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#050816" },
+  statsRow: { flexDirection: "row", paddingHorizontal: 16, gap: 10, marginTop: 12, marginBottom: 8 },
+  statBox: { flex: 1, backgroundColor: "#1E293B", borderRadius: 12, padding: 12, alignItems: "center" },
+  statValue: { fontSize: 20, fontWeight: "bold", color: "white" },
+  statLabel: { fontSize: 10, color: "#94A3B8", marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "white", marginTop: 20, marginBottom: 12, paddingHorizontal: 20 },
+});

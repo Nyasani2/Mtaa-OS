@@ -1,0 +1,1 @@
+export const tribesManifest = { id:'tribes', name:'Tribes', version:'1.0.0', icon:'users', category:'social', description:'Community groups and messaging', entryRoute:'/(apps)/tribes', permissions:['contacts','notifications','storage'], minKycLevel:1, sizeMb:12, dependencies:['messaging','notifications'], enabled:true };

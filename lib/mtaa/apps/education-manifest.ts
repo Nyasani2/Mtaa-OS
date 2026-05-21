@@ -1,0 +1,1 @@
+export const educationManifest = { id:'education', name:'Education', version:'1.0.0', icon:'book-open', category:'learning', description:'Courses, certificates, and progress tracking', entryRoute:'/(apps)/education', permissions:['storage','notifications','camera'], minKycLevel:1, sizeMb:18, dependencies:['storage','notifications'], enabled:true };

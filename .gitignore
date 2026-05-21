@@ -1,26 +1,13 @@
 node_modules
-.next
-.env
-.env.local
-dist
-out
-.DS_Store
-.vercel
-.env*.local
-civic-apps-v1/
-
-# builds
+.expo
 .next
 dist
 build
-.expo
-node_modules
-
-# dumps
-*.txt
-audit_*
-mtaa_*dump*
-
-# nested repos
-civic-apps-v1/.git
-
+coverage
+*.log
+.env
+.env.local
+android/.gradle
+android/app/build
+ios/build
+.DS_Store

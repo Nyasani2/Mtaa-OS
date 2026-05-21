@@ -3,6 +3,7 @@
     "name": "MTAA OS",
     "slug": "mtaa-os",
     "version": "1.0.0",
+    "sdkVersion": "52.0.0",
     "assetBundlePatterns": [
       "assets/**/*"
     ],

@@ -1,6 +1,0 @@
-./components_backup_styles
-./_route_conflicts_backup
-./_dead_nested_router_backup
-./supabase/migrations_backup
-./_CLEANUP_BACKUP
-./_ARCHIVE

@@ -1,0 +1,1 @@
+export const healthManifest = { id:'health', name:'Health', version:'1.0.0', icon:'heart-pulse', category:'healthcare', description:'Patient records, appointments, telemedicine', entryRoute:'/(apps)/health', permissions:['camera','notifications','storage','microphone'], minKycLevel:2, sizeMb:20, dependencies:['notifications','storage'], enabled:true };

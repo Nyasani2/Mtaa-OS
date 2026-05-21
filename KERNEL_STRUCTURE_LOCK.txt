@@ -1,0 +1,15 @@
+MTAA KERNEL STRUCTURE (CLEAN)
+
+ACTIVE:
+- lib/kernel/runtime/kernel-runtime.ts
+- lib/kernel/core/*
+- lib/kernel/orchestrator/*
+
+ARCHIVE:
+- _KERNEL_BACKUP_ARCHIVE/
+
+STAGING:
+- _STAGING/ (non-runtime only)
+
+TOOLS:
+- scripts/cleanup-os.sh
