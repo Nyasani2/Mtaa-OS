@@ -1,0 +1,35 @@
+import { AppManifest } from '../types';
+
+export const documentsManifest: AppManifest = {
+  id: 'documents',
+  name: 'Documents',
+  description: 'File manager, document viewer, and cloud storage',
+  version: '1.0.0',
+  category: 'productivity',
+  icon: 'folder-open',
+  color: '#3B82F6',
+  author: 'MTAA OS',
+  size: '12MB',
+  rating: 4.5,
+  installs: 0,
+  isOSBased: false,
+  entryPoint: '/(os)/documents',
+  permissions: ['storage', 'camera', 'files'],
+  screens: [
+    { route: '/(os)/documents', label: 'Files', icon: 'folder' },
+    { route: '/(os)/documents/folder', label: 'Folders', icon: 'folder-open' },
+    { route: '/(os)/documents/preview', label: 'Preview', icon: 'eye' },
+  ],
+  features: [
+    'Browse local and cloud files',
+    'Document preview (PDF, images, text)',
+    'Folder management',
+    'Cloud sync integration',
+  ],
+  minOSVersion: '1.0.0',
+  supportedPlatforms: ['ios', 'android', 'web'],
+  requiresAuth: true,
+  hasInAppPurchases: false,
+  dataUsage: 'medium',
+  offlineSupport: true,
+};

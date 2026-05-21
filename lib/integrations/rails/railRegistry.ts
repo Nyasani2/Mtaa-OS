@@ -1,78 +1,62 @@
-import { mpesaAdapter } from './mpesaAdapter'
+// lib/integrations/rails/railRegistry.ts
 
-type PaymentPayload = {
-  amount: number
-  phone?: string
-  account?: string
-  metadata?: any
-}
+type RailRequest = {
+  [key: string]: any;
+};
+
+type RailResponse = {
+  success: boolean;
+  rail: string;
+  data?: any;
+  error?: string;
+};
 
 class RailRegistry {
-  async route(
-    type: 'mpesa' | 'card' | 'bank',
-    payload: PaymentPayload
+  private rails: Record<
+    string,
+    (payload: RailRequest) => Promise<RailResponse>
+  > = {};
+
+  register(
+    name: string,
+    handler: (payload: RailRequest) => Promise<RailResponse>
   ) {
-    switch (type) {
-      case 'mpesa':
-        return this.mpesa(payload)
-
-      case 'card':
-        return this.card(payload)
-
-      case 'bank':
-        return this.bank(payload)
-
-      default:
-        throw new Error(`Unsupported rail type: ${type}`)
-    }
+    this.rails[name] = handler;
   }
 
-  // =========================
-  // MPESA RAIL (PRIMARY)
-  // =========================
-  private async mpesa(payload: PaymentPayload) {
-    const res = await mpesaAdapter.stkPush({
-      phone: payload.phone || '',
-      amount: payload.amount,
-      accountReference: payload.metadata?.ref,
-      description: payload.metadata?.description || 'MTAA Wallet Payment',
-    })
-
-    return {
-      status: res.status,
-      rail: 'mpesa',
-      ref: res.checkoutRequestID,
-      message: res.message,
-    }
+  list() {
+    return Object.keys(this.rails);
   }
 
-  // =========================
-  // CARD RAIL (STAGING)
-  // =========================
-  private async card(payload: PaymentPayload) {
-    console.log('CARD PAYMENT INIT:', payload)
-
-    return {
-      status: 'PENDING',
-      rail: 'card',
-      ref: 'CARD_TX_' + Date.now(),
-      message: 'Card rail is in staging mode',
-    }
+  get(name: string) {
+    return this.rails[name] || null;
   }
 
-  // =========================
-  // BANK RAIL (STAGING)
-  // =========================
-  private async bank(payload: PaymentPayload) {
-    console.log('BANK TRANSFER INIT:', payload)
+  async route(name: string, payload: RailRequest): Promise<RailResponse> {
+    const handler = this.rails[name];
 
-    return {
-      status: 'PENDING',
-      rail: 'bank',
-      ref: 'BANK_TX_' + Date.now(),
-      message: 'Bank rail is in staging mode',
+    if (!handler) {
+      return {
+        success: false,
+        rail: name,
+        error: `Rail '${name}' not found`,
+      };
+    }
+
+    try {
+      return await handler(payload);
+    } catch (err: any) {
+      return {
+        success: false,
+        rail: name,
+        error: err?.message || 'Rail execution failed',
+      };
     }
   }
 }
 
-export const railRegistry = new RailRegistry()
+// singleton instance (IMPORTANT for OS design)
+export const railRegistry = new RailRegistry();
+
+// optional default export (safe)
+export default railRegistry;

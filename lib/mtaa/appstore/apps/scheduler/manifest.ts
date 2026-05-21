@@ -1,0 +1,37 @@
+import { AppManifest } from '../types';
+
+export const schedulerManifest: AppManifest = {
+  id: 'scheduler',
+  name: 'Scheduler',
+  description: 'Calendar, tasks, reminders, and event planning',
+  version: '1.0.0',
+  category: 'productivity',
+  icon: 'calendar',
+  color: '#8B5CF6',
+  author: 'MTAA OS',
+  size: '10MB',
+  rating: 4.4,
+  installs: 0,
+  isOSBased: false,
+  entryPoint: '/(os)/scheduler',
+  permissions: ['notifications', 'storage', 'contacts'],
+  screens: [
+    { route: '/(os)/scheduler', label: 'Calendar', icon: 'calendar' },
+    { route: '/(os)/scheduler/tasks', label: 'Tasks', icon: 'check-square' },
+    { route: '/(os)/scheduler/reminders', label: 'Reminders', icon: 'bell' },
+    { route: '/(os)/scheduler/events', label: 'Events', icon: 'calendar-event' },
+  ],
+  features: [
+    'Monthly/weekly/daily calendar views',
+    'Task lists with priorities and deadlines',
+    'Recurring reminders and notifications',
+    'Event creation and invite system',
+    'Sync with system calendar',
+  ],
+  minOSVersion: '1.0.0',
+  supportedPlatforms: ['ios', 'android', 'web'],
+  requiresAuth: true,
+  hasInAppPurchases: false,
+  dataUsage: 'low',
+  offlineSupport: true,
+};

@@ -1,16 +1,20 @@
+import React from 'react';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 
 export default function DocumentsLayout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: '#0A0A0A' },
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="preview" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="folder" />
-    </Stack>
+    <>
+      <Stack
+        screenOptions={
+          headerShown: false,
+          contentStyle: { backgroundColor: '#F8FAFC' },
+          animation: 'slide_from_right',
+        }
+      >
+        <Stack.Screen name="index" options={ title: 'Documents' } />
+      </Stack>
+      <StatusBar style="dark" />
+    </>
   );
 }

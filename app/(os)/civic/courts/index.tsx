@@ -1,51 +1,99 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Gavel, FileText, Users, Calendar, Scale } from 'lucide-react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { CourtNav } from '../../../../lib/civic/courts/components/CourtNav';
+import { useCourts } from '../../../../lib/civic/courts/hooks/useCourts';
 
-export default function CourtsHome() {
+const courtModules = [
+  { id: 'cases', label: 'Cases', icon: 'gavel', route: '/(os)/civic/courts/cases', color: '#1E40AF' },
+  { id: 'hearings', label: 'Hearings', icon: 'mic', route: '/(os)/civic/courts/hearings', color: '#059669' },
+  { id: 'judgments', label: 'Judgments', icon: 'check-circle', route: '/(os)/civic/courts/judgments', color: '#7C3AED' },
+  { id: 'bails', label: 'Bails', icon: 'unlock', route: '/(os)/civic/courts/bails', color: '#D97706' },
+  { id: 'fines', label: 'Fines', icon: 'dollar-sign', route: '/(os)/civic/courts/fines', color: '#DC2626' },
+  { id: 'appeals', label: 'Appeals', icon: 'repeat', route: '/(os)/civic/courts/appeals', color: '#0891B2' },
+  { id: 'jury', label: 'Jury', icon: 'users', route: '/(os)/civic/courts/jury', color: '#BE185D' },
+  { id: 'payroll', label: 'Payroll', icon: 'money-bill-wave', route: '/(os)/civic/courts/payroll', color: '#4338CA' },
+];
+
+export default function CourtsIndex() {
   const router = useRouter();
-  
-  const modules = [
-    { icon: FileText, label: 'Cases', route: '/civic/courts/cases', color: '#3b82f6' },
-    { icon: Calendar, label: 'Hearings', route: '/civic/courts/hearings', color: '#10b981' },
-    { icon: Scale, label: 'Judgments', route: '/civic/courts/judgments', color: '#f59e0b' },
-    { icon: Users, label: 'Jury', route: '/civic/courts/jury', color: '#8b5cf6' },
-    { icon: Gavel, label: 'Appeals', route: '/civic/courts/appeals', color: '#ef4444' },
-  ];
+  const { stats } = useCourts();
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#0f172a' }}>
-      <View style={{ padding: 20 }}>
-        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 8 }}>
-          Courts
-        </Text>
-        <Text style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
-          Justice administration system
-        </Text>
-        
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-          {modules.map((m, i) => (
+    <View style={styles.container}>
+      <CourtNav />
+
+      <ScrollView style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Courts</Text>
+          <Text style={styles.subtitle}>Judicial Case Management</Text>
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { backgroundColor: '#EFF6FF' }]}>
+            <Text style={[styles.statNumber, { color: '#1E40AF' }]}>{stats?.activeCases || 0}</Text>
+            <Text style={styles.statLabel}>Active Cases</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#ECFDF5' }]}>
+            <Text style={[styles.statNumber, { color: '#059669' }]}>{stats?.pendingHearings || 0}</Text>
+            <Text style={styles.statLabel}>Pending Hearings</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: '#F5F3FF' }]}>
+            <Text style={[styles.statNumber, { color: '#7C3AED' }]}>{stats?.judgmentsThisMonth || 0}</Text>
+            <Text style={styles.statLabel}>This Month</Text>
+          </View>
+        </View>
+
+        <View style={styles.modulesGrid}>
+          {courtModules.map((mod) => (
             <TouchableOpacity
-              key={i}
-              onPress={() => router.push(m.route as any)}
-              style={{
-                width: '47%',
-                backgroundColor: '#1e293b',
-                borderRadius: 16,
-                padding: 20,
-                alignItems: 'center',
-                borderLeftWidth: 4,
-                borderLeftColor: m.color,
-              }}
+              key={mod.id}
+              style={[styles.moduleCard, { borderLeftColor: mod.color }]}
+              onPress={() => router.push(mod.route as any)}
             >
-              <m.icon size={32} color={m.color} />
-              <Text style={{ color: '#fff', marginTop: 12, fontSize: 16, fontWeight: '600' }}>
-                {m.label}
-              </Text>
+              <View style={[styles.iconContainer, { backgroundColor: mod.color + '15' }]}>
+                <FontAwesome5 name={mod.icon} size={22} color={mod.color} />
+              </View>
+              <Text style={styles.moduleLabel}>{mod.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  content: { padding: 16 },
+  header: { marginBottom: 20 },
+  title: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
+  subtitle: { fontSize: 14, color: '#64748B', marginTop: 4 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  statCard: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
+  statNumber: { fontSize: 22, fontWeight: '800' },
+  statLabel: { fontSize: 11, color: '#64748B', marginTop: 4 },
+  modulesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  moduleCard: {
+    width: '47%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  moduleLabel: { fontSize: 13, fontWeight: '600', color: '#334155' },
+});

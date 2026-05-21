@@ -1,271 +1,61 @@
-import React, { useEffect, useRef, useState } from 'react'
-import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  ImageBackground,
-  StatusBar,
-  Animated,
-} from 'react-native'
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInstalledApps } from '../hooks/useInstalledApps';
+import { LoadingState } from '../components/ui/LoadingState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorState } from '../components/ui/ErrorState';
+import { SafeAreaWrapper } from '../components/ui/SafeAreaWrapper';
 
-import { Ionicons } from '@expo/vector-icons'
-import { getInstalledApps } from './app-runtime/registry'
-import { launchApp } from './_kernel/runtime/OSSystemBridge'
+export default function LauncherScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { apps, isLoading, error, refetch } = useInstalledApps();
+  const [search, setSearch] = React.useState('');
+  const filteredApps = apps?.filter((app: any) => app.name?.toLowerCase().includes(search.toLowerCase()) || app.category?.toLowerCase().includes(search.toLowerCase())) || [];
 
-export default function Launcher() {
-  const [time, setTime] = useState('')
-  const [launchingApp, setLaunchingApp] =
-    useState<string | null>(null)
-
-  const apps = getInstalledApps()
-
-  const scaleAnim = useRef(
-    new Animated.Value(1)
-  ).current
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date()
-
-      setTime(
-        now.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      )
-    }
-
-    updateTime()
-
-    const interval = setInterval(
-      updateTime,
-      1000
-    )
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const runMorph = () => {
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.94,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 4,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-    ]).start()
-  }
-
-  const handleLaunch = (item: any) => {
-    setLaunchingApp(item.id)
-
-    runMorph()
-
-    setTimeout(() => {
-      launchApp(item.id, item.route)
-
-      setLaunchingApp(null)
-    }, 180)
-  }
+  if (isLoading) return <SafeAreaWrapper><LoadingState message="Loading apps..." /></SafeAreaWrapper>;
+  if (error) return <SafeAreaWrapper><ErrorState title="Apps unavailable" message={error.message || 'Failed to load installed apps'} onRetry={refetch} /></SafeAreaWrapper>;
 
   return (
-    <ImageBackground
-      source={require('@/assets/images/mtaa_home.jpg')}
-      resizeMode="cover"
-      style={styles.background}
-    >
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="light-content"
-      />
-
-      <View style={styles.overlay} />
-
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [
-              {
-                scale: scaleAnim,
-              },
-            ],
-          },
-        ]}
-      >
-        {/* TOP BAR */}
-
-        <View style={styles.topBar}>
-          <Text style={styles.time}>
-            {time}
-          </Text>
-
-          <View style={styles.icons}>
-            <Ionicons
-              name="wifi"
-              size={18}
-              color="#fff"
-            />
-
-            <Ionicons
-              name="cellular"
-              size={18}
-              color="#fff"
-            />
-
-            <Ionicons
-              name="battery-full"
-              size={20}
-              color="#fff"
-            />
-          </View>
+    <SafeAreaWrapper>
+      <View style={styles.container}>
+        <View style={styles.searchBox}>
+          <FontAwesome5 name="search" size={16} color="#94A3B8" />
+          <TextInput style={styles.searchInput} placeholder="Search apps..." value={search} onChangeText={setSearch} placeholderTextColor="#94A3B8" />
+          {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><FontAwesome5 name="times-circle" size={16} color="#94A3B8" /></TouchableOpacity>}
         </View>
-
-        {/* HEADER */}
-
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            MTAA OS
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Sovereign African Operating System
-          </Text>
-        </View>
-
-        {/* GRID */}
-
-        <FlatList
-          data={apps}
-          keyExtractor={(item) => item.id}
-          numColumns={4}
-          contentContainerStyle={styles.grid}
-          renderItem={({ item }) => {
-            const isLaunching =
-              launchingApp === item.id
-
-            return (
-              <Pressable
-                style={[
-                  styles.app,
-                  isLaunching && {
-                    transform: [
-                      { scale: 1.12 },
-                    ],
-                    opacity: 0.55,
-                  },
-                ]}
-                onPress={() =>
-                  handleLaunch(item)
-                }
-              >
-                <View style={styles.iconBox}>
-                  <Ionicons
-                    name={item.icon as any}
-                    size={30}
-                    color="#fff"
-                  />
-                </View>
-
-                <Text style={styles.label}>
-                  {item.name}
-                </Text>
-              </Pressable>
-            )
-          }}
-        />
-      </Animated.View>
-    </ImageBackground>
-  )
+        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} showsVerticalScrollIndicator={false}>
+          {filteredApps.length === 0 ? (
+            <EmptyState icon="th-large" title={search ? 'No apps found' : 'No apps installed'} message={search ? 'Try a different search term' : 'Visit the AppStore to install apps'} actionLabel={!search ? 'Open AppStore' : undefined} onAction={!search ? () => router.push('/(os)/appstore') : undefined} />
+          ) : (
+            <View style={styles.appsGrid}>
+              {filteredApps.map((app: any) => (
+                <TouchableOpacity key={app.id} style={styles.appCard} onPress={() => router.push(app.route as any)}>
+                  <View style={[styles.appIcon, { backgroundColor: (app.color || '#64748B') + '15' }]}>
+                    <FontAwesome5 name={app.icon || 'app'} size={24} color={app.color || '#64748B'} />
+                  </View>
+                  <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+                  <Text style={styles.appCategory}>{app.category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </SafeAreaWrapper>
+  );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-  },
-
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor:
-      'rgba(0,0,0,0.28)',
-  },
-
-  container: {
-    flex: 1,
-    paddingTop: 58,
-  },
-
-  topBar: {
-    flexDirection: 'row',
-    justifyContent:
-      'space-between',
-    paddingHorizontal: 18,
-  },
-
-  time: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-
-  icons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-
-  header: {
-    paddingHorizontal: 18,
-    marginTop: 24,
-  },
-
-  title: {
-    color: '#fff',
-    fontSize: 30,
-    fontWeight: '900',
-  },
-
-  subtitle: {
-    color: '#ccc',
-    marginTop: 4,
-    fontSize: 13,
-  },
-
-  grid: {
-    paddingTop: 40,
-    paddingHorizontal: 12,
-  },
-
-  app: {
-    width: '25%',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-
-  iconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor:
-      'rgba(255,255,255,0.10)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor:
-      'rgba(255,255,255,0.08)',
-  },
-
-  label: {
-    color: '#fff',
-    fontSize: 11,
-    marginTop: 8,
-  },
-})
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16, gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  searchInput: { flex: 1, fontSize: 15, color: '#334155' },
+  appsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  appCard: { width: '30%', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 18, paddingHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  appIcon: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  appName: { fontSize: 13, fontWeight: '600', color: '#334155', textAlign: 'center' },
+  appCategory: { fontSize: 10, color: '#94A3B8', marginTop: 2, textTransform: 'uppercase' },
+});

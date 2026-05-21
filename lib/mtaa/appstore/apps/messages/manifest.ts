@@ -1,0 +1,37 @@
+import { AppManifest } from '../types';
+
+export const messagesManifest: AppManifest = {
+  id: 'messages',
+  name: 'Messages',
+  description: 'Secure messaging, chat, and communication hub',
+  version: '1.0.0',
+  category: 'communication',
+  icon: 'message-circle',
+  color: '#10B981',
+  author: 'MTAA OS',
+  size: '8MB',
+  rating: 4.6,
+  installs: 0,
+  isOSBased: false,
+  entryPoint: '/(os)/messages',
+  permissions: ['notifications', 'storage', 'contacts'],
+  screens: [
+    { route: '/(os)/messages', label: 'Inbox', icon: 'inbox' },
+    { route: '/(os)/messages/compose', label: 'Compose', icon: 'edit' },
+    { route: '/(os)/messages/thread/[id]', label: 'Thread', icon: 'message-square' },
+    { route: '/(os)/messages/contacts', label: 'Contacts', icon: 'users' },
+  ],
+  features: [
+    'Direct messaging between users',
+    'Group chats and channels',
+    'End-to-end encryption',
+    'Message search and archiving',
+    'Read receipts and typing indicators',
+  ],
+  minOSVersion: '1.0.0',
+  supportedPlatforms: ['ios', 'android', 'web'],
+  requiresAuth: true,
+  hasInAppPurchases: false,
+  dataUsage: 'low',
+  offlineSupport: true,
+};

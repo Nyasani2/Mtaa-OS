@@ -1,4 +1,4 @@
-import { railRegistry } from './rail-registry';
+import { railRegistry } from './railRegistry';
 import { calculateFX } from '../fx/fx-engine';
 
 export async function routeTransfer({

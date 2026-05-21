@@ -1,10 +1,14 @@
 import { railMonitor } from '../monitoring/rail-status';
-import { railRegistry } from './rail-registry';
+import { railRegistry } from './railRegistry';
 
-export function chooseBestRail(amount: number, currencyFrom: string, currencyTo: string) {
+export function chooseBestRail(
+  amount: number,
+  currencyFrom: string,
+  currencyTo: string
+) {
   const rails = railRegistry.list();
 
-  const ranked = rails.map(r => {
+  const ranked = rails.map((r: any) => {
     const health = railMonitor.get(r.name);
 
     const score =
@@ -15,7 +19,7 @@ export function chooseBestRail(amount: number, currencyFrom: string, currencyTo:
     return { rail: r, score };
   });
 
-  ranked.sort((a, b) => b.score - a.score);
+  ranked.sort((a: any, b: any) => b.score - a.score);
 
   return ranked[0]?.rail || null;
 }
