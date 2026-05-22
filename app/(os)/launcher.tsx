@@ -3,21 +3,31 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 
 import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useInstalledApps } from '../hooks/useInstalledApps';
-import { LoadingState } from '../components/ui/LoadingState';
-import { EmptyState } from '../components/ui/EmptyState';
-import { ErrorState } from '../components/ui/ErrorState';
-import { SafeAreaWrapper } from '../components/ui/SafeAreaWrapper';
+import { getInstalledApps } from '@/lib/apps-store/registry';
+import { getLaunchRoute, getAppIcon, getAppColor } from '@/lib/apps-store/launcher';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SafeAreaWrapper } from '@/components/ui/SafeAreaWrapper';
 
 export default function LauncherScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { apps, isLoading, error, refetch } = useInstalledApps();
+  const [apps, setApps] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
-  const filteredApps = apps?.filter((app: any) => app.name?.toLowerCase().includes(search.toLowerCase()) || app.category?.toLowerCase().includes(search.toLowerCase())) || [];
+
+  React.useEffect(() => {
+    const installed = getInstalledApps();
+    setApps(installed);
+    setIsLoading(false);
+  }, []);
+
+  const filteredApps = apps.filter((app: any) =>
+    app.name?.toLowerCase().includes(search.toLowerCase()) ||
+    app.category?.toLowerCase().includes(search.toLowerCase())
+  );
 
   if (isLoading) return <SafeAreaWrapper><LoadingState message="Loading apps..." /></SafeAreaWrapper>;
-  if (error) return <SafeAreaWrapper><ErrorState title="Apps unavailable" message={error.message || 'Failed to load installed apps'} onRetry={refetch} /></SafeAreaWrapper>;
 
   return (
     <SafeAreaWrapper>
@@ -28,20 +38,26 @@ export default function LauncherScreen() {
           {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><FontAwesome5 name="times-circle" size={16} color="#94A3B8" /></TouchableOpacity>}
         </View>
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }} showsVerticalScrollIndicator={false}>
-          {filteredApps.length === 0 ? (
-            <EmptyState icon="th-large" title={search ? 'No apps found' : 'No apps installed'} message={search ? 'Try a different search term' : 'Visit the AppStore to install apps'} actionLabel={!search ? 'Open AppStore' : undefined} onAction={!search ? () => router.push('/(os)/appstore') : undefined} />
-          ) : (
-            <View style={styles.appsGrid}>
-              {filteredApps.map((app: any) => (
-                <TouchableOpacity key={app.id} style={styles.appCard} onPress={() => router.push(app.route as any)}>
-                  <View style={[styles.appIcon, { backgroundColor: (app.color || '#64748B') + '15' }]}>
-                    <FontAwesome5 name={app.icon || 'app'} size={24} color={app.color || '#64748B'} />
-                  </View>
-                  <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
-                  <Text style={styles.appCategory}>{app.category}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View style={styles.grid}>
+            {filteredApps.map((app) => (
+              <TouchableOpacity
+                key={app.id}
+                style={styles.appTile}
+                onPress={() => {
+                  const route = getLaunchRoute(app.id);
+                  if (route) router.push(route);
+                }}
+              >
+                <View style={[styles.iconBox, { backgroundColor: (app.color || '#6366F1') + '20' }]}>
+                  <FontAwesome5 name={getAppIcon(app.id) as any} size={24} color={app.color || '#6366F1'} />
+                </View>
+                <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+                <Text style={styles.appCategory}>{app.category}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {filteredApps.length === 0 && (
+            <EmptyState title="No apps found" message={search ? `No apps matching "${search}"` : "Install apps from the AppStore"} />
           )}
         </ScrollView>
       </View>
@@ -50,12 +66,12 @@ export default function LauncherScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 16, gap: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  searchInput: { flex: 1, fontSize: 15, color: '#334155' },
-  appsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  appCard: { width: '30%', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, paddingVertical: 18, paddingHorizontal: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  appIcon: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  appName: { fontSize: 13, fontWeight: '600', color: '#334155', textAlign: 'center' },
-  appCategory: { fontSize: 10, color: '#94A3B8', marginTop: 2, textTransform: 'uppercase' },
+  container: { flex: 1, backgroundColor: '#050816', padding: 16 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 },
+  searchInput: { flex: 1, marginLeft: 10, color: 'white', fontSize: 14 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  appTile: { width: '30%', aspectRatio: 0.85, backgroundColor: '#1E293B', borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  appName: { color: 'white', fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  appCategory: { color: '#94A3B8', fontSize: 10, marginTop: 2 },
 });

@@ -1,2 +1,2 @@
-// lib/wallet/index.ts
-export * from './store';
+export { WalletDashboard } from './components/WalletDashboard';
+export { WalletShell } from './components/WalletShell';

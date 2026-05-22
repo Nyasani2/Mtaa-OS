@@ -1,0 +1,18 @@
+
+// Add these imports to lib/apps-store/registry.ts
+
+import { POLICE_APP } from "./apps/police/manifest";
+import { COURTS_APP } from "./apps/courts/manifest";
+import { PRISONS_APP } from "./apps/prisons/manifest";
+import { REVENUE_APP } from "./apps/revenue/manifest";
+import { HEALTH_AUTHORITY_APP } from "./apps/health-authority/manifest";
+
+// Add to LOCAL_APPS array:
+const LOCAL_APPS = [
+  // ... existing apps ...
+  POLICE_APP,
+  COURTS_APP,
+  PRISONS_APP,
+  REVENUE_APP,
+  HEALTH_AUTHORITY_APP,
+];
