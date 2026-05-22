@@ -1,44 +1,46 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/core/lib/supabaseClient";
-import { getMyRides, getRideById } from "../services/rideService";
-import type { Ride, RideStatus } from "../types";
+"use client";
 
-export function useRides(status?: RideStatus) {
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase/client";
+
+export interface Ride {
+  id: string;
+  pickup_location: string;
+  dropoff_location: string;
+  status: string;
+  fare: number;
+  created_at: string;
+}
+
+export function useRides(rideId?: string) {
   const [rides, setRides] = useState<Ride[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [ride, setRide] = useState<Ride | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchRides = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { const data = await getMyRides(status); setRides(data); }
-    catch (err: any) { setError(err.message); } finally { setLoading(false); }
-  }, [status]);
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.from("rides").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      setRides(data || []);
+    } catch (err) { console.error(err); }
+    finally { setIsLoading(false); }
+  }, []);
 
-  useEffect(() => { fetchRides(); }, [fetchRides]);
-  return { rides, loading, error, refresh: fetchRides };
-}
-
-export function useRide(ride_id: string) {
-  const [ride, setRide] = useState<Ride | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetchRide = useCallback(async (id: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.from("rides").select("*").eq("id", id).single();
+      if (error) throw error;
+      setRide(data);
+    } catch (err) { console.error(err); }
+    finally { setIsLoading(false); }
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
-    getRideById(ride_id).then(data => { if (mounted) setRide(data); }).catch(err => { if (mounted) setError(err.message); }).finally(() => { if (mounted) setLoading(false); });
-    return () => { mounted = false; };
-  }, [ride_id]);
+    if (rideId) fetchRide(rideId);
+    else fetchRides();
+  }, [rideId, fetchRide, fetchRides]);
 
-  return { ride, loading, error };
-}
-
-export function useRealtimeRide(ride_id: string | null) {
-  const [ride, setRide] = useState<Ride | null>(null);
-  useEffect(() => {
-    if (!ride_id) return;
-    getRideById(ride_id).then(setRide);
-    const channel = supabase.channel(`ride-${ride_id}`).on("postgres_changes", { event: "*", schema: "public", table: "rides", filter: `id=eq.${ride_id}` }, (payload) => { setRide(payload.new as Ride); }).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [ride_id]);
-  return ride;
+  return { rides, ride, isLoading, refresh: fetchRides };
 }

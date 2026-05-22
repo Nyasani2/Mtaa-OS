@@ -1,27 +1,40 @@
-import { View, StyleSheet } from 'react-native';
-import { Card } from '@/components/ui/Card';
-import { Text } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface StatsCardProps {
-  label: string;
-  value: number;
-  icon: string;
-  color: string;
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  color?: string;
 }
 
-export function StatsCard({ label, value, icon, color }: StatsCardProps) {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, subtitle, color = '#3b82f6' }) => {
   return (
-    <Card style={[styles.card, { borderLeftWidth: 3, borderLeftColor: color }]}>
-      <Text style={styles.icon}>{icon}</Text>
-      <Text style={[styles.value, { color }]}>{value}</Text>
-      <Text style={styles.label}>{label}</Text>
-    </Card>
+    <View style={[styles.card, { borderLeftColor: color, borderLeftWidth: 3 }]}>
+      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.title}>{title}</Text>
+      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  card: { width: '47%', padding: 14, alignItems: 'center', marginBottom: 12 },
-  icon: { fontSize: 22, marginBottom: 6 },
-  value: { fontSize: 24, fontWeight: '800', marginBottom: 2 },
-  label: { color: '#94a3b8', fontSize: 11, textAlign: 'center' },
+  card: {
+    width: '47%',
+    backgroundColor: '#fff',
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  value: { fontSize: 24, fontWeight: 'bold', color: '#111' },
+  title: { fontSize: 12, color: '#666', marginTop: 4 },
+  subtitle: { fontSize: 10, color: '#999', marginTop: 2 },
 });
+
+export default StatsCard;

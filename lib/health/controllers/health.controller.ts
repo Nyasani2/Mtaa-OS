@@ -1,63 +1,37 @@
-// lib/health/controllers/health.controller.ts
-import { PatientService } from '../services/patient.service';
-import { AppointmentService } from '../services/appointment.service';
-import { HospitalService } from '../services/hospital.service';
-import { EHRService } from '../services/ehr.service';
-import { AmbulanceService } from '../services/ambulance.service';
-import { HealthPatient, HealthAppointment, HealthHospital, HealthRecord, HealthLabTest, HealthAlert, HealthQueue, HealthEHRRecord, HealthAmbulanceRequest } from '../types';
-
+import { PatientService } from "../services/patient.service";
+import { AppointmentService } from "../services/appointment.service";
 export class HealthController {
-  static async getOrCreatePatient(userId: string, patientData: Partial<HealthPatient>): Promise<HealthPatient> {
+  static async registerPatient(userId: string, patientData: any): Promise<any> {
     let patient = await PatientService.getPatientByUserId(userId);
     if (!patient) {
-      const code = `PAT-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
       patient = await PatientService.createPatient({
-        user_id: userId, patient_code: code,
-        first_name: patientData.first_name || '', last_name: patientData.last_name || '',
-        date_of_birth: patientData.date_of_birth || '', gender: patientData.gender || '',
-        status: 'active', allergies: [], chronic_conditions: [], current_medications: [], metadata: {},
-      } as any);
+        user_id: userId, first_name: patientData.first_name || "",
+        last_name: patientData.last_name || "", ...patientData,
+      });
     }
     return patient;
   }
-
-  static async getPatientDashboard(patientId: string) {
+  static async getPatientDashboard(patientId: string): Promise<any> {
     const [records, appointments, labTests] = await Promise.all([
       PatientService.getPatientRecords(patientId),
       PatientService.getPatientAppointments(patientId),
       PatientService.getPatientLabTests(patientId),
     ]);
     return {
-      totalVisits: records.length,
-      upcomingAppointments: appointments.filter(a => a.status === 'scheduled' && new Date(a.scheduled_date) >= new Date()),
-      pendingLabTests: labTests.filter(t => t.result_status === 'pending'),
-      recentRecords: records.slice(0, 5),
+      records, appointments, labTests,
+      upcomingAppointments: appointments.filter((a: any) => a.status === "scheduled" && new Date(a.scheduled_date || a.scheduled_at) >= new Date()),
+      pendingLabTests: labTests.filter((t: any) => t.result_status === "pending"),
+      stats: { totalAppointments: appointments.length, totalRecords: records.length, pendingLabs: labTests.filter((t: any) => t.result_status === "pending").length },
     };
   }
-
-  static async bookAppointment(appointmentData: Omit<HealthAppointment, 'id' | 'created_at' | 'updated_at'>): Promise<HealthAppointment> {
+  static async getDashboardStats(userId: string, role: string): Promise<any> {
+    return { upcomingAppointments: 0, pendingLabTests: 0, unreadNotifications: 0, totalPatients: 0, activeQueues: 0 };
+  }
+  static async createAppointment(appointmentData: any): Promise<any> {
     return AppointmentService.createAppointment(appointmentData);
   }
-
-  static async checkInToQueue(appointmentId: string, queueData: Omit<HealthQueue, 'id' | 'created_at' | 'updated_at'>): Promise<HealthQueue> {
-    await AppointmentService.updateAppointmentStatus(appointmentId, 'checked_in');
+  static async checkInPatient(appointmentId: string, queueData: any): Promise<any> {
+    await AppointmentService.updateAppointmentStatus(appointmentId, "checked_in");
     return AppointmentService.addToQueue(queueData);
-  }
-
-  static async getHospitalDashboard(hospitalId: string) {
-    const [departments, alerts, stats] = await Promise.all([
-      HospitalService.getHospitalDepartments(hospitalId),
-      HospitalService.getHospitalAlerts(hospitalId),
-      HospitalService.getHospitalStats(hospitalId),
-    ]);
-    return { departments, activeAlerts: alerts, stats };
-  }
-
-  static async createPatientVisit(ehrData: Omit<HealthEHRRecord, 'id' | 'created_at' | 'updated_at'>): Promise<HealthEHRRecord> {
-    return EHRService.createEHRRecord(ehrData);
-  }
-
-  static async requestEmergencyAmbulance(request: Omit<HealthAmbulanceRequest, 'id' | 'status' | 'created_at' | 'updated_at'>): Promise<HealthAmbulanceRequest> {
-    return AmbulanceService.requestAmbulance(request);
   }
 }

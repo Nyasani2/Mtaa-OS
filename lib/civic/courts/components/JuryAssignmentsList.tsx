@@ -1,19 +1,31 @@
-import { CourtJuryAssignment } from '@/types/courts';
-import { formatDate } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useJury } from '../hooks/useJury';
 
-export function JuryAssignmentsList({ assignments }: { assignments: CourtJuryAssignment[] }) {
+interface Props {
+  caseId?: string;
+}
+
+export default function JuryAssignmentsList({ caseId }: Props) {
+  const { assignments, loading } = useJury(caseId);
+
+  if (loading) return <Text>Loading assignments...</Text>;
+
   return (
-    <div className="space-y-2 max-h-96 overflow-y-auto">
-      {assignments.map(a => (
-        <div key={a.id} className="border rounded p-2 text-sm">
-          <div className="flex justify-between">
-            <span className="font-medium">{a.juror?.full_name || 'Unknown'}</span>
-            {a.is_foreperson && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Foreperson</span>}
-          </div>
-          <div className="text-xs text-gray-500">Assigned: {formatDate(a.assigned_date)}</div>
-          {a.stipend_amount > 0 && <div className="text-xs text-green-600">Stipend: KES {a.stipend_amount}</div>}
-        </div>
-      ))}
-    </div>
+    <FlatList
+      data={assignments}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.juror?.first_name} {item.juror?.last_name}</Text>
+          <Text>{item.is_foreperson ? 'Foreperson' : 'Juror'}</Text>
+          <Text>${(item.stipend_amount || 0).toFixed(2)}</Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' }
+});

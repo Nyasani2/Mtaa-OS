@@ -1,39 +1,95 @@
-import { useEffect, useState, useCallback } from "react";
-import { getCarpoolTrips, createCarpoolTrip, bookCarpool, getMyCarpoolBookings } from "../services/carpoolService";
-import type { CarpoolTrip, CarpoolBooking, GeoLocation } from "../types";
+// lib/mtaxi/hooks/useCarpool.ts
+import { useState, useEffect, useCallback } from "react";
+import { getCarpoolTrips, createCarpoolTrip, bookCarpool, getMyCarpoolBookings, CarpoolTrip, CarpoolBooking } from "../services/carpoolService";
 
-export function useCarpoolTrips() {
+export function useCarpoolTrips(filters?: { from?: string; to?: string; date?: string }) {
   const [trips, setTrips] = useState<CarpoolTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { const data = await getCarpoolTrips(); setTrips(data); }
-    catch (err: any) { setError(err.message); } finally { setLoading(false); }
-  }, []);
+  const fetchTrips = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getCarpoolTrips(filters);
+      setTrips(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load trips");
+    } finally {
+      setLoading(false);
+    }
+  }, [JSON.stringify(filters)]);
 
-  useEffect(() => { fetch(); }, [fetch]);
-  return { trips, loading, error, refresh: fetch };
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
+
+  return { trips, loading, error, refresh: fetchTrips };
 }
 
-export function useCarpoolBookings() {
-  const [bookings, setBookings] = useState<CarpoolBooking[]>([]);
+export function useCarpoolBookings(passengerId: string) {
+  const [bookings, setBookings] = useState<(CarpoolBooking & { trip: CarpoolTrip })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => { const data = await getMyCarpoolBookings(); setBookings(data); setLoading(false); }, []);
-  useEffect(() => { fetch(); }, [fetch]);
-  return { bookings, loading, refresh: fetch };
-}
+  const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getMyCarpoolBookings(passengerId);
+      setBookings(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load bookings");
+    } finally {
+      setLoading(false);
+    }
+  }, [passengerId]);
 
-export function useCreateCarpool() {
-  const create = useCallback(async (origin: GeoLocation, destination: GeoLocation, departure_time: string, available_seats: number, price_per_seat: number) => {
-    return await createCarpoolTrip(origin, destination, departure_time, available_seats, price_per_seat);
-  }, []);
-  return { create };
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  return { bookings, loading, error, refresh: fetchBookings };
 }
 
 export function useBookCarpool() {
-  const book = useCallback(async (trip_id: string, seats: number = 1) => { return await bookCarpool(trip_id, seats); }, []);
-  return { book };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const book = useCallback(async (tripId: string, passengerId: string, seats = 1) => {
+    setLoading(true);
+    try {
+      const result = await bookCarpool(tripId, passengerId, seats);
+      setError(null);
+      return result;
+    } catch (err: any) {
+      setError(err.message || "Booking failed");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { book, loading, error };
+}
+
+export function useCreateCarpoolTrip() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const create = useCallback(async (data: Partial<CarpoolTrip>) => {
+    setLoading(true);
+    try {
+      const result = await createCarpoolTrip(data);
+      setError(null);
+      return result;
+    } catch (err: any) {
+      setError(err.message || "Failed to create trip");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { create, loading, error };
 }

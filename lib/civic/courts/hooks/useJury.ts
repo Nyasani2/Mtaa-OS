@@ -1,43 +1,24 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getJuryPool, createJuror, updateJuror, getJuryAssignments, assignJuror, removeJurorAssignment } from '@/services/courtJury';
-import { CourtJuror, CourtJuryAssignment } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtJuryService } from '../services/courtJury';
 
-export function useJuryPool(houseId?: string) {
-  return useQuery({ queryKey: ['juryPool', houseId], queryFn: () => getJuryPool(houseId) });
-}
+export function useJury(caseId?: string) {
+  const [jurors, setJurors] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateJuror() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createJuror,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['juryPool'] }),
-  });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      CourtJuryService.getJurors(),
+      CourtJuryService.getAssignments(caseId)
+    ])
+      .then(([j, a]) => { setJurors(j); setAssignments(a); })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [caseId]);
 
-export function useUpdateJuror() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtJuror> }) => updateJuror(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['juryPool'] }),
-  });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useJuryAssignments(caseId?: string) {
-  return useQuery({ queryKey: ['juryAssignments', caseId], queryFn: () => getJuryAssignments(caseId) });
-}
-
-export function useAssignJuror() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: assignJuror,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['juryAssignments'] }),
-  });
-}
-
-export function useRemoveJurorAssignment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: removeJurorAssignment,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['juryAssignments'] }),
-  });
+  return { jurors, assignments, loading, error, refresh };
 }

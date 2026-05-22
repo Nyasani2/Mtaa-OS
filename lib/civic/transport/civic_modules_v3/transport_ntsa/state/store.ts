@@ -1,53 +1,50 @@
-"use client";
+import { create } from 'zustand';
+import { VehicleRegistration, DrivingLicense, InspectionRecord, Sacco, TrafficOffence, NTSAApplication, RoadIncident } from '../types';
 
-import { create } from "zustand";
-import {
-  TransportState,
-  DrivingLicense,
-  VehicleRegistration,
-  InspectionRecord,
-  TrafficOffence,
-  NTSAApplication,
-  RoadIncident,
-} from "../types";
+interface TransportState {
+  vehicles: VehicleRegistration[];
+  licenses: DrivingLicense[];
+  inspections: InspectionRecord[];
+  saccos: Sacco[];
+  offences: TrafficOffence[];
+  applications: NTSAApplication[];
+  incidents: RoadIncident[];
+  selectedItem: any;
+  isLoading: boolean;
+  error: string | null;
+  setVehicles: (vehicles: VehicleRegistration[]) => void;
+  setLicenses: (licenses: DrivingLicense[]) => void;
+  setInspections: (inspections: InspectionRecord[]) => void;
+  setSaccos: (saccos: Sacco[]) => void;
+  setOffences: (offences: TrafficOffence[]) => void;
+  setApplications: (applications: NTSAApplication[]) => void;
+  setIncidents: (incidents: RoadIncident[]) => void;
+  setSelectedItem: (item: any) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  clearError: () => void;
+}
 
-export const useTransportStore = create<TransportState>((set, get) => ({
-  licenses: [],
+export const useTransportStore = create<TransportState>((set) => ({
   vehicles: [],
+  licenses: [],
   inspections: [],
+  saccos: [],
   offences: [],
   applications: [],
   incidents: [],
   selectedItem: null,
   isLoading: false,
   error: null,
-  filters: {},
-
-  setLicenses: (licenses: DrivingLicense[]) => set({ licenses }),
-  setVehicles: (vehicles: VehicleRegistration[]) => set({ vehicles }),
-  setInspections: (inspections: InspectionRecord[]) => set({ inspections }),
-  setOffences: (offences: TrafficOffence[]) => set({ offences }),
-  setApplications: (applications: NTSAApplication[]) => set({ applications }),
-  setIncidents: (incidents: RoadIncident[]) => set({ incidents }),
-
-  setSelectedItem: (item: any | null) => set({ selectedItem: item }),
-  setLoading: (isLoading: boolean) => set({ isLoading }),
-  setError: (error: string | null) => set({ error }),
-  setFilters: (filters: Partial<TransportState["filters"]>) =>
-    set((state) => ({ filters: { ...state.filters, ...filters } })),
-
+  setVehicles: (vehicles) => set({ vehicles }),
+  setLicenses: (licenses) => set({ licenses }),
+  setInspections: (inspections) => set({ inspections }),
+  setSaccos: (saccos) => set({ saccos }),
+  setOffences: (offences) => set({ offences }),
+  setApplications: (applications) => set({ applications }),
+  setIncidents: (incidents) => set({ incidents }),
+  setSelectedItem: (selectedItem) => set({ selectedItem }),
+  setLoading: (isLoading) => set({ isLoading }),
+  setError: (error) => set({ error }),
   clearError: () => set({ error: null }),
-  reset: () =>
-    set({
-      licenses: [],
-      vehicles: [],
-      inspections: [],
-      offences: [],
-      applications: [],
-      incidents: [],
-      selectedItem: null,
-      isLoading: false,
-      error: null,
-      filters: {},
-    }),
 }));

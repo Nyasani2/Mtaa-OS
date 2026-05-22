@@ -1,234 +1,118 @@
-import { supabase } from "@/lib/supabase/client";
-import {
-  DrivingLicense,
-  VehicleRegistration,
-  InspectionRecord,
-  TrafficOffence,
-  NTSAApplication,
-  RoadIncident,
-} from "../types";
-
-const TABLE_LICENSES = "driving_licenses";
-const TABLE_VEHICLES = "vehicle_registrations";
-const TABLE_INSPECTIONS = "vehicle_inspections";
-const TABLE_OFFENCES = "traffic_offences";
-const TABLE_APPLICATIONS = "ntsa_applications";
-const TABLE_INCIDENTS = "road_incidents";
+import { supabase } from '@/lib/supabase';
+import { VehicleRegistration, DrivingLicense, InspectionRecord, Sacco, TrafficOffence, NTSAApplication, RoadIncident } from '../types';
 
 export class NTSAService {
-  // ─── DRIVING LICENSES ───
-  static async getLicenses(userId: string): Promise<DrivingLicense[]> {
-    const { data, error } = await supabase
-      .from(TABLE_LICENSES)
-      .select("*")
-      .eq("user_id", userId)
-      .order("expiry_date", { ascending: true });
+  async getVehicles(filters?: { status?: VehicleRegistration['status']; ownerId?: string }) {
+    let query = supabase.from('ntsa_vehicles').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.ownerId) query = query.eq('owner_id', filters.ownerId);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as VehicleRegistration[];
   }
 
-  static async getLicenseById(id: string): Promise<DrivingLicense | null> {
-    const { data, error } = await supabase
-      .from(TABLE_LICENSES)
-      .select("*")
-      .eq("id", id)
-      .single();
+  async getVehicleById(id: string) {
+    const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('id', id).single();
     if (error) throw error;
-    return data;
+    return data as VehicleRegistration;
   }
 
-  static async createLicense(license: Omit<DrivingLicense, "id" | "created_at" | "updated_at">): Promise<DrivingLicense> {
-    const { data, error } = await supabase
-      .from(TABLE_LICENSES)
-      .insert(license)
-      .select()
-      .single();
+  async registerVehicle(vehicle: Omit<VehicleRegistration, 'id' | 'created_at' | 'updated_at'>) {
+    const { data, error } = await supabase.from('ntsa_vehicles').insert(vehicle).select().single();
     if (error) throw error;
-    return data;
+    return data as VehicleRegistration;
   }
 
-  static async renewLicense(id: string, newExpiry: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_LICENSES)
-      .update({ expiry_date: newExpiry, status: "active", updated_at: new Date().toISOString() })
-      .eq("id", id);
+  async getLicenses(filters?: { status?: DrivingLicense['status']; holderId?: string }) {
+    let query = supabase.from('ntsa_licenses').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.holderId) query = query.eq('holder_id', filters.holderId);
+    const { data, error } = await query.order('issue_date', { ascending: false });
     if (error) throw error;
+    return data as DrivingLicense[];
   }
 
-  // ─── VEHICLE REGISTRATIONS ───
-  static async getVehicles(userId: string): Promise<VehicleRegistration[]> {
-    const { data, error } = await supabase
-      .from(TABLE_VEHICLES)
-      .select("*")
-      .eq("user_id", userId)
-      .order("registration_date", { ascending: false });
+  async getInspections(filters?: { status?: InspectionRecord['status']; vehicleId?: string }) {
+    let query = supabase.from('ntsa_inspections').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.vehicleId) query = query.eq('vehicle_id', filters.vehicleId);
+    const { data, error } = await query.order('inspection_date', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as InspectionRecord[];
   }
 
-  static async getVehicleById(id: string): Promise<VehicleRegistration | null> {
-    const { data, error } = await supabase
-      .from(TABLE_VEHICLES)
-      .select("*")
-      .eq("id", id)
-      .single();
+  async scheduleInspection(vehicleId: string, inspectorId: string, date: string) {
+    const { data, error } = await supabase.from('ntsa_inspections').insert({
+      vehicle_id: vehicleId, inspector_id: inspectorId, inspection_date: date,
+      status: 'pending', created_at: new Date().toISOString(),
+    }).select().single();
     if (error) throw error;
-    return data;
+    return data as InspectionRecord;
   }
 
-  static async registerVehicle(vehicle: Omit<VehicleRegistration, "id" | "created_at" | "updated_at">): Promise<VehicleRegistration> {
-    const { data, error } = await supabase
-      .from(TABLE_VEHICLES)
-      .insert(vehicle)
-      .select()
-      .single();
+  async completeInspection(inspectionId: string, findings: string, status: InspectionRecord['status'], recommendations?: string) {
+    const { data, error } = await supabase.from('ntsa_inspections')
+      .update({ findings, status, recommendations, expiry_date: status === 'passed' ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : undefined })
+      .eq('id', inspectionId).select().single();
     if (error) throw error;
-    return data;
+    return data as InspectionRecord;
   }
 
-  static async transferVehicle(id: string, newUserId: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_VEHICLES)
-      .update({ user_id: newUserId, updated_at: new Date().toISOString() })
-      .eq("id", id);
+  async getSaccos(filters?: { status?: Sacco['status'] }) {
+    let query = supabase.from('ntsa_saccos').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    const { data, error } = await query.order('name', { ascending: true });
     if (error) throw error;
+    return data as Sacco[];
   }
 
-  // ─── INSPECTIONS ───
-  static async getInspections(vehicleId: string): Promise<InspectionRecord[]> {
-    const { data, error } = await supabase
-      .from(TABLE_INSPECTIONS)
-      .select("*")
-      .eq("vehicle_id", vehicleId)
-      .order("inspection_date", { ascending: false });
+  async getOffences(filters?: { status?: TrafficOffence['status']; vehicleId?: string; driverId?: string }) {
+    let query = supabase.from('ntsa_offences').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.vehicleId) query = query.eq('vehicle_id', filters.vehicleId);
+    if (filters?.driverId) query = query.eq('driver_id', filters.driverId);
+    const { data, error } = await query.order('issued_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as TrafficOffence[];
   }
 
-  static async createInspection(inspection: Omit<InspectionRecord, "id" | "created_at">): Promise<InspectionRecord> {
-    const { data, error } = await supabase
-      .from(TABLE_INSPECTIONS)
-      .insert(inspection)
-      .select()
-      .single();
+  async payFine(offenceId: string, paymentRef: string) {
+    const { data, error } = await supabase.from('ntsa_offences')
+      .update({ status: 'paid', paid_at: new Date().toISOString(), payment_reference: paymentRef })
+      .eq('id', offenceId).select().single();
     if (error) throw error;
-    return data;
+    return data as TrafficOffence;
   }
 
-  // ─── TRAFFIC OFFENCES ───
-  static async getOffences(userId: string): Promise<TrafficOffence[]> {
-    const { data, error } = await supabase
-      .from(TABLE_OFFENCES)
-      .select("*")
-      .eq("offender_id", userId)
-      .order("offence_date", { ascending: false });
+  async getApplications(filters?: { status?: NTSAApplication['status']; applicantId?: string }) {
+    let query = supabase.from('ntsa_applications').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.applicantId) query = query.eq('applicant_id', filters.applicantId);
+    const { data, error } = await query.order('submitted_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as NTSAApplication[];
   }
 
-  static async getOffenceById(id: string): Promise<TrafficOffence | null> {
-    const { data, error } = await supabase
-      .from(TABLE_OFFENCES)
-      .select("*")
-      .eq("id", id)
-      .single();
+  async getIncidents(filters?: { status?: RoadIncident['status'] }) {
+    let query = supabase.from('ntsa_incidents').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return data as RoadIncident[];
   }
 
-  static async payFine(id: string, paymentRef: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_OFFENCES)
-      .update({ status: "paid", payment_reference: paymentRef, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) throw error;
-  }
-
-  static async contestOffence(id: string, reason: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_OFFENCES)
-      .update({ status: "contested", updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) throw error;
-  }
-
-  // ─── APPLICATIONS ───
-  static async getApplications(userId: string): Promise<NTSAApplication[]> {
-    const { data, error } = await supabase
-      .from(TABLE_APPLICATIONS)
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data || [];
-  }
-
-  static async createApplication(app: Omit<NTSAApplication, "id" | "created_at" | "updated_at">): Promise<NTSAApplication> {
-    const { data, error } = await supabase
-      .from(TABLE_APPLICATIONS)
-      .insert(app)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  static async updateApplicationStatus(id: string, status: NTSAApplication["status"], reason?: string): Promise<void> {
-    const update: any = { status, updated_at: new Date().toISOString() };
-    if (reason) update.rejection_reason = reason;
-    if (status === "completed") update.completion_date = new Date().toISOString();
-    const { error } = await supabase.from(TABLE_APPLICATIONS).update(update).eq("id", id);
-    if (error) throw error;
-  }
-
-  // ─── ROAD INCIDENTS ───
-  static async getIncidents(county?: string): Promise<RoadIncident[]> {
-    let query = supabase
-      .from(TABLE_INCIDENTS)
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (county) query = query.eq("county", county);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }
-
-  static async reportIncident(incident: Omit<RoadIncident, "id" | "created_at" | "updated_at">): Promise<RoadIncident> {
-    const { data, error } = await supabase
-      .from(TABLE_INCIDENTS)
-      .insert(incident)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  static async updateIncidentStatus(id: string, status: RoadIncident["status"]): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_INCIDENTS)
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) throw error;
-  }
-
-  // ─── SEARCH ───
-  static async searchPlate(plateNumber: string): Promise<VehicleRegistration | null> {
-    const { data, error } = await supabase
-      .from(TABLE_VEHICLES)
-      .select("*")
-      .eq("plate_number", plateNumber.toUpperCase())
-      .single();
-    if (error) return null;
-    return data;
-  }
-
-  static async searchLicense(licenseNumber: string): Promise<DrivingLicense | null> {
-    const { data, error } = await supabase
-      .from(TABLE_LICENSES)
-      .select("*")
-      .eq("license_number", licenseNumber.toUpperCase())
-      .single();
-    if (error) return null;
-    return data;
+  async getStats() {
+    const { data: vehicles, error: vError } = await supabase.from('ntsa_vehicles').select('status', { count: 'exact' });
+    if (vError) throw vError;
+    const { data: licences, error: lError } = await supabase.from('ntsa_licenses').select('status', { count: 'exact' });
+    if (lError) throw lError;
+    return {
+      totalVehicles: vehicles?.length || 0,
+      activeVehicles: vehicles?.filter((v: any) => v.status === 'active').length || 0,
+      totalLicenses: licences?.length || 0,
+      activeLicenses: licences?.filter((l: any) => l.status === 'active').length || 0,
+    };
   }
 }
+
+export const ntsaService = new NTSAService();

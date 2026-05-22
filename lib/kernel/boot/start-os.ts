@@ -1,10 +1,6 @@
-/**
- * MTAA OS — System Starter
- * Single command entrypoint
- */
-
-import { kernelBootSequence } from './kernel-boot-sequence'
+import { KernelBootSequence } from "./kernel-boot-sequence";
 
 export async function startOS() {
-  await kernelBootSequence?.boot()
+  await KernelBootSequence.run();
+  return { status: "started" };
 }

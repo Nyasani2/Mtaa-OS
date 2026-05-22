@@ -1,61 +1,54 @@
-'use client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { CourtCasesService } from '../services/courtCases';
 
-import { useState } from 'react';
-import { CourtCase, CourtHouse } from '@/types/courts';
+interface Props {
+  courtHouseId: string;
+  onSubmit?: () => void;
+}
 
-export function CaseForm({ houses, onSubmit }: { houses: CourtHouse[]; onSubmit: (data: Partial<CourtCase>) => void }) {
-  const [form, setForm] = useState<Partial<CourtCase>>({
-    case_type: 'criminal',
-    case_category: 'felony',
-    priority: 'normal',
-    status: 'filed',
-  });
+export default function CaseForm({ courtHouseId, onSubmit }: Props) {
+  const [caseNumber, setCaseNumber] = useState('');
+  const [caseType, setCaseType] = useState('');
+  const [caseCategory, setCaseCategory] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [policeCaseRef, setPoliceCaseRef] = useState('');
+
+  const handleSubmit = async () => {
+    await CourtCasesService.createCase({
+      court_house_id: courtHouseId,
+      case_number: caseNumber,
+      case_type: caseType,
+      case_category: caseCategory,
+      title,
+      description,
+      priority,
+      police_case_ref: policeCaseRef || undefined,
+      filing_date: new Date().toISOString(),
+      status: 'filed'
+    });
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium mb-1">Court House</label>
-        <select value={form.court_house_id || ''} onChange={e => setForm(f => ({ ...f, court_house_id: e.target.value }))} className="w-full border rounded px-3 py-2" required>
-          <option value="">Select court...</option>
-          {houses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-        </select>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-sm font-medium mb-1">Case Type</label>
-          <select value={form.case_type} onChange={e => setForm(f => ({ ...f, case_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-            <option value="criminal">Criminal</option>
-            <option value="civil">Civil</option>
-            <option value="family">Family</option>
-            <option value="traffic">Traffic</option>
-            <option value="small_claims">Small Claims</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
-          <select value={form.case_category} onChange={e => setForm(f => ({ ...f, case_category: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-            <option value="felony">Felony</option>
-            <option value="misdemeanor">Misdemeanor</option>
-            <option value="petty">Petty</option>
-            <option value="civil_suit">Civil Suit</option>
-            <option value="traffic_violation">Traffic Violation</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Priority</label>
-        <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-          <option value="low">Low</option>
-          <option value="normal">Normal</option>
-          <option value="high">High</option>
-          <option value="urgent">Urgent</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Police Case Ref</label>
-        <input type="text" value={form.police_case_ref || ''} onChange={e => setForm(f => ({ ...f, police_case_ref: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      </div>
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Create Case</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>File New Case</Text>
+      <TextInput style={styles.input} placeholder="Case Number" value={caseNumber} onChangeText={setCaseNumber} />
+      <TextInput style={styles.input} placeholder="Case Type" value={caseType} onChangeText={setCaseType} />
+      <TextInput style={styles.input} placeholder="Category" value={caseCategory} onChangeText={setCaseCategory} />
+      <TextInput style={styles.input} placeholder="Title" value={title} onChangeText={setTitle} />
+      <TextInput style={styles.input} placeholder="Description" value={description} onChangeText={setDescription} multiline />
+      <TextInput style={styles.input} placeholder="Priority (low/medium/high/urgent)" value={priority} onChangeText={(text) => setPriority(text as any)} />
+      <TextInput style={styles.input} placeholder="Police Case Ref (optional)" value={policeCaseRef} onChangeText={setPoliceCaseRef} />
+      <Button title="File Case" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
+});

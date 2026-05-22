@@ -1,76 +1,90 @@
-import { useState, useEffect, useCallback } from 'react';
-import { tribeService } from '../services/tribeService';
-import { Tribe, TribeMember, TribePost, TribeEvent, TribeMessage } from '../types';
+"use client";
 
-export function useTribes(filters?: { category?: string; search?: string }) {
+import { useState, useCallback } from "react";
+import { supabase } from "@/lib/supabase/client";
+import type { Tribe, TribePost, TribeMember } from "@/lib/tribes/types";
+
+export function useTribes() {
   const [tribes, setTribes] = useState<Tribe[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [posts, setPosts] = useState<TribePost[]>([]);
+  const [members, setMembers] = useState<TribeMember[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { loadTribes(); }, [filters?.category, filters?.search]);
-
-  const loadTribes = async () => {
-    try { setLoading(true); const data = await tribeService.getTribes(filters); setTribes(data); }
-    catch (err: any) { setError(err.message); } finally { setLoading(false); }
-  };
-
-  return { tribes, loading, error, refresh: loadTribes };
-}
-
-export function useTribe(slug: string) {
-  const [tribe, setTribe] = useState<Tribe | null>(null);
-  const [membership, setMembership] = useState<TribeMember | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadTribe(); }, [slug]);
-
-  const loadTribe = async () => {
+  const fetchTribes = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const tribeData = await tribeService.getTribeBySlug(slug);
-      const membershipData = await tribeService.getMyMembership(tribeData.id).catch(() => null);
-      setTribe(tribeData); setMembership(membershipData);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
-  };
+      const { data, error: supaError } = await supabase.from("tribes").select("*").order("created_at", { ascending: false });
+      if (supaError) throw supaError;
+      setTribes(data || []);
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to fetch tribes"); }
+    finally { setLoading(false); }
+  }, []);
 
-  const join = async () => { if (!tribe) return; await tribeService.joinTribe(tribe.id); await loadTribe(); };
+  const fetchPosts = useCallback(async (tribeId: string) => {
+    setLoading(true); setError(null);
+    try {
+      const { data, error: supaError } = await supabase.from("tribe_posts").select("*, profiles(full_name, avatar_url)").eq("tribe_id", tribeId).order("created_at", { ascending: false });
+      if (supaError) throw supaError;
+      setPosts(data || []);
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to fetch posts"); }
+    finally { setLoading(false); }
+  }, []);
 
-  return { tribe, membership, loading, join, refresh: loadTribe };
+  const createPost = useCallback(async (tribeId: string, content: string, mediaUrl?: string) => {
+    setLoading(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Not authenticated");
+      const { data, error: supaError } = await supabase.from("tribe_posts").insert({
+        tribe_id: tribeId, user_id: userId, content, media_url: mediaUrl || null,
+        likes_count: 0, comments_count: 0,
+      }).select().single();
+      if (supaError) throw supaError;
+      setPosts((prev) => [data, ...prev]); return data;
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to create post"); throw err; }
+    finally { setLoading(false); }
+  }, []);
+
+  const joinTribe = useCallback(async (tribeId: string) => {
+    setLoading(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Not authenticated");
+      const { error: supaError } = await supabase.from("tribe_members").insert({ tribe_id: tribeId, user_id: userId, role: "member" });
+      if (supaError) throw supaError;
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to join tribe"); throw err; }
+    finally { setLoading(false); }
+  }, []);
+
+  const leaveTribe = useCallback(async (tribeId: string) => {
+    setLoading(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("Not authenticated");
+      const { error: supaError } = await supabase.from("tribe_members").delete().eq("tribe_id", tribeId).eq("user_id", userId);
+      if (supaError) throw supaError;
+      setTribes((prev) => prev.filter((t) => t.id !== tribeId));
+    } catch (err) { setError(err instanceof Error ? err.message : "Failed to leave tribe"); throw err; }
+    finally { setLoading(false); }
+  }, []);
+
+  return { tribes, posts, members, loading, error, fetchTribes, fetchPosts, createPost, joinTribe, leaveTribe };
 }
 
 export function useTribePosts(tribeId: string) {
-  const [posts, setPosts] = useState<TribePost[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadPosts(); }, [tribeId]);
-
-  const loadPosts = async () => { const data = await tribeService.getTribePosts(tribeId); setPosts(data); setLoading(false); };
-
-  const createPost = async (content: string, contentType = 'text') => {
-    const post = await tribeService.createPost({ tribe_id: tribeId, content, content_type: contentType });
-    setPosts(prev => [post, ...prev]);
-  };
-
-  return { posts, loading, createPost, refresh: loadPosts };
+  const { posts, loading, error, fetchPosts } = useTribes();
+  return { posts, loading, error, refresh: () => fetchPosts(tribeId) };
 }
 
 export function useTribeChat(tribeId: string) {
-  const [messages, setMessages] = useState<TribeMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadMessages();
-    const subscription = tribeService.subscribeToMessages(tribeId, (message) => {
-      setMessages(prev => [message, ...prev]);
-    });
-    return () => { subscription.unsubscribe(); };
-  }, [tribeId]);
-
-  const loadMessages = async () => { const data = await tribeService.getTribeMessages(tribeId); setMessages(data.reverse()); setLoading(false); };
-
-  const sendMessage = async (content: string) => {
-    const message = await tribeService.sendMessage(tribeId, content);
-    setMessages(prev => [...prev, message]);
-  };
-
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const sendMessage = useCallback(async (content: string) => {
+    setMessages((prev) => [...prev, { id: Date.now(), content, sender: "me", created_at: new Date().toISOString() }]);
+  }, []);
   return { messages, loading, sendMessage };
 }

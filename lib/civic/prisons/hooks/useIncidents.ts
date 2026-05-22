@@ -1,22 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getIncidents, createIncident, updateIncident, resolveIncident } from '@/services/prisonIncidents';
-import { PrisonIncident } from '@/types/prisons';
+import { useState, useEffect, useCallback } from 'react';
+import { PrisonIncidentsService } from '../services/prisonIncidents';
 
-export function useIncidents(filters?: Parameters<typeof getIncidents>[0]) {
-  return useQuery({ queryKey: ['prisonIncidents', filters], queryFn: () => getIncidents(filters) });
-}
+export function useIncidents(facilityId: string) {
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateIncident() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createIncident, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonIncidents'] }) });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    PrisonIncidentsService.getIncidents(facilityId)
+      .then(setIncidents)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [facilityId]);
 
-export function useUpdateIncident() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, updates }: { id: string; updates: Partial<PrisonIncident> }) => updateIncident(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonIncidents'] }) });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useResolveIncident() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, notes }: { id: string; notes: string }) => resolveIncident(id, notes), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonIncidents'] }) });
+  return { incidents, loading, error, refresh };
 }

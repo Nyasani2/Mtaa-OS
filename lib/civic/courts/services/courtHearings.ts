@@ -1,45 +1,31 @@
 import { supabase } from '@/lib/supabase';
-import { CourtHearing } from '@/types/courts';
+import { CourtHearing } from '../types';
 
-export async function getHearings(filters?: {
-  case_id?: string;
-  court_room_id?: string;
-  status?: string;
-  date_from?: string;
-  date_to?: string;
-}): Promise<CourtHearing[]> {
-  let q = supabase
-    .from('court_hearings')
-    .select(`*, court_rooms:court_room_id(*), court_judges:presiding_judge_id(*)`);
+export class CourtHearingsService {
+  static async getHearings(courtHouseId?: string, caseId?: string): Promise<CourtHearing[]> {
+    let query = supabase.from('court_hearings').select('*, case:court_cases(*), court_room:court_rooms(*), presiding_judge:court_judges(*)');
+    if (courtHouseId) query = query.eq('court_room_id', courtHouseId);
+    if (caseId) query = query.eq('case_id', caseId);
+    const { data, error } = await query.order('scheduled_date', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
 
-  if (filters?.case_id) q = q.eq('case_id', filters.case_id);
-  if (filters?.court_room_id) q = q.eq('court_room_id', filters.court_room_id);
-  if (filters?.status) q = q.eq('status', filters.status);
-  if (filters?.date_from) q = q.gte('scheduled_date', filters.date_from);
-  if (filters?.date_to) q = q.lte('scheduled_date', filters.date_to);
+  static async createHearing(data: Partial<CourtHearing>): Promise<CourtHearing> {
+    const { data: result, error } = await supabase.from('court_hearings').insert(data).select().single();
+    if (error) throw error;
+    return result;
+  }
 
-  const { data, error } = await q.order('scheduled_date');
-  if (error) throw error;
-  return (data || []).map((d: any) => ({
-    ...d,
-    court_room: d.court_rooms,
-    presiding_judge: d.court_judges,
-  }));
-}
+  static async updateHearing(id: string, data: Partial<CourtHearing>): Promise<CourtHearing> {
+    const { data: result, error } = await supabase.from('court_hearings').update(data).eq('id', id).select().single();
+    if (error) throw error;
+    return result;
+  }
 
-export async function createHearing(hearing: Partial<CourtHearing>): Promise<CourtHearing> {
-  const { data, error } = await supabase.from('court_hearings').insert(hearing).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function updateHearing(id: string, updates: Partial<CourtHearing>): Promise<CourtHearing> {
-  const { data, error } = await supabase.from('court_hearings').update(updates).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteHearing(id: string): Promise<void> {
-  const { error } = await supabase.from('court_hearings').delete().eq('id', id);
-  if (error) throw error;
+  static async getCourtRooms(courtHouseId: string): Promise<any[]> {
+    const { data, error } = await supabase.from('court_rooms').select('*').eq('court_house_id', courtHouseId);
+    if (error) throw error;
+    return data || [];
+  }
 }

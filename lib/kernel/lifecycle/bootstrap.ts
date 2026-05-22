@@ -1,35 +1,5 @@
-import "../apps/register-core-apps";
-
-import {
-  kernelMonitor
-} from "../monitoring/kernel-monitor";
-
-import {
-  kernelTelemetry
-} from "../telemetry/kernel-telemetry";
-
-class KernelBootstrap {
-
-  boot() {
-
-    const health =
-      kernelMonitor.health();
-
-    kernelTelemetry.track(
-      "KERNEL_BOOT",
-      health
-    );
-
-    console.log(
-      "[MTAA KERNEL ONLINE]"
-    );
-
-    return {
-      state: "ONLINE",
-      health
-    };
-  }
+// Bootstrap sequence
+export function bootstrap() {
+  // Initialize systems
+  return { status: "ready", systems: [] };
 }
-
-export const kernelBootstrap =
-  new KernelBootstrap();

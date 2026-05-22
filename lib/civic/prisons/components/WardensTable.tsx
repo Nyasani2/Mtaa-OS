@@ -1,37 +1,34 @@
-import { PrisonWarden } from '@/types/prisons';
-import { formatDate } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useWardens } from '../hooks/useWardens';
 
-export function WardensTable({ wardens }: { wardens: PrisonWarden[] }) {
+interface Props {
+  facilityId?: string;
+}
+
+export default function WardensTable({ facilityId }: Props) {
+  const { wardens, loading } = useWardens(facilityId);
+
+  if (loading) return <Text>Loading wardens...</Text>;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-600">
-          <tr>
-            <th className="text-left px-3 py-2">Badge</th>
-            <th className="text-left px-3 py-2">Name</th>
-            <th className="text-left px-3 py-2">Rank</th>
-            <th className="text-left px-3 py-2">Shift</th>
-            <th className="text-left px-3 py-2">Phone</th>
-            <th className="text-left px-3 py-2">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {wardens.map(w => (
-            <tr key={w.id} className="hover:bg-gray-50">
-              <td className="px-3 py-2 font-medium">{w.badge_number || w.warden_number}</td>
-              <td className="px-3 py-2">{w.full_name}</td>
-              <td className="px-3 py-2 capitalize">{w.rank}</td>
-              <td className="px-3 py-2 capitalize">{w.shift}</td>
-              <td className="px-3 py-2">{w.phone}</td>
-              <td className="px-3 py-2">
-                <span className={`text-xs px-2 py-0.5 rounded ${w.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {w.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <FlatList
+      data={wardens}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.first_name} {item.last_name}</Text>
+          <Text>{item.rank}</Text>
+          <Text style={[styles.status, { color: item.is_active ? '#4caf50' : '#f44336' }]}>
+            {item.is_active ? 'Active' : 'Inactive'}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' },
+  status: { fontWeight: '600' }
+});

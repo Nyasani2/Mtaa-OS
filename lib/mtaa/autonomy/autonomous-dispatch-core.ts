@@ -1,32 +1,22 @@
-import { supabase } from "../../supabase";
-import { runDispatchMatching } from "../../mtruck/dispatch/mtruck-dispatch-brain";
-import { computeSurgePricing } from "../../mtruck/pricing/mtruck-surge-engine";
+// lib/mtaa/autonomy/autonomous-dispatch-core.ts
+export interface DispatchState {
+  active: boolean;
+  queue: string[];
+  lastRun?: string;
+}
 
-export async function runAutonomousDispatchCycle() {
-
-  const surge = await computeSurgePricing();
-  const dispatch = await runDispatchMatching();
-
-  const list = Array.isArray(dispatch.matches)
-    ? dispatch.matches
-    : dispatch.matched || [];
-
-  const optimized = list.map(d => ({
-    ...d,
-    auto_approved: true,
-  }));
-
-  await supabase
-    .from("mtaa_autonomous_dispatch_logs")
-    .insert({
-      surge,
-      dispatch_count: list.length,
-      created_at: new Date().toISOString(),
-    });
-
+export function createDispatchState(base: Partial<DispatchState> = {}): DispatchState {
   return {
-    mode: "AUTONOMOUS",
-    surge,
-    optimized,
+    active: base.active ?? false,
+    queue: base.queue ?? [],
+    lastRun: base.lastRun,
+  };
+}
+
+export function mergeDispatchState(current: DispatchState, updates: Partial<DispatchState>): DispatchState {
+  return {
+    ...current,
+    ...updates,
+    queue: updates.queue ?? current.queue,
   };
 }

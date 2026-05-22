@@ -1,29 +1,40 @@
-import { CourtHearing } from '@/types/courts';
-import { formatDateTime } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useHearings } from '../hooks/useHearings';
+import { formatDate } from '@/lib/utils';
 
-export function HearingsList({ hearings, caseId }: { hearings: CourtHearing[]; caseId?: string }) {
+interface Props {
+  courtHouseId?: string;
+  caseId?: string;
+}
+
+export default function HearingsList({ courtHouseId, caseId }: Props) {
+  const { hearings, loading } = useHearings(courtHouseId, caseId);
+
+  if (loading) return <Text>Loading hearings...</Text>;
+
   return (
-    <div className="space-y-2">
-      {hearings.map(h => (
-        <div key={h.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="font-medium capitalize">{h.hearing_type.replace('_', ' ')}</span>
-              <span className="text-gray-500 ml-2">{h.court_room?.room_number || '—'}</span>
-            </div>
-            <span className={`text-xs px-2 py-0.5 rounded capitalize ${
-              h.status === 'completed' ? 'bg-green-100 text-green-800' :
-              h.status === 'ongoing' ? 'bg-blue-100 text-blue-800' :
-              h.status === 'adjourned' ? 'bg-amber-100 text-amber-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>{h.status}</span>
-          </div>
-          <div className="text-gray-500 mt-1">{formatDateTime(h.scheduled_date)}</div>
-          {h.presiding_judge && <div className="text-xs text-gray-600">Judge: {h.presiding_judge.full_name}</div>}
-          {h.adjournment_reason && <div className="text-xs text-amber-600">Adjourned: {h.adjournment_reason}</div>}
-        </div>
-      ))}
-      {hearings.length === 0 && <div className="text-gray-400 text-sm">No hearings scheduled</div>}
-    </div>
+    <FlatList
+      data={hearings}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.card}>
+          <Text style={styles.type}>{item.hearing_type}</Text>
+          <Text>Room: {item.court_room?.name || item.court_room_id}</Text>
+          <Text>Date: {formatDate(item.scheduled_date || '')}</Text>
+          {item.presiding_judge && <Text>Judge: {item.presiding_judge.first_name} {item.presiding_judge.last_name}</Text>}
+          {item.adjournment_reason && <Text>Adjourned: {item.adjournment_reason}</Text>}
+          <Text style={[styles.badge, { backgroundColor: item.status === 'completed' ? '#4caf50' : '#ff9800' }]}>
+            {item.status}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#fff', padding: 12, marginBottom: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  type: { fontWeight: '600', fontSize: 16, marginBottom: 4 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10, alignSelf: 'flex-start', marginTop: 4 }
+});

@@ -1,24 +1,41 @@
-'use client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { CourtFinesService } from '../services/courtFines';
 
-import { useState } from 'react';
-import { CourtFine } from '@/types/courts';
+interface Props {
+  caseId: string;
+  partyId: string;
+  onSubmit?: () => void;
+}
 
-export function FineForm({ onSubmit }: { onSubmit: (data: Partial<CourtFine>) => void }) {
-  const [form, setForm] = useState<Partial<CourtFine>>({ fine_type: 'criminal_fine', payment_status: 'pending' });
+export default function FineForm({ caseId, partyId, onSubmit }: Props) {
+  const [amount, setAmount] = useState('');
+  const [dueDate, setDueDate] = useState('');
+
+  const handleSubmit = async () => {
+    await CourtFinesService.createFine({
+      case_id: caseId,
+      party_id: partyId,
+      amount: parseFloat(amount),
+      amount_paid: 0,
+      payment_status: 'pending',
+      due_date: dueDate || undefined
+    });
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Case ID" value={form.case_id || ''} onChange={e => setForm(f => ({ ...f, case_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.fine_type} onChange={e => setForm(f => ({ ...f, fine_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="court_fee">Court Fee</option>
-        <option value="traffic_fine">Traffic Fine</option>
-        <option value="criminal_fine">Criminal Fine</option>
-        <option value="restitution">Restitution</option>
-        <option value="contempt_fine">Contempt Fine</option>
-      </select>
-      <input type="number" placeholder="Amount (KES)" value={form.amount || ''} onChange={e => setForm(f => ({ ...f, amount: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-      <input type="date" value={form.due_date || ''} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Add Fine</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>Issue Fine</Text>
+      <TextInput style={styles.input} placeholder="Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
+      <TextInput style={styles.input} placeholder="Due Date (YYYY-MM-DD)" value={dueDate} onChangeText={setDueDate} />
+      <Button title="Issue Fine" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
+});

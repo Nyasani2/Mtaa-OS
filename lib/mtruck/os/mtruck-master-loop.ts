@@ -1,21 +1,32 @@
-import { runAutonomousDispatcher } from "./autonomous-dispatcher";
-import { computeRepositionPlan } from "./fleet-reposition-engine";
-import { predictDemandWindow } from "./predictive-demand-engine";
+// lib/mtruck/os/mtruck-master-loop.ts
+import { computeRepositionPlan, Truck, DemandZone } from "./fleet-reposition-engine";
 
-export function startMTruckOSMasterLoop(intervalMs = 5000) {
-  setInterval(async () => {
-    try {
-      const dispatch = await runAutonomousDispatcher();
-      const reposition = await computeRepositionPlan();
-      const demand = await predictDemandWindow();
+export interface MasterLoopState {
+  trucks: Truck[];
+  demandZones: DemandZone[];
+  repositionPlans: any[];
+  lastUpdated: string;
+}
 
-      console.log("🚛 MTRUCK OS LIVE");
-      console.log("DISPATCH:", dispatch.dispatched);
-      console.log("REPOSITION PLAN:", reposition.length);
-      console.log("DEMAND ZONES:", demand.length);
+export function initializeMasterLoop(trucks: Truck[] = [], demandZones: DemandZone[] = []): MasterLoopState {
+  return {
+    trucks,
+    demandZones,
+    repositionPlans: computeRepositionPlan(trucks, demandZones),
+    lastUpdated: new Date().toISOString(),
+  };
+}
 
-    } catch (err) {
-      console.error("MTRUCK OS ERROR:", err);
-    }
-  }, intervalMs);
+export function runMasterLoop(state: MasterLoopState): MasterLoopState {
+  const plans = computeRepositionPlan(state.trucks, state.demandZones);
+  return {
+    ...state,
+    repositionPlans: plans,
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+// Default export for backward compatibility
+export default function mtruckMasterLoop(trucks?: Truck[], demandZones?: DemandZone[]) {
+  return initializeMasterLoop(trucks, demandZones);
 }

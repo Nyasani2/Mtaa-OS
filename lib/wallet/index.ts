@@ -1,2 +1,1 @@
-export { WalletDashboard } from './components/WalletDashboard';
-export { WalletShell } from './components/WalletShell';
+export { default as WalletDashboard } from './components/WalletDashboard';

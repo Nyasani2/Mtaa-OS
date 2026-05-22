@@ -1,33 +1,37 @@
-import { CourtFine } from '@/types/courts';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useFines } from '../hooks/useFines';
 
-export function FinesList({ fines, caseId, onRecordPayment }: { fines: CourtFine[]; caseId?: string; onRecordPayment?: (id: string, amount: number) => void }) {
+interface Props {
+  caseId?: string;
+}
+
+export default function FinesList({ caseId }: Props) {
+  const { fines, loading } = useFines(caseId);
+
+  if (loading) return <Text>Loading fines...</Text>;
+
   return (
-    <div className="space-y-2">
-      {fines.map(f => (
-        <div key={f.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between">
-            <span className="font-medium capitalize">{f.fine_type.replace('_', ' ')}</span>
-            <span className={`text-xs px-2 py-0.5 rounded capitalize ${
-              f.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-              f.payment_status === 'partial' ? 'bg-amber-100 text-amber-800' :
-              'bg-red-100 text-red-800'
-            }`}>{f.payment_status}</span>
-          </div>
-          <div className="flex justify-between mt-1">
-            <span>Amount: {formatCurrency(f.amount)}</span>
-            <span>Paid: {formatCurrency(f.amount_paid)}</span>
-          </div>
-          {f.due_date && <div className="text-xs text-gray-500">Due: {formatDate(f.due_date)}</div>}
-          {f.receipt_number && <div className="text-xs text-green-600">Receipt: {f.receipt_number}</div>}
-          {onRecordPayment && f.payment_status !== 'paid' && (
-            <button onClick={() => onRecordPayment(f.id, f.amount)} className="mt-2 text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">
-              Record Payment
-            </button>
-          )}
-        </div>
-      ))}
-      {fines.length === 0 && <div className="text-gray-400 text-sm">No fines recorded</div>}
-    </div>
+    <FlatList
+      data={fines}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>Amount: ${item.amount?.toFixed(2)}</Text>
+          <Text>Paid: ${(item.amount_paid || 0).toFixed(2)}</Text>
+          <Text style={[styles.badge, {
+            backgroundColor: item.payment_status === 'paid' ? '#4caf50' : item.payment_status === 'partial' ? '#ff9800' : '#f44336'
+          }]}>
+            {item.payment_status}
+          </Text>
+          {item.receipt_number && <Text>Receipt: {item.receipt_number}</Text>}
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10, alignSelf: 'flex-start', marginTop: 4 }
+});

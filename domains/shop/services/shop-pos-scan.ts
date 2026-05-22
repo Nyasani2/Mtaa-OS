@@ -1,59 +1,42 @@
-// supabase/functions/shop-pos-scan/index.ts
-// Barcode/QR code scanning for POS - returns product by barcode/QR
+import { supabase } from '@/lib/supabase';
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+export async function posScanBarcode(shopId: string, barcode: string) {
+  const { data: product, error } = await supabase.from('shop_products')
+    .select('*')
+    .eq('shop_id', shopId)
+    .eq('barcode', barcode)
+    .single();
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+  if (error && error.code !== 'PGRST116') throw error;
+  if (!product) throw new Error('Product not found');
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  return product;
+}
 
-  try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+export async function posCreateSale(sessionId: string, items: Array<{ product_id: string; quantity: number; price: number }>, total: number) {
+  const { data: sale, error } = await supabase.from('pos_sales').insert({
+    session_id: sessionId,
+    total_amount: total,
+    created_at: new Date().toISOString()
+  }).select().single();
 
-    const { code, shop_id, type } = await req.json(); // type: 'barcode' | 'qr'
-    if (!code || !shop_id) throw new Error("code and shop_id required");
+  if (error) throw error;
 
-    const column = type === "qr" ? "qr_code" : "barcode";
+  const saleItems = items.map(item => ({
+    sale_id: sale.id,
+    product_id: item.product_id,
+    quantity: item.quantity,
+    unit_price: item.price
+  }));
 
-    const { data: product, error } = await supabase
-      .from("shop_products")
-      .select("*, shop:shop_id(name, tax_rate)")
-      .eq("shop_id", shop_id)
-      .eq(column, code)
-      .eq("is_active", true)
-      .single();
+  await supabase.from('pos_sale_items').insert(saleItems);
 
-    if (error || !product) {
-      return new Response(JSON.stringify({ found: false, message: "Product not found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 404,
-      });
-    }
-
-    // Check stock
-    if (product.track_inventory && product.stock_quantity <= 0 && !product.allow_backorders) {
-      return new Response(JSON.stringify({ found: true, product, in_stock: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    return new Response(JSON.stringify({ found: true, product, in_stock: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+  for (const item of items) {
+    await supabase.rpc('decrement_stock', {
+      p_product_id: item.product_id,
+      p_quantity: item.quantity
     });
   }
-});
+
+  return sale;
+}

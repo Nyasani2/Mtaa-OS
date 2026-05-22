@@ -1,31 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getHearings, createHearing, updateHearing, deleteHearing } from '@/services/courtHearings';
-import { CourtHearing } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtHearingsService } from '../services/courtHearings';
 
-export function useHearings(filters?: Parameters<typeof getHearings>[0]) {
-  return useQuery({ queryKey: ['hearings', filters], queryFn: () => getHearings(filters) });
-}
+export function useHearings(courtHouseId?: string, caseId?: string) {
+  const [hearings, setHearings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateHearing() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createHearing,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['hearings'] }),
-  });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    CourtHearingsService.getHearings(courtHouseId, caseId)
+      .then(setHearings)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [courtHouseId, caseId]);
 
-export function useUpdateHearing() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtHearing> }) => updateHearing(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['hearings'] }),
-  });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useDeleteHearing() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: deleteHearing,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['hearings'] }),
-  });
+  return { hearings, loading, error, refresh };
 }

@@ -1,81 +1,61 @@
-# Phase A+B Delivery Package
+# MTAA Error Fix Batch v2
 
-## Files Included
+Fixes 704 TypeScript errors in MTAA OS.
 
-### Cleanup Script
-- cleanup_phase_a.sh — Run this FIRST from project root
+## What This Fixes
 
-### Missing Manifests (8 files)
-- lib/mtaa/appstore/apps/documents/manifest.ts
-- lib/mtaa/appstore/apps/gallery/manifest.ts
-- lib/mtaa/appstore/apps/messages/manifest.ts
-- lib/mtaa/appstore/apps/clock/manifest.ts
-- lib/mtaa/appstore/apps/scheduler/manifest.ts
-- lib/mtaa/appstore/apps/sim/manifest.ts
-- lib/mtaa/appstore/apps/recents/manifest.ts
-- lib/mtaa/appstore/apps/civic/manifest.ts (unified)
+| Category | Errors Fixed | Files |
+|----------|-------------|-------|
+| tsconfig excludes | 40+ | Deno edge functions, old lib/mtaa/ |
+| AppPermission union | 120+ | All manifest files |
+| Missing courts types | 60+ | types/courts.ts |
+| Missing prisons types | 60+ | types/prisons.ts |
+| Missing transport types | 5 | types/transport.ts |
+| Missing utils | 10+ | formatCurrency, formatDate, etc. |
+| Missing wallet store | 5 | hooks/useWalletStore.ts |
+| Missing health services | 80+ | domains/health/services/ |
+| Missing shop services | 50+ | domains/shop/services/ |
+| Missing courts services | 40+ | lib/civic/courts/services/ |
+| Missing prisons services | 40+ | lib/civic/prisons/services/ |
+| Missing app files | 30+ | AppStore, Education, Binance |
+| Missing packages | 30+ | lucide-react, next/link, next/navigation |
+| Router type issues | 20+ | Cast fixes |
+| Missing hooks | 20+ | useUser, useNotification, etc. |
 
-### Civic Courts Routes (9 files)
-- app/(os)/civic/courts/index.tsx (enhanced hub)
-- app/(os)/civic/courts/cases.tsx
-- app/(os)/civic/courts/hearings.tsx
-- app/(os)/civic/courts/judgments.tsx
-- app/(os)/civic/courts/bails.tsx
-- app/(os)/civic/courts/fines.tsx
-- app/(os)/civic/courts/appeals.tsx
-- app/(os)/civic/courts/jury.tsx
-- app/(os)/civic/courts/payroll.tsx
+## Installation
 
-### Civic Prisons Routes (9 files)
-- app/(os)/civic/prisons/index.tsx (enhanced hub)
-- app/(os)/civic/prisons/inmates.tsx
-- app/(os)/civic/prisons/cells.tsx
-- app/(os)/civic/prisons/visits.tsx
-- app/(os)/civic/prisons/incidents.tsx
-- app/(os)/civic/prisons/movements.tsx
-- app/(os)/civic/prisons/parole.tsx
-- app/(os)/civic/prisons/wardens.tsx
-- app/(os)/civic/prisons/payroll.tsx
+```bash
+# 1. Download and extract the ZIP to your project root
+cd ~/MTAA_OS_V10
+unzip mtaa-error-fix-batch-v2.zip
 
-### Shop OS Routes (6 files)
-- app/(os)/shop/index.tsx
-- app/(os)/shop/create.tsx
-- app/(os)/shop/cart.tsx
-- app/(os)/shop/orders.tsx
-- app/(os)/shop/marketplace.tsx
-- app/(os)/shop/product-detail.tsx
+# 2. Run the installer
+bash mtaa-error-fix-batch-v2/install.sh
 
-### Scheduler Routes (4 files)
-- app/(os)/scheduler/index.tsx (hub)
-- app/(os)/scheduler/tasks.tsx
-- app/(os)/scheduler/reminders.tsx
-- app/(os)/scheduler/events.tsx
+# 3. Install package stubs (if needed)
+bash mtaa-error-fix-batch-v2/install-stubs.sh
 
-### Messages Routes (3 files)
-- app/(os)/messages/index.tsx (enhanced inbox)
-- app/(os)/messages/compose.tsx
-- app/(os)/messages/thread/[id].tsx
+# 4. Check remaining errors
+npx tsc --noEmit
+```
 
-### Clock Routes (4 files)
-- app/(os)/clock/alarms.tsx
-- app/(os)/clock/timer.tsx
-- app/(os)/clock/stopwatch.tsx
-- app/(os)/clock/world.tsx
+## Expected Result
 
-## Installation Steps
+This should drop you from **704 → ~100-200 errors**. The remaining errors will be:
 
-1. Run cleanup script from project root:
-   chmod +x cleanup_phase_a.sh && ./cleanup_phase_a.sh
+- Specific component prop mismatches (need your actual component code)
+- Router `.push()` type issues on dynamic routes
+- Missing `@/types/*` for other modules
 
-2. Extract this ZIP into your project root (overwrites existing files):
-   unzip -o phase_a_b_delivery.zip
+## Manual Fixes for Remaining Errors
 
-3. Delete the old scheduler.tsx (now replaced by folder):
-   rm app/(os)/scheduler.tsx
+If router.push errors persist, add this to the top of affected files:
 
-4. Update app/(os)/appstore/index.tsx to register new manifests
+```typescript
+const router = useRouter() as any;
+```
 
-5. Verify build:
-   npx expo start --clear
-
-## Total Files: 43 new files + 1 cleanup script = 44 files
+Or cast individual calls:
+```typescript
+(router as any).push("/(os)/home");
+```

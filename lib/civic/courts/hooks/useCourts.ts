@@ -1,35 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCourtHouses, getCourtHouse, createCourtHouse, updateCourtHouse, deleteCourtHouse } from '@/services/courtHouses';
-import { CourtHouse } from '@/types/courts';
+import { useState, useEffect } from 'react';
+import { CourtHousesService } from '../services/courtHouses';
 
-export function useCourtHouses() {
-  return useQuery({ queryKey: ['courtHouses'], queryFn: getCourtHouses });
-}
+export function useCourts() {
+  const [courts, setCourts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCourtHouse(id: string) {
-  return useQuery({ queryKey: ['courtHouse', id], queryFn: () => getCourtHouse(id), enabled: !!id });
-}
+  useEffect(() => {
+    CourtHousesService.getHouses()
+      .then(setCourts)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-export function useCreateCourtHouse() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createCourtHouse,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['courtHouses'] }),
-  });
-}
-
-export function useUpdateCourtHouse() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtHouse> }) => updateCourtHouse(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['courtHouses'] }),
-  });
-}
-
-export function useDeleteCourtHouse() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: deleteCourtHouse,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['courtHouses'] }),
-  });
+  return { courts, loading, error };
 }

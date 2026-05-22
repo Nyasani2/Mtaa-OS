@@ -1,14 +1,5 @@
 export class KernelRuntime {
-  boot() {
-    console.log("KernelRuntime booted");
-  }
-
-  getState() {
-    return {
-      status: "healthy",
-      uptime: Date.now(),
-    };
+  async boot() {
+    return { status: "running" };
   }
 }
-
-export const kernelRuntime = new KernelRuntime();

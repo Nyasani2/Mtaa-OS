@@ -1,34 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getJudgments, createJudgment, updateJudgment, deleteJudgment } from '@/services/courtJudgments';
-import { CourtJudgment } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtJudgmentsService } from '../services/courtJudgments';
 
 export function useJudgments(caseId?: string) {
-  return useQuery({ queryKey: ['judgments', caseId], queryFn: () => getJudgments(caseId) });
-}
+  const [judgments, setJudgments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateJudgment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createJudgment,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['judgments'] });
-      qc.invalidateQueries({ queryKey: ['cases'] });
-    },
-  });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    CourtJudgmentsService.getJudgments(caseId)
+      .then(setJudgments)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [caseId]);
 
-export function useUpdateJudgment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtJudgment> }) => updateJudgment(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['judgments'] }),
-  });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useDeleteJudgment() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: deleteJudgment,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['judgments'] }),
-  });
+  return { judgments, loading, error, refresh };
 }

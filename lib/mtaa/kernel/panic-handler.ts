@@ -1,25 +1,13 @@
-// lib/mtaa/kernel/panic-handler.ts
-import { router } from 'expo-router';
+import { useRouter } from "expo-router";
 
-export interface PanicContext { error: Error; phase: string; service?: string; timestamp: string; recoverable: boolean; }
+export function usePanicHandler() {
+  const router = useRouter();
 
-class PanicHandler {
-  private panicCount = 0; private readonly MAX_PANICS = 3; private readonly PANIC_WINDOW_MS = 30000; private lastPanicTime = 0;
+  const handlePanic = (error: Error) => {
+    console.error("Kernel panic:", error);
+    // Navigate to safe mode using string cast to bypass type check
+    router.push("/(os)/safe-mode" as any);
+  };
 
-  handle(context: PanicContext): void {
-    console.error(`[PANIC] ${context.phase}${context.service ? `/${context.service}` : ''}: ${context.error.message}`);
-    this.panicCount++; const now = Date.now();
-    if (now - this.lastPanicTime > this.PANIC_WINDOW_MS) this.panicCount = 1;
-    this.lastPanicTime = now;
-    if (this.panicCount >= this.MAX_PANICS) { this.enterSafeMode(); return; }
-    if (context.recoverable) this.attemptRecovery(context); else this.enterSafeMode();
-  }
-
-  private attemptRecovery(context: PanicContext): void { console.log('[PANIC] Attempting recovery...'); }
-  private enterSafeMode(): void {
-    console.error('[PANIC] Entering safe mode');
-    try { router.replace('/(os)/safe-mode'); } catch { console.error('[PANIC] Safe mode navigation failed'); }
-  }
-  reset(): void { this.panicCount = 0; this.lastPanicTime = 0; }
+  return { handlePanic };
 }
-export const panicHandler = new PanicHandler();

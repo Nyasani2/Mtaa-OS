@@ -1,20 +1,24 @@
-import { matchFreightRequest } from "./freight-dispatch-brain";
-import { getFleetState } from "../intelligence/fleet-state-engine";
+// lib/mtruck/dispatch/dispatch-loop.ts
+export interface DispatchJob {
+  id: string;
+  truckId?: string;
+  status: "pending" | "assigned" | "in_transit" | "completed";
+  pickup: string;
+  dropoff: string;
+  cargoType?: string;
+}
 
-export async function runMTruckDispatchLoop() {
-  const fleet = await getFleetState();
+export async function runDispatchLoop(jobs: DispatchJob[], trucks: any[]): Promise<DispatchJob[]> {
+  const pending: DispatchJob[] = jobs.filter(j => j.status === "pending");
 
-  console.log("🚛 Fleet State:", fleet);
-
-  // pull pending requests
-  const pending = [
-    // later replaced with DB queue
-  ];
-
-  for (const req of pending) {
-    const result = await matchFreightRequest(req);
-    console.log("DISPATCH RESULT:", result);
+  for (const job of pending) {
+    const availableTruck = trucks.find((t: any) => t.available && t.capacity >= (job.cargoType === "heavy" ? 20 : 5));
+    if (availableTruck) {
+      job.truckId = availableTruck.id;
+      job.status = "assigned";
+      availableTruck.available = false;
+    }
   }
 
-  return fleet;
+  return jobs;
 }

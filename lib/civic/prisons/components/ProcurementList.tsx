@@ -1,51 +1,36 @@
-import { PrisonProcurement } from '@/types/prisons';
-import { formatCurrency } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { usePrisonProcurement } from '../hooks/usePrisonProcurement';
 
-const urgencyColors: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800',
-  normal: 'bg-blue-100 text-blue-800',
-  high: 'bg-amber-100 text-amber-800',
-  critical: 'bg-red-100 text-red-800',
-};
+interface Props {
+  facilityId?: string;
+}
 
-export function ProcurementList({ items }: { items: PrisonProcurement[] }) {
+export default function ProcurementList({ facilityId }: Props) {
+  const { items, loading } = usePrisonProcurement(facilityId);
+
+  if (loading) return <Text>Loading procurement...</Text>;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-600">
-          <tr>
-            <th className="text-left px-3 py-2">Item</th>
-            <th className="text-left px-3 py-2">Category</th>
-            <th className="text-left px-3 py-2">Qty</th>
-            <th className="text-left px-3 py-2">Total</th>
-            <th className="text-left px-3 py-2">Urgency</th>
-            <th className="text-left px-3 py-2">Vendor</th>
-            <th className="text-left px-3 py-2">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {items.map(i => (
-            <tr key={i.id} className="hover:bg-gray-50">
-              <td className="px-3 py-2 font-medium">{i.item_name}</td>
-              <td className="px-3 py-2 capitalize">{i.category.replace('_', ' ')}</td>
-              <td className="px-3 py-2">{i.quantity}</td>
-              <td className="px-3 py-2">{formatCurrency(i.total_cost)}</td>
-              <td className="px-3 py-2">
-                <span className={`text-xs px-2 py-0.5 rounded capitalize ${urgencyColors[i.urgency] || 'bg-gray-100 text-gray-800'}`}>{i.urgency}</span>
-              </td>
-              <td className="px-3 py-2">{i.vendor_name || '—'}</td>
-              <td className="px-3 py-2">
-                <span className={`text-xs px-2 py-0.5 rounded capitalize ${
-                  i.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                  i.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                  i.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>{i.status}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <FlatList
+      data={items}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.item_name}</Text>
+          <Text>{item.quantity}</Text>
+          <Text>${(item.unit_price || 0).toFixed(2)}</Text>
+          <Text>${(item.total_cost || 0).toFixed(2)}</Text>
+          <Text style={[styles.badge, { backgroundColor: item.status === 'received' ? '#4caf50' : '#ff9800' }]}>
+            {item.status}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10 }
+});

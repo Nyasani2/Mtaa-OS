@@ -1,7 +1,7 @@
-// lib/shop/hooks/useShop.ts
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useShopStore } from "../state/shopStore";
 import { ShopService } from "../services/shopService";
+import { AccountingService } from "../services/accountingService";
 import { Shop } from "../types";
 
 export function useShop(shopId?: string) {
@@ -13,12 +13,15 @@ export function useShop(shopId?: string) {
   useEffect(() => {
     if (shopId && (!currentShop || currentShop.id !== shopId)) {
       setLoading(true);
+      setError(null);
       ShopService.getShopById(shopId)
-        .then(setCurrentShop)
-        .catch((e) => setError(e.message))
+        .then((shop) => {
+          if (shop) setCurrentShop(shop);
+        })
+        .catch((e: Error) => setError(e.message))
         .finally(() => setLoading(false));
     }
-  }, [shopId]);
+  }, [shopId, currentShop, setCurrentShop]);
 
   return { shop: currentShop, loading, error };
 }
@@ -28,97 +31,128 @@ export function useMyShops() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
     ShopService.getMyShops()
       .then(setShops)
-      .catch((e) => setError(e.message))
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  return { shops, loading, error, refresh: () => ShopService.getMyShops().then(setShops) };
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  return { shops, loading, error, refresh };
 }
 
-export function useShopProducts(shopId: string, options?: any) {
-  const products = useShopStore((s) => s.products);
-  const productsLoading = useShopStore((s) => s.productsLoading);
-  const loadProducts = useShopStore((s) => s.loadProducts);
+export function useShopProducts(shopId: string, options?: { category?: string; search?: string }) {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    ShopService.getProducts(shopId)
+      .then((data) => {
+        let filtered = data;
+        if (options?.category) filtered = filtered.filter((p: any) => p.category === options.category);
+        if (options?.search) filtered = filtered.filter((p: any) => p.name?.toLowerCase().includes(options.search!.toLowerCase()));
+        setProducts(filtered);
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [shopId, options?.category, options?.search]);
 
   useEffect(() => {
-    if (shopId) loadProducts(shopId, options);
-  }, [shopId, JSON.stringify(options)]);
+    refresh();
+  }, [refresh]);
 
-  return { products, loading: productsLoading, refresh: () => loadProducts(shopId, options) };
+  return { products, loading, error, refresh };
 }
 
 export function useShopOrders(shopId: string, status?: string) {
-  const orders = useShopStore((s) => s.orders);
-  const ordersLoading = useShopStore((s) => s.ordersLoading);
-  const loadOrders = useShopStore((s) => s.loadOrders);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (shopId) loadOrders(shopId, status);
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    ShopService.getOrders(shopId, status)
+      .then(setOrders)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
   }, [shopId, status]);
 
-  return { orders, loading: ordersLoading, refresh: () => loadOrders(shopId, status) };
-}
-
-export function useDashboard(shopId: string) {
-  const stats = useShopStore((s) => s.dashboardStats);
-  const loading = useShopStore((s) => s.dashboardLoading);
-  const loadDashboard = useShopStore((s) => s.loadDashboard);
-
   useEffect(() => {
-    if (shopId) loadDashboard(shopId);
-  }, [shopId]);
+    refresh();
+  }, [refresh]);
 
-  return { stats, loading, refresh: () => loadDashboard(shopId) };
-}
-
-export function useCart() {
-  const cart = useShopStore((s) => s.cart);
-  const addToCart = useShopStore((s) => s.addToCart);
-  const removeFromCart = useShopStore((s) => s.removeFromCart);
-  const updateCartQuantity = useShopStore((s) => s.updateCartQuantity);
-  const clearCart = useShopStore((s) => s.clearCart);
-  const total = useShopStore((s) => s.cartTotal());
-  const itemCount = useShopStore((s) => s.cartItemCount());
-
-  return { cart, addToCart, removeFromCart, updateCartQuantity, clearCart, total, itemCount };
+  return { orders, loading, error, refresh };
 }
 
 export function usePOSSession(shopId: string) {
-  const posSession = useShopStore((s) => s.posSession);
-  const setPosSession = useShopStore((s) => s.setPosSession);
-  const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const openSession = async (staffId: string, openingCash: number) => {
+  const refresh = useCallback(() => {
     setLoading(true);
-    try {
-      const session = await ShopService.openPosSession(shopId, staffId, openingCash);
-      setPosSession(session);
-      return session;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const closeSession = async (closingCash: number, notes?: string) => {
-    if (!posSession) throw new Error("No active session");
-    setLoading(true);
-    try {
-      const session = await ShopService.closePosSession(posSession.id, closingCash, notes);
-      setPosSession(null);
-      return session;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    ShopService.getActivePosSession(shopId).then((s) => {
-      if (s) setPosSession(s);
-    });
+    ShopService.getActivePosSession(shopId)
+      .then(setSession)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
   }, [shopId]);
 
-  return { posSession, openSession, closeSession, loading };
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const openSession = useCallback(async (cashierId: string) => {
+    const newSession = await ShopService.openPosSession(shopId, cashierId);
+    setSession(newSession);
+    return newSession;
+  }, [shopId]);
+
+  const closeSession = useCallback(async () => {
+    if (!session) return;
+    await ShopService.closePosSession(session.id);
+    setSession(null);
+  }, [session]);
+
+  return { session, loading, error, openSession, closeSession, refresh };
+}
+
+export function useDashboard(shopId: string) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setLoading(true);
+      try {
+        const [products, orders, accounts] = await Promise.all([
+          ShopService.getProducts(shopId),
+          ShopService.getOrders(shopId),
+          AccountingService.getAccounts(shopId)
+        ]);
+        setData({
+          products: products.length,
+          orders: orders.length,
+          revenue: accounts.reduce((s: number, a: any) => s + (a.balance || 0), 0)
+        });
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, [shopId]);
+
+  return { data, loading, error };
 }

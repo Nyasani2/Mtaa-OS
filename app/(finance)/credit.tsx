@@ -1,18 +1,16 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CreditScoreRing } from "@/lib/credit/components/CreditScoreRing";
-import { useCreditStore } from "@/lib/credit/hooks/use-credit-store";
 
-export default function CreditScreen() {
-  const { score } = useCreditStore();
+export default function CreditIndex() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Credit</Text>
-      <CreditScoreRing score={score || 650} />
+      <Text>Credit score and lending services.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 16 },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 }
 });

@@ -1,122 +1,90 @@
-export interface DrivingLicense {
-  id: string;
-  user_id: string;
-  license_number: string;
-  category: string[];
-  issue_date: string;
-  expiry_date: string;
-  status: 'active' | 'suspended' | 'expired' | 'revoked';
-  county: string;
-  blood_group?: string;
-  photo_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface VehicleRegistration {
   id: string;
-  user_id: string;
   plate_number: string;
+  registration_number: string;
   make: string;
   model: string;
   year: number;
   color: string;
-  engine_number: string;
-  chassis_number: string;
-  body_type: string;
-  fuel_type: string;
-  seating_capacity: number;
-  tare_weight: number;
-  gross_weight: number;
-  registration_date: string;
-  expiry_date: string;
-  status: 'active' | 'expired' | 'suspended' | 'written_off';
+  body_type?: string;
+  fuel_type?: string;
+  seating_capacity?: number;
+  owner_id: string;
   county: string;
-  logbook_url?: string;
+  status: 'active' | 'suspended' | 'expired' | 'transferred';
+  expiry_date?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface DrivingLicense {
+  id: string;
+  license_number: string;
+  holder_id: string;
+  category: string[];
+  county: string;
+  issue_date: string;
+  expiry_date: string;
+  status: 'active' | 'expired' | 'suspended' | 'revoked';
+  points: number;
 }
 
 export interface InspectionRecord {
   id: string;
   vehicle_id: string;
   inspector_id: string;
-  station: string;
   inspection_date: string;
   expiry_date: string;
-  result: 'pass' | 'fail' | 'conditional';
-  defects: string[];
-  certificate_number: string;
-  status: 'valid' | 'expired';
+  status: 'pending' | 'passed' | 'failed' | 'conditional';
+  findings: string;
+  recommendations?: string;
+  created_at: string;
+}
+
+export interface Sacco {
+  id: string;
+  name: string;
+  registration_number: string;
+  route: string;
+  status: 'active' | 'suspended' | 'dissolved';
+  fleet_size: number;
   created_at: string;
 }
 
 export interface TrafficOffence {
   id: string;
-  offender_id: string;
   vehicle_id?: string;
-  license_id?: string;
+  driver_id?: string;
+  offence_code: string;
   offence_type: string;
   description: string;
+  fine_amount: number;
+  points_deducted: number;
   location: string;
   county: string;
   offence_date: string;
-  fine_amount: number;
-  points_deducted: number;
-  status: 'pending' | 'paid' | 'contested' | 'waived' | 'escalated';
-  payment_reference?: string;
-  court_date?: string;
-  officer_id: string;
-  evidence_urls?: string[];
-  created_at: string;
-  updated_at: string;
+  status: 'pending' | 'paid' | 'appealed' | 'waived';
+  issued_at: string;
+  paid_at?: string;
 }
 
 export interface NTSAApplication {
   id: string;
-  user_id: string;
-  type: 'new_license' | 'renewal' | 'duplicate' | 'endorsement' | 'vehicle_registration' | 'transfer' | 'inspection';
-  status: 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed';
-  data: Record<string, any>;
-  fees_paid: number;
-  appointment_date?: string;
-  completion_date?: string;
-  rejection_reason?: string;
-  created_at: string;
-  updated_at: string;
+  applicant_id: string;
+  type: 'license' | 'registration' | 'permit';
+  status: 'pending' | 'under_review' | 'approved' | 'rejected';
+  submitted_at: string;
 }
 
 export interface RoadIncident {
   id: string;
   reporter_id: string;
-  type: 'accident' | 'breakdown' | 'hazard' | 'traffic_jam' | 'road_closure';
+  type: string;
+  incident_type: string;
   location: string;
   county: string;
-  coordinates?: { lat: number; lng: number };
   description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  status: 'reported' | 'responding' | 'resolved' | 'closed';
-  photos?: string[];
-  involved_parties?: string[];
+  severity: string;
+  status: 'reported' | 'under_investigation' | 'resolved';
   created_at: string;
-  updated_at: string;
-}
-
-export interface TransportState {
-  licenses: DrivingLicense[];
-  vehicles: VehicleRegistration[];
-  inspections: InspectionRecord[];
-  offences: TrafficOffence[];
-  applications: NTSAApplication[];
-  incidents: RoadIncident[];
-  selectedItem: any | null;
-  isLoading: boolean;
-  error: string | null;
-  filters: {
-    status?: string;
-    county?: string;
-    type?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  };
 }

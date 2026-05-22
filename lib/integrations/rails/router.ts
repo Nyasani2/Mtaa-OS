@@ -1,30 +1,27 @@
-import { railRegistry } from './railRegistry';
-import { calculateFX } from '../fx/fx-engine';
+export interface RailRequest {
+  route: string;
+  payload?: any;
+}
 
-export async function routeTransfer({
-  from,
-  to,
-  amount,
-  currencyFrom,
-  currencyTo,
-  rail,
-}: any) {
-  const selectedRail = railRegistry.get(rail);
+export interface RailResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
 
-  if (!selectedRail) throw new Error('RAIL_NOT_FOUND');
-
-  const fx = calculateFX(amount, currencyFrom, currencyTo);
-
-  const result = await selectedRail.send({
-    from,
-    to,
-    amount: fx.convertedAmount,
-  });
+export function createRailRouter() {
+  const handlers = new Map<string, (payload: any) => Promise<RailResponse>>();
 
   return {
-    ...result,
-    fx,
-    railUsed: rail,
-    mtaaRevenue: fx.fee,
+    register: (route: string, handler: (payload: any) => Promise<RailResponse>) => {
+      handlers.set(route, handler);
+    },
+    send: async (request: RailRequest): Promise<RailResponse> => {
+      const handler = handlers.get(request.route);
+      if (!handler) return { success: false, error: "Route not found" };
+      return handler(request.payload);
+    },
   };
 }
+
+export type RailRouter = ReturnType<typeof createRailRouter>;

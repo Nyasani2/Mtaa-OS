@@ -1,37 +1,35 @@
-import { View, StyleSheet } from 'react-native';
-import { Card } from '@/components/ui/Card';
-import { Text } from 'react-native';
-import { ImmigrationAlert } from '../hooks/useImmigrationAlerts';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface AlertBadgeProps {
-  alert: ImmigrationAlert;
+  count: number;
+  label: string;
+  color?: string;
 }
 
-export function AlertBadge({ alert }: AlertBadgeProps) {
-  const severityColors = {
-    critical: '#ef4444',
-    high: '#f97316',
-    medium: '#f59e0b',
-    low: '#3b82f6',
-  };
-
+const AlertBadge: React.FC<AlertBadgeProps> = ({ count, label, color = '#ef4444' }) => {
   return (
-    <Card style={[styles.card, { borderLeftWidth: 3, borderLeftColor: severityColors[alert.severity] }]}>
-      <View style={styles.header}>
-        <View style={[styles.severityDot, { backgroundColor: severityColors[alert.severity] }]} />
-        <Text style={styles.type}>{alert.alert_type}</Text>
-        <Text style={styles.time}>{new Date(alert.created_at).toLocaleTimeString()}</Text>
-      </View>
-      <Text style={styles.message}>{alert.message}</Text>
-    </Card>
+    <View style={[styles.badge, { borderLeftColor: color, borderLeftWidth: 3 }]}>
+      <Text style={styles.count}>{count}</Text>
+      <Text style={styles.label}>{label}</Text>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  card: { padding: 12, marginBottom: 8 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  severityDot: { width: 8, height: 8, borderRadius: 4 },
-  type: { color: '#e2e8f0', fontSize: 12, fontWeight: '700', flex: 1 },
-  time: { color: '#64748b', fontSize: 10 },
-  message: { color: '#cbd5e1', fontSize: 13 },
+  badge: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  count: { fontSize: 20, fontWeight: 'bold', color: '#111' },
+  label: { fontSize: 12, color: '#666', marginTop: 4 },
 });
+
+export default AlertBadge;

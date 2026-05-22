@@ -1,35 +1,15 @@
-import { AppManifest } from '../types';
+import { AppManifest } from "../types";
 
-export const galleryManifest: AppManifest = {
-  id: 'gallery',
-  name: 'Gallery',
-  description: 'Photo viewer, editor, and media organizer',
-  version: '1.0.0',
-  category: 'media',
-  icon: 'image',
-  color: '#EC4899',
-  author: 'MTAA OS',
-  size: '18MB',
-  rating: 4.7,
-  installs: 0,
-  isOSBased: false,
-  entryPoint: '/(os)/gallery',
-  permissions: ['storage', 'camera', 'microphone'],
-  screens: [
-    { route: '/(os)/gallery', label: 'Photos', icon: 'image' },
-    { route: '/(os)/gallery/viewer', label: 'Viewer', icon: 'maximize' },
-    { route: '/(os)/gallery/editor', label: 'Editor', icon: 'edit-3' },
-  ],
-  features: [
-    'Browse photos and videos',
-    'Image viewer with zoom',
-    'Basic photo editing (crop, filter, rotate)',
-    'Album organization',
-  ],
-  minOSVersion: '1.0.0',
-  supportedPlatforms: ['ios', 'android', 'web'],
-  requiresAuth: true,
-  hasInAppPurchases: false,
-  dataUsage: 'high',
-  offlineSupport: true,
+export const manifest: AppManifest = {
+  id: "gallery",
+  name: "Gallery",
+  description: "App",
+  version: "1.0.0",
+  icon: "Image",
+  category: "system",
+  color: "#ec4899",
+  permissions: ["storage", "camera", "microphone"] as const,
+  entry: "/gallery",
+  isOSApp: true,
+  size: "6MB",
 };

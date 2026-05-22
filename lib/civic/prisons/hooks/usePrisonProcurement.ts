@@ -1,17 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProcurement, createProcurement, updateProcurement } from '@/services/prisonProcurement';
-import { PrisonProcurement } from '@/types/prisons';
+import { useState, useEffect, useCallback } from 'react';
+import { PrisonProcurementService } from '../services/prisonProcurement';
 
-export function usePrisonProcurement(filters?: Parameters<typeof getProcurement>[0]) {
-  return useQuery({ queryKey: ['prisonProcurement', filters], queryFn: () => getProcurement(filters) });
-}
+export function usePrisonProcurement(facilityId?: string) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreatePrisonProcurement() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createProcurement, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonProcurement'] }) });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    PrisonProcurementService.getProcurements(facilityId)
+      .then(setItems)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [facilityId]);
 
-export function useUpdatePrisonProcurement() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, updates }: { id: string; updates: Partial<PrisonProcurement> }) => updateProcurement(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonProcurement'] }) });
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { items, loading, error, refresh };
 }

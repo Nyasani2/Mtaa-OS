@@ -1,36 +1,36 @@
-import { PrisonMovement } from '@/types/prisons';
-import { formatDateTime } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useMovements } from '../hooks/useMovements';
+import { formatDate } from '@/lib/utils';
 
-const typeColors: Record<string, string> = {
-  intake: 'bg-blue-100 text-blue-800',
-  transfer_in: 'bg-green-100 text-green-800',
-  transfer_out: 'bg-amber-100 text-amber-800',
-  release: 'bg-green-100 text-green-800',
-  escape: 'bg-red-100 text-red-800',
-  hospitalization: 'bg-purple-100 text-purple-800',
-  court_appearance: 'bg-gray-100 text-gray-800',
-};
+interface Props {
+  facilityId?: string;
+}
 
-export function MovementsList({ movements }: { movements: PrisonMovement[] }) {
+export default function MovementsList({ facilityId }: Props) {
+  const { movements, loading } = useMovements(facilityId);
+
+  if (loading) return <Text>Loading movements...</Text>;
+
   return (
-    <div className="space-y-2">
-      {movements.map(m => (
-        <div key={m.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className={`text-xs px-2 py-0.5 rounded capitalize font-medium ${typeColors[m.movement_type] || 'bg-gray-100 text-gray-800'}`}>
-                {m.movement_type.replace('_', ' ')}
-              </span>
-              <span className="text-gray-500 ml-2">{m.inmate?.full_name || '—'}</span>
-            </div>
-            <span className="text-xs text-gray-500">{formatDateTime(m.occurred_at)}</span>
-          </div>
-          <div className="text-gray-600 mt-1">{m.reason}</div>
-          {m.from_facility_id && <div className="text-xs text-gray-500">From: {m.from_facility_id}</div>}
-          {m.to_facility_id && <div className="text-xs text-gray-500">To: {m.to_facility_id}</div>}
-        </div>
-      ))}
-      {movements.length === 0 && <div className="text-gray-400 text-sm">No movements recorded</div>}
-    </div>
+    <FlatList
+      data={movements}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.inmate?.first_name} {item.inmate?.last_name}</Text>
+          <Text>{item.movement_type}</Text>
+          <Text>{formatDate(item.occurred_at || '')}</Text>
+          <Text style={[styles.badge, { backgroundColor: item.status === 'completed' ? '#4caf50' : '#ff9800' }]}>
+            {item.status}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10 }
+});

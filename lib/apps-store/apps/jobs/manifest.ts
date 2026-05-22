@@ -1,12 +1,4 @@
-export const JOBS_APP = {
-  id: "jobs",
-  name: "Jobs",
-  description: "Employment and workforce",
-  version: "1.0.0",
-  category: "work",
-  icon: "briefcase",
-  route: "/(work)/jobs",
-  color: "#0369A1",
-  installable: true,
-  size: "12MB",
-};
+import { AppManifest } from '@/lib/apps-store/types';
+import manifest from '@/lib/modules/jobs/manifest';
+
+export default manifest as AppManifest;

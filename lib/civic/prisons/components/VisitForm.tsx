@@ -1,26 +1,53 @@
-'use client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { PrisonVisitsService } from '../services/prisonVisits';
 
-import { useState } from 'react';
-import { PrisonVisit } from '@/types/prisons';
+interface Props {
+  facilityId: string;
+  onSubmit?: () => void;
+}
 
-export function VisitForm({ onSubmit }: { onSubmit: (data: Partial<PrisonVisit>) => void }) {
-  const [form, setForm] = useState<Partial<PrisonVisit>>({ status: 'scheduled', visit_type: 'standard', duration_minutes: 30 });
+export default function VisitForm({ facilityId, onSubmit }: Props) {
+  const [inmateId, setInmateId] = useState('');
+  const [visitorName, setVisitorName] = useState('');
+  const [visitorIdNumber, setVisitorIdNumber] = useState('');
+  const [visitorRelationship, setVisitorRelationship] = useState('');
+  const [visitType, setVisitType] = useState<'family' | 'legal' | 'medical' | 'official'>('family');
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState('30');
+
+  const handleSubmit = async () => {
+    await PrisonVisitsService.createVisit({
+      facility_id: facilityId,
+      inmate_id: inmateId,
+      visitor_name: visitorName,
+      visitor_id_number: visitorIdNumber,
+      visitor_relationship: visitorRelationship,
+      visit_type: visitType,
+      scheduled_at: scheduledAt,
+      duration_minutes: parseInt(durationMinutes),
+      status: 'scheduled'
+    });
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Inmate ID" value={form.inmate_id || ''} onChange={e => setForm(f => ({ ...f, inmate_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Visitor Name" value={form.visitor_name || ''} onChange={e => setForm(f => ({ ...f, visitor_name: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Visitor ID Number" value={form.visitor_id_number || ''} onChange={e => setForm(f => ({ ...f, visitor_id_number: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Relationship" value={form.visitor_relationship || ''} onChange={e => setForm(f => ({ ...f, visitor_relationship: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <select value={form.visit_type} onChange={e => setForm(f => ({ ...f, visit_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="standard">Standard</option>
-        <option value="legal">Legal</option>
-        <option value="medical">Medical</option>
-        <option value="conjugal">Conjugal</option>
-      </select>
-      <input type="datetime-local" value={form.scheduled_at ? form.scheduled_at.slice(0, 16) : ''} onChange={e => setForm(f => ({ ...f, scheduled_at: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input type="number" placeholder="Duration (minutes)" value={form.duration_minutes || ''} onChange={e => setForm(f => ({ ...f, duration_minutes: parseInt(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Schedule Visit</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>Schedule Visit</Text>
+      <TextInput style={styles.input} placeholder="Inmate ID" value={inmateId} onChangeText={setInmateId} />
+      <TextInput style={styles.input} placeholder="Visitor Name" value={visitorName} onChangeText={setVisitorName} />
+      <TextInput style={styles.input} placeholder="Visitor ID Number" value={visitorIdNumber} onChangeText={setVisitorIdNumber} />
+      <TextInput style={styles.input} placeholder="Relationship" value={visitorRelationship} onChangeText={setVisitorRelationship} />
+      <TextInput style={styles.input} placeholder="Visit Type (family/legal/medical/official)" value={visitType} onChangeText={(text) => setVisitType(text as any)} />
+      <TextInput style={styles.input} placeholder="Scheduled At (YYYY-MM-DD HH:MM)" value={scheduledAt} onChangeText={setScheduledAt} />
+      <TextInput style={styles.input} placeholder="Duration (minutes)" value={durationMinutes} onChangeText={setDurationMinutes} keyboardType="numeric" />
+      <Button title="Schedule" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
+});

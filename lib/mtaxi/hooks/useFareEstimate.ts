@@ -1,16 +1,32 @@
+// lib/mtaxi/hooks/useFareEstimate.ts
 import { useState, useCallback } from "react";
-import { estimateFare } from "../services/rideService";
-import type { GeoLocation, FareEstimate, VehicleType } from "../types";
+import { estimateFare, FareEstimate } from "../services/rideService";
+
+export type VehicleType = "economy" | "premium" | "xl" | "truck";
 
 export function useFareEstimate() {
   const [estimate, setEstimate] = useState<FareEstimate | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const calculate = useCallback(async (pickup: GeoLocation, dropoff: GeoLocation, vehicle_type: VehicleType = "sedan") => {
-    setLoading(true); setError(null);
-    try { const data = await estimateFare(pickup, dropoff, vehicle_type); setEstimate(data); return data; }
-    catch (err: any) { setError(err.message); return null; } finally { setLoading(false); }
+  const calculate = useCallback(async (
+    pickup: { lat: number; lng: number },
+    dropoff: { lat: number; lng: number },
+    vehicleType: VehicleType = "economy"
+  ) => {
+    setLoading(true);
+    try {
+      const result = await estimateFare(pickup, dropoff, vehicleType);
+      setEstimate(result);
+      setError(null);
+      return result;
+    } catch (err: any) {
+      setError(err.message || "Failed to estimate fare");
+      setEstimate(null);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   return { estimate, loading, error, calculate };

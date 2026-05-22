@@ -1,23 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProcurement, createProcurement, updateProcurement } from '@/services/courtProcurement';
-import { CourtProcurement } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtProcurementService } from '../services/courtProcurement';
 
-export function useProcurement(filters?: Parameters<typeof getProcurement>[0]) {
-  return useQuery({ queryKey: ['procurement', filters], queryFn: () => getProcurement(filters) });
-}
+export function useProcurement(courtHouseId?: string) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateProcurement() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createProcurement,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['procurement'] }),
-  });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    CourtProcurementService.getProcurements(courtHouseId)
+      .then(setItems)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [courtHouseId]);
 
-export function useUpdateProcurement() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtProcurement> }) => updateProcurement(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['procurement'] }),
-  });
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { items, loading, error, refresh };
 }

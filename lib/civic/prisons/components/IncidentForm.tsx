@@ -1,40 +1,50 @@
-'use client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { PrisonIncidentsService } from '../services/prisonIncidents';
 
-import { useState } from 'react';
-import { PrisonIncident, PrisonFacility } from '@/types/prisons';
+interface Props {
+  facilityId: string;
+  onSubmit?: () => void;
+}
 
-export function IncidentForm({ facilities, onSubmit }: { facilities: PrisonFacility[]; onSubmit: (data: Partial<PrisonIncident>) => void }) {
-  const [form, setForm] = useState<Partial<PrisonIncident>>({ severity: 'minor', status: 'open' });
+export default function IncidentForm({ facilityId, onSubmit }: Props) {
+  const [incidentType, setIncidentType] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [severity, setSeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium');
+  const [inmateId, setInmateId] = useState('');
+  const [reportedBy, setReportedBy] = useState('');
+
+  const handleSubmit = async () => {
+    await PrisonIncidentsService.createIncident({
+      facility_id: facilityId,
+      incident_type: incidentType,
+      description,
+      location,
+      severity,
+      inmate_id: inmateId || undefined,
+      reported_by: reportedBy,
+      status: 'reported'
+    });
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <select value={form.facility_id || ''} onChange={e => setForm(f => ({ ...f, facility_id: e.target.value }))} className="w-full border rounded px-3 py-2" required>
-        <option value="">Select facility...</option>
-        {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-      </select>
-      <input placeholder="Inmate ID (optional)" value={form.inmate_id || ''} onChange={e => setForm(f => ({ ...f, inmate_id: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <input placeholder="Reported By (Warden ID)" value={form.reported_by || ''} onChange={e => setForm(f => ({ ...f, reported_by: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <select value={form.incident_type} onChange={e => setForm(f => ({ ...f, incident_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="assault">Assault</option>
-        <option value="escape_attempt">Escape Attempt</option>
-        <option value="contraband">Contraband</option>
-        <option value="self_harm">Self Harm</option>
-        <option value="death">Death</option>
-        <option value="riot">Riot</option>
-        <option value="property_damage">Property Damage</option>
-        <option value="medical_emergency">Medical Emergency</option>
-        <option value="other">Other</option>
-      </select>
-      <select value={form.severity} onChange={e => setForm(f => ({ ...f, severity: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="minor">Minor</option>
-        <option value="moderate">Moderate</option>
-        <option value="major">Major</option>
-        <option value="critical">Critical</option>
-      </select>
-      <input placeholder="Location" value={form.location || ''} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <textarea placeholder="Description" value={form.description || ''} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full border rounded px-3 py-2" rows={3} required />
-      <input placeholder="Witnesses (comma separated)" onChange={e => setForm(f => ({ ...f, witnesses: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700">Report Incident</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>Report Incident</Text>
+      <TextInput style={styles.input} placeholder="Incident Type" value={incidentType} onChangeText={setIncidentType} />
+      <TextInput style={styles.input} placeholder="Description" value={description} onChangeText={setDescription} multiline />
+      <TextInput style={styles.input} placeholder="Location" value={location} onChangeText={setLocation} />
+      <TextInput style={styles.input} placeholder="Severity (low/medium/high/critical)" value={severity} onChangeText={(text) => setSeverity(text as any)} />
+      <TextInput style={styles.input} placeholder="Inmate ID (optional)" value={inmateId} onChangeText={setInmateId} />
+      <TextInput style={styles.input} placeholder="Reported By" value={reportedBy} onChangeText={setReportedBy} />
+      <Button title="Submit" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
+});

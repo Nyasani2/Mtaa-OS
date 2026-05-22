@@ -1,30 +1,18 @@
-import { emitGlobalEvent } from "../bus/mtaa-interapp-bus";
-import { runPlugin } from "../plugins/mtruck-plugin-registry";
-import { processSettlement } from "../finance/mtruck-settlement-engine";
+// lib/mtruck/core/mtruck-platform-bridge.ts
+import { runEconomyLoop } from "./mtruck-economy-loop";
 
-export async function executePlatformFlow(context: any) {
-
-  // 1. Dispatch event to all apps
-  emitGlobalEvent({
-    type: "MTRUCK:DISPATCH",
-    payload: context,
-    timestamp: new Date().toISOString(),
-  });
-
-  // 2. Run plugins (3rd party logic)
-  if (context.plugin_id) {
-    await runPlugin(context.plugin_id, context);
+export class MTruckPlatformBridge {
+  static async process(payload: any): Promise<any> {
+    const state = runEconomyLoop(payload);
+    return {
+      success: true,
+      dispatched: state.dispatched,
+      matched: state.matched.length,
+      decision: state.control.decision,
+    };
   }
 
-  // 3. If payment exists → settle instantly
-  if (context.amount) {
-    await processSettlement({
-      trip_id: context.trip_id,
-      total_amount: context.amount,
-    });
+  static async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    return { status: "healthy", timestamp: new Date().toISOString() };
   }
-
-  return {
-    status: "PLATFORM_FLOW_EXECUTED",
-  };
 }

@@ -1,46 +1,38 @@
-export function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
+// lib/utils.ts
+// Stubbed cn() function - replace with real clsx + tailwind-merge when installed
 
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount)
+export function cn(...inputs: (string | undefined | null | false | Record<string, boolean>)[]): string {
+  const classes: string[] = [];
+  for (const input of inputs) {
+    if (!input) continue;
+    if (typeof input === "string") {
+      classes.push(input);
+    } else if (typeof input === "object") {
+      for (const [key, value] of Object.entries(input)) {
+        if (value) classes.push(key);
+      }
+    }
+  }
+  return classes.join(" ");
 }
 
 export function formatDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(d)
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
-export function formatRelativeDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return formatDate(date)
+export function formatCurrency(amount: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amount);
 }
 
-export function maskCardNumber(last4: string): string {
-  return `**** **** **** ${last4}`
-}
-
-export function maskPhone(phone: string): string {
-  if (phone.length < 4) return phone
-  return `${phone.slice(0, 3)}****${phone.slice(-2)}`
-}
-
-export function generateReference(): string {
-  return `MTAA-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+export function truncate(str: string, maxLength: number): string {
+  if (str.length <= maxLength) return str;
+  return str.slice(0, maxLength) + "...";
 }

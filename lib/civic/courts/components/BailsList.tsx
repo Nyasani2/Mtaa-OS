@@ -1,35 +1,35 @@
-import { CourtBail } from '@/types/courts';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useBails } from '../hooks/useBails';
 
-export function BailsList({ bails, caseId, onPost, onRelease }: { bails: CourtBail[]; caseId?: string; onPost?: (id: string) => void; onRelease?: (id: string) => void }) {
+interface Props {
+  caseId?: string;
+}
+
+export default function BailsList({ caseId }: Props) {
+  const { bails, loading } = useBails(caseId);
+
+  if (loading) return <Text>Loading bails...</Text>;
+
   return (
-    <div className="space-y-2">
-      {bails.map(b => (
-        <div key={b.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between">
-            <span className="font-medium capitalize">{b.bail_type.replace('_', ' ')}</span>
-            <span className={`text-xs px-2 py-0.5 rounded capitalize ${
-              b.status === 'posted' ? 'bg-green-100 text-green-800' :
-              b.status === 'released' ? 'bg-blue-100 text-blue-800' :
-              b.status === 'forfeited' ? 'bg-red-100 text-red-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>{b.status}</span>
-          </div>
-          <div className="mt-1">Amount: {formatCurrency(b.amount)}</div>
-          {b.party && <div className="text-xs text-gray-600">For: {b.party.full_name}</div>}
-          {b.posted_date && <div className="text-xs text-gray-500">Posted: {formatDate(b.posted_date)}</div>}
-          {b.conditions?.length > 0 && <div className="text-xs text-gray-600 mt-1">Conditions: {b.conditions.join(', ')}</div>}
-          <div className="flex gap-2 mt-2">
-            {onPost && b.status === 'pending' && (
-              <button onClick={() => onPost(b.id)} className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">Post Bail</button>
-            )}
-            {onRelease && b.status === 'posted' && (
-              <button onClick={() => onRelease(b.id)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Release</button>
-            )}
-          </div>
-        </div>
-      ))}
-      {bails.length === 0 && <div className="text-gray-400 text-sm">No bail records</div>}
-    </div>
+    <FlatList
+      data={bails}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>Party: {item.party?.full_name || item.party_id}</Text>
+          <Text>Amount: ${item.amount?.toFixed(2)}</Text>
+          <Text>Conditions: {item.conditions || 'None'}</Text>
+          <Text style={[styles.badge, { backgroundColor: item.status === 'posted' ? '#4caf50' : '#f44336' }]}>
+            {item.status}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10, alignSelf: 'flex-start', marginTop: 4 }
+});

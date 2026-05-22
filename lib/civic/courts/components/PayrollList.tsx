@@ -1,48 +1,35 @@
-import { CourtPayroll } from '@/types/courts';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { usePayroll } from '../hooks/usePayroll';
 
-export function PayrollList({ entries, onApprove, onPay }: { entries: CourtPayroll[]; onApprove?: (id: string) => void; onPay?: (id: string) => void }) {
+interface Props {
+  courtHouseId?: string;
+  period?: string;
+}
+
+export default function PayrollList({ courtHouseId, period }: Props) {
+  const { payrolls, loading } = usePayroll(courtHouseId, period);
+
+  if (loading) return <Text>Loading payroll...</Text>;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-600">
-          <tr>
-            <th className="text-left px-3 py-2">Staff</th>
-            <th className="text-left px-3 py-2">Type</th>
-            <th className="text-left px-3 py-2">Period</th>
-            <th className="text-left px-3 py-2">Net</th>
-            <th className="text-left px-3 py-2">Status</th>
-            <th className="text-left px-3 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {entries.map(e => (
-            <tr key={e.id} className="hover:bg-gray-50">
-              <td className="px-3 py-2 font-medium">{e.staff_name}</td>
-              <td className="px-3 py-2 capitalize">{e.staff_type}</td>
-              <td className="px-3 py-2">{formatDate(e.pay_period_start)} – {formatDate(e.pay_period_end)}</td>
-              <td className="px-3 py-2">{formatCurrency(e.net_amount)}</td>
-              <td className="px-3 py-2">
-                <span className={`text-xs px-2 py-0.5 rounded capitalize ${
-                  e.status === 'paid' ? 'bg-green-100 text-green-800' :
-                  e.status === 'approved' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>{e.status}</span>
-              </td>
-              <td className="px-3 py-2">
-                <div className="flex gap-1">
-                  {onApprove && e.status === 'pending' && (
-                    <button onClick={() => onApprove(e.id)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Approve</button>
-                  )}
-                  {onPay && e.status === 'approved' && (
-                    <button onClick={() => onPay(e.id)} className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">Pay</button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <FlatList
+      data={payrolls}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.staff_id}</Text>
+          <Text>${(item.base_salary || 0).toFixed(2)}</Text>
+          <Text>{(item.overtime_hours || 0).toFixed(1)}h</Text>
+          <Text>${(item.deductions || 0).toFixed(2)}</Text>
+          <Text style={styles.net}>${(item.net_pay || 0).toFixed(2)}</Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' },
+  net: { fontWeight: '600', color: '#2e7d32' }
+});

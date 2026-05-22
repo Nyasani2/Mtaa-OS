@@ -1,31 +1,33 @@
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 
-import { View, Text, ScrollView } from 'react-native';
-import { useTeachers } from '../../hooks/useTeachers';
-import TeacherCard from '../../components/TeacherCard';
+const MOCK_TEACHERS = [
+  { id: '1', name: 'John Doe', subject: 'Mathematics', school: 'Central High' },
+  { id: '2', name: 'Jane Smith', subject: 'English', school: 'Greenfield Academy' },
+];
 
 export default function TeachersPage() {
-  // In real app, get institutionId from user's context
-  const institutionId = 'placeholder';
-  const { data: teachers, isLoading } = useTeachers(institutionId);
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#0f172a' }}>
-      <View style={{ padding: 20 }}>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 16 }}>
-          Teachers
-        </Text>
-        <Text style={{ color: '#94a3b8', fontSize: 14 }}>
-          {teachers?.length || 0} active teachers
-        </Text>
-      </View>
-
-      <ScrollView style={{ paddingHorizontal: 20 }}>
-        {isLoading ? (
-          <Text style={{ color: '#94a3b8', textAlign: 'center', marginTop: 40 }}>Loading...</Text>
-        ) : teachers?.map(teacher => (
-          <TeacherCard key={teacher.id} teacher={teacher} />
-        ))}
-      </ScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Teachers</Text>
+      <FlatList
+        data={MOCK_TEACHERS}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text>{item.subject}</Text>
+            <Text>{item.school}</Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  card: { backgroundColor: '#fff', padding: 12, marginBottom: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  name: { fontWeight: '600', fontSize: 16 }
+});

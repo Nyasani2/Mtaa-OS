@@ -1,27 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVisits, createVisit, updateVisit, checkInVisit, checkOutVisit } from '@/services/prisonVisits';
-import { PrisonVisit } from '@/types/prisons';
+import { useState, useEffect, useCallback } from 'react';
+import { PrisonVisitsService } from '../services/prisonVisits';
 
-export function useVisits(filters?: Parameters<typeof getVisits>[0]) {
-  return useQuery({ queryKey: ['prisonVisits', filters], queryFn: () => getVisits(filters) });
-}
+export function useVisits(facilityId?: string, inmateId?: string) {
+  const [visits, setVisits] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreateVisit() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createVisit, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonVisits'] }) });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    PrisonVisitsService.getVisits(facilityId, inmateId)
+      .then(setVisits)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [facilityId, inmateId]);
 
-export function useUpdateVisit() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, updates }: { id: string; updates: Partial<PrisonVisit> }) => updateVisit(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonVisits'] }) });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useCheckInVisit() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: checkInVisit, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonVisits'] }) });
-}
-
-export function useCheckOutVisit() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: checkOutVisit, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonVisits'] }) });
+  return { visits, loading, error, refresh };
 }

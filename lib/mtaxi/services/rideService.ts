@@ -1,78 +1,86 @@
-import { supabase } from "@/core/lib/supabaseClient";
-import type { Ride, GeoLocation, RideStatus, FareEstimate, VehicleType } from "../types";
+// lib/mtaxi/services/rideService.ts
+import { supabase } from "@/lib/supabase";
 
-const EDGE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL + "/functions/v1";
-
-export async function requestRide(pickup: GeoLocation, dropoff: GeoLocation, ride_type: string = "instant", vehicle_type: VehicleType = "sedan"): Promise<Ride> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(`${EDGE_URL}/mtaxi-request`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify({ pickup, dropoff, ride_type, vehicle_type })
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to request ride"); }
-  const { ride } = await res.json(); return ride;
+export interface FareEstimate {
+  distance_km: number;
+  base_fare: number;
+  distance_fare: number;
+  time_fare: number;
+  surge_multiplier: number;
+  total_fare: number;
+  vehicle_type: string;
+  currency: string;
 }
 
-export async function acceptRide(ride_id: string): Promise<Ride> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(`${EDGE_URL}/mtaxi-accept`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify({ ride_id })
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to accept ride"); }
-  const { ride } = await res.json(); return ride;
+export async function estimateFare(
+  pickup: { lat: number; lng: number },
+  dropoff: { lat: number; lng: number },
+  vehicleType: string = "economy"
+): Promise<FareEstimate> {
+  const R = 6371;
+  const dLat = (dropoff.lat - pickup.lat) * Math.PI / 180;
+  const dLng = (dropoff.lng - pickup.lng) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(pickup.lat * Math.PI / 180) * Math.cos(dropoff.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const baseRates: Record<string, number> = { economy: 2.5, premium: 5.0, xl: 8.0, truck: 12.0 };
+  const perKmRates: Record<string, number> = { economy: 1.2, premium: 2.5, xl: 3.5, truck: 5.0 };
+
+  const baseFare = baseRates[vehicleType] || 2.5;
+  const distanceFare = distance * (perKmRates[vehicleType] || 1.2);
+  const timeFare = (distance / 30) * 0.5;
+  const surgeMultiplier = 1.0;
+  const totalFare = Math.round((baseFare + distanceFare + timeFare) * surgeMultiplier * 100) / 100;
+
+  return {
+    distance_km: Math.round(distance * 100) / 100,
+    base_fare: baseFare,
+    distance_fare: Math.round(distanceFare * 100) / 100,
+    time_fare: Math.round(timeFare * 100) / 100,
+    surge_multiplier: surgeMultiplier,
+    total_fare: totalFare,
+    vehicle_type: vehicleType,
+    currency: "USD",
+  };
 }
 
-export async function completeRide(ride_id: string, final_fare?: number): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(`${EDGE_URL}/mtaxi-complete`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify({ ride_id, final_fare })
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to complete ride"); }
+export async function requestRide(data: {
+  passenger_id: string;
+  pickup_lat: number;
+  pickup_lng: number;
+  dropoff_lat: number;
+  dropoff_lng: number;
+  ride_type?: string;
+  payment_method?: string;
+}): Promise<any> {
+  const { data: result, error } = await supabase
+    .from("mtaxi_rides")
+    .insert({
+      passenger_id: data.passenger_id,
+      pickup_lat: data.pickup_lat,
+      pickup_lng: data.pickup_lng,
+      dropoff_lat: data.dropoff_lat,
+      dropoff_lng: data.dropoff_lng,
+      ride_type: data.ride_type || "economy",
+      payment_method: data.payment_method || "wallet",
+      status: "searching",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return result;
 }
 
-export async function cancelRide(ride_id: string, reason?: string): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const res = await fetch(`${EDGE_URL}/mtaxi-cancel`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-    body: JSON.stringify({ ride_id, reason })
-  });
-  if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Failed to cancel ride"); }
+export async function getRideById(rideId: string): Promise<any> {
+  const { data, error } = await supabase.from("mtaxi_rides").select("*").eq("id", rideId).single();
+  if (error) throw error;
+  return data;
 }
 
-export async function getMyRides(status?: RideStatus): Promise<Ride[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  let query = supabase.from("rides").select("*, driver:driver_id(*), vehicle:vehicle_id(*)").or(`rider_id.eq.${user.id},driver_id.eq.${user.id}`).order("created_at", { ascending: false });
-  if (status) query = query.eq("status", status);
-  const { data, error } = await query.limit(50);
-  if (error) throw new Error(error.message); return data || [];
-}
-
-export async function getRideById(ride_id: string): Promise<Ride | null> {
-  const { data, error } = await supabase.from("rides").select("*, driver:driver_id(*), vehicle:vehicle_id(*)").eq("id", ride_id).single();
-  if (error) throw new Error(error.message); return data;
-}
-
-export async function rateRide(ride_id: string, rating: number, review?: string, as: "rider" | "driver" = "rider"): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const field = as === "rider" ? "rating_driver" : "rating_rider";
-  const reviewField = as === "rider" ? "review_driver" : "review_rider";
-  const update: any = { [field]: rating }; if (review) update[reviewField] = review;
-  const { error } = await supabase.from("rides").update(update).eq("id", ride_id);
-  if (error) throw new Error(error.message);
-}
-
-export async function estimateFare(pickup: GeoLocation, dropoff: GeoLocation, vehicle_type: VehicleType = "sedan"): Promise<FareEstimate> {
-  const { data: distanceData } = await supabase.rpc("calculate_distance_km", { lat1: pickup.lat, lng1: pickup.lng, lat2: dropoff.lat, lng2: dropoff.lng });
-  const distance_km = distanceData || 0;
-  const { data: fareData } = await supabase.rpc("calculate_fare", { distance_km });
-  const base_fare = fareData || 0;
-  const multipliers: Record<VehicleType, number> = { boda: 0.6, tuk_tuk: 0.8, sedan: 1.0, van: 1.3, truck: 1.8 };
-  const adjustedBase = Math.round(base_fare * (multipliers[vehicle_type] || 1));
-  const { data: surgeData } = await supabase.rpc("mtaxi_compute_surge", { demand: 0, supply: 0 });
-  const surge = surgeData || 1;
-  return { distance_km: Math.round(distance_km * 100) / 100, base_fare: adjustedBase, surge_multiplier: surge, total_fare: Math.round(adjustedBase * surge), vehicle_type, currency: "KES" };
+export async function cancelRide(rideId: string, reason?: string): Promise<void> {
+  const { error } = await supabase
+    .from("mtaxi_rides")
+    .update({ status: "cancelled", cancellation_reason: reason, cancelled_at: new Date().toISOString() })
+    .eq("id", rideId);
+  if (error) throw error;
 }

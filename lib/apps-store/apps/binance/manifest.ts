@@ -1,12 +1,4 @@
-export const BINANCE_APP = {
-  id: "binance",
-  name: "Binance",
-  description: "Crypto trading integration",
-  version: "1.0.0",
-  category: "finance",
-  icon: "bitcoin",
-  route: "/(finance)/binance",
-  color: "#F59E0B",
-  installable: true,
-  size: "12MB",
-};
+import { AppManifest } from '@/lib/apps-store/types';
+import manifest from '@/lib/modules/binance/manifest';
+
+export default manifest as AppManifest;

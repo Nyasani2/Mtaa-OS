@@ -1,29 +1,56 @@
-import { supabase } from "../../supabase";
-import { predictDemandWindow } from "./predictive-demand-engine";
+// lib/mtruck/os/fleet-reposition-engine.ts
+export interface Truck {
+  id: string;
+  lat: number;
+  lng: number;
+  available: boolean;
+  capacity: number;
+}
 
-export async function computeRepositionPlan() {
-  const demand = await predictDemandWindow();
+export interface DemandZone {
+  lat: number;
+  lng: number;
+  weight: number;
+}
 
-  const topZones = demand
-    .sort((a, b) => b.predicted_demand - a.predicted_demand)
-    .slice(0, 5);
+export interface RepositionPlan {
+  truckId: string;
+  targetLat: number;
+  targetLng: number;
+  reason: string;
+}
 
-  const { data: trucks } = await supabase.from("truck_locations").select("*");
+export function computeRepositionPlan(trucks: Truck[] | null, demandZones: DemandZone[]): RepositionPlan[] {
+  if (!trucks || trucks.length === 0 || demandZones.length === 0) return [];
 
-  const instructions = [];
+  const topZone = demandZones.sort((a, b) => b.weight - a.weight)[0];
+  const plans: RepositionPlan[] = [];
 
-  for (let i = 0; i < trucks.length; i++) {
-    const zone = topZones[i % topZones.length];
-
-    instructions.push({
-      truck_id: trucks[i].truck_id,
-      move_to: {
-        lat: zone.lat,
-        lng: zone.lng
-      },
-      reason: "DEMAND_OPTIMIZATION"
+  for (const truck of trucks) {
+    if (!truck.available) continue;
+    const targetLat = truck.lat + (topZone.lat - truck.lat) * 0.1;
+    const targetLng = truck.lng + (topZone.lng - truck.lng) * 0.1;
+    plans.push({
+      truckId: truck.id,
+      targetLat,
+      targetLng,
+      reason: `Move toward demand zone (${topZone.weight} weight)`,
     });
   }
 
-  return instructions;
+  return plans;
+}
+
+export function repositionFleet(trucks: Truck[] | null, demandZones: DemandZone[]): Truck[] {
+  if (!trucks || trucks.length === 0) return [];
+  if (demandZones.length === 0) return trucks;
+
+  const topZone = demandZones.sort((a, b) => b.weight - a.weight)[0];
+
+  return trucks.map(truck => {
+    if (!truck.available) return truck;
+    const newLat = truck.lat + (topZone.lat - truck.lat) * 0.1;
+    const newLng = truck.lng + (topZone.lng - truck.lng) * 0.1;
+    return { ...truck, lat: newLat, lng: newLng };
+  });
 }

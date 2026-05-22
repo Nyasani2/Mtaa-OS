@@ -1,35 +1,39 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import type { Transaction } from "@/lib/credit/types";
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { CreditTransaction } from '../history/user-credit-history';
 
-interface Props {
-  tx: Transaction;
+interface TransactionItemProps {
+  transaction: CreditTransaction;
 }
 
-export function TransactionItem({ tx }: Props) {
-  const isCredit = tx.type === "credit" || tx.type === "reward";
+const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
+  const getColor = () => {
+    switch (transaction.type) {
+      case 'transfer': return '#3b82f6';
+      case 'debit': return '#ef4444';
+      case 'loan': return '#f59e0b';
+      case 'investment': return '#10b981';
+      case 'reward': return '#8b5cf6';
+      default: return '#6b7280';
+    }
+  };
+
   return (
-    <View style={styles.row}>
-      <View style={[styles.iconBox, { backgroundColor: isCredit ? "#10B98120" : "#EF444420" }]}>
-        <Ionicons name={isCredit ? "arrow-down" : "arrow-up"} size={18} color={isCredit ? "#10B981" : "#EF4444"} />
-      </View>
-      <View style={styles.info}>
-        <Text style={styles.desc}>{tx.description}</Text>
-        <Text style={styles.meta}>{tx.timestamp} • {tx.status}</Text>
-      </View>
-      <Text style={[styles.amount, { color: isCredit ? "#10B981" : "white" }]}>
-        {isCredit ? "+" : "-"}${tx.amount}
-      </Text>
+    <View style={[styles.container, { borderLeftColor: getColor(), borderLeftWidth: 4 }]}>
+      <Text style={styles.type}>{transaction.type.toUpperCase()}</Text>
+      <Text style={styles.amount}>${transaction.amount.toFixed(2)}</Text>
+      <Text style={styles.desc}>{transaction.description}</Text>
+      <Text style={styles.date}>{new Date(transaction.createdAt).toLocaleDateString()}</Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1E293B" },
-  iconBox: { width: 36, height: 36, borderRadius: 8, justifyContent: "center", alignItems: "center", marginRight: 12 },
-  info: { flex: 1 },
-  desc: { color: "white", fontSize: 14 },
-  meta: { color: "#64748B", fontSize: 12, marginTop: 2 },
-  amount: { fontSize: 15, fontWeight: "600" },
+  container: { backgroundColor: '#fff', padding: 12, marginVertical: 4, borderRadius: 8 },
+  type: { fontSize: 12, fontWeight: 'bold', color: '#374151' },
+  amount: { fontSize: 16, fontWeight: 'bold', marginTop: 4 },
+  desc: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  date: { fontSize: 10, color: '#9ca3af', marginTop: 4 },
 });
+
+export default TransactionItem;

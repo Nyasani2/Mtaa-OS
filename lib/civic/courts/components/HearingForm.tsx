@@ -1,31 +1,51 @@
-'use client';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { CourtHearingsService } from '../services/courtHearings';
+import { useHearings } from '../hooks/useHearings';
+import { useCourts } from '../hooks/useCourts';
 
-import { useState } from 'react';
-import { CourtHearing } from '@/types/courts';
-import { useCreateHearing } from '@/hooks/useHearings';
-import { useCourtRooms } from '@/hooks/useCourts';
+interface Props {
+  caseId: string;
+  courtHouseId: string;
+  onSubmit?: () => void;
+}
 
-export function HearingForm({ onSubmit }: { onSubmit: () => void }) {
-  const [form, setForm] = useState<Partial<CourtHearing>>({ hearing_type: 'mention', status: 'scheduled' });
-  const create = useCreateHearing();
-  const { data: rooms } = useCourtRooms();
+export default function HearingForm({ caseId, courtHouseId, onSubmit }: Props) {
+  const [hearingType, setHearingType] = useState('');
+  const [courtRoomId, setCourtRoomId] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [rooms, setRooms] = useState<any[]>([]);
+
+  useEffect(() => {
+    CourtHearingsService.getCourtRooms(courtHouseId).then(setRooms);
+  }, [courtHouseId]);
+
+  const handleSubmit = async () => {
+    await CourtHearingsService.createHearing({
+      case_id: caseId,
+      hearing_type: hearingType,
+      court_room_id: courtRoomId,
+      scheduled_date: scheduledDate,
+      status: 'scheduled'
+    });
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); create.mutateAsync(form).then(onSubmit); }} className="space-y-3">
-      <input placeholder="Case ID" value={form.case_id || ''} onChange={e => setForm(f => ({ ...f, case_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.court_room_id || ''} onChange={e => setForm(f => ({ ...f, court_room_id: e.target.value }))} className="w-full border rounded px-3 py-2" required>
-        <option value="">Select room...</option>
-        {rooms?.map(r => <option key={r.id} value={r.id}>{r.room_number} ({r.room_type})</option>)}
-      </select>
-      <select value={form.hearing_type} onChange={e => setForm(f => ({ ...f, hearing_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="mention">Mention</option>
-        <option value="pretrial">Pretrial</option>
-        <option value="trial">Trial</option>
-        <option value="sentencing">Sentencing</option>
-        <option value="ruling">Ruling</option>
-      </select>
-      <input type="datetime-local" value={form.scheduled_date ? form.scheduled_date.slice(0, 16) : ''} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Schedule</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>Schedule Hearing</Text>
+      <TextInput style={styles.input} placeholder="Hearing Type" value={hearingType} onChangeText={setHearingType} />
+      <TextInput style={styles.input} placeholder="Court Room ID" value={courtRoomId} onChangeText={setCourtRoomId} />
+      <TextInput style={styles.input} placeholder="Scheduled Date (YYYY-MM-DD HH:MM)" value={scheduledDate} onChangeText={setScheduledDate} />
+      <Text style={styles.label}>Available Rooms: {rooms.map((r: any) => r.name).join(', ')}</Text>
+      <Button title="Schedule" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 },
+  label: { fontSize: 12, color: '#666', marginBottom: 8 }
+});

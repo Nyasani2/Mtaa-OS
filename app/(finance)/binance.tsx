@@ -1,15 +1,16 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { BinanceIndex } from "@/domains/binance/pages/index";
 
-export default function BinanceScreen() {
+export default function BinanceIndex() {
   return (
     <View style={styles.container}>
-      <BinanceIndex />
+      <Text style={styles.title}>Binance</Text>
+      <Text>Crypto trading and conversion services.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 16 },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 }
 });

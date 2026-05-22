@@ -1,46 +1,64 @@
-// lib/shop/hooks/useMarketplace.ts
 import { useState, useEffect, useCallback } from "react";
 import { ShopService } from "../services/shopService";
-import { MarketplaceListing } from "../types";
+import { supabase } from '@/lib/supabase';
 
-export function useMarketplaceSearch() {
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
+export function useMarketplaceSearch(query: string, category?: string) {
+  const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async (params: { query?: string; category?: string; lat?: number; lng?: number }) => {
+  const search = useCallback(() => {
     setLoading(true);
     setError(null);
-    try {
-      const results = await ShopService.searchMarketplace(params.query, params.category, params.lat, params.lng);
-      setListings(results);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    ShopService.searchMarketplace(query, category)
+      .then(setListings)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [query, category]);
+
+  useEffect(() => {
+    search();
+  }, [search]);
 
   return { listings, loading, error, search };
 }
 
-export function useShopMessages(shopId: string, customerId: string) {
+export function useShopMessages(shopId: string, customerId?: string) {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (shopId && customerId) {
-      ShopService.getMessages(shopId, customerId).then(setMessages).finally(() => setLoading(false));
-      const subscription = ShopService.subscribeToMessages(shopId, customerId, (payload) => {
-        setMessages((prev) => [...prev, payload.new]);
-      });
-      return () => { subscription.unsubscribe(); };
-    }
-  }, [shopId, customerId]);
+    const fetchMessages = async () => {
+      const { data, error } = await supabase
+        .from('shop_messages')
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('created_at', { ascending: true });
+      if (!error) setMessages(data || []);
+      setLoading(false);
+    };
+    fetchMessages();
 
-  const sendMessage = async (message: string, senderType: "customer" | "shop" = "customer", productId?: string, orderId?: string) => {
-    await ShopService.sendMessage(shopId, customerId, message, senderType, productId, orderId);
-  };
+    const channel = supabase
+      .channel(`shop_messages:${shopId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shop_messages', filter: `shop_id=eq.${shopId}` }, (payload: any) => {
+        setMessages((prev) => [...prev, payload.new]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [shopId]);
+
+  const sendMessage = useCallback(async (content: string, senderId: string) => {
+    const { error } = await supabase.from('shop_messages').insert({
+      shop_id: shopId,
+      customer_id: customerId,
+      sender_id: senderId,
+      content,
+      created_at: new Date().toISOString()
+    });
+    if (error) throw error;
+  }, [shopId, customerId]);
 
   return { messages, loading, sendMessage };
 }

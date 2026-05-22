@@ -1,28 +1,18 @@
 import { supabase } from '@/lib/supabase';
-import { CourtAppeal } from '@/types/courts';
+import { CourtAppeal } from '../types';
 
-export async function getAppeals(): Promise<CourtAppeal[]> {
-  const { data, error } = await supabase
-    .from('court_appeals')
-    .select(`
-      *,
-      original_case:original_case_id(*),
-      original_judgment:original_judgment_id(*),
-      appellate_court:appellate_court_id(*)
-    `)
-    .order('filing_date', { ascending: false });
-  if (error) throw error;
-  return data || [];
-}
+export class CourtAppealsService {
+  static async getAppeals(courtHouseId?: string): Promise<CourtAppeal[]> {
+    let query = supabase.from('court_appeals').select('*, original_case:court_cases(*), appellate_court:court_houses(*)');
+    if (courtHouseId) query = query.eq('appellate_court_id', courtHouseId);
+    const { data, error } = await query.order('filing_date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
 
-export async function createAppeal(appeal: Partial<CourtAppeal>): Promise<CourtAppeal> {
-  const { data, error } = await supabase.from('court_appeals').insert(appeal).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function updateAppeal(id: string, updates: Partial<CourtAppeal>): Promise<CourtAppeal> {
-  const { data, error } = await supabase.from('court_appeals').update(updates).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
+  static async createAppeal(data: Partial<CourtAppeal>): Promise<CourtAppeal> {
+    const { data: result, error } = await supabase.from('court_appeals').insert(data).select().single();
+    if (error) throw error;
+    return result;
+  }
 }

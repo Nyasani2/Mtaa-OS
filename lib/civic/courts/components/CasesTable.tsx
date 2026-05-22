@@ -1,39 +1,40 @@
-import Link from 'next/link';
-import { CourtCase } from '@/types/courts';
-import { CaseStatusBadge } from './CaseStatusBadge';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useCases } from '../hooks/useCases';
 import { formatDate } from '@/lib/utils';
 
-export function CasesTable({ cases, compact }: { cases: CourtCase[]; compact?: boolean }) {
+interface Props {
+  courtHouseId?: string;
+}
+
+export default function CasesTable({ courtHouseId }: Props) {
+  const { cases, loading } = useCases(courtHouseId);
+
+  if (loading) return <Text>Loading cases...</Text>;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-50 text-gray-600">
-          <tr>
-            <th className="text-left px-3 py-2">Case #</th>
-            {!compact && <th className="text-left px-3 py-2">Type</th>}
-            <th className="text-left px-3 py-2">Status</th>
-            {!compact && <th className="text-left px-3 py-2">Court</th>}
-            <th className="text-left px-3 py-2">Filed</th>
-            {!compact && <th className="text-left px-3 py-2">Judge</th>}
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {cases.map(c => (
-            <tr key={c.id} className="hover:bg-gray-50">
-              <td className="px-3 py-2">
-                <Link href={`/cases/${c.id}`} className="text-blue-600 hover:underline font-medium">
-                  {c.case_number}
-                </Link>
-              </td>
-              {!compact && <td className="px-3 py-2 capitalize">{c.case_type}</td>}
-              <td className="px-3 py-2"><CaseStatusBadge status={c.status} /></td>
-              {!compact && <td className="px-3 py-2">{c.court_house?.name || '—'}</td>}
-              <td className="px-3 py-2">{formatDate(c.filing_date)}</td>
-              {!compact && <td className="px-3 py-2">{c.assigned_judge?.full_name || '—'}</td>}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <FlatList
+      data={cases}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text style={styles.number}>{item.case_number}</Text>
+          <Text>{item.title}</Text>
+          <Text>Type: {item.case_type}</Text>
+          <Text>Court: {item.court_house?.name || 'N/A'}</Text>
+          <Text>Filed: {formatDate(item.filing_date || '')}</Text>
+          <Text>Judge: {item.assigned_judge ? `${item.assigned_judge.first_name} ${item.assigned_judge.last_name}` : 'Unassigned'}</Text>
+          <Text style={[styles.badge, { backgroundColor: item.status === 'closed' ? '#4caf50' : '#ff9800' }]}>
+            {item.status}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  number: { fontWeight: '600', fontSize: 14 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, color: '#fff', fontSize: 10, alignSelf: 'flex-start', marginTop: 4 }
+});

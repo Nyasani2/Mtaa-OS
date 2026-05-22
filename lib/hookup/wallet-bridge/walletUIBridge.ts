@@ -1,23 +1,12 @@
-import { walletCoreEngine } from './walletCoreEngine'
-import { walletEventBus } from './walletEventBus'
+import { WalletCoreEngine } from "./walletCoreEngine";
+import type { WalletEventType } from "./walletExecutionPipeline";
 
-export const walletUIBridge = {
-  scanAndPay: async (qrData: string) => {
-    walletEventBus.emit('QR_SCANNED', {
-      qr: qrData,
-      timestamp: Date.now(),
-    })
+export function walletUIBridge() {
+  const engine = new WalletCoreEngine();
 
-    return walletCoreEngine.processQR(qrData)
-  },
-
-  initiateTransfer: async (payload: any) => {
-    walletEventBus.emit('TRANSFER_INIT', payload)
-    return walletCoreEngine.processTransfer(payload)
-  },
-
-  requestBalance: async () => {
-    walletEventBus.emit('BALANCE_REQUEST')
-    return walletCoreEngine.getBalance()
-  },
+  return {
+    handleQRScan: (data: string) => engine.processQR(data),
+    handleTransfer: (payload: any) => engine.processTransfer(payload),
+    handleBalanceRequest: () => engine.getBalance(),
+  };
 }

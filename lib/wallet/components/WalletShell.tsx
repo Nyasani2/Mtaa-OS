@@ -1,15 +1,18 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { WalletDashboard } from './WalletDashboard';
+// lib/wallet/components/WalletShell.tsx
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import WalletDashboard from "./WalletDashboard";
 
-export function WalletShell() {
+export default function WalletShell() {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Wallet</Text>
       <WalletDashboard />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816' },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  header: { fontSize: 24, fontWeight: "bold", color: "#fff", padding: 16 },
 });

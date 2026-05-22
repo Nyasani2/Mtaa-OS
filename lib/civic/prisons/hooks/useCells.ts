@@ -1,26 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCells, getCell, createCell, updateCell, deleteCell } from '@/services/prisonCells';
-import { PrisonCell } from '@/types/prisons';
+import { useState, useEffect, useCallback } from 'react';
+import { PrisonCellsService } from '../services/prisonCells';
 
-export function useCells(facilityId?: string) {
-  return useQuery({ queryKey: ['prisonCells', facilityId], queryFn: () => getCells(facilityId) });
-}
+export function useCells(facilityId: string) {
+  const [cells, setCells] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCell(id: string) {
-  return useQuery({ queryKey: ['prisonCell', id], queryFn: () => getCell(id), enabled: !!id });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    PrisonCellsService.getCells(facilityId)
+      .then(setCells)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [facilityId]);
 
-export function useCreateCell() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createCell, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonCells'] }) });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useUpdateCell() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, updates }: { id: string; updates: Partial<PrisonCell> }) => updateCell(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonCells'] }) });
-}
-
-export function useDeleteCell() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: deleteCell, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonCells'] }) });
+  return { cells, loading, error, refresh };
 }

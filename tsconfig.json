@@ -1,17 +1,46 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "baseUrl": ".",
+    "strict": true,
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "extends": "expo/tsconfig.base",
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "domains/**/*.ts",
+    "domains/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "types/**/*.ts",
+    "types/**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "_CLEANUP_BACKUP",
+    "_KERNEL_ARCHIVE_LOCK",
+    "apps/_disabled",
+    "apps/_legacy_components",
+    "supabase/functions",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }

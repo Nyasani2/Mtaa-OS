@@ -13,7 +13,7 @@
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
     "@opentelemetry/api": "^1.9.1",
-    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/netinfo": "11.4.1",
     "@react-native-community/slider": "4.5.5",
     "@supabase/supabase-js": "^2.105.4",
@@ -25,12 +25,14 @@
     "expo-barcode-scanner": "^13.0.1",
     "expo-calendar": "~14.0.6",
     "expo-camera": "~16.0.18",
+    "expo-constants": "~17.0.8",
     "expo-contacts": "~14.0.5",
     "expo-device": "~7.0.3",
     "expo-document-picker": "~13.0.3",
     "expo-file-system": "~18.0.12",
     "expo-image-picker": "~16.0.6",
     "expo-linear-gradient": "~14.0.2",
+    "expo-linking": "~7.0.5",
     "expo-local-authentication": "~15.0.2",
     "expo-location": "~18.0.10",
     "expo-media-library": "~17.0.6",
@@ -61,5 +63,19 @@
     "@types/react": "~18.3.12",
     "eslint": "^9.39.4",
     "typescript": "^5.3.3"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "react-native-chart-kit",
+          "@opentelemetry/api",
+          "@urql/core",
+          "expo-barcode-scanner",
+          "graphql"
+        ],
+        "listUnknownPackages": false
+      }
+    }
   }
 }

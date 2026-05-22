@@ -1,20 +1,49 @@
-import { runAutonomousDispatchCycle } from "./autonomous-dispatch-core";
-import { analyzeTradeVolume } from "../trade/africa-digital-trade-layer";
+// lib/mtaa/autonomy/global-autonomous-orchestrator.ts
+import { createDispatchState, mergeDispatchState, DispatchState } from "./autonomous-dispatch-core";
 
-export async function runGlobalAutonomousSystem() {
+export interface OrchestratorConfig {
+  intervalMs: number;
+  maxRetries: number;
+  enabledModules: string[];
+}
 
-  const dispatch = await runAutonomousDispatchCycle();
-  const trade = await analyzeTradeVolume();
+export function runAutonomousDispatchCycle(
+  state: DispatchState,
+  config: OrchestratorConfig
+): DispatchState {
+  // Run one cycle of autonomous dispatch
+  const updated = mergeDispatchState(state, {
+    active: true,
+    lastRun: new Date().toISOString(),
+  });
 
-  const system_state =
-    trade.total_flows > 1000
-      ? "HIGH_ACTIVITY"
-      : "NORMAL";
+  // Process queue
+  if (updated.queue.length > 0) {
+    const processed = updated.queue.slice(0, config.maxRetries);
+    updated.queue = updated.queue.slice(config.maxRetries);
+  }
+
+  return updated;
+}
+
+export function initializeOrchestrator(config?: Partial<OrchestratorConfig>): OrchestratorConfig {
+  return {
+    intervalMs: config?.intervalMs ?? 5000,
+    maxRetries: config?.maxRetries ?? 3,
+    enabledModules: config?.enabledModules ?? [],
+  };
+}
+
+export function startAutonomousLoop(config: OrchestratorConfig, onTick: (state: DispatchState) => void) {
+  let state = createDispatchState({ active: true });
+
+  const interval = setInterval(() => {
+    state = runAutonomousDispatchCycle(state, config);
+    onTick(state);
+  }, config.intervalMs);
 
   return {
-    dispatch,
-    trade,
-    system_state,
-    autonomy_level: "FULL_CONTINENTAL_AUTONOMY",
+    stop: () => clearInterval(interval),
+    getState: () => state,
   };
 }

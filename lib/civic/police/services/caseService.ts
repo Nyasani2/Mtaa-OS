@@ -1,196 +1,164 @@
-import { supabase } from '../../shared/lib/supabase'
-import { PoliceCase, CaseFilter, CaseTimelineEvent, CaseStatus } from '../types/police.types'
+import { supabase } from '@/lib/supabase';
+import { PoliceCase, CaseStatus, CasePriority, CaseTimelineEvent } from '../types/police.types';
 
-export const caseService = {
-  async getCases(filter: CaseFilter = {}): Promise<PoliceCase[]> {
-    let query = supabase
-      .from('police_cases')
-      .select(`
-        *,
-        reporting_officer:reporting_officer_id(id, badge_number, full_name, rank),
-        assigned_officer:assigned_officer_id(id, badge_number, full_name, rank),
-        station:station_id(id, station_code, name)
-      `)
-      .order('created_at', { ascending: false })
+export interface CaseUpdate {
+  notes: string;
+  updated_by: string;
+  status?: CaseStatus;
+}
 
-    if (filter.status) {
-      query = query.eq('status', filter.status)
+export class CaseService {
+  async getCases(filters?: { status?: CaseStatus; priority?: CasePriority; assignedTo?: string }) {
+    let query = supabase.from('police_cases').select('*');
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.priority) query = query.eq('priority', filters.priority);
+    if (filters?.assignedTo) query = query.eq('assigned_officer_id', filters.assignedTo);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as PoliceCase[];
+  }
+
+  async getCaseById(id: string) {
+    const { data, error } = await supabase.from('police_cases').select('*').eq('id', id).single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
+
+  async createCase(caseData: Partial<PoliceCase>) {
+    const { data, error } = await supabase.from('police_cases').insert(caseData).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
+
+  async updateCase(id: string, updates: Partial<PoliceCase>) {
+    const { data, error } = await supabase.from('police_cases').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
+
+  async updateCaseStatus(id: string, status: CaseStatus, update?: CaseUpdate | string) {
+    let notes = '';
+    let updatedBy = 'system';
+    if (typeof update === 'string') {
+      notes = update;
+    } else if (update) {
+      notes = update.notes;
+      updatedBy = update.updated_by;
     }
-    if (filter.case_type) {
-      query = query.eq('case_type', filter.case_type)
-    }
-    if (filter.priority) {
-      query = query.eq('priority', filter.priority)
-    }
-    if (filter.date_from) {
-      query = query.gte('created_at', filter.date_from)
-    }
-    if (filter.date_to) {
-      query = query.lte('created_at', filter.date_to)
-    }
-    if (filter.search) {
-      query = query.or(`case_number.ilike.%${filter.search}%,description.ilike.%${filter.search}%,reporter_name.ilike.%${filter.search}%`)
-    }
+    const { data, error } = await supabase.rpc('update_case_status', {
+      p_case_id: id, p_status: status, p_notes: notes, p_updated_by: updatedBy
+    });
+    if (error) throw error;
+    return data;
+  }
 
-    const { data, error } = await query
-    if (error) throw error
-    return data || []
-  },
+  async assignCase(id: string, officerId: string, assignedBy?: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .update({ assigned_officer_id: officerId, assigned_by: assignedBy || 'system', assigned_at: new Date().toISOString() })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
 
-  async getCaseById(id: string): Promise<PoliceCase | null> {
-    const { data, error } = await supabase
-      .from('police_cases')
-      .select(`
-        *,
-        reporting_officer:reporting_officer_id(id, badge_number, full_name, rank, phone),
-        assigned_officer:assigned_officer_id(id, badge_number, full_name, rank, phone),
-        station:station_id(id, station_code, name, address, phone)
-      `)
-      .eq('id', id)
-      .single()
+  async assignOfficer(caseId: string, officerId: string) {
+    return this.assignCase(caseId, officerId, 'system');
+  }
 
-    if (error) throw error
-    return data
-  },
+  async getCaseHistory(caseId: string) {
+    const { data, error } = await supabase.from('case_history').select('*').eq('case_id', caseId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  }
 
-  async createCase(caseData: Partial<PoliceCase>): Promise<PoliceCase> {
-    const { data, error } = await supabase
-      .from('police_cases')
-      .insert(caseData)
-      .select()
-      .single()
+  async getCaseTimeline(caseId: string) {
+    const { data, error } = await supabase.from('case_timeline')
+      .select('*').eq('case_id', caseId).order('created_at', { ascending: true });
+    if (error) throw error;
+    return data as CaseTimelineEvent[];
+  }
 
-    if (error) throw error
-    return data
-  },
+  async addCaseUpdate(caseId: string, update: CaseUpdate) {
+    const { data, error } = await supabase.from('case_updates').insert({
+      case_id: caseId, notes: update.notes, updated_by: update.updated_by, status: update.status,
+    }).select().single();
+    if (error) throw error;
+    return data;
+  }
 
-  async updateCase(id: string, updates: Partial<PoliceCase>): Promise<PoliceCase> {
-    const { data, error } = await supabase
-      .from('police_cases')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+  async searchCases(query: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .select('*').or(`case_number.ilike.%${query}%,description.ilike.%${query}%,incident_location.ilike.%${query}%`);
+    if (error) throw error;
+    return data as PoliceCase[];
+  }
 
-    if (error) throw error
-    return data
-  },
+  async getCasesByOfficer(officerId: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .select('*').eq('assigned_officer_id', officerId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as PoliceCase[];
+  }
 
-  async updateCaseStatus(id: string, status: CaseStatus, notes?: string): Promise<void> {
-    const updates: any = { status, updated_at: new Date().toISOString() }
-    if (status === 'closed' || status === 'resolved') {
-      updates.resolved_at = new Date().toISOString()
-      updates.resolution_notes = notes
-    }
+  async getCasesByReporter(reporterId: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .select('*').eq('reporting_officer_id', reporterId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as PoliceCase[];
+  }
 
-    const { error } = await supabase
-      .from('police_cases')
-      .update(updates)
-      .eq('id', id)
+  async transferCase(caseId: string, fromOfficerId: string, toOfficerId: string, reason: string) {
+    const { data, error } = await supabase.rpc('transfer_case', {
+      p_case_id: caseId, p_from_officer: fromOfficerId, p_to_officer: toOfficerId, p_reason: reason
+    });
+    if (error) throw error;
+    return data;
+  }
 
-    if (error) throw error
+  async escalateCase(caseId: string, reason: string, escalatedBy: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .update({ priority: 'high', escalated_at: new Date().toISOString(), escalated_by: escalatedBy, escalation_reason: reason })
+      .eq('id', caseId).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
 
-    // Add timeline event
-    await this.addTimelineEvent(id, 'status_changed', `Status updated to ${status}`, { new_status: status, notes })
-  },
+  async getCaseStats(officerId?: string) {
+    let query = supabase.from('police_cases').select('status', { count: 'exact' });
+    if (officerId) query = query.eq('assigned_officer_id', officerId);
+    const { data, error } = await query;
+    if (error) throw error;
+    const stats: Record<string, number> = {};
+    data?.forEach((row: any) => { stats[row.status] = (stats[row.status] || 0) + 1; });
+    return stats;
+  }
 
-  async assignOfficer(caseId: string, officerId: string): Promise<void> {
-    const { error } = await supabase
-      .from('police_cases')
-      .update({ 
-        assigned_officer_id: officerId,
-        status: 'under_investigation',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', caseId)
+  async closeCase(caseId: string, closureData: { outcome: string; closedBy: string; notes?: string }) {
+    const { data, error } = await supabase.from('police_cases')
+      .update({ status: 'closed', resolution_notes: closureData.notes, resolved_at: new Date().toISOString() })
+      .eq('id', caseId).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
 
-    if (error) throw error
+  async reopenCase(caseId: string, reason: string, reopenedBy: string) {
+    const { data, error } = await supabase.from('police_cases')
+      .update({ status: 'reopened', reopened_by: reopenedBy })
+      .eq('id', caseId).select().single();
+    if (error) throw error;
+    return data as PoliceCase;
+  }
 
-    await this.addTimelineEvent(caseId, 'officer_assigned', 'Case assigned to investigating officer', { officer_id: officerId })
-  },
+  subscribeToCaseUpdates(caseId: string, callback: (payload: any) => void) {
+    return supabase.channel(`case-${caseId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'case_updates', filter: `case_id=eq.${caseId}` }, callback)
+      .subscribe();
+  }
 
-  async forwardCase(caseId: string, forwardTo: string, notes?: string): Promise<void> {
-    const { error } = await supabase
-      .from('police_cases')
-      .update({
-        forwarded_to: forwardTo,
-        forwarded_at: new Date().toISOString(),
-        status: 'transferred',
-        forwarding_notes: notes,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', caseId)
-
-    if (error) throw error
-
-    await this.addTimelineEvent(caseId, 'case_forwarded', `Case forwarded to ${forwardTo}`, { forwarded_to: forwardTo, notes })
-  },
-
-  async getCaseTimeline(caseId: string): Promise<CaseTimelineEvent[]> {
-    const { data, error } = await supabase
-      .from('police_case_timeline')
-      .select(`
-        *,
-        officer:officer_id(id, badge_number, full_name, rank)
-      `)
-      .eq('case_id', caseId)
-      .order('created_at', { ascending: true })
-
-    if (error) throw error
-    return data || []
-  },
-
-  async addTimelineEvent(caseId: string, action: string, description?: string, metadata?: Record<string, any>): Promise<void> {
-    const { error } = await supabase
-      .from('police_case_timeline')
-      .insert({
-        case_id: caseId,
-        action,
-        description,
-        metadata,
-        created_at: new Date().toISOString()
-      })
-
-    if (error) throw error
-  },
-
-  async getCaseStats(stationId?: string): Promise<{
-    total: number
-    open: number
-    investigating: number
-    closed: number
-    critical: number
-    by_type: Record<string, number>
-  }> {
-    let query = supabase.from('police_cases').select('*', { count: 'exact' })
-    if (stationId) {
-      query = query.eq('station_id', stationId)
-    }
-
-    const { count: total } = await query
-    const { count: open } = await supabase.from('police_cases').select('*', { count: 'exact' }).eq('status', 'reported')
-    const { count: investigating } = await supabase.from('police_cases').select('*', { count: 'exact' }).eq('status', 'under_investigation')
-    const { count: closed } = await supabase.from('police_cases').select('*', { count: 'exact' }).in('status', ['closed', 'resolved', 'dismissed'])
-    const { count: critical } = await supabase.from('police_cases').select('*', { count: 'exact' }).eq('priority', 'critical')
-
-    const { data: byType } = await supabase
-      .from('police_cases')
-      .select('case_type')
-      .then(res => {
-        const counts: Record<string, number> = {}
-        res.data?.forEach((c: any) => {
-          counts[c.case_type] = (counts[c.case_type] || 0) + 1
-        })
-        return { data: counts }
-      })
-
-    return {
-      total: total || 0,
-      open: open || 0,
-      investigating: investigating || 0,
-      closed: closed || 0,
-      critical: critical || 0,
-      by_type: byType || {}
-    }
+  subscribeToNewCases(callback: (payload: any) => void) {
+    return supabase.channel('new-cases')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'police_cases' }, callback)
+      .subscribe();
   }
 }
+
+export const caseService = new CaseService();

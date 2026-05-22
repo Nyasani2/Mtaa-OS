@@ -1,24 +1,39 @@
 import { supabase } from '@/lib/supabase';
 
-export async function getUserFinancialHistory(user_id: string) {
-  const { data: txns } = await supabase
+export interface CreditTransaction {
+  id: string;
+  userId: string;
+  type: 'transfer' | 'debit' | 'loan' | 'investment' | 'reward';
+  amount: number;
+  description: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: string;
+}
+
+export async function getUserCreditHistory(userId: string): Promise<CreditTransaction[]> {
+  const { data, error } = await supabase
+    .from('credit_transactions')
     .select('*')
-    .eq('user_id', user_id);
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
 
-  const { data: loans } = await supabase
-    .from('loan_repayments')
-    .select('*')
-    .eq('user_id', user_id);
+  if (error) throw error;
+  return (data || []) as CreditTransaction[];
+}
 
-  const totalPaid = (loans || []).reduce((s, l) => s + Number(l.amount), 0);
-  const totalSpent = (txns || [])
-    .filter(t => t.type === 'debit')
-    .reduce((s, t) => s + Number(t.amount), 0);
+export async function getCreditStats(userId: string) {
+  const { data, error } = await supabase
+    .from('credit_transactions')
+    .select('type, amount', { count: 'exact' })
+    .eq('user_id', userId)
+    .eq('status', 'completed');
 
-  return {
-    totalPaid,
-    totalSpent,
-    reliability_index: totalPaid > totalSpent ? 0.8 : 0.4,
-    activity_score: Math.min((txns?.length || 0) / 50, 1),
-  };
+  if (error) throw error;
+
+  const stats = { total: 0, byType: {} as Record<string, number> };
+  data?.forEach((row: any) => {
+    stats.total += row.amount;
+    stats.byType[row.type] = (stats.byType[row.type] || 0) + row.amount;
+  });
+  return stats;
 }

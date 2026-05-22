@@ -1,15 +1,16 @@
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { EducationIndex } from "@/domains/education/pages/index";
 
-export default function EducationScreen() {
+export default function EducationIndex() {
   return (
     <View style={styles.container}>
-      <EducationIndex />
+      <Text style={styles.title}>Education</Text>
+      <Text>Access schools, teachers, lessons, and educational resources.</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: 'white', marginBottom: 16 },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 }
 });

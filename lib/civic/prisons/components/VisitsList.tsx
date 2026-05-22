@@ -1,42 +1,39 @@
-import { PrisonVisit } from '@/types/prisons';
-import { formatDateTime } from '@/lib/utils';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useVisits } from '../hooks/useVisits';
+import { formatDate } from '@/lib/utils';
 
-const statusColors: Record<string, string> = {
-  scheduled: 'bg-gray-100 text-gray-800',
-  checked_in: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-  denied: 'bg-orange-100 text-orange-800',
-};
+interface Props {
+  facilityId?: string;
+  inmateId?: string;
+}
 
-export function VisitsList({ visits, onCheckIn, onCheckOut }: { visits: PrisonVisit[]; onCheckIn?: (id: string) => void; onCheckOut?: (id: string) => void }) {
+export default function VisitsList({ facilityId, inmateId }: Props) {
+  const { visits, loading } = useVisits(facilityId, inmateId);
+
+  if (loading) return <Text>Loading visits...</Text>;
+
   return (
-    <div className="space-y-2">
-      {visits.map(v => (
-        <div key={v.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="font-medium">{v.visitor_name}</span>
-              <span className="text-gray-500 ml-2">visiting {v.inmate?.full_name || '—'}</span>
-            </div>
-            <span className={`text-xs px-2 py-0.5 rounded capitalize ${statusColors[v.status] || 'bg-gray-100 text-gray-800'}`}>{v.status}</span>
-          </div>
-          <div className="text-gray-500 mt-1">{formatDateTime(v.scheduled_at)} • {v.duration_minutes} min • {v.visit_type}</div>
-          {v.visitor_relationship && <div className="text-xs text-gray-600">Relationship: {v.visitor_relationship}</div>}
-          {v.check_in && <div className="text-xs text-green-600">Checked in: {formatDateTime(v.check_in)}</div>}
-          {v.check_out && <div className="text-xs text-blue-600">Checked out: {formatDateTime(v.check_out)}</div>}
-          {v.items_seized?.length > 0 && <div className="text-xs text-red-600">Items seized: {v.items_seized.join(', ')}</div>}
-          <div className="flex gap-2 mt-2">
-            {onCheckIn && v.status === 'scheduled' && (
-              <button onClick={() => onCheckIn(v.id)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Check In</button>
-            )}
-            {onCheckOut && v.status === 'checked_in' && (
-              <button onClick={() => onCheckOut(v.id)} className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">Check Out</button>
-            )}
-          </div>
-        </div>
-      ))}
-      {visits.length === 0 && <div className="text-gray-400 text-sm">No visits scheduled</div>}
-    </div>
+    <FlatList
+      data={visits}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.card}>
+          <Text style={styles.name}>{item.visitor_name}</Text>
+          <Text>Inmate: {item.inmate?.first_name} {item.inmate?.last_name}</Text>
+          <Text>{formatDate(item.scheduled_at || '')} — {item.duration_minutes}min</Text>
+          <Text>Type: {item.visit_type}</Text>
+          <Text>Relationship: {item.visitor_relationship}</Text>
+          {item.check_in && <Text>Checked in: {formatDate(item.check_in)}</Text>}
+          {item.check_out && <Text>Checked out: {formatDate(item.check_out)}</Text>}
+          {item.items_seized && <Text>Items seized: {item.items_seized.join(', ')}</Text>}
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#fff', padding: 12, marginBottom: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  name: { fontWeight: '600', fontSize: 16, marginBottom: 4 }
+});

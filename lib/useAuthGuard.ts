@@ -1,33 +1,18 @@
 import { useEffect } from "react";
-import { supabase } from "./supabase";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
+import { useAuth } from "@/hooks/useAuth";
 
-export function useAuthGuard() {
+export function useAuthGuard(redirectTo: Href = "/login" as Href) {
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getUser();
+    if (!isLoading && !user) {
+      router.replace(redirectTo);
+    }
+  }, [user, isLoading, router, redirectTo]);
 
-      const user = data?.user;
-
-      if (!user) {
-        router.replace("/login");
-      }
-    };
-
-    checkAuth();
-
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!session) {
-          router.replace("/login");
-        }
-      }
-    );
-
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
+  return { isLoading, isAuthenticated: !!user };
 }
+
+export default useAuthGuard;

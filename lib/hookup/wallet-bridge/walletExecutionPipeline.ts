@@ -1,50 +1,18 @@
-import { walletEventBus } from './walletEventBus'
-import { walletCoreEngine } from './walletCoreEngine'
+import { WalletCoreEngine } from "./walletCoreEngine";
 
-/**
- * MTAA Wallet Execution Pipeline
- * ------------------------------
- * Central decision layer between:
- * EventBus → Core Engine → Payment Rails
- */
+export type WalletEventType = "QR_SCANNED" | "TRANSFER_INIT" | "BALANCE_REQUEST" | "PAYMENT_REQUEST";
 
-class WalletExecutionPipeline {
-  private initialized = false
+export function walletExecutionPipeline(event: { type: WalletEventType; payload?: any }) {
+  const engine = new WalletCoreEngine();
 
-  init() {
-    if (this.initialized) return
-    this.initialized = true
-
-    // QR PAYMENT FLOW
-    walletEventBus.on(async (event) => {
-      switch (event.type) {
-        case 'QR_SCANNED':
-          await this.handleQR(event.payload)
-          break
-
-        case 'TRANSFER_INIT':
-          await this.handleTransfer(event.payload)
-          break
-      }
-    })
-  }
-
-  async handleQR(payload: any) {
-    try {
-      return await walletCoreEngine.processQR(payload.qr)
-    } catch (err) {
-      walletEventBus.emit('TRANSACTION_FAILED', err)
-    }
-  }
-
-  async handleTransfer(payload: any) {
-    try {
-      return await walletCoreEngine.processTransfer(payload)
-    } catch (err) {
-      walletEventBus.emit('TRANSACTION_FAILED', err)
-    }
+  switch (event.type) {
+    case "QR_SCANNED":
+      return engine.processQR(event.payload?.data);
+    case "TRANSFER_INIT":
+      return engine.processTransfer(event.payload);
+    case "BALANCE_REQUEST":
+      return engine.getBalance();
+    default:
+      return Promise.resolve({ success: false, error: "Unknown event type" });
   }
 }
-
-// SINGLETON
-export const walletExecutionPipeline = new WalletExecutionPipeline()

@@ -1,27 +1,38 @@
-import { CourtJudgment } from '@/types/courts';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useJudgments } from '../hooks/useJudgments';
 import { formatDate } from '@/lib/utils';
 
-export function JudgmentsList({ judgments, caseId }: { judgments: CourtJudgment[]; caseId?: string }) {
+interface Props {
+  caseId?: string;
+}
+
+export default function JudgmentsList({ caseId }: Props) {
+  const { judgments, loading } = useJudgments(caseId);
+
+  if (loading) return <Text>Loading judgments...</Text>;
+
   return (
-    <div className="space-y-2">
-      {judgments.map(j => (
-        <div key={j.id} className="border rounded p-3 text-sm">
-          <div className="flex justify-between">
-            <span className="font-medium capitalize">{j.judgment_type.replace('_', ' ')}</span>
-            <span className="text-xs text-gray-500">{formatDate(j.delivered_date)}</span>
-          </div>
-          {j.sentence_type && (
-            <div className="text-gray-600 mt-1">
-              Sentence: <span className="capitalize">{j.sentence_type.replace('_', ' ')}</span>
-              {j.sentence_duration_months && ` (${j.sentence_duration_months} months)`}
-            </div>
-          )}
-          {j.fine_amount > 0 && <div className="text-red-600">Fine: KES {j.fine_amount.toLocaleString()}</div>}
-          {j.judge && <div className="text-xs text-gray-500 mt-1">By: {j.judge.full_name}</div>}
-          {j.is_appealable && <div className="text-xs text-amber-600 mt-1">Appealable until {formatDate(j.appeal_deadline)}</div>}
-        </div>
-      ))}
-      {judgments.length === 0 && <div className="text-gray-400 text-sm">No judgments recorded</div>}
-    </div>
+    <FlatList
+      data={judgments}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.card}>
+          <Text style={styles.type}>{item.judgment_type}</Text>
+          <Text>Delivered: {formatDate(item.delivered_date || '')}</Text>
+          <Text>{item.summary}</Text>
+          {item.sentence_type && <Text>Sentence: {item.sentence_type} ({item.sentence_duration_months} months)</Text>}
+          {item.fine_amount ? <Text>Fine: ${item.fine_amount.toFixed(2)}</Text> : null}
+          {item.judge && <Text>Judge: {item.judge.first_name} {item.judge.last_name}</Text>}
+          <Text>Appealable: {item.is_appealable ? 'Yes' : 'No'}</Text>
+          {item.appeal_deadline && <Text>Deadline: {formatDate(item.appeal_deadline)}</Text>}
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  card: { backgroundColor: '#fff', padding: 12, marginBottom: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  type: { fontWeight: '600', fontSize: 16, marginBottom: 4 }
+});

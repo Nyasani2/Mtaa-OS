@@ -1,12 +1,4 @@
-export const CLOCK_APP = {
-  id: "clock",
-  name: "Clock",
-  description: "Time, alarms, world clock",
-  version: "1.0.0",
-  category: "utility",
-  icon: "clock",
-  route: "/(utility)/clock",
-  color: "#52525B",
-  installable: true,
-  size: "12MB",
-};
+import { AppManifest } from '@/lib/apps-store/types';
+import manifest from '@/lib/modules/clock/manifest';
+
+export default manifest as AppManifest;

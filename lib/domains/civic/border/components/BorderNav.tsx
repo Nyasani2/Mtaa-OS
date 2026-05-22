@@ -1,61 +1,32 @@
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
-import { Text } from 'react-native';
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
-interface BorderNavProps {
-  alertCount: number;
-}
-
-const navItems = [
-  { href: '/(os)/civic/border/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/(os)/civic/border/cargo', label: 'Cargo', icon: '📦' },
-  { href: '/(os)/civic/border/inspection', label: 'Inspect', icon: '🔍' },
-  { href: '/(os)/civic/border/transit', label: 'Transit', icon: '🛤️' },
-  { href: '/(os)/civic/border/operations', label: 'Ops', icon: '👮' },
-];
-
-export function BorderNav({ alertCount }: BorderNavProps) {
+const BorderNav: React.FC = () => {
   const router = useRouter();
-  const pathname = usePathname();
+
+  const navItems = [
+    { label: 'Dashboard', path: '/(civic)/border' },
+    { label: 'Entries', path: '/(civic)/border/entries' },
+    { label: 'Alerts', path: '/(civic)/border/alerts' },
+    { label: 'Reports', path: '/(civic)/border/reports' },
+  ];
 
   return (
-    <View style={styles.navContainer}>
-      {navItems.map(item => {
-        const isActive = pathname?.startsWith(item.href);
-        return (
-          <TouchableOpacity
-            key={item.href}
-            style={[styles.navItem, isActive && styles.navItemActive]}
-            onPress={() => router.push(item.href)}
-          >
-            <Text style={styles.navIcon}>{item.icon}</Text>
-            <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>{item.label}</Text>
-            {item.href.includes('dashboard') && alertCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{alertCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+    <View style={styles.container}>
+      {navItems.map((item, index) => (
+        <TouchableOpacity key={index} onPress={() => router.push(item.path as any)} style={styles.item}>
+          <Text style={styles.label}>{item.label}</Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  navContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#1e293b',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
-  },
-  navItem: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 6 },
-  navItemActive: { backgroundColor: '#0f172a' },
-  navIcon: { fontSize: 18, marginBottom: 2 },
-  navLabel: { color: '#94a3b8', fontSize: 10 },
-  navLabelActive: { color: '#10b981', fontWeight: '700' },
-  badge: { position: 'absolute', top: 2, right: 8, backgroundColor: '#ef4444', borderRadius: 8, minWidth: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  container: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  item: { paddingHorizontal: 16, paddingVertical: 8 },
+  label: { fontSize: 14, color: '#374151' },
 });
+
+export default BorderNav;

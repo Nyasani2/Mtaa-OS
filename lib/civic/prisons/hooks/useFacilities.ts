@@ -1,26 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getFacilities, getFacility, createFacility, updateFacility, deleteFacility } from '@/services/prisonFacilities';
-import { PrisonFacility } from '@/types/prisons';
+import { useState, useEffect } from 'react';
+import { PrisonFacilitiesService } from '../services/prisonFacilities';
 
 export function useFacilities() {
-  return useQuery({ queryKey: ['prisonFacilities'], queryFn: getFacilities });
-}
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useFacility(id: string) {
-  return useQuery({ queryKey: ['prisonFacility', id], queryFn: () => getFacility(id), enabled: !!id });
-}
+  useEffect(() => {
+    PrisonFacilitiesService.getFacilities()
+      .then(setFacilities)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-export function useCreateFacility() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createFacility, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonFacilities'] }) });
-}
-
-export function useUpdateFacility() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, updates }: { id: string; updates: Partial<PrisonFacility> }) => updateFacility(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonFacilities'] }) });
-}
-
-export function useDeleteFacility() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: deleteFacility, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonFacilities'] }) });
+  return { facilities, loading, error };
 }

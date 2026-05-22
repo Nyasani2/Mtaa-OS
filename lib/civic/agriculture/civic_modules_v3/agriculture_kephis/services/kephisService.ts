@@ -1,211 +1,188 @@
-import { supabase } from "@/lib/supabase/client";
-import {
-  CropCertificate,
-  SeedLicense,
-  FarmInspection,
-  PestDiseaseReport,
-  AgriApplication,
-  MarketPrice,
-} from "../types";
-
-const TABLE_CERTIFICATES = "crop_certificates";
-const TABLE_SEED_LICENSES = "seed_licenses";
-const TABLE_INSPECTIONS = "farm_inspections";
-const TABLE_PEST_REPORTS = "pest_disease_reports";
-const TABLE_APPLICATIONS = "agri_applications";
-const TABLE_MARKET_PRICES = "market_prices";
+import { supabase } from '@/lib/supabase';
+import { CropCertificate, SeedLicense, FarmInspection, PestDiseaseReport, AgriApplication, MarketPrice } from '../types';
 
 export class KEPHISService {
-  // ─── CROP CERTIFICATES ───
-  static async getCertificates(userId: string): Promise<CropCertificate[]> {
-    const { data, error } = await supabase
-      .from(TABLE_CERTIFICATES)
-      .select("*")
-      .eq("user_id", userId)
-      .order("expiry_date", { ascending: true });
+  // === STATIC METHODS (for controllers) ===
+
+  static async getCertificates(userId?: string) {
+    let query = supabase.from('kephis_certificates').select('*');
+    if (userId) query = query.eq('applicant_id', userId);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as CropCertificate[];
   }
 
-  static async getCertificateById(id: string): Promise<CropCertificate | null> {
-    const { data, error } = await supabase
-      .from(TABLE_CERTIFICATES)
-      .select("*")
-      .eq("id", id)
-      .single();
+  static async getSeedLicenses(userId?: string) {
+    let query = supabase.from('kephis_seed_licenses').select('*');
+    if (userId) query = query.eq('dealer_id', userId);
+    const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return data as SeedLicense[];
   }
 
-  static async createCertificate(cert: Omit<CropCertificate, "id" | "created_at" | "updated_at">): Promise<CropCertificate> {
-    const { data, error } = await supabase
-      .from(TABLE_CERTIFICATES)
-      .insert(cert)
-      .select()
-      .single();
+  static async getInspections(farmId?: string) {
+    let query = supabase.from('kephis_inspections').select('*');
+    if (farmId) query = query.eq('farm_id', farmId);
+    const { data, error } = await query.order('inspection_date', { ascending: false });
     if (error) throw error;
-    return data;
+    return data as FarmInspection[];
   }
 
-  static async revokeCertificate(id: string, reason: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_CERTIFICATES)
-      .update({ status: "revoked", updated_at: new Date().toISOString() })
-      .eq("id", id);
+  static async getPestReports(county?: string) {
+    let query = supabase.from('kephis_pest_reports').select('*');
+    if (county) query = query.eq('county', county);
+    const { data, error } = await query.order('reported_at', { ascending: false });
     if (error) throw error;
+    return data as PestDiseaseReport[];
   }
 
-  // ─── SEED LICENSES ───
-  static async getSeedLicenses(userId: string): Promise<SeedLicense[]> {
-    const { data, error } = await supabase
-      .from(TABLE_SEED_LICENSES)
-      .select("*")
-      .eq("user_id", userId)
-      .order("expiry_date", { ascending: true });
+  static async getApplications(userId?: string) {
+    let query = supabase.from('kephis_applications').select('*');
+    if (userId) query = query.eq('applicant_id', userId);
+    const { data, error } = await query.order('submitted_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return data as AgriApplication[];
   }
 
-  static async createSeedLicense(license: Omit<SeedLicense, "id" | "created_at" | "updated_at">): Promise<SeedLicense> {
-    const { data, error } = await supabase
-      .from(TABLE_SEED_LICENSES)
-      .insert(license)
-      .select()
-      .single();
+  static async getMarketPrices(commodity?: string, county?: string) {
+    let query = supabase.from('kephis_market_prices').select('*');
+    if (commodity) query = query.eq('commodity', commodity);
+    if (county) query = query.eq('county', county);
+    const { data, error } = await query.order('date', { ascending: false });
     if (error) throw error;
-    return data;
+    return data as MarketPrice[];
   }
 
-  static async renewSeedLicense(id: string, newExpiry: string): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_SEED_LICENSES)
-      .update({ expiry_date: newExpiry, status: "active", updated_at: new Date().toISOString() })
-      .eq("id", id);
+  static async createCertificate(cert: Omit<CropCertificate, 'id' | 'created_at' | 'updated_at'>) {
+    const { data, error } = await supabase.from('kephis_certificates').insert(cert).select().single();
     if (error) throw error;
+    return data as CropCertificate;
   }
 
-  // ─── FARM INSPECTIONS ───
-  static async getInspections(farmId?: string): Promise<FarmInspection[]> {
-    let query = supabase
-      .from(TABLE_INSPECTIONS)
-      .select("*")
-      .order("inspection_date", { ascending: false });
-    if (farmId) query = query.eq("farm_id", farmId);
-    const { data, error } = await query;
+  static async reportPestDisease(report: Omit<PestDiseaseReport, 'id' | 'created_at' | 'updated_at'>) {
+    const { data, error } = await supabase.from('kephis_pest_reports').insert(report).select().single();
     if (error) throw error;
-    return data || [];
+    return data as PestDiseaseReport;
   }
 
-  static async createInspection(inspection: Omit<FarmInspection, "id" | "created_at">): Promise<FarmInspection> {
-    const { data, error } = await supabase
-      .from(TABLE_INSPECTIONS)
-      .insert(inspection)
-      .select()
-      .single();
+  static async scheduleInspection(farmId: string, inspectorId: string, date: string) {
+    const { data, error } = await supabase.from('kephis_inspections').insert({
+      farm_id: farmId, inspector_id: inspectorId, inspection_date: date, status: 'scheduled',
+    }).select().single();
     if (error) throw error;
-    return data;
+    return data as FarmInspection;
   }
 
-  // ─── PEST / DISEASE REPORTS ───
-  static async getPestReports(county?: string): Promise<PestDiseaseReport[]> {
-    let query = supabase
-      .from(TABLE_PEST_REPORTS)
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (county) query = query.eq("county", county);
-    const { data, error } = await query;
+  static async completeInspection(inspectionId: string, findings: string, status: FarmInspection['status']) {
+    const { data, error } = await supabase.from('kephis_inspections')
+      .update({ findings, status, completed_at: new Date().toISOString() })
+      .eq('id', inspectionId).select().single();
     if (error) throw error;
-    return data || [];
+    return data as FarmInspection;
   }
 
-  static async reportPestDisease(report: Omit<PestDiseaseReport, "id" | "created_at" | "updated_at">): Promise<PestDiseaseReport> {
-    const { data, error } = await supabase
-      .from(TABLE_PEST_REPORTS)
-      .insert(report)
-      .select()
-      .single();
+  static async approveCertificate(certId: string) {
+    const { data, error } = await supabase.from('kephis_certificates')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', certId).select().single();
     if (error) throw error;
-    return data;
+    return data as CropCertificate;
   }
 
-  static async updatePestStatus(id: string, status: PestDiseaseReport["status"]): Promise<void> {
-    const { error } = await supabase
-      .from(TABLE_PEST_REPORTS)
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id);
+  static async rejectCertificate(certId: string, reason: string) {
+    const { data, error } = await supabase.from('kephis_certificates')
+      .update({ status: 'rejected', rejection_reason: reason, rejected_at: new Date().toISOString() })
+      .eq('id', certId).select().single();
     if (error) throw error;
+    return data as CropCertificate;
   }
 
-  // ─── APPLICATIONS ───
-  static async getApplications(userId: string): Promise<AgriApplication[]> {
-    const { data, error } = await supabase
-      .from(TABLE_APPLICATIONS)
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+  static async verifyCertificate(certNumber: string): Promise<CropCertificate> {
+    const { data, error } = await supabase.from('kephis_certificates').select('*').eq('certificate_number', certNumber).single();
     if (error) throw error;
-    return data || [];
+    return data as CropCertificate;
   }
 
-  static async createApplication(app: Omit<AgriApplication, "id" | "created_at" | "updated_at">): Promise<AgriApplication> {
-    const { data, error } = await supabase
-      .from(TABLE_APPLICATIONS)
-      .insert(app)
-      .select()
-      .single();
+  static async searchCertificate(query: string): Promise<CropCertificate[]> {
+    const { data, error } = await supabase.from('kephis_certificates')
+      .select('*').or(`certificate_number.ilike.%${query}%,product_name.ilike.%${query}%,applicant_name.ilike.%${query}%`);
     if (error) throw error;
-    return data;
+    return data as CropCertificate[];
   }
 
-  static async updateApplicationStatus(id: string, status: AgriApplication["status"], reason?: string): Promise<void> {
-    const update: any = { status, updated_at: new Date().toISOString() };
-    if (reason) update.rejection_reason = reason;
-    if (status === "completed") update.completion_date = new Date().toISOString();
-    const { error } = await supabase.from(TABLE_APPLICATIONS).update(update).eq("id", id);
+  static async getStats() {
+    const { data, error } = await supabase.from('kephis_certificates').select('status', { count: 'exact' });
     if (error) throw error;
+    const stats = { total: data?.length || 0, pending: 0, approved: 0, rejected: 0 };
+    data?.forEach((row: any) => {
+      if (row.status === 'pending') stats.pending++;
+      else if (row.status === 'approved') stats.approved++;
+      else if (row.status === 'rejected') stats.rejected++;
+    });
+    return stats;
   }
 
-  // ─── MARKET PRICES ───
-  static async getMarketPrices(commodity?: string, county?: string): Promise<MarketPrice[]> {
-    let query = supabase
-      .from(TABLE_MARKET_PRICES)
-      .select("*")
-      .order("date_recorded", { ascending: false });
-    if (commodity) query = query.eq("commodity", commodity);
-    if (county) query = query.eq("county", county);
-    const { data, error } = await query.limit(50);
-    if (error) throw error;
-    return data || [];
+  // === INSTANCE METHODS (for components like CertVerify) ===
+
+  async verifyCertificate(certNumber: string): Promise<CropCertificate> {
+    return KEPHISService.verifyCertificate(certNumber);
   }
 
-  static async addMarketPrice(price: Omit<MarketPrice, "id" | "created_at">): Promise<MarketPrice> {
-    const { data, error } = await supabase
-      .from(TABLE_MARKET_PRICES)
-      .insert(price)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
+  async searchCertificate(query: string): Promise<CropCertificate[]> {
+    return KEPHISService.searchCertificate(query);
   }
 
-  // ─── SEARCH ───
-  static async searchCertificate(certNumber: string): Promise<CropCertificate | null> {
-    const { data, error } = await supabase
-      .from(TABLE_CERTIFICATES)
-      .select("*")
-      .eq("certificate_number", certNumber.toUpperCase())
-      .single();
-    if (error) return null;
-    return data;
+  async getCertificates(userId?: string) {
+    return KEPHISService.getCertificates(userId);
   }
 
-  static async searchSeedLicense(licenseNumber: string): Promise<SeedLicense | null> {
-    const { data, error } = await supabase
-      .from(TABLE_SEED_LICENSES)
-      .select("*")
-      .eq("license_number", licenseNumber.toUpperCase())
-      .single();
-    if (error) return null;
-    return data;
+  async getSeedLicenses(userId?: string) {
+    return KEPHISService.getSeedLicenses(userId);
+  }
+
+  async getInspections(farmId?: string) {
+    return KEPHISService.getInspections(farmId);
+  }
+
+  async getPestReports(county?: string) {
+    return KEPHISService.getPestReports(county);
+  }
+
+  async getApplications(userId?: string) {
+    return KEPHISService.getApplications(userId);
+  }
+
+  async getMarketPrices(commodity?: string, county?: string) {
+    return KEPHISService.getMarketPrices(commodity, county);
+  }
+
+  async createCertificate(cert: Omit<CropCertificate, 'id' | 'created_at' | 'updated_at'>) {
+    return KEPHISService.createCertificate(cert);
+  }
+
+  async reportPestDisease(report: Omit<PestDiseaseReport, 'id' | 'created_at' | 'updated_at'>) {
+    return KEPHISService.reportPestDisease(report);
+  }
+
+  async scheduleInspection(farmId: string, inspectorId: string, date: string) {
+    return KEPHISService.scheduleInspection(farmId, inspectorId, date);
+  }
+
+  async completeInspection(inspectionId: string, findings: string, status: FarmInspection['status']) {
+    return KEPHISService.completeInspection(inspectionId, findings, status);
+  }
+
+  async approveCertificate(certId: string) {
+    return KEPHISService.approveCertificate(certId);
+  }
+
+  async rejectCertificate(certId: string, reason: string) {
+    return KEPHISService.rejectCertificate(certId, reason);
+  }
+
+  async getStats() {
+    return KEPHISService.getStats();
   }
 }
+
+export const kephisService = new KEPHISService();

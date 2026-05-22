@@ -1,19 +1,42 @@
-'use client';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { CourtJuryService } from '../services/courtJury';
 
-import { useState } from 'react';
-import { CourtJuror } from '@/types/courts';
+interface Props {
+  onSubmit?: () => void;
+}
 
-export function JurorForm({ onSubmit }: { onSubmit: (data: Partial<CourtJuror>) => void }) {
-  const [form, setForm] = useState<Partial<CourtJuror>>({ is_available: true });
+export default function JurorForm({ onSubmit }: Props) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [occupation, setOccupation] = useState('');
+
+  const handleSubmit = async () => {
+    await CourtJuryService.assignJuror({
+      first_name: firstName,
+      last_name: lastName,
+      id_number: idNumber,
+      occupation,
+      is_available: true
+    } as any);
+    onSubmit?.();
+  };
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Court House ID" value={form.court_house_id || ''} onChange={e => setForm(f => ({ ...f, court_house_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Full Name" value={form.full_name || ''} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="ID Number" value={form.id_number || ''} onChange={e => setForm(f => ({ ...f, id_number: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Phone" value={form.phone || ''} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <input placeholder="Occupation" value={form.occupation || ''} onChange={e => setForm(f => ({ ...f, occupation: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Add Juror</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.title}>Add Juror</Text>
+      <TextInput style={styles.input} placeholder="First Name" value={firstName} onChangeText={setFirstName} />
+      <TextInput style={styles.input} placeholder="Last Name" value={lastName} onChangeText={setLastName} />
+      <TextInput style={styles.input} placeholder="ID Number" value={idNumber} onChangeText={setIdNumber} />
+      <TextInput style={styles.input} placeholder="Occupation" value={occupation} onChangeText={setOccupation} />
+      <Button title="Add Juror" onPress={handleSubmit} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
+});

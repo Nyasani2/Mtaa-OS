@@ -1,27 +1,18 @@
 import { supabase } from '@/lib/supabase';
-import { CourtJudgment } from '@/types/courts';
+import { CourtJudgment } from '../types';
 
-export async function getJudgments(caseId?: string): Promise<CourtJudgment[]> {
-  let q = supabase.from('court_judgments').select(`*, court_judges:judge_id(*)`);
-  if (caseId) q = q.eq('case_id', caseId);
-  const { data, error } = await q.order('delivered_date', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((d: any) => ({ ...d, judge: d.court_judges }));
-}
+export class CourtJudgmentsService {
+  static async getJudgments(caseId?: string): Promise<CourtJudgment[]> {
+    let query = supabase.from('court_judgments').select('*, case:court_cases(*), judge:court_judges(*)');
+    if (caseId) query = query.eq('case_id', caseId);
+    const { data, error } = await query.order('delivered_date', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
 
-export async function createJudgment(judgment: Partial<CourtJudgment>): Promise<CourtJudgment> {
-  const { data, error } = await supabase.from('court_judgments').insert(judgment).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function updateJudgment(id: string, updates: Partial<CourtJudgment>): Promise<CourtJudgment> {
-  const { data, error } = await supabase.from('court_judgments').update(updates).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteJudgment(id: string): Promise<void> {
-  const { error } = await supabase.from('court_judgments').delete().eq('id', id);
-  if (error) throw error;
+  static async createJudgment(data: Partial<CourtJudgment>): Promise<CourtJudgment> {
+    const { data: result, error } = await supabase.from('court_judgments').insert(data).select().single();
+    if (error) throw error;
+    return result;
+  }
 }

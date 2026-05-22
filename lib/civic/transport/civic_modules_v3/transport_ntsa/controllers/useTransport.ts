@@ -1,151 +1,143 @@
-"use client";
-
-import { useCallback } from "react";
-import { useTransportStore } from "../state/store";
-import { NTSAService } from "../services/ntsaService";
-import {
-  DrivingLicense,
-  VehicleRegistration,
-  InspectionRecord,
-  TrafficOffence,
-  NTSAApplication,
-  RoadIncident,
-} from "../types";
+import { useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { ntsaService } from '../services/ntsaService';
+import { useTransportStore } from '../state/store';
+import { VehicleRegistration, DrivingLicense, InspectionRecord, Sacco, TrafficOffence, NTSAApplication, RoadIncident } from '../types';
 
 export function useTransport() {
   const store = useTransportStore();
-
-  const loadLicenses = useCallback(async (userId: string) => {
-    store.setLoading(true);
-    store.clearError();
-    try {
-      const licenses = await NTSAService.getLicenses(userId);
-      store.setLicenses(licenses);
-    } catch (err: any) {
-      store.setError(err.message || "Failed to load licenses");
-    } finally {
-      store.setLoading(false);
-    }
-  }, []);
 
   const loadVehicles = useCallback(async (userId: string) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const vehicles = await NTSAService.getVehicles(userId);
-      store.setVehicles(vehicles);
+      const data = await ntsaService.getVehicles({ ownerId: userId });
+      store.setVehicles(data);
     } catch (err: any) {
-      store.setError(err.message || "Failed to load vehicles");
+      store.setError(err.message);
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
+
+  const loadLicenses = useCallback(async (userId: string) => {
+    store.setLoading(true);
+    store.clearError();
+    try {
+      const data = await ntsaService.getLicenses({ holderId: userId });
+      store.setLicenses(data);
+    } catch (err: any) {
+      store.setError(err.message);
+    } finally {
+      store.setLoading(false);
+    }
+  }, [store]);
 
   const loadOffences = useCallback(async (userId: string) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const offences = await NTSAService.getOffences(userId);
-      store.setOffences(offences);
+      const data = await ntsaService.getOffences({ driverId: userId });
+      store.setOffences(data);
     } catch (err: any) {
-      store.setError(err.message || "Failed to load offences");
+      store.setError(err.message);
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
   const loadApplications = useCallback(async (userId: string) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const apps = await NTSAService.getApplications(userId);
-      store.setApplications(apps);
+      const data = await ntsaService.getApplications({ applicantId: userId });
+      store.setApplications(data);
     } catch (err: any) {
-      store.setError(err.message || "Failed to load applications");
+      store.setError(err.message);
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
-  const loadIncidents = useCallback(async (county?: string) => {
+  const loadIncidents = useCallback(async () => {
     store.setLoading(true);
     store.clearError();
     try {
-      const incidents = await NTSAService.getIncidents(county);
-      store.setIncidents(incidents);
+      const data = await ntsaService.getIncidents();
+      store.setIncidents(data);
     } catch (err: any) {
-      store.setError(err.message || "Failed to load incidents");
+      store.setError(err.message);
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
-  const registerVehicle = useCallback(async (vehicle: Omit<VehicleRegistration, "id" | "created_at" | "updated_at">) => {
+  const registerVehicle = useCallback(async (vehicle: Omit<VehicleRegistration, 'id' | 'created_at' | 'updated_at'>) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const newVehicle = await NTSAService.registerVehicle(vehicle);
-      store.setVehicles([newVehicle, ...store.vehicles]);
-      return newVehicle;
+      const data = await ntsaService.registerVehicle(vehicle);
+      store.setVehicles([...store.vehicles, data]);
+      return data;
     } catch (err: any) {
-      store.setError(err.message || "Failed to register vehicle");
+      store.setError(err.message);
       throw err;
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
-  const payFine = useCallback(async (id: string, paymentRef: string) => {
+  const payFine = useCallback(async (offenceId: string, paymentRef: string) => {
     store.setLoading(true);
     store.clearError();
     try {
-      await NTSAService.payFine(id, paymentRef);
-      const updated = store.offences.map((o) =>
-        o.id === id ? { ...o, status: "paid" as const, payment_reference: paymentRef } : o
-      );
-      store.setOffences(updated);
+      const data = await ntsaService.payFine(offenceId, paymentRef);
+      store.setOffences(store.offences.map(o => o.id === offenceId ? data : o));
+      return data;
     } catch (err: any) {
-      store.setError(err.message || "Failed to pay fine");
+      store.setError(err.message);
       throw err;
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
-  const reportIncident = useCallback(async (incident: Omit<RoadIncident, "id" | "created_at" | "updated_at">) => {
+  const reportIncident = useCallback(async (incident: Omit<RoadIncident, 'id' | 'created_at'>) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const newIncident = await NTSAService.reportIncident(incident);
-      store.setIncidents([newIncident, ...store.incidents]);
-      return newIncident;
+      const { data, error } = await supabase.from('ntsa_incidents').insert(incident).select().single();
+      if (error) throw error;
+      store.setIncidents([...store.incidents, data]);
+      return data;
     } catch (err: any) {
-      store.setError(err.message || "Failed to report incident");
+      store.setError(err.message);
       throw err;
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
   const searchPlate = useCallback(async (plateNumber: string) => {
     store.setLoading(true);
     store.clearError();
     try {
-      const vehicle = await NTSAService.searchPlate(plateNumber);
-      store.setSelectedItem(vehicle);
-      return vehicle;
+      const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('plate_number', plateNumber).single();
+      if (error) throw error;
+      store.setSelectedItem(data);
+      return data;
     } catch (err: any) {
-      store.setError(err.message || "Search failed");
-      return null;
+      store.setError(err.message);
+      throw err;
     } finally {
       store.setLoading(false);
     }
-  }, []);
+  }, [store]);
 
   return {
     ...store,
-    loadLicenses,
     loadVehicles,
+    loadLicenses,
     loadOffences,
     loadApplications,
     loadIncidents,

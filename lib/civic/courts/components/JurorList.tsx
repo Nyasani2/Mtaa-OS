@@ -1,19 +1,30 @@
-import { CourtJuror } from '@/types/courts';
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { useJury } from '../hooks/useJury';
 
-export function JurorList({ jurors }: { jurors: CourtJuror[] }) {
+export default function JurorList() {
+  const { jurors, loading } = useJury();
+
+  if (loading) return <Text>Loading jurors...</Text>;
+
   return (
-    <div className="space-y-2 max-h-96 overflow-y-auto">
-      {jurors.map(j => (
-        <div key={j.id} className="border rounded p-2 text-sm flex justify-between items-center">
-          <div>
-            <div className="font-medium">{j.full_name}</div>
-            <div className="text-xs text-gray-500">{j.id_number} • {j.occupation || 'No occupation'}</div>
-          </div>
-          <span className={`text-xs px-2 py-0.5 rounded ${j.is_available ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-            {j.is_available ? 'Available' : 'Unavailable'}
-          </span>
-        </div>
-      ))}
-    </div>
+    <FlatList
+      data={jurors}
+      keyExtractor={(item: any) => item.id}
+      renderItem={({ item }: { item: any }) => (
+        <View style={styles.row}>
+          <Text>{item.first_name} {item.last_name}</Text>
+          <Text>{item.occupation || 'N/A'}</Text>
+          <Text style={[styles.status, { color: item.is_available ? '#4caf50' : '#f44336' }]}>
+            {item.is_available ? 'Available' : 'Unavailable'}
+          </Text>
+        </View>
+      )}
+    />
   );
 }
+
+const styles = StyleSheet.create({
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee', alignItems: 'center' },
+  status: { fontWeight: '600' }
+});

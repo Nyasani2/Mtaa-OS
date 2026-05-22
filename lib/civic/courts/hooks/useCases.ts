@@ -1,54 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCases, getCase, createCase, updateCase, deleteCase, addParty, removeParty } from '@/services/courtCases';
-import { CourtCase, CourtParty } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtCasesService } from '../services/courtCases';
 
-export function useCases(filters?: Parameters<typeof getCases>[0]) {
-  return useQuery({ queryKey: ['cases', filters], queryFn: () => getCases(filters) });
-}
+export function useCases(courtHouseId?: string) {
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCase(id: string) {
-  return useQuery({ queryKey: ['case', id], queryFn: () => getCase(id), enabled: !!id });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    CourtCasesService.getCases(courtHouseId)
+      .then(setCases)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [courtHouseId]);
 
-export function useCreateCase() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: createCase,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cases'] }),
-  });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useUpdateCase() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<CourtCase> }) => updateCase(id, updates),
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ['cases'] });
-      qc.invalidateQueries({ queryKey: ['case', vars.id] });
-    },
-  });
-}
-
-export function useDeleteCase() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: deleteCase,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cases'] }),
-  });
-}
-
-export function useAddParty() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: addParty,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cases'] }),
-  });
-}
-
-export function useRemoveParty() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: removeParty,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cases'] }),
-  });
+  return { cases, loading, error, refresh };
 }

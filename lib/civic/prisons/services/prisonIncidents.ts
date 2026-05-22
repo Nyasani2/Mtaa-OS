@@ -1,43 +1,44 @@
 import { supabase } from '@/lib/supabase';
-import { PrisonIncident } from '@/types/prisons';
+import { PrisonIncident } from '../types';
 
-export async function getIncidents(filters?: {
-  facility_id?: string;
-  inmate_id?: string;
-  status?: string;
-  severity?: string;
-}): Promise<PrisonIncident[]> {
-  let q = supabase
-    .from('prison_incidents')
-    .select(`*, prison_facilities:facility_id(*), prison_inmates:inmate_id(*), prison_wardens:reported_by(*)`);
-  if (filters?.facility_id) q = q.eq('facility_id', filters.facility_id);
-  if (filters?.inmate_id) q = q.eq('inmate_id', filters.inmate_id);
-  if (filters?.status) q = q.eq('status', filters.status);
-  if (filters?.severity) q = q.eq('severity', filters.severity);
-  const { data, error } = await q.order('created_at', { ascending: false });
-  if (error) throw error;
-  return (data || []).map((d: any) => ({ ...d, facility: d.prison_facilities, inmate: d.prison_inmates, reporter: d.prison_wardens }));
-}
+export class PrisonIncidentsService {
+  static async getIncidents(facilityId: string): Promise<PrisonIncident[]> {
+    const { data, error } = await supabase.from('prison_incidents')
+      .select('*, inmate:prison_inmates(*), reporter:prison_wardens(*)')
+      .eq('facility_id', facilityId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  }
 
-export async function createIncident(incident: Partial<PrisonIncident>): Promise<PrisonIncident> {
-  const { data, error } = await supabase.from('prison_incidents').insert(incident).select().single();
-  if (error) throw error;
-  return data;
-}
+  static async getIncidentById(id: string): Promise<PrisonIncident | null> {
+    const { data, error } = await supabase.from('prison_incidents')
+      .select('*, inmate:prison_inmates(*), reporter:prison_wardens(*)')
+      .eq('id', id)
+      .single();
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  }
 
-export async function updateIncident(id: string, updates: Partial<PrisonIncident>): Promise<PrisonIncident> {
-  const { data, error } = await supabase.from('prison_incidents').update(updates).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
-}
+  static async createIncident(data: Partial<PrisonIncident>): Promise<PrisonIncident> {
+    const { data: result, error } = await supabase.from('prison_incidents').insert(data).select().single();
+    if (error) throw error;
+    return result;
+  }
 
-export async function resolveIncident(id: string, notes: string): Promise<PrisonIncident> {
-  const { data, error } = await supabase
-    .from('prison_incidents')
-    .update({ status: 'resolved', resolved_at: new Date().toISOString(), resolution_notes: notes })
-    .eq('id', id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  static async updateIncident(id: string, data: Partial<PrisonIncident>): Promise<PrisonIncident> {
+    const { data: result, error } = await supabase.from('prison_incidents').update(data).eq('id', id).select().single();
+    if (error) throw error;
+    return result;
+  }
+
+  static async resolveIncident(id: string, resolutionNotes: string, resolvedBy: string): Promise<void> {
+    const { error } = await supabase.from('prison_incidents').update({
+      status: 'resolved',
+      resolution_notes: resolutionNotes,
+      resolved_by: resolvedBy,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if (error) throw error;
+  }
 }

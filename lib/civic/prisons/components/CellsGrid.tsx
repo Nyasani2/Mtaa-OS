@@ -1,34 +1,39 @@
-import { PrisonCell } from '@/types/prisons';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useCells } from '../hooks/useCells';
 
-export function CellsGrid({ cells }: { cells: PrisonCell[] }) {
-  const blocks = Array.from(new Set(cells.map(c => c.cell_block))).sort();
+interface Props {
+  facilityId: string;
+}
+
+export default function CellsGrid({ facilityId }: Props) {
+  const { cells, loading } = useCells(facilityId);
+
+  if (loading) return <Text>Loading cells...</Text>;
 
   return (
-    <div className="space-y-6">
-      {blocks.map(block => (
-        <div key={block}>
-          <h3 className="text-lg font-semibold mb-3">{block}</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {cells.filter(c => c.cell_block === block).map(cell => {
-              const occupancyPct = cell.capacity > 0 ? (cell.current_occupancy / cell.capacity) * 100 : 0;
-              const isFull = cell.current_occupancy >= cell.capacity;
-              const isOver = cell.current_occupancy > cell.capacity;
-              return (
-                <div key={cell.id} className={`border rounded-lg p-3 text-center ${
-                  isOver ? 'border-red-400 bg-red-50' : isFull ? 'border-amber-400 bg-amber-50' : 'border-green-400 bg-green-50'
-                }`}>
-                  <div className="text-lg font-bold">{cell.cell_number}</div>
-                  <div className="text-xs text-gray-500 capitalize">{cell.cell_type}</div>
-                  <div className="text-sm mt-1">{cell.current_occupancy}/{cell.capacity}</div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                    <div className={`h-1.5 rounded-full ${isOver ? 'bg-red-600' : isFull ? 'bg-amber-600' : 'bg-green-600'}`} style={{ width: `${Math.min(100, occupancyPct)}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
+    <View style={styles.grid}>
+      {cells.map((cell: any) => {
+        const occupancy = cell.current_occupancy || 0;
+        const capacity = cell.capacity || 1;
+        const isFull = occupancy >= capacity;
+        return (
+          <View key={cell.id} style={[styles.cell, isFull ? styles.full : styles.available]}>
+            <Text style={styles.cellNumber}>Cell {cell.cell_number}</Text>
+            <Text>{occupancy}/{capacity}</Text>
+            <Text style={styles.type}>{cell.cell_type}</Text>
+          </View>
+        );
+      })}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 8 },
+  cell: { width: '30%', padding: 12, borderRadius: 8, alignItems: 'center' },
+  available: { backgroundColor: '#e8f5e9' },
+  full: { backgroundColor: '#ffebee' },
+  cellNumber: { fontWeight: '600', fontSize: 14 },
+  type: { fontSize: 10, color: '#666', marginTop: 4 }
+});

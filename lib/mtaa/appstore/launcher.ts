@@ -1,54 +1,38 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useRouter } from "expo-router";
 import { getAppById, isSystemApp, isLocalApp } from "./registry";
+import type { AppManifest } from "./apps/types";
 
-// ============================================
-// APP LAUNCHER
-// Routes to any installed app by ID
-// ============================================
+export function useLauncher() {
+  const router = useRouter();
+  const [recentApps, setRecentApps] = useState<string[]>([]);
 
-export function getLaunchRoute(appId: string, entryPoint?: string): string | null {
-  const app = getAppById(appId);
-  if (!app) return null;
+  const launchApp = useCallback((app: AppManifest) => {
+    setRecentApps((prev) => {
+      const filtered = prev.filter((id) => id !== app.id);
+      return [app.id, ...filtered].slice(0, 10);
+    });
 
-  // Use specified entry point or default home
-  if (entryPoint && app.entryPoints?.[entryPoint]) {
-    return app.entryPoints[entryPoint];
-  }
+    // Navigate to app entry point
+    const entry = (app as any).entryPoints?.[0] || app.entry;
+    router.push(entry as any);
+  }, [router]);
 
-  return app.entryPoints?.home || `/${app.entry}`;
-}
+  const getAppEntry = useCallback((appId: string) => {
+    const app = getAppById(appId);
+    return app?.entry || "/";
+  }, []);
 
-export function canLaunch(appId: string): boolean {
-  const app = getAppById(appId);
-  if (!app) return false;
+  const isAppInstalled = useCallback((appId: string) => {
+    return !!getAppById(appId);
+  }, []);
 
-  // System apps are always launchable
-  if (isSystemApp(appId)) return true;
-
-  // Local apps need installation check (could check Supabase user_apps table)
-  if (isLocalApp(appId)) return true; // For now, local apps are always available
-
-  // Remote apps need to be installed
-  return app.installed === true;
-}
-
-export function getAppIcon(appId: string): string {
-  const icons: Record<string, string> = {
-    mtruck: "truck",
-    hookup: "heart",
-    health: "medical",
-    wallet: "wallet",
-    settings: "cog",
+  return {
+    launchApp,
+    getAppEntry,
+    isAppInstalled,
+    recentApps,
   };
-  return icons[appId] || "app";
-}
-
-export function getAppColor(appId: string): string {
-  const colors: Record<string, string> = {
-    mtruck: "#F59E0B",
-    hookup: "#EC4899",
-    health: "#10B981",
-    wallet: "#3B82F6",
-    settings: "#6B7280",
-  };
-  return colors[appId] || "#6366F1";
 }

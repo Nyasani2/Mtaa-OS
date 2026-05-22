@@ -1,1 +1,2 @@
-export { SettingsShell } from './components/SettingsShell';
+// lib/settings/index.ts
+export { default as SettingsShell } from "./components/SettingsShell";

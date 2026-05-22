@@ -1,85 +1,43 @@
-import { MTRUCK_APP } from "./apps/mtruck/manifest";
-import { HOOKUP_APP } from "./apps/hookup/manifest";
-import { HEALTH_APP } from "./apps/health/manifest";
-import { WALLET_APP } from "./apps/wallet/manifest";
-import { SETTINGS_APP } from "./apps/settings/manifest";
-import { CREDIT_APP } from "./apps/credit/manifest";
-import { JOBS_APP } from "./apps/jobs/manifest";
-import { MARKETPLACE_APP } from "./apps/marketplace/manifest";
-import { STREETS_APP } from "./apps/streets/manifest";
-import { MTAXI_APP } from "./apps/mtaxi/manifest";
-import { TRIBES_APP } from "./apps/tribes/manifest";
-// ============================================
-// UNIFIED APP REGISTRY — PHASE 1 COMPLETE
-// 9 apps total: 3 system + 6 installable
-// ============================================
+import { manifest as walletManifest } from "./apps/wallet/manifest";
+import { manifest as civicManifest } from "./apps/civic/manifest";
+import { manifest as clockManifest } from "./apps/clock/manifest";
+import { manifest as documentsManifest } from "./apps/documents/manifest";
+import { manifest as galleryManifest } from "./apps/gallery/manifest";
+import { manifest as messagesManifest } from "./apps/messages/manifest";
+import { manifest as recentsManifest } from "./apps/recents/manifest";
+import { manifest as schedulerManifest } from "./apps/scheduler/manifest";
+import { manifest as simManifest } from "./apps/sim/manifest";
+import type { AppManifest } from "./apps/types";
 
-// System apps (pre-installed, cannot uninstall)
-const SYSTEM_APPS = [
-  HEALTH_APP,
-  WALLET_APP,
-  SETTINGS_APP,
-];
+const REGISTRY = new Map<string, AppManifest>([
+  ["wallet", walletManifest],
+  ["civic", civicManifest],
+  ["clock", clockManifest],
+  ["documents", documentsManifest],
+  ["gallery", galleryManifest],
+  ["messages", messagesManifest],
+  ["recents", recentsManifest],
+  ["scheduler", schedulerManifest],
+  ["sim", simManifest],
+]);
 
-// Local installable apps (bundled with OS)
-const LOCAL_APPS = [
-  MTRUCK_APP,
-  HOOKUP_APP,
-  CREDIT_APP,
-  JOBS_APP,
-  MARKETPLACE_APP,
-  STREETS_APP,
-TRIBES_APP, 
-];
-
-// Remote apps fetched from Supabase app_store_apps table
-let remoteApps: any[] = [];
-
-export function setRemoteApps(apps: any[]) {
-  remoteApps = apps;
+export function getAppById(id: string): AppManifest | undefined {
+  return REGISTRY.get(id);
 }
 
-export function getRemoteApps() {
-  return remoteApps;
+export function isSystemApp(id: string): boolean {
+  const app = REGISTRY.get(id);
+  return app?.isOSApp || false;
 }
 
-// Full unified registry
-export function getUnifiedRegistry() {
-  return [
-    ...SYSTEM_APPS.map(app => ({ ...app, isSystem: true })),
-    ...LOCAL_APPS.map(app => ({ ...app, isSystem: false, isLocal: true })),
-    ...remoteApps.map((app: any) => ({ ...app, isSystem: false, isLocal: false })),
-  ];
+export function isLocalApp(id: string): boolean {
+  const app = REGISTRY.get(id);
+  return !app?.isOSApp;
 }
 
-// Legacy export for backward compatibility
-export const APP_REGISTRY = LOCAL_APPS;
-
-export function getAppById(id: string) {
-  const all = getUnifiedRegistry();
-  return all.find(app => app.id === id);
+export function listApps(): AppManifest[] {
+  return Array.from(REGISTRY.values());
 }
 
-export function listApps() {
-  return getUnifiedRegistry().filter(app => app.installable);
-}
-
-export function listSystemApps() {
-  return SYSTEM_APPS;
-}
-
-export function listLocalApps() {
-  return LOCAL_APPS;
-}
-
-export function listInstallableApps() {
-  return getUnifiedRegistry().filter(app => app.installable && !app.isSystem);
-}
-
-export function isSystemApp(id: string) {
-  return SYSTEM_APPS.some(app => app.id === id);
-}
-
-export function isLocalApp(id: string) {
-  return LOCAL_APPS.some(app => app.id === id);
-}
+export const BUILTIN_APPS = listApps();
+export const WALLET_APP = walletManifest;

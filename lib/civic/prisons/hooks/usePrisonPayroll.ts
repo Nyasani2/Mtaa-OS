@@ -1,22 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPayroll, createPayrollEntry, approvePayroll, markPaid } from '@/services/prisonPayroll';
-import { PrisonPayroll } from '@/types/prisons';
+import { useState, useEffect, useCallback } from 'react';
+import { PrisonPayrollService } from '../services/prisonPayroll';
 
-export function usePrisonPayroll(filters?: Parameters<typeof getPayroll>[0]) {
-  return useQuery({ queryKey: ['prisonPayroll', filters], queryFn: () => getPayroll(filters) });
-}
+export function usePrisonPayroll(facilityId?: string, period?: string) {
+  const [payrolls, setPayrolls] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useCreatePrisonPayroll() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: createPayrollEntry, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonPayroll'] }) });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    PrisonPayrollService.getPayroll(facilityId, period)
+      .then(setPayrolls)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [facilityId, period]);
 
-export function useApprovePrisonPayroll() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: approvePayroll, onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonPayroll'] }) });
-}
+  useEffect(() => { refresh(); }, [refresh]);
 
-export function useMarkPrisonPaid() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, transactionRef }: { id: string; transactionRef: string }) => markPaid(id, transactionRef), onSuccess: () => qc.invalidateQueries({ queryKey: ['prisonPayroll'] }) });
+  return { payrolls, loading, error, refresh };
 }

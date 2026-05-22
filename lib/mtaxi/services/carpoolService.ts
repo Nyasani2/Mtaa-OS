@@ -1,34 +1,86 @@
-import { supabase } from "@/core/lib/supabaseClient";
-import type { CarpoolTrip, CarpoolBooking, GeoLocation } from "../types";
+// lib/mtaxi/services/carpoolService.ts
+import { supabase } from "@/lib/supabase";
 
-export async function getCarpoolTrips(): Promise<CarpoolTrip[]> {
-  const { data, error } = await supabase.from("carpool_trips").select("*, driver:driver_id(*)").eq("status", "open").gte("departure_time", new Date().toISOString()).order("departure_time", { ascending: true });
-  if (error) throw new Error(error.message); return data || [];
+export interface CarpoolTrip {
+  id: string;
+  driver_id: string;
+  route_from: string;
+  route_to: string;
+  departure_time: string;
+  available_seats: number;
+  price_per_seat: number;
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
+  vehicle_type?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export async function createCarpoolTrip(origin: GeoLocation, destination: GeoLocation, departure_time: string, available_seats: number, price_per_seat: number): Promise<CarpoolTrip> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data, error } = await supabase.from("carpool_trips").insert({ driver_id: user.id, origin, destination, departure_time, available_seats, price_per_seat, status: "open" }).select().single();
-  if (error) throw new Error(error.message); return data;
+export interface CarpoolBooking {
+  id: string;
+  trip_id: string;
+  rider_id: string;
+  seats_booked: number;
+  total_amount: number;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  created_at: string;
 }
 
-export async function bookCarpool(trip_id: string, seats_booked: number = 1): Promise<CarpoolBooking> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data: trip } = await supabase.from("carpool_trips").select("price_per_seat, available_seats").eq("id", trip_id).single();
-  if (!trip) throw new Error("Trip not found");
-  if (trip.available_seats < seats_booked) throw new Error("Not enough seats");
-  const total_amount = trip.price_per_seat * seats_booked;
-  const { data, error } = await supabase.from("carpool_bookings").insert({ trip_id, rider_id: user.id, seats_booked, total_amount, status: "confirmed" }).select().single();
-  if (error) throw new Error(error.message);
-  await supabase.from("carpool_trips").update({ available_seats: trip.available_seats - seats_booked }).eq("id", trip_id);
-  return data;
+export async function getCarpoolTrips(filters?: { from?: string; to?: string; date?: string }): Promise<CarpoolTrip[]> {
+  let query = supabase.from("carpool_trips").select("*").eq("status", "scheduled");
+  if (filters?.from) query = query.ilike("route_from", `%${filters.from}%`);
+  if (filters?.to) query = query.ilike("route_to", `%${filters.to}%`);
+  if (filters?.date) query = query.gte("departure_time", `${filters.date}T00:00:00`).lt("departure_time", `${filters.date}T23:59:59`);
+  const { data, error } = await query.order("departure_time", { ascending: true });
+  if (error) throw error;
+  return data || [];
 }
 
-export async function getMyCarpoolBookings(): Promise<CarpoolBooking[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  const { data, error } = await supabase.from("carpool_bookings").select("*, trip:trip_id(*, driver:driver_id(*))").eq("rider_id", user.id).order("created_at", { ascending: false });
-  if (error) throw new Error(error.message); return data || [];
+export async function createCarpoolTrip(data: Partial<CarpoolTrip>): Promise<CarpoolTrip> {
+  const { data: result, error } = await supabase
+    .from("carpool_trips")
+    .insert({
+      driver_id: data.driver_id,
+      route_from: data.route_from,
+      route_to: data.route_to,
+      departure_time: data.departure_time,
+      available_seats: data.available_seats || 3,
+      price_per_seat: data.price_per_seat || 0,
+      status: data.status || "scheduled",
+      vehicle_type: data.vehicle_type,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return result;
+}
+
+export async function bookCarpool(tripId: string, passengerId: string, seats = 1): Promise<CarpoolBooking> {
+  const { data: trip } = await supabase.from("carpool_trips").select("price_per_seat, available_seats").eq("id", tripId).single();
+  if (!trip || trip.available_seats < seats) throw new Error("Not enough seats available");
+
+  const { data: result, error } = await supabase
+    .from("carpool_bookings")
+    .insert({
+      trip_id: tripId,
+      rider_id: passengerId,
+      seats_booked: seats,
+      total_amount: trip.price_per_seat * seats,
+      status: "confirmed",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+
+  await supabase.from("carpool_trips").update({ available_seats: trip.available_seats - seats }).eq("id", tripId);
+  return result;
+}
+
+export async function getMyCarpoolBookings(passengerId: string): Promise<(CarpoolBooking & { trip: CarpoolTrip })[]> {
+  const { data, error } = await supabase
+    .from("carpool_bookings")
+    .select("*, trip:carpool_trips(*)")
+    .eq("rider_id", passengerId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
 }

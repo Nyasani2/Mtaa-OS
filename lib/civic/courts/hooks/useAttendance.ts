@@ -1,23 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAttendance, clockIn, clockOut } from '@/services/courtAttendance';
-import { CourtStaffAttendance } from '@/types/courts';
+import { useState, useEffect, useCallback } from 'react';
+import { CourtAttendanceService } from '../services/courtAttendance';
 
-export function useAttendance(filters?: Parameters<typeof getAttendance>[0]) {
-  return useQuery({ queryKey: ['attendance', filters], queryFn: () => getAttendance(filters) });
-}
+export function useAttendance(courtHouseId: string, date?: string) {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export function useClockIn() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: clockIn,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['attendance'] }),
-  });
-}
+  const refresh = useCallback(() => {
+    setLoading(true);
+    CourtAttendanceService.getAttendance(courtHouseId, date)
+      .then(setRecords)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [courtHouseId, date]);
 
-export function useClockOut() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: clockOut,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['attendance'] }),
-  });
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { records, loading, error, refresh };
 }

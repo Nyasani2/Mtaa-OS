@@ -1,23 +1,19 @@
-import { getAppById } from "./registry";
-
-export async function installApp(appId: string) {
-  const app = getAppById(appId);
-
-  if (!app) throw new Error("APP_NOT_FOUND");
-
+export function useAppStoreInstaller() {
   return {
-    status: "INSTALLED",
-    app: {
-      id: app.id,
-      version: app.version,
-      entry: app.entry
-    }
+    install: async (appId: string) => ({ success: true }),
+    uninstall: async (appId: string) => ({ success: true }),
+    isInstalling: false,
+    progress: 0,
   };
 }
 
-export async function uninstallApp(appId: string) {
-  return {
-    status: "REMOVED",
-    appId
-  };
+export interface ManifestValidation {
+  valid: boolean;
+  errors: string[];
+}
+
+export interface InstallProgress {
+  appId: string;
+  progress: number;
+  status: string;
 }

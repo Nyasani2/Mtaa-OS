@@ -1,82 +1,102 @@
-import { supabase } from '../../shared/lib/supabase'
-import { Notification } from '../../shared/types/civic'
+import { supabase } from '@/lib/supabase';
 
-export const notificationService = {
-  async getNotifications(userId: string, unreadOnly: boolean = false): Promise<Notification[]> {
-    let query = supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50)
+export type NotificationType = 'case_update' | 'incident_alert' | 'assignment' | 'escalation' | 'system' | 'message';
+export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
-    if (unreadOnly) {
-      query = query.eq('read', false)
-    }
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  read: boolean;
+  read_at?: string;
+  created_at: string;
+}
 
-    const { data, error } = await query
-    if (error) throw error
-    return data || []
-  },
+export class NotificationService {
+  async getNotifications(userId: string, filters?: { type?: NotificationType; priority?: NotificationPriority; read?: boolean }) {
+    let query = supabase.from('police_notifications').select('*').eq('user_id', userId);
+    if (filters?.type) query = query.eq('type', filters.type);
+    if (filters?.priority) query = query.eq('priority', filters.priority);
+    if (filters?.read !== undefined) query = query.eq('read', filters.read);
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as Notification[];
+  }
 
-  async markAsRead(notificationId: string): Promise<void> {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId)
+  async getNotificationById(id: string) {
+    const { data, error } = await supabase.from('police_notifications').select('*').eq('id', id).single();
+    if (error) throw error;
+    return data as Notification;
+  }
 
-    if (error) throw error
-  },
+  async createNotification(notification: Omit<Notification, 'id' | 'created_at'>) {
+    const { data, error } = await supabase.from('police_notifications').insert(notification).select().single();
+    if (error) throw error;
+    return data as Notification;
+  }
 
-  async markAllAsRead(userId: string): Promise<void> {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('user_id', userId)
-      .eq('read', false)
+  async markAsRead(id: string) {
+    const { data, error } = await supabase.from('police_notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('id', id).select().single();
+    if (error) throw error;
+    return data as Notification;
+  }
 
-    if (error) throw error
-  },
+  async markAllAsRead(userId: string) {
+    const { data, error } = await supabase.from('police_notifications')
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('user_id', userId).eq('read', false).select();
+    if (error) throw error;
+    return data as Notification[];
+  }
 
-  async createNotification(notification: Partial<Notification>): Promise<Notification> {
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert({
-        ...notification,
-        read: false,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single()
+  async deleteNotification(id: string) {
+    const { error } = await supabase.from('police_notifications').delete().eq('id', id);
+    if (error) throw error;
+  }
 
-    if (error) throw error
-    return data
-  },
+  async deleteAllRead(userId: string) {
+    const { error } = await supabase.from('police_notifications')
+      .delete().eq('user_id', userId).eq('read', true);
+    if (error) throw error;
+  }
 
-  subscribeToNotifications(userId: string, callback: (notification: Notification) => void) {
-    return supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`
-        },
-        (payload) => {
-          callback(payload.new as Notification)
-        }
-      )
-      .subscribe()
-  },
+  async getUnreadCount(userId: string) {
+    const { count, error } = await supabase.from('police_notifications')
+      .select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('read', false);
+    if (error) throw error;
+    return count || 0;
+  }
 
-  getUnreadCount(userId: string): Promise<number> {
-    return supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('read', false)
-      .then(({ count }) => count || 0)
+  async getNotificationStats(userId: string) {
+    const { data, error } = await supabase.from('police_notifications')
+      .select('type, read', { count: 'exact' }).eq('user_id', userId);
+    if (error) throw error;
+    const stats = { total: data?.length || 0, unread: 0, byType: {} as Record<string, number> };
+    data?.forEach((row: any) => {
+      if (!row.read) stats.unread++;
+      stats.byType[row.type] = (stats.byType[row.type] || 0) + 1;
+    });
+    return stats;
+  }
+
+  async sendBulkNotifications(userIds: string[], notification: Omit<Notification, 'id' | 'created_at' | 'user_id'>) {
+    const notifications = userIds.map(userId => ({ ...notification, user_id: userId }));
+    const { data, error } = await supabase.from('police_notifications').insert(notifications).select();
+    if (error) throw error;
+    return data as Notification[];
+  }
+
+  subscribeToNotifications(userId: string, callback: (payload: any) => void) {
+    return supabase.channel(`notifications-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'police_notifications', filter: `user_id=eq.${userId}` }, callback)
+      .subscribe();
   }
 }
+
+export const notificationService = new NotificationService();
