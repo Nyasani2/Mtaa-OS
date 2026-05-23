@@ -3,3 +3,13 @@
 *.log
 *.dump
 *.tsbuildinfo
+
+# Dumps
+*.txt
+*.dump
+
+# Build cache
+*.tsbuildinfo
+
+# Large zips
+*.zip
