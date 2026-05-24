@@ -1,0 +1,13 @@
+export { HealthVault } from './health-vault';
+export { ConsentManager } from './consent-manager';
+export { MedicalRecords } from './medical-records';
+export { RecordAccessGateway } from './record-access-gateway';
+export { EmergencyAccess } from './emergency-access';
+export { ProviderDirectory } from './provider-directory';
+export { AppointmentOrchestrator } from './appointment-orchestrator';
+export { HealthQRSystem } from './health-qr-system';
+export { HealthAuditLog } from './audit-log';
+export * from './types';
+export * from './interfaces';
+export { HealthPermissions } from './security/health-permissions';
+export { ConsentPolicies } from './security/consent-policies';

@@ -1,24 +1,17 @@
 /**
  * ╔══════════════════════════════════════════════════════════════╗
- * ║  LAYER 1: IDENTITY ENGINE — Supabase Auth (Single Source)    ║
- * ║  MTAA_OS_V10 — SOLE AUTH AUTHORITY                         ║
+ * ║  LAYER 1: IDENTITY ENGINE — Supabase Auth                   ║
+ * ║  MTAA_OS_V10                                                ║
  * ╚══════════════════════════════════════════════════════════════╝
- *
- * RULES:
- * 1. This is the ONLY file that talks to supabase.auth
- * 2. No UI logic here — pure identity operations
- * 3. Session state lives ONLY in Supabase, NOT in Zustand
- * 4. One listener to rule them all (registered in app/_layout.tsx)
- * 5. All errors are caught and surfaced — never silent failures
- * 6. signUp properly updates state and returns confirmation status
- * 7. signOut is atomic — state always cleared
- * 8. resetPassword + updatePassword fully implemented
  */
 
 import { supabase } from "@/lib/supabase";
 import { Session, User, AuthError } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 
-// ─── Types ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────
 
 export type IdentityState = {
   session: Session | null;
@@ -33,13 +26,9 @@ export type SignUpResult = {
   message: string;
 };
 
-export type AuthErrorResult = {
-  error: AuthError | Error;
-  message: string;
-  code?: string;
-};
-
-// ─── Singleton State (module-level, not Zustand) ───────────
+// ─────────────────────────────────────────────
+// INTERNAL STATE
+// ─────────────────────────────────────────────
 
 let _state: IdentityState = {
   session: null,
@@ -54,85 +43,92 @@ function _notify() {
 }
 
 function _setState(partial: Partial<IdentityState>) {
-  _state = { ..._state, ...partial };
+  _state = {
+    ..._state,
+    ...partial,
+  };
+
   _notify();
 }
 
-// ─── Public API ────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// IDENTITY ENGINE
+// ─────────────────────────────────────────────
 
 export const identityEngine = {
-  /**
-   * Get current state (non-reactive, for imperative checks)
-   */
   getState(): IdentityState {
     return { ..._state };
   },
 
-  /**
-   * Subscribe to identity changes.
-   * Returns unsubscribe function.
-   */
-  subscribe(fn: (state: IdentityState) => void): () => void {
+  subscribe(fn: (state: IdentityState) => void) {
     _listeners.add(fn);
+
     fn({ ..._state });
+
     return () => {
       _listeners.delete(fn);
     };
   },
 
-  /**
-   * BOOT SEQUENCE — Call once at app startup.
-   * Checks for existing session and hydrates state.
-   */
+  // ─────────────────────────────────────────
+  // BOOT
+  // ─────────────────────────────────────────
+
   async boot(): Promise<void> {
-    _setState({ isLoading: true });
+    _setState({
+      isLoading: true,
+    });
 
     try {
       const { data, error } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("[IdentityEngine] Session fetch error:", error.message);
-        _setState({ session: null, user: null, isLoading: false });
+        console.log("[Identity Boot Error]", error.message);
+
+        _setState({
+          session: null,
+          user: null,
+          isLoading: false,
+        });
+
         return;
       }
 
-      const session = data.session;
+      _setState({
+        session: data.session,
+        user: data.session?.user ?? null,
+        isLoading: false,
+      });
 
-      if (session?.user) {
-        _setState({
-          session,
-          user: session.user,
-          isLoading: false,
-        });
-      } else {
-        _setState({ session: null, user: null, isLoading: false });
-      }
-    } catch (err: any) {
-      console.error("[IdentityEngine] Boot crash:", err);
-      _setState({ session: null, user: null, isLoading: false });
+      console.log(
+        "[Identity Boot]",
+        data.session?.user?.email || "NO SESSION"
+      );
+    } catch (e: any) {
+      console.log("[Identity Boot Fatal]", e?.message);
+
+      _setState({
+        session: null,
+        user: null,
+        isLoading: false,
+      });
     }
   },
 
-  /**
-   * Start the SINGLE auth state listener.
-   * Call this once after boot. Returns cleanup function.
-   */
+  // ─────────────────────────────────────────
+  // AUTH LISTENER
+  // ─────────────────────────────────────────
+
   startListener(): () => void {
     const { data } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          _setState({
-            session,
-            user: session.user,
-            isLoading: false,
-          });
-        } else {
-          _setState({
-            session: null,
-            user: null,
-            isLoading: false,
-          });
-        }
+      async (event, session) => {
+        console.log("[AUTH EVENT]", event);
+
+        _setState({
+          session,
+          user: session?.user ?? null,
+          isLoading: false,
+        });
       }
     );
 
@@ -141,54 +137,62 @@ export const identityEngine = {
     };
   },
 
-  /**
-   * Sign in with email/password
-   * Returns session on success, throws AuthError on failure
-   */
+  // ─────────────────────────────────────────
+  // SIGN IN
+  // ─────────────────────────────────────────
+
   async signIn(email: string, password: string): Promise<Session> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
     if (error) {
-      // Surface specific error messages
-      let message = error.message;
-      if (error.message.includes("Invalid login")) {
-        message = "Invalid email or password. Please try again.";
-      } else if (error.message.includes("Email not confirmed")) {
-        message = "Please confirm your email before signing in.";
-      }
-      throw new AuthError(message, error.status || 400, error.code);
+      throw new AuthError(
+        error.message,
+        error.status || 400,
+        error.code
+      );
     }
-    if (!data.session) throw new Error("No session returned after sign in");
-    _setState({ session: data.session, user: data.user, isLoading: false });
+
+    if (!data.session) {
+      throw new Error("No session returned");
+    }
+
+    _setState({
+      session: data.session,
+      user: data.user,
+      isLoading: false,
+    });
+
     return data.session;
   },
 
-  /**
-   * Sign up with email/password
-   * FIX: Now properly updates state and returns confirmation status
-   */
+  // ─────────────────────────────────────────
+  // SIGN UP
+  // ─────────────────────────────────────────
+
   async signUp(
     email: string,
     password: string,
     metadata?: Record<string, any>
   ): Promise<SignUpResult> {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata },
-    });
+    const { data, error } =
+      await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+
     if (error) {
-      let message = error.message;
-      if (error.message.includes("already registered") || error.message.includes("already exists")) {
-        message = "An account with this email already exists.";
-      }
-      throw new AuthError(message, error.status || 400, error.code);
+      throw error;
     }
 
-    // FIX: Update state even if session is null (email confirmation pending)
     const confirmationRequired = !data.session;
+
     _setState({
       session: data.session,
       user: data.user,
@@ -200,69 +204,52 @@ export const identityEngine = {
       session: data.session,
       confirmationRequired,
       message: confirmationRequired
-        ? "Check your email to confirm your account."
-        : "Account created successfully.",
+        ? "Check your email to confirm account."
+        : "Account created.",
     };
   },
 
-  /**
-   * Sign out — clears everything ATOMICALLY
-   * FIX: Always clears state even if Supabase throws
-   */
+  // ─────────────────────────────────────────
+  // SIGN OUT
+  // ─────────────────────────────────────────
+
   async signOut(): Promise<void> {
     try {
       await supabase.auth.signOut();
-    } catch (err: any) {
-      console.error("[IdentityEngine] signOut Supabase error:", err.message);
-      // Continue to clear local state regardless
-    } finally {
-      _setState({ session: null, user: null, isLoading: false });
+    } catch (e: any) {
+      console.log("[SignOut Error]", e?.message);
     }
+
+    _setState({
+      session: null,
+      user: null,
+      isLoading: false,
+    });
   },
 
-  /**
-   * Send password reset email
-   * NEW: Full forgot password flow
-   */
-  async resetPassword(email: string): Promise<{ success: boolean; message: string }> {
+  // ─────────────────────────────────────────
+  // PASSWORD RESET
+  // ─────────────────────────────────────────
+
+  async resetPassword(
+    email: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     try {
-      const redirectUrl = process.env.EXPO_PUBLIC_RESET_URL || 
-        (typeof window !== "undefined" ? window.location.origin + "/auth/reset-password" : "");
+      const redirectTo =
+        "mtaa://auth/reset-password";
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
+      console.log("[RESET REDIRECT]", redirectTo);
 
-      if (error) {
-        return {
-          success: false,
-          message: error.message.includes("not found")
-            ? "No account found with this email."
-            : error.message,
-        };
-      }
-
-      return {
-        success: true,
-        message: "Password reset link sent. Check your email.",
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        message: err.message || "Failed to send reset link.",
-      };
-    }
-  },
-
-  /**
-   * Update user password (after reset)
-   * NEW: Full password update flow
-   */
-  async updatePassword(newPassword: string): Promise<{ success: boolean; message: string }> {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+      const { error } =
+        await supabase.auth.resetPasswordForEmail(
+          email,
+          {
+            redirectTo,
+          }
+        );
 
       if (error) {
         return {
@@ -273,26 +260,50 @@ export const identityEngine = {
 
       return {
         success: true,
-        message: "Password updated successfully.",
+        message:
+          "Password reset email sent.",
       };
-    } catch (err: any) {
+    } catch (e: any) {
       return {
         success: false,
-        message: err.message || "Failed to update password.",
+        message:
+          e?.message ||
+          "Failed to send reset email.",
       };
     }
   },
 
-  /**
-   * Resend email confirmation
-   * NEW: Handle users who lost confirmation email
-   */
-  async resendConfirmation(email: string): Promise<{ success: boolean; message: string }> {
+  // ─────────────────────────────────────────
+  // UPDATE PASSWORD
+  // ─────────────────────────────────────────
+
+  async updatePassword(
+    password: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-      });
+      const { data: sessionData } =
+        await supabase.auth.getSession();
+
+      console.log(
+        "[UPDATE PASSWORD SESSION]",
+        !!sessionData.session
+      );
+
+      if (!sessionData.session) {
+        return {
+          success: false,
+          message:
+            "Auth session missing. Open the reset link again from email.",
+        };
+      }
+
+      const { error } =
+        await supabase.auth.updateUser({
+          password,
+        });
 
       if (error) {
         return {
@@ -303,37 +314,57 @@ export const identityEngine = {
 
       return {
         success: true,
-        message: "Confirmation email resent. Check your inbox.",
+        message:
+          "Password updated successfully.",
       };
-    } catch (err: any) {
+    } catch (e: any) {
       return {
         success: false,
-        message: err.message || "Failed to resend confirmation.",
+        message:
+          e?.message ||
+          "Password update failed.",
       };
     }
   },
 
-  /**
-   * Refresh profile from profiles table
-   */
-  async refreshProfile(userId: string): Promise<Record<string, any> | null> {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
+  // ─────────────────────────────────────────
+  // RESEND CONFIRMATION
+  // ─────────────────────────────────────────
 
-    if (error) {
-      console.warn("[IdentityEngine] Profile fetch:", error.message);
-      return null;
+  async resendConfirmation(email: string) {
+    try {
+      const { error } =
+        await supabase.auth.resend({
+          type: "signup",
+          email,
+        });
+
+      if (error) {
+        return {
+          success: false,
+          message: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        message:
+          "Confirmation email resent.",
+      };
+    } catch (e: any) {
+      return {
+        success: false,
+        message:
+          e?.message ||
+          "Failed to resend email.",
+      };
     }
-    return data;
   },
 };
 
-// ─── React Hook ────────────────────────────────────────────
-
-import { useState, useEffect } from "react";
+// ─────────────────────────────────────────────
+// REACT HOOK
+// ─────────────────────────────────────────────
 
 export function useIdentity(): IdentityState & {
   signIn: typeof identityEngine.signIn;
@@ -342,9 +373,9 @@ export function useIdentity(): IdentityState & {
   resetPassword: typeof identityEngine.resetPassword;
   updatePassword: typeof identityEngine.updatePassword;
   resendConfirmation: typeof identityEngine.resendConfirmation;
-  refreshProfile: typeof identityEngine.refreshProfile;
 } {
-  const [state, setState] = useState<IdentityState>(_state);
+  const [state, setState] =
+    useState<IdentityState>(_state);
 
   useEffect(() => {
     return identityEngine.subscribe(setState);
@@ -355,9 +386,11 @@ export function useIdentity(): IdentityState & {
     signIn: identityEngine.signIn,
     signUp: identityEngine.signUp,
     signOut: identityEngine.signOut,
-    resetPassword: identityEngine.resetPassword,
-    updatePassword: identityEngine.updatePassword,
-    resendConfirmation: identityEngine.resendConfirmation,
-    refreshProfile: identityEngine.refreshProfile,
+    resetPassword:
+      identityEngine.resetPassword,
+    updatePassword:
+      identityEngine.updatePassword,
+    resendConfirmation:
+      identityEngine.resendConfirmation,
   };
 }
