@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase/client";
+import supabase from "@/lib/supabase";
 
 export interface AuthUser {
   id: string;
@@ -25,68 +25,156 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email,
-          phone: session.user.phone,
-          metadata: session.user.user_metadata,
-        });
-        // Fetch profile
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single();
-        if (profileData) setProfile(profileData as AuthProfile);
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("[AUTH SESSION ERROR]", error.message);
+          return;
+        }
+
+        if (!mounted) return;
+
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? undefined,
+            phone: session.user.phone ?? undefined,
+            metadata: session.user.user_metadata ?? {},
+          });
+
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("user_id", session.user.id)
+              .single();
+
+            if (profileError) {
+              console.warn("[PROFILE LOAD WARNING]", profileError.message);
+            }
+
+            if (profileData && mounted) {
+              setProfile(profileData as AuthProfile);
+            }
+          } catch (profileErr) {
+            console.error("[PROFILE FETCH ERROR]", profileErr);
+          }
+        }
+      } catch (err) {
+        console.error("[AUTH INIT ERROR]", err);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
     };
+
     getSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email,
-          phone: session.user.phone,
-          metadata: session.user.user_metadata,
-        });
-      } else {
-        setUser(null);
-        setProfile(null);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      try {
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? undefined,
+            phone: session.user.phone ?? undefined,
+            metadata: session.user.user_metadata ?? {},
+          });
+
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (profileData) {
+            setProfile(profileData as AuthProfile);
+          }
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+      } catch (err) {
+        console.error("[AUTH STATE ERROR]", err);
       }
     });
 
     return () => {
-      listener?.subscription?.unsubscribe?.();
+      mounted = false;
+      subscription.unsubscribe();
     };
   }, []);
 
-  const signIn = useCallback(async (phone: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ phone, password });
-    if (error) throw error;
-  }, []);
+  const signIn = useCallback(
+    async (phone: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        phone,
+        password,
+      });
 
-  const signUp = useCallback(async (phone: string, password: string, metadata: Record<string, unknown>) => {
-    const { data, error } = await supabase.auth.signUp({
-      phone,
-      password,
-      options: { data: metadata },
-    });
-    if (error) throw error;
-    return { data, error };
-  }, []);
+      if (error) {
+        console.error("[SIGN IN ERROR]", error.message);
+        throw error;
+      }
+
+      return data;
+    },
+    []
+  );
+
+  const signUp = useCallback(
+    async (
+      phone: string,
+      password: string,
+      metadata: Record<string, unknown>
+    ) => {
+      const { data, error } = await supabase.auth.signUp({
+        phone,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+
+      if (error) {
+        console.error("[SIGN UP ERROR]", error.message);
+        throw error;
+      }
+
+      return data;
+    },
+    []
+  );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("[SIGN OUT ERROR]", error.message);
+      throw error;
+    }
+
     setUser(null);
     setProfile(null);
   }, []);
 
-  return { user, profile, isLoading, signIn, signUp, signOut };
+  return {
+    user,
+    profile,
+    isLoading,
+    signIn,
+    signUp,
+    signOut,
+  };
 }
 
 export default useAuth;
