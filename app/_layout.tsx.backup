@@ -1,0 +1,62 @@
+import { Stack } from "expo-router";
+import { useEffect, useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AppState } from "react-native";
+
+import { kernelEntry } from "@/lib/kernel/boot/kernel-entry";
+import { pinEngine } from "@/lib/security/pin-engine";
+
+export default function RootLayout() {
+  const [booted, setBooted] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const boot = async () => {
+      await kernelEntry.boot();
+
+      if (!mounted) return;
+
+      setBooted(true);
+    };
+
+    boot();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // PIN lock on background
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", async (state) => {
+      if (state === "background") {
+        await pinEngine.onAppResume();
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  if (!booted) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(os)" />
+          <Stack.Screen name="auth" />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}

@@ -1,6 +1,10 @@
-// lib/stores/auth-store.ts
+import { create } from "zustand";
+import { identityEngine } from "@/lib/auth/identity";
 
-import { create } from 'zustand';
+/**
+ * BRIDGE STORE (TEMP BUT STABLE)
+ * Syncs Zustand with identityEngine
+ */
 
 type AuthState = {
   user: any | null;
@@ -12,12 +16,31 @@ type AuthState = {
   setHydrated: (v: boolean) => void;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  session: null,
-  hydrated: false,
+export const useAuthStore = create<AuthState>((set, get) => {
+  // subscribe once to identity engine
+  identityEngine.subscribe((state: any) => {
+    set({
+      user: state.user ?? null,
+      session: state.session ?? null,
+      hydrated: true,
+    });
+  });
 
-  setUser: (user) => set({ user }),
-  setSession: (session) => set({ session }),
-  setHydrated: (hydrated) => set({ hydrated }),
-}));
+  return {
+    user: null,
+    session: null,
+    hydrated: false,
+
+    setUser: (user) => {
+      identityEngine.setUser?.(user);
+      set({ user });
+    },
+
+    setSession: (session) => {
+      identityEngine.setSession?.(session);
+      set({ session });
+    },
+
+    setHydrated: (hydrated) => set({ hydrated }),
+  };
+});
