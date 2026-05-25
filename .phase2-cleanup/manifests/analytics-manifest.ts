@@ -1,1 +1,0 @@
-export const analyticsManifest = { id:'analytics', name:'Analytics Dashboard', version:'1.0.0', icon:'bar-chart-2', category:'system', description:'Real-time metrics and system analytics', entryRoute:'/(admin)/analytics', permissions:['storage'], minKycLevel:3, sizeMb:8, dependencies:['storage'], enabled:true };
