@@ -10,21 +10,32 @@ export interface WalletAccount {
 
 export interface WalletTransaction {
   id: string;
-  type: "send" | "receive" | "deposit" | "withdraw" | "escrow" | "go_fund" | "fee" | "refund";
+  type: "send" | "receive" | "deposit" | "withdraw" | "escrow" | "go_fund" | "fee" | "refund" | "qr_pay" | "go_fund_draw" | "go_fund_repay" | "escrow_hold" | "escrow_release" | "escrow_dispute";
   amount: number;
   currency: string;
   status: "pending" | "completed" | "failed" | "cancelled";
   description: string;
   recipient?: string;
+  recipientName?: string;
+  recipientPhone?: string;
   sender?: string;
+  senderName?: string;
   escrowId?: string;
+  note?: string;
+  qrCode?: string;
+  goFundUsed?: number;
+  balanceBefore?: number;
   balanceAfter: number;
   timestamp: string;
+  createdAt?: string;
+  completedAt?: string;
 }
 
 export interface LinkedBank {
   id: string;
   name: string;
+  bankName?: string;
+  accountName?: string;
   accountNumber: string;
   branch: string;
   isDefault: boolean;
@@ -35,6 +46,7 @@ export interface LinkedCard {
   id: string;
   last4: string;
   brand: string;
+  cardType?: string;
   expiryMonth: number;
   expiryYear: number;
   isDefault: boolean;
@@ -82,12 +94,16 @@ export interface EscrowTransaction {
 
 export interface WalletNotification {
   id: string;
-  type: "transaction" | "escrow" | "go_fund" | "security" | "system";
+  type: "transaction" | "escrow" | "go_fund" | "security" | "system" | "payment_received" | "payment_sent" | "escrow_update" | "go_fund_draw" | "go_fund_repay_due" | "go_fund_repayed" | "go_fund_limit_change" | "system_alert" | "security_alert";
   title: string;
   message: string;
+  amount?: number;
   read: boolean;
+  isRead?: boolean;
   timestamp: string;
+  createdAt?: string;
   actionUrl?: string;
+  actionRoute?: string;
 }
 
 export interface WalletSettings {
@@ -116,3 +132,6 @@ export interface Wallet {
   notifications: WalletNotification[];
   settings: WalletSettings;
 }
+
+// Export TransactionType alias for history.tsx
+export type TransactionType = WalletTransaction["type"];
