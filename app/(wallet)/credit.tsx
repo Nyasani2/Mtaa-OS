@@ -30,7 +30,7 @@ export default function CreditScreen() {
       <Text style={styles.header}>GoFund Credit</Text>
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Credit</Text>
-        <Text style={styles.balance}>KES {wallet?.credit_limit?.toLocaleString() ?? '0'}</Text>
+        <Text style={styles.balance}>KES {wallet?.creditLimit?.toLocaleString() ?? '0'}</Text>
       </View>
 
       <Text style={styles.label}>Request Amount</Text>

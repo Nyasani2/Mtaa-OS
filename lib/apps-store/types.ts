@@ -6,6 +6,7 @@ export interface AppManifest {
   domain: string;
   icon?: string;
   color?: string;
+  category: string;
   permissions: string[];
   routes: string[];
   dependencies: string[];
