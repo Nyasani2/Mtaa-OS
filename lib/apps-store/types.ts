@@ -3,17 +3,19 @@ export interface AppManifest {
   name: string;
   version: string;
   description?: string;
-  domain: string;
+  domain?: string;
   icon?: string;
   color?: string;
-  category: string;
+  category?: string;
   permissions: string[];
-  routes: string[];
-  dependencies: string[];
-  entry_point: string;
-  enabled: boolean;
-  installable: boolean;
-  system_app: boolean;
+  routes?: string[];
+  dependencies?: string[];
+  entry_point?: string;
+  entryPoint?: string;
+  enabled?: boolean;
+  installable?: boolean;
+  system_app?: boolean;
+  isOSApp?: boolean;
   min_kernel_version?: string;
   config_schema?: Record<string, any>;
 }

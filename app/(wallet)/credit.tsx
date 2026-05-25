@@ -1,10 +1,9 @@
-// app/(wallet)/credit.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useWalletStore } from '@/lib/modules/wallet/store';
 
 export default function CreditScreen() {
-  const { wallet } = useWalletStore();
+  const { goFund } = useWalletStore();
   const [amount, setAmount] = useState('');
   const [requesting, setRequesting] = useState(false);
 
@@ -30,7 +29,7 @@ export default function CreditScreen() {
       <Text style={styles.header}>GoFund Credit</Text>
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Credit</Text>
-        <Text style={styles.balance}>KES {wallet?.creditLimit?.toLocaleString() ?? '0'}</Text>
+        <Text style={styles.balance}>KES {goFund?.creditLimit?.toLocaleString() ?? '0'}</Text>
       </View>
 
       <Text style={styles.label}>Request Amount</Text>

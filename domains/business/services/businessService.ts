@@ -1,10 +1,10 @@
 // domains/business/services/businessService.ts
 import { supabase } from '@/lib/supabase/client';
 
-type BusinessType = 'sole_proprietorship' | 'llc' | 'partnership' | 'cooperative';
-type BusinessStatus = 'pending' | 'active' | 'suspended' | 'closed';
-type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
-type SettlementFrequency = 'daily' | 'weekly' | 'monthly';
+export type BusinessType = 'sole_proprietorship' | 'llc' | 'partnership' | 'cooperative';
+export type BusinessStatus = 'pending' | 'active' | 'suspended' | 'closed';
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type SettlementFrequency = 'daily' | 'weekly' | 'monthly';
 
 export interface Business {
   id: string;
