@@ -1,25 +1,19 @@
-"use client";
-
-import { useEffect } from "react";
-import { useTransport } from "../controllers/useTransport";
-import { useAuth } from "@/hooks/useAuth";
+// lib/civic/transport/civic_modules_v3/transport_ntsa/hooks/useLicenses.ts
+import { useState, useEffect } from 'react';
+import { useIdentity } from '@/lib/auth/identity';
+import { supabase } from '@/lib/supabase/client';
 
 export function useLicenses() {
-  const { user } = useAuth();
-  const transport = useTransport();
+  const { user } = useIdentity();
+  const [licenses, setLicenses] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      transport.loadLicenses(user.id);
-    }
-  }, [user?.id]);
+    if (!user) return;
+    setLoading(true);
+    supabase.from('driving_licenses').select('*').eq('user_id', user.id)
+      .then(({ data }) => { setLicenses(data ?? []); setLoading(false); });
+  }, [user]);
 
-  return {
-    licenses: transport.licenses,
-    isLoading: transport.isLoading,
-    error: transport.error,
-    selectedLicense: transport.selectedItem,
-    setSelectedLicense: transport.setSelectedItem,
-    refresh: () => user?.id && transport.loadLicenses(user.id),
-  };
+  return { licenses, loading };
 }

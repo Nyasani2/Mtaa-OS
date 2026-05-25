@@ -1,76 +1,88 @@
+// domains/shop/state/shopStore.ts
 import { create } from 'zustand';
-import { Shop, ShopProduct, ShopOrder, CartItem } from '../types';
-import { ShopService } from '../services/shopService';
+import { shopService, ShopProduct, Shop } from '../services/shopService';
 
-interface ShopState {
-  currentShop: Shop | null;
+interface ShopStore {
   products: ShopProduct[];
-  orders: ShopOrder[];
-  cart: CartItem[];
-  productsLoading: boolean;
-  ordersLoading: boolean;
-  setCurrentShop: (shop: Shop | null) => void;
-  loadProducts: (shopId: string, options?: any) => Promise<void>;
-  loadOrders: (shopId: string, status?: string) => Promise<void>;
-  addToCart: (item: CartItem) => void;
+  shops: Shop[];
+  cart: { product: ShopProduct; quantity: number }[];
+  loading: boolean;
+  error: string | null;
+  loadProducts: (shopId?: string) => Promise<void>;
+  loadShops: () => Promise<void>;
+  addToCart: (product: ShopProduct, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   clearCart: () => void;
+  getCartTotal: () => number;
+  searchProducts: (options?: { category?: string; search?: string }) => ShopProduct[];
 }
 
-export const useShopStore = create<ShopState>((set, get) => ({
-  currentShop: null,
+export const useShopStore = create<ShopStore>((set, get) => ({
   products: [],
-  orders: [],
+  shops: [],
   cart: [],
-  productsLoading: false,
-  ordersLoading: false,
+  loading: false,
+  error: null,
 
-  setCurrentShop: (shop) => set({ currentShop: shop }),
-
-  loadProducts: async (shopId, options) => {
-    set({ productsLoading: true });
+  loadProducts: async (shopId?: string) => {
+    set({ loading: true, error: null });
     try {
-      const data = await ShopService.getProducts(shopId);
-      let filtered = data;
-      if (options?.category) filtered = filtered.filter((p) => p.category === options.category);
-      if (options?.search) filtered = filtered.filter((p) => p.name?.toLowerCase().includes(options.search.toLowerCase()));
-      set({ products: filtered });
-    } catch (e) {
-      console.error('Failed to load products:', e);
-    } finally {
-      set({ productsLoading: false });
+      const products = await shopService.getProducts(shopId);
+      set({ products, loading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to load', loading: false });
     }
   },
 
-  loadOrders: async (shopId, status) => {
-    set({ ordersLoading: true });
+  loadShops: async () => {
+    set({ loading: true, error: null });
     try {
-      const data = await ShopService.getOrders(shopId, status);
-      set({ orders: data });
-    } catch (e) {
-      console.error('Failed to load orders:', e);
-    } finally {
-      set({ ordersLoading: false });
+      const shops = await shopService.getShops();
+      set({ shops, loading: false });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to load', loading: false });
     }
   },
 
-  addToCart: (item) => {
-    const cart = get().cart;
-    const existing = cart.find((c) => c.product_id === item.product_id);
-    if (existing) {
-      set({
-        cart: cart.map((c) =>
-          c.product_id === item.product_id ? { ...c, quantity: c.quantity + item.quantity } : c
-        )
-      });
-    } else {
-      set({ cart: [...cart, item] });
-    }
+  addToCart: (product, quantity) => {
+    set((state) => {
+      const existing = state.cart.find((item) => item.product.id === product.id);
+      if (existing) {
+        return {
+          cart: state.cart.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          ),
+        };
+      }
+      return { cart: [...state.cart, { product, quantity }] };
+    });
   },
 
   removeFromCart: (productId) => {
-    set({ cart: get().cart.filter((c) => c.product_id !== productId) });
+    set((state) => ({
+      cart: state.cart.filter((item) => item.product.id !== productId),
+    }));
   },
 
   clearCart: () => set({ cart: [] }),
+
+  getCartTotal: () => {
+    return get().cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  },
+
+  searchProducts: (options) => {
+    let filtered = get().products;
+    if (options?.category) {
+      filtered = filtered.filter((p: ShopProduct) => p.category === options.category);
+    }
+    if (options?.search) {
+      const q = options.search.toLowerCase();
+      filtered = filtered.filter((p: ShopProduct) => p.name?.toLowerCase().includes(q));
+    }
+    return filtered;
+  },
 }));
+
+export default useShopStore;

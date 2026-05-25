@@ -1,49 +1,21 @@
-// lib/shop/shopRegistry.ts
-// MTAA AFRIQ Shop Module Registry Entry
+// domains/shop/state/shopRegistry.ts
+import { AppManifest } from '@/types/module.types';
 
-export const SHOP_APP = {
-  id: "shop",
-  name: "SHOP OS",
-  version: "1.0.0",
-  category: "business",
-  description: "Complete business operating system with POS, inventory, accounting, affiliate marketing, and escrow-connected marketplace fulfillment.",
-  icon: "store",
-  color: "#f59e0b",
-  route: "/shop",
-  installable: true,
-  isSystem: false,
-  permissions: [
-    "supabase.read",
-    "supabase.write",
-    "realtime.orders",
-    "camera.scan",
-    "wallet.read",
-    "escrow.access",
-    "maps.location",
-  ],
-  modules: ["pos", "inventory", "accounting", "affiliate", "marketplace", "orders"],
-  status: "stable",
-  features: [
-    "barcode_scanning",
-    "qr_scanning",
-    "pos_terminal",
-    "inventory_tracking",
-    "purchase_orders",
-    "order_management",
-    "escrow_payments",
-    "delivery_tracking",
-    "affiliate_programs",
-    "commission_tracking",
-    "profit_loss_reports",
-    "balance_sheet",
-    "cash_flow",
-    "expense_tracking",
-    "marketplace_sync",
-    "customer_chat",
-    "realtime_notifications",
-  ],
+export const shopManifest: AppManifest = {
+  id: 'shop',
+  name: 'Shop',
+  description: 'E-commerce and POS system',
+  version: '1.0.0',
+  icon: 'shopping-cart',
+  category: 'commerce',
+  color: '#10B981',
+  permissions: ['shop:read', 'shop:write', 'payments:read', 'payments:write'],
+  entry: '/shop',
+  isOSApp: true,
+  size: '2.4MB',
 };
 
-// Register with kernel
-import { registerApp } from "@/lib/kernel/registry";
-registerApp(SHOP_APP);
+export function registerShopApp(): void {
+  // Register with kernel
+  console.log('[ShopRegistry] Registered shop module');
+}

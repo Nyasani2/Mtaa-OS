@@ -1,64 +1,56 @@
-import { useState, useEffect, useCallback } from "react";
-import { ShopService } from "../services/shopService";
-import { supabase } from '@/lib/supabase';
+// domains/shop/hooks/useMarketplace.ts
+import { useState, useEffect, useCallback } from 'react';
+import { shopService, ShopProduct } from '../services/shopService';
 
-export function useMarketplaceSearch(query: string, category?: string) {
-  const [listings, setListings] = useState<any[]>([]);
+export function useMarketplace() {
+  const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(() => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    ShopService.searchMarketplace(query, category)
-      .then(setListings)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [query, category]);
+    try {
+      const data = await shopService.getProducts();
+      setProducts(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load marketplace');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    search();
-  }, [search]);
+    loadProducts();
+  }, [loadProducts]);
 
-  return { listings, loading, error, search };
+  return { products, loading, error, refresh: loadProducts };
 }
 
-export function useShopMessages(shopId: string, customerId?: string) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useMarketplaceSearch() {
+  const [results, setResults] = useState<ShopProduct[]>([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('shop_messages')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('created_at', { ascending: true });
-      if (!error) setMessages(data || []);
-      setLoading(false);
-    };
-    fetchMessages();
+  const search = useCallback(async (q: string) => {
+    setQuery(q);
+    if (!q.trim()) { setResults([]); return; }
+    setLoading(true);
+    const all = await shopService.getProducts();
+    const filtered = all.filter(p => 
+      p.name.toLowerCase().includes(q.toLowerCase()) ||
+      p.description?.toLowerCase().includes(q.toLowerCase())
+    );
+    setResults(filtered);
+    setLoading(false);
+  }, []);
 
-    const channel = supabase
-      .channel(`shop_messages:${shopId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shop_messages', filter: `shop_id=eq.${shopId}` }, (payload: any) => {
-        setMessages((prev) => [...prev, payload.new]);
-      })
-      .subscribe();
+  return { results, query, loading, search };
+}
 
-    return () => { supabase.removeChannel(channel); };
-  }, [shopId]);
-
-  const sendMessage = useCallback(async (content: string, senderId: string) => {
-    const { error } = await supabase.from('shop_messages').insert({
-      shop_id: shopId,
-      customer_id: customerId,
-      sender_id: senderId,
-      content,
-      created_at: new Date().toISOString()
-    });
-    if (error) throw error;
-  }, [shopId, customerId]);
-
-  return { messages, loading, sendMessage };
+export function useShopMessages() {
+  const [messages, setMessages] = useState<{ id: string; text: string; sender: string; timestamp: string }[]>([]);
+  const sendMessage = (text: string, sender: string) => {
+    setMessages(prev => [...prev, { id: Math.random().toString(36).slice(2), text, sender, timestamp: new Date().toISOString() }]);
+  };
+  return { messages, sendMessage };
 }

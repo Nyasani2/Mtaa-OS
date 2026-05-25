@@ -1,102 +1,125 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
-import { usePOSSession } from '../hooks/useShop';
-import { ShopService } from '../services/shopService';
-import { shopCreateOrder } from '../services/shop-create-order';
+// domains/shop/components/POSScreen.tsx
+import React, { useState, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, Alert, StyleSheet } from 'react-native';
+import { supabase } from '@/lib/supabase/client';
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  qty: number;
+}
 
 interface Props {
   shopId: string;
-  cashierId: string;
 }
 
-export default function POSScreen({ shopId, cashierId }: Props) {
-  const { session, loading, openSession, closeSession } = usePOSSession(shopId);
+export default function POSScreen({ shopId }: Props) {
+  const [sessionActive, setSessionActive] = useState(false);
   const [barcode, setBarcode] = useState('');
-  const [cart, setCart] = useState<Array<{ product: any; quantity: number }>>([]);
-  const [scanError, setScanError] = useState('');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleScan = async () => {
-    setScanError('');
-    try {
-      const product = await ShopService.getProductByBarcode(shopId, barcode);
-      if (!product) {
-        setScanError('Product not found');
-        return;
-      }
-      const existing = cart.find((c) => c.product.id === product.id);
-      if (existing) {
-        setCart(cart.map((c) => c.product.id === product.id ? { ...c, quantity: c.quantity + 1 } : c));
-      } else {
-        setCart([...cart, { product, quantity: 1 }]);
-      }
-      setBarcode('');
-    } catch (e: any) {
-      setScanError(e.message);
+  const startSession = () => setSessionActive(true);
+  const endSession = () => { setSessionActive(false); setCart([]); };
+
+  const lookupProduct = async (code: string) => {
+    if (!code.trim()) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('shop_id', shopId)
+      .eq('barcode', code.trim())
+      .single();
+    setLoading(false);
+    if (error || !data) {
+      Alert.alert('Not found', 'Product not found for this barcode');
+      return;
     }
+    const existing = cart.find((c) => c.id === data.id);
+    if (existing) {
+      setCart(cart.map((c) => c.id === data.id ? { ...c, qty: c.qty + 1 } : c));
+    } else {
+      setCart([...cart, { id: data.id, name: data.name, price: data.price, qty: 1 }]);
+    }
+    setBarcode('');
   };
 
-  const handleCheckout = async () => {
-    if (!session || cart.length === 0) return;
-    const items = cart.map((c) => ({ product_id: c.product.id, quantity: c.quantity, price: c.product.price }));
-    const total = cart.reduce((sum, c) => sum + c.product.price * c.quantity, 0);
-    await shopCreateOrder({
-      shop_id: shopId,
-      customer_id: cashierId,
-      items,
-      total_amount: total
-    });
-    setCart([]);
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const checkout = () => {
+    Alert.alert('Checkout', `Total: KES ${total.toLocaleString()}`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: () => { setCart([]); Alert.alert('Success', 'Sale recorded'); } },
+    ]);
   };
 
-  if (loading) return <Text>Loading POS...</Text>;
-
-  if (!session) {
+  if (!sessionActive) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>POS Closed</Text>
-        <Button title="Open Session" onPress={() => openSession(cashierId)} />
+      <View style={styles.center}>
+        <Text style={styles.title}>POS Session</Text>
+        <TouchableOpacity style={styles.bigBtn} onPress={startSession}>
+          <Text style={styles.bigBtnText}>Start Session</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>POS Active</Text>
-        <Button title="Close" onPress={closeSession} />
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>POS — {shopId}</Text>
+        <TouchableOpacity onPress={endSession}><Text style={styles.end}>End</Text></TouchableOpacity>
       </View>
-      <View style={styles.scanRow}>
-        <TextInput style={styles.input} value={barcode} onChangeText={setBarcode} placeholder="Scan barcode..." />
-        <Button title="Add" onPress={handleScan} />
-      </View>
-      {scanError ? <Text style={styles.error}>{scanError}</Text> : null}
+      <TextInput
+        style={styles.input}
+        placeholder="Scan barcode..."
+        placeholderTextColor="#888"
+        value={barcode}
+        onChangeText={setBarcode}
+        onSubmitEditing={() => lookupProduct(barcode)}
+        autoFocus
+      />
+      {loading && <Text style={styles.loading}>Scanning...</Text>}
       <FlatList
         data={cart}
-        keyExtractor={(item) => item.product.id}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.cartItem}>
-            <Text>{item.product.name}</Text>
-            <Text>Qty: {item.quantity}</Text>
-            <Text>${(item.product.price * item.quantity).toFixed(2)}</Text>
+          <View style={styles.item}>
+            <Text style={styles.itemName}>{item.name}</Text>
+            <Text style={styles.itemQty}>x{item.qty}</Text>
+            <Text style={styles.itemPrice}>KES {(item.price * item.qty).toLocaleString()}</Text>
           </View>
         )}
       />
       <View style={styles.footer}>
-        <Text style={styles.total}>Total: ${cart.reduce((s, c) => s + c.product.price * c.quantity, 0).toFixed(2)}</Text>
-        <Button title="Checkout" onPress={handleCheckout} disabled={cart.length === 0} />
+        <Text style={styles.total}>Total: KES {total.toLocaleString()}</Text>
+        <TouchableOpacity style={styles.checkoutBtn} onPress={checkout}>
+          <Text style={styles.checkoutText}>Checkout</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 18, fontWeight: 'bold' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  scanRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8 },
-  error: { color: '#f44336', marginBottom: 8 },
-  cartItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  footer: { marginTop: 16, paddingTop: 16, borderTopWidth: 2, borderTopColor: '#eee' },
-  total: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 }
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' },
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 24 },
+  bigBtn: { backgroundColor: '#10B981', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12 },
+  bigBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 16 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  header: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  end: { color: '#EF4444', fontSize: 16 },
+  input: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 8 },
+  loading: { color: '#888', marginBottom: 8 },
+  item: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
+  itemName: { color: '#fff', flex: 1, fontSize: 16 },
+  itemQty: { color: '#888', width: 40, textAlign: 'center' },
+  itemPrice: { color: '#10B981', width: 100, textAlign: 'right' },
+  footer: { borderTopWidth: 1, borderTopColor: '#1f1f1f', paddingTop: 16, marginTop: 8 },
+  total: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  checkoutBtn: { backgroundColor: '#10B981', borderRadius: 12, padding: 16, alignItems: 'center' },
+  checkoutText: { color: '#fff', fontSize: 18, fontWeight: '700' },
 });

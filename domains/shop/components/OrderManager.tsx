@@ -1,89 +1,96 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { useShopOrders } from '../hooks/useShop';
-import { ShopService } from '../services/shopService';
+// domains/shop/components/OrderManager.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { supabase } from '@/lib/supabase/client';
+
+interface Order {
+  id: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  total: number;
+  customer_name: string;
+  created_at: string;
+}
 
 interface Props {
   shopId: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#ff9800',
-  processing: '#2196f3',
-  shipped: '#9c27b0',
-  delivered: '#4caf50',
-  cancelled: '#f44336'
-};
-
 export default function OrderManager({ shopId }: Props) {
-  const { orders, loading, refresh } = useShopOrders(shopId);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const updateStatus = async (orderId: string, status: string) => {
-    await ShopService.updateOrderStatus(orderId, status);
-    refresh();
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false });
+    if (!error && data) setOrders(data as Order[]);
+    setLoading(false);
+  }, [shopId]);
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
+
+  const updateStatus = async (orderId: string, status: Order['status']) => {
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      loadOrders();
+    }
   };
 
   const confirmDelivery = async (orderId: string) => {
-    await ShopService.confirmDelivery(orderId);
-    refresh();
+    await updateStatus(orderId, 'delivered');
   };
 
-  if (loading) return <Text>Loading orders...</Text>;
+  const renderItem = ({ item }: { item: Order }) => (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <Text style={styles.customer}>{item.customer_name}</Text>
+        <Text style={[styles.badge, styles[item.status]]}>{item.status}</Text>
+      </View>
+      <Text style={styles.total}>KES {item.total?.toLocaleString()}</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.btn} onPress={() => updateStatus(item.id, 'processing')}>
+          <Text style={styles.btnText}>Process</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btn} onPress={() => updateStatus(item.id, 'shipped')}>
+          <Text style={styles.btnText}>Ship</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.btn, styles.deliverBtn]} onPress={() => confirmDelivery(item.id)}>
+          <Text style={styles.btnText}>Deliver</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Orders ({orders.length})</Text>
-      <FlatList
-        data={orders}
-        keyExtractor={(item: any) => item.id}
-        renderItem={({ item }: { item: any }) => (
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <Text style={styles.orderId}>Order #{item.id.slice(0, 8)}</Text>
-              <View style={[styles.badge, { backgroundColor: STATUS_COLORS[item.status] || '#999' }]}>
-                <Text style={styles.badgeText}>{item.status}</Text>
-              </View>
-            </View>
-            <Text>Total: ${item.total_amount?.toFixed(2)}</Text>
-            <Text>Date: {new Date(item.created_at).toLocaleDateString()}</Text>
-            <View style={styles.actions}>
-              {item.status === 'pending' && (
-                <TouchableOpacity style={styles.button} onPress={() => updateStatus(item.id, 'processing')}>
-                  <Text style={styles.buttonText}>Process</Text>
-                </TouchableOpacity>
-              )}
-              {item.status === 'processing' && (
-                <TouchableOpacity style={styles.button} onPress={() => updateStatus(item.id, 'shipped')}>
-                  <Text style={styles.buttonText}>Ship</Text>
-                </TouchableOpacity>
-              )}
-              {item.status === 'shipped' && (
-                <TouchableOpacity style={[styles.button, styles.deliverBtn]} onPress={() => confirmDelivery(item.id)}>
-                  <Text style={styles.buttonText}>Confirm Delivery</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={[styles.button, styles.cancelBtn]} onPress={() => updateStatus(item.id, 'cancelled')}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
+      <Text style={styles.header}>Orders</Text>
+      {loading && <Text style={styles.loading}>Loading...</Text>}
+      <FlatList data={orders} keyExtractor={(o) => o.id} renderItem={renderItem} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderId: { fontSize: 14, fontWeight: '600' },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '600' },
-  actions: { flexDirection: 'row', marginTop: 12, gap: 8 },
-  button: { backgroundColor: '#2196f3', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 },
-  buttonText: { color: '#fff', fontSize: 12 },
-  deliverBtn: { backgroundColor: '#4caf50' },
-  cancelBtn: { backgroundColor: '#f44336' }
+  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 16 },
+  header: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+  loading: { color: '#888', textAlign: 'center' },
+  card: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16, marginBottom: 12 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  customer: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, fontSize: 12, fontWeight: '600' },
+  pending: { backgroundColor: '#F59E0B', color: '#000' },
+  processing: { backgroundColor: '#3B82F6', color: '#fff' },
+  shipped: { backgroundColor: '#8B5CF6', color: '#fff' },
+  delivered: { backgroundColor: '#10B981', color: '#fff' },
+  cancelled: { backgroundColor: '#EF4444', color: '#fff' },
+  total: { color: '#10B981', fontSize: 18, fontWeight: '700', marginTop: 8 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  btn: { backgroundColor: '#333', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  deliverBtn: { backgroundColor: '#10B981' },
+  btnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

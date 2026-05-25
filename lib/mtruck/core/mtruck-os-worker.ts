@@ -1,33 +1,39 @@
-import { runMTruckOSBrain } from "./mtruck-os-brain";
-import { safeArray, safeObject } from "@/lib/kernel/safe-types";
+// lib/mtruck/core/mtruck-os-worker.ts
+export interface MTruckResult {
+  [key: string]: unknown;
+  snapshot: {
+    active_trucks: number;
+    pending_jobs: number;
+    completed_jobs: number;
+  };
+  control: {
+    decision: string;
+    priority: string;
+  };
+}
 
-export function startMTruckOS(intervalMs = 8000) {
-  console.log("🚛 MTRUCK OS LIVE BRAIN STARTED");
+export function processMTruckWorker(result: unknown): {
+  fleet: number;
+  pending: number;
+  completed: number;
+  decision: string;
+} {
+  const r = result as MTruckResult;
+  const snapshot = (r.snapshot as { active_trucks?: number; pending_jobs?: number; completed_jobs?: number }) || {};
+  const control = (r.control as { decision?: string; priority?: string }) || {};
 
-  setInterval(async () => {
-    try {
-      const result = await runMTruckOSBrain();
+  return {
+    fleet: snapshot.active_trucks ?? 0,
+    pending: snapshot.pending_jobs ?? 0,
+    completed: snapshot.completed_jobs ?? 0,
+    decision: control.decision ?? 'noop',
+  };
+}
 
-      const safeResult = safeObject(result, {
-        snapshot: {
-          active_trucks: 0,
-        },
-        matches: [],
-        control: {
-          decision: "noop",
-        },
-      });
-
-      const matches = safeArray<any>(safeResult.matches);
-
-      console.log("🧠 OS TICK:", {
-        fleet: safeResult.snapshot?.active_trucks ?? 0,
-        assignments: matches.length,
-        decision: safeResult.control?.decision ?? "noop",
-      });
-
-    } catch (e) {
-      console.error("MTRUCK OS ERROR:", e);
-    }
+export function startMTruckOS(intervalMs: number = 5000): () => void {
+  console.log(`[MTruckOS] Worker starting with ${intervalMs}ms interval`);
+  const timer = setInterval(() => {
+    console.log('[MTruckOS] Heartbeat');
   }, intervalMs);
+  return () => clearInterval(timer);
 }

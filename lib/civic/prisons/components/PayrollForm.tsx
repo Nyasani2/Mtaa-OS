@@ -1,36 +1,58 @@
-'use client';
+// lib/civic/prisons/components/PayrollForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { PrisonPayroll, StaffType } from '@/types/prisons';
 
-import { useState } from 'react';
-import { PrisonPayroll } from '@/types/prisons';
+interface PayrollData {
+  facility_id: string;
+  staff_id: string;
+  staff_name: string;
+  staff_type: StaffType;
+  pay_period_start: string;
+  pay_period_end: string;
+  base_amount: number;
+  hazard_allowance: number;
+  overtime: number;
+  deductions: number;
+}
 
-export function PayrollForm({ onSubmit }: { onSubmit: (data: Partial<PrisonPayroll>) => void }) {
-  const [form, setForm] = useState<Partial<PrisonPayroll>>({ status: 'pending' });
+export function PayrollForm({ onSubmit }: { onSubmit?: (data: PayrollData) => void }) {
+  const [form, setForm] = useState<PayrollData>({
+    facility_id: '',
+    staff_id: '',
+    staff_name: '',
+    staff_type: 'warder',
+    pay_period_start: '',
+    pay_period_end: '',
+    base_amount: 0,
+    hazard_allowance: 0,
+    overtime: 0,
+    deductions: 0,
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Facility ID" value={form.facility_id || ''} onChange={e => setForm(f => ({ ...f, facility_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Staff ID" value={form.staff_id || ''} onChange={e => setForm(f => ({ ...f, staff_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Staff Name" value={form.staff_name || ''} onChange={e => setForm(f => ({ ...f, staff_name: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.staff_type} onChange={e => setForm(f => ({ ...f, staff_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="warden">Warden</option>
-        <option value="guard">Guard</option>
-        <option value="medical">Medical</option>
-        <option value="counselor">Counselor</option>
-        <option value="kitchen">Kitchen</option>
-        <option value="maintenance">Maintenance</option>
-        <option value="admin">Admin</option>
-      </select>
-      <div className="grid grid-cols-2 gap-3">
-        <input type="date" value={form.pay_period_start || ''} onChange={e => setForm(f => ({ ...f, pay_period_start: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-        <input type="date" value={form.pay_period_end || ''} onChange={e => setForm(f => ({ ...f, pay_period_end: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      </div>
-      <div className="grid grid-cols-4 gap-3">
-        <input type="number" placeholder="Base" value={form.base_amount || ''} onChange={e => setForm(f => ({ ...f, base_amount: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-        <input type="number" placeholder="Hazard" value={form.hazard_allowance || ''} onChange={e => setForm(f => ({ ...f, hazard_allowance: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-        <input type="number" placeholder="OT" value={form.overtime || ''} onChange={e => setForm(f => ({ ...f, overtime: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-        <input type="number" placeholder="Deductions" value={form.deductions || ''} onChange={e => setForm(f => ({ ...f, deductions: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-      </div>
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Create Entry</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>Process Payroll</Text>
+      <TextInput style={styles.input} placeholder="Facility ID" value={form.facility_id} onChangeText={v => setForm(f => ({ ...f, facility_id: v }))} />
+      <TextInput style={styles.input} placeholder="Staff ID" value={form.staff_id} onChangeText={v => setForm(f => ({ ...f, staff_id: v }))} />
+      <TextInput style={styles.input} placeholder="Staff Name" value={form.staff_name} onChangeText={v => setForm(f => ({ ...f, staff_name: v }))} />
+      <TextInput style={styles.input} placeholder="Period Start (YYYY-MM-DD)" value={form.pay_period_start} onChangeText={v => setForm(f => ({ ...f, pay_period_start: v }))} />
+      <TextInput style={styles.input} placeholder="Period End (YYYY-MM-DD)" value={form.pay_period_end} onChangeText={v => setForm(f => ({ ...f, pay_period_end: v }))} />
+      <TextInput style={styles.input} placeholder="Base Amount" value={String(form.base_amount)} onChangeText={v => setForm(f => ({ ...f, base_amount: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Hazard Allowance" value={String(form.hazard_allowance)} onChangeText={v => setForm(f => ({ ...f, hazard_allowance: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Overtime" value={String(form.overtime)} onChangeText={v => setForm(f => ({ ...f, overtime: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Deductions" value={String(form.deductions)} onChangeText={v => setForm(f => ({ ...f, deductions: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Process</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

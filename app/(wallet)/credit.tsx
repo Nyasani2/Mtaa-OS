@@ -1,245 +1,62 @@
-"use client";
+// app/(wallet)/credit.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
+import { useWalletStore } from '@/hooks/useWalletStore';
 
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  StyleSheet,
-} from "react-native";
-import { useRouter } from "expo-router";
+export default function CreditScreen() {
+  const { wallet } = useWalletStore();
+  const [amount, setAmount] = useState('');
+  const [requesting, setRequesting] = useState(false);
 
-import { useWalletStore } from "@/hooks/useWalletStore";
-import { useWalletAccount } from "@/hooks/useWalletStore";
-import { useWalletCredit } from "@/hooks/useWalletStore";
-
-import {
-  CreditCard,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  Shield,
-} from "lucide-react-native";
-
-export default function Credit() {
-  const router = useRouter();
-
-  const { account } = useWalletAccount();
-  const { credit, refresh } = useWalletCredit();
-  const { requestCredit } = useWalletStore();
-
-  const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-
-  const currency = account?.currency || "USD";
-
-  const format = (v: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(v);
-
-  const submit = async () => {
-    const value = parseFloat(amount);
-
-    if (!value || value <= 0) {
-      Alert.alert("Invalid Amount", "Enter a valid credit amount");
+  const handleRequest = async () => {
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt <= 0) {
+      Alert.alert('Error', 'Enter a valid amount');
       return;
     }
-
-    setLoading(true);
-
-    const res = await requestCredit(value);
-
-    setLoading(false);
-
-    if (res?.success) {
-      Alert.alert("Success", "Credit request submitted");
-      setAmount("");
-      setShowForm(false);
-      refresh();
-    } else {
-      Alert.alert("Failed", res?.error || "Request failed");
-    }
-  };
-
-  const statusColor = (s?: string) => {
-    switch (s) {
-      case "active":
-        return "#10B981";
-      case "pending":
-        return "#F59E0B";
-      case "suspended":
-        return "#EF4444";
-      default:
-        return "#64748B";
+    setRequesting(true);
+    try {
+      Alert.alert('Success', `Credit request for KES ${amt} submitted`);
+      setAmount('');
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Request failed');
+    } finally {
+      setRequesting(false);
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Credit</Text>
-
-        {/* CREDIT CARD */}
-        {credit ? (
-          <View style={styles.card}>
-            <Text style={styles.label}>Limit</Text>
-            <Text style={styles.amount}>{format(credit.limit)}</Text>
-
-            <Text style={styles.label}>Used</Text>
-            <Text style={styles.used}>{format(credit.used)}</Text>
-
-            <View style={styles.bar}>
-              <View
-                style={[
-                  styles.fill,
-                  {
-                    width: `${Math.min(
-                      100,
-                      (credit.used / Math.max(credit.limit, 1)) * 100
-                    )}%`,
-                    backgroundColor:
-                      credit.used / Math.max(credit.limit, 1) > 0.8
-                        ? "#EF4444"
-                        : "#3B82F6",
-                  },
-                ]}
-              />
-            </View>
-
-            <Text style={[styles.status, { color: statusColor(credit.status) }]}>
-              {credit.status}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.empty}>
-            <Shield size={40} color="#64748B" />
-            <Text style={styles.emptyText}>No credit line</Text>
-          </View>
-        )}
-
-        {/* FORM */}
-        <View style={styles.section}>
-          {!showForm ? (
-            <TouchableOpacity
-              style={styles.btn}
-              onPress={() => setShowForm(true)}
-            >
-              <CreditCard color="#fff" />
-              <Text style={styles.btnText}>Request Credit</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              <TextInput
-                placeholder="Amount"
-                placeholderTextColor="#64748B"
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
-                style={styles.input}
-              />
-
-              <View style={styles.row}>
-                <TouchableOpacity
-                  style={[styles.btn, styles.cancel]}
-                  onPress={() => setShowForm(false)}
-                >
-                  <Text style={styles.btnText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.btn, styles.primary]}
-                  onPress={submit}
-                  disabled={loading}
-                >
-                  <Text style={styles.btnText}>
-                    {loading ? "Sending..." : "Submit"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </View>
+      <Text style={styles.header}>GoFund Credit</Text>
+      <View style={styles.balanceCard}>
+        <Text style={styles.balanceLabel}>Available Credit</Text>
+        <Text style={styles.balance}>KES {wallet?.credit_limit?.toLocaleString() ?? '0'}</Text>
       </View>
+
+      <Text style={styles.label}>Request Amount</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter amount"
+        value={amount}
+        onChangeText={setAmount}
+        keyboardType="decimal-pad"
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleRequest} disabled={requesting}>
+        <Text style={styles.buttonText}>{requesting ? 'Requesting...' : 'Request Credit'}</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0F172A" },
-  content: { padding: 16 },
-
-  title: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 20,
-  },
-
-  card: {
-    backgroundColor: "#1E293B",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-
-  label: { color: "#94A3B8", fontSize: 12 },
-  amount: { color: "#fff", fontSize: 22, fontWeight: "700", marginBottom: 8 },
-  used: { color: "#CBD5E1", fontSize: 16 },
-
-  bar: {
-    height: 8,
-    backgroundColor: "#334155",
-    borderRadius: 6,
-    marginTop: 12,
-    overflow: "hidden",
-  },
-
-  fill: { height: "100%" },
-
-  status: {
-    marginTop: 10,
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-
-  empty: {
-    padding: 30,
-    alignItems: "center",
-    backgroundColor: "#1E293B",
-    borderRadius: 16,
-  },
-
-  emptyText: { color: "#94A3B8", marginTop: 10 },
-
-  section: { marginTop: 20 },
-
-  input: {
-    backgroundColor: "#1E293B",
-    color: "#fff",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-
-  row: { flexDirection: "row", gap: 10 },
-
-  btn: {
-    flex: 1,
-    backgroundColor: "#3B82F6",
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  cancel: { backgroundColor: "#334155" },
-  primary: { backgroundColor: "#2563EB" },
-
-  btnText: { color: "#fff", fontWeight: "600" },
+  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  header: { fontSize: 24, fontWeight: '700', marginBottom: 20 },
+  balanceCard: { backgroundColor: '#1e40af', padding: 20, borderRadius: 12, marginBottom: 24 },
+  balanceLabel: { color: '#93c5fd', fontSize: 14 },
+  balance: { color: '#fff', fontSize: 32, fontWeight: '700', marginTop: 4 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

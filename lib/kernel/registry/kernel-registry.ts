@@ -1,33 +1,40 @@
-export class KernelRegistry {
-  private static instance: KernelRegistry;
-  private apps = new Map<string, any>();
+// lib/kernel/registry/kernel-registry.ts
+import { AppManifest, KernelRegistryEntry } from '@/types/module.types';
 
-  static getInstance(): KernelRegistry {
-    if (!KernelRegistry.instance) {
-      KernelRegistry.instance = new KernelRegistry();
-    }
-    return KernelRegistry.instance;
-  }
+const kernelRegistry = new Map<string, KernelRegistryEntry>();
 
-  get(id: string) {
-    return this.apps.get(id);
-  }
+export function registerKernelApp(manifest: AppManifest): KernelRegistryEntry {
+  const entry: KernelRegistryEntry = {
+    id: manifest.id,
+    manifest,
+    status: 'active',
+    lastBooted: new Date().toISOString(),
+    errorCount: 0,
+  };
+  kernelRegistry.set(manifest.id, entry);
+  return entry;
+}
 
-  getAll() {
-    return Array.from(this.apps.values());
-  }
+export function getKernelEntry(id: string): KernelRegistryEntry | undefined {
+  return kernelRegistry.get(id);
+}
 
-  getInstallable() {
-    return this.getAll().filter((app: any) => !app.isOSApp);
-  }
+export function listKernelEntries(): KernelRegistryEntry[] {
+  return Array.from(kernelRegistry.values());
+}
 
-  register(id: string, app: any) {
-    this.apps.set(id, app);
-  }
-
-  async initialize() {
-    // Initialize kernel systems
+export function setKernelError(id: string, error: string): void {
+  const entry = kernelRegistry.get(id);
+  if (entry) {
+    entry.status = 'error';
+    entry.errorCount += 1;
   }
 }
 
-export type AppRoute = string;
+export function setKernelActive(id: string): void {
+  const entry = kernelRegistry.get(id);
+  if (entry) {
+    entry.status = 'active';
+    entry.lastBooted = new Date().toISOString();
+  }
+}

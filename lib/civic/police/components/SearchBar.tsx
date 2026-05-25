@@ -1,54 +1,40 @@
-import React, { useState } from 'react'
+// lib/civic/police/components/SearchBar.tsx
+import React, { useState, useCallback } from 'react';
+import { View, TextInput, StyleSheet } from 'react-native';
 
 interface SearchBarProps {
-  onSearch: (query: string) => void
-  placeholder?: string
-  debounceMs?: number
+  onSearch: (query: string) => void;
+  placeholder?: string;
 }
 
-export function SearchBar({ onSearch, placeholder = 'Search...', debounceMs = 300 }: SearchBarProps) {
-  const [query, setQuery] = useState('')
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
+export function SearchBar({ onSearch, placeholder = 'Search...' }: SearchBarProps) {
+  const [query, setQuery] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setQuery(value)
-
-    if (timeoutId) clearTimeout(timeoutId)
-
-    const newTimeout = setTimeout(() => {
-      onSearch(value)
-    }, debounceMs)
-
-    setTimeoutId(newTimeout)
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearch(query)
-  }
+  const handleChange = useCallback((text: string) => {
+    setQuery(text);
+    onSearch(text);
+  }, [onSearch]);
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
-      <input
-        type="text"
-        value={query}
-        onChange={handleChange}
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
         placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        value={query}
+        onChangeText={handleChange}
       />
-      <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      {query && (
-        <button
-          type="button"
-          onClick={() => { setQuery(''); onSearch('') }}
-          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-        >
-          ✕
-        </button>
-      )}
-    </form>
-  )
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 8 },
+  input: { 
+    height: 40, 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    borderRadius: 8, 
+    paddingHorizontal: 12,
+    backgroundColor: '#fff'
+  },
+});

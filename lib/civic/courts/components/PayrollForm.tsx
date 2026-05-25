@@ -1,34 +1,55 @@
-'use client';
+// lib/civic/courts/components/PayrollForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { CourtPayroll, StaffType } from '@/types/courts';
 
-import { useState } from 'react';
-import { CourtPayroll } from '@/types/courts';
+interface PayrollData {
+  court_house_id: string;
+  staff_id: string;
+  staff_name: string;
+  staff_type: StaffType;
+  pay_period_start: string;
+  pay_period_end: string;
+  base_amount: number;
+  allowances: number;
+  deductions: number;
+}
 
-export function PayrollForm({ onSubmit }: { onSubmit: (data: Partial<CourtPayroll>) => void }) {
-  const [form, setForm] = useState<Partial<CourtPayroll>>({ status: 'pending' });
+export function PayrollForm({ onSubmit }: { onSubmit?: (data: PayrollData) => void }) {
+  const [form, setForm] = useState<PayrollData>({
+    court_house_id: '',
+    staff_id: '',
+    staff_name: '',
+    staff_type: 'clerk',
+    pay_period_start: '',
+    pay_period_end: '',
+    base_amount: 0,
+    allowances: 0,
+    deductions: 0,
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Court House ID" value={form.court_house_id || ''} onChange={e => setForm(f => ({ ...f, court_house_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Staff ID" value={form.staff_id || ''} onChange={e => setForm(f => ({ ...f, staff_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Staff Name" value={form.staff_name || ''} onChange={e => setForm(f => ({ ...f, staff_name: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.staff_type} onChange={e => setForm(f => ({ ...f, staff_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="judge">Judge</option>
-        <option value="clerk">Clerk</option>
-        <option value="bailiff">Bailiff</option>
-        <option value="reporter">Reporter</option>
-        <option value="registrar">Registrar</option>
-        <option value="security">Security</option>
-      </select>
-      <div className="grid grid-cols-2 gap-3">
-        <input type="date" placeholder="Period Start" value={form.pay_period_start || ''} onChange={e => setForm(f => ({ ...f, pay_period_start: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-        <input type="date" placeholder="Period End" value={form.pay_period_end || ''} onChange={e => setForm(f => ({ ...f, pay_period_end: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <input type="number" placeholder="Base" value={form.base_amount || ''} onChange={e => setForm(f => ({ ...f, base_amount: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-        <input type="number" placeholder="Allowances" value={form.allowances || ''} onChange={e => setForm(f => ({ ...f, allowances: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-        <input type="number" placeholder="Deductions" value={form.deductions || ''} onChange={e => setForm(f => ({ ...f, deductions: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" />
-      </div>
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Create Entry</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>Process Payroll</Text>
+      <TextInput style={styles.input} placeholder="Court House ID" value={form.court_house_id} onChangeText={v => setForm(f => ({ ...f, court_house_id: v }))} />
+      <TextInput style={styles.input} placeholder="Staff ID" value={form.staff_id} onChangeText={v => setForm(f => ({ ...f, staff_id: v }))} />
+      <TextInput style={styles.input} placeholder="Staff Name" value={form.staff_name} onChangeText={v => setForm(f => ({ ...f, staff_name: v }))} />
+      <TextInput style={styles.input} placeholder="Period Start (YYYY-MM-DD)" value={form.pay_period_start} onChangeText={v => setForm(f => ({ ...f, pay_period_start: v }))} />
+      <TextInput style={styles.input} placeholder="Period End (YYYY-MM-DD)" value={form.pay_period_end} onChangeText={v => setForm(f => ({ ...f, pay_period_end: v }))} />
+      <TextInput style={styles.input} placeholder="Base Amount" value={String(form.base_amount)} onChangeText={v => setForm(f => ({ ...f, base_amount: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Allowances" value={String(form.allowances)} onChangeText={v => setForm(f => ({ ...f, allowances: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Deductions" value={String(form.deductions)} onChangeText={v => setForm(f => ({ ...f, deductions: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Process</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

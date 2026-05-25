@@ -1,27 +1,34 @@
 export interface AppManifest {
   id: string;
   name: string;
-  description: string;
   version: string;
-  icon: string;
-  category: 'system' | 'civic' | 'commerce' | 'social' | 'utility' | 'finance' | 'health' | 'education' | 'transport';
-  author: string;
-  entryPoint: string;
-  routes: string[];
+  description?: string;
+  domain: string;
+  icon?: string;
+  color?: string;
   permissions: string[];
-  config?: Record<string, any>;
-  isCore?: boolean;
-  isInstalled?: boolean;
-  installDate?: string;
-  size?: string;
-  rating?: number;
-  downloads?: number;
+  routes: string[];
+  dependencies: string[];
+  entry_point: string;
+  enabled: boolean;
+  installable: boolean;
+  system_app: boolean;
+  min_kernel_version?: string;
+  config_schema?: Record<string, any>;
 }
 
-export interface AppRegistry {
-  apps: AppManifest[];
-  categories: string[];
-  version: string;
+export interface AppInstallation {
+  id: string;
+  user_id: string;
+  app_id: string;
+  installed_at: string;
+  is_enabled: boolean;
+  pinned: boolean;
+  grid_x?: number;
+  grid_y?: number;
+  screen?: number;
+  folder_id?: string | null;
+  badge_count: number;
+  last_opened_at?: string | null;
+  open_count: number;
 }
-
-export type AppCategory = AppManifest['category'];

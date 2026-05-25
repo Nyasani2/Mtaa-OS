@@ -1,35 +1,62 @@
-import { create } from 'zustand';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase/client';
 
-interface WalletState {
+export interface Wallet {
+  id: string;
+  user_id: string;
   balance: number;
   currency: string;
-  transactions: any[];
-  loading: boolean;
-  error: string | null;
-  fetchBalance: () => Promise<void>;
-  sendTransaction: (to: string, amount: number) => Promise<void>;
+  status: 'active' | 'frozen' | 'closed';
+  created_at: string;
 }
 
-export const useWalletStore = create<WalletState>((set, get) => ({
-  balance: 0,
-  currency: 'USD',
-  transactions: [],
-  loading: false,
-  error: null,
-  fetchBalance: async () => {
-    set({ loading: true });
+export interface WalletTransaction {
+  id: string;
+  wallet_id: string;
+  type: 'credit' | 'debit';
+  amount: number;
+  description: string;
+  status: 'pending' | 'completed' | 'failed';
+  created_at: string;
+}
+
+export function useWalletStore() {
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      set({ loading: false });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setWallet(null); setTransactions([]); return; }
+
+      const { data: walletData } = await supabase.from('wallets').select('*').eq('user_id', user.id).single();
+      setWallet(walletData);
+
+      if (walletData) {
+        const { data: txData } = await supabase.from('transactions').select('*').eq('wallet_id', walletData.id).order('created_at', { ascending: false }).limit(50);
+        setTransactions(txData || []);
+      }
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-  },
-  sendTransaction: async (to, amount) => {
-    set({ loading: true });
-    try {
-      set({ loading: false });
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
-    }
-  },
-}));
+  }, []);
+
+  const transfer = useCallback(async (recipientPhone: string, amount: number, description?: string) => {
+    const { data, error } = await supabase.functions.invoke('transfer-funds', {
+      body: { recipientPhone, amount, description },
+    });
+    if (error) throw error;
+    await refresh();
+    return data;
+  }, [refresh]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  return { wallet, transactions, loading, error, refresh, transfer };
+}

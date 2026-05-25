@@ -1,16 +1,24 @@
+// lib/civic/prisons/components/RiskBadge.tsx
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { RiskLevel } from '@/types/prisons';
 
-const colors: Record<RiskLevel, string> = {
-  low: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  high: 'bg-orange-100 text-orange-800',
-  critical: 'bg-red-100 text-red-800',
+const riskColors: Record<RiskLevel, string> = {
+  low: '#059669',
+  medium: '#f59e0b',
+  high: '#ef4444',
+  maximum: '#7f1d1d',
 };
 
 export function RiskBadge({ level }: { level: RiskLevel }) {
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium uppercase ${colors[level] || colors.medium}`}>
-      {level}
-    </span>
+    <View style={[styles.badge, { backgroundColor: riskColors[level] ?? '#6b7280' }]}>
+      <Text style={styles.text}>{level.toUpperCase()}</Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  badge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 12, alignSelf: 'flex-start' },
+  text: { color: '#fff', fontSize: 11, fontWeight: '600' },
+});

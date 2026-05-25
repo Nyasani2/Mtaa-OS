@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "expo-router";
-import { getAppById, isSystemApp, isLocalApp } from "./registry";
-import type { AppManifest } from "./apps/types";
+import { getAppById, isSystemApp } from "./registry";
+import type { AppManifest } from "@/types/module.types";
 
 export function useLauncher() {
   const router = useRouter();
@@ -15,8 +15,7 @@ export function useLauncher() {
       return [app.id, ...filtered].slice(0, 10);
     });
 
-    // Navigate to app entry point
-    const entry = (app as any).entryPoints?.[0] || app.entry;
+    const entry = app.entry || '/';
     router.push(entry as any);
   }, [router]);
 
