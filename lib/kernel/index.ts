@@ -1,5 +1,5 @@
-export { KernelStateMachine } from "./kernel-state-machine";
-export { KernelRegistry } from "./registry/kernel-registry";
-export { KernelBootSequence } from "./boot/kernel-boot-sequence";
-export { kernelEntry } from "./boot/kernel-entry";
-export { startOS } from "./boot/start-os";
+// lib/kernel/index.ts
+export { SearchEngine, getSearchEngine, resetSearchEngine } from './search-engine';
+export { registerApp, getAppById, listApps, isSystemApp, isLocalApp } from './registry';
+export { safeArray, safeObject, safeString, safeNumber, safeBoolean } from './safe-types';
+export * from './registry/kernel-registry';

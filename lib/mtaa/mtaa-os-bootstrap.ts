@@ -1,15 +1,15 @@
-import { startMTruckLiveOS } from "../mtruck/core/mtruck-live-os-loop";
+// lib/mtaa/mtaa-os-bootstrap.ts
 import { startMTruckOS } from "../mtruck/core/mtruck-os-worker";
 
 export function bootMTAAOS() {
-
   console.log("🚀 MTAA OS BOOTING...");
 
-  // core mobility brain
-  startMTruckOS(5000);
-
-  // live system loop
-  startMTruckLiveOS();
+  const stopMTruck = startMTruckOS(5000);
 
   console.log("✅ MTAA OS ONLINE");
+
+  return () => {
+    stopMTruck();
+    console.log("🛑 MTAA OS shutdown complete");
+  };
 }

@@ -2,45 +2,32 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    },
     "baseUrl": ".",
-    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "types": ["react", "react-native"],
+    "noEmit": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "lib/**/*.ts",
-    "lib/**/*.tsx",
-    "components/**/*.ts",
-    "components/**/*.tsx",
-    "domains/**/*.ts",
-    "domains/**/*.tsx",
-    "hooks/**/*.ts",
-    "hooks/**/*.tsx",
-    "types/**/*.ts",
-    "types/**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "app/**/*",
+    "lib/**/*",
+    "domains/**/*",
+    "components/**/*",
+    "hooks/**/*",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules",
-    "_CLEANUP_BACKUP",
-    "_KERNEL_ARCHIVE_LOCK",
-    "apps/_disabled",
-    "apps/_legacy_components",
-    "supabase/functions",
+    "supabase/functions/**/*",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "babel.config.js",
+    "metro.config.js"
   ]
 }

@@ -1,24 +1,43 @@
-'use client';
+// lib/civic/prisons/components/ParoleReviewForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { PrisonParoleReview, ReviewType } from '@/types/prisons';
 
-import { useState } from 'react';
-import { PrisonParoleReview } from '@/types/prisons';
+interface ParoleData {
+  inmate_id: string;
+  review_date: string;
+  review_type: ReviewType;
+  board_members: string;
+  rehabilitation_notes: string;
+}
 
-export function ParoleReviewForm({ onSubmit }: { onSubmit: (data: Partial<PrisonParoleReview>) => void }) {
-  const [form, setForm] = useState<Partial<PrisonParoleReview>>({ review_type: 'scheduled', decision: 'pending' });
+export function ParoleReviewForm({ onSubmit }: { onSubmit?: (data: ParoleData) => void }) {
+  const [form, setForm] = useState<ParoleData>({
+    inmate_id: '',
+    review_date: '',
+    review_type: 'parole',
+    board_members: '',
+    rehabilitation_notes: '',
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Inmate ID" value={form.inmate_id || ''} onChange={e => setForm(f => ({ ...f, inmate_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input type="date" value={form.review_date || ''} onChange={e => setForm(f => ({ ...f, review_date: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.review_type} onChange={e => setForm(f => ({ ...f, review_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="scheduled">Scheduled</option>
-        <option value="early">Early</option>
-        <option value="mandatory">Mandatory</option>
-        <option value="appeal">Appeal</option>
-      </select>
-      <input placeholder="Board Members (comma separated)" onChange={e => setForm(f => ({ ...f, board_members: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} className="w-full border rounded px-3 py-2" />
-      <textarea placeholder="Rehabilitation Notes" value={form.rehabilitation_notes || ''} onChange={e => setForm(f => ({ ...f, rehabilitation_notes: e.target.value }))} className="w-full border rounded px-3 py-2" rows={3} />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Schedule Review</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>Parole Review</Text>
+      <TextInput style={styles.input} placeholder="Inmate ID" value={form.inmate_id} onChangeText={v => setForm(f => ({ ...f, inmate_id: v }))} />
+      <TextInput style={styles.input} placeholder="Review Date (YYYY-MM-DD)" value={form.review_date} onChangeText={v => setForm(f => ({ ...f, review_date: v }))} />
+      <TextInput style={styles.input} placeholder="Board Members (comma separated)" value={form.board_members} onChangeText={v => setForm(f => ({ ...f, board_members: v }))} />
+      <TextInput style={styles.input} placeholder="Rehabilitation Notes" value={form.rehabilitation_notes} onChangeText={v => setForm(f => ({ ...f, rehabilitation_notes: v }))} multiline />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Submit Review</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

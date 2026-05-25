@@ -1,18 +1,13 @@
-import { useEffect } from "react";
-import { useRouter, type Href } from "expo-router";
-import { useAuth } from "@/hooks/useAuth";
+// lib/useAuthGuard.ts
+import { useIdentity } from '@/lib/auth/identity';
 
-export function useAuthGuard(redirectTo: Href = "/login" as Href) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
+export function useAuthGuard(requiredRole?: string) {
+  const identity = useIdentity();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace(redirectTo);
-    }
-  }, [user, isLoading, router, redirectTo]);
-
-  return { isLoading, isAuthenticated: !!user };
+  return {
+    isAllowed: identity.isAuthenticated && (!requiredRole || identity.user?.role === requiredRole),
+    isAuthenticated: identity.isAuthenticated,
+    isLoading: identity.isLoading,
+    user: identity.user,
+  };
 }
-
-export default useAuthGuard;

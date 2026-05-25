@@ -1,24 +1,43 @@
-'use client';
+// lib/civic/courts/components/BailForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { CourtBail, BailType } from '@/types/courts';
 
-import { useState } from 'react';
-import { CourtBail } from '@/types/courts';
+interface BailFormData {
+  case_id: string;
+  party_id: string;
+  bail_type: BailType;
+  amount: number;
+  conditions: string;
+}
 
-export function BailForm({ onSubmit }: { onSubmit: (data: Partial<CourtBail>) => void }) {
-  const [form, setForm] = useState<Partial<CourtBail>>({ bail_type: 'cash_bail', status: 'pending' });
+export function BailForm({ onSubmit }: { onSubmit?: (data: BailFormData) => void }) {
+  const [form, setForm] = useState<BailFormData>({
+    case_id: '',
+    party_id: '',
+    bail_type: 'cash',
+    amount: 0,
+    conditions: '',
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Case ID" value={form.case_id || ''} onChange={e => setForm(f => ({ ...f, case_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Party ID" value={form.party_id || ''} onChange={e => setForm(f => ({ ...f, party_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.bail_type} onChange={e => setForm(f => ({ ...f, bail_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="cash_bail">Cash Bail</option>
-        <option value="surety_bond">Surety Bond</option>
-        <option value="property_bond">Property Bond</option>
-        <option value="personal_recognizance">Personal Recognizance</option>
-      </select>
-      <input type="number" placeholder="Amount (KES)" value={form.amount || ''} onChange={e => setForm(f => ({ ...f, amount: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Conditions (comma separated)" onChange={e => setForm(f => ({ ...f, conditions: e.target.value.split(',').map(s => s.trim()) }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Create Bail</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>Post Bail</Text>
+      <TextInput style={styles.input} placeholder="Case ID" value={form.case_id} onChangeText={v => setForm(f => ({ ...f, case_id: v }))} />
+      <TextInput style={styles.input} placeholder="Party ID" value={form.party_id} onChangeText={v => setForm(f => ({ ...f, party_id: v }))} />
+      <TextInput style={styles.input} placeholder="Amount (KES)" value={String(form.amount)} onChangeText={v => setForm(f => ({ ...f, amount: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Conditions (comma separated)" value={form.conditions} onChangeText={v => setForm(f => ({ ...f, conditions: v }))} />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Post Bail</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

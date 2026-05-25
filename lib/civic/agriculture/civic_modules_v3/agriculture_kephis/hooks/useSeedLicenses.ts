@@ -1,23 +1,19 @@
-"use client";
-
-import { useEffect } from "react";
-import { useAgriculture } from "../controllers/useAgriculture";
-import { useAuth } from "@/hooks/useAuth";
+// lib/civic/agriculture/civic_modules_v3/agriculture_kephis/hooks/useSeedLicenses.ts
+import { useState, useEffect } from 'react';
+import { useIdentity } from '@/lib/auth/identity';
+import { supabase } from '@/lib/supabase/client';
 
 export function useSeedLicenses() {
-  const { user } = useAuth();
-  const agri = useAgriculture();
+  const { user } = useIdentity();
+  const [licenses, setLicenses] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      agri.loadSeedLicenses(user.id);
-    }
-  }, [user?.id]);
+    if (!user) return;
+    setLoading(true);
+    supabase.from('seed_licenses').select('*').eq('user_id', user.id)
+      .then(({ data }) => { setLicenses(data ?? []); setLoading(false); });
+  }, [user]);
 
-  return {
-    seedLicenses: agri.seedLicenses,
-    isLoading: agri.isLoading,
-    error: agri.error,
-    refresh: () => user?.id && agri.loadSeedLicenses(user.id),
-  };
+  return { licenses, loading };
 }

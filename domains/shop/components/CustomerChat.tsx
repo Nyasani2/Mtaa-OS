@@ -1,50 +1,60 @@
+// domains/shop/components/CustomerChat.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useShopMessages } from '../hooks/useMarketplace';
 
 interface Props {
   shopId: string;
-  customerId?: string;
-  userId: string;
+  customerId: string;
 }
 
-export default function CustomerChat({ shopId, customerId, userId }: Props) {
-  const { messages, loading, sendMessage } = useShopMessages(shopId, customerId);
+export default function CustomerChat({ shopId, customerId }: Props) {
+  const { messages, sendMessage } = useShopMessages();
   const [text, setText] = useState('');
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!text.trim()) return;
-    await sendMessage(text, userId);
+    sendMessage(text.trim(), customerId);
     setText('');
   };
 
   return (
     <View style={styles.container}>
-      {loading && <Text>Loading messages...</Text>}
       <FlatList
         data={messages}
-        keyExtractor={(item: any) => item.id}
-        renderItem={({ item }: { item: any }) => (
-          <View style={[styles.message, item.sender_id === userId ? styles.myMessage : styles.theirMessage]}>
-            <Text>{item.content}</Text>
-            <Text style={styles.time}>{new Date(item.created_at).toLocaleTimeString()}</Text>
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={[styles.bubble, item.sender === customerId ? styles.me : styles.them]}>
+            <Text style={styles.msgText}>{item.text}</Text>
+            <Text style={styles.time}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
           </View>
         )}
       />
       <View style={styles.inputRow}>
-        <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="Type a message..." />
-        <Button title="Send" onPress={handleSend} />
+        <TextInput
+          style={styles.input}
+          value={text}
+          onChangeText={setText}
+          placeholder="Type a message..."
+          placeholderTextColor="#888"
+        />
+        <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
+          <Text style={styles.sendText}>Send</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 8 },
-  message: { padding: 10, borderRadius: 8, marginVertical: 4, maxWidth: '80%' },
-  myMessage: { backgroundColor: '#dcf8c6', alignSelf: 'flex-end' },
-  theirMessage: { backgroundColor: '#f0f0f0', alignSelf: 'flex-start' },
-  time: { fontSize: 10, color: '#999', marginTop: 4 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8 }
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  bubble: { margin: 8, padding: 12, borderRadius: 12, maxWidth: '80%' },
+  me: { alignSelf: 'flex-end', backgroundColor: '#10B981' },
+  them: { alignSelf: 'flex-start', backgroundColor: '#1f1f1f' },
+  msgText: { color: '#fff', fontSize: 14 },
+  time: { color: '#888', fontSize: 10, marginTop: 4 },
+  inputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderTopColor: '#1f1f1f' },
+  input: { flex: 1, backgroundColor: '#1f1f1f', borderRadius: 20, paddingHorizontal: 16, color: '#fff' },
+  sendBtn: { marginLeft: 8, backgroundColor: '#10B981', borderRadius: 20, paddingHorizontal: 16, justifyContent: 'center' },
+  sendText: { color: '#fff', fontWeight: '600' },
 });

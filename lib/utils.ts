@@ -1,38 +1,40 @@
-// lib/utils.ts
-// Stubbed cn() function - replace with real clsx + tailwind-merge when installed
+export function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
 
-export function cn(...inputs: (string | undefined | null | false | Record<string, boolean>)[]): string {
-  const classes: string[] = [];
-  for (const input of inputs) {
-    if (!input) continue;
-    if (typeof input === "string") {
-      classes.push(input);
-    } else if (typeof input === "object") {
-      for (const [key, value] of Object.entries(input)) {
-        if (value) classes.push(key);
-      }
-    }
-  }
-  return classes.join(" ");
+export function formatCurrency(amount: number, currency = 'KES'): string {
+  return new Intl.NumberFormat('en-KE', { style: 'currency', currency }).format(amount);
 }
 
 export function formatDate(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return new Date(date).toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-  }).format(amount);
+export function formatPhone(phone: string): string {
+  if (!phone) return '';
+  if (phone.startsWith('+254')) return phone;
+  if (phone.startsWith('0')) return '+254' + phone.slice(1);
+  if (phone.startsWith('7') || phone.startsWith('1')) return '+254' + phone;
+  return phone;
 }
 
-export function truncate(str: string, maxLength: number): string {
-  if (str.length <= maxLength) return str;
-  return str.slice(0, maxLength) + "...";
+export function maskPhone(phone: string): string {
+  if (phone.length < 7) return phone;
+  return phone.slice(0, -6) + '****' + phone.slice(-3);
+}
+
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), ms);
+  };
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

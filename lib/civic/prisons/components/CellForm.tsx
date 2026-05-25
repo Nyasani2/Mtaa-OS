@@ -1,35 +1,45 @@
-'use client';
+// lib/civic/prisons/components/CellForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { PrisonCell, CellType, SecurityLevel } from '@/types/prisons';
 
-import { useState } from 'react';
-import { PrisonCell, PrisonFacility } from '@/types/prisons';
+interface CellFormData {
+  facility_id: string;
+  cell_block: string;
+  cell_number: string;
+  capacity: number;
+  cell_type: CellType;
+  security_level: SecurityLevel;
+}
 
-export function CellForm({ facilities, onSubmit }: { facilities: PrisonFacility[]; onSubmit: (data: Partial<PrisonCell>) => void }) {
-  const [form, setForm] = useState<Partial<PrisonCell>>({ cell_type: 'general', security_level: 'medium', capacity: 2 });
+export function CellForm({ onSubmit }: { onSubmit?: (data: CellFormData) => void }) {
+  const [form, setForm] = useState<CellFormData>({
+    facility_id: '',
+    cell_block: '',
+    cell_number: '',
+    capacity: 0,
+    cell_type: 'shared',
+    security_level: 'medium',
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <select value={form.facility_id || ''} onChange={e => setForm(f => ({ ...f, facility_id: e.target.value }))} className="w-full border rounded px-3 py-2" required>
-        <option value="">Select facility...</option>
-        {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-      </select>
-      <input placeholder="Cell Block" value={form.cell_block || ''} onChange={e => setForm(f => ({ ...f, cell_block: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Cell Number" value={form.cell_number || ''} onChange={e => setForm(f => ({ ...f, cell_number: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input type="number" placeholder="Capacity" value={form.capacity || ''} onChange={e => setForm(f => ({ ...f, capacity: parseInt(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.cell_type} onChange={e => setForm(f => ({ ...f, cell_type: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="general">General</option>
-        <option value="solitary">Solitary</option>
-        <option value="medical">Medical</option>
-        <option value="protective_custody">Protective Custody</option>
-        <option value="death_row">Death Row</option>
-        <option value="juvenile">Juvenile</option>
-      </select>
-      <select value={form.security_level} onChange={e => setForm(f => ({ ...f, security_level: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="minimum">Minimum</option>
-        <option value="medium">Medium</option>
-        <option value="maximum">Maximum</option>
-        <option value="supermax">Supermax</option>
-      </select>
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Add Cell</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>Add Cell</Text>
+      <TextInput style={styles.input} placeholder="Facility ID" value={form.facility_id} onChangeText={v => setForm(f => ({ ...f, facility_id: v }))} />
+      <TextInput style={styles.input} placeholder="Cell Block" value={form.cell_block} onChangeText={v => setForm(f => ({ ...f, cell_block: v }))} />
+      <TextInput style={styles.input} placeholder="Cell Number" value={form.cell_number} onChangeText={v => setForm(f => ({ ...f, cell_number: v }))} />
+      <TextInput style={styles.input} placeholder="Capacity" value={String(form.capacity)} onChangeText={v => setForm(f => ({ ...f, capacity: parseInt(v) || 0 }))} keyboardType="number-pad" />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Add Cell</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

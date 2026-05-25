@@ -1,25 +1,19 @@
-"use client";
-
-import { useEffect } from "react";
-import { useAgriculture } from "../controllers/useAgriculture";
-import { useAuth } from "@/hooks/useAuth";
+// lib/civic/agriculture/civic_modules_v3/agriculture_kephis/hooks/useCertificates.ts
+import { useState, useEffect } from 'react';
+import { useIdentity } from '@/lib/auth/identity';
+import { supabase } from '@/lib/supabase/client';
 
 export function useCertificates() {
-  const { user } = useAuth();
-  const agri = useAgriculture();
+  const { user } = useIdentity();
+  const [certificates, setCertificates] = useState<Record<string, unknown>[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      agri.loadCertificates(user.id);
-    }
-  }, [user?.id]);
+    if (!user) return;
+    setLoading(true);
+    supabase.from('certificates').select('*').eq('user_id', user.id)
+      .then(({ data }) => { setCertificates(data ?? []); setLoading(false); });
+  }, [user]);
 
-  return {
-    certificates: agri.certificates,
-    isLoading: agri.isLoading,
-    error: agri.error,
-    selectedCertificate: agri.selectedItem,
-    setSelectedCertificate: agri.setSelectedItem,
-    refresh: () => user?.id && agri.loadCertificates(user.id),
-  };
+  return { certificates, loading };
 }

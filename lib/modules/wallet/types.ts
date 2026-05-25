@@ -158,3 +158,15 @@ export interface WithdrawForm {
   agentCode?: string;
   phoneNumber?: string;
 }
+
+export interface GoFundTransaction {
+  id: string;
+  wallet_id: string;
+  type: 'draw' | 'repay';
+  amount: number;
+  status: 'pending' | 'completed' | 'failed';
+  description?: string;
+  created_at: string;
+  balanceAfter: number;
+  timestamp: string;
+}

@@ -1,33 +1,34 @@
-import React from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+// domains/shop/components/MarketplaceBrowser.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useMarketplaceSearch } from '../hooks/useMarketplace';
 
-interface Props {
-  shopId?: string;
-}
+export default function MarketplaceBrowser() {
+  const { results, loading, search } = useMarketplaceSearch();
+  const [query, setQuery] = useState('');
 
-export default function MarketplaceBrowser({ shopId }: Props) {
-  const router = useRouter();
-  const { listings, loading, search } = useMarketplaceSearch('', '');
-
-  const handlePress = (item: any) => {
-    router.push(`/shop/${item.shop_id}/product/${item.id}` as any);
+  const handleSearch = (text: string) => {
+    setQuery(text);
+    search(text);
   };
 
   return (
     <View style={styles.container}>
-      <TextInput style={styles.search} placeholder="Search marketplace..." onChangeText={(text) => search()} />
-      {loading && <Text>Loading...</Text>}
+      <TextInput
+        style={styles.search}
+        placeholder="Search marketplace..."
+        placeholderTextColor="#888"
+        value={query}
+        onChangeText={handleSearch}
+      />
+      {loading && <Text style={styles.loading}>Loading...</Text>}
       <FlatList
-        data={listings}
-        keyExtractor={(item: any) => item.id}
-        renderItem={({ item }: { item: any }) => (
-          <TouchableOpacity style={styles.card} onPress={() => handlePress(item)}>
-            {item.images?.[0] && <Image source={{ uri: item.images[0] }} style={styles.image} />}
+        data={results}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.price}>${item.price?.toFixed(2)}</Text>
-            <Text style={styles.shop}>{item.shops?.name || 'Unknown Shop'}</Text>
+            <Text style={styles.price}>KES {item.price?.toLocaleString()}</Text>
           </TouchableOpacity>
         )}
       />
@@ -36,11 +37,10 @@ export default function MarketplaceBrowser({ shopId }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  search: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, marginBottom: 12 },
-  card: { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  image: { width: '100%', height: 150, borderRadius: 8, marginBottom: 8 },
-  name: { fontSize: 16, fontWeight: '600' },
-  price: { fontSize: 14, color: '#2e7d32', fontWeight: '600', marginTop: 4 },
-  shop: { fontSize: 12, color: '#666', marginTop: 4 }
+  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 16 },
+  search: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 12, color: '#fff', marginBottom: 12 },
+  loading: { color: '#888', textAlign: 'center', marginVertical: 12 },
+  card: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16, marginBottom: 8 },
+  name: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  price: { color: '#10B981', fontSize: 14, marginTop: 4 },
 });

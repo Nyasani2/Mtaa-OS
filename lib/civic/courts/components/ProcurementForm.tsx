@@ -1,30 +1,46 @@
-'use client';
+// lib/civic/courts/components/ProcurementForm.tsx
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { CourtProcurement, ProcurementCategory } from '@/types/courts';
 
-import { useState } from 'react';
-import { CourtProcurement } from '@/types/courts';
+interface ProcurementData {
+  court_house_id: string;
+  item_name: string;
+  category: ProcurementCategory;
+  quantity: number;
+  unit_cost: number;
+  vendor_name: string;
+}
 
-export function ProcurementForm({ onSubmit }: { onSubmit: (data: Partial<CourtProcurement>) => void }) {
-  const [form, setForm] = useState<Partial<CourtProcurement>>({ category: 'stationery', status: 'requested' });
+export function ProcurementForm({ onSubmit }: { onSubmit?: (data: ProcurementData) => void }) {
+  const [form, setForm] = useState<ProcurementData>({
+    court_house_id: '',
+    item_name: '',
+    category: 'stationery',
+    quantity: 0,
+    unit_cost: 0,
+    vendor_name: '',
+  });
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
-      <input placeholder="Court House ID" value={form.court_house_id || ''} onChange={e => setForm(f => ({ ...f, court_house_id: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <input placeholder="Item Name" value={form.item_name || ''} onChange={e => setForm(f => ({ ...f, item_name: e.target.value }))} className="w-full border rounded px-3 py-2" required />
-      <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as any }))} className="w-full border rounded px-3 py-2">
-        <option value="stationery">Stationery</option>
-        <option value="furniture">Furniture</option>
-        <option value="equipment">Equipment</option>
-        <option value="vehicle">Vehicle</option>
-        <option value="software">Software</option>
-        <option value="security">Security</option>
-        <option value="maintenance">Maintenance</option>
-      </select>
-      <div className="grid grid-cols-2 gap-3">
-        <input type="number" placeholder="Quantity" value={form.quantity || ''} onChange={e => setForm(f => ({ ...f, quantity: parseInt(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-        <input type="number" placeholder="Unit Cost (KES)" value={form.unit_cost || ''} onChange={e => setForm(f => ({ ...f, unit_cost: parseFloat(e.target.value) }))} className="w-full border rounded px-3 py-2" required />
-      </div>
-      <input placeholder="Vendor Name" value={form.vendor_name || ''} onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))} className="w-full border rounded px-3 py-2" />
-      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Submit Request</button>
-    </form>
+    <View style={styles.container}>
+      <Text style={styles.header}>New Procurement</Text>
+      <TextInput style={styles.input} placeholder="Court House ID" value={form.court_house_id} onChangeText={v => setForm(f => ({ ...f, court_house_id: v }))} />
+      <TextInput style={styles.input} placeholder="Item Name" value={form.item_name} onChangeText={v => setForm(f => ({ ...f, item_name: v }))} />
+      <TextInput style={styles.input} placeholder="Quantity" value={String(form.quantity)} onChangeText={v => setForm(f => ({ ...f, quantity: parseInt(v) || 0 }))} keyboardType="number-pad" />
+      <TextInput style={styles.input} placeholder="Unit Cost (KES)" value={String(form.unit_cost)} onChangeText={v => setForm(f => ({ ...f, unit_cost: parseFloat(v) || 0 }))} keyboardType="decimal-pad" />
+      <TextInput style={styles.input} placeholder="Vendor Name" value={form.vendor_name} onChangeText={v => setForm(f => ({ ...f, vendor_name: v }))} />
+      <TouchableOpacity style={styles.button} onPress={() => onSubmit?.(form)}>
+        <Text style={styles.buttonText}>Submit Request</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: 16 },
+  header: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
+  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+});

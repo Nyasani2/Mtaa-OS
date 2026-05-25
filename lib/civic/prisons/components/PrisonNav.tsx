@@ -1,43 +1,41 @@
-'use client';
+// lib/civic/prisons/components/PrisonNav.tsx
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useRouter, usePathname } from 'expo-router';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-const links = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/inmates', label: 'Inmates' },
-  { href: '/cells', label: 'Cells' },
-  { href: '/movements', label: 'Movements' },
-  { href: '/visits', label: 'Visits' },
-  { href: '/wardens', label: 'Wardens' },
-  { href: '/incidents', label: 'Incidents' },
-  { href: '/parole', label: 'Parole' },
-  { href: '/attendance', label: 'Attendance' },
-  { href: '/payroll', label: 'Payroll' },
-  { href: '/procurement', label: 'Procurement' },
-  { href: '/stats', label: 'Stats' },
+const NAV_ITEMS = [
+  { label: 'Dashboard', path: '/civic/prisons' },
+  { label: 'Inmates', path: '/civic/prisons/inmates' },
+  { label: 'Cells', path: '/civic/prisons/cells' },
+  { label: 'Movements', path: '/civic/prisons/movements' },
+  { label: 'Staff', path: '/civic/prisons/staff' },
 ];
 
 export function PrisonNav() {
+  const router = useRouter();
   const pathname = usePathname();
+
   return (
-    <nav className="bg-slate-900 text-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center h-14 gap-1 overflow-x-auto">
-          <span className="font-bold mr-4 whitespace-nowrap">🔒 CIVIC PRISONS</span>
-          {links.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`px-3 py-1 rounded text-sm whitespace-nowrap transition ${
-                pathname === link.href ? 'bg-blue-600' : 'hover:bg-slate-700'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-    </nav>
+    <View style={styles.nav}>
+      {NAV_ITEMS.map((item) => (
+        <TouchableOpacity
+          key={item.path}
+          style={[styles.navItem, pathname === item.path && styles.active]}
+          onPress={() => router.push(item.path)}
+        >
+          <Text style={[styles.navText, pathname === item.path && styles.activeText]}>
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  nav: { flexDirection: 'row', padding: 8, backgroundColor: '#1a1a1a' },
+  navItem: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 4 },
+  active: { backgroundColor: '#333' },
+  navText: { color: '#ccc', fontSize: 12 },
+  activeText: { color: '#fff', fontWeight: '600' },
+});
