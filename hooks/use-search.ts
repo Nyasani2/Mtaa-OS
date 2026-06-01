@@ -1,4 +1,3 @@
-// hooks/use-search.ts
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SearchEngine, SearchResult, SearchQuery, SEARCH_CONFIGS } from '@/lib/kernel/search-engine';
 import { getSearchEngine } from '@/lib/kernel/search-engine';
@@ -17,7 +16,7 @@ export function useSearch() {
     engineRef.current = getSearchEngine();
   }, []);
 
-  const search = useCallback(async (q: string, configId?: string) => {
+  const search = useCallback(async (q: string, domain?: string) => {
     if (!q.trim()) {
       setResults({});
       return;
@@ -25,9 +24,9 @@ export function useSearch() {
     setLoading(true);
     try {
       const engine = engineRef.current ?? getSearchEngine();
-      const searchQuery: SearchQuery = { q, configId, limit: 20 };
+      const searchQuery: SearchQuery = { q, domain, limit: 20 };
       const result = await engine.search(searchQuery);
-      setResults((prev) => ({ ...prev, [result.configId]: result }));
+      setResults((prev) => ({ ...prev, [result.query.domain || 'all']: result }));
     } catch (err) {
       console.error('Search error:', err);
     } finally {
@@ -36,9 +35,9 @@ export function useSearch() {
   }, []);
 
   const debouncedSearch = useCallback(
-    (q: string, configId?: string) => {
+    (q: string, domain?: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => search(q, configId), 300);
+      debounceRef.current = setTimeout(() => search(q, domain), 300);
     },
     [search]
   );

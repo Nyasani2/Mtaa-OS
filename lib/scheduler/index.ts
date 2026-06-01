@@ -1,1 +1,1 @@
-export { SchedulerShell } from './components/SchedulerShell';
+export { default as SchedulerShell } from './components/SchedulerShell';

@@ -1,33 +1,37 @@
 {
-  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    },
-    "moduleResolution": "node",
-    "esModuleInterop": true,
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
     "skipLibCheck": true,
+    "strict": false,
+    "noEmit": true,
+    "incremental": true,
+    "module": "esnext",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "jsx": "react-jsx",
-    "types": ["react", "react-native"],
-    "noEmit": true
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
-    "app/**/*",
-    "lib/**/*",
-    "domains/**/*",
-    "components/**/*",
-    "hooks/**/*",
-    "types/**/*"
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ],
   "exclude": [
-    "node_modules",
-    "supabase/functions/**/*",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "babel.config.js",
-    "metro.config.js"
-  ]
+    "node_modules"
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -1,9 +1,8 @@
-// domains/business/hooks/usePayments.ts
 import { useState, useEffect, useCallback } from 'react';
-import { businessService, BusinessPayment } from '../services/businessService';
+import { businessService, TillPayment, PaybillPayment } from '../services/businessService';
 
 export function usePayments(businessId?: string) {
-  const [payments, setPayments] = useState<BusinessPayment[]>([]);
+  const [payments, setPayments] = useState<(TillPayment | PaybillPayment)[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

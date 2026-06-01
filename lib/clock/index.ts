@@ -1,1 +1,1 @@
-export { ClockShell } from './components/ClockShell';
+export { default as ClockShell } from './components/ClockShell';

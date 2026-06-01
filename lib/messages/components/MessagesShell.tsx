@@ -1,73 +1,150 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, Platform } from "react-native";
+import { useRouter } from "expo-router";
+import * as Contacts from "expo-contacts";
+import { Ionicons } from "@expo/vector-icons";
 
-const chats = [
-  { id: 1, name: 'Sarah', lastMessage: 'See you tomorrow!', time: '2m', unread: 2 },
-  { id: 2, name: 'Work Group', lastMessage: 'Meeting at 3pm', time: '1h', unread: 0 },
-  { id: 3, name: 'Mom', lastMessage: 'Call me when free', time: '3h', unread: 1 },
-  { id: 4, name: 'MTAA Support', lastMessage: 'How can we help?', time: '1d', unread: 0 },
-];
+interface ContactItem {
+  id: string;
+  name: string;
+  phone?: string;
+  image?: string;
+}
 
-export function MessagesShell() {
+export default function MessagesShell() {
+  const router = useRouter();
+  const [contacts, setContacts] = useState<ContactItem[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [smsPermission, setSmsPermission] = useState(false);
+
+  useEffect(() => {
+    loadContacts();
+    checkSmsPermission();
+  }, []);
+
+  const loadContacts = async () => {
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status !== "granted") {
+      setLoading(false);
+      return;
+    }
+
+    const { data } = await Contacts.getContactsAsync({
+      fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Image],
+    });
+
+    const items: ContactItem[] = data
+      .filter((c) => c.phoneNumbers && c.phoneNumbers.length > 0 && c.id)
+      .map((c) => ({
+        id: c.id || `contact-${Math.random().toString(36).substring(2, 9)}`,
+        name: c.name || "Unknown",
+        phone: c.phoneNumbers?.[0]?.number,
+        image: c.image?.uri,
+      }));
+
+    setContacts(items);
+    setLoading(false);
+  };
+
+  const checkSmsPermission = async () => {
+    // expo-sms doesn't have inbox reading — this is a placeholder for custom module
+    setSmsPermission(false);
+  };
+
+  const filtered = contacts.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.phone?.includes(search)
+  );
+
+  const handleNewMessage = () => {
+    router.push("/communication/new-message" as any);
+  };
+
+  const handleContactPress = (contact: ContactItem) => {
+    router.push({
+      pathname: "/communication/chat",
+      params: { contactId: contact.id, name: contact.name, phone: contact.phone },
+    } as any);
+  };
+
+  const handleEnableSms = () => {
+    Alert.alert(
+      "Enable SMS Inbox",
+      "To read your Android SMS history, enable SMS permissions in Settings > Apps > MTAA > Permissions",
+      [{ text: "OK" }]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
-        <TouchableOpacity style={styles.newBtn}>
-          <Ionicons name="create" size={20} color="white" />
+        <Text style={styles.headerTitle}>Messages</Text>
+        <TouchableOpacity style={styles.newBtn} onPress={handleNewMessage}>
+          <Ionicons name="create-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
-      <View style={styles.searchBox}>
-        <Ionicons name="search" size={16} color="#94A3B8" />
-        <TextInput style={styles.searchInput} placeholder="Search messages..." placeholderTextColor="#64748B" />
+
+      <View style={styles.searchWrap}>
+        <Ionicons name="search" size={18} color="#64748B" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search contacts..."
+          placeholderTextColor="#64748B"
+          value={search}
+          onChangeText={setSearch}
+        />
       </View>
+
+      {!smsPermission && Platform.OS === "android" && (
+        <TouchableOpacity style={styles.banner} onPress={handleEnableSms}>
+          <Ionicons name="chatbubble-outline" size={18} color="#6366F1" />
+          <Text style={styles.bannerText}>Enable SMS inbox to see message history</Text>
+          <Ionicons name="chevron-forward" size={16} color="#64748B" />
+        </TouchableOpacity>
+      )}
+
       <FlatList
-        data={chats}
-        keyExtractor={c => c.id.toString()}
+        data={filtered}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.chatRow}>
+          <TouchableOpacity style={styles.contactRow} onPress={() => handleContactPress(item)}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.name[0]}</Text>
+              <Text style={styles.avatarText}>{item.name[0]?.toUpperCase()}</Text>
             </View>
-            <View style={styles.chatInfo}>
-              <View style={styles.chatTop}>
-                <Text style={styles.chatName}>{item.name}</Text>
-                <Text style={styles.chatTime}>{item.time}</Text>
-              </View>
-              <View style={styles.chatBottom}>
-                <Text style={styles.chatPreview} numberOfLines={1}>{item.lastMessage}</Text>
-                {item.unread > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.unread}</Text>
-                  </View>
-                )}
-              </View>
+            <View style={styles.contactInfo}>
+              <Text style={styles.contactName}>{item.name}</Text>
+              <Text style={styles.contactPhone}>{item.phone}</Text>
             </View>
+            <Ionicons name="chevron-forward" size={16} color="#64748B" />
           </TouchableOpacity>
         )}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        ListEmptyComponent={
+          loading ? (
+            <Text style={styles.emptyText}>Loading contacts...</Text>
+          ) : (
+            <Text style={styles.emptyText}>No contacts found</Text>
+          )
+        }
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
-  title: { fontSize: 32, fontWeight: 'bold', color: 'white' },
-  newBtn: { backgroundColor: '#6366F1', padding: 10, borderRadius: 12 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', marginHorizontal: 16, padding: 10, borderRadius: 12, marginBottom: 8 },
-  searchInput: { flex: 1, color: 'white', marginLeft: 8, fontSize: 14 },
-  chatRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1E293B' },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  chatInfo: { flex: 1, marginLeft: 12 },
-  chatTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  chatName: { color: 'white', fontSize: 15, fontWeight: '600' },
-  chatTime: { color: '#64748B', fontSize: 12 },
-  chatBottom: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  chatPreview: { color: '#94A3B8', fontSize: 13, flex: 1 },
-  badge: { backgroundColor: '#6366F1', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
-  badgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
+  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "700" },
+  newBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#6366F1", justifyContent: "center", alignItems: "center" },
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#1a1a1a", marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  searchInput: { flex: 1, color: "#fff", fontSize: 15, marginLeft: 8 },
+  banner: { flexDirection: "row", alignItems: "center", backgroundColor: "#1E1B4B", marginHorizontal: 16, padding: 12, borderRadius: 12, marginBottom: 12, gap: 8 },
+  bannerText: { flex: 1, color: "#6366F1", fontSize: 13, fontWeight: "600" },
+  contactRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#334155", justifyContent: "center", alignItems: "center" },
+  avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  contactInfo: { flex: 1, marginLeft: 12 },
+  contactName: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  contactPhone: { color: "#64748B", fontSize: 13, marginTop: 2 },
+  emptyText: { color: "#64748B", textAlign: "center", marginTop: 40, fontSize: 15 },
 });

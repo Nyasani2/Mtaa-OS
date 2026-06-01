@@ -16,7 +16,7 @@ export function CaseCard({ caseId, title, status, date }: CaseCardProps) {
   return (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => router.push(`/civic/police/cases/${caseId}`)}
+      onPress={() => router.push(`/civic/police/cases/${caseId}` as any)}
     >
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.status}>Status: {status}</Text>

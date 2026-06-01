@@ -1,32 +1,12 @@
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Modal,
-  Dimensions,
-} from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  ArrowLeft,
-  ScanLine,
-  QrCode,
-  Copy,
-  Share2,
-  CheckCircle,
-  XCircle,
-  Zap,
-  ArrowUpRight,
-  Wallet,
-} from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import QRCode from "react-native-qrcode-svg";
 import { useWalletStore } from "@/lib/modules/wallet/store";
-import type { WalletTransaction } from "@/lib/modules/wallet/types";
+import { WalletTransaction } from "@/lib/modules/wallet/types";
+import { ArrowLeft, ScanLine, QrCode, ArrowUpRight, Zap, XCircle, CheckCircle, Copy, Share2, Wallet } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import QRCode from "react-native-qrcode-svg";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
@@ -100,18 +80,22 @@ export default function QRPayScreen() {
       balanceAfter: newBalance,
       goFundUsed: goFundAmount > 0 ? goFundAmount : undefined,
       qrCode: scanResult || undefined,
+      timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
     };
 
     addTransaction(tx);
+
     addNotification({
       id: Math.random().toString(36).substring(2, 15),
       type: "payment_sent",
       title: "QR Payment",
       message: `KSh ${numericAmount.toLocaleString()} paid to ${merchantName}`,
       amount: numericAmount,
+      read: false,
       isRead: false,
+      timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     });
 
@@ -149,19 +133,12 @@ export default function QRPayScreen() {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Mode Toggle */}
       <View style={styles.modeToggle}>
-        <TouchableOpacity
-          style={[styles.modeBtn, mode === "scan" && styles.modeBtnActive]}
-          onPress={() => setMode("scan")}
-        >
+        <TouchableOpacity style={[styles.modeBtn, mode === "scan" && styles.modeBtnActive]} onPress={() => setMode("scan")}>
           <ScanLine size={16} color={mode === "scan" ? "#FFF" : "#6B7280"} />
           <Text style={[styles.modeBtnText, mode === "scan" && styles.modeBtnTextActive]}>Scan</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeBtn, mode === "generate" && styles.modeBtnActive]}
-          onPress={() => setMode("generate")}
-        >
+        <TouchableOpacity style={[styles.modeBtn, mode === "generate" && styles.modeBtnActive]} onPress={() => setMode("generate")}>
           <QrCode size={16} color={mode === "generate" ? "#FFF" : "#6B7280"} />
           <Text style={[styles.modeBtnText, mode === "generate" && styles.modeBtnTextActive]}>My QR</Text>
         </TouchableOpacity>
@@ -173,10 +150,7 @@ export default function QRPayScreen() {
             <View style={styles.scanPlaceholder}>
               <ScanLine size={48} color="#D1D5DB" />
               <Text style={styles.scanText}>Point camera at merchant QR code</Text>
-              <TouchableOpacity
-                style={styles.simulateBtn}
-                onPress={() => handleScanResult(JSON.stringify({ name: "Jumia Kenya", type: "merchant" }))}
-              >
+              <TouchableOpacity style={styles.simulateBtn} onPress={() => handleScanResult(JSON.stringify({ name: "Jumia Kenya", type: "merchant" }))}>
                 <Text style={styles.simulateBtnText}>Simulate Scan</Text>
               </TouchableOpacity>
             </View>
@@ -221,30 +195,17 @@ export default function QRPayScreen() {
               <Text style={styles.inputLabel}>Amount (KSh)</Text>
               <View style={styles.amountWrap}>
                 <Text style={styles.amountPrefix}>KSh</Text>
-                <TextInput
-                  style={styles.amountInput}
-                  placeholder="0.00"
-                  keyboardType="decimal-pad"
-                  value={payAmount}
-                  onChangeText={setPayAmount}
-                />
+                <TextInput style={styles.amountInput} placeholder="0.00" keyboardType="decimal-pad" value={payAmount} onChangeText={setPayAmount} />
               </View>
             </View>
 
             {numericAmount > balance && canUseGoFund && (
-              <TouchableOpacity
-                style={[styles.goFundToggle, useGoFund && styles.goFundToggleActive]}
-                onPress={() => setUseGoFund(!useGoFund)}
-              >
+              <TouchableOpacity style={[styles.goFundToggle, useGoFund && styles.goFundToggleActive]} onPress={() => setUseGoFund(!useGoFund)}>
                 <View style={styles.goFundToggleRow}>
                   <Zap size={18} color="#F97316" />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.goFundToggleTitle}>
-                      {useGoFund ? "Using Go Fund" : "Use Go Fund?"}
-                    </Text>
-                    <Text style={styles.goFundToggleSub}>
-                      Need KSh {shortfall.toLocaleString()} more
-                    </Text>
+                    <Text style={styles.goFundToggleTitle}>{useGoFund ? "Using Go Fund" : "Use Go Fund?"}</Text>
+                    <Text style={styles.goFundToggleSub}>Need KSh {shortfall.toLocaleString()} more</Text>
                   </View>
                   <View style={[styles.toggleDot, useGoFund && { borderColor: "#F97316" }]}>
                     {useGoFund && <View style={styles.toggleDotInner} />}
@@ -261,16 +222,9 @@ export default function QRPayScreen() {
             )}
 
             <TouchableOpacity onPress={handlePay} activeOpacity={0.8}>
-              <LinearGradient
-                colors={["#10B981", "#059669"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.payBtn}
-              >
+              <LinearGradient colors={["#10B981", "#059669"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.payBtn}>
                 <ArrowUpRight size={18} color="#FFF" />
-                <Text style={styles.payBtnText}>
-                  Pay KSh {numericAmount > 0 ? numericAmount.toLocaleString() : ""}
-                </Text>
+                <Text style={styles.payBtnText}>Pay KSh {numericAmount > 0 ? numericAmount.toLocaleString() : ""}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -282,188 +236,56 @@ export default function QRPayScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   headerTitle: { fontSize: 18, fontWeight: "700", color: "#1F2937" },
-
-  modeToggle: {
-    flexDirection: "row",
-    marginHorizontal: 20,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
-  },
-  modeBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
+  modeToggle: { flexDirection: "row", marginHorizontal: 20, backgroundColor: "#F3F4F6", borderRadius: 12, padding: 4, marginBottom: 20 },
+  modeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 10 },
   modeBtnActive: { backgroundColor: "#10B981" },
   modeBtnText: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
   modeBtnTextActive: { color: "#FFF" },
-
   scanContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
-  scanFrame: {
-    width: width - 80,
-    height: width - 80,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#10B981",
-    borderStyle: "dashed",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF",
-  },
+  scanFrame: { width: width - 80, height: width - 80, borderRadius: 24, borderWidth: 2, borderColor: "#10B981", borderStyle: "dashed", alignItems: "center", justifyContent: "center", backgroundColor: "#FFF" },
   scanPlaceholder: { alignItems: "center", padding: 20 },
   scanText: { fontSize: 14, color: "#9CA3AF", marginTop: 16, textAlign: "center" },
-  simulateBtn: {
-    marginTop: 20,
-    backgroundColor: "#10B981",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
+  simulateBtn: { marginTop: 20, backgroundColor: "#10B981", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   simulateBtnText: { fontSize: 14, fontWeight: "600", color: "#FFF" },
   scanHint: { fontSize: 13, color: "#9CA3AF", marginTop: 20 },
-
   generateContent: { alignItems: "center", paddingVertical: 20 },
-  qrCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 24,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  qrCard: { backgroundColor: "#FFF", borderRadius: 20, padding: 24, alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
   qrTitle: { fontSize: 18, fontWeight: "700", color: "#1F2937", marginBottom: 20 },
-  qrWrap: {
-    padding: 16,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
-  },
+  qrWrap: { padding: 16, backgroundColor: "#FFF", borderRadius: 16, borderWidth: 1, borderColor: "#F3F4F6" },
   qrSub: { fontSize: 13, color: "#9CA3AF", marginTop: 16 },
   qrActions: { flexDirection: "row", gap: 16, marginTop: 20 },
   qrActionBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   qrActionText: { fontSize: 14, fontWeight: "600", color: "#3B82F6" },
-
   payCard: { paddingHorizontal: 20, paddingTop: 10 },
   payMerchant: { alignItems: "center", marginBottom: 24 },
-  payMerchantIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "#ECFDF5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
+  payMerchantIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: "#ECFDF5", alignItems: "center", justifyContent: "center", marginBottom: 10 },
   payMerchantName: { fontSize: 18, fontWeight: "700", color: "#1F2937" },
-
   inputGroup: { marginBottom: 20 },
   inputLabel: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginBottom: 8 },
-  amountWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
+  amountWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, borderWidth: 1, borderColor: "#E5E7EB" },
   amountPrefix: { fontSize: 18, fontWeight: "700", color: "#10B981", marginRight: 8 },
   amountInput: { flex: 1, fontSize: 28, fontWeight: "700", color: "#1F2937", paddingVertical: 12 },
-
-  goFundToggle: {
-    backgroundColor: "#FFF",
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginBottom: 20,
-  },
+  goFundToggle: { backgroundColor: "#FFF", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "#E5E7EB", marginBottom: 20 },
   goFundToggleActive: { borderColor: "#F97316", backgroundColor: "#FFF7ED" },
   goFundToggleRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   goFundToggleTitle: { fontSize: 14, fontWeight: "700", color: "#1F2937" },
   goFundToggleSub: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  toggleDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#D1D5DB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  toggleDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: "#D1D5DB", alignItems: "center", justifyContent: "center" },
   toggleDotInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#F97316" },
-
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#FEF2F2",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
+  errorBanner: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#FEF2F2", padding: 12, borderRadius: 10, marginBottom: 16 },
   errorText: { flex: 1, fontSize: 13, color: "#EF4444" },
-
-  payBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 16,
-  },
+  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, paddingVertical: 16 },
   payBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
-
   resultContainer: { flex: 1, backgroundColor: "#F8FAFC", justifyContent: "center", alignItems: "center" },
   resultContent: { alignItems: "center", paddingHorizontal: 40 },
-  successIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#ECFDF5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
+  successIcon: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#ECFDF5", alignItems: "center", justifyContent: "center", marginBottom: 24 },
   resultTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937", marginBottom: 8 },
   resultAmount: { fontSize: 32, fontWeight: "800", color: "#10B981", marginBottom: 4 },
   resultTo: { fontSize: 15, color: "#6B7280", marginBottom: 24 },
-  resultBtn: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 12,
-  },
+  resultBtn: { backgroundColor: "#10B981", paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14, width: "100%", alignItems: "center", marginBottom: 12 },
   resultBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
-  resultBtnSecondary: {
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 14,
-    width: "100%",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
+  resultBtnSecondary: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14, width: "100%", alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB" },
   resultBtnSecondaryText: { fontSize: 16, fontWeight: "600", color: "#6B7280" },
 });

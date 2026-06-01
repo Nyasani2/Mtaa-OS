@@ -1,37 +1,38 @@
-"use client";
-
-import { useState, useCallback } from "react";
+// lib/mtaa/appstore/launcher.ts
 import { useRouter } from "expo-router";
-import { getAppById, isSystemApp } from "./registry";
-import type { AppManifest } from "@/types/module.types";
+import { APP_REGISTRY, getAppById } from "./unified-registry";
 
-export function useLauncher() {
+export interface LauncherContextValue {
+  apps: typeof APP_REGISTRY;
+  launchApp: (appId: string) => void;
+  listApps: () => typeof APP_REGISTRY;
+  isInstalled: (appId: string) => boolean;
+}
+
+export function useLauncher(): LauncherContextValue {
   const router = useRouter();
-  const [recentApps, setRecentApps] = useState<string[]>([]);
 
-  const launchApp = useCallback((app: AppManifest) => {
-    setRecentApps((prev) => {
-      const filtered = prev.filter((id) => id !== app.id);
-      return [app.id, ...filtered].slice(0, 10);
-    });
-
-    const entry = app.entry || '/';
-    router.push(entry as any);
-  }, [router]);
-
-  const getAppEntry = useCallback((appId: string) => {
+  const launchApp = (appId: string) => {
     const app = getAppById(appId);
-    return app?.entry || "/";
-  }, []);
-
-  const isAppInstalled = useCallback((appId: string) => {
-    return !!getAppById(appId);
-  }, []);
-
-  return {
-    launchApp,
-    getAppEntry,
-    isAppInstalled,
-    recentApps,
+    if (!app) {
+      console.warn(`[Launcher] App "${appId}" not found in registry`);
+      return;
+    }
+    if (!app.isInstalled && !app.isOSApp) {
+      console.warn(`[Launcher] App "${appId}" is not installed`);
+      router.push("/appstore" as any);
+      return;
+    }
+    console.log(`[Launcher] Opening ${app.name} at ${app.route}`);
+    router.push(app.route as any);
   };
+
+  const listApps = () => APP_REGISTRY;
+
+  const isInstalled = (appId: string) => {
+    const app = getAppById(appId);
+    return app ? app.isInstalled || app.isOSApp : false;
+  };
+
+  return { apps: APP_REGISTRY, launchApp, listApps, isInstalled };
 }

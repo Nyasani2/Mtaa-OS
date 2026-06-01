@@ -1,1 +1,1 @@
-export { RecentsShell } from './components/RecentsShell';
+export { default as RecentsShell } from './components/RecentsShell';

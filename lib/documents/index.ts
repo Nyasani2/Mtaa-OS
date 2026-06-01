@@ -1,1 +1,1 @@
-export { DocumentsShell } from './components/DocumentsShell';
+export { default as DocumentsShell } from './components/DocumentsShell';

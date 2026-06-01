@@ -1,1 +1,1 @@
-export { SIMShell } from './components/SIMShell';
+export { default as SIMShell } from './components/SIMShell';

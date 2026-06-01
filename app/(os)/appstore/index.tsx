@@ -1,81 +1,171 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
-
-const MOCK_APPS = [
-  { id: '1', name: 'MTaxi', description: 'Ride hailing', color: '#2196f3', installed: false },
-  { id: '2', name: 'MTruck', description: 'Logistics', color: '#4caf50', installed: false },
-  { id: '3', name: 'Shop', description: 'E-commerce', color: '#ff9800', installed: true },
-  { id: '4', name: 'Health', description: 'Medical records', color: '#f44336', installed: true },
-];
-
-const MOCK_CATEGORIES = [
-  { id: 'transport', name: 'Transport', apps: ['1', '2'] },
-  { id: 'commerce', name: 'Commerce', apps: ['3'] },
-  { id: 'health', name: 'Health', apps: ['4'] },
-];
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { APP_REGISTRY, searchApps, getInstalledApps, getInstallableApps } from "@/lib/mtaa/appstore/unified-registry";
+import { installApp, uninstallApp } from "@/lib/mtaa/appstore/install-lifecycle";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function AppStoreScreen() {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"discover" | "installed" | "updates">("discover");
+  const [installing, setInstalling] = useState<string | null>(null);
 
-  const handleInstall = (appId: string) => {
-    console.log('Install', appId);
+  const filtered = search ? searchApps(search) : activeTab === "installed" ? getInstalledApps() : getInstallableApps();
+
+  const handleInstall = async (appId: string) => {
+    setInstalling(appId);
+    const result = await installApp(appId);
+    setInstalling(null);
+    if (!result.success) {
+      alert(result.error);
+    }
   };
 
-  const handleLaunch = (appId: string) => {
-    const routes: Record<string, string> = {
-      '1': '/mtaxi',
-      '2': '/mtruck',
-      '3': '/shop',
-      '4': '/health'
-    };
-    const route = routes[appId];
-    if (route) router.push(route as any);
+  const handleUninstall = async (appId: string) => {
+    const result = await uninstallApp(appId);
+    if (!result.success) {
+      alert(result.error);
+    }
   };
+
+  const handleLaunch = (route: string) => {
+    router.push(route as any);
+  };
+
+  const categories = ["All", "Finance", "Transport", "Social", "Commerce", "Work", "Education", "Health", "Utility"];
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const categoryFiltered = activeCategory === "All" ? filtered : filtered.filter((a) => a.category === activeCategory);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>App Store</Text>
-      <Text style={styles.section}>Featured</Text>
-      <FlatList
-        data={MOCK_APPS}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={[styles.card, { borderLeftColor: item.color, borderLeftWidth: 4 }]} onPress={() => handleLaunch(item.id)}>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.desc}>{item.description}</Text>
-            {!item.installed && (
-              <TouchableOpacity style={styles.installBtn} onPress={() => handleInstall(item.id)}>
-                <Text style={styles.installText}>Install</Text>
-              </TouchableOpacity>
-            )}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>AppStore</Text>
+        <TouchableOpacity style={styles.profileBtn}>
+          <Ionicons name="person-circle" size={32} color="#6366F1" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchWrap}>
+        <Ionicons name="search" size={18} color="#64748B" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search apps..."
+          placeholderTextColor="#64748B"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      <View style={styles.tabs}>
+        {(["discover", "installed", "updates"] as const).map((t) => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tab, activeTab === t && styles.tabActive]}
+            onPress={() => setActiveTab(t)}
+          >
+            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </Text>
           </TouchableOpacity>
-        )}
-      />
-      <Text style={styles.section}>Categories</Text>
+        ))}
+      </View>
+
+      {activeTab === "discover" && !search && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar}>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.categoryChip, activeCategory === cat && styles.categoryChipActive]}
+              onPress={() => setActiveCategory(cat)}
+            >
+              <Text style={[styles.categoryText, activeCategory === cat && styles.categoryTextActive]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
       <FlatList
-        data={MOCK_CATEGORIES}
+        data={categoryFiltered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.category}>
-            <Text style={styles.catName}>{item.name}</Text>
-            <Text>{item.apps.length} apps</Text>
+          <View style={styles.appCard}>
+            <View style={[styles.appIcon, { backgroundColor: item.color }]}>
+              <Ionicons name={item.icon as any} size={28} color="#fff" />
+            </View>
+            <View style={styles.appInfo}>
+              <Text style={styles.appName}>{item.name}</Text>
+              <Text style={styles.appDesc} numberOfLines={1}>{item.description}</Text>
+              <View style={styles.appMeta}>
+                <Text style={styles.appRating}>★ {item.rating}</Text>
+                <Text style={styles.appSize}>{item.size}</Text>
+              </View>
+            </View>
+            <View style={styles.appActions}>
+              {item.isInstalled || item.isOSApp ? (
+                <>
+                  <TouchableOpacity style={styles.launchBtn} onPress={() => handleLaunch(item.route)}>
+                    <Text style={styles.launchText}>Open</Text>
+                  </TouchableOpacity>
+                  {!item.isOSApp && (
+                    <TouchableOpacity style={styles.uninstallBtn} onPress={() => handleUninstall(item.id)}>
+                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.installBtn, installing === item.id && styles.installingBtn]}
+                  onPress={() => handleInstall(item.id)}
+                  disabled={installing === item.id}
+                >
+                  <Text style={styles.installText}>
+                    {installing === item.id ? "..." : "Get"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
+        ListEmptyComponent={<Text style={styles.emptyText}>No apps found</Text>}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  section: { fontSize: 16, fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  card: { backgroundColor: '#fff', padding: 12, marginBottom: 8, borderRadius: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
-  name: { fontWeight: '600', fontSize: 16 },
-  desc: { fontSize: 12, color: '#666', marginTop: 4 },
-  installBtn: { backgroundColor: '#2196f3', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, alignSelf: 'flex-start', marginTop: 8 },
-  installText: { color: '#fff', fontSize: 12 },
-  category: { backgroundColor: '#f5f5f5', padding: 12, marginBottom: 8, borderRadius: 8 },
-  catName: { fontWeight: '600' }
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
+  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
+  profileBtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
+  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#1a1a1a", marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
+  searchInput: { flex: 1, color: "#fff", fontSize: 15, marginLeft: 8 },
+  tabs: { flexDirection: "row", justifyContent: "center", gap: 24, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  tab: { paddingHorizontal: 16, paddingVertical: 8 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: "#6366F1" },
+  tabText: { color: "#64748B", fontSize: 14, fontWeight: "600" },
+  tabTextActive: { color: "#6366F1" },
+  categoryBar: { paddingHorizontal: 16, marginBottom: 12 },
+  categoryChip: { backgroundColor: "#1a1a1a", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8 },
+  categoryChipActive: { backgroundColor: "#6366F1" },
+  categoryText: { color: "#94A3B8", fontSize: 13 },
+  categoryTextActive: { color: "#fff", fontWeight: "600" },
+  appCard: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  appIcon: { width: 56, height: 56, borderRadius: 14, justifyContent: "center", alignItems: "center" },
+  appInfo: { flex: 1, marginLeft: 12 },
+  appName: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  appDesc: { color: "#64748B", fontSize: 13, marginTop: 2 },
+  appMeta: { flexDirection: "row", gap: 12, marginTop: 4 },
+  appRating: { color: "#F59E0B", fontSize: 12, fontWeight: "600" },
+  appSize: { color: "#64748B", fontSize: 12 },
+  appActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  launchBtn: { backgroundColor: "#1a1a1a", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  launchText: { color: "#6366F1", fontSize: 14, fontWeight: "700" },
+  installBtn: { backgroundColor: "#6366F1", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8 },
+  installingBtn: { backgroundColor: "#334155" },
+  installText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  uninstallBtn: { padding: 8 },
+  emptyText: { color: "#64748B", textAlign: "center", marginTop: 40, fontSize: 15 },
 });

@@ -1,68 +1,128 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-const events = [
-  { id: 1, title: 'Team Standup', time: '09:00', duration: '30m', type: 'work' },
-  { id: 2, title: 'Doctor Appointment', time: '14:00', duration: '1h', type: 'health' },
-  { id: 3, title: 'Client Call', time: '16:00', duration: '45m', type: 'work' },
-];
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  type: "personal" | "work" | "reminder";
+}
 
-const typeColors: Record<string, string> = { work: '#6366F1', health: '#10B981', personal: '#F59E0B' };
+const TYPE_COLORS: Record<string, string> = {
+  personal: "#6366F1",
+  work: "#22C55E",
+  reminder: "#F59E0B",
+};
 
-export function SchedulerShell() {
-  const [selectedDate, setSelectedDate] = useState(0);
-  const dates = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export default function SchedulerShell() {
+  const router = useRouter();
+  const [events, setEvents] = useState<Event[]>([
+    { id: "1", title: "Team Meeting", date: "2026-05-26", time: "10:00", type: "work" },
+    { id: "2", title: "Doctor Appointment", date: "2026-05-27", time: "14:30", type: "personal" },
+    { id: "3", title: "Pay Rent", date: "2026-05-30", time: "09:00", type: "reminder" },
+  ]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [newType, setNewType] = useState<"personal" | "work" | "reminder">("personal");
+
+  const handleAdd = () => {
+    if (!newTitle || !newDate || !newTime) {
+      Alert.alert("Error", "Fill all fields");
+      return;
+    }
+    const event: Event = {
+      id: Date.now().toString(),
+      title: newTitle,
+      date: newDate,
+      time: newTime,
+      type: newType,
+    };
+    setEvents((prev) => [...prev, event].sort((a, b) => a.date.localeCompare(b.date)));
+    setNewTitle("");
+    setNewDate("");
+    setNewTime("");
+    setShowAdd(false);
+  };
+
+  const handleDelete = (id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Scheduler</Text>
-        <TouchableOpacity style={styles.addBtn}>
-          <Ionicons name="add" size={24} color="white" />
+        <Text style={styles.headerTitle}>Scheduler</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(!showAdd)}>
+          <Ionicons name={showAdd ? "close" : "add"} size={22} color="#fff" />
         </TouchableOpacity>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateScroll} contentContainerStyle={{ paddingHorizontal: 16 }}>
-        {dates.map((d, i) => (
-          <TouchableOpacity key={i} style={[styles.dateChip, selectedDate === i && styles.dateChipActive]} onPress={() => setSelectedDate(i)}>
-            <Text style={[styles.dateText, selectedDate === i && styles.dateTextActive]}>{d}</Text>
-            <Text style={[styles.dayNum, selectedDate === i && styles.dateTextActive]}>{12 + i}</Text>
+
+      {showAdd && (
+        <View style={styles.addForm}>
+          <TextInput style={styles.input} placeholder="Event title" placeholderTextColor="#64748B" value={newTitle} onChangeText={setNewTitle} />
+          <TextInput style={styles.input} placeholder="Date (YYYY-MM-DD)" placeholderTextColor="#64748B" value={newDate} onChangeText={setNewDate} />
+          <TextInput style={styles.input} placeholder="Time (HH:MM)" placeholderTextColor="#64748B" value={newTime} onChangeText={setNewTime} />
+          <View style={styles.typeRow}>
+            {(["personal", "work", "reminder"] as const).map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[styles.typeChip, newType === t && { backgroundColor: TYPE_COLORS[t] }]}
+                onPress={() => setNewType(t)}
+              >
+                <Text style={[styles.typeText, newType === t && { color: "#fff" }]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleAdd}>
+            <Text style={styles.saveText}>Add Event</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+        </View>
+      )}
+
       <FlatList
         data={events}
-        keyExtractor={e => e.id.toString()}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.eventRow}>
-            <View style={[styles.timeLine, { backgroundColor: typeColors[item.type] }]} />
-            <View style={styles.eventContent}>
-              <Text style={styles.eventTime}>{item.time}</Text>
+            <View style={[styles.eventDot, { backgroundColor: TYPE_COLORS[item.type] }]} />
+            <View style={styles.eventInfo}>
               <Text style={styles.eventTitle}>{item.title}</Text>
-              <Text style={styles.eventDuration}>{item.duration}</Text>
+              <Text style={styles.eventMeta}>{item.date} • {item.time}</Text>
             </View>
+            <TouchableOpacity onPress={() => handleDelete(item.id)}>
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            </TouchableOpacity>
           </View>
         )}
-        contentContainerStyle={{ padding: 16 }}
+        ListEmptyComponent={<Text style={styles.emptyText}>No events scheduled</Text>}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050816' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
-  title: { fontSize: 32, fontWeight: 'bold', color: 'white' },
-  addBtn: { backgroundColor: '#6366F1', width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  dateScroll: { maxHeight: 80, marginBottom: 8 },
-  dateChip: { alignItems: 'center', padding: 10, marginRight: 8, borderRadius: 12, backgroundColor: '#1E293B', width: 56 },
-  dateChipActive: { backgroundColor: '#6366F1' },
-  dateText: { color: '#94A3B8', fontSize: 12 },
-  dateTextActive: { color: 'white', fontWeight: 'bold' },
-  dayNum: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 2 },
-  eventRow: { flexDirection: 'row', marginBottom: 12 },
-  timeLine: { width: 4, borderRadius: 2, marginRight: 12 },
-  eventContent: { flex: 1, backgroundColor: '#1E293B', padding: 14, borderRadius: 12 },
-  eventTime: { color: '#6366F1', fontSize: 13, fontWeight: '600' },
-  eventTitle: { color: 'white', fontSize: 15, fontWeight: '600', marginTop: 4 },
-  eventDuration: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
+  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "700" },
+  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#6366F1", justifyContent: "center", alignItems: "center" },
+  addForm: { paddingHorizontal: 16, paddingBottom: 16, gap: 8 },
+  input: { backgroundColor: "#1a1a1a", borderRadius: 12, padding: 14, color: "#fff", fontSize: 15 },
+  typeRow: { flexDirection: "row", gap: 8 },
+  typeChip: { flex: 1, backgroundColor: "#1a1a1a", padding: 10, borderRadius: 8, alignItems: "center" },
+  typeText: { color: "#94A3B8", fontSize: 13, fontWeight: "600" },
+  saveBtn: { backgroundColor: "#6366F1", padding: 14, borderRadius: 12, alignItems: "center", marginTop: 4 },
+  saveText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  eventRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  eventDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
+  eventInfo: { flex: 1 },
+  eventTitle: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  eventMeta: { color: "#64748B", fontSize: 12, marginTop: 2 },
+  emptyText: { color: "#64748B", textAlign: "center", marginTop: 40, fontSize: 15 },
 });
