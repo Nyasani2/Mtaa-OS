@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { pinEngine } from '@/lib/security/pin-engine';
+import { setPin } from '@/lib/security/pin-engine';
 
 export default function FirstBootScreen() {
-  const [pin, setPin] = useState('');
+  const [pin, setPinValue] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,9 +14,9 @@ export default function FirstBootScreen() {
     if (pin.length < 4) { setError('PIN must be at least 4 digits'); return; }
     if (pin !== confirmPin) { setError('PINs do not match'); return; }
     setLoading(true); setError('');
-    const ok = await pinEngine.setPin(pin);
-    if (ok) { router.replace('/(os)'); }
-    else { setError('Failed to set PIN. Try again.'); }
+    const result = await setPin(pin);
+    if (result.success) { router.replace('/(os)'); }
+    else { setError(result.error || 'Failed to set PIN. Try again.'); }
     setLoading(false);
   }
 
@@ -24,7 +24,7 @@ export default function FirstBootScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to MTAA OS</Text>
       <Text style={styles.subtitle}>Set a PIN to secure your device</Text>
-      <TextInput style={styles.input} value={pin} onChangeText={setPin} keyboardType="number-pad" secureTextEntry maxLength={6} placeholder="Enter PIN" placeholderTextColor="#999" />
+      <TextInput style={styles.input} value={pin} onChangeText={setPinValue} keyboardType="number-pad" secureTextEntry maxLength={6} placeholder="Enter PIN" placeholderTextColor="#999" />
       <TextInput style={styles.input} value={confirmPin} onChangeText={setConfirmPin} keyboardType="number-pad" secureTextEntry maxLength={6} placeholder="Confirm PIN" placeholderTextColor="#999" />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSetPin} disabled={loading}>
