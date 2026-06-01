@@ -18,6 +18,7 @@ export interface AppManifest {
   isOSApp?: boolean;
   min_kernel_version?: string;
   config_schema?: Record<string, any>;
+  author?: string;
 }
 
 export interface AppInstallation {

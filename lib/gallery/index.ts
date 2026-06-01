@@ -1,1 +1,1 @@
-export { GalleryShell } from './components/GalleryShell';
+export { default as GalleryShell } from './components/GalleryShell';

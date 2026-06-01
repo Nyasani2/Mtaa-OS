@@ -1,0 +1,29 @@
+// app/_layout.tsx
+import React from 'react';
+import { Stack } from 'expo-router';
+import { ThemeProvider } from '@/lib/theme/theme-provider';
+import { ToastProvider } from '@/lib/toast/toast-provider';
+import { ASISProvider } from '@/lib/kernel/ai/asis-provider';
+import { IdentityProvider } from '@/lib/auth/identity';
+import { OSShellProvider } from '@/lib/shell/use-os-shell';
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <ASISProvider>
+          <IdentityProvider>
+            <OSShellProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(os)" />
+                <Stack.Screen name="(wallet)" />
+                <Stack.Screen name="auth" />
+              </Stack>
+            </OSShellProvider>
+          </IdentityProvider>
+        </ASISProvider>
+      </ToastProvider>
+    </ThemeProvider>
+  );
+}

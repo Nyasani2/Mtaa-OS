@@ -1,87 +1,106 @@
-// lib/shell/os-shell-provider.tsx
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { getPinState, PinState } from '@/lib/security/pin-engine';
+import { useIdentity } from '@/lib/auth/use-identity';
 
-export interface OSShellContextValue {
+interface OSShellContextType {
+  isBooting: boolean;
+  isAuthenticated: boolean;
+  isPinSet: boolean;
   isLocked: boolean;
   isUnlocked: boolean;
-  isBooting: boolean;
-  isReady: boolean;
+  bootError: string | null;
+  unlock: () => void;
   lock: () => void;
-  unlockWithPin: (pin: string) => Promise<boolean>;
-  unlockWithBiometric: () => Promise<boolean>;
-  boot: () => Promise<void>;
-  shutdown: () => void;
+  refreshPinState: () => Promise<void>;
 }
 
-export const OSShellContext = createContext<OSShellContextValue | undefined>(undefined);
+const OSShellContext = createContext<OSShellContextType | null>(null);
+
+export function useOSShell() {
+  const ctx = useContext(OSShellContext);
+  if (!ctx) throw new Error('useOSShell must be used within OSShellProvider');
+  return ctx;
+}
 
 export function OSShellProvider({ children }: { children: React.ReactNode }) {
-  const [isLocked, setIsLocked] = useState(true);
+  const { session, isLoading: authLoading } = useIdentity();
+
+  const [pinState, setPinState] = useState<PinState | null>(null);
   const [isBooting, setIsBooting] = useState(true);
-  const [isReady, setIsReady] = useState(false);
+  const [bootError, setBootError] = useState<string | null>(null);
+
+  const isAuthenticated = !!session;
+  const isPinSet = pinState?.isSet ?? false;
+  const isLocked = pinState?.isLocked ?? false;
+  const isUnlocked = isPinSet && !isLocked;
+
+  const refreshPinState = useCallback(async () => {
+    try {
+      const state = await getPinState();
+      setPinState(state);
+    } catch (err) {
+      console.warn('[OSShell] refreshPinState failed:', err);
+      setPinState({ isSet: false, isLocked: false, attemptsRemaining: 5, lockoutEnd: null });
+    }
+  }, []);
+
+  const unlock = useCallback(() => {
+    setPinState(prev => prev
+      ? { ...prev, isLocked: false }
+      : { isSet: true, isLocked: false, attemptsRemaining: 5, lockoutEnd: null }
+    );
+  }, []);
 
   const lock = useCallback(() => {
-    setIsLocked(true);
-    setIsReady(false);
+    setPinState(prev => prev
+      ? { ...prev, isLocked: true }
+      : { isSet: true, isLocked: true, attemptsRemaining: 5, lockoutEnd: null }
+    );
   }, []);
 
-  const unlockWithPin = useCallback(async (pin: string): Promise<boolean> => {
-    // In production, validate against secure storage
-    const valid = pin.length >= 4;
-    if (valid) {
-      setIsLocked(false);
-      setIsReady(true);
-    }
-    return valid;
-  }, []);
+  useEffect(() => {
+    if (authLoading) return;
 
-  const unlockWithBiometric = useCallback(async (): Promise<boolean> => {
-    // In production, use expo-local-authentication
-    const success = true;
-    if (success) {
-      setIsLocked(false);
-      setIsReady(true);
-    }
-    return success;
-  }, []);
-
-  const boot = useCallback(async () => {
+    let mounted = true;
     setIsBooting(true);
-    // Simulate boot sequence
-    await new Promise(r => setTimeout(r, 500));
-    setIsBooting(false);
-    setIsLocked(true); // Require unlock after boot
-  }, []);
+    setBootError(null);
 
-  const shutdown = useCallback(() => {
-    setIsLocked(true);
-    setIsReady(false);
-    setIsBooting(false);
-  }, []);
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('[OSShell] PIN check timed out');
+        setPinState({ isSet: false, isLocked: false, attemptsRemaining: 5, lockoutEnd: null });
+        setIsBooting(false);
+      }
+    }, 3000);
 
-  const value: OSShellContextValue = {
-    isLocked,
-    isUnlocked: !isLocked,
-    isBooting,
-    isReady,
-    lock,
-    unlockWithPin,
-    unlockWithBiometric,
-    boot,
-    shutdown,
-  };
+    refreshPinState().then(() => {
+      clearTimeout(timeout);
+      if (mounted) setIsBooting(false);
+    }).catch(err => {
+      clearTimeout(timeout);
+      if (mounted) {
+        console.error('[OSShell] Boot failed:', err);
+        setBootError('Failed to initialize. Please restart the app.');
+        setIsBooting(false);
+      }
+    });
+
+    return () => { mounted = false; clearTimeout(timeout); };
+  }, [authLoading, session, refreshPinState]);
 
   return (
-    <OSShellContext.Provider value={value}>
+    <OSShellContext.Provider value={{
+      isBooting,
+      isAuthenticated,
+      isPinSet,
+      isLocked,
+      isUnlocked,
+      bootError,
+      unlock,
+      lock,
+      refreshPinState,
+    }}>
       {children}
     </OSShellContext.Provider>
   );
-}
-
-export function useOSShell(): OSShellContextValue {
-  const context = useContext(OSShellContext);
-  if (context === undefined) {
-    throw new Error('useOSShell must be used within an OSShellProvider');
-  }
-  return context;
 }

@@ -21,7 +21,7 @@ export function PrisonNav() {
         <TouchableOpacity
           key={item.path}
           style={[styles.navItem, pathname === item.path && styles.active]}
-          onPress={() => router.push(item.path)}
+          onPress={() => router.push(item.path as any)}
         >
           <Text style={[styles.navText, pathname === item.path && styles.activeText]}>
             {item.label}

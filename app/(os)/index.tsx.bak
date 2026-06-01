@@ -1,0 +1,93 @@
+import React, { useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useLauncher } from "@/lib/mtaa/appstore/launcher";
+import { useIdentity } from "@/lib/auth/identity";
+import { Ionicons } from "@expo/vector-icons";
+
+export default function OSHomeScreen() {
+  const router = useRouter();
+  const { apps, launchApp } = useLauncher();
+  const { user } = useIdentity();
+
+  const installedApps = apps.filter((app) => app.isInstalled || app.isOSApp);
+  const pinnedApps = installedApps.slice(0, 8);
+  const allApps = installedApps;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Good {getGreeting()}</Text>
+          <Text style={styles.name}>{user?.user_metadata?.full_name || user?.email || "User"}</Text>
+        </View>
+        <TouchableOpacity style={styles.appStoreBtn} onPress={() => router.push("/appstore" as any)}>
+          <Ionicons name="apps" size={24} color="#6366F1" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>Pinned</Text>
+        <View style={styles.pinnedGrid}>
+          {pinnedApps.map((app) => (
+            <TouchableOpacity
+              key={app.id}
+              style={styles.pinnedItem}
+              onPress={() => launchApp(app.id)}
+            >
+              <View style={[styles.pinnedIcon, { backgroundColor: app.color }]}>
+                <Ionicons name={app.icon as any} size={24} color="#fff" />
+              </View>
+              <Text style={styles.pinnedName} numberOfLines={1}>{app.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>All Apps</Text>
+        <FlatList
+          data={allApps}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.appRow} onPress={() => launchApp(item.id)}>
+              <View style={[styles.appIcon, { backgroundColor: item.color }]}>
+                <Ionicons name={item.icon as any} size={20} color="#fff" />
+              </View>
+              <View style={styles.appInfo}>
+                <Text style={styles.appName}>{item.name}</Text>
+                <Text style={styles.appCategory}>{item.category}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#64748B" />
+            </TouchableOpacity>
+          )}
+        />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Morning";
+  if (hour < 17) return "Afternoon";
+  return "Evening";
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
+  greeting: { color: "#94A3B8", fontSize: 14 },
+  name: { color: "#fff", fontSize: 20, fontWeight: "700", marginTop: 2 },
+  appStoreBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#1a1a1a", justifyContent: "center", alignItems: "center" },
+  sectionTitle: { color: "#64748B", fontSize: 12, fontWeight: "700", paddingHorizontal: 16, paddingVertical: 12, textTransform: "uppercase", letterSpacing: 1 },
+  pinnedGrid: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12 },
+  pinnedItem: { width: "25%", alignItems: "center", paddingVertical: 12 },
+  pinnedIcon: { width: 56, height: 56, borderRadius: 16, justifyContent: "center", alignItems: "center" },
+  pinnedName: { color: "#fff", fontSize: 12, marginTop: 8, textAlign: "center" },
+  appRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  appIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: "center", alignItems: "center" },
+  appInfo: { flex: 1, marginLeft: 12 },
+  appName: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  appCategory: { color: "#64748B", fontSize: 12, marginTop: 2 },
+});

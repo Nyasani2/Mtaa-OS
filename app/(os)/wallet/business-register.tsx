@@ -1,4 +1,3 @@
-// app/(os)/wallet/business-register.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -36,8 +35,12 @@ export default function BusinessRegisterScreen() {
     try {
       await businessService.registerBusiness({
         ...form,
-        owner_id: user.id,
+        user_id: user.id,
         documents: {},
+        verified: false,
+        status: "pending_verification",
+        registration_number: form.business_reg_number,
+        tax_pin: form.kra_pin,
         fee_percentage: 2.5,
         settlement_frequency: 'daily',
         settlement_threshold: 100,
@@ -55,67 +58,105 @@ export default function BusinessRegisterScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Register Business</Text>
 
-      <TextInput style={styles.input} placeholder="Business Name" value={form.name} onChangeText={t => setForm(f => ({ ...f, name: t }))} />
+      <View style={styles.form}>
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Business Name</Text>
+          <TextInput style={styles.input} placeholder="Enter business name" value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
+        </View>
 
-      <Text style={styles.label}>Business Type</Text>
-      <View style={styles.typeContainer}>
-        {TYPES.map(type => (
-          <TouchableOpacity
-            key={type}
-            style={[styles.typeButton, form.type === type && styles.typeActive]}
-            onPress={() => setForm(f => ({ ...f, type }))}
-          >
-            <Text style={form.type === type ? styles.typeActiveText : styles.typeText}>{type.replace(/_/g, ' ')}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Business Type</Text>
+          <View style={styles.typeRow}>
+            {TYPES.map((t) => (
+              <TouchableOpacity key={t} style={[styles.typeBtn, form.type === t && styles.typeBtnActive]} onPress={() => setForm({ ...form, type: t })}>
+                <Text style={[styles.typeText, form.type === t && styles.typeTextActive]}>{t.replace('_', ' ')}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput style={[styles.input, styles.textArea]} placeholder="What does your business do?" value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} multiline />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Category</Text>
+          <TextInput style={styles.input} placeholder="e.g. Retail, Food, Services" value={form.category} onChangeText={(t) => setForm({ ...form, category: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>County</Text>
+          <View style={styles.countyRow}>
+            {COUNTIES.map((c) => (
+              <TouchableOpacity key={c} style={[styles.countyBtn, form.county === c && styles.countyBtnActive]} onPress={() => setForm({ ...form, county: c })}>
+                <Text style={[styles.countyText, form.county === c && styles.countyTextActive]}>{c}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Sub County</Text>
+          <TextInput style={styles.input} placeholder="Enter sub county" value={form.sub_county} onChangeText={(t) => setForm({ ...form, sub_county: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Ward</Text>
+          <TextInput style={styles.input} placeholder="Enter ward" value={form.ward} onChangeText={(t) => setForm({ ...form, ward: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Location</Text>
+          <TextInput style={styles.input} placeholder="Enter location" value={form.location} onChangeText={(t) => setForm({ ...form, location: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Phone</Text>
+          <TextInput style={styles.input} placeholder="2547XXXXXXXX" keyboardType="phone-pad" value={form.phone} onChangeText={(t) => setForm({ ...form, phone: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput style={styles.input} placeholder="business@example.com" keyboardType="email-address" value={form.email} onChangeText={(t) => setForm({ ...form, email: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>KRA PIN</Text>
+          <TextInput style={styles.input} placeholder="A001234567B" value={form.kra_pin} onChangeText={(t) => setForm({ ...form, kra_pin: t })} />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Business Registration Number</Text>
+          <TextInput style={styles.input} placeholder="BN/2024/123456" value={form.business_reg_number} onChangeText={(t) => setForm({ ...form, business_reg_number: t })} />
+        </View>
+
+        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
+          <Text style={styles.submitText}>{loading ? 'Registering...' : 'Register Business'}</Text>
+        </TouchableOpacity>
       </View>
-
-      <TextInput style={styles.input} placeholder="Description" value={form.description} onChangeText={t => setForm(f => ({ ...f, description: t }))} multiline />
-      <TextInput style={styles.input} placeholder="Category (e.g. Retail, Food)" value={form.category} onChangeText={t => setForm(f => ({ ...f, category: t }))} />
-
-      <Text style={styles.label}>County</Text>
-      <View style={styles.countyContainer}>
-        {COUNTIES.map(county => (
-          <TouchableOpacity
-            key={county}
-            style={[styles.countyButton, form.county === county && styles.countyActive]}
-            onPress={() => setForm(f => ({ ...f, county }))}
-          >
-            <Text style={form.county === county ? styles.countyActiveText : styles.countyText}>{county}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <TextInput style={styles.input} placeholder="Sub-County" value={form.sub_county} onChangeText={t => setForm(f => ({ ...f, sub_county: t }))} />
-      <TextInput style={styles.input} placeholder="Ward" value={form.ward} onChangeText={t => setForm(f => ({ ...f, ward: t }))} />
-      <TextInput style={styles.input} placeholder="Location/Street" value={form.location} onChangeText={t => setForm(f => ({ ...f, location: t }))} />
-      <TextInput style={styles.input} placeholder="Phone" value={form.phone} onChangeText={t => setForm(f => ({ ...f, phone: t }))} keyboardType="phone-pad" />
-      <TextInput style={styles.input} placeholder="Email" value={form.email} onChangeText={t => setForm(f => ({ ...f, email: t }))} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="KRA PIN" value={form.kra_pin} onChangeText={t => setForm(f => ({ ...f, kra_pin: t }))} autoCapitalize="characters" />
-      <TextInput style={styles.input} placeholder="Business Reg. Number" value={form.business_reg_number} onChangeText={t => setForm(f => ({ ...f, business_reg_number: t }))} />
-
-      <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Registering...' : 'Register Business'}</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 24, fontWeight: '700', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', marginTop: 12, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  typeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  typeButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
-  typeActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  typeText: { fontSize: 12, color: '#374151' },
-  typeActiveText: { fontSize: 12, color: '#fff', fontWeight: '600' },
-  countyContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  countyButton: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
-  countyActive: { backgroundColor: '#059669', borderColor: '#059669' },
-  countyText: { fontSize: 12, color: '#374151' },
-  countyActiveText: { fontSize: 12, color: '#fff', fontWeight: '600' },
-  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 20, marginBottom: 40 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#F8FAFC', padding: 16 },
+  header: { fontSize: 24, fontWeight: '700', color: '#1F2937', marginBottom: 20 },
+  form: { gap: 16 },
+  inputGroup: { gap: 6 },
+  label: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
+  input: { backgroundColor: '#FFF', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: '#E5E7EB', fontSize: 15, color: '#1F2937' },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
+  typeBtnActive: { backgroundColor: '#3B82F6' },
+  typeText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  typeTextActive: { color: '#FFF' },
+  countyRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  countyBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
+  countyBtnActive: { backgroundColor: '#3B82F6' },
+  countyText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  countyTextActive: { color: '#FFF' },
+  submitBtn: { backgroundColor: '#2563EB', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  submitText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
 });

@@ -1,0 +1,11 @@
+import { MARKETPLACE_APP } from "./apps/marketplace/manifest";
+import { STREETS_APP } from "./apps/streets/manifest";
+
+const LOCAL_APPS = [
+  MTRUCK_APP,
+  HOOKUP_APP,
+  CREDIT_APP,
+  JOBS_APP,
+  MARKETPLACE_APP,  // ADD
+  STREETS_APP,      // ADD
+];

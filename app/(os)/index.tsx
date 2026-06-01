@@ -1,84 +1,263 @@
-// app/(os)/index.tsx — MTAA OS Home
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { useIdentity } from '@/lib/auth/identity';
-import { useOSShell } from '@/lib/shell/use-os-shell';
-import { useLauncher } from '@/lib/mtaa/appstore/launcher';
-import { listApps } from '@/lib/mtaa/appstore/registry';
-import type { AppManifest } from '@/types/module.types';
+// app/(os)/index.tsx — MTAA OS Home with Warrior Background
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+  ScrollView,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { useLauncher } from "@/lib/mtaa/appstore/launcher";
+import { useIdentity } from "@/lib/auth/use-identity";
+import { Ionicons } from "@expo/vector-icons";
+import { getAppsBySection, AppManifest } from "@/lib/mtaa/appstore/unified-registry";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const COLS = 4;
 const TILE = (width - 48) / COLS;
 
 export default function OSHomeScreen() {
-  const { user, isAuthenticated } = useIdentity();
-  const { isReady } = useOSShell();
-  const { launchApp, recentApps } = useLauncher();
-  const apps = listApps();
+  const router = useRouter();
+  const { launchApp } = useLauncher();
+  const { user } = useIdentity();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDate(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const mtaaApps = getAppsBySection("mtaa");
+  const androidApps = getAppsBySection("android");
+
+  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const dayName = days[currentDate.getDay()];
+  const dayNum = currentDate.getDate();
+  const monthName = months[currentDate.getMonth()];
+  const year = currentDate.getFullYear();
 
   const renderAppTile = (app: AppManifest) => (
-    <TouchableOpacity key={app.id} style={styles.tile} onPress={() => launchApp(app)}>
-      <View style={[styles.icon, { backgroundColor: app.color || '#333' }]}>
-        <Text style={styles.iconText}>{app.name[0]}</Text>
+    <TouchableOpacity
+      key={app.id}
+      style={styles.tile}
+      onPress={() => launchApp(app.id)}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: app.color }]}>
+        <Ionicons name={app.icon as any} size={28} color="#fff" />
       </View>
-      <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+      <Text style={styles.appName} numberOfLines={1}>
+        {app.name}
+      </Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>
-          {isAuthenticated ? `Welcome, ${user?.email?.split('@')[0]}` : 'Welcome to MTAA'}
-        </Text>
-        <Text style={styles.status}>{isReady ? '● Online' : '○ Initializing...'}</Text>
-      </View>
+    <View style={styles.root}>
+      {/* Warrior Background Image */}
+      <Image
+        source={require("@/assets/images/mtaa_home.jpeg")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      />
 
-      {recentApps.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {recentApps.map((id) => {
-              const app = apps.find((a) => a.id === id);
-              if (!app) return null;
-              return (
-                <TouchableOpacity key={id} style={styles.recentTile} onPress={() => launchApp(app)}>
-                  <View style={[styles.recentIcon, { backgroundColor: app.color || '#333' }]}>
-                    <Text style={styles.recentIconText}>{app.name[0]}</Text>
-                  </View>
-                  <Text style={styles.recentName}>{app.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
+      {/* Dark overlay for readability */}
+      <View style={styles.overlay} />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Apps</Text>
-        <View style={styles.grid}>
-          {apps.map(renderAppTile)}
-        </View>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              <Text style={styles.name}>
+                {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.appStoreBtn}
+              onPress={() => router.push("/appstore" as any)}
+            >
+              <Ionicons name="apps" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Date Widget */}
+          <View style={styles.dateWidget}>
+            <Text style={styles.dayName}>{dayName.toUpperCase()}</Text>
+            <Text style={styles.dayNumber}>{dayNum}</Text>
+            <Text style={styles.monthYear}>{monthName} {year}</Text>
+          </View>
+
+          {/* MTAA Apps Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>MTAA Apps</Text>
+              <TouchableOpacity onPress={() => router.push("/appstore" as any)}>
+                <Text style={styles.appStoreLink}>App Store →</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.grid}>
+              {mtaaApps.map(renderAppTile)}
+            </View>
+          </View>
+
+          {/* Android Apps Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Android Apps</Text>
+            <View style={styles.grid}>
+              {androidApps.map(renderAppTile)}
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning,";
+  if (hour < 17) return "Good afternoon,";
+  return "Good evening,";
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', paddingTop: 48 },
-  header: { paddingHorizontal: 16, marginBottom: 24 },
-  greeting: { color: '#fff', fontSize: 24, fontWeight: '700' },
-  status: { color: '#10B981', fontSize: 12, marginTop: 4, fontWeight: '600' },
-  section: { marginBottom: 24 },
-  sectionTitle: { color: '#888', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, paddingHorizontal: 16, marginBottom: 12 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16 },
-  tile: { width: TILE, alignItems: 'center', marginBottom: 20 },
-  icon: { width: 56, height: 56, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  iconText: { color: '#fff', fontSize: 22, fontWeight: '700' },
-  appName: { color: '#ccc', fontSize: 11, textAlign: 'center', width: TILE - 8 },
-  recentTile: { alignItems: 'center', marginRight: 16, width: 72 },
-  recentIcon: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  recentIconText: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  recentName: { color: '#ccc', fontSize: 10, textAlign: 'center', width: 72 },
+  root: {
+    flex: 1,
+  },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 8 : 20,
+    paddingBottom: 12,
+  },
+  greeting: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    fontWeight: "400",
+  },
+  name: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  appStoreBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  dateWidget: {
+    alignItems: "center",
+    marginVertical: 20,
+    paddingHorizontal: 20,
+  },
+  dayName: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 3,
+    marginBottom: 4,
+  },
+  dayNumber: {
+    color: "#fff",
+    fontSize: 64,
+    fontWeight: "200",
+    lineHeight: 72,
+  },
+  monthYear: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 16,
+    fontWeight: "400",
+    marginTop: 4,
+  },
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  appStoreLink: {
+    color: "#60A5FA",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  tile: {
+    width: TILE,
+    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  appName: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 8,
+    textAlign: "center",
+    width: TILE - 8,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
 });

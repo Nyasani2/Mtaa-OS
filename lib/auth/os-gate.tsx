@@ -11,9 +11,9 @@ export function OSGate({ children, fallback }: OSGateProps) {
 
   if (isLoading || isBooting) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 12 }}>Loading MTAA OS...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FF6B00' }}>
+        <ActivityIndicator size="large" color="#fff" />
+        <Text style={{ marginTop: 12, color: '#fff', fontSize: 14 }}>Loading MTAA OS...</Text>
       </View>
     );
   }
@@ -22,9 +22,9 @@ export function OSGate({ children, fallback }: OSGateProps) {
   if (isLocked) return fallback || null;
   if (!isUnlocked) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 12 }}>Unlocking...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f' }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text style={{ marginTop: 12, color: '#999' }}>Unlocking...</Text>
       </View>
     );
   }

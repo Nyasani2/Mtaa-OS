@@ -1,10 +1,9 @@
-// app/(os)/wallet/business.tsx
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useBusiness } from '@/domains/business/hooks/useBusiness';
-import { usePayments } from '@/domains/business/hooks/usePayments';
-import { businessService, TillPayment, PaybillPayment } from '@/domains/business/services/businessService';
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { useBusiness } from "@/domains/business/hooks/useBusiness";
+import { usePayments } from "@/domains/business/hooks/usePayments";
+import { businessService, TillPayment, PaybillPayment } from "@/domains/business/services/businessService";
 
 export default function BusinessScreen() {
   const router = useRouter();
@@ -14,20 +13,19 @@ export default function BusinessScreen() {
 
   const initiateTill = async (tillNumber: string | undefined, phone: string, amount: number) => {
     if (!tillNumber) {
-      Alert.alert('Error', 'No till number configured');
+      Alert.alert("Error", "No till number configured");
       return;
     }
-    // Call STK push edge function
     try {
-      const response = await fetch('/api/business-stk-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/business-stk-push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tillNumber, phone, amount }),
       });
-      if (!response.ok) throw new Error('STK push failed');
-      Alert.alert('Success', 'Payment request sent to customer phone');
+      if (!response.ok) throw new Error("STK push failed");
+      Alert.alert("Success", "Payment request sent to customer phone");
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Payment failed');
+      Alert.alert("Error", err instanceof Error ? err.message : "Payment failed");
     }
   };
 
@@ -36,13 +34,13 @@ export default function BusinessScreen() {
     setExporting(true);
     const allPayments = payments as (TillPayment | PaybillPayment)[];
     const csv = allPayments.map((p: TillPayment | PaybillPayment) => {
-      const number = 'till_number' in p ? p.till_number : p.paybill_number;
-      return `${p.created_at},${number},${p.sender_name || p.sender_phone},${p.amount},${p.status}`;
-    }).join('\n');
+      const number = "till_number" in p ? p.till_number : p.paybill_number;
+      const sender = p.sender_name || p.sender_phone || "Unknown";
+      return `${p.created_at},${number},${sender},${p.amount},${p.status}`;
+    }).join("\n");
 
-    // In native, share via Share API
-    console.log('CSV Export:', csv);
-    Alert.alert('Export', 'CSV generated (check console for data)');
+    console.log("CSV Export:", csv);
+    Alert.alert("Export", "CSV generated (check console for data)");
     setExporting(false);
   };
 
@@ -52,7 +50,7 @@ export default function BusinessScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.noBizText}>No business registered</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/(os)/wallet/business-register')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/(os)/wallet/business-register")}>
           <Text style={styles.buttonText}>Register Business</Text>
         </TouchableOpacity>
       </View>
@@ -69,7 +67,7 @@ export default function BusinessScreen() {
           <Text style={styles.sectionTitle}>Till Number: {business.till_number}</Text>
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => initiateTill(business.till_number, '254712345678', 1)}
+            onPress={() => initiateTill(business.till_number, "254712345678", 1)}
           >
             <Text style={styles.actionText}>Test STK Push</Text>
           </TouchableOpacity>
@@ -88,7 +86,7 @@ export default function BusinessScreen() {
           payments.map((p, i) => (
             <View key={i} style={styles.paymentRow}>
               <Text style={styles.paymentAmount}>KES {p.amount}</Text>
-              <Text style={[styles.paymentStatus, p.status === 'completed' ? styles.completed : styles.pending]}>
+              <Text style={[styles.paymentStatus, p.status === "completed" ? styles.completed : styles.pending]}>
                 {p.status}
               </Text>
             </View>
@@ -97,7 +95,7 @@ export default function BusinessScreen() {
       </View>
 
       <TouchableOpacity style={styles.button} onPress={exportCSV} disabled={exporting}>
-        <Text style={styles.buttonText}>{exporting ? 'Exporting...' : 'Export CSV'}</Text>
+        <Text style={styles.buttonText}>{exporting ? "Exporting..." : "Export CSV"}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.button, styles.secondary]} onPress={refresh}>
@@ -108,22 +106,22 @@ export default function BusinessScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { fontSize: 24, fontWeight: '700', marginBottom: 4 },
-  status: { fontSize: 14, color: '#666', marginBottom: 20 },
-  noBizText: { fontSize: 18, color: '#666', marginBottom: 20 },
-  section: { marginBottom: 20, padding: 16, backgroundColor: '#f9fafb', borderRadius: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  actionButton: { backgroundColor: '#2563eb', padding: 12, borderRadius: 6, alignItems: 'center' },
-  actionText: { color: '#fff', fontWeight: '600' },
-  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  paymentAmount: { fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, padding: 16, backgroundColor: "#fff" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  header: { fontSize: 24, fontWeight: "700", marginBottom: 4 },
+  status: { fontSize: 14, color: "#666", marginBottom: 20 },
+  noBizText: { fontSize: 18, color: "#666", marginBottom: 20 },
+  section: { marginBottom: 20, padding: 16, backgroundColor: "#f9fafb", borderRadius: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
+  actionButton: { backgroundColor: "#2563eb", padding: 12, borderRadius: 6, alignItems: "center" },
+  actionText: { color: "#fff", fontWeight: "600" },
+  paymentRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  paymentAmount: { fontSize: 16, fontWeight: "600" },
   paymentStatus: { fontSize: 14 },
-  completed: { color: '#059669' },
-  pending: { color: '#d97706' },
-  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  secondary: { backgroundColor: '#f3f4f6' },
-  secondaryText: { color: '#374151' },
+  completed: { color: "#059669" },
+  pending: { color: "#d97706" },
+  button: { backgroundColor: "#2563eb", padding: 16, borderRadius: 8, alignItems: "center", marginBottom: 12 },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  secondary: { backgroundColor: "#f3f4f6" },
+  secondaryText: { color: "#374151" },
 });
