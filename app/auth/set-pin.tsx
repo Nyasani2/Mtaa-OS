@@ -34,6 +34,21 @@ export default function SetPinScreen() {
     return '';
   }, []);
 
+  const handleNumpadPress = useCallback((digit: string) => {
+    const current = step === 'create' ? pin : confirmPin;
+    if (current.length < 6) {
+      if (step === 'create') setPinValue(current + digit);
+      else setConfirmPin(current + digit);
+      setError('');
+    }
+  }, [pin, confirmPin, step]);
+
+  const handleBackspace = useCallback(() => {
+    if (step === 'create') setPinValue(pin.slice(0, -1));
+    else setConfirmPin(confirmPin.slice(0, -1));
+    setError('');
+  }, [pin, confirmPin, step]);
+
   const handleContinue = useCallback(async () => {
     const validationError = validatePin(pin);
     if (validationError) {
@@ -77,6 +92,9 @@ export default function SetPinScreen() {
     }
   }, [step, router]);
 
+  const currentPin = step === 'create' ? pin : confirmPin;
+  const numpadDigits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'backspace'];
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -96,39 +114,64 @@ export default function SetPinScreen() {
             : 'Re-enter your PIN to confirm'}
         </Text>
 
+        {/* PIN Dots Display */}
         <View style={styles.pinContainer}>
-          {(step === 'create' ? pin : confirmPin).split('').map((_, i) => (
+          {currentPin.split('').map((_, i) => (
             <View key={i} style={styles.pinDot}>
               <View style={styles.pinDotInner} />
             </View>
           ))}
-          {Array.from({ length: 6 - (step === 'create' ? pin : confirmPin).length }).map((_, i) => (
+          {Array.from({ length: 6 - currentPin.length }).map((_, i) => (
             <View key={`empty-${i}`} style={styles.pinDotEmpty} />
           ))}
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
+        {/* Hidden TextInput for mobile keyboard support */}
         <TextInput
           style={styles.hiddenInput}
-          value={step === 'create' ? pin : confirmPin}
+          value={currentPin}
           onChangeText={step === 'create' ? setPinValue : setConfirmPin}
           keyboardType="number-pad"
           secureTextEntry={!showPin}
           maxLength={6}
-          autoFocus
+          autoFocus={Platform.OS !== 'web'}
           caretHidden
         />
 
+        {/* Show/Hide Toggle */}
         <TouchableOpacity onPress={() => setShowPin(!showPin)} style={styles.showToggle}>
           <Ionicons name={showPin ? 'eye-off' : 'eye'} size={20} color="#6366F1" />
           <Text style={styles.showToggleText}>{showPin ? 'Hide PIN' : 'Show PIN'}</Text>
         </TouchableOpacity>
 
+        {/* Numpad for web / tap input */}
+        <View style={styles.numpad}>
+          {numpadDigits.map((digit, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.numpadKey, digit === '' && styles.numpadKeyEmpty]}
+              onPress={() => {
+                if (digit === 'backspace') handleBackspace();
+                else if (digit !== '') handleNumpadPress(digit);
+              }}
+              disabled={digit === ''}
+            >
+              {digit === 'backspace' ? (
+                <Ionicons name="backspace" size={24} color="#fff" />
+              ) : digit !== '' ? (
+                <Text style={styles.numpadText}>{digit}</Text>
+              ) : null}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Continue / Confirm Button */}
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={step === 'create' ? handleContinue : handleConfirm}
-          disabled={loading || (step === 'create' ? pin : confirmPin).length < 4}
+          disabled={loading || currentPin.length < 4}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
@@ -159,8 +202,12 @@ const styles = StyleSheet.create({
   pinDotEmpty: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#333' },
   error: { color: '#ef4444', textAlign: 'center', marginBottom: 16, fontSize: 14 },
   hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
-  showToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 },
+  showToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
   showToggleText: { color: '#6366F1', fontSize: 14 },
+  numpad: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 24, width: 280, alignSelf: 'center' },
+  numpadKey: { width: 80, height: 56, borderRadius: 12, backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' },
+  numpadKeyEmpty: { backgroundColor: 'transparent' },
+  numpadText: { color: '#fff', fontSize: 24, fontWeight: '600' },
   button: { backgroundColor: '#6366F1', borderRadius: 12, padding: 16, alignItems: 'center' },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
