@@ -1,3 +1,10 @@
+/**
+ * Business Domain Barrel Export
+ */
+
+export * from './types';
 export * from './services/businessService';
-export { darajaService } from './services/darajaService';
-export type { StkPushResult } from './services/darajaService';
+export * from './services/darajaService';
+export * from './hooks/useBusiness';
+export * from './hooks/usePayments';
+export * from './hooks/useStkPush';
