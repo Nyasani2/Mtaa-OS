@@ -1,100 +1,46 @@
 /**
- * ASIS Layer 5 — Transfer Policy
- * KYC-aware limits, confirmation gates, audit logging
+ * ASIS Wallet Security — Transfer Policy
+ * Defines limits, allowed methods, currencies for all transfers
  */
 
-import { TransferPolicy, PaymentMethod, Currency, Transfer } from '../types';
+import { PaymentMethod } from '../types'
 
-export class TransferPolicyEngine {
-  private policies: Map<number, TransferPolicy> = new Map(); // kycLevel -> policy
+export class TransferPolicy {
+  minAmount = 10
+  maxAmount = 10000000
+  allowedMethods: PaymentMethod[] = [
+    PaymentMethod.MTAA_WALLET,
+    PaymentMethod.MPESA,
+    PaymentMethod.BANK_TRANSFER,
+    PaymentMethod.CARD,
+  ]
+  allowedCurrencies: string[] = ['KES', 'USD', 'EUR', 'GBP', 'UGX', 'TZS', 'RWF']
+  requireKyc = 1
+  dailyLimit = 500000
+  monthlyLimit = 10000000
 
-  constructor() {
-    // Default policies by KYC level
-    this.policies.set(0, {
-      minAmount: 10,
-      maxAmount: 5000,
-      dailyLimit: 10000,
-      monthlyLimit: 50000,
-      requireConfirmation: true,
-      requirePin: true,
-      requireBiometric: false,
-      requireKyc: 0,
-      allowedMethods: [PaymentMethod.MTAA_WALLET, PaymentMethod.MOBILE_MONEY],
-      allowedCurrencies: [Currency.KES, Currency.UGX, Currency.TZS],
-      coolingOffMinutes: 0,
-    });
-
-    this.policies.set(1, {
-      minAmount: 10,
-      maxAmount: 50000,
-      dailyLimit: 100000,
-      monthlyLimit: 500000,
-      requireConfirmation: true,
-      requirePin: true,
-      requireBiometric: false,
-      requireKyc: 1,
-      allowedMethods: [PaymentMethod.MTAA_WALLET, PaymentMethod.MOBILE_MONEY, PaymentMethod.BANK_TRANSFER],
-      allowedCurrencies: [Currency.KES, Currency.UGX, Currency.TZS, Currency.RWF, Currency.NGN],
-      coolingOffMinutes: 0,
-    });
-
-    this.policies.set(2, {
-      minAmount: 10,
-      maxAmount: 500000,
-      dailyLimit: 1000000,
-      monthlyLimit: 5000000,
-      requireConfirmation: true,
-      requirePin: true,
-      requireBiometric: true,
-      requireKyc: 2,
-      allowedMethods: Object.values(PaymentMethod),
-      allowedCurrencies: Object.values(Currency),
-      coolingOffMinutes: 0,
-    });
+  /**
+   * Check if transfer is within policy limits
+   */
+  checkLimits(amount: number, dailyUsed: number, monthlyUsed: number): { allowed: boolean; reason?: string } {
+    if (amount < this.minAmount) return { allowed: false, reason: `Minimum amount is ${this.minAmount}` }
+    if (amount > this.maxAmount) return { allowed: false, reason: `Maximum amount is ${this.maxAmount}` }
+    if (dailyUsed + amount > this.dailyLimit) return { allowed: false, reason: 'Daily limit exceeded' }
+    if (monthlyUsed + amount > this.monthlyLimit) return { allowed: false, reason: 'Monthly limit exceeded' }
+    return { allowed: true }
   }
 
   /**
-   * Get policy for KYC level
+   * Check if method is allowed
    */
-  getPolicy(kycLevel: number): TransferPolicy {
-    return this.policies.get(kycLevel) || this.policies.get(0)!;
+  isMethodAllowed(method: PaymentMethod): boolean {
+    return this.allowedMethods.includes(method)
   }
 
   /**
-   * Check if transfer is allowed
+   * Check if currency is supported
    */
-  checkTransfer(kycLevel: number, transfer: Omit<Transfer, 'id' | 'status'>): { allowed: boolean; reason?: string } {
-    const policy = this.getPolicy(kycLevel);
-
-    if (transfer.amount < policy.minAmount) {
-      return { allowed: false, reason: `Minimum amount is ${policy.minAmount}` };
-    }
-    if (transfer.amount > policy.maxAmount) {
-      return { allowed: false, reason: `Maximum amount for your KYC level is ${policy.maxAmount}` };
-    }
-    if (!policy.allowedMethods.includes(transfer.method)) {
-      return { allowed: false, reason: `Payment method not allowed at KYC level ${kycLevel}` };
-    }
-    if (!policy.allowedCurrencies.includes(transfer.currency)) {
-      return { allowed: false, reason: `Currency not supported at KYC level ${kycLevel}` };
-    }
-
-    return { allowed: true };
-  }
-
-  /**
-   * Get required confirmations
-   */
-  getRequiredConfirmations(kycLevel: number, amount: number): {
-    pin: boolean;
-    biometric: boolean;
-    confirmation: boolean;
-  } {
-    const policy = this.getPolicy(kycLevel);
-    return {
-      pin: policy.requirePin || amount > 5000,
-      biometric: policy.requireBiometric || amount > 50000,
-      confirmation: policy.requireConfirmation || amount > 1000,
-    };
+  isCurrencySupported(currency: string): boolean {
+    return this.allowedCurrencies.includes(currency)
   }
 }

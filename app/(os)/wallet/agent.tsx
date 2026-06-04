@@ -5,7 +5,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
@@ -28,7 +28,7 @@ interface Agent {
 }
 
 export default function AgentBankingScreen() {
-  const { user } = useAuthStore();
+  const { user } = useIdentity();
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);

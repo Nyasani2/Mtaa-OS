@@ -31,7 +31,7 @@ export default function WalletHomeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Wallet</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(wallet)/notifications")}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(os)/wallet/notifications")}>
             <Bell size={22} color="#1F2937" />
             {unreadCount > 0 && (
               <View style={styles.badge}>
@@ -39,7 +39,7 @@ export default function WalletHomeScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(wallet)/settings")}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(os)/wallet/settings")}>
             <Settings size={22} color="#1F2937" />
           </TouchableOpacity>
         </View>
@@ -66,27 +66,27 @@ export default function WalletHomeScreen() {
       </View>
 
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(wallet)/send")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/send")}>
           <View style={[styles.actionIcon, { backgroundColor: "#FEF2F2" }]}>
             <ArrowUpRight size={22} color="#EF4444" />
           </View>
           <Text style={styles.actionText}>Send</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(wallet)/deposit")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/deposit")}>
           <View style={[styles.actionIcon, { backgroundColor: "#ECFDF5" }]}>
             <ArrowDownLeft size={22} color="#10B981" />
           </View>
           <Text style={styles.actionText}>Deposit</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(wallet)/withdraw")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/withdraw")}>
           <View style={[styles.actionIcon, { backgroundColor: "#FFFBEB" }]}>
             <ArrowUpRight size={22} color="#F59E0B" />
           </View>
           <Text style={styles.actionText}>Withdraw</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(wallet)/qr-pay")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/qr-pay")}>
           <View style={[styles.actionIcon, { backgroundColor: "#F5F3FF" }]}>
-            <ArrowUpRight size={22} color="#8B5CF6" />
+            <Zap size={22} color="#8B5CF6" />
           </View>
           <Text style={styles.actionText}>QR Pay</Text>
         </TouchableOpacity>
@@ -95,7 +95,7 @@ export default function WalletHomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <TouchableOpacity onPress={() => router.push("/(wallet)/history")}>
+          <TouchableOpacity onPress={() => router.push("/(os)/wallet/history")}>
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -105,7 +105,7 @@ export default function WalletHomeScreen() {
           </View>
         ) : (
           recentTx.map((tx) => (
-            <TouchableOpacity key={tx.id} style={styles.txRow} onPress={() => router.push(`/(wallet)/history`)}>
+            <TouchableOpacity key={tx.id} style={styles.txRow} onPress={() => router.push("/(os)/wallet/history")}>
               <View style={styles.txIcon}>{getIcon(tx.type)}</View>
               <View style={styles.txInfo}>
                 <Text style={styles.txType}>{tx.type.replace("_", " ").toUpperCase()}</Text>

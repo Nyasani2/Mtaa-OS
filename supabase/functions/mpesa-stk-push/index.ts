@@ -1,165 +1,215 @@
-/**
- * MTAA OS — MPESA STK PUSH (HARD-LOCKED FINTECH VERSION)
- */
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-import { serve } from 'https://deno.land/std/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// M-Pesa / Daraja Configuration
+const MPESA_CONFIG = {
+  // Production credentials - Till Number
+  PRODUCTION_SHORTCODE: '9767587',
+  STORE_NUMBER: '7840528',
+
+  // Sandbox credentials (for testing)
+  SANDBOX_SHORTCODE: '174379',
+
+  // API endpoints
+  SANDBOX_BASE_URL: 'https://sandbox.safaricom.co.ke',
+  PRODUCTION_BASE_URL: 'https://api.safaricom.co.ke',
+
+  AUTH_URL: '/oauth/v1/generate?grant_type=client_credentials',
+  STK_PUSH_URL: '/mpesa/stkpush/v1/processrequest',
+
+  // Transaction type
+  TRANSACTION_TYPE: 'CustomerPayBillOnline',
+}
+
+function getBaseUrl(): string {
+  const env = Deno.env.get('MPESA_ENV') || 'sandbox'
+  return env === 'production' 
+    ? MPESA_CONFIG.PRODUCTION_BASE_URL 
+    : MPESA_CONFIG.SANDBOX_BASE_URL
+}
+
+function getShortcode(): string {
+  // Priority: env var > production till > sandbox fallback
+  return Deno.env.get('MPESA_SHORTCODE') 
+    || MPESA_CONFIG.PRODUCTION_SHORTCODE 
+    || MPESA_CONFIG.SANDBOX_SHORTCODE
+}
 
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+    const { phone, amount, accountReference, transactionDesc, userId } = await req.json()
 
-    const {
-      phone,
-      amount,
-    } = await req.json()
-
-    // 🔐 1. VERIFY AUTH USER (DO NOT TRUST CLIENT USER_ID)
-    const authHeader = req.headers.get('Authorization') || ''
-    const token = authHeader.replace('Bearer ', '')
-
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(token)
-
-    if (userError || !userData?.user) {
+    // Validate required fields
+    if (!phone || !amount) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Unauthorized user',
-        }),
-        { status: 401 }
+        JSON.stringify({ error: 'Phone and amount are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const user = userData.user
-    const user_id = user.id
-
-    // 🧠 2. GENERATE SAFE REFERENCE (SYSTEM CONTROLLED)
-    const reference = `MPESA_${user_id}_${Date.now()}`
-
-    // 💳 3. GET WALLET
-    const { data: wallet } = await supabase
-      .from('wallets')
-      .select('*')
-      .eq('user_id', user_id)
-      .single()
-
-    if (!wallet) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Wallet not found',
-        }),
-        { status: 404 }
-      )
-    }
-
-    // 📌 4. CREATE PENDING TRANSACTION (CRITICAL LINK)
-    await supabase.from('wallet_transactions').insert({
-      wallet_id: wallet.id,
-      user_id,
-      transaction_type: 'deposit',
-      direction: 'credit',
-      amount,
-      currency: 'KES',
-      balance_after: wallet.balance,
-      status: 'PENDING',
-      reference,
-      description: 'MPESA STK Push',
-      metadata: {
-        phone,
-      },
-    })
-
-    // 🔑 5. MPESA CREDENTIALS
+    // Get credentials from environment
     const CONSUMER_KEY = Deno.env.get('MPESA_CONSUMER_KEY')
     const CONSUMER_SECRET = Deno.env.get('MPESA_CONSUMER_SECRET')
     const PASSKEY = Deno.env.get('MPESA_PASSKEY')
-    const SHORTCODE = Deno.env.get('MPESA_SHORTCODE')
-    const CALLBACK_URL = Deno.env.get('MPESA_CALLBACK_URL')
+    const SHORTCODE = getShortcode()
+    const CALLBACK_URL = Deno.env.get('MPESA_CALLBACK_URL') || 
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/daraja-till-callback`
 
-    const auth = btoa(`${CONSUMER_KEY}:${CONSUMER_SECRET}`)
-
-    const tokenRes = await fetch(
-      'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-      }
-    )
-
-    const tokenData = await tokenRes.json()
-    const access_token = tokenData.access_token
-
-    // ⏱ 6. TIMESTAMP
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[-:TZ.]/g, '')
-      .slice(0, 14)
-
-    const password = btoa(SHORTCODE + PASSKEY + timestamp)
-
-    // 🚀 7. STK PUSH
-    const stkRes = await fetch(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          BusinessShortCode: SHORTCODE,
-          Password: password,
-          Timestamp: timestamp,
-          TransactionType: 'CustomerPayBillOnline',
-          Amount: amount,
-          PartyA: phone,
-          PartyB: SHORTCODE,
-          PhoneNumber: phone,
-          CallBackURL: CALLBACK_URL,
-          AccountReference: reference,
-          TransactionDesc: 'MTAA Wallet Topup',
+    // Check credentials
+    if (!CONSUMER_KEY || !CONSUMER_SECRET || !PASSKEY) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'M-Pesa credentials not configured',
+          details: 'Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, and MPESA_PASSKEY environment variables'
         }),
-      }
-    )
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    const stkData = await stkRes.json()
+    const baseUrl = getBaseUrl()
 
-    // 🔗 8. LINK CALLBACK ID TO TRANSACTION
-    await supabase
-      .from('wallet_transactions')
-      .update({
-        metadata: {
-          checkoutRequestID: stkData.CheckoutRequestID,
+    // Step 1: Get OAuth token
+    const authString = btoa(`${CONSUMER_KEY}:${CONSUMER_SECRET}`)
+    const authResponse = await fetch(`${baseUrl}${MPESA_CONFIG.AUTH_URL}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${authString}`,
+      },
+    })
+
+    if (!authResponse.ok) {
+      const authError = await authResponse.text()
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed', details: authError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const authData = await authResponse.json()
+    const accessToken = authData.access_token
+
+    // Step 2: Generate timestamp and password
+    const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14)
+    const passwordString = `${SHORTCODE}${PASSKEY}${timestamp}`
+    const password = btoa(passwordString)
+
+    // Step 3: Format phone number
+    let formattedPhone = phone.replace(/^\+/, '')
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone = '254' + formattedPhone.substring(1)
+    }
+    if (!formattedPhone.startsWith('254')) {
+      formattedPhone = '254' + formattedPhone
+    }
+
+    // Step 4: Build STK push payload
+    const stkPayload = {
+      BusinessShortCode: SHORTCODE,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: MPESA_CONFIG.TRANSACTION_TYPE,
+      Amount: Math.round(parseFloat(amount)),
+      PartyA: formattedPhone,
+      PartyB: SHORTCODE,
+      PhoneNumber: formattedPhone,
+      CallBackURL: CALLBACK_URL,
+      AccountReference: accountReference || 'MTAA-WALLET',
+      TransactionDesc: transactionDesc || 'MTAA Wallet Deposit',
+    }
+
+    // Step 5: Make STK push request
+    const stkResponse = await fetch(`${baseUrl}${MPESA_CONFIG.STK_PUSH_URL}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(stkPayload),
+    })
+
+    const stkData = await stkResponse.json()
+
+    if (!stkResponse.ok || stkData.ResponseCode !== '0') {
+      return new Response(
+        JSON.stringify({
+          error: 'STK push failed',
+          responseCode: stkData.ResponseCode,
+          responseDescription: stkData.ResponseDescription,
           merchantRequestID: stkData.MerchantRequestID,
-        },
-      })
-      .eq('reference', reference)
+          checkoutRequestID: stkData.CheckoutRequestID,
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
+    // Step 6: Log transaction to database (optional)
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+      if (supabaseUrl && supabaseServiceKey && userId) {
+        await fetch(`${supabaseUrl}/rest/v1/wallet_transactions`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'apikey': supabaseServiceKey,
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            type: 'deposit',
+            amount: parseFloat(amount),
+            currency: 'KES',
+            status: 'pending',
+            description: `M-Pesa STK push - ${stkData.CheckoutRequestID}`,
+            reference_id: stkData.CheckoutRequestID,
+            reference_type: 'mpesa_stk',
+            metadata: {
+              merchantRequestID: stkData.MerchantRequestID,
+              checkoutRequestID: stkData.CheckoutRequestID,
+              phone: formattedPhone,
+              shortcode: SHORTCODE,
+            },
+          }),
+        })
+      }
+    } catch (logError) {
+      console.error('Failed to log transaction:', logError)
+      // Non-critical, continue
+    }
+
+    // Return success response
     return new Response(
       JSON.stringify({
         success: true,
-        reference,
+        status: 'PENDING',
+        merchantRequestID: stkData.MerchantRequestID,
         checkoutRequestID: stkData.CheckoutRequestID,
-        data: stkData,
+        responseCode: stkData.ResponseCode,
+        responseDescription: stkData.ResponseDescription,
+        customerMessage: stkData.CustomerMessage,
+        shortcode: SHORTCODE,
+        phone: formattedPhone,
+        amount: amount,
       }),
-      {
-        headers: { 'Content-Type': 'application/json' },
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
-  } catch (err) {
+  } catch (error: any) {
+    console.error('MPESA STK ERROR:', error)
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: err.message,
-      }),
-      { status: 500 }
+      JSON.stringify({ error: error.message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

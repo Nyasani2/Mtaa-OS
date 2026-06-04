@@ -22,6 +22,7 @@ export default function OsLayout() {
         <Stack.Screen name="appstore" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="developer" />
+        <Stack.Screen name="wallet" />
       </Stack>
     </OSGate>
   );

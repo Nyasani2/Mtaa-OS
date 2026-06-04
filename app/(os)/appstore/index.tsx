@@ -1,171 +1,272 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { APP_REGISTRY, searchApps, getInstalledApps, getInstallableApps } from "@/lib/mtaa/appstore/unified-registry";
-import { installApp, uninstallApp } from "@/lib/mtaa/appstore/install-lifecycle";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Image,
+  RefreshControl,
+  Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppStoreHeader } from '@/components/appstore/AppStoreHeader';
+import { FeaturedBanner } from '@/components/appstore/FeaturedBanner';
+import { AppCard } from '@/components/appstore/AppCard';
+import { CategoryPill } from '@/components/appstore/CategoryPill';
+import { useAppStore } from '@/hooks/useAppStore';
+import { useOSKernel } from '@/hooks/useOSKernel';
+import { AppItem } from '@/types/appstore';
+import { COLORS, FONTS, SIZES } from '@/constants/theme';
+
+const { width } = Dimensions.get('window');
+const CATEGORIES = ['All', 'Transport', 'Finance', 'Social', 'Productivity', 'Health', 'Education', 'Government'];
 
 export default function AppStoreScreen() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"discover" | "installed" | "updates">("discover");
-  const [installing, setInstalling] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+  const { installApp, uninstallApp, isInstalled, getInstalledApps } = useAppStore();
+  const { kernel } = useOSKernel();
 
-  const filtered = search ? searchApps(search) : activeTab === "installed" ? getInstalledApps() : getInstallableApps();
+  const [activeTab, setActiveTab] = useState<'discover' | 'installed'>('discover');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [apps, setApps] = useState<AppItem[]>([]);
+  const [installedAppsList, setInstalledAppsList] = useState<AppItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [installingId, setInstallingId] = useState<string | null>(null);
 
-  const handleInstall = async (appId: string) => {
-    setInstalling(appId);
-    const result = await installApp(appId);
-    setInstalling(null);
-    if (!result.success) {
-      alert(result.error);
+  // ── installedApps as a Set for O(1) lookups ──
+  const installedAppsSet = useMemo(() => {
+    const ids = new Set<string>();
+    installedAppsList.forEach(a => ids.add(a.id));
+    return ids;
+  }, [installedAppsList]);
+
+  const fetchApps = useCallback(async () => {
+    try {
+      setLoading(true);
+      const allApps = await kernel?.appStore?.getCatalog?.() ?? [];
+      const installed = await getInstalledApps?.() ?? [];
+      setApps(allApps);
+      setInstalledAppsList(installed);
+    } catch (err) {
+      console.error('[AppStore] fetch error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [kernel, getInstalledApps]);
 
-  const handleUninstall = async (appId: string) => {
-    const result = await uninstallApp(appId);
-    if (!result.success) {
-      alert(result.error);
+  useEffect(() => { fetchApps(); }, [fetchApps]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchApps();
+  }, [fetchApps]);
+
+  const filteredApps = useMemo(() => {
+    if (activeCategory === 'All') return apps;
+    return apps.filter(a => a.category === activeCategory);
+  }, [apps, activeCategory]);
+
+  const handleInstall = useCallback(async (app: AppItem) => {
+    if (installingId) return;
+    setInstallingId(app.id);
+    try {
+      await installApp(app);
+      const installed = await getInstalledApps?.() ?? [];
+      setInstalledAppsList(installed);
+    } catch (err) {
+      console.error('[AppStore] install error:', err);
+    } finally {
+      setInstallingId(null);
     }
-  };
+  }, [installApp, getInstalledApps, installingId]);
 
-  const handleLaunch = (route: string) => {
-    router.push(route as any);
-  };
+  const handleUninstall = useCallback(async (appId: string) => {
+    try {
+      await uninstallApp(appId);
+      const installed = await getInstalledApps?.() ?? [];
+      setInstalledAppsList(installed);
+    } catch (err) {
+      console.error('[AppStore] uninstall error:', err);
+    }
+  }, [uninstallApp, getInstalledApps]);
 
-  const categories = ["All", "Finance", "Transport", "Social", "Commerce", "Work", "Education", "Health", "Utility"];
-  const [activeCategory, setActiveCategory] = useState("All");
+  const renderApp = useCallback(({ item }: { item: AppItem }) => {
+    const isAppInstalled = installedAppsSet.has(item.id);
+    return (
+      <AppCard
+        app={item}
+        installed={isAppInstalled}
+        installing={installingId === item.id}
+        onInstall={() => handleInstall(item)}
+        onUninstall={() => handleUninstall(item.id)}
+        onPress={() => router.push(`/appstore/${item.id}` as any)}
+      />
+    );
+  }, [installedAppsSet, installingId, handleInstall, handleUninstall, router]);
 
-  const categoryFiltered = activeCategory === "All" ? filtered : filtered.filter((a) => a.category === activeCategory);
+  const renderInstalledApp = useCallback(({ item }: { item: AppItem }) => (
+    <TouchableOpacity
+      style={styles.installedRow}
+      onPress={() => router.push(`/(os)/${item.route}` as any)}
+      activeOpacity={0.7}
+    >
+      <Image source={{ uri: item.icon }} style={styles.installedIcon} />
+      <View style={styles.installedInfo}>
+        <Text style={styles.installedName}>{item.name}</Text>
+        <Text style={styles.installedCategory}>{item.category}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.openBtn}
+        onPress={() => router.push(`/(os)/${item.route}` as any)}
+      >
+        <Text style={styles.openBtnText}>OPEN</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  ), [router]);
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.center, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>AppStore</Text>
-        <TouchableOpacity style={styles.profileBtn}>
-          <Ionicons name="person-circle" size={32} color="#6366F1" />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" />
+      <AppStoreHeader />
+
+      {/* Tabs */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
+          onPress={() => setActiveTab('discover')}
+        >
+          <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>
+            Discover
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'installed' && styles.tabActive]}
+          onPress={() => setActiveTab('installed')}
+        >
+          <Text style={[styles.tabText, activeTab === 'installed' && styles.tabTextActive]}>
+            Installed
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchWrap}>
-        <Ionicons name="search" size={18} color="#64748B" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search apps..."
-          placeholderTextColor="#64748B"
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
+      {activeTab === 'discover' ? (
+        <>
+          <FeaturedBanner apps={apps.slice(0, 3)} />
 
-      <View style={styles.tabs}>
-        {(["discover", "installed", "updates"] as const).map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, activeTab === t && styles.tabActive]}
-            onPress={() => setActiveTab(t)}
+          {/* Categories */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryScroll}
+            contentContainerStyle={styles.categoryContent}
           >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            {CATEGORIES.map(cat => (
+              <CategoryPill
+                key={cat}
+                label={cat}
+                active={activeCategory === cat}
+                onPress={() => setActiveCategory(cat)}
+              />
+            ))}
+          </ScrollView>
 
-      {activeTab === "discover" && !search && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryBar}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryChip, activeCategory === cat && styles.categoryChipActive]}
-              onPress={() => setActiveCategory(cat)}
-            >
-              <Text style={[styles.categoryText, activeCategory === cat && styles.categoryTextActive]}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <FlatList
+            data={filteredApps}
+            keyExtractor={item => item.id}
+            renderItem={renderApp}
+            numColumns={2}
+            columnWrapperStyle={styles.columnWrapper}
+            contentContainerStyle={styles.gridContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No apps found in this category.</Text>
+            }
+          />
+        </>
+      ) : (
+        <FlatList
+          data={installedAppsList}
+          keyExtractor={item => item.id}
+          renderItem={renderInstalledApp}
+          contentContainerStyle={styles.installedList}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyInstalled}>
+              <Text style={styles.emptyInstalledText}>
+                No apps installed yet.
+Browse the Discover tab to find apps.
+              </Text>
+            </View>
+          }
+        />
       )}
-
-      <FlatList
-        data={categoryFiltered}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.appCard}>
-            <View style={[styles.appIcon, { backgroundColor: item.color }]}>
-              <Ionicons name={item.icon as any} size={28} color="#fff" />
-            </View>
-            <View style={styles.appInfo}>
-              <Text style={styles.appName}>{item.name}</Text>
-              <Text style={styles.appDesc} numberOfLines={1}>{item.description}</Text>
-              <View style={styles.appMeta}>
-                <Text style={styles.appRating}>★ {item.rating}</Text>
-                <Text style={styles.appSize}>{item.size}</Text>
-              </View>
-            </View>
-            <View style={styles.appActions}>
-              {item.isInstalled || item.isOSApp ? (
-                <>
-                  <TouchableOpacity style={styles.launchBtn} onPress={() => handleLaunch(item.route)}>
-                    <Text style={styles.launchText}>Open</Text>
-                  </TouchableOpacity>
-                  {!item.isOSApp && (
-                    <TouchableOpacity style={styles.uninstallBtn} onPress={() => handleUninstall(item.id)}>
-                      <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                    </TouchableOpacity>
-                  )}
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.installBtn, installing === item.id && styles.installingBtn]}
-                  onPress={() => handleInstall(item.id)}
-                  disabled={installing === item.id}
-                >
-                  <Text style={styles.installText}>
-                    {installing === item.id ? "..." : "Get"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No apps found</Text>}
-      />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
-  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "800" },
-  profileBtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
-  searchWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#1a1a1a", marginHorizontal: 16, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12 },
-  searchInput: { flex: 1, color: "#fff", fontSize: 15, marginLeft: 8 },
-  tabs: { flexDirection: "row", justifyContent: "center", gap: 24, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
-  tab: { paddingHorizontal: 16, paddingVertical: 8 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: "#6366F1" },
-  tabText: { color: "#64748B", fontSize: 14, fontWeight: "600" },
-  tabTextActive: { color: "#6366F1" },
-  categoryBar: { paddingHorizontal: 16, marginBottom: 12 },
-  categoryChip: { backgroundColor: "#1a1a1a", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8 },
-  categoryChipActive: { backgroundColor: "#6366F1" },
-  categoryText: { color: "#94A3B8", fontSize: 13 },
-  categoryTextActive: { color: "#fff", fontWeight: "600" },
-  appCard: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
-  appIcon: { width: 56, height: 56, borderRadius: 14, justifyContent: "center", alignItems: "center" },
-  appInfo: { flex: 1, marginLeft: 12 },
-  appName: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  appDesc: { color: "#64748B", fontSize: 13, marginTop: 2 },
-  appMeta: { flexDirection: "row", gap: 12, marginTop: 4 },
-  appRating: { color: "#F59E0B", fontSize: 12, fontWeight: "600" },
-  appSize: { color: "#64748B", fontSize: 12 },
-  appActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  launchBtn: { backgroundColor: "#1a1a1a", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-  launchText: { color: "#6366F1", fontSize: 14, fontWeight: "700" },
-  installBtn: { backgroundColor: "#6366F1", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 8 },
-  installingBtn: { backgroundColor: "#334155" },
-  installText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  uninstallBtn: { padding: 8 },
-  emptyText: { color: "#64748B", textAlign: "center", marginTop: 40, fontSize: 15 },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: SIZES.md,
+    marginTop: SIZES.sm,
+    gap: SIZES.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.sm,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+  },
+  tabActive: { backgroundColor: COLORS.primary },
+  tabText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
+  tabTextActive: { color: '#fff', fontFamily: FONTS.bold },
+  categoryScroll: { maxHeight: 48, marginTop: SIZES.sm },
+  categoryContent: { paddingHorizontal: SIZES.md, gap: SIZES.sm },
+  columnWrapper: { justifyContent: 'space-between', paddingHorizontal: SIZES.md },
+  gridContent: { paddingBottom: SIZES.xl },
+  emptyText: { textAlign: 'center', marginTop: SIZES.xl, color: COLORS.textSecondary, fontFamily: FONTS.regular },
+  installedList: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
+  installedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SIZES.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  installedIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: COLORS.surface },
+  installedInfo: { flex: 1, marginLeft: SIZES.md },
+  installedName: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text },
+  installedCategory: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  openBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.xs,
+    borderRadius: SIZES.sm,
+  },
+  openBtnText: { color: '#fff', fontFamily: FONTS.bold, fontSize: 13 },
+  emptyInstalled: { alignItems: 'center', marginTop: SIZES.xl * 2 },
+  emptyInstalledText: { textAlign: 'center', color: COLORS.textSecondary, fontFamily: FONTS.regular, lineHeight: 22 },
 });

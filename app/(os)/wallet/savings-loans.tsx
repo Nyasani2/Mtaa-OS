@@ -5,7 +5,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
@@ -39,7 +39,7 @@ interface Loan {
 }
 
 export default function SavingsLoansScreen() {
-  const { user } = useAuthStore();
+  const { user } = useIdentity();
   const router = useRouter();
   const [tab, setTab] = useState<"savings" | "loans">("savings");
   const [savings, setSavings] = useState<SavingsAccount[]>([]);

@@ -5,7 +5,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl, Share,
 } from "react-native";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
@@ -27,7 +27,7 @@ interface PaymentRequest {
 }
 
 export default function ReceiveMoneyScreen() {
-  const { user } = useAuthStore();
+  const { user } = useIdentity();
   const router = useRouter();
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [loading, setLoading] = useState(false);

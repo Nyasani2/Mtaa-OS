@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { useWalletTaxes } from "../hooks";
-import { useWalletAccount } from "../hooks";
+import { useWalletTaxes } from "./hooks";
+import { useWalletAccount } from "./hooks";
 import { supabase } from "@/lib/supabase/client";
 import {
   FileText,

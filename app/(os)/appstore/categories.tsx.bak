@@ -1,0 +1,178 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAppStore } from '@/hooks/useAppStore';
+import { AppCard } from '@/components/appstore/AppCard';
+
+export default function CategoriesPage() {
+  const router = useRouter();
+  const { category: activeCategoryId } = useLocalSearchParams<{ category?: string }>();
+  const { categories, getAppsByCategory, isInstalled, isInstalling, installApp, installedApps } = useAppStore();
+
+  const activeCategory = activeCategoryId || categories[0]?.id;
+  const apps = getAppsByCategory(activeCategory);
+
+  const handleInstall = (appId: string) => installApp(appId);
+  const handleOpen = (route: string) => router.push(route as any);
+  const handleAppPress = (appId: string) => router.push(`/(os)/appstore/${appId}` as any);
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Categories</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      {/* Category List */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryList}
+        contentContainerStyle={styles.categoryListContent}
+      >
+        {categories.map(cat => (
+          <TouchableOpacity
+            key={cat.id}
+            style={[styles.categoryTab, activeCategory === cat.id && styles.categoryTabActive]}
+            onPress={() => router.setParams({ category: cat.id })}
+          >
+            <Feather
+              name={cat.icon as any}
+              size={16}
+              color={activeCategory === cat.id ? '#121212' : cat.color}
+            />
+            <Text style={[styles.categoryTabText, activeCategory === cat.id && styles.categoryTabTextActive]}>
+              {cat.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Apps in Category */}
+      <ScrollView style={styles.appsList} showsVerticalScrollIndicator={false}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            {categories.find(c => c.id === activeCategory)?.name} Apps
+          </Text>
+          <Text style={styles.appCount}>{apps.length} apps</Text>
+        </View>
+        {apps.map(app => (
+          <AppCard
+            key={app.id}
+            app={app}
+            isInstalled={isInstalled(app.id)}
+            isInstalling={isInstalling(app.id)}
+            onInstall={handleInstall}
+            onOpen={handleOpen}
+            onPress={handleAppPress}
+            variant="horizontal"
+          />
+        ))}
+        {apps.length === 0 && (
+          <View style={styles.emptyState}>
+            <Feather name="package" size={48} color="#333" />
+            <Text style={styles.emptyText}>No apps in this category yet</Text>
+          </View>
+        )}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1C1C1C',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  categoryList: {
+    maxHeight: 60,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1C1C1C',
+  },
+  categoryListContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  categoryTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1C1C',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  categoryTabActive: {
+    backgroundColor: '#4ECDC4',
+  },
+  categoryTabText: {
+    color: '#ccc',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryTabTextActive: {
+    color: '#121212',
+    fontWeight: '700',
+  },
+  appsList: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  appCount: {
+    color: '#888',
+    fontSize: 14,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});

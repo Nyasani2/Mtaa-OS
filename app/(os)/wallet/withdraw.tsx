@@ -1,199 +1,252 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useWalletStore } from "@/lib/modules/wallet/store";
-import { WalletTransaction } from "@/lib/modules/wallet/types";
-import { ArrowUpRight, Banknote, Building2, CreditCard, CheckCircle } from "lucide-react-native";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useWallet } from '@/hooks/useWallet';
+import { COLORS, FONTS, SIZES } from '@/constants/theme';
+
+const WITHDRAW_METHODS = [
+  { id: 'mpesa', label: 'M-Pesa', icon: '📱' },
+  { id: 'bank', label: 'Bank Account', icon: '🏦' },
+  { id: 'crypto', label: 'Crypto Wallet', icon: '₿' },
+];
 
 export default function WithdrawScreen() {
   const router = useRouter();
-  const { accounts, activeAccountId, linkedBanks, linkedCards, addTransaction, addNotification } = useWalletStore();
+  const insets = useSafeAreaInsets();
+  const { balance, withdraw } = useWallet();
 
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"bank" | "card" | "agent">("bank");
-  const [selectedBankId, setSelectedBankId] = useState("");
-  const [selectedCardId, setSelectedCardId] = useState("");
-  const [step, setStep] = useState<"form" | "success">("form");
+  const [method, setMethod] = useState('mpesa');
+  const [amount, setAmount] = useState('');
+  const [recipient, setRecipient] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const activeAccount = accounts.find((a) => a.id === activeAccountId);
-  const balance = activeAccount?.balance || 0;
-  const numericAmount = parseFloat(amount) || 0;
-
-  const handleWithdraw = () => {
-    if (numericAmount <= 0 || numericAmount > balance) {
-      Alert.alert("Error", numericAmount > balance ? "Insufficient balance" : "Enter valid amount");
-      return;
+  const handleWithdraw = useCallback(async () => {
+    if (!recipient.trim()) { Alert.alert('Error', 'Enter recipient details'); return; }
+    if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
+      Alert.alert('Error', 'Enter a valid amount'); return;
     }
-    if (method === "bank" && !selectedBankId) {
-      Alert.alert("Error", "Select a bank account");
-      return;
+    if (Number(amount) > balance) { Alert.alert('Error', 'Insufficient balance'); return; }
+
+    setLoading(true);
+    try {
+      await withdraw?.({ method, amount: Number(amount), recipient: recipient.trim() });
+      Alert.alert('Success', `Withdrew KSh ${amount} to ${recipient}`, [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
+    } catch (err: any) {
+      Alert.alert('Withdraw Failed', err?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
-    if (method === "card" && !selectedCardId) {
-      Alert.alert("Error", "Select a card");
-      return;
-    }
+  }, [method, amount, recipient, balance, withdraw, router]);
 
-    const newBalance = balance - numericAmount;
-    const bankName = method === "bank" ? linkedBanks.find((b) => b.id === selectedBankId)?.name : undefined;
-    const cardLast4 = method === "card" ? linkedCards.find((c) => c.id === selectedCardId)?.last4 : undefined;
+  const quickAmounts = [500, 1000, 5000, 10000];
 
-    const tx: WalletTransaction = {
-      id: Math.random().toString(36).substring(2, 15),
-      type: "withdraw",
-      amount: numericAmount,
-      currency: "KES",
-      status: "completed",
-      description: `Withdraw to ${method === "bank" ? bankName : method === "card" ? `card ****${cardLast4}` : "agent"}`,
-      balanceBefore: balance,
-      balanceAfter: newBalance,
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-    };
-
-    addTransaction(tx);
-
-    addNotification({
-      id: Math.random().toString(36).substring(2, 15),
-      type: "payment_sent",
-      title: "Withdrawal",
-      message: `KSh ${numericAmount.toLocaleString()} withdrawn to ${method === "bank" ? bankName : method === "card" ? `card ****${cardLast4}` : "agent"}`,
-      amount: numericAmount,
-      read: false,
-      isRead: false,
-      timestamp: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    });
-
-    setStep("success");
+  const getPlaceholder = () => {
+    if (method === 'mpesa') return 'M-Pesa phone number (2547XXXXXXXX)';
+    if (method === 'bank') return 'Bank account number';
+    return 'Crypto wallet address';
   };
 
-  if (step === "success") {
-    return (
-      <SafeAreaView style={styles.resultContainer}>
-        <View style={styles.resultContent}>
-          <View style={styles.successIcon}>
-            <CheckCircle size={64} color="#10B981" />
-          </View>
-          <Text style={styles.resultTitle}>Withdrawal Successful!</Text>
-          <Text style={styles.resultAmount}>KSh {numericAmount.toLocaleString()}</Text>
-          <TouchableOpacity style={styles.resultBtn} onPress={() => { setStep("form"); setAmount(""); }}>
-            <Text style={styles.resultBtnText}>Withdraw Again</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.resultBtnSecondary} onPress={() => router.back()}>
-            <Text style={styles.resultBtnSecondaryText}>Back to Wallet</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Withdraw</Text>
-          <Text style={styles.balanceText}>Balance: KSh {balance.toLocaleString()}</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Withdraw</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Balance */}
+        <View style={styles.balanceCard}>
+          <Text style={styles.balanceLabel}>Available Balance</Text>
+          <Text style={styles.balanceValue}>KSh {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.methodRow}>
-            <TouchableOpacity style={[styles.methodBtn, method === "bank" && styles.methodBtnActive]} onPress={() => setMethod("bank")}>
-              <Building2 size={20} color={method === "bank" ? "#FFF" : "#6B7280"} />
-              <Text style={[styles.methodText, method === "bank" && styles.methodTextActive]}>Bank</Text>
+        {/* Method */}
+        <Text style={styles.sectionLabel}>Withdraw To</Text>
+        <View style={styles.methodRow}>
+          {WITHDRAW_METHODS.map(m => (
+            <TouchableOpacity
+              key={m.id}
+              style={[styles.methodChip, method === m.id && styles.methodChipActive]}
+              onPress={() => setMethod(m.id)}
+            >
+              <Text style={styles.methodIcon}>{m.icon}</Text>
+              <Text style={[styles.methodLabel, method === m.id && styles.methodLabelActive]}>{m.label}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.methodBtn, method === "card" && styles.methodBtnActive]} onPress={() => setMethod("card")}>
-              <CreditCard size={20} color={method === "card" ? "#FFF" : "#6B7280"} />
-              <Text style={[styles.methodText, method === "card" && styles.methodTextActive]}>Card</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.methodBtn, method === "agent" && styles.methodBtnActive]} onPress={() => setMethod("agent")}>
-              <Banknote size={20} color={method === "agent" ? "#FFF" : "#6B7280"} />
-              <Text style={[styles.methodText, method === "agent" && styles.methodTextActive]}>Agent</Text>
-            </TouchableOpacity>
-          </View>
-
-          {method === "bank" && (
-            <View style={styles.methodList}>
-              {linkedBanks.map((bank) => (
-                <TouchableOpacity key={bank.id} style={[styles.methodItem, selectedBankId === bank.id && styles.methodItemActive]} onPress={() => setSelectedBankId(bank.id)}>
-                  <Building2 size={20} color="#3B82F6" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.methodItemName}>{bank.name}</Text>
-                    <Text style={styles.methodItemDetail}>{bank.accountNumber}</Text>
-                  </View>
-                  {selectedBankId === bank.id && <CheckCircle size={20} color="#10B981" />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          {method === "card" && (
-            <View style={styles.methodList}>
-              {linkedCards.map((card) => (
-                <TouchableOpacity key={card.id} style={[styles.methodItem, selectedCardId === card.id && styles.methodItemActive]} onPress={() => setSelectedCardId(card.id)}>
-                  <CreditCard size={20} color="#8B5CF6" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.methodItemName}>{card.brand} ****{card.last4}</Text>
-                    <Text style={styles.methodItemDetail}>Expires {card.expiryMonth}/{card.expiryYear}</Text>
-                  </View>
-                  {selectedCardId === card.id && <CheckCircle size={20} color="#10B981" />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Amount (KSh)</Text>
-            <View style={styles.amountWrap}>
-              <Text style={styles.amountPrefix}>KSh</Text>
-              <TextInput style={styles.amountInput} placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
-            </View>
-          </View>
-
-          <TouchableOpacity onPress={handleWithdraw} activeOpacity={0.8}>
-            <LinearGradient colors={["#F59E0B", "#D97706"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.withdrawBtn}>
-              <ArrowUpRight size={18} color="#FFF" />
-              <Text style={styles.withdrawBtnText}>Withdraw KSh {numericAmount > 0 ? numericAmount.toLocaleString() : ""}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          ))}
         </View>
+
+        {/* Recipient */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Recipient</Text>
+          <View style={styles.inputRow}>
+            <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder={getPlaceholder()}
+              placeholderTextColor={COLORS.textSecondary}
+              value={recipient}
+              onChangeText={setRecipient}
+              autoCapitalize="none"
+            />
+          </View>
+        </View>
+
+        {/* Amount */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Amount (KSh)</Text>
+          <View style={styles.amountRow}>
+            <Text style={styles.currency}>KSh</Text>
+            <TextInput
+              style={styles.amountInput}
+              placeholder="0.00"
+              placeholderTextColor={COLORS.textSecondary}
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              maxLength={10}
+            />
+          </View>
+          <View style={styles.quickRow}>
+            {quickAmounts.map(amt => (
+              <TouchableOpacity
+                key={amt}
+                style={styles.quickChip}
+                onPress={() => setAmount(amt.toString())}
+              >
+                <Text style={styles.quickText}>KSh {amt.toLocaleString()}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Fee estimate */}
+        <View style={styles.feeRow}>
+          <Text style={styles.feeLabel}>Estimated Fee</Text>
+          <Text style={styles.feeValue}>KSh {Math.max(10, Math.round(Number(amount || 0) * 0.01)).toLocaleString()}</Text>
+        </View>
+
+        {/* Withdraw Button */}
+        <TouchableOpacity
+          style={[styles.actionBtn, loading && styles.actionBtnDisabled]}
+          onPress={handleWithdraw}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="cash-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.actionBtnText}>Withdraw</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
-  header: { paddingHorizontal: 20, paddingVertical: 16 },
-  headerTitle: { fontSize: 22, fontWeight: "700", color: "#1F2937" },
-  balanceText: { fontSize: 14, color: "#6B7280", marginTop: 4 },
-  form: { paddingHorizontal: 20, gap: 16 },
-  methodRow: { flexDirection: "row", gap: 12 },
-  methodBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12, backgroundColor: "#F3F4F6" },
-  methodBtnActive: { backgroundColor: "#3B82F6" },
-  methodText: { fontSize: 14, fontWeight: "600", color: "#6B7280" },
-  methodTextActive: { color: "#FFF" },
-  methodList: { gap: 8 },
-  methodItem: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "#FFF", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB" },
-  methodItemActive: { borderColor: "#3B82F6", backgroundColor: "#EFF6FF" },
-  methodItemName: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
-  methodItemDetail: { fontSize: 12, color: "#9CA3AF", marginTop: 2 },
-  inputGroup: { gap: 8 },
-  inputLabel: { fontSize: 13, fontWeight: "600", color: "#6B7280" },
-  amountWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: "#E5E7EB" },
-  amountPrefix: { fontSize: 18, fontWeight: "700", color: "#F59E0B", marginRight: 8 },
-  amountInput: { flex: 1, fontSize: 28, fontWeight: "700", color: "#1F2937", paddingVertical: 12 },
-  withdrawBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 14, paddingVertical: 16, marginTop: 8 },
-  withdrawBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
-  resultContainer: { flex: 1, backgroundColor: "#F8FAFC", justifyContent: "center", alignItems: "center" },
-  resultContent: { alignItems: "center", paddingHorizontal: 40 },
-  successIcon: { width: 100, height: 100, borderRadius: 50, backgroundColor: "#ECFDF5", alignItems: "center", justifyContent: "center", marginBottom: 24 },
-  resultTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937", marginBottom: 8 },
-  resultAmount: { fontSize: 32, fontWeight: "800", color: "#10B981", marginBottom: 4 },
-  resultBtn: { backgroundColor: "#F59E0B", paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14, width: "100%", alignItems: "center", marginBottom: 12 },
-  resultBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
-  resultBtnSecondary: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14, width: "100%", alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB" },
-  resultBtnSecondaryText: { fontSize: 16, fontWeight: "600", color: "#6B7280" },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.md,
+  },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
+  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
+  balanceCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.md,
+    padding: SIZES.lg,
+    marginBottom: SIZES.lg,
+  },
+  balanceLabel: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  balanceValue: { fontFamily: FONTS.bold, fontSize: 28, color: '#fff', marginTop: 4 },
+  sectionLabel: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text, marginBottom: SIZES.md },
+  methodRow: { flexDirection: 'row', gap: SIZES.sm, marginBottom: SIZES.lg },
+  methodChip: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.md,
+    paddingVertical: SIZES.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  methodChipActive: { borderColor: COLORS.primary },
+  methodIcon: { fontSize: 24, marginBottom: 4 },
+  methodLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textSecondary },
+  methodLabelActive: { color: COLORS.primary, fontFamily: FONTS.bold },
+  section: { marginBottom: SIZES.lg },
+  label: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary, marginBottom: SIZES.sm },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    height: 52,
+  },
+  inputIcon: { marginRight: SIZES.sm },
+  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    height: 64,
+  },
+  currency: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginRight: SIZES.sm },
+  amountInput: { flex: 1, fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text },
+  quickRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  quickChip: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingVertical: SIZES.sm,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  quickText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.text },
+  feeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: SIZES.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginBottom: SIZES.md,
+  },
+  feeLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
+  feeValue: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
+  actionBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.md,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnDisabled: { opacity: 0.6 },
+  actionBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
 });
