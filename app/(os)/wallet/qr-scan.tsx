@@ -10,7 +10,7 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
@@ -26,7 +26,7 @@ const { width } = Dimensions.get("window");
 const SCANNER_SIZE = Math.min(width - 64, 280);
 
 export default function QrScannerScreen() {
-  const { user } = useAuthStore();
+  const { user } = useIdentity();
   const router = useRouter();
   const [scanning, setScanning] = useState(true);
   const [manualInput, setManualInput] = useState("");

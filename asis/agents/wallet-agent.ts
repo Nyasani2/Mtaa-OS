@@ -124,18 +124,10 @@ export class WalletAgent extends BaseAgent {
           break;
         default:
           response = this._createTextResponse(
-            'I can help you with:
+            `I can help you with:
 
 ' +
-            '• Check balance
-' +
-            '• Send money
-' +
-            '• Pay bills
-' +
-            '• View transactions
-' +
-            '• Create payment links
+            `• Check balance• Send money• Pay bills• View transactions• Create payment links`,
 
 ' +
             'What would you like to do?',

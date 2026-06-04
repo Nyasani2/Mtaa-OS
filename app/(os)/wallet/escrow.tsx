@@ -11,7 +11,7 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
@@ -46,7 +46,7 @@ interface EscrowTransaction {
 }
 
 export default function EscrowScreen() {
-  const { user } = useAuthStore();
+  const { user } = useIdentity();
   const router = useRouter();
   const [escrows, setEscrows] = useState<EscrowTransaction[]>([]);
   const [loading, setLoading] = useState(false);

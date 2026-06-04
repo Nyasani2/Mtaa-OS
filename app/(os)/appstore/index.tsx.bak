@@ -1,0 +1,218 @@
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
+} from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useAppStore } from '@/hooks/useAppStore';
+import { AppCard } from '@/components/appstore/AppCard';
+import { InterestPicker } from '@/components/appstore/InterestPicker';
+import { SearchOverlay } from '@/components/appstore/SearchOverlay';
+import { InstallProgress } from '@/components/appstore/InstallProgress';
+
+export default function AppStoreHome() {
+  const router = useRouter();
+  const {
+    apps, categories, interests, hasCompletedOnboarding, installedApps, installingApps,
+    getSponsoredApps, getRecommendedApps, getTopCharts, isInstalled, isInstalling, installApp,
+    toggleInterest, completeOnboarding,
+  } = useAppStore();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'discover'|'installed'|'updates'>('discover');
+  const [showSearch, setShowSearch] = useState(false);
+  const [activeInstall, setActiveInstall] = useState<{id: string, name: string, size: string, progress: number, status: any} | null>(null);
+
+  const sponsoredApps = getSponsoredApps();
+  const recommendedApps = getRecommendedApps();
+  const topCharts = getTopCharts();
+
+  const onRefresh = useCallback(() => { setRefreshing(true); setTimeout(() => setRefreshing(false), 1000); }, []);
+
+  const handleInstall = useCallback((appId: string) => {
+    const app = apps.find(a => a.id === appId);
+    if (!app || isInstalled(appId) || isInstalling(appId)) return;
+
+    setActiveInstall({ id: appId, name: app.name, size: app.size, progress: 0, status: 'downloading' });
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 15 + 5;
+      if (progress >= 50) setActiveInstall(prev => prev ? {...prev, status: 'installing'} : null);
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setActiveInstall(prev => prev ? {...prev, progress: 100, status: 'complete'} : null);
+        installApp(appId);
+        setTimeout(() => setActiveInstall(null), 2000);
+      } else {
+        setActiveInstall(prev => prev ? {...prev, progress} : null);
+      }
+    }, 400);
+  }, [apps, isInstalled, isInstalling, installApp]);
+
+  const handleOpen = useCallback((route: string) => { router.push(route as any); }, [router]);
+  const handleAppPress = useCallback((appId: string) => { router.push(`/(os)/appstore/${appId}` as any); }, [router]);
+  const handleCategoryPress = useCallback((categoryId: string) => { router.push(`/(os)/appstore/categories?category=${categoryId}` as any); }, [router]);
+
+  if (!hasCompletedOnboarding) {
+    return <InterestPicker interests={interests} onToggle={toggleInterest} onComplete={completeOnboarding} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Install Progress Toast */}
+      {activeInstall && (
+        <InstallProgress
+          appName={activeInstall.name}
+          appSize={activeInstall.size}
+          progress={activeInstall.progress}
+          status={activeInstall.status}
+          onCancel={() => setActiveInstall(null)}
+          onOpen={() => { setActiveInstall(null); handleOpen(apps.find(a => a.id === activeInstall.id)?.route || ''); }}
+        />
+      )}
+
+      <SearchOverlay visible={showSearch} onClose={() => setShowSearch(false)} />
+
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerTitle}>AppStore</Text>
+          <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
+            <Feather name="search" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.tabRow}>
+          {(['discover','installed','updates'] as const).map(tab => (
+            <TouchableOpacity key={tab} style={[styles.tab, activeTab===tab&&styles.tabActive]} onPress={() => setActiveTab(tab)}>
+              <Text style={[styles.tabText, activeTab===tab&&styles.tabTextActive]}>{tab.charAt(0).toUpperCase()+tab.slice(1)}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4ECDC4" />} showsVerticalScrollIndicator={false}>
+        {activeTab === 'discover' && (
+          <>
+            <View style={styles.section}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesScroll}>
+                {categories.map(cat => (
+                  <TouchableOpacity key={cat.id} style={styles.categoryChip} onPress={() => handleCategoryPress(cat.id)} activeOpacity={0.7}>
+                    <View style={[styles.categoryIcon, {backgroundColor: cat.color+'30'}]}>
+                      <Feather name={cat.icon as any} size={18} color={cat.color} />
+                    </View>
+                    <Text style={styles.categoryName}>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {sponsoredApps.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Sponsored · Recommended for you</Text>
+                </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselScroll}>
+                  {sponsoredApps.map(app => (
+                    <View key={app.id} style={styles.sponsoredCardWrapper}>
+                      <AppCard app={app} isInstalled={isInstalled(app.id)} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="compact" />
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recommended for you</Text>
+                <TouchableOpacity onPress={() => router.push('/(os)/appstore/top-charts' as any)}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselScroll}>
+                {recommendedApps.map(app => (
+                  <AppCard key={app.id} app={app} isInstalled={isInstalled(app.id)} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="compact" />
+                ))}
+              </ScrollView>
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Top Charts</Text>
+                <TouchableOpacity onPress={() => router.push('/(os)/appstore/top-charts' as any)}><Text style={styles.seeAll}>See all</Text></TouchableOpacity>
+              </View>
+              {topCharts.slice(0,5).map((app, index) => (
+                <View key={app.id} style={styles.topChartRow}>
+                  <Text style={styles.rankNumber}>{index+1}</Text>
+                  <AppCard app={app} isInstalled={isInstalled(app.id)} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="horizontal" />
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>New & Noteworthy</Text></View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselScroll}>
+                {apps.filter(a => !a.isSystem).slice(0,6).map(app => (
+                  <AppCard key={app.id} app={app} isInstalled={isInstalled(app.id)} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="compact" />
+                ))}
+              </ScrollView>
+            </View>
+          </>
+        )}
+
+        {activeTab === 'installed' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Installed Apps</Text>
+            {apps.filter(app => installedApps.has(app.id)).map(app => (
+              <AppCard key={app.id} app={app} isInstalled={true} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="horizontal" />
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'updates' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Available Updates</Text>
+            {apps.filter(app => installedApps.has(app.id) && !app.isSystem).map(app => (
+              <AppCard key={app.id} app={app} isInstalled={true} isInstalling={isInstalling(app.id)} onInstall={handleInstall} onOpen={handleOpen} onPress={handleAppPress} variant="horizontal" />
+            ))}
+            {apps.filter(app => installedApps.has(app.id) && !app.isSystem).length === 0 && (
+              <View style={styles.emptyState}>
+                <Feather name="check-circle" size={48} color="#4ECDC4" />
+                <Text style={styles.emptyTitle}>All up to date!</Text>
+                <Text style={styles.emptySubtitle}>No updates available</Text>
+              </View>
+            )}
+          </View>
+        )}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#121212' },
+  header: { paddingTop: 50, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: '#121212', borderBottomWidth: 1, borderBottomColor: '#1C1C1C' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  headerTitle: { color: '#fff', fontSize: 28, fontWeight: '800' },
+  searchButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1C1C1C', justifyContent: 'center', alignItems: 'center' },
+  tabRow: { flexDirection: 'row', gap: 8 },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#1C1C1C' },
+  tabActive: { backgroundColor: '#4ECDC4' },
+  tabText: { color: '#aaa', fontSize: 14, fontWeight: '600' },
+  tabTextActive: { color: '#121212', fontWeight: '700' },
+  section: { marginTop: 24, paddingHorizontal: 16 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  seeAll: { color: '#4ECDC4', fontSize: 14, fontWeight: '600' },
+  categoriesScroll: { paddingRight: 16, gap: 10 },
+  categoryChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1C', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 24, marginRight: 8 },
+  categoryIcon: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  categoryName: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  carouselScroll: { paddingRight: 16 },
+  sponsoredCardWrapper: { marginRight: 8 },
+  topChartRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  rankNumber: { color: '#4ECDC4', fontSize: 18, fontWeight: '800', width: 30, textAlign: 'center', marginRight: 8 },
+  bottomSpacer: { height: 40 },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
+  emptyTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginTop: 16 },
+  emptySubtitle: { color: '#888', fontSize: 14, marginTop: 4 },
+});

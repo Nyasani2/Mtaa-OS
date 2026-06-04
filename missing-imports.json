@@ -1,0 +1,16 @@
+{
+  "@/lib/tribes/services/tribes.service": [
+    "app/(tribes)/post-detail.tsx:19",
+    "app/(tribes)/post-create.tsx:17",
+    "app/(tribes)/discovery.tsx:18",
+    "app/(tribes)/detail.tsx:19",
+    "app/(tribes)/create.tsx:18"
+  ],
+  "@/lib/kernel/identity": [
+    "app/(tribes)/my-tribes.tsx:18"
+  ],
+  "../hooks": [
+    "app/(os)/wallet/tax.tsx:6",
+    "app/(os)/wallet/tax.tsx:7"
+  ]
+}

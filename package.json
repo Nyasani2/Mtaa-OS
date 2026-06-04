@@ -46,6 +46,7 @@
     "expo-sharing": "~13.0.1",
     "expo-sms": "^56.0.3",
     "expo-status-bar": "~2.0.1",
+    "glob": "^13.0.6",
     "graphql": "^16.14.0",
     "lucide-react-native": "^0.525.0",
     "react": "18.3.1",

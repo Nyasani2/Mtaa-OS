@@ -1,108 +1,198 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { supabase } from '@/lib/supabase/client';
+// domains/phone/state/contactStore.ts
+// Phone contact store — contacts, favorites, recent calls
 
-interface Contact {
+import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+
+// ─── Types ─────────────────────────────────────────────────────────
+
+export interface Contact {
   id: string;
-  firstName?: string;
-  lastName?: string;
-  phoneNumbers?: string[];
-  emails?: string[];
-  company?: string;
-  notes?: string;
-  createdAt: string;
+  user_id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  avatar_url: string | null;
+  is_favorite: boolean;
+  label: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CallLog {
+  id: string;
+  user_id: string;
+  contact_id: string | null;
+  phone_number: string;
+  direction: 'incoming' | 'outgoing' | 'missed';
+  duration: number;
+  timestamp: string;
+  notes: string | null;
 }
 
 interface ContactState {
   contacts: Contact[];
-  addContact: (contact: Omit<Contact, 'id' | 'createdAt'>) => void;
-  updateContact: (id: string, updates: Partial<Contact>) => void;
-  deleteContact: (id: string) => void;
-  searchContacts: (query: string) => Contact[];
+  favorites: Contact[];
+  recentCalls: CallLog[];
+  selectedContact: Contact | null;
+  loading: boolean;
+  error: string | null;
+  searchQuery: string;
+
+  // Actions
   loadContacts: () => Promise<void>;
-  syncContacts: () => Promise<void>;
+  addContact: (contact: Omit<Contact, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
+  updateContact: (id: string, updates: Partial<Contact>) => Promise<boolean>;
+  deleteContact: (id: string) => Promise<boolean>;
+  toggleFavorite: (id: string) => Promise<boolean>;
+  setSelectedContact: (contact: Contact | null) => void;
+  setSearchQuery: (query: string) => void;
+  loadRecentCalls: () => Promise<void>;
+  logCall: (call: Omit<CallLog, 'id' | 'user_id'>) => Promise<boolean>;
 }
 
-export const useContactStore = create<ContactState>()(
-  persist(
-    (set, get) => ({
-      contacts: [],
+export const useContactStore = create<ContactState>((set, get) => ({
+  contacts: [],
+  favorites: [],
+  recentCalls: [],
+  selectedContact: null,
+  loading: false,
+  error: null,
+  searchQuery: '',
 
-      addContact: async (contact) => {
-        const newContact: Contact = {
-          id: `contact_${Date.now()}`,
-          ...contact,
-          createdAt: new Date().toISOString(),
-        };
-        set((s) => ({ contacts: [...s.contacts, newContact] }));
+  // ─── Load Contacts ─────────────────────────────────────────────
 
-        // Sync to Supabase
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('contacts').insert({
-            user_id: user.id,
-            first_name: contact.firstName,
-            last_name: contact.lastName,
-            phone_numbers: contact.phoneNumbers,
-            emails: contact.emails,
-            company: contact.company,
-            notes: contact.notes,
-          });
-        }
-      },
+  loadContacts: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user?.id) return;
 
-      updateContact: (id, updates) => {
-        set((s) => ({
-          contacts: s.contacts.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-        }));
-      },
+    set({ loading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name', { ascending: true });
 
-      deleteContact: (id) => {
-        set((s) => ({ contacts: s.contacts.filter((c) => c.id !== id) }));
-      },
+      if (error) throw error;
 
-      searchContacts: (query) => {
-        const q = query.toLowerCase();
-        return get().contacts.filter((c) => {
-          const name = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
-          return (
-            name.includes(q) ||
-            c.phoneNumbers?.some((p) => p.includes(q)) ||
-            c.emails?.some((e) => e.toLowerCase().includes(q)) ||
-            c.company?.toLowerCase().includes(q)
-          );
-        });
-      },
+      const contacts = (data || []) as Contact[];
+      set({
+        contacts,
+        favorites: contacts.filter(c => c.is_favorite),
+        loading: false,
+      });
+    } catch (err: any) {
+      set({ error: err.message || 'Failed to load contacts', loading: false });
+    }
+  },
 
-      loadContacts: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase
-          .from('contacts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (data) {
-          set({
-            contacts: data.map((d: any) => ({
-              id: d.id,
-              firstName: d.first_name,
-              lastName: d.last_name,
-              phoneNumbers: d.phone_numbers,
-              emails: d.emails,
-              company: d.company,
-              notes: d.notes,
-              createdAt: d.created_at,
-            })),
-          });
-        }
-      },
+  // ─── Add Contact ───────────────────────────────────────────────
 
-      syncContacts: async () => {
-        // TODO: Import from device contacts via expo-contacts
-        await get().loadContacts();
-      },
-    }),
-    { name: 'mtaa-contact-store' }
-  )
-);
+  addContact: async (contact) => {
+    const user = useAuthStore.getState().user;
+    if (!user?.id) return false;
+
+    set({ loading: true });
+    const { error } = await supabase
+      .from('contacts')
+      .insert({ ...contact, user_id: user.id });
+
+    if (error) {
+      set({ error: error.message, loading: false });
+      return false;
+    }
+
+    await get().loadContacts();
+    return true;
+  },
+
+  // ─── Update Contact ────────────────────────────────────────────
+
+  updateContact: async (id, updates) => {
+    set({ loading: true });
+    const { error } = await supabase
+      .from('contacts')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      set({ error: error.message, loading: false });
+      return false;
+    }
+
+    await get().loadContacts();
+    return true;
+  },
+
+  // ─── Delete Contact ──────────────────────────────────────────────
+
+  deleteContact: async (id) => {
+    set({ loading: true });
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      set({ error: error.message, loading: false });
+      return false;
+    }
+
+    await get().loadContacts();
+    return true;
+  },
+
+  // ─── Toggle Favorite ───────────────────────────────────────────
+
+  toggleFavorite: async (id) => {
+    const contact = get().contacts.find(c => c.id === id);
+    if (!contact) return false;
+
+    return get().updateContact(id, { is_favorite: !contact.is_favorite });
+  },
+
+  // ─── Selection ─────────────────────────────────────────────────
+
+  setSelectedContact: (contact) => set({ selectedContact: contact }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
+
+  // ─── Call Logs ─────────────────────────────────────────────────
+
+  loadRecentCalls: async () => {
+    const user = useAuthStore.getState().user;
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('call_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('timestamp', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('[contactStore] loadRecentCalls error:', error);
+      return;
+    }
+
+    set({ recentCalls: (data || []) as CallLog[] });
+  },
+
+  logCall: async (call) => {
+    const user = useAuthStore.getState().user;
+    if (!user?.id) return false;
+
+    const { error } = await supabase
+      .from('call_logs')
+      .insert({ ...call, user_id: user.id });
+
+    if (error) {
+      console.error('[contactStore] logCall error:', error);
+      return false;
+    }
+
+    await get().loadRecentCalls();
+    return true;
+  },
+}));
