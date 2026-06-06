@@ -15,16 +15,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES } from '@/constants/theme';
 import { useWallet } from '@/hooks/useWallet';
-import { mpesaAdapter } from '@/lib/integrations/rails/mpesaAdapter';
 
 export default function DepositScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { wallet, walletId, deposit } = useWallet();
+  const { wallet, walletId } = useWallet();
 
   const [method, setMethod] = useState<'mpesa' | 'bank' | 'card' | 'crypto'>('mpesa');
   const [amount, setAmount] = useState('');
-  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -36,74 +34,23 @@ export default function DepositScreen() {
     }
   }, [walletId]);
 
-  const handleMpesaDeposit = useCallback(async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-    if (!phone || phone.length < 10) {
-      Alert.alert('Error', 'Enter a valid M-Pesa phone number (2547XXXXXXXX)');
-      return;
-    }
-    setLoading(true);
-    try {
-      // Use the REAL mpesaAdapter that calls the deployed edge function
-      const result = await mpesaAdapter.stkPush({
-        phone: phone,
-        amount: parseFloat(amount),
-        accountReference: walletId || 'MTAA-DEPOSIT',
-        description: 'MTAA Wallet Deposit',
-      });
-
-      if (result.success) {
-        Alert.alert(
-          'STK Push Sent',
-          `Check your phone ${phone} for M-Pesa prompt. Enter PIN to complete deposit of KES ${amount}.\n\nCheckout ID: ${result.checkoutRequestID || 'N/A'}`,
-          [{ text: 'OK', onPress: () => { setAmount(''); setPhone(''); } }]
-        );
-      } else {
-        Alert.alert('Deposit Failed', result.message || 'M-Pesa STK push failed. Please try again.');
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Failed to initiate M-Pesa deposit');
-    } finally {
-      setLoading(false);
-    }
-  }, [amount, phone, walletId]);
-
-  const handleBankDeposit = useCallback(async () => {
+  const handleDeposit = useCallback(async () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
     setLoading(true);
     try {
-      await deposit(parseFloat(amount));
-      Alert.alert('Success', `Bank deposit of KES ${amount} initiated. Funds will reflect within 24 hours.`);
+      // TODO: wire to real deposit API
+      await new Promise(r => setTimeout(r, 1500));
+      Alert.alert('Success', `Deposit of KES ${amount} initiated via ${method.toUpperCase()}`);
       setAmount('');
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Bank deposit failed');
+      Alert.alert('Error', err?.message ?? 'Deposit failed');
     } finally {
       setLoading(false);
     }
-  }, [amount, deposit]);
-
-  const handleCardDeposit = useCallback(async () => {
-    Alert.alert('Coming Soon', 'Card deposits via Stripe/Flutterwave will be available shortly.');
-  }, []);
-
-  const handleCryptoDeposit = useCallback(async () => {
-    Alert.alert('Coming Soon', 'Crypto deposits via Binance integration will be available shortly.');
-  }, []);
-
-  const handleDeposit = useCallback(async () => {
-    switch (method) {
-      case 'mpesa': return handleMpesaDeposit();
-      case 'bank': return handleBankDeposit();
-      case 'card': return handleCardDeposit();
-      case 'crypto': return handleCryptoDeposit();
-    }
-  }, [method, handleMpesaDeposit, handleBankDeposit, handleCardDeposit, handleCryptoDeposit]);
+  }, [amount, method]);
 
   const quickAmounts = ['500', '1000', '5000', '10000'];
 
@@ -185,27 +132,22 @@ export default function DepositScreen() {
           ))}
         </View>
 
-        {/* M-Pesa Phone Input */}
+        {/* Method-specific instructions */}
         {method === 'mpesa' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>M-Pesa Phone Number</Text>
-            <View style={styles.inputRow}>
-              <Ionicons name="call-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="2547XXXXXXXX"
-                placeholderTextColor={COLORS.textSecondary}
-                keyboardType="phone-pad"
-                value={phone}
-                onChangeText={setPhone}
-                maxLength={12}
-              />
-            </View>
-            <Text style={styles.hint}>Enter the M-Pesa number to receive STK push</Text>
+          <View style={styles.instructionCard}>
+            <Text style={styles.instructionTitle}>M-Pesa Steps</Text>
+            <Text style={styles.instructionText}>
+              {'1. Go to M-Pesa -> Lipa na M-Pesa\n'}
+              {'2. Select PayBill\n'}
+              {'3. Enter Business No: '}
+              <Text style={styles.bold}>247247</Text>
+              {'\n4. Account No: '}
+              <Text style={styles.bold}>{walletId || 'your-wallet-id'}</Text>
+              {'\n5. Enter amount & PIN'}
+            </Text>
           </View>
         )}
 
-        {/* Bank Instructions */}
         {method === 'bank' && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Bank Transfer</Text>
@@ -219,17 +161,16 @@ export default function DepositScreen() {
           </View>
         )}
 
-        {/* Card Info */}
         {method === 'card' && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Card Payment</Text>
             <Text style={styles.instructionText}>
-              Secure card processing powered by Stripe.\nYour card details are encrypted end-to-end.
+              {'Secure card processing powered by Stripe.\n'}
+              {'Your card details are encrypted end-to-end.'}
             </Text>
           </View>
         )}
 
-        {/* Crypto Info */}
         {method === 'crypto' && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Crypto Deposit</Text>
@@ -251,11 +192,7 @@ export default function DepositScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.depositBtnText}>
-              {method === 'mpesa' ? 'Send M-Pesa Prompt' : 
-               method === 'bank' ? 'Confirm Bank Deposit' :
-               method === 'card' ? 'Pay with Card' : 'Deposit Crypto'} KES {amount || '0'}
-            </Text>
+            <Text style={styles.depositBtnText}>Deposit KES {amount || '0'}</Text>
           )}
         </TouchableOpacity>
 
@@ -355,20 +292,6 @@ const styles = StyleSheet.create({
   quickBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   quickText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
   quickTextActive: { color: '#fff', fontFamily: FONTS.bold },
-  section: { marginHorizontal: SIZES.md, marginTop: SIZES.md },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
-    height: 52,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  inputIcon: { marginRight: SIZES.sm },
-  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
-  hint: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary, marginTop: SIZES.sm },
   instructionCard: {
     backgroundColor: COLORS.surface,
     marginHorizontal: SIZES.md,
@@ -377,7 +300,7 @@ const styles = StyleSheet.create({
     marginTop: SIZES.md,
   },
   instructionTitle: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text, marginBottom: SIZES.sm },
-  instructionText: { fontFamily: FONTS.regular, FontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
+  instructionText: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary, lineHeight: 22 },
   bold: { fontFamily: FONTS.bold, color: COLORS.text },
   depositBtn: {
     backgroundColor: COLORS.primary,

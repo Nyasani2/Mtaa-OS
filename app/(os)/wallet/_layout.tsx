@@ -23,6 +23,17 @@ export default function WalletLayout() {
       <Stack.Screen name="qr-action" />
       <Stack.Screen name="qr-scan" />
       <Stack.Screen name="savings-loans" />
+      <Stack.Screen name="merchant-dashboard" />
+      <Stack.Screen name="gofund" />
+      <Stack.Screen name="claim" />
+      <Stack.Screen name="agent-map" />
+      <Stack.Screen name="rewards" />
+      <Stack.Screen name="group-savings" />
+      <Stack.Screen name="regulatory" />
+      <Stack.Screen name="partner" />
+      <Stack.Screen name="crypto" />
+      <Stack.Screen name="daraja" />
+      <Stack.Screen name="email-verify" />
       <Stack.Screen name="tax" />
     </Stack>
   );
