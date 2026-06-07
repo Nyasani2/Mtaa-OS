@@ -60,7 +60,7 @@ export default function RideTracking() {
     return (
       <View style={styles.center}>
         <Text style={{ fontSize: 16, color: "#666" }}>Ride not found</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/(mtaxi)" as any)}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/(mtaxi)")}>
           <Text style={styles.backBtnText}>Back to MTaxi</Text>
         </TouchableOpacity>
       </View>
@@ -127,7 +127,7 @@ export default function RideTracking() {
       )}
 
       {currentRide.status === "completed" && (
-        <TouchableOpacity style={styles.doneBtn} onPress={() => router.push("/(mtaxi)/history" as any)}>
+        <TouchableOpacity style={styles.doneBtn} onPress={() => router.push("/(mtaxi)/history")}>
           <Text style={styles.doneBtnText}>View Ride History</Text>
         </TouchableOpacity>
       )}
@@ -167,3 +167,4 @@ const styles = StyleSheet.create({
   backBtn: { marginTop: 16, padding: 12, backgroundColor: "#2563eb", borderRadius: 10 },
   backBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
 });
+

@@ -1,161 +1,66 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
+// app/(os)/appstore/top-charts.tsx — Top Charts
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/hooks/useAppStore';
-import { AppCard } from '@/components/appstore/AppCard';
+import { Ionicons } from '@expo/vector-icons';
+import { getAppsBySection } from '@/lib/mtaa/appstore/unified-registry';
+import { AppItem } from '@/hooks/useAppStore';
 
-export default function TopChartsPage() {
+export default function TopChartsScreen() {
   const router = useRouter();
-  const { getTopCharts, isInstalled, isInstalling, installApp } = useAppStore();
-  const [filter, setFilter] = useState<'all' | 'free' | 'paid' | 'top-grossing'>('all');
-
-  const allApps = getTopCharts();
-  const filteredApps = filter === 'all' ? allApps :
-    filter === 'free' ? allApps.filter(a => !a.isSystem) :
-    filter === 'paid' ? allApps.filter(a => a.isSystem) :
-    allApps.filter(a => a.ranking !== undefined);
-
-  const handleInstall = (appId: string) => installApp(appId);
-  const handleOpen = (route: string) => router.push(route as any);
-  const handleAppPress = (appId: string) => router.push(`/(os)/appstore/${appId}` as any);
+  const apps = getAppsBySection('mtaa')
+    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+    .slice(0, 20);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Top Charts</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Filter Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterList}
-        contentContainerStyle={styles.filterListContent}
-      >
-        {(['all', 'free', 'paid', 'top-grossing'] as const).map(f => (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.title}>Top Charts</Text>
+        {apps.map((app: AppItem, index: number) => (
           <TouchableOpacity
-            key={f}
-            style={[styles.filterTab, filter === f && styles.filterTabActive]}
-            onPress={() => setFilter(f)}
+            key={app.id}
+            style={styles.row}
+            onPress={() => router.push(`/appstore/${app.id}`)}
           >
-            <Text style={[styles.filterTabText, filter === f && styles.filterTabTextActive]}>
-              {f === 'all' ? 'All' : f === 'free' ? 'Free' : f === 'paid' ? 'Paid' : 'Top Grossing'}
-            </Text>
+            <Text style={styles.rank}>{index + 1}</Text>
+            <View style={[styles.iconBox, { backgroundColor: app.color || '#2563EB' }]}>
+              <Ionicons name={app.icon} size={24} color="#fff" />
+            </View>
+            <View style={styles.info}>
+              <Text style={styles.name}>{app.name}</Text>
+              <Text style={styles.category}>{app.category}</Text>
+            </View>
+            <Text style={styles.rating}>★ {app.rating || 0}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {/* Ranked List */}
-      <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
-        {filteredApps.map((app, index) => (
-          <View key={app.id} style={styles.rankRow}>
-            <Text style={[styles.rankNumber, index < 3 && styles.rankNumberTop]}>
-              {index + 1}
-            </Text>
-            <View style={styles.rankCard}>
-              <AppCard
-                app={app}
-                isInstalled={isInstalled(app.id)}
-                isInstalling={isInstalling(app.id)}
-                onInstall={handleInstall}
-                onOpen={handleOpen}
-                onPress={handleAppPress}
-                variant="horizontal"
-              />
-            </View>
-          </View>
-        ))}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  header: {
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scroll: { padding: 16 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 20 },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1C1C1C',
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  filterList: {
-    maxHeight: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1C1C1C',
-  },
-  filterListContent: {
-    paddingHorizontal: 12,
     paddingVertical: 12,
-    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1C1C1C',
-  },
-  filterTabActive: {
-    backgroundColor: '#4ECDC4',
-  },
-  filterTabText: {
-    color: '#ccc',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  filterTabTextActive: {
-    color: '#121212',
-    fontWeight: '700',
-  },
-  list: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  rankRow: {
-    flexDirection: 'row',
+  rank: { color: '#64748B', fontSize: 16, fontWeight: '700', width: 30 },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  rankNumber: {
-    color: '#666',
-    fontSize: 18,
-    fontWeight: '700',
-    width: 32,
-    textAlign: 'center',
-  },
-  rankNumberTop: {
-    color: '#4ECDC4',
-    fontSize: 20,
-  },
-  rankCard: {
-    flex: 1,
-  },
-  bottomSpacer: {
-    height: 40,
-  },
+  info: { flex: 1, marginLeft: 12 },
+  name: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  category: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
+  rating: { color: '#FBBF24', fontSize: 14, fontWeight: '600' },
 });
+

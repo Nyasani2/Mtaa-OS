@@ -1,8 +1,10 @@
 // lib/auth/store/auth.store.ts
-// Authentication store — user session, login, logout, PIN
+// Authentication store — user session, login, logout, PIN, biometric
+// v2: Wired to pin-engine, exposes profile, checkPinRequired
 
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+import { getPinState, verifyPin, setPin as setPinEngine, isPinSet } from '@/lib/security/pin-engine';
 
 export interface User {
   id: string;
@@ -17,10 +19,13 @@ export interface User {
 interface AuthState {
   user: User | null;
   session: any | null;
+  profile: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   pinSet: boolean;
+  pinLocked: boolean;
   biometricEnabled: boolean;
+  pinAttemptsRemaining: number;
   error: string | null;
 
   // Actions
@@ -30,11 +35,11 @@ interface AuthState {
   signOut: () => Promise<void>;
   signInWithPhone: (phone: string) => Promise<{ success: boolean; error?: string }>;
   verifyPhoneOTP: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
-  signInWithOAuth: (provider: 'google' | 'apple' | 'facebook') => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; error?: string }>;
-  setPIN: (pin: string) => Promise<void>;
-  verifyPIN: (pin: string) => boolean;
+  setPIN: (pin: string) => Promise<{ success: boolean; error?: string }>;
+  verifyPIN: (pin: string) => Promise<{ valid: boolean; error?: string }>;
+  checkPinRequired: () => Promise<boolean>;
   enableBiometric: (enabled: boolean) => void;
   clearError: () => void;
 }
@@ -42,16 +47,21 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
+  profile: null,
   isAuthenticated: false,
   isLoading: true,
   pinSet: false,
+  pinLocked: false,
   biometricEnabled: false,
+  pinAttemptsRemaining: 5,
   error: null,
 
   initialize: async () => {
     set({ isLoading: true });
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      const pinState = await getPinState();
+
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -59,171 +69,172 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .eq('id', session.user.id)
           .single();
 
+        const user: User = profile || {
+          id: session.user.id,
+          email: session.user.email,
+          phone: session.user.phone,
+          display_name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+          role: 'user',
+          created_at: session.user.created_at,
+        };
+
         set({
-          user: profile as User || {
-            id: session.user.id,
-            email: session.user.email,
-            phone: session.user.phone,
-            display_name: session.user.user_metadata?.display_name || null,
-            avatar_url: session.user.user_metadata?.avatar_url || null,
-            role: 'user',
-            created_at: session.user.created_at,
-          },
+          user,
+          profile: user,
           session,
           isAuthenticated: true,
+          pinSet: pinState.isSet,
+          pinLocked: pinState.isLocked,
+          pinAttemptsRemaining: pinState.attemptsRemaining,
           isLoading: false,
         });
       } else {
-        set({ isLoading: false });
+        set({ isLoading: false, pinSet: pinState.isSet });
       }
-    } catch (err) {
-      set({ isLoading: false });
+    } catch (err: any) {
+      set({ isLoading: false, error: err?.message || 'Auth init failed' });
     }
   },
 
   signIn: async (email: string, password: string) => {
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      set({ isLoading: false, error: error.message });
-      return { success: false, error: error.message };
-    }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .single();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user!.id)
+        .single();
 
-    set({
-      user: profile as User || {
-        id: data.user.id,
-        email: data.user.email,
-        phone: data.user.phone,
-        display_name: data.user.user_metadata?.display_name || null,
-        avatar_url: data.user.user_metadata?.avatar_url || null,
+      const user: User = profile || {
+        id: data.user!.id,
+        email: data.user!.email || null,
+        phone: data.user!.phone || null,
+        display_name: data.user!.user_metadata?.display_name || email.split('@')[0],
+        avatar_url: data.user!.user_metadata?.avatar_url || null,
         role: 'user',
-        created_at: data.user.created_at,
-      },
-      session: data.session,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-    return { success: true };
+        created_at: data.user!.created_at,
+      };
+
+      const pinState = await getPinState();
+      set({
+        user,
+        profile: user,
+        session: data.session,
+        isAuthenticated: true,
+        pinSet: pinState.isSet,
+        isLoading: false,
+      });
+      return { success: true };
+    } catch (err: any) {
+      set({ isLoading: false, error: err?.message || 'Login failed' });
+      return { success: false, error: err?.message };
+    }
   },
 
   signUp: async (email: string, password: string, metadata?: Record<string, any>) => {
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: metadata },
-    });
-    if (error) {
-      set({ isLoading: false, error: error.message });
-      return { success: false, error: error.message };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: metadata },
+      });
+      if (error) throw error;
+      set({ isLoading: false });
+      return { success: true };
+    } catch (err: any) {
+      set({ isLoading: false, error: err?.message });
+      return { success: false, error: err?.message };
     }
-    set({ isLoading: false });
-    return { success: true };
   },
 
   signOut: async () => {
     await supabase.auth.signOut();
     set({
       user: null,
+      profile: null,
       session: null,
       isAuthenticated: false,
       pinSet: false,
+      error: null,
     });
   },
 
   signInWithPhone: async (phone: string) => {
-    set({ isLoading: true, error: null });
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    set({ isLoading: false });
-    if (error) {
-      set({ error: error.message });
-      return { success: false, error: error.message };
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone });
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
     }
-    return { success: true };
   },
 
   verifyPhoneOTP: async (phone: string, token: string) => {
-    set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: 'sms',
-    });
-    set({ isLoading: false });
-    if (error) {
-      set({ error: error.message });
-      return { success: false, error: error.message };
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: 'sms' });
+      if (error) throw error;
+      set({ user: data.user as any, session: data.session, isAuthenticated: true });
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
     }
-    set({
-      user: data.user ? {
-        id: data.user.id,
-        email: data.user.email,
-        phone: data.user.phone,
-        display_name: data.user.user_metadata?.display_name || null,
-        avatar_url: data.user.user_metadata?.avatar_url || null,
-        role: 'user',
-        created_at: data.user.created_at,
-      } as User : null,
-      session: data.session,
-      isAuthenticated: !!data.user,
-    });
-    return { success: true };
-  },
-
-  signInWithOAuth: async (provider: 'google' | 'apple' | 'facebook') => {
-    set({ isLoading: true, error: null });
-    const { error } = await supabase.auth.signInWithOAuth({ provider });
-    set({ isLoading: false });
-    if (error) {
-      set({ error: error.message });
-      return { success: false, error: error.message };
-    }
-    return { success: true };
   },
 
   resetPassword: async (email: string) => {
-    set({ isLoading: true, error: null });
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    set({ isLoading: false });
-    if (error) {
-      set({ error: error.message });
-      return { success: false, error: error.message };
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
     }
-    return { success: true };
   },
 
   updateProfile: async (updates: Partial<User>) => {
-    const user = get().user;
-    if (!user?.id) return { success: false, error: 'Not authenticated' };
-
-    const { error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', user.id);
-
-    if (error) {
-      set({ error: error.message });
-      return { success: false, error: error.message };
+    try {
+      const { user } = get();
+      if (!user) return { success: false, error: 'Not authenticated' };
+      const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+      if (error) throw error;
+      set({ user: { ...user, ...updates }, profile: { ...user, ...updates } });
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message };
     }
-
-    set({ user: { ...user, ...updates } });
-    return { success: true };
   },
 
   setPIN: async (pin: string) => {
-    // Store PIN hash securely (in production use SecureStore)
-    set({ pinSet: true });
+    const result = await setPinEngine(pin);
+    if (result.success) {
+      const pinState = await getPinState();
+      set({ pinSet: true, pinLocked: false, pinAttemptsRemaining: pinState.attemptsRemaining });
+    }
+    return result;
   },
 
-  verifyPIN: (pin: string) => {
-    // In production, compare hashed PIN
-    return get().pinSet;
+  verifyPIN: async (pin: string) => {
+    const result = await verifyPin(pin);
+    set({
+      pinLocked: result.state.isLocked,
+      pinAttemptsRemaining: result.state.attemptsRemaining,
+    });
+    if (result.valid) {
+      return { valid: true };
+    }
+    return { valid: false, error: `Invalid PIN. ${result.state.attemptsRemaining} attempts remaining.` };
+  },
+
+  checkPinRequired: async () => {
+    const { isAuthenticated } = get();
+    if (!isAuthenticated) return false;
+    const pinState = await getPinState();
+    set({ pinSet: pinState.isSet, pinLocked: pinState.isLocked });
+    return pinState.isSet;
   },
 
   enableBiometric: (enabled: boolean) => {

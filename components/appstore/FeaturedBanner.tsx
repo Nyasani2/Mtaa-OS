@@ -25,7 +25,7 @@ export function FeaturedBanner({ apps }: FeaturedBannerProps) {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.sectionTitle}>Featured</Text>
-        <TouchableOpacity onPress={() => router.push('/appstore/top-charts' as any)}>
+        <TouchableOpacity onPress={() => router.push('/appstore/top-charts')}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
@@ -38,7 +38,7 @@ export function FeaturedBanner({ apps }: FeaturedBannerProps) {
               styles.banner,
               index === activeIndex ? styles.bannerActive : styles.bannerInactive,
             ]}
-            onPress={() => router.push(`/appstore/${app.id}` as any)}
+            onPress={() => router.push(`/appstore/${app.id}`)}
             activeOpacity={0.85}
           >
             <Image
@@ -173,3 +173,4 @@ const styles = StyleSheet.create({
     width: 20,
   },
 });
+

@@ -95,7 +95,7 @@ export class WalletAssistant implements IWalletIntelligence {
     if (recipientPhone) {
       return {
         method: PaymentMethod.MOBILE_MONEY,
-        reason: 'Direct to their phone. They don't need MTAA.',
+        reason: `Direct to their phone. They don't need MTAA.`,
       };
     }
 
@@ -125,15 +125,15 @@ export class WalletAssistant implements IWalletIntelligence {
         suggestion: 'Double-check the amount and recipient before confirming.',
       },
       'new_recipient': {
-        warning: 'You haven't sent to this person before.',
+        warning: `You haven't sent to this person before.`,
         suggestion: 'Verify their phone number is correct.',
       },
       'late_night': {
-        warning: 'It's late. Are you sure about this transfer?',
+        warning: `It's late. Are you sure about this transfer?`,
         suggestion: 'You can schedule it for tomorrow if you prefer.',
       },
       'rapid_transfers': {
-        warning: 'You've made several transfers quickly.',
+        warning: `You've made several transfers quickly.`,
         suggestion: 'Take a moment to review each one.',
       },
     };

@@ -9,6 +9,8 @@ import { AgentRequest, AgentResponse } from '../shared/types';
 import { ASISEventBus } from '../core/event-bus';
 import { ASISSecurityLayer } from '../security/security-layer';
 import { TransportAction, BookingIntent } from './types';
+import { View, Text } from 'react-native';
+
 
 export class TransportAgent extends BaseAgent {
   readonly name = 'transport_agent';

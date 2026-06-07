@@ -9,7 +9,7 @@ import { ISettlementProvider } from './interfaces';
 import { EventBus } from '../kernel/event-bus';
 
 export class SettlementOrchestrator implements ISettlementProvider {
-  name = 'mtaa_settlement_orchestrator';
+  const name = 'mtaa_settlement_orchestrator';
   private batches: Map<string, SettlementBatch> = new Map();
   private pendingTransactions: Map<string, { batchId?: string; status: string }> = new Map();
   private eventBus: EventBus;

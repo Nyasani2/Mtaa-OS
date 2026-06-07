@@ -1,4 +1,4 @@
-// hooks/index.ts
+// hooks/index.ts — Clean barrel export
+export { useAuthStore, useIdentity } from './useAuthStore';
+export { useAdmin } from './useAdmin';
 export { useAuth } from './useAuth';
-export { useIdentity } from './useIdentity';
-export { useIdentity } from './useIdentity';

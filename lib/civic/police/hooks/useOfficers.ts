@@ -28,7 +28,7 @@ export function useOfficers(stationId?: string) {
     try {
       await officerService.updateDutyStatus(officerId, status)
       setOfficers(prev => prev.map(o => 
-        o.id === officerId ? { ...o, duty_status: status as any } : o
+        o.id === officerId ? { ...o, duty_status: status } : o
       ))
     } catch (err: any) {
       setError(err.message || 'Failed to update duty status')
@@ -44,3 +44,4 @@ export function useOfficers(stationId?: string) {
     updateDutyStatus
   }
 }
+

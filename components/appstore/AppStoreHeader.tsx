@@ -14,7 +14,7 @@ export function AppStoreHeader() {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      router.push(`/appstore/search?q=${encodeURIComponent(searchQuery.trim())}` as any);
+      router.push(`/appstore/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
@@ -27,7 +27,7 @@ export function AppStoreHeader() {
         </View>
         <TouchableOpacity
           style={styles.profileBtn}
-          onPress={() => router.push('/(os)/settings' as any)}
+          onPress={() => router.push('/(os)/settings')}
           activeOpacity={0.7}
         >
           <View style={styles.avatar}>
@@ -140,3 +140,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

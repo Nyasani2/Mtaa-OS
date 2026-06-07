@@ -1,34 +1,52 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+// app/(os)/wallet/hooks/useWalletAccount.ts
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export interface WalletAccount {
   id: string;
   user_id: string;
-  balance: number;
-  held_balance: number;
+  account_id: string;
+  wallet_name: string;
+  wallet_type: string;
   currency: string;
+  balance: number;
+  available_balance: number;
   status: string;
-  tier: string;
+  is_default: boolean;
   created_at: string;
 }
 
 export function useWalletAccount() {
-  const { user } = useAuthStore();
-  const [wallet, setWallet] = useState<WalletAccount | null>(null);
+  const [account, setAccount] = useState<WalletAccount | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>("");
 
-  const loadWallet = useCallback(async () => {
-    if (!user?.id) return;
+  const fetchAccount = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('wallets').select('*').eq('user_id', user.id).single();
-    if (error) setError(error.message);
-    else setWallet(data as WalletAccount);
-    setLoading(false);
-  }, [user?.id]);
+    setError("");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+      const { data, error: err } = await supabase
+        .from("wallets")
+        .select("id, user_id, account_id, wallet_name, wallet_type, currency, balance, available_balance, status, is_default, created_at")
+        .eq("user_id", user.id)
+        .eq("is_default", true)
+        .single();
+      if (err) throw err;
+      setAccount(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => { loadWallet(); }, [loadWallet]);
+  useEffect(() => {
+    fetchAccount();
+  }, [fetchAccount]);
 
-  return { wallet, loading, error, balance: wallet?.balance || 0, loadWallet };
+  return { account, loading, error, refresh: fetchAccount };
 }
+
+export default useWalletAccount;

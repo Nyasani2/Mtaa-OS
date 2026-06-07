@@ -1,38 +1,35 @@
-// lib/mtaa/appstore/launcher.ts
-import { useRouter } from "expo-router";
-import { APP_REGISTRY, getAppById } from "./unified-registry";
+// lib/mtaa/appstore/launcher.ts — App Launcher Hook
+import { useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { getAppById } from './unified-registry';
 
-export interface LauncherContextValue {
-  apps: typeof APP_REGISTRY;
-  launchApp: (appId: string) => void;
-  listApps: () => typeof APP_REGISTRY;
-  isInstalled: (appId: string) => boolean;
-}
-
-export function useLauncher(): LauncherContextValue {
+export function useLauncher() {
   const router = useRouter();
 
-  const launchApp = (appId: string) => {
+  const launchApp = useCallback((appId: string) => {
     const app = getAppById(appId);
     if (!app) {
-      console.warn(`[Launcher] App "${appId}" not found in registry`);
+      console.warn(`[Launcher] App not found: ${appId}`);
       return;
     }
-    if (!app.isInstalled && !app.isOSApp) {
-      console.warn(`[Launcher] App "${appId}" is not installed`);
-      router.push("/appstore" as any);
+
+    // System apps launch directly
+    if (app.is_system_app) {
+      router.push(app.entry_route as any);
       return;
     }
-    console.log(`[Launcher] Opening ${app.name} at ${app.route}`);
-    router.push(app.route as any);
-  };
 
-  const listApps = () => APP_REGISTRY;
+    // Non-system apps check if installed
+    if (!app.is_installed) {
+      // Redirect to app store detail page
+      router.push(`/appstore/${appId}` as any);
+      return;
+    }
 
-  const isInstalled = (appId: string) => {
-    const app = getAppById(appId);
-    return app ? app.isInstalled || app.isOSApp : false;
-  };
+    router.push(app.entry_route as any);
+  }, [router]);
 
-  return { apps: APP_REGISTRY, launchApp, listApps, isInstalled };
+  return { launchApp };
 }
+
+export default useLauncher;

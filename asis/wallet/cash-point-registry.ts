@@ -8,7 +8,7 @@ import { CashPoint, Currency } from './types';
 import { ICashPointProvider } from './interfaces';
 
 export class CashPointRegistry implements ICashPointProvider {
-  name = 'mtaa_cash_points';
+  const name = 'mtaa_cash_points';
   private cashPoints: Map<string, CashPoint> = new Map();
   private geoIndex: Map<string, Set<string>> = new Map(); // geohash -> cashpoint ids
 

@@ -9,6 +9,8 @@ import { AgentRequest, AgentResponse } from '../shared/types';
 import { ASISEventBus } from '../core/event-bus';
 import { ASISSecurityLayer } from '../security/security-layer';
 import { JobsAction, JobSearchIntent } from './types';
+import { Text } from 'react-native';
+
 
 export class JobsAgent extends BaseAgent {
   readonly name = 'jobs_agent';

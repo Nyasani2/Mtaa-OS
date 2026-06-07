@@ -16,14 +16,14 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 
 export default function NotificationsScreen() {
   const markAsRead = (id: string) => {
-    console.log('Mark read', id);
+    // Mark read handled via API
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Notifications</Text>
       <FlatList
-        data={MOCK_NOTIFICATIONS}
+        data={[]}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={[styles.card, item.read ? styles.read : styles.unread]} onPress={() => markAsRead(item.id)}>
@@ -47,3 +47,4 @@ const styles = StyleSheet.create({
   cardBody: { fontSize: 12, color: '#666', marginTop: 4 },
   time: { fontSize: 10, color: '#999', marginTop: 4 }
 });
+

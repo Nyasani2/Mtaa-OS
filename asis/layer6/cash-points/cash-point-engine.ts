@@ -16,7 +16,7 @@ import { IGeoDiscoveryProvider, GeoFilters } from './interfaces';
 import { EventBus } from '../kernel/event-bus';
 
 export class CashPointEngine implements IGeoDiscoveryProvider {
-  name = 'mtaa_cash_point_engine';
+  const name = 'mtaa_cash_point_engine';
   private cashPoints: Map<string, CashPoint> = new Map();
   private geoIndex: Map<string, Set<string>> = new Map(); // geohash -> ids
   private nameIndex: Map<string, Set<string>> = new Map(); // name word -> ids

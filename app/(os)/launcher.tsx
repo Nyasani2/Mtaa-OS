@@ -1,69 +1,66 @@
+// app/(os)/launcher.tsx — App Launcher Screen
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { APP_REGISTRY, getAppById } from '@/lib/mtaa/appstore/unified-registry';
+import { Ionicons } from '@expo/vector-icons';
+import { getAllApps, getAppById, AppManifest } from '@/lib/mtaa/appstore/unified-registry';
 
 export default function LauncherScreen() {
   const router = useRouter();
 
-  const installedApps = APP_REGISTRY.filter(app => app.isInstalled || app.isOSApp);
-
-  const handleLaunch = (appId: string) => {
-    const app = getAppById(appId);
-    if (!app) {
-      console.warn(`[Launcher] App "${appId}" not found`);
-      return;
-    }
-    console.log(`[Launcher] Opening ${app.name} at ${app.route}`);
-    router.push(app.route as any);
+  const launchApp = (app: AppManifest) => {
+    console.log(`[Launcher] Opening ${app.name} at ${app.entry_route}`);
+    router.push(app.entry_route as any);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>App Launcher</Text>
-      <FlatList
-        data={installedApps}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity 
-            style={styles.appTile} 
-            onPress={() => handleLaunch(item.id)}
-          >
-            <View style={[styles.icon, { backgroundColor: item.color }]}>
-              <Text style={styles.iconText}>{item.name[0]}</Text>
-            </View>
-            <View style={styles.appInfo}>
-              <Text style={styles.appTitle}>{item.name}</Text>
-              <Text style={styles.appDesc}>{item.description}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.title}>All Apps</Text>
+        <View style={styles.grid}>
+          {getAllApps().map((app) => (
+            <TouchableOpacity
+              key={app.id}
+              style={styles.tile}
+              onPress={() => launchApp(app)}
+            >
+              <View style={[styles.iconBox, { backgroundColor: app.color }]}>
+                <Ionicons name={app.icon as any} size={28} color="#fff" />
+              </View>
+              <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#0a0a0a' },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#fff' },
-  appTile: { 
-    flexDirection: 'row', 
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scroll: { padding: 16 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  tile: {
+    width: '25%',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a', 
-    padding: 16, 
-    marginBottom: 8, 
-    borderRadius: 12 
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
-  icon: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
+  iconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12
   },
-  iconText: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  appInfo: { flex: 1 },
-  appTitle: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  appDesc: { fontSize: 12, color: '#888', marginTop: 2 }
+  appName: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
+    textAlign: 'center',
+  },
 });
+

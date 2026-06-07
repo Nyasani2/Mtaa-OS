@@ -21,7 +21,7 @@ export function PrisonNav() {
         <TouchableOpacity
           key={item.path}
           style={[styles.navItem, pathname === item.path && styles.active]}
-          onPress={() => router.push(item.path as any)}
+          onPress={() => router.push(item.path)}
         >
           <Text style={[styles.navText, pathname === item.path && styles.activeText]}>
             {item.label}
@@ -39,3 +39,4 @@ const styles = StyleSheet.create({
   navText: { color: '#ccc', fontSize: 12 },
   activeText: { color: '#fff', fontWeight: '600' },
 });
+

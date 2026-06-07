@@ -73,7 +73,7 @@ export default function WithdrawScreen() {
         {/* Balance */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceValue}>KSh {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
+          <Text style={styles.balanceValue}>KSh {(balance ?? 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
         </View>
 
         {/* Method */}

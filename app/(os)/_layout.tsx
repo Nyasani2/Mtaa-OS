@@ -1,29 +1,13 @@
-import { Stack, Redirect } from "expo-router";
-import { Image, StyleSheet } from 'react-native';
-import { OSGate } from "@/lib/auth/os-gate";
-import { useOSShell } from '@/lib/shell/use-os-shell';
+import { Stack } from 'expo-router';
 
-export default function OsLayout() {
-  const { isAuthenticated, isUnlocked } = useOSShell();
-
-  if (!isAuthenticated) return <Redirect href="/auth/login" />;
-  if (!isUnlocked) return <Redirect href="/auth/lock-screen" />;
-
+export default function OSLayout() {
   return (
-    <OSGate>
-      <Image
-        source={require('@/assets/images/mtaa_home.jpeg')}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="launcher" />
-        <Stack.Screen name="appstore" />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="developer" />
-        <Stack.Screen name="wallet" />
-      </Stack>
-    </OSGate>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="appstore" />
+      <Stack.Screen name="wallet" />
+      <Stack.Screen name="phone" />
+      <Stack.Screen name="settings" />
+    </Stack>
   );
 }

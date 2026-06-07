@@ -124,13 +124,13 @@ export class WalletAgent extends BaseAgent {
           break;
         default:
           response = this._createTextResponse(
-            `I can help you with:
-
-' +
-            `• Check balance• Send money• Pay bills• View transactions• Create payment links`,
-
-' +
-            'What would you like to do?',
+            `I can help you with:\n\n` +
+            `• Check balance\n` +
+            `• Send money\n` +
+            `• Pay bills\n` +
+            `• View transactions\n` +
+            `• Create payment links\n\n` +
+            `What would you like to do?`,
             { type: 'wallet_menu' }
           );
       }

@@ -55,7 +55,7 @@ export function AppCompare({ apps, visible, onClose }: AppCompareProps) {
           <View style={styles.appHeaders}>
             <View style={styles.appHeader}>
               <View style={[styles.appIcon, { backgroundColor: getIconBg(app1.category) }]}>
-                <Feather name={app1.icon as any} size={28} color="#fff" />
+                <Feather name={app1.icon} size={28} color="#fff" />
               </View>
               <Text style={styles.appName} numberOfLines={1}>{app1.name}</Text>
               <Text style={styles.appTagline} numberOfLines={1}>{app1.tagline}</Text>
@@ -65,7 +65,7 @@ export function AppCompare({ apps, visible, onClose }: AppCompareProps) {
             </View>
             <View style={styles.appHeader}>
               <View style={[styles.appIcon, { backgroundColor: getIconBg(app2.category) }]}>
-                <Feather name={app2.icon as any} size={28} color="#fff" />
+                <Feather name={app2.icon} size={28} color="#fff" />
               </View>
               <Text style={styles.appName} numberOfLines={1}>{app2.name}</Text>
               <Text style={styles.appTagline} numberOfLines={1}>{app2.tagline}</Text>
@@ -335,3 +335,4 @@ const styles = StyleSheet.create({
     height: 40,
   },
 });
+

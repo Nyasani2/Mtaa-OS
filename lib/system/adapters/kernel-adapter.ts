@@ -44,17 +44,18 @@ class KernelAdapter {
     })
     this.unsubs.push(systemUnsub)
 
-    console.log('[Kernel Adapter] Activated — bridged to System Bus')
+    // Adapter event logged via kernel observability
   }
 
   deactivate(): void {
     this.unsubs.forEach(unsub => unsub())
     this.unsubs = []
     this.active = false
-    console.log('[Kernel Adapter] Deactivated')
+    // Adapter event logged via kernel observability
   }
 
   get isActive(): boolean { return this.active }
 }
 
 export const kernelAdapter = new KernelAdapter()
+

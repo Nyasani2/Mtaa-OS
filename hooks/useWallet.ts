@@ -1,226 +1,288 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+// hooks/useWallet.ts
+// Real wallet hook — connects to Supabase tables and edge functions
+// Multi-country support, generates receipts and notifications
 
-export interface Wallet {
+import { create } from 'zustand';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { supabase } from '@/lib/supabase/client';
+
+export interface WalletTransaction {
+  id: string;
+  transaction_type: string;
+  direction: 'credit' | 'debit';
+  amount: number;
+  currency: string;
+  status: string;
+  description: string;
+  reference: string;
+  counterparty_wallet_id?: string;
+  counterparty_phone?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  completed_at?: string;
+}
+
+export interface WalletAccount {
   id: string;
   user_id: string;
+  account_id: string;
+  wallet_name: string;
+  wallet_type: string;
+  currency: string;
   balance: number;
   available_balance: number;
-  currency: string;
-  wallet_name: string;
-  account_id: string;
-  is_frozen: boolean;
+  held_balance: number;
+  status: string;
+  is_default: boolean;
+  daily_limit: number;
+  monthly_limit: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface WalletTransaction {
+export interface WalletReceipt {
   id: string;
-  wallet_id: string;
   user_id: string;
+  wallet_id: string;
   transaction_type: string;
-  direction: string;
   amount: number;
   currency: string;
-  balance_after: number;
   status: string;
   reference: string;
   description: string;
-  metadata: any;
+  metadata?: Record<string, any>;
   created_at: string;
 }
 
-export interface RecentContact {
-  name: string;
-  phone?: string;
-  walletId?: string;
+export interface WalletState {
+  account: WalletAccount | null;
+  transactions: WalletTransaction[];
+  receipts: WalletReceipt[];
+  isLoading: boolean;
+  error: string | null;
+  isProcessing: boolean;
+
+  // Actions
+  loadAccount: () => Promise<void>;
+  loadTransactions: (limit?: number) => Promise<void>;
+  loadReceipts: (limit?: number) => Promise<void>;
+  deposit: (amount: number, method: string, phoneNumber?: string, metadata?: Record<string, any>) => Promise<{ success: boolean; depositId?: string; error?: string }>;
+  withdraw: (amount: number, method: string, destination: Record<string, any>, metadata?: Record<string, any>) => Promise<{ success: boolean; transactionId?: string; error?: string }>;
+  transfer: (amount: number, recipientPhone: string, description?: string) => Promise<{ success: boolean; transactionId?: string; error?: string }>;
+  getBalance: () => number;
+  getAvailableBalance: () => number;
+  getFormattedBalance: () => string;
+  clearError: () => void;
 }
 
-export function useWallet() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [walletId, setWalletId] = useState<string>('');
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const useWallet = create<WalletState>((set, get) => ({
+  account: null,
+  transactions: [],
+  receipts: [],
+  isLoading: false,
+  error: null,
+  isProcessing: false,
 
-  // Computed properties that screens expect
-  const balance = wallet?.balance || 0;
-  const availableBalance = wallet?.available_balance || 0;
+  loadAccount: async () => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) {
+      set({ account: null, error: 'Not authenticated' });
+      return;
+    }
 
-  // Mock recent contacts - replace with real data fetch later
-  const recentContacts: RecentContact[] = [];
-
-  useEffect(() => {
-    loadWallet();
-  }, []);
-
-  async function loadWallet() {
+    set({ isLoading: true, error: null });
     try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Not authenticated');
-        setLoading(false);
-        return;
-      }
-
-      const { data: walletData, error: walletError } = await supabase
+      const { data, error } = await supabase
         .from('wallets')
-        .select('*')
+        .select('id, user_id, account_id, wallet_name, wallet_type, currency, balance, available_balance, held_balance, status, is_default, daily_limit, monthly_limit, created_at, updated_at')
         .eq('user_id', user.id)
+        .eq('is_default', true)
         .single();
 
-      if (walletError) {
-        const { data: newWallet, error: createError } = await supabase
-          .from('wallets')
-          .insert({
-            user_id: user.id,
-            balance: 0,
-            available_balance: 0,
-            currency: 'KES',
-            wallet_name: 'Main Wallet',
-            account_id: `WAL-${user.id.slice(0, 8)}`,
-            is_frozen: false,
-          })
-          .select()
-          .single();
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No default wallet — try any active wallet
+          const { data: anyWallet, error: anyErr } = await supabase
+            .from('wallets')
+            .select('id, user_id, account_id, wallet_name, wallet_type, currency, balance, available_balance, held_balance, status, is_default, daily_limit, monthly_limit, created_at, updated_at')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single();
 
-        if (createError) {
-          setError(createError.message);
-          setLoading(false);
+          if (anyErr) throw anyErr;
+          set({ account: anyWallet as WalletAccount });
           return;
         }
-
-        setWallet(newWallet);
-        setWalletId(newWallet.id);
-      } else {
-        setWallet(walletData);
-        setWalletId(walletData.id);
+        throw error;
       }
 
-      const { data: txData } = await supabase
+      set({ account: data as WalletAccount });
+    } catch (err: any) {
+      set({ error: err.message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loadTransactions: async (limit = 50) => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase
         .from('wallet_transactions')
+        .select('id, transaction_type, direction, amount, currency, status, description, reference, counterparty_wallet_id, counterparty_phone, metadata, created_at, completed_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      set({ transactions: (data || []) as WalletTransaction[] });
+    } catch (err: any) {
+      set({ error: err.message });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loadReceipts: async (limit = 50) => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) return;
+
+    set({ isLoading: true, error: null });
+    try {
+      const { data, error } = await supabase
+        .from('wallet_receipts')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(limit);
 
-      setTransactions(txData || []);
-      setError(null);
+      if (error) throw error;
+      set({ receipts: (data || []) as WalletReceipt[] });
     } catch (err: any) {
-      setError(err?.message || 'Failed to load wallet');
+      set({ error: err.message });
     } finally {
-      setLoading(false);
+      set({ isLoading: false });
     }
-  }
+  },
 
-  async function deposit(amount: number) {
+  deposit: async (amount: number, method: string, phoneNumber?: string, metadata?: Record<string, any>) => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) {
+      set({ error: 'Not authenticated' });
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    set({ isProcessing: true, error: null });
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: result, error } = await supabase.rpc('wallet_deposit', {
-        wallet: walletId,
-        amount: amount,
+      const { data, error } = await supabase.functions.invoke('wallet-deposit', {
+        body: {
+          user_id: user.id,
+          amount,
+          currency: get().account?.currency || 'KES',
+          method,
+          phone_number: phoneNumber,
+          metadata,
+        },
       });
 
       if (error) throw error;
-      await loadWallet();
-      return result;
-    } catch (err: any) {
-      throw new Error(err?.message || 'Deposit failed');
-    }
-  }
 
-  async function withdraw(amount: number) {
+      // Refresh account and transactions
+      await get().loadAccount();
+      await get().loadTransactions();
+      await get().loadReceipts();
+
+      set({ isProcessing: false });
+      return { success: true, depositId: data?.deposit_id };
+    } catch (err: any) {
+      set({ error: err.message, isProcessing: false });
+      return { success: false, error: err.message };
+    }
+  },
+
+  withdraw: async (amount: number, method: string, destination: Record<string, any>, metadata?: Record<string, any>) => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) {
+      set({ error: 'Not authenticated' });
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    set({ isProcessing: true, error: null });
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: result, error } = await supabase.rpc('wallet_withdraw', {
-        p_user: user.id,
-        p_amount: amount,
+      const { data, error } = await supabase.functions.invoke('withdraw', {
+        body: {
+          user_id: user.id,
+          amount,
+          currency: get().account?.currency || 'KES',
+          method,
+          destination,
+          metadata,
+        },
       });
 
       if (error) throw error;
-      await loadWallet();
-      return result;
-    } catch (err: any) {
-      throw new Error(err?.message || 'Withdrawal failed');
-    }
-  }
 
-  async function transfer(receiverWalletId: string, amount: number, description?: string) {
+      await get().loadAccount();
+      await get().loadTransactions();
+      await get().loadReceipts();
+
+      set({ isProcessing: false });
+      return { success: true, transactionId: data?.transaction_id };
+    } catch (err: any) {
+      set({ error: err.message, isProcessing: false });
+      return { success: false, error: err.message };
+    }
+  },
+
+  transfer: async (amount: number, recipientPhone: string, description?: string) => {
+    const { user, isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated || !user) {
+      set({ error: 'Not authenticated' });
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    set({ isProcessing: true, error: null });
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data: result, error } = await supabase.rpc('wallet_transfer', {
-        p_sender_wallet_id: walletId,
-        p_recipient_wallet_id: receiverWalletId,
-        p_amount: amount,
-        p_description: description || 'Wallet transfer',
+      const { data, error } = await supabase.functions.invoke('wallet-transfer', {
+        body: {
+          sender_id: user.id,
+          recipient_phone: recipientPhone,
+          amount,
+          description: description || 'Wallet transfer',
+          currency_code: get().account?.currency || 'KES',
+        },
       });
 
       if (error) throw error;
-      await loadWallet();
-      return result;
+
+      await get().loadAccount();
+      await get().loadTransactions();
+      await get().loadReceipts();
+
+      set({ isProcessing: false });
+      return { success: true, transactionId: data?.transaction_id };
     } catch (err: any) {
-      throw new Error(err?.message || 'Transfer failed');
+      set({ error: err.message, isProcessing: false });
+      return { success: false, error: err.message };
     }
-  }
+  },
 
-  // Alias methods that screens expect
-  const sendMoney = async (params: { recipient: string; amount: number; note?: string }) => {
-    // Try to resolve recipient to wallet ID
-    let receiverId = params.recipient;
+  getBalance: () => get().account?.balance || 0,
+  getAvailableBalance: () => get().account?.available_balance || 0,
+  getFormattedBalance: () => {
+    const balance = get().account?.available_balance || 0;
+    const currency = get().account?.currency || 'KES';
+    return new Intl.NumberFormat('en-KE', {
+      style: 'currency',
+      currency,
+    }).format(balance);
+  },
+  clearError: () => set({ error: null }),
+}));
 
-    // If recipient looks like a phone number, try to find user
-    if (params.recipient.match(/^\d/)) {
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('phone', params.recipient)
-        .single();
-      if (userData) {
-        const { data: receiverWallet } = await supabase
-          .from('wallets')
-          .select('id')
-          .eq('user_id', userData.id)
-          .single();
-        if (receiverWallet) receiverId = receiverWallet.id;
-      }
-    }
-
-    return transfer(receiverId, params.amount, params.note);
-  };
-
-  return {
-    wallet,
-    walletId,
-    transactions,
-    loading,
-    error,
-    // Computed properties
-    balance,
-    availableBalance,
-    // Alias methods for screen compatibility
-    deposit,
-    withdraw: async (params: { method: string; amount: number; recipient: string }) => {
-      // Withdraw to external method (mpesa/bank/crypto)
-      const { data: result, error } = await supabase.rpc('wallet_withdraw_external', {
-        p_wallet_id: walletId,
-        p_amount: params.amount,
-        p_method: params.method,
-        p_recipient: params.recipient,
-      });
-      if (error) throw error;
-      await loadWallet();
-      return result;
-    },
-    transfer,
-    sendMoney,
-    recentContacts,
-    refresh: loadWallet,
-  };
-}
+export default useWallet;

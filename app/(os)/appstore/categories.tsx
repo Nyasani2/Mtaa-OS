@@ -1,199 +1,64 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+// app/(os)/appstore/categories.tsx — App Categories
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppCard } from '@/components/appstore/AppCard';
-import { useAppStore } from '@/hooks/useAppStore';
-import { useOSKernel } from '@/hooks/useOSKernel';
-import { AppItem } from '@/types/appstore';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { getAppsBySection } from '@/lib/mtaa/appstore/unified-registry';
 
 const CATEGORIES = [
-  { id: 'transport', label: 'Transport', icon: '🚕' },
-  { id: 'finance', label: 'Finance', icon: '💰' },
-  { id: 'social', label: 'Social', icon: '👥' },
-  { id: 'productivity', label: 'Productivity', icon: '⚡' },
-  { id: 'health', label: 'Health', icon: '🏥' },
-  { id: 'education', label: 'Education', icon: '📚' },
-  { id: 'government', label: 'Government', icon: '🏛️' },
-  { id: 'utilities', label: 'Utilities', icon: '🔧' },
+  { id: 'mtaa', name: 'MTAA Apps', icon: 'apps', color: '#2563EB' },
+  { id: 'android', name: 'Android Apps', icon: 'logo-android', color: '#10B981' },
+  { id: 'productivity', name: 'Productivity', icon: 'briefcase', color: '#F59E0B' },
+  { id: 'social', name: 'Social', icon: 'people', color: '#EC4899' },
+  { id: 'finance', name: 'Finance', icon: 'cash', color: '#059669' },
 ];
 
 export default function CategoriesScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { installApp, uninstallApp, isInstalled, getInstalledApps } = useAppStore();
-  const { kernel } = useOSKernel();
-
-  const [activeCategory, setActiveCategory] = useState<string>('transport');
-  const [apps, setApps] = useState<AppItem[]>([]);
-  const [categoryApps, setCategoryApps] = useState<AppItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [installingId, setInstallingId] = useState<string | null>(null);
-  const [installedIds, setInstalledIds] = useState<Set<string>>(new Set());
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const all = await kernel?.appStore?.getCatalog?.() ?? [];
-      const installed = await getInstalledApps?.() ?? [];
-      setApps(all);
-      setInstalledIds(new Set(installed.map((a: AppItem) => a.id)));
-    } catch (err) {
-      console.error('[Categories] fetch error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [kernel, getInstalledApps]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  // Filter apps by active category — replaces broken getAppsByCategory
-  useEffect(() => {
-    const filtered = apps.filter(a =>
-      a.category?.toLowerCase() === activeCategory.toLowerCase()
-    );
-    setCategoryApps(filtered);
-  }, [apps, activeCategory]);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
-
-  const handleInstall = useCallback(async (app: AppItem) => {
-    if (installingId) return;
-    setInstallingId(app.id);
-    try {
-      await installApp(app);
-      const installed = await getInstalledApps?.() ?? [];
-      setInstalledIds(new Set(installed.map((a: AppItem) => a.id)));
-    } catch (err) {
-      console.error('[Categories] install error:', err);
-    } finally {
-      setInstallingId(null);
-    }
-  }, [installApp, getInstalledApps, installingId]);
-
-  const handleUninstall = useCallback(async (appId: string) => {
-    try {
-      await uninstallApp(appId);
-      const installed = await getInstalledApps?.() ?? [];
-      setInstalledIds(new Set(installed.map((a: AppItem) => a.id)));
-    } catch (err) {
-      console.error('[Categories] uninstall error:', err);
-    }
-  }, [uninstallApp, getInstalledApps]);
-
-  const renderApp = useCallback(({ item }: { item: AppItem }) => (
-    <AppCard
-      app={item}
-      installed={installedIds.has(item.id)}
-      installing={installingId === item.id}
-      onInstall={() => handleInstall(item)}
-      onUninstall={() => handleUninstall(item.id)}
-      onPress={() => router.push(`/appstore/${item.id}` as any)}
-    />
-  ), [installedIds, installingId, handleInstall, handleUninstall, router]);
-
-  if (loading && !refreshing) {
-    return (
-      <View style={[styles.center, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-      </View>
-    );
-  }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Categories</Text>
-      </View>
-
-      {/* Category Selector */}
-      <FlatList
-        horizontal
-        data={CATEGORIES}
-        keyExtractor={item => item.id}
-        showsHorizontalScrollIndicator={false}
-        style={styles.catList}
-        contentContainerStyle={styles.catContent}
-        renderItem={({ item }) => (
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.title}>Categories</Text>
+        {CATEGORIES.map(cat => (
           <TouchableOpacity
-            style={[styles.catBtn, activeCategory === item.id && styles.catBtnActive]}
-            onPress={() => setActiveCategory(item.id)}
+            key={cat.id}
+            style={styles.card}
+            onPress={() => router.push(`/appstore/search?category=${cat.id}`)}
           >
-            <Text style={styles.catIcon}>{item.icon}</Text>
-            <Text style={[styles.catLabel, activeCategory === item.id && styles.catLabelActive]}>
-              {item.label}
-            </Text>
+            <View style={[styles.iconBox, { backgroundColor: cat.color }]}>
+              <Ionicons name={cat.icon} size={28} color="#fff" />
+            </View>
+            <Text style={styles.name}>{cat.name}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </TouchableOpacity>
-        )}
-      />
-
-      {/* Apps in Category */}
-      <FlatList
-        data={categoryApps}
-        keyExtractor={item => item.id}
-        renderItem={renderApp}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.gridContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyEmoji}>📭</Text>
-            <Text style={styles.emptyTitle}>No apps yet</Text>
-            <Text style={styles.emptySub}>
-              No apps available in {CATEGORIES.find(c => c.id === activeCategory)?.label}.
-            </Text>
-          </View>
-        }
-      />
-    </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    paddingHorizontal: SIZES.md,
-    paddingTop: SIZES.md,
-    paddingBottom: SIZES.sm,
-  },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text },
-  catList: { maxHeight: 80, marginTop: SIZES.sm },
-  catContent: { paddingHorizontal: SIZES.md, gap: SIZES.sm },
-  catBtn: {
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scroll: { padding: 16 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 20 },
+  card: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.sm,
-    borderRadius: SIZES.md,
-    backgroundColor: COLORS.surface,
-    minWidth: 72,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
-  catBtnActive: { backgroundColor: COLORS.primary },
-  catIcon: { fontSize: 24, marginBottom: 4 },
-  catLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textSecondary },
-  catLabelActive: { color: '#fff', fontFamily: FONTS.bold },
-  columnWrapper: { justifyContent: 'space-between', paddingHorizontal: SIZES.md },
-  gridContent: { paddingBottom: SIZES.xl },
-  emptyBox: { alignItems: 'center', marginTop: SIZES.xl * 2, paddingHorizontal: SIZES.xl },
-  emptyEmoji: { fontSize: 48, marginBottom: SIZES.md },
-  emptyTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: SIZES.xs },
-  emptySub: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary, textAlign: 'center' },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  name: { color: '#fff', fontSize: 16, fontWeight: '600', flex: 1 },
 });
+

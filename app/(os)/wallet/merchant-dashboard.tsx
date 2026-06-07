@@ -181,25 +181,25 @@ export default function MerchantDashboardScreen() {
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics")}>
             <View style={[styles.actionIcon, { backgroundColor: '#1E3A5F' }]}>
               <Ionicons name="qr-code" size={20} color="#60A5FA" />
             </View>
             <Text style={styles.actionText}>Receive</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics")}>
             <View style={[styles.actionIcon, { backgroundColor: '#064E3B' }]}>
               <Ionicons name="send" size={20} color="#34D399" />
             </View>
             <Text style={styles.actionText}>Send</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics")}>
             <View style={[styles.actionIcon, { backgroundColor: '#451A03' }]}>
               <Ionicons name="people" size={20} color="#FBBF24" />
             </View>
             <Text style={styles.actionText}>Customers</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-customers")}>
             <View style={[styles.actionIcon, { backgroundColor: '#312E81' }]}>
               <Ionicons name="settings" size={20} color="#A78BFA" />
             </View>
@@ -408,3 +408,4 @@ const styles = StyleSheet.create({
   },
   txStatusText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
 });
+

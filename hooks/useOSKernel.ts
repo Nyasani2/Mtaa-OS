@@ -9,7 +9,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Transport',
     description: 'Book rides across Africa. Safe, affordable, and instant.',
     icon: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
-    bannerImage: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.8,
     reviews: 12400,
     size: '24 MB',
@@ -24,7 +24,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Transport',
     description: 'Freight & logistics. Move goods across borders.',
     icon: 'https://cdn-icons-png.flaticon.com/512/3093/3093990.png',
-    bannerImage: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.6,
     reviews: 8300,
     size: '28 MB',
@@ -39,7 +39,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Finance',
     description: 'M-Pesa, banks, crypto, escrow, savings & loans.',
     icon: 'https://cdn-icons-png.flaticon.com/512/3037/3037156.png',
-    bannerImage: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.9,
     reviews: 25600,
     size: '18 MB',
@@ -54,7 +54,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Social',
     description: 'Community groups, events, and local networking.',
     icon: 'https://cdn-icons-png.flaticon.com/512/2922/2922506.png',
-    bannerImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.5,
     reviews: 6700,
     size: '22 MB',
@@ -69,7 +69,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Productivity',
     description: 'Buy & sell goods. Local marketplace.',
     icon: 'https://cdn-icons-png.flaticon.com/512/1170/1170678.png',
-    bannerImage: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.4,
     reviews: 9200,
     size: '20 MB',
@@ -84,7 +84,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Health',
     description: 'Telemedicine, records, appointments, insurance.',
     icon: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
-    bannerImage: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.7,
     reviews: 5400,
     size: '26 MB',
@@ -99,7 +99,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Education',
     description: 'Courses, certificates, and skills training.',
     icon: 'https://cdn-icons-png.flaticon.com/512/3048/3048386.png',
-    bannerImage: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.6,
     reviews: 4100,
     size: '30 MB',
@@ -114,7 +114,7 @@ const MOCK_CATALOG: AppItem[] = [
     category: 'Government',
     description: 'Government services, ID, permits, courts.',
     icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-    bannerImage: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=800',
+    bannerImage: require('@/assets/images/default-banner.png'), // TODO: Replace with real banner asset
     rating: 4.3,
     reviews: 3200,
     size: '19 MB',
@@ -206,3 +206,4 @@ export function useOSKernel(): UseOSKernelReturn {
 
   return { kernel, loading, error };
 }
+

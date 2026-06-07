@@ -10,6 +10,8 @@ import { AgentState, ToolDefinition, ToolExecution, ToolResult } from './types';
 import { ASISEventBus } from '../core/event-bus';
 import { ASISSecurityLayer } from '../security/security-layer';
 import { generateId } from '../shared/utils';
+import { Text } from 'react-native';
+
 
 export abstract class BaseAgent implements IASISAgent {
   abstract readonly name: string;

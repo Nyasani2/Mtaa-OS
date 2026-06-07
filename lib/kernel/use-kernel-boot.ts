@@ -1,32 +1,23 @@
-// lib/kernel/use-kernel-boot.ts
-import { useEffect, useState } from 'react';
-import { useIdentity } from '@/lib/auth/identity';
+// lib/kernel/use-kernel-boot.ts — Kernel boot sequence
+import { useCallback, useEffect, useState } from 'react';
 import { useOSShell } from '@/lib/shell/use-os-shell';
 
 export function useKernelBoot() {
-  const identity = useIdentity();
-  const shell = useOSShell();
-  const [booted, setBooted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, isUnlocked } = useOSShell();
+  const [isReady, setIsReady] = useState(false);
+
+  const boot = useCallback(async () => {
+    // Kernel boot: wait for auth + pin unlock
+    if (isAuthenticated && isUnlocked) {
+      setIsReady(true);
+    } else {
+      setIsReady(false);
+    }
+  }, [isAuthenticated, isUnlocked]);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        await shell.boot();
-        setBooted(true);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Boot failed');
-      }
-    };
-    init();
-  }, [shell]);
+    boot();
+  }, [boot]);
 
-  return {
-    booted,
-    error,
-    isLoading: identity.isLoading || shell.isBooting,
-    isReady: booted && !identity.isLoading && !shell.isLocked,
-    user: identity.user,
-    session: identity.session,
-  };
+  return { isReady, boot };
 }

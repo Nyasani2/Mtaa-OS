@@ -28,7 +28,7 @@ export class ConversationalOnboarding {
         title: isClaimContext ? 'You have money waiting!' : 'Welcome to MTAA',
         description: isClaimContext
           ? `${senderName} sent you ${this.formatMoney(claimAmount, currency)}. Let's get you set up to claim it.`
-          : 'Welcome! I'm ASIS, your guide. Let's set up your wallet in a few simple steps.',
+          : `Welcome! I'm ASIS, your guide. Let's set up your wallet in a few simple steps.`,
         action: 'show_welcome',
         completed: false,
         skippable: false,

@@ -25,7 +25,7 @@ export function AgricultureNav() {
           <TouchableOpacity
             key={index}
             style={styles.navItem}
-            onPress={() => router.push(item.path as any)}
+            onPress={() => router.push(item.path)}
           >
             <item.icon size={20} color={isActive ? "#059669" : "#94A3B8"} />
             <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>{item.label}</Text>
@@ -49,3 +49,4 @@ const styles = StyleSheet.create({
   navLabel: { fontSize: 10, color: "#94A3B8", marginTop: 2 },
   navLabelActive: { color: "#059669", fontWeight: "600" },
 });
+

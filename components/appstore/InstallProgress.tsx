@@ -77,7 +77,7 @@ export function InstallProgress({ appName, appSize, progress, status, onCancel, 
       <View style={styles.card}>
         {/* Status Icon */}
         <View style={[styles.iconContainer, { backgroundColor: getStatusColor() + '20' }]}>
-          <Feather name={getStatusIcon() as any} size={28} color={getStatusColor()} />
+          <Feather name={getStatusIcon()} size={28} color={getStatusColor()} />
         </View>
 
         {/* Info */}
@@ -205,3 +205,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+

@@ -4,6 +4,8 @@
  */
 
 import { StreamConfig, StreamState, StreamEvent } from './types';
+import { Text } from 'react-native';
+
 
 export class ASISStreamHandler {
   private _config: StreamConfig;
@@ -49,7 +51,7 @@ export class ASISStreamHandler {
     abort: () => void;
     state: StreamState;
   } {
-    const abortController = new AbortController();
+    const abortController = new AbortController() /* RN 0.60+ has native AbortController */;
     const state: StreamState = {
       isActive: true,
       chunks: [],

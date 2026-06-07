@@ -65,7 +65,7 @@ export default function DriverHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-requests" as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-requests")}>
           <List size={20} color="#f59e0b" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Ride Requests</Text>
@@ -74,7 +74,7 @@ export default function DriverHome() {
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-ride" as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-ride")}>
           <Car size={20} color="#3b82f6" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Current Ride</Text>
@@ -83,7 +83,7 @@ export default function DriverHome() {
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-earnings" as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-earnings")}>
           <TrendingUp size={20} color="#10b981" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Earnings Details</Text>
@@ -138,3 +138,4 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6 },
   profileText: { marginLeft: 10, fontSize: 14, color: "#e2e8f0" },
 });
+

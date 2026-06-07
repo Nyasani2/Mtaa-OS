@@ -12,7 +12,7 @@ export const TribeMemberList: React.FC<Props> = ({ members }) => (
     keyExtractor={item => item.id}
     renderItem={({ item }) => (
       <View style={styles.row}>
-        <Image source={{ uri: item.profile?.avatar_url || 'https://via.placeholder.com/40' }} style={styles.avatar} />
+        <Image source={{ uri: item.profile?.avatar_url || require('@/assets/images/default-avatar-small.png') }} style={styles.avatar} />
         <View>
           <Text style={styles.name}>{item.profile?.full_name || 'Member'}</Text>
           <Text style={styles.role}>{item.role} • {item.membership_status}</Text>
@@ -28,3 +28,4 @@ const styles = StyleSheet.create({
   name: { color: '#fff', fontWeight: 'bold' },
   role: { color: '#a0a0a0', fontSize: 12, marginTop: 2 }
 });
+

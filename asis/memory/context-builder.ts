@@ -17,6 +17,8 @@ import {
 } from '../types';
 import { MemoryEngine } from './memory-engine';
 import { SemanticSearch } from './semantic-search';
+import { Text } from 'react-native';
+
 
 export class ContextBuilder {
   private memoryEngine: MemoryEngine;

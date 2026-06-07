@@ -15,6 +15,8 @@ import {
   AuditLogEntry,
 } from '../types/privacy.types';
 import { EventBus } from '../kernel/event-bus';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export class PrivacyGate {
   private userId: string;
@@ -238,9 +240,9 @@ export class PrivacyGate {
   }
 
   private loadSettings(): PrivacySettings {
-    // Load from localStorage or return defaults
+    // Load from AsyncStorage or return defaults
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`asis_privacy_${this.userId}`);
+      const saved = AsyncStorage.getItem(`asis_privacy_${this.userId}`);
       if (saved) return JSON.parse(saved);
     }
 
@@ -259,13 +261,13 @@ export class PrivacyGate {
 
   private saveSettings(): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`asis_privacy_${this.userId}`, JSON.stringify(this.settings));
+      AsyncStorage.setItem(`asis_privacy_${this.userId}`, JSON.stringify(this.settings));
     }
   }
 
   private loadConsents(): void {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`asis_consents_${this.userId}`);
+      const saved = AsyncStorage.getItem(`asis_consents_${this.userId}`);
       if (saved) {
         const data = JSON.parse(saved);
         for (const [scope, record] of Object.entries(data)) {
@@ -281,7 +283,7 @@ export class PrivacyGate {
       for (const [scope, record] of this.consents) {
         data[scope] = record;
       }
-      localStorage.setItem(`asis_consents_${this.userId}`, JSON.stringify(data));
+      AsyncStorage.setItem(`asis_consents_${this.userId}`, JSON.stringify(data));
     }
   }
 }

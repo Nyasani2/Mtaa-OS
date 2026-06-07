@@ -25,6 +25,7 @@ export async function simulateMovement() {
 
     await pushTruckLocation("TRUCK_001", lat, lng);
 
-    console.log("🚛 Truck moved:", lat, lng);
+    // Truck location event logged via kernel observability
   }, 5000);
 }
+

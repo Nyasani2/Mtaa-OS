@@ -1,61 +1,55 @@
-# MTAA Error Fix Batch v2
+# MTAA Admin Diagnostics Dashboard
 
-Fixes 704 TypeScript errors in MTAA OS.
+## Files
 
-## What This Fixes
+| File | Destination |
+|------|-------------|
+| `app/(os)/admin/diagnostics.tsx` | `~/MTAA_OS_V10/app/(os)/admin/diagnostics.tsx` |
+| `components/admin/DiagnosticsButton.tsx` | `~/MTAA_OS_V10/components/admin/DiagnosticsButton.tsx` |
 
-| Category | Errors Fixed | Files |
-|----------|-------------|-------|
-| tsconfig excludes | 40+ | Deno edge functions, old lib/mtaa/ |
-| AppPermission union | 120+ | All manifest files |
-| Missing courts types | 60+ | types/courts.ts |
-| Missing prisons types | 60+ | types/prisons.ts |
-| Missing transport types | 5 | types/transport.ts |
-| Missing utils | 10+ | formatCurrency, formatDate, etc. |
-| Missing wallet store | 5 | hooks/useWalletStore.ts |
-| Missing health services | 80+ | domains/health/services/ |
-| Missing shop services | 50+ | domains/shop/services/ |
-| Missing courts services | 40+ | lib/civic/courts/services/ |
-| Missing prisons services | 40+ | lib/civic/prisons/services/ |
-| Missing app files | 30+ | AppStore, Education, Binance |
-| Missing packages | 30+ | lucide-react, next/link, next/navigation |
-| Router type issues | 20+ | Cast fixes |
-| Missing hooks | 20+ | useUser, useNotification, etc. |
-
-## Installation
+## Install
 
 ```bash
-# 1. Download and extract the ZIP to your project root
 cd ~/MTAA_OS_V10
-unzip mtaa-error-fix-batch-v2.zip
+mkdir -p app/(os)/admin components/admin
 
-# 2. Run the installer
-bash mtaa-error-fix-batch-v2/install.sh
+# Extract files
+unzip -o mtaa_admin_diagnostics.zip
 
-# 3. Install package stubs (if needed)
-bash mtaa-error-fix-batch-v2/install-stubs.sh
-
-# 4. Check remaining errors
-npx tsc --noEmit
+# Or copy manually:
+cp app/\(os\)/admin/diagnostics.tsx ~/MTAA_OS_V10/app/\(os\)/admin/
+cp components/admin/DiagnosticsButton.tsx ~/MTAA_OS_V10/components/admin/
 ```
 
-## Expected Result
+## Usage
 
-This should drop you from **704 → ~100-200 errors**. The remaining errors will be:
+In your home screen:
 
-- Specific component prop mismatches (need your actual component code)
-- Router `.push()` type issues on dynamic routes
-- Missing `@/types/*` for other modules
+```tsx
+import { DiagnosticsButton } from '@/components/admin/DiagnosticsButton';
 
-## Manual Fixes for Remaining Errors
-
-If router.push errors persist, add this to the top of affected files:
-
-```typescript
-const router = useRouter() as any;
+// In JSX:
+<DiagnosticsButton />
 ```
 
-Or cast individual calls:
-```typescript
-(router as any).push("/(os)/home");
+Or manually:
+
+```tsx
+import { useRouter } from 'expo-router';
+const router = useRouter();
+
+<TouchableOpacity onPress={() => router.push('/(os)/admin/diagnostics')}>
+  <Text>🔧 Diagnostics</Text>
+</TouchableOpacity>
 ```
+
+## Admin Gate
+
+Only users with `role === 'admin'` or `is_super_admin === true` can access.
+Non-admins see 🚫 screen.
+
+## Layers
+
+1. Kernel (event bus, registry, boot sequence, panic handler, safe mode)
+2. Auth & Identity (auth store, session)
+3-20. Placeholder — expand as we audit

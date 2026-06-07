@@ -59,10 +59,10 @@ export function SearchOverlay({ visible, onClose }: SearchOverlayProps) {
   }, [recent]);
 
   const handleInstall = (appId: string) => installApp(appId);
-  const handleOpen = (route: string) => router.push(route as any);
+  const handleOpen = (route: string) => router.push(route);
   const handleAppPress = (appId: string) => {
     onClose();
-    router.push(`/(os)/appstore/${appId}` as any);
+    router.push(`/(os)/appstore/${appId}`);
   };
 
   if (!visible) return null;
@@ -155,10 +155,10 @@ export function SearchOverlay({ visible, onClose }: SearchOverlayProps) {
                   style={[styles.categoryChip, { borderColor: cat.color + '40' }]}
                   onPress={() => {
                     onClose();
-                    router.push(`/(os)/appstore/categories?category=${cat.name.toLowerCase()}` as any);
+                    router.push(`/(os)/appstore/categories?category=${cat.name.toLowerCase()}`);
                   }}
                 >
-                  <Feather name={cat.icon as any} size={16} color={cat.color} />
+                  <Feather name={cat.icon} size={16} color={cat.color} />
                   <Text style={styles.categoryChipText}>{cat.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -347,3 +347,4 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 });
+

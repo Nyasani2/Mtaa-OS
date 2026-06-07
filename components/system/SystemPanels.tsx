@@ -14,7 +14,7 @@ export default function SystemPanels() {
   return (
     <View style={styles.container}>
       {panels.map((panel) => (
-        <TouchableOpacity key={panel.route} style={styles.panel} onPress={() => router.push(panel.route as any)}>
+        <TouchableOpacity key={panel.route} style={styles.panel} onPress={() => router.push(panel.route)}>
           <Text style={styles.icon}>{panel.icon}</Text>
           <Text style={styles.title}>{panel.title}</Text>
         </TouchableOpacity>
@@ -29,3 +29,4 @@ const styles = StyleSheet.create({
   icon: { fontSize: 24, marginBottom: 8 },
   title: { fontSize: 12, fontWeight: '600' }
 });
+

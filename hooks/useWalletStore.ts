@@ -1,62 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { create } from 'zustand';
 
-export interface Wallet {
+interface Transaction {
   id: string;
-  user_id: string;
+  type: string;
+  amount: number;
+  to: string | null;
+  from: string | null;
+  created_at: string;
+}
+
+interface WalletState {
   balance: number;
   currency: string;
-  status: 'active' | 'frozen' | 'closed';
-  created_at: string;
+  transactions: Transaction[];
+  send: (to: string, amount: number) => Promise<void>;
+  receive: (from: string, amount: number) => Promise<void>;
 }
 
-export interface WalletTransaction {
-  id: string;
-  wallet_id: string;
-  type: 'credit' | 'debit';
-  amount: number;
-  description: string;
-  status: 'pending' | 'completed' | 'failed';
-  created_at: string;
-}
+export const useWalletStore = create<WalletState>((set) => ({
+  balance: 1000.00,
+  currency: 'KES',
+  transactions: [
+    { id: '1', type: 'deposit', amount: 1000, to: null, from: 'bank', created_at: '2026-06-01' },
+  ],
+  send: async (to, amount) => {
+    set((state) => ({
+      balance: state.balance - amount,
+      transactions: [
+        { id: Date.now().toString(), type: 'send', amount: -amount, to, from: null, created_at: new Date().toISOString() },
+        ...state.transactions,
+      ],
+    }));
+  },
+  receive: async (from, amount) => {
+    set((state) => ({
+      balance: state.balance + amount,
+      transactions: [
+        { id: Date.now().toString(), type: 'receive', amount, to: null, from, created_at: new Date().toISOString() },
+        ...state.transactions,
+      ],
+    }));
+  },
+}));
 
-export function useWalletStore() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setWallet(null); setTransactions([]); return; }
-
-      const { data: walletData } = await supabase.from('wallets').select('*').eq('user_id', user.id).single();
-      setWallet(walletData);
-
-      if (walletData) {
-        const { data: txData } = await supabase.from('transactions').select('*').eq('wallet_id', walletData.id).order('created_at', { ascending: false }).limit(50);
-        setTransactions(txData || []);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const transfer = useCallback(async (recipientPhone: string, amount: number, description?: string) => {
-    const { data, error } = await supabase.functions.invoke('transfer-funds', {
-      body: { recipientPhone, amount, description },
-    });
-    if (error) throw error;
-    await refresh();
-    return data;
-  }, [refresh]);
-
-  useEffect(() => { refresh(); }, [refresh]);
-
-  return { wallet, transactions, loading, error, refresh, transfer };
-}
+export default useWalletStore;

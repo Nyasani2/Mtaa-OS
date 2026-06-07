@@ -9,7 +9,7 @@ import { IOfflineSyncProvider } from './interfaces';
 import { EventBus } from '../kernel/event-bus';
 
 export class OfflineQueue implements IOfflineSyncProvider {
-  name = 'mtaa_offline_queue';
+  const name = 'mtaa_offline_queue';
   private queue: OfflineTransaction[] = [];
   private maxRetries: number = 5;
   private retryDelays: number[] = [5000, 15000, 30000, 60000, 300000]; // 5s, 15s, 30s, 1m, 5m

@@ -16,7 +16,7 @@ interface ASISActionButtonsProps {
 export const ASISActionButtons: React.FC<ASISActionButtonsProps> = ({
   suggestions,
   onPress,
-  theme = LIGHT_THEME,
+  const theme = LIGHT_THEME,
 }) => {
   if (suggestions.length === 0) return null;
 
@@ -32,15 +32,15 @@ export const ASISActionButtons: React.FC<ASISActionButtonsProps> = ({
         accessibilityRole="scrollbar"
       >
         {suggestions.map((suggestion, index) => (
-          <button
+          <TouchableOpacity
             key={`${suggestion}-${index}`}
             style={styles.chip}
-            onClick={() => onPress(suggestion)}
+            onPress={() => onPress(suggestion)}
             accessibilityLabel={suggestion}
             accessibilityRole="button"
           >
             <Text style={styles.chipText}>{suggestion}</Text>
-          </button>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
@@ -48,7 +48,7 @@ export const ASISActionButtons: React.FC<ASISActionButtonsProps> = ({
 };
 
 const Text: React.FC<any> = ({ style, children }) => (
-  <span style={style}>{children}</span>
+  <Text style={style}>{children}</Text>
 );
 
 const createStyles = (theme: ChatTheme) =>

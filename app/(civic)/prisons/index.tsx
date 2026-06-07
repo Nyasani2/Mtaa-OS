@@ -21,7 +21,7 @@ export default function PrisonsScreen() {
   const insets = useSafeAreaInsets();
 
   const handleService = (service: string) => {
-    Alert.alert('Coming Soon', `${service} module will be available in the next update`);
+    // Prisons module — implement actual navigation when ready
   };
 
   return (
@@ -103,3 +103,4 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 14, fontWeight: '700', color: '#FFF', marginBottom: 4 },
   serviceDesc: { fontSize: 12, color: '#94A3B8' },
 });
+

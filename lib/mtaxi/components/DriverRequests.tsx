@@ -20,7 +20,7 @@ export default function DriverRequests() {
     try {
       await accept(rideId);
       setPendingRides((prev) => prev.filter((r) => r.id !== rideId));
-      router.push({ pathname: "/(mtaxi)/driver-ride" as any, params: { rideId } });
+      router.push({ pathname: "/(mtaxi)/driver-ride", params: { rideId } });
     } catch (e: any) {
       // Error handled in hook
     }
@@ -111,3 +111,4 @@ const styles = StyleSheet.create({
   rejectText: { marginLeft: 8, color: "#ef4444", fontSize: 15, fontWeight: "600" },
   emptyText: { textAlign: "center", color: "#64748b", marginTop: 40, fontSize: 16 },
 });
+

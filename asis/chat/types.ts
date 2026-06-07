@@ -4,6 +4,8 @@
  */
 
 import { AgentResponse, AgentAction, ConversationMessage } from '../shared/types';
+import { Text } from 'react-native';
+
 
 // ============================================
 // CHAT UI TYPES
