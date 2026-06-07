@@ -58,14 +58,14 @@ export default function MessagesShell() {
   );
 
   const handleNewMessage = () => {
-    router.push("/communication/new-message" as any);
+    router.push("/communication/new-message");
   };
 
   const handleContactPress = (contact: ContactItem) => {
     router.push({
       pathname: "/communication/chat",
       params: { contactId: contact.id, name: contact.name, phone: contact.phone },
-    } as any);
+    });
   };
 
   const handleEnableSms = () => {
@@ -148,3 +148,4 @@ const styles = StyleSheet.create({
   contactPhone: { color: "#64748B", fontSize: 13, marginTop: 2 },
   emptyText: { color: "#64748B", textAlign: "center", marginTop: 40, fontSize: 15 },
 });
+

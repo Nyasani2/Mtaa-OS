@@ -1,2 +1,3 @@
-// lib/shell/use-os-shell.ts
-export { useOSShell, OSShellContext, OSShellProvider } from './os-shell-provider';
+// lib/shell/use-os-shell.ts — Clean re-exports
+export { useOSShell, OSShellProvider } from './os-shell-provider';
+// OSShellContext is internal — use useOSShell() hook instead

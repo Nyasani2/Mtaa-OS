@@ -16,7 +16,7 @@ export function CaseCard({ caseId, title, status, date }: CaseCardProps) {
   return (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => router.push(`/civic/police/cases/${caseId}` as any)}
+      onPress={() => router.push(`/civic/police/cases/${caseId}`)}
     >
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.status}>Status: {status}</Text>
@@ -31,3 +31,4 @@ const styles = StyleSheet.create({
   status: { fontSize: 14, color: '#666', marginTop: 4 },
   date: { fontSize: 12, color: '#999', marginTop: 2 },
 });
+

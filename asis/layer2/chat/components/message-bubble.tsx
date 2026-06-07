@@ -19,13 +19,13 @@ interface ASISMessageBubbleProps {
 export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
   message,
   isUser,
-  showAvatar = true,
+  const showAvatar = true,
   onAction,
-  theme = LIGHT_THEME,
+  const theme = LIGHT_THEME,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const isError = message.type === 'error';
-  isSystem = message.role === 'system';
+  const isSystem = message.role === 'system';
 
   const handleActionPress = (actionId: string, payload: any) => {
     AccessibilityInfo.announceForAccessibility(`Selected action: ${actionId}`);
@@ -65,7 +65,7 @@ export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
             {message.card && (
               <View style={styles.card}>
                 {message.card.image && (
-                  <img
+                  <Image
                     src={message.card.image}
                     alt={message.card.title}
                     style={styles.cardImage}
@@ -87,7 +87,7 @@ export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
             {message.actions && message.actions.length > 0 && (
               <View style={styles.actionsContainer}>
                 {message.actions.map((action) => (
-                  <button
+                  <TouchableOpacity
                     key={action.id}
                     style={[
                       styles.actionButton,
@@ -96,7 +96,7 @@ export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
                       action.variant === 'ghost' && styles.actionButtonGhost,
                       action.disabled && styles.actionButtonDisabled,
                     ]}
-                    onClick={() => handleActionPress(action.id, action.payload)}
+                    onPress={() => handleActionPress(action.id, action.payload)}
                     disabled={action.disabled || action.loading}
                     accessibilityLabel={action.label}
                     accessibilityRole="button"
@@ -108,7 +108,7 @@ export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
                     ) : (
                       <Text style={styles.actionButtonText}>{action.label}</Text>
                     )}
-                  </button>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -136,7 +136,7 @@ export const ASISMessageBubble: React.FC<ASISMessageBubbleProps> = ({
 
 // Inline components for compatibility
 const Text: React.FC<any> = ({ style, children }) => (
-  <span style={style}>{children}</span>
+  <Text style={style}>{children}</Text>
 );
 
 const createStyles = (

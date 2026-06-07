@@ -88,14 +88,14 @@ export class DataExportEngine {
       <html>
       <head><title>ASIS Data Export</title></head>
       <body>
-      <h1>Your ASIS Data Export</h1>
-      <p>Exported: ${(data as any).exportedAt}</p>
-      <hr/>
+      <Text>Your ASIS Data Export</Text>
+      <Text>Exported: ${(data as any).exportedAt}</Text>
+      <View style={{height:1,backgroundColor:"#ccc"}} />
     `;
 
     for (const [layer, entries] of Object.entries(data)) {
       if (typeof entries !== 'object') continue;
-      html += `<h2>${layer}</h2><table border="1">`;
+      html += `<Text>${layer}</Text><table border="1">`;
       html += '<tr><th>Key</th><th>Value</th><th>Scope</th><th>Created</th></tr>';
 
       for (const entry of entries as MemoryEntry[]) {

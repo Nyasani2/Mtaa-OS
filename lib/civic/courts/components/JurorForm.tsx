@@ -19,7 +19,7 @@ export default function JurorForm({ onSubmit }: Props) {
       id_number: idNumber,
       occupation,
       is_available: true
-    } as any);
+    });
     onSubmit?.();
   };
 
@@ -40,3 +40,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 8 }
 });
+

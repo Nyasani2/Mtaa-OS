@@ -1,4 +1,4 @@
-// hooks/useIdentity.ts
+// hooks/useAuthStore.ts — Unified Auth + Identity Hook
 import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
@@ -15,7 +15,7 @@ interface AuthStore {
   refresh: () => Promise<void>;
 }
 
-export const useIdentity = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   session: null,
   isLoading: true,
@@ -33,4 +33,6 @@ export const useIdentity = create<AuthStore>((set) => ({
   },
 }));
 
-export default useIdentity;
+// Alias for backward compatibility
+export const useIdentity = useAuthStore;
+export default useAuthStore;

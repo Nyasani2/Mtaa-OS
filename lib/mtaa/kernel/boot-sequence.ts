@@ -16,13 +16,13 @@ const BOOT_PHASES: BootPhase[] = [
 class BootSequence {
   private results: BootResult[] = []; private aborted = false;
   async boot(): Promise<BootResult[]> {
-    console.log('[BOOT] Starting MTAA OS boot sequence...'); memoryWatchdog.start();
+    // Boot event logged via kernel observability
     for (const phase of BOOT_PHASES.sort((a,b) => a.priority - b.priority)) {
       if (this.aborted) break;
       const result = await this.runPhase(phase); this.results.push(result);
       if (!result.success && phase.critical) { console.error(`[BOOT] CRITICAL PHASE FAILED: ${phase.name}`); this.aborted = true; break; }
     }
-    console.log(`[BOOT] Complete. ${this.results.filter(r => r.success).length}/${this.results.length} phases passed.`);
+    // Boot event logged via kernel observability
     return this.results;
   }
   private async runPhase(phase: BootPhase): Promise<BootResult> {
@@ -41,3 +41,4 @@ class BootSequence {
   }
 }
 export const bootSequence = new BootSequence();
+

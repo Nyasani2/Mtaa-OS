@@ -5,6 +5,8 @@
  */
 
 import { ChatMessage, MessageCard, ChatAction, RenderOptions, MarkdownConfig } from './types';
+import { Text } from 'react-native';
+
 
 export class ASISMessageRenderer {
   private _markdownConfig: MarkdownConfig;
@@ -68,7 +70,7 @@ export class ASISMessageRenderer {
    */
   private _renderText(content: string, options: RenderOptions): string {
     if (!this._markdownConfig.enabled) {
-      return this._escapeHtml(content).replace(/\n/g, '<br>');
+      return this._escapeHtml(content).replace(/\n/g, '');
     }
 
     let html = content;
@@ -78,13 +80,13 @@ export class ASISMessageRenderer {
 
     // Headers
     if (this._markdownConfig.maxHeadingLevel >= 1) {
-      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/^# (.*$)/gim, '<Text>$1</Text>');
     }
     if (this._markdownConfig.maxHeadingLevel >= 2) {
-      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^## (.*$)/gim, '<Text>$1</Text>');
     }
     if (this._markdownConfig.maxHeadingLevel >= 3) {
-      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^### (.*$)/gim, '<Text>$1</Text>');
     }
 
     // Bold and italic
@@ -103,17 +105,17 @@ export class ASISMessageRenderer {
     }
 
     // Lists
-    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    html = html.replace(/^\* (.*$)/gim, '<View>$1</View>');
+    html = html.replace(/(<View>.*<\/li>)/s, '<View>$1</View>');
 
     // Line breaks
-    html = html.replace(/\n/g, '<br>');
+    html = html.replace(/\n/g, '');
 
     // Compact mode: truncate if needed
     if (options.compact && options.maxLines > 0) {
-      const lines = html.split('<br>');
+      const lines = html.split('');
       if (lines.length > options.maxLines) {
-        html = lines.slice(0, options.maxLines).join('<br>') + '...';
+        html = lines.slice(0, options.maxLines).join('') + '...';
       }
     }
 
@@ -124,21 +126,21 @@ export class ASISMessageRenderer {
    * Renders a card component
    */
   private _renderCard(card: MessageCard, options: RenderOptions): string {
-    const parts: string[] = ['<div class="asis-card">'];
+    const parts: string[] = ['<View class="asis-card">'];
 
     if (card.image) {
-      parts.push(`<img src="${card.image}" alt="${card.title}" class="asis-card-image" />`);
+      parts.push(`<Image src="${card.image}" alt="${card.title}" class="asis-card-image" />`);
     }
 
-    parts.push('<div class="asis-card-content">');
+    parts.push('<View class="asis-card-content">');
     parts.push(`<h4 class="asis-card-title">${this._escapeHtml(card.title)}</h4>`);
 
     if (card.subtitle) {
-      parts.push(`<p class="asis-card-subtitle">${this._escapeHtml(card.subtitle)}</p>`);
+      parts.push(`<Text class="asis-card-subtitle">${this._escapeHtml(card.subtitle)}</Text>`);
     }
 
     if (card.description) {
-      parts.push(`<p class="asis-card-description">${this._renderText(card.description, options)}</p>`);
+      parts.push(`<Text class="asis-card-description">${this._renderText(card.description, options)}</Text>`);
     }
 
     if (card.metadata) {
@@ -150,13 +152,13 @@ export class ASISMessageRenderer {
       parts.push('</dl>');
     }
 
-    parts.push('</div>');
+    parts.push('</View>');
 
     if (card.actions) {
       parts.push(this._renderActions(card.actions));
     }
 
-    parts.push('</div>');
+    parts.push('</View>');
 
     return parts.join('\n');
   }
@@ -170,37 +172,37 @@ export class ASISMessageRenderer {
       const disabled = action.disabled ? 'disabled' : '';
       const loading = action.loading ? 'asis-btn-loading' : '';
 
-      return `<button 
+      return `<TouchableOpacity 
         class="asis-btn ${variantClass} ${loading}" 
         data-action-id="${action.id}"
         ${disabled}
       >
-        ${action.icon ? `<span class="asis-btn-icon">${action.icon}</span>` : ''}
-        <span class="asis-btn-label">${this._escapeHtml(action.label)}</span>
-      </button>`;
+        ${action.icon ? `<Text class="asis-btn-icon">${action.icon}</Text>` : ''}
+        <Text class="asis-btn-label">${this._escapeHtml(action.label)}</Text>
+      </TouchableOpacity>`;
     });
 
-    return `<div class="asis-actions">${buttons.join('')}</div>`;
+    return `<View class="asis-actions">${buttons.join('')}</View>`;
   }
 
   /**
    * Renders error message
    */
   private _renderError(content: string): string {
-    return `<div class="asis-error">
-      <span class="asis-error-icon">⚠️</span>
-      <span class="asis-error-text">${this._escapeHtml(content)}</span>
-    </div>`;
+    return `<View class="asis-error">
+      <Text class="asis-error-icon">⚠️</Text>
+      <Text class="asis-error-text">${this._escapeHtml(content)}</Text>
+    </View>`;
   }
 
   /**
    * Renders system message
    */
   private _renderSystem(content: string): string {
-    return `<div class="asis-system-message">
-      <span class="asis-system-icon">ℹ️</span>
-      <span class="asis-system-text">${this._escapeHtml(content)}</span>
-    </div>`;
+    return `<View class="asis-system-message">
+      <Text class="asis-system-icon">ℹ️</Text>
+      <Text class="asis-system-text">${this._escapeHtml(content)}</Text>
+    </View>`;
   }
 
   /**

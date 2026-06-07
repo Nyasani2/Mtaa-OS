@@ -35,12 +35,12 @@ export function AppStoreBottomNav() {
           <TouchableOpacity
             key={tab.name}
             style={styles.tab}
-            onPress={() => router.push(tab.route as any)}
+            onPress={() => router.push(tab.route)}
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, active && styles.iconContainerActive]}>
               <Feather
-                name={tab.icon as any}
+                name={tab.icon}
                 size={22}
                 color={active ? '#4ECDC4' : '#888'}
               />
@@ -97,3 +97,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

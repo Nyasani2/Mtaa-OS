@@ -21,7 +21,7 @@ export default function RiderHome() {
         <Text style={styles.subGreeting}>Where are you going today?</Text>
       </View>
 
-      <TouchableOpacity style={styles.searchBox} onPress={() => router.push("/(mtaxi)/request" as any)}>
+      <TouchableOpacity style={styles.searchBox} onPress={() => router.push("/(mtaxi)/request")}>
         <MapPin size={20} color="#666" />
         <Text style={styles.searchText}>Enter destination</Text>
         <ChevronRight size={20} color="#999" />
@@ -33,7 +33,7 @@ export default function RiderHome() {
           <TouchableOpacity
             key={place.id}
             style={styles.placeRow}
-            onPress={() => router.push({ pathname: "/(mtaxi)/request" as any, params: { dropoffLat: place.lat, dropoffLng: place.lng, dropoffAddress: place.address } })}
+            onPress={() => router.push({ pathname: "/(mtaxi)/request", params: { dropoffLat: place.lat, dropoffLng: place.lng, dropoffAddress: place.address } })}
           >
             <Clock size={18} color="#666" />
             <View style={styles.placeInfo}>
@@ -57,7 +57,7 @@ export default function RiderHome() {
             <TouchableOpacity
               key={r.type}
               style={styles.rideTypeCard}
-              onPress={() => router.push({ pathname: "/(mtaxi)/request" as any, params: { rideType: r.type } })}
+              onPress={() => router.push({ pathname: "/(mtaxi)/request", params: { rideType: r.type } })}
             >
               <r.icon size={28} color="#2563eb" />
               <View style={{ flex: 1, marginLeft: 12 }}>
@@ -72,7 +72,7 @@ export default function RiderHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Ride History</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/history" as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/history")}>
           <Clock size={18} color="#2563eb" />
           <Text style={styles.actionText}>View Past Rides</Text>
           <ChevronRight size={18} color="#999" />
@@ -81,7 +81,7 @@ export default function RiderHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/payment" as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/payment")}>
           <CreditCard size={18} color="#2563eb" />
           <Text style={styles.actionText}>Manage Payment Methods</Text>
           <ChevronRight size={18} color="#999" />
@@ -112,3 +112,4 @@ const styles = StyleSheet.create({
   actionBtn: { flexDirection: "row", alignItems: "center", padding: 14, backgroundColor: "#fff", borderRadius: 10 },
   actionText: { flex: 1, marginLeft: 12, fontSize: 15, fontWeight: "500", color: "#1a1a1a" },
 });
+

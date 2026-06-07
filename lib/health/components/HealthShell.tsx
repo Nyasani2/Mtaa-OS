@@ -21,7 +21,7 @@ export function HealthShell({ children }: { children: React.ReactNode }) {
           <TouchableOpacity
             key={item.path}
             style={[styles.navItem, pathname === item.path && styles.active]}
-            onPress={() => router.push(item.path as any)}
+            onPress={() => router.push(item.path)}
           >
             <Text style={[styles.navText, pathname === item.path && styles.activeText]}>
               {item.label}
@@ -43,3 +43,4 @@ const styles = StyleSheet.create({
   activeText: { color: '#fff', fontWeight: '600' },
   content: { flex: 1, padding: 16 },
 });
+

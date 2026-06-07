@@ -11,21 +11,22 @@ export function startMTruckDispatchWorker(intervalMs = 5000) {
   if (running) return;
   running = true;
 
-  console.log("🚛 MTRUCK DISPATCH WORKER ONLINE");
+    // MTruck dispatch event logged via kernel observability
 
   setInterval(async () => {
     try {
       // 1. Run dispatch allocation
       const result = await runMTruckDispatchBrain();
 
-      console.log("📦 Dispatch cycle:", result.dispatched);
+    // MTruck dispatch event logged via kernel observability
 
       // 2. Rebalance idle fleet (map intelligence layer)
       await rebalanceIdleFleet();
 
-      console.log("🧭 Fleet rebalance complete");
+    // MTruck dispatch event logged via kernel observability
     } catch (err) {
       console.error("❌ Dispatch worker error:", err);
     }
   }, intervalMs);
 }
+

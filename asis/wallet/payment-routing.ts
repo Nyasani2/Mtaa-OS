@@ -93,7 +93,7 @@ export class PaymentRouter {
     const reasons: Record<PaymentMethod, string> = {
       mtaa_wallet: 'Instant and free between MTAA wallets',
       bank_transfer: 'Secure bank transfer, 1-2 hours',
-      mobile_money: 'Direct to phone, recipient doesn't need MTAA',
+      mobile_money: `Direct to phone, recipient doesn't need MTAA`,
       cash_point: 'Withdraw cash at nearby agent',
       cross_border: 'Cross-border transfer with FX conversion',
     };

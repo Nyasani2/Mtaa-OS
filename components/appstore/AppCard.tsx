@@ -30,7 +30,7 @@ export function AppCard({ app, isInstalled, isInstalling, onInstall, onOpen, onP
     return (
       <TouchableOpacity style={styles.horizontalCard} onPress={() => onPress(app.id)} activeOpacity={0.7}>
         <View style={[styles.iconContainer, { backgroundColor: getIconBg(app.category) }]}>
-          <Feather name={app.icon as any} size={28} color="#fff" />
+          <Feather name={app.icon} size={28} color="#fff" />
         </View>
         <View style={styles.horizontalInfo}>
           <Text style={styles.name} numberOfLines={1}>{app.name}</Text>
@@ -59,7 +59,7 @@ export function AppCard({ app, isInstalled, isInstalling, onInstall, onOpen, onP
       <TouchableOpacity style={styles.fullCard} onPress={() => onPress(app.id)} activeOpacity={0.7}>
         <View style={styles.fullHeader}>
           <View style={[styles.iconContainerLarge, { backgroundColor: getIconBg(app.category) }]}>
-            <Feather name={app.icon as any} size={40} color="#fff" />
+            <Feather name={app.icon} size={40} color="#fff" />
           </View>
           <View style={styles.fullInfo}>
             <Text style={styles.fullName}>{app.name}</Text>
@@ -115,7 +115,7 @@ export function AppCard({ app, isInstalled, isInstalling, onInstall, onOpen, onP
   return (
     <TouchableOpacity style={styles.compactCard} onPress={() => onPress(app.id)} activeOpacity={0.7}>
       <View style={[styles.iconContainer, { backgroundColor: getIconBg(app.category) }]}>
-        <Feather name={app.icon as any} size={32} color="#fff" />
+        <Feather name={app.icon} size={32} color="#fff" />
       </View>
       <Text style={styles.name} numberOfLines={1}>{app.name}</Text>
       <Text style={styles.category}>{app.category}</Text>
@@ -366,3 +366,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

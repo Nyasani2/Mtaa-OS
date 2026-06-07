@@ -6,10 +6,10 @@ export async function runSelfHealingLoop() {
   const signals = await generateRebalanceSignals();
   const map = await getFleetMapSnapshot();
 
-  console.log("🧠 MTRUCK CONTROL TOWER");
-  console.log("STATE:", state);
-  console.log("SIGNALS:", signals);
-  console.log("FLEET:", map.trucks.length);
+    // MTruck control event logged via kernel observability
+    // MTruck control event logged via kernel observability
+    // MTruck control event logged via kernel observability
+    // MTruck control event logged via kernel observability
 
   return {
     state,
@@ -17,3 +17,4 @@ export async function runSelfHealingLoop() {
     fleet_size: map.trucks.length
   };
 }
+

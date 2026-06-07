@@ -22,10 +22,10 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
   onSend,
   onVoiceStart,
   onVoiceEnd,
-  disabled = false,
-  placeholder = 'Ask ASIS anything...',
-  maxLength = 2000,
-  theme = LIGHT_THEME,
+  const disabled = false,
+  const placeholder = 'Ask ASIS anything...',
+  const maxLength = 2000,
+  const theme = LIGHT_THEME,
 }) => {
   const [text, setText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -68,12 +68,12 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
       <View style={styles.inputContainer}>
         {/* Voice button */}
         {onVoiceStart && (
-          <button
+          <TouchableOpacity
             style={[
               styles.voiceButton,
               isRecording && styles.voiceButtonActive,
             ]}
-            onClick={handleVoicePress}
+            onPress={handleVoicePress}
             disabled={disabled}
             accessibilityLabel={isRecording ? 'Stop recording' : 'Start voice input'}
             accessibilityRole="button"
@@ -81,7 +81,7 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
             <Text style={styles.voiceButtonText}>
               {isRecording ? '⏹' : '🎤'}
             </Text>
-          </button>
+          </TouchableOpacity>
         )}
 
         {/* Text input */}
@@ -90,7 +90,7 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
             ref={inputRef}
             style={styles.input}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChangeText={(e) => setText(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={disabled ? 'Please wait...' : placeholder}
             maxLength={maxLength}
@@ -107,18 +107,18 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
         </View>
 
         {/* Send button */}
-        <button
+        <TouchableOpacity
           style={[
             styles.sendButton,
             canSend ? styles.sendButtonActive : styles.sendButtonDisabled,
           ]}
-          onClick={handleSend}
+          onPress={handleSend}
           disabled={!canSend}
           accessibilityLabel="Send message"
           accessibilityRole="button"
         >
           <Text style={styles.sendButtonText}>➤</Text>
-        </button>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -126,7 +126,7 @@ export const ASISChatInput: React.FC<ASISChatInputProps> = ({
 
 // Inline components
 const Text: React.FC<any> = ({ style, children }) => (
-  <span style={style}>{children}</span>
+  <Text style={style}>{children}</Text>
 );
 
 const createStyles = (theme: ChatTheme) =>

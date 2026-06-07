@@ -1,6 +1,5 @@
-// app/(mtaxi)/index.tsx
-import RiderHome from "@/lib/mtaxi/components/RiderHome";
+import BodaHome from '@/lib/mtaxi/components/BodaHome';
 
-export default function MTaxiHome() {
-  return <RiderHome />;
+export default function MTaxiScreen() {
+  return <BodaHome />;
 }

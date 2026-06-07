@@ -1,131 +1,47 @@
+// domains/phone/state/phoneStore.ts — Phone State
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { supabase } from '@/lib/supabase/client';
-import { osShell } from '@/lib/shell/osShell';
 
-interface Call {
+export interface Contact {
   id: string;
-  number: string;
-  name?: string;
-  status: 'dialing' | 'ringing' | 'connected' | 'ended';
-  duration: string;
-  startTime: number;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  avatar?: string;
 }
 
-interface CallLog {
+export interface CallLog {
   id: string;
-  number: string;
-  name?: string;
+  contactId: string;
   type: 'incoming' | 'outgoing' | 'missed';
+  duration: number;
   timestamp: string;
-  duration?: string;
 }
 
 interface PhoneState {
-  activeCall: Call | null;
+  contacts: Contact[];
   callLogs: CallLog[];
-  makeCall: (number: string, name?: string) => void;
+  activeCall: Contact | null;
+  isDialing: boolean;
+  addContact: (contact: Omit<Contact, 'id'>) => void;
+  removeContact: (id: string) => void;
+  startCall: (contact: Contact) => void;
   endCall: () => void;
-  deleteLog: (id: string) => void;
-  addLog: (log: CallLog) => void;
-  loadLogs: () => Promise<void>;
 }
 
-export const usePhoneStore = create<PhoneState>()(
-  persist(
-    (set, get) => ({
-      activeCall: null,
-      callLogs: [],
+export const usePhoneStore = create<PhoneState>((set) => ({
+  contacts: [],
+  callLogs: [],
+  activeCall: null,
+  isDialing: false,
+  addContact: (contact) => set((state) => ({
+    contacts: [...state.contacts, { ...contact, id: Date.now().toString() }],
+  })),
+  removeContact: (id) => set((state) => ({
+    contacts: state.contacts.filter((c) => c.id !== id),
+  })),
+  startCall: (contact) => set({ activeCall: contact, isDialing: true }),
+  endCall: () => set({ activeCall: null, isDialing: false }),
+}));
 
-      makeCall: (number, name) => {
-        const call: Call = {
-          id: `call_${Date.now()}`,
-          number,
-          name,
-          status: 'dialing',
-          duration: '00:00',
-          startTime: Date.now(),
-        };
-        set({ activeCall: call });
-
-        // Simulate call progression
-        setTimeout(() => {
-          set((s) => ({
-            activeCall: s.activeCall ? { ...s.activeCall, status: 'ringing' } : null,
-          }));
-        }, 1500);
-
-        setTimeout(() => {
-          set((s) => ({
-            activeCall: s.activeCall ? { ...s.activeCall, status: 'connected' } : null,
-          }));
-          // Start duration timer
-          const timer = setInterval(() => {
-            set((s) => {
-              if (!s.activeCall) { clearInterval(timer); return s; }
-              const elapsed = Math.floor((Date.now() - s.activeCall.startTime) / 1000);
-              const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
-              const secs = (elapsed % 60).toString().padStart(2, '0');
-              return {
-                activeCall: { ...s.activeCall, duration: `${mins}:${secs}` },
-              };
-            });
-          }, 1000);
-        }, 4000);
-
-        osShell.emit('phone:call:initiated', { number, name });
-      },
-
-      endCall: () => {
-        const { activeCall, callLogs } = get();
-        if (!activeCall) return;
-
-        const log: CallLog = {
-          id: `log_${Date.now()}`,
-          number: activeCall.number,
-          name: activeCall.name,
-          type: 'outgoing',
-          timestamp: new Date().toLocaleString(),
-          duration: activeCall.duration,
-        };
-
-        set({
-          activeCall: null,
-          callLogs: [log, ...callLogs].slice(0, 100),
-        });
-
-        osShell.emit('phone:call:ended', { log });
-      },
-
-      deleteLog: (id) => {
-        set((s) => ({ callLogs: s.callLogs.filter((l) => l.id !== id) }));
-      },
-
-      addLog: (log) => {
-        set((s) => ({ callLogs: [log, ...s.callLogs].slice(0, 100) }));
-      },
-
-      loadLogs: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase
-          .from('call_logs')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(100);
-        if (data) {
-          set({ callLogs: data.map((d: any) => ({
-            id: d.id,
-            number: d.number,
-            name: d.name,
-            type: d.type,
-            timestamp: new Date(d.created_at).toLocaleString(),
-            duration: d.duration,
-          })) });
-        }
-      },
-    }),
-    { name: 'mtaa-phone-store' }
-  )
-);
+export default usePhoneStore;

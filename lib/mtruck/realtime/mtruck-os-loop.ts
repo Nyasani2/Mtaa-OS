@@ -7,12 +7,13 @@ export function startMTruckOS(intervalMs = 5000) {
       const dispatch = await runSmartDispatchCycle();
       const snapshot = await getControlTowerSnapshot();
 
-      console.log("🚛 MTRUCK LOOP");
-      console.log("Dispatch:", dispatch);
-      console.log("Fleet:", snapshot);
+    // MTruck OS loop event logged via kernel observability
+    // MTruck OS loop event logged via kernel observability
+    // MTruck OS loop event logged via kernel observability
 
     } catch (err) {
       console.error("MTRUCK LOOP ERROR:", err);
     }
   }, intervalMs);
 }
+

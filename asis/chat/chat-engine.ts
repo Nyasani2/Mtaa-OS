@@ -19,6 +19,8 @@ import {
   MessageStatus,
 } from './types';
 import { sanitizeInput, generateId } from '../shared/utils';
+import { View } from 'react-native';
+
 
 export interface ChatEngineOptions {
   asis: ASIS;

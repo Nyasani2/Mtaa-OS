@@ -1,5 +1,7 @@
 import { BaseAgent, AgentResponse, UserContext } from './base-agent';
 import { IntentClassification } from './routing/intent-classifier';
+import { Text } from 'react-native';
+
 
 export class NavigatorAgent extends BaseAgent {
   private _faqDatabase: Map<string, string> = new Map();

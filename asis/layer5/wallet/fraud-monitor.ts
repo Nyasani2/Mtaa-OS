@@ -228,7 +228,7 @@ export class FraudMonitor {
    */
   getAlerts(userId: string, status?: FraudAlert['status']): FraudAlert[] {
     return this.alerts.filter(
-      a => a.userId === userId && (!status || a.status === status)
+      const a => a.userId === userId && (!status || a.status === status)
     );
   }
 

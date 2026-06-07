@@ -1,247 +1,98 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-  Alert,
-} from 'react-native';
+// app/(os)/settings/index.tsx — Settings Home
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/hooks/useAuth';
-import { useOSKernel } from '@/hooks/useOSKernel';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
-
-const SETTINGS_SECTIONS = [
-  {
-    title: 'Account',
-    items: [
-      { id: 'profile', label: 'Profile', icon: 'person-outline', route: '/settings/profile' },
-      { id: 'security', label: 'Security & PIN', icon: 'lock-closed-outline', route: '/settings/security' },
-      { id: 'kyc', label: 'Identity Verification', icon: 'id-card-outline', route: '/settings/kyc' },
-    ],
-  },
-  {
-    title: 'Preferences',
-    items: [
-      { id: 'notifications', label: 'Notifications', icon: 'notifications-outline', route: '/settings/notifications' },
-      { id: 'language', label: 'Language', icon: 'language-outline', route: '/settings/language' },
-      { id: 'theme', label: 'Appearance', icon: 'color-palette-outline', route: '/settings/theme' },
-    ],
-  },
-  {
-    title: 'System',
-    items: [
-      { id: 'storage', label: 'Storage & Cache', icon: 'server-outline', route: '/settings/storage' },
-      { id: 'about', label: 'About MTAA OS', icon: 'information-circle-outline', route: '/settings/about' },
-      { id: 'help', label: 'Help & Support', icon: 'help-circle-outline', route: '/settings/help' },
-    ],
-  },
-];
+import { useIdentity } from '@/hooks/useAuthStore';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
-  const { kernel } = useOSKernel();
+  const { user, signOut } = useIdentity();
 
-  const [biometrics, setBiometrics] = useState(false);
-  const [analytics, setAnalytics] = useState(true);
-
-  const handleLogout = useCallback(() => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout?.();
-              router.replace('/auth/login');
-            } catch (err) {
-              console.error('[Settings] logout error:', err);
-            }
-          },
-        },
-      ]
-    );
-  }, [logout, router]);
-
-  const handleClearCache = useCallback(() => {
-    Alert.alert(
-      'Clear Cache',
-      'This will remove temporary files. Your data will not be affected.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          onPress: () => {
-            kernel?.storage?.clearCache?.();
-            Alert.alert('Done', 'Cache cleared successfully');
-          },
-        },
-      ]
-    );
-  }, [kernel]);
-
-  const renderItem = useCallback((item: any) => {
-    if (item.id === 'biometrics') {
-      return (
-        <View key={item.id} style={styles.row}>
-          <Ionicons name={item.icon as any} size={22} color={COLORS.primary} style={styles.rowIcon} />
-          <Text style={styles.rowLabel}>{item.label}</Text>
-          <Switch value={biometrics} onValueChange={setBiometrics} trackColor={{ true: COLORS.primary }} />
-        </View>
-      );
-    }
-    if (item.id === 'analytics') {
-      return (
-        <View key={item.id} style={styles.row}>
-          <Ionicons name={item.icon as any} size={22} color={COLORS.primary} style={styles.rowIcon} />
-          <Text style={styles.rowLabel}>{item.label}</Text>
-          <Switch value={analytics} onValueChange={setAnalytics} trackColor={{ true: COLORS.primary }} />
-        </View>
-      );
-    }
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={styles.row}
-        onPress={() => {
-          if (item.id === 'storage') { handleClearCache(); return; }
-          if (item.route) router.push(item.route as any);
-        }}
-      >
-        <Ionicons name={item.icon as any} size={22} color={COLORS.primary} style={styles.rowIcon} />
-        <Text style={styles.rowLabel}>{item.label}</Text>
-        <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
-      </TouchableOpacity>
-    );
-  }, [biometrics, analytics, router, handleClearCache]);
+  const settings = [
+    { icon: 'person', label: 'Profile', route: '/settings/profile' as any },
+    { icon: 'notifications', label: 'Notifications', route: '/settings/notifications' as any },
+    { icon: 'lock-closed', label: 'Security & PIN', route: '/settings/pin' as any },
+    { icon: 'moon', label: 'Display', route: '/settings/display' as any },
+    { icon: 'shield-checkmark', label: 'Privacy', route: '/settings/security' as any },
+  ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* User Card */}
-        <View style={styles.userCard}>
+        <Text style={styles.title}>Settings</Text>
+
+        <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase() || 'U'}</Text>
+            <Text style={styles.avatarText}>
+              {(user?.email?.[0] || 'U').toUpperCase()}
+            </Text>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'User'}</Text>
-            <Text style={styles.userPhone}>{user?.phone || user?.email || 'No contact info'}</Text>
+          <View>
+            <Text style={styles.email}>{user?.email || 'Guest'}</Text>
+            <Text style={styles.role}>User</Text>
           </View>
-          <TouchableOpacity onPress={() => router.push('/settings/profile' as any)}>
-            <Ionicons name="create-outline" size={20} color={COLORS.primary} />
+        </View>
+
+        {settings.map((item) => (
+          <TouchableOpacity
+            key={item.label}
+            style={styles.row}
+            onPress={() => router.push(item.route)}
+          >
+            <Ionicons name={item.icon as any} size={22} color="#94A3B8" />
+            <Text style={styles.rowLabel}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#64748B" />
           </TouchableOpacity>
-        </View>
-
-        {/* Toggles */}
-        <View style={styles.section}>
-          {renderItem({ id: 'biometrics', label: 'Biometric Unlock', icon: 'finger-print-outline' })}
-          {renderItem({ id: 'analytics', label: 'Share Analytics', icon: 'bar-chart-outline' })}
-        </View>
-
-        {/* Sections */}
-        {SETTINGS_SECTIONS.map(section => (
-          <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            {section.items.map(renderItem)}
-          </View>
         ))}
 
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={COLORS.danger} style={{ marginRight: SIZES.sm }} />
-          <Text style={styles.logoutText}>Sign Out</Text>
+        <TouchableOpacity style={styles.logoutBtn} onPress={signOut}>
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-
-        {/* Version */}
-        <Text style={styles.version}>MTAA OS v1.0.0 · Build 20250603</Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scroll: { padding: 16 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 20 },
+  profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
-  },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    padding: SIZES.lg,
-    marginBottom: SIZES.lg,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
   },
   avatar: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center', alignItems: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#2563EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  avatarText: { fontFamily: FONTS.bold, fontSize: 22, color: '#fff' },
-  userInfo: { flex: 1, marginLeft: SIZES.md },
-  userName: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  userPhone: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary, marginTop: 2 },
-  section: {
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    marginBottom: SIZES.lg,
-    overflow: 'hidden',
-  },
-  sectionTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    paddingHorizontal: SIZES.md,
-    paddingTop: SIZES.md,
-    paddingBottom: SIZES.sm,
-  },
+  avatarText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  email: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  role: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
-  rowIcon: { marginRight: SIZES.md },
-  rowLabel: { flex: 1, fontFamily: FONTS.medium, fontSize: 15, color: COLORS.text },
+  rowLabel: { color: '#fff', fontSize: 15, flex: 1, marginLeft: 12 },
   logoutBtn: {
-    flexDirection: 'row',
+    marginTop: 24,
+    backgroundColor: '#EF444420',
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    paddingVertical: SIZES.md,
-    marginBottom: SIZES.lg,
   },
-  logoutText: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.danger },
-  version: { textAlign: 'center', fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary, marginBottom: SIZES.xl },
+  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: '600' },
 });

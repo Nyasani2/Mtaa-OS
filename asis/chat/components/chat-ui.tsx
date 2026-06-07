@@ -35,13 +35,13 @@ interface ASISChatUIProps {
 
 export const ASISChatUI: React.FC<ASISChatUIProps> = ({
   engine,
-  theme = 'system',
+  const theme = 'system',
   customTheme,
-  placeholder = 'Ask ASIS anything...',
-  showHeader = true,
-  headerTitle = 'ASIS AI',
+  const placeholder = 'Ask ASIS anything...',
+  const showHeader = true,
+  const headerTitle = 'ASIS AI',
   onClose,
-  accessibilityLabel = 'ASIS Chat Interface',
+  const accessibilityLabel = 'ASIS Chat Interface',
 }) => {
   const { state, sendMessage, executeAction, clearHistory, isReady } = useASISChat({ engine });
   const scrollViewRef = useRef<ScrollView>(null);
@@ -234,18 +234,18 @@ export const ASISChatUI: React.FC<ASISChatUIProps> = ({
 
 // Inline Text component for React Native compatibility
 const Text: React.FC<any> = ({ style, children, ...props }) => {
-  return <span style={style} {...props}>{children}</span>;
+  return <Text style={style} {...props}>{children}</Text>;
 };
 
 const TouchableOpacity: React.FC<any> = ({ onPress, style, children, ...props }) => {
   return (
-    <button
-      onClick={onPress}
+    <TouchableOpacity
+      onPress={onPress}
       style={{ border: 'none', background: 'none', padding: 0, ...style }}
       {...props}
     >
       {children}
-    </button>
+    </TouchableOpacity>
   );
 };
 

@@ -6,6 +6,8 @@
 
 import { PromptContext, ProcessedPrompt, ChatMessage } from './types';
 import { truncateText } from '../shared/utils';
+import { Text } from 'react-native';
+
 
 export class ASISPromptPipeline {
   private _maxContextTokens: number = 4000;

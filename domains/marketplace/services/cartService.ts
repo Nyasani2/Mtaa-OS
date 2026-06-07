@@ -3,7 +3,6 @@
 
 import { supabase } from '@/lib/supabase/client';
 import { identityEngine } from '@/lib/kernel/identity';
-import { withdrawService } from '@/lib/wallet/services/withdraw.service';
 
 export interface CartItem {
   id: string;
@@ -237,7 +236,7 @@ class CartService {
     }
 
     // Check KYC for purchases over threshold
-    const kyc = await withdrawService.checkKycLevel();
+    const kyc = await identityEngine.checkKycLevel();
     const totals = this.calculateTotals(request.items);
 
     if (totals.total > 10000 && !kyc.eligible) {

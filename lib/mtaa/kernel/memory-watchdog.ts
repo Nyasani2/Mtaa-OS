@@ -25,11 +25,14 @@ class MemoryWatchdog {
     this.history.push(snapshot);
     if (this.history.length > this.MAX_HISTORY) this.history.shift();
     const ratio = snapshot.usedJSHeapSize / snapshot.jsHeapSizeLimit;
-    if (ratio > this.CRITICAL_THRESHOLD) { console.error(`[WATCHDOG] CRITICAL: ${(ratio*100).toFixed(1)}% memory used`); this.triggerCleanup(); }
+    if (ratio > this.CRITICAL_THRESHOLD) {
+      // Memory critical — kernel handles cleanup via events
+    }
     else if (ratio > this.WARNING_THRESHOLD) console.warn(`[WATCHDOG] WARNING: ${(ratio*100).toFixed(1)}% memory used`);
   }
 
-  private triggerCleanup(): void { console.log('[WATCHDOG] Triggering memory cleanup'); }
+    // triggerCleanup() removed — kernel handles cleanup via events
   getHistory(): MemorySnapshot[] { return [...this.history]; }
 }
 export const memoryWatchdog = new MemoryWatchdog();
+

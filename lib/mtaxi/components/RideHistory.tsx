@@ -24,7 +24,7 @@ export default function RideHistory() {
   }, [fetchMyRides]);
 
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.rideCard} onPress={() => router.push({ pathname: "/(mtaxi)/tracking" as any, params: { rideId: item.id } })}>
+    <TouchableOpacity style={styles.rideCard} onPress={() => router.push({ pathname: "/(mtaxi)/tracking", params: { rideId: item.id } })}>
       <View style={styles.rideHeader}>
         <View style={[styles.statusDot, { backgroundColor: STATUS_COLORS[item.status] || "#666" }]} />
         <Text style={styles.statusText}>{item.status}</Text>
@@ -93,3 +93,4 @@ const styles = StyleSheet.create({
   fareText: { marginLeft: "auto", fontSize: 16, fontWeight: "700", color: "#1a1a1a" },
   emptyText: { textAlign: "center", color: "#666", marginTop: 40, fontSize: 16 },
 });
+

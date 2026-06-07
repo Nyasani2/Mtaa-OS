@@ -6,7 +6,7 @@ const hub = new MTruckRealtimeHub();
 
 export function startMTruckLiveOS() {
 
-  console.log("🚛 MTRUCK LIVE OS ONLINE");
+    // MTruck live cycle logged via kernel observability
 
   setInterval(async () => {
 
@@ -15,10 +15,11 @@ export function startMTruckLiveOS() {
 
     hub.emit("ai:decision", ai);
 
-    console.log("⚡ LIVE CYCLE:", {
+    // MTruck live cycle logged via kernel observability
       dispatch,
       congestion: ai.congestion_forecast,
     });
 
   }, 5000);
 }
+

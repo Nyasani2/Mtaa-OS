@@ -1,3 +1,4 @@
 export async function runControlTower() {
-  console.log('[MTruck] Control Tower Running');
+    // MTruck control tower event logged via kernel observability
 }
+

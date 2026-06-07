@@ -1,5 +1,2 @@
-import supabase from "../supabase";
-
-export { supabase };
-
-export default supabase;
+// lib/supabase/index.ts — Re-export supabase client
+export { supabase, createClient } from './client';

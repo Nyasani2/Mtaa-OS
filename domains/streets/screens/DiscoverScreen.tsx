@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, Text } from 'react-native';
 import { useDiscover } from '../hooks/useDiscover';
-import { DiscoverGrid } from '../components/DiscoverGrid';
 
 export default function DiscoverScreen() {
-  const { results, searchQuery, setSearchQuery, activeFilter, setActiveFilter } = useDiscover();
+  const { posts, loading, hasMore, filters, trendingTags, refreshDiscover, loadMore, search, searchPeople, setFilters } = useDiscover();
   const [searchText, setSearchText] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
 
-  const filters = ['All', 'Videos', 'Users', 'Hashtags', 'Shops', 'Jobs', 'Live'];
+  const filterList = ['All', 'Videos', 'Users', 'Hashtags', 'Shops', 'Jobs', 'Live'];
 
   return (
     <View style={styles.container}>
@@ -18,17 +18,17 @@ export default function DiscoverScreen() {
           placeholder="Search Streets..."
           value={searchText}
           onChangeText={setSearchText}
-          onSubmitEditing={() => setSearchQuery(searchText)}
+          onSubmitEditing={() => search(searchText)}
         />
         {searchText.length > 0 && (
-          <Pressable onPress={() => { setSearchText(''); setSearchQuery(''); }}>
+          <Pressable onPress={() => { setSearchText(''); search(''); }}>
             <Text>✕</Text>
           </Pressable>
         )}
       </View>
 
       <View style={styles.filterRow}>
-        {filters.map(f => (
+        {filterList.map(f => (
           <Pressable
             key={f}
             style={[styles.filterChip, activeFilter === f && styles.activeChip]}
@@ -39,21 +39,24 @@ export default function DiscoverScreen() {
         ))}
       </View>
 
-      <DiscoverGrid
-        items={results}
-        onItemPress={(item) => {
-          if (item.type === 'user') router.push(`/streets/profile/${item.id}`);
-          else if (item.type === 'live') router.push(`/streets/live/${item.id}`);
-          else router.push(`/streets/post/${item.id}`);
-        }}
-        onHashtagPress={(tag) => setSearchQuery(tag)}
-      />
+      {/* Results placeholder — wire to your actual DiscoverGrid or list */}
+      <View style={styles.results}>
+        {loading && <Text style={styles.loadingText}>Loading...</Text>}
+        {posts.length === 0 && !loading && <Text style={styles.emptyText}>No results found</Text>}
+        {posts.map((post: any) => (
+          <Pressable key={post.id} style={styles.resultItem}>
+            <Text style={styles.resultTitle}>{post.title || post.content?.substring(0, 50) || 'Untitled'}</Text>
+          </Pressable>
+        ))}
+        {hasMore && (
+          <Pressable style={styles.loadMoreBtn} onPress={loadMore}>
+            <Text style={styles.loadMoreText}>Load More</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
-
-import { Text } from 'react-native';
-import { router } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -65,4 +68,11 @@ const styles = StyleSheet.create({
   activeChip: { backgroundColor: '#E91E63' },
   filterText: { fontSize: 13, color: '#555' },
   activeFilterText: { color: '#fff', fontWeight: '600' },
+  results: { flex: 1, padding: 12 },
+  loadingText: { textAlign: 'center', color: '#888', marginTop: 40 },
+  emptyText: { textAlign: 'center', color: '#888', marginTop: 40 },
+  resultItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  resultTitle: { fontSize: 14, color: '#333' },
+  loadMoreBtn: { padding: 12, alignItems: 'center', backgroundColor: '#f5f5f5', marginTop: 12, borderRadius: 8 },
+  loadMoreText: { color: '#E91E63', fontWeight: '600' },
 });

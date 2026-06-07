@@ -59,7 +59,7 @@ export default function BodaRequest() {
         ride_type: selectedVehicle,
         payment_method: paymentMethod,
       });
-      router.push({ pathname: "/(mtaxi)/tracking" as any, params: { rideId: ride.id } });
+      router.push({ pathname: "/(mtaxi)/tracking", params: { rideId: ride.id } });
     } catch (e: any) {
       Alert.alert("Request Failed", e.message);
     }
@@ -166,3 +166,4 @@ const styles = StyleSheet.create({
   requestBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
   errorText: { color: "#ef4444", textAlign: "center", marginTop: 8 },
 });
+

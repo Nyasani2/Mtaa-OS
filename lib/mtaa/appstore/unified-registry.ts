@@ -1,100 +1,195 @@
-// lib/mtaa/appstore/unified-registry.ts
-// Single source of truth for all MTAA app manifests
-
+// lib/mtaa/appstore/unified-registry.ts — Unified App Registry
 export interface AppManifest {
   id: string;
   name: string;
+  slug: string;
   description: string;
-  tagline: string;
-  version: string;
-  category: string;
   icon: string;
-  route: string;
   color: string;
-  size: string;
-  rating: number;
-  installs: number;
-  installCount: string;
-  reviewCount: number;
+  category: string;
+  version: string;
+  size_mb: number;
+  is_installed: boolean;
+  is_system_app: boolean;
+  requires_auth: boolean;
+  requires_subscription: boolean;
+  subscription_tier: 'free' | 'basic' | 'premium' | 'enterprise';
   developer: string;
-  isOSApp: boolean;
-  isInstalled: boolean;
-  section?: 'mtaa' | 'android' | 'utility';
+  rating: number;
+  review_count: number;
   screenshots: string[];
-  about: string;
-  features: string[];
   permissions: string[];
-  tags: string[];
-  ranking?: { rank: number; category: string };
+  entry_route: string;
+  is_native: boolean;
+  status: 'active' | 'pending' | 'suspended' | 'deprecated';
+  updated_at: string;
+  installed_at?: string;
+  section?: string;
 }
 
-export const APP_REGISTRY: AppManifest[] = [
-  // === MTAA APPS (Core Platform) ===
-  { id: "wallet", name: "Wallet", description: "Send, receive, store money", tagline: "Your money, your way", version: "1.0.0", category: "Finance", icon: "wallet", route: "/(os)/wallet", color: "#F59E0B", size: "12 MB", rating: 4.8, installs: 50000, installCount: "50K+", reviewCount: 5000, developer: "MTAA", isOSApp: true, isInstalled: true, section: "mtaa", screenshots: [], about: "Secure digital wallet for Africa. Send, receive, and store money with bank-grade security.", features: ["Send money instantly","Receive payments","Transaction history","Biometric lock"], permissions: ["Biometric","Notifications"], tags: ["Finance","Payments","Secure"] },
-  { id: "mtaxi", name: "mTaxi", description: "Book rides across Africa", tagline: "Ride anywhere, anytime", version: "2.1.0", category: "Transport", icon: "car", route: "/(mtaxi)", color: "#10B981", size: "24 MB", rating: 4.7, installs: 125000, installCount: "125K+", reviewCount: 1240, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Book safe and affordable rides across African cities. Real-time tracking, cashless payments.", features: ["Real-time tracking","Cashless payment","Driver ratings","Scheduled rides"], permissions: ["Location","Camera","Notifications"], tags: ["Transport","Rides","Africa"], ranking: { rank: 1, category: "Transport" } },
-  { id: "civic", name: "Civic", description: "Government services", tagline: "Government at your fingertips", version: "1.3.0", category: "Government", icon: "shield", route: "/(civic)", color: "#3B82F6", size: "20 MB", rating: 4.1, installs: 29000, installCount: "29K+", reviewCount: 420, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Access government services, pay taxes, apply for permits, and track applications.", features: ["Tax payments","Permit applications","Status tracking","Document vault"], permissions: ["Camera","Notifications","Storage"], tags: ["Government","Services","Public"] },
-  { id: "streets", name: "Streets", description: "Navigation and maps", tagline: "Know your city", version: "1.7.0", category: "Navigation", icon: "map", route: "/(local)/streets", color: "#8B5CF6", size: "52 MB", rating: 4.3, installs: 43000, installCount: "43K+", reviewCount: 1500, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Offline-capable navigation and city mapping for African urban centers.", features: ["Offline maps","Traffic alerts","Public transit","Points of interest"], permissions: ["Location","Notifications"], tags: ["Maps","Navigation","Offline"] },
-  { id: "health", name: "Health", description: "Healthcare services", tagline: "Healthcare for everyone", version: "2.0.0", category: "Health", icon: "medical", route: "/(health)", color: "#EF4444", size: "38 MB", rating: 4.6, installs: 72000, installCount: "72K+", reviewCount: 1200, developer: "MTAA", isOSApp: true, isInstalled: true, section: "mtaa", screenshots: [], about: "Access health records, book appointments, and manage prescriptions securely.", features: ["Health records","Appointment booking","Prescription tracking","Telemedicine"], permissions: ["Camera","Notifications","Biometric"], tags: ["Health","Medical","Care"] },
-
-  { id: "command", name: "Command", description: "Command Centre", tagline: "System administration hub", version: "1.0.0", category: "Admin", icon: "shield-checkmark", route: "/(admin)/command-centre", color: "#06B6D4", size: "15 MB", rating: 4.5, installs: 10000, installCount: "10K+", reviewCount: 800, developer: "MTAA", isOSApp: true, isInstalled: true, section: "mtaa", screenshots: [], about: "Administrative dashboard for MTAA platform operators and system admins.", features: ["User management","Analytics dashboard","System monitoring","Audit logs"], permissions: ["Biometric","Notifications"], tags: ["Admin","System","Control"] },
-  { id: "regulatory", name: "Regulatory", description: "Fraud, compliance & CBK reporting", tagline: "Compliance made simple", version: "1.0.0", category: "Admin", icon: "shield-checkmark", route: "/(os)/regulatory", color: "#7C3AED", size: "14 MB", rating: 4.7, installs: 5000, installCount: "5K+", reviewCount: 300, developer: "MTAA", isOSApp: true, isInstalled: true, section: "mtaa", screenshots: [], about: "Fraud detection, compliance monitoring, and CBK regulatory reporting tools.", features: ["Fraud alerts","Compliance reports","CBK integration","Risk scoring"], permissions: ["Biometric","Notifications","Storage"], tags: ["Compliance","Fraud","Regulatory"] },
-  { id: "shop", name: "Shop", description: "Buy and sell products", tagline: "Your local marketplace", version: "2.5.0", category: "Commerce", icon: "cart", route: "/(commerce)/shop", color: "#EC4899", size: "35 MB", rating: 4.6, installs: 156000, installCount: "156K+", reviewCount: 3400, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "E-commerce platform for African businesses. Buy, sell, and track orders.", features: ["Product listings","Order tracking","Secure payments","Seller dashboard"], permissions: ["Camera","Notifications","Storage"], tags: ["Shopping","E-commerce","Retail"], ranking: { rank: 2, category: "Commerce" } },
-  { id: "jobs", name: "Jobs", description: "Find work and hire", tagline: "Opportunities await", version: "1.9.0", category: "Work", icon: "briefcase", route: "/(work)/jobs", color: "#F97316", size: "22 MB", rating: 4.5, installs: 67000, installCount: "67K+", reviewCount: 950, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Connect with employers, post jobs, and manage applications across Africa.", features: ["Job postings","Resume builder","Application tracking","Interview scheduling"], permissions: ["Notifications","Storage"], tags: ["Jobs","Career","Work"] },
-  { id: "studio", name: "Studio", description: "Media studio", tagline: "Create and share", version: "1.0.0", category: "Media", icon: "videocam", route: "/(media)/studio", color: "#6366F1", size: "40 MB", rating: 4.4, installs: 35000, installCount: "35K+", reviewCount: 600, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Create, edit, and share media content. Video, audio, and image tools.", features: ["Video editing","Audio recording","Image filters","Social sharing"], permissions: ["Camera","Microphone","Storage","Notifications"], tags: ["Media","Creative","Studio"] },
-  { id: "education", name: "Edu", description: "Learn and teach", tagline: "Knowledge for all", version: "1.5.0", category: "Education", icon: "school", route: "/(education)", color: "#14B8A6", size: "45 MB", rating: 4.7, installs: 54000, installCount: "54K+", reviewCount: 780, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Online learning platform with courses, quizzes, and certification tracking.", features: ["Video courses","Quizzes","Progress tracking","Certificates"], permissions: ["Camera","Microphone","Notifications","Storage"], tags: ["Education","Learning","Courses"] },
-  { id: "marketplace", name: "Market", description: "Local marketplace", tagline: "Buy local, sell local", version: "2.2.0", category: "Commerce", icon: "storefront", route: "/(commerce)/marketplace", color: "#84CC16", size: "30 MB", rating: 4.4, installs: 98000, installCount: "98K+", reviewCount: 1800, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Peer-to-peer marketplace for local goods and services across Africa.", features: ["P2P listings","Negotiation chat","Secure escrow","Local pickup"], permissions: ["Camera","Notifications","Storage"], tags: ["Marketplace","Local","P2P"] },
-  { id: "hookup", name: "HookUp", description: "Dating and connections", tagline: "Find your match", version: "1.4.0", category: "Social", icon: "heart", route: "/(social)/hookup", color: "#F43F5E", size: "26 MB", rating: 4.2, installs: 38000, installCount: "38K+", reviewCount: 1100, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Connect with people nearby. Safe, verified dating and social connections.", features: ["Profile matching","Chat","Video calls","Verification"], permissions: ["Camera","Microphone","Notifications","Contacts"], tags: ["Dating","Social","Connections"] },
-  { id: "mtruck", name: "MTruck", description: "Freight and logistics", tagline: "Move goods, grow business", version: "1.8.0", category: "Transport", icon: "bus", route: "/(mtruck)", color: "#A855F7", size: "28 MB", rating: 4.5, installs: 45000, installCount: "45K+", reviewCount: 890, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Freight logistics platform connecting shippers with truck operators across Africa.", features: ["Load matching","Route optimization","Payment tracking","Fleet management"], permissions: ["Location","Camera","Notifications","Storage"], tags: ["Logistics","Freight","Transport"] },
-  { id: "tribes", name: "Tribes", description: "Community groups", tagline: "Your community, your voice", version: "3.0.0", category: "Social", icon: "people", route: "/(social)/tribes", color: "#D946EF", size: "32 MB", rating: 4.8, installs: 89000, installCount: "89K+", reviewCount: 2100, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Community groups and forums for African interest-based networking.", features: ["Group creation","Discussion forums","Event planning","Media sharing"], permissions: ["Camera","Microphone","Notifications","Contacts"], tags: ["Community","Social","Groups"], ranking: { rank: 1, category: "Social" } },
-
-  // === ANDROID APPS (Communication + Utilities) ===
-  { id: "messages", name: "Messages", description: "SMS and chat", tagline: "Stay connected", version: "1.0.0", category: "Communication", icon: "chatbubble", route: "/(communication)/messages", color: "#3B82F6", size: "8 MB", rating: 4.5, installs: 45000, installCount: "45K+", reviewCount: 3200, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Secure messaging with end-to-end encryption. SMS and internet chat in one app.", features: ["End-to-end encryption","SMS integration","Group chats","Media sharing"], permissions: ["Notifications","Contacts","Camera","Microphone"], tags: ["Messaging","Chat","Secure"] },
-  { id: "call", name: "Phone", description: "Calls and dialer", tagline: "Crystal clear calls", version: "1.0.0", category: "Communication", icon: "call", route: "/(communication)/call", color: "#22C55E", size: "6 MB", rating: 4.3, installs: 42000, installCount: "42K+", reviewCount: 1500, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Smart dialer with spam detection, call recording, and contact management.", features: ["Smart dialer","Spam detection","Call recording","Contact sync"], permissions: ["Phone","Contacts","Microphone","Notifications"], tags: ["Phone","Calls","Dialer"] },
-  { id: "contacts", name: "Contacts", description: "Manage contacts", tagline: "Your network, organized", version: "1.0.0", category: "Communication", icon: "people", route: "/(communication)/contacts", color: "#6366F1", size: "5 MB", rating: 4.4, installs: 40000, installCount: "40K+", reviewCount: 1200, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Contact management with sync, groups, and backup to the cloud.", features: ["Cloud sync","Contact groups","Duplicate detection","Backup"], permissions: ["Contacts","Storage"], tags: ["Contacts","Sync","Management"] },
-  { id: "clock", name: "Clock", description: "Alarm, world clock, timer", tagline: "Time well managed", version: "1.0.0", category: "Utility", icon: "time", route: "/(utility)/clock", color: "#F59E0B", size: "4 MB", rating: 4.6, installs: 38000, installCount: "38K+", reviewCount: 900, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Alarm clock, world clock, timer, and stopwatch with customizable themes.", features: ["Multiple alarms","World clock","Timer","Stopwatch"], permissions: ["Notifications"], tags: ["Clock","Alarm","Timer"] },
-  { id: "calculator", name: "Calculator", description: "Basic calculator", tagline: "Calculate anything", version: "1.0.0", category: "Utility", icon: "calculator", route: "/(utility)/calculator", color: "#8B5CF6", size: "3 MB", rating: 4.2, installs: 35000, installCount: "35K+", reviewCount: 700, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Scientific and basic calculator with history and unit conversion.", features: ["Scientific mode","History","Unit conversion","Currency calc"], permissions: [], tags: ["Calculator","Math","Tools"] },
-  { id: "weather", name: "Weather", description: "Local and global weather", tagline: "Know before you go", version: "1.0.0", category: "Utility", icon: "partly-sunny", route: "/(utility)/weather", color: "#0EA5E9", size: "5 MB", rating: 4.7, installs: 36000, installCount: "36K+", reviewCount: 1100, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Accurate weather forecasts for African cities with severe weather alerts.", features: ["Hourly forecast","7-day outlook","Severe alerts","Radar map"], permissions: ["Location","Notifications"], tags: ["Weather","Forecast","Alerts"] },
-  { id: "time", name: "World Time", description: "Time zone converter", tagline: "Global time at a glance", version: "1.0.0", category: "Utility", icon: "globe", route: "/(utility)/time", color: "#EC4899", size: "4 MB", rating: 4.1, installs: 28000, installCount: "28K+", reviewCount: 500, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Time zone converter and world clock for business travelers and remote teams.", features: ["Time zone converter","Meeting planner","World clock","DST alerts"], permissions: [], tags: ["Time","Zones","World"] },
-  { id: "documents", name: "Documents", description: "File manager", tagline: "Your files, organized", version: "1.0.0", category: "Productivity", icon: "folder", route: "/(productivity)/documents", color: "#64748B", size: "7 MB", rating: 4.4, installs: 32000, installCount: "32K+", reviewCount: 800, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "File manager with cloud sync, PDF viewer, and document scanner.", features: ["File browser","Cloud sync","PDF viewer","Document scanner"], permissions: ["Storage","Camera"], tags: ["Files","Documents","Manager"] },
-  { id: "gallery", name: "Gallery", description: "Photos and albums", tagline: "Memories preserved", version: "1.0.0", category: "Media", icon: "images", route: "/(media)/gallery", color: "#EF4444", size: "9 MB", rating: 4.6, installs: 41000, installCount: "41K+", reviewCount: 1300, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Photo and video gallery with albums, editing, and cloud backup.", features: ["Albums","Photo editor","Video player","Cloud backup"], permissions: ["Storage","Camera"], tags: ["Photos","Gallery","Media"] },
-  { id: "scheduler", name: "Scheduler", description: "Calendar and events", tagline: "Plan your day", version: "1.0.0", category: "Productivity", icon: "calendar", route: "/(productivity)/scheduler", color: "#14B8A6", size: "6 MB", rating: 4.3, installs: 29000, installCount: "29K+", reviewCount: 600, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Calendar and event scheduler with reminders and shared calendars.", features: ["Event creation","Reminders","Shared calendars","Recurring events"], permissions: ["Notifications","Storage"], tags: ["Calendar","Schedule","Planner"] },
-  { id: "sim", name: "SIM", description: "Airtime and data", tagline: "Top up in seconds", version: "1.0.0", category: "Utility", icon: "phone-portrait", route: "/(utility)/sim", color: "#F97316", size: "5 MB", rating: 4.5, installs: 33000, installCount: "33K+", reviewCount: 950, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Airtime top-up, data bundle purchase, and SIM management for all carriers.", features: ["Airtime top-up","Data bundles","Balance check","Multi-SIM"], permissions: ["Phone","Notifications"], tags: ["Airtime","Data","Mobile"] },
-  { id: "recents", name: "Recents", description: "Activity feed", tagline: "Your activity timeline", version: "1.0.0", category: "System", icon: "time", route: "/(system)/recents", color: "#94A3B8", size: "3 MB", rating: 4.0, installs: 25000, installCount: "25K+", reviewCount: 400, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "Recent activity feed showing your latest actions across all MTAA apps.", features: ["Activity timeline","Quick actions","Search history","App shortcuts"], permissions: ["Notifications"], tags: ["Activity","Recent","Feed"] },
-  { id: "settings", name: "Settings", description: "System settings", tagline: "Control your device", version: "1.0.0", category: "System", icon: "settings", route: "/(os)/settings", color: "#64748B", size: "5 MB", rating: 4.4, installs: 48000, installCount: "48K+", reviewCount: 8000, developer: "MTAA", isOSApp: true, isInstalled: true, section: "android", screenshots: [], about: "System preferences, security settings, and device configuration.", features: ["Security settings","Privacy controls","Display options","Notification prefs"], permissions: ["Biometric"], tags: ["Settings","System","Config"] },
-  { id: "credit", name: "Credit", description: "Credit and loans", tagline: "Financial freedom", version: "1.0.0", category: "Finance", icon: "card", route: "/(finance)/credit", color: "#10B981", size: "10 MB", rating: 4.3, installs: 25000, installCount: "25K+", reviewCount: 600, developer: "MTAA", isOSApp: false, isInstalled: false, section: "android", screenshots: [], about: "Apply for micro-loans, track credit score, and manage repayments.", features: ["Loan applications","Credit score","Repayment tracking","Financial tips"], permissions: ["Biometric","Notifications","Storage"], tags: ["Credit","Loans","Finance"] },
-  { id: "binance", name: "Binance", description: "Crypto trading", tagline: "Trade crypto safely", version: "1.0.0", category: "Finance", icon: "logo-bitcoin", route: "/(finance)/binance", color: "#F0B90B", size: "18 MB", rating: 4.5, installs: 60000, installCount: "60K+", reviewCount: 2200, developer: "Binance", isOSApp: false, isInstalled: false, section: "android", screenshots: [], about: "Buy, sell, and trade cryptocurrencies with secure wallet integration.", features: ["Spot trading","Wallet integration","Price alerts","Staking"], permissions: ["Biometric","Notifications"], tags: ["Crypto","Trading","Bitcoin"] },
-
-  // === ADDITIONAL APPS ===
-  { id: "ads", name: "Ads Engine", description: "Advertising platform", tagline: "Reach your audience", version: "1.2.0", category: "Business", icon: "megaphone", route: "/(business)/ads", color: "#F97316", size: "18 MB", rating: 4.0, installs: 22000, installCount: "22K+", reviewCount: 450, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Create and manage ad campaigns across the MTAA platform.", features: ["Campaign creation","Audience targeting","Analytics","Budget management"], permissions: ["Storage","Notifications"], tags: ["Ads","Marketing","Business"] },
-  { id: "boda", name: "Boda", description: "Boda boda rides", tagline: "Quick local rides", version: "1.0.0", category: "Transport", icon: "bicycle", route: "/(boda)", color: "#22C55E", size: "15 MB", rating: 4.4, installs: 55000, installCount: "55K+", reviewCount: 800, developer: "MTAA", isOSApp: false, isInstalled: false, section: "mtaa", screenshots: [], about: "Motorcycle taxi booking for quick urban transportation.", features: ["Quick booking","Fare estimate","Driver tracking","Cash payment"], permissions: ["Location","Notifications"], tags: ["Boda","Transport","Quick"] },
+const ALL_APPS: AppManifest[] = [
+  // MTAA Apps
+  {
+    id: 'wallet', name: 'Wallet', slug: 'wallet', description: 'Send, receive, and manage money',
+    icon: 'wallet', color: '#2563EB', category: 'Finance', version: '1.0.0', size_mb: 12,
+    is_installed: true, is_system_app: true, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.8, review_count: 1240,
+    screenshots: [], permissions: [], entry_route: '/wallet', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'health', name: 'Health', slug: 'health', description: 'Healthcare and telemedicine',
+    icon: 'medical', color: '#10B981', category: 'Health', version: '1.0.0', size_mb: 18,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.5, review_count: 890,
+    screenshots: [], permissions: [], entry_route: '/health', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'mtaxi', name: 'MTaxi', slug: 'mtaxi', description: 'Ride hailing and carpooling',
+    icon: 'car', color: '#F59E0B', category: 'Transport', version: '1.0.0', size_mb: 22,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.6, review_count: 2100,
+    screenshots: [], permissions: [], entry_route: '/mtaxi', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'mtruck', name: 'MTruck', slug: 'mtruck', description: 'Freight and logistics',
+    icon: 'truck', color: '#8B5CF6', category: 'Transport', version: '1.0.0', size_mb: 25,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.4, review_count: 560,
+    screenshots: [], permissions: [], entry_route: '/mtruck', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'tribes', name: 'Tribes', slug: 'tribes', description: 'Community groups and events',
+    icon: 'people', color: '#EC4899', category: 'Social', version: '1.0.0', size_mb: 15,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.7, review_count: 1500,
+    screenshots: [], permissions: [], entry_route: '/tribes', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'shop', name: 'Shop', slug: 'shop', description: 'Buy and sell products',
+    icon: 'cart', color: '#EF4444', category: 'Commerce', version: '1.0.0', size_mb: 14,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.3, review_count: 780,
+    screenshots: [], permissions: [], entry_route: '/shop', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'marketplace', name: 'Marketplace', slug: 'marketplace', description: 'Peer-to-peer marketplace',
+    icon: 'storefront', color: '#06B6D4', category: 'Commerce', version: '1.0.0', size_mb: 16,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.2, review_count: 640,
+    screenshots: [], permissions: [], entry_route: '/marketplace', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'streets', name: 'Streets', slug: 'streets', description: 'Social feed and local news',
+    icon: 'newspaper', color: '#6366F1', category: 'Social', version: '1.0.0', size_mb: 13,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.5, review_count: 920,
+    screenshots: [], permissions: [], entry_route: '/streets', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'jobs', name: 'Jobs', slug: 'jobs', description: 'Find work and hire talent',
+    icon: 'briefcase', color: '#14B8A6', category: 'Work', version: '1.0.0', size_mb: 11,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.1, review_count: 430,
+    screenshots: [], permissions: [], entry_route: '/jobs', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  {
+    id: 'education', name: 'Education', slug: 'education', description: 'Learning and courses',
+    icon: 'school', color: '#F97316', category: 'Education', version: '1.0.0', size_mb: 20,
+    is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA', rating: 4.6, review_count: 670,
+    screenshots: [], permissions: [], entry_route: '/education', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'mtaa',
+  },
+  // Android Apps
+  {
+    id: 'phone', name: 'Phone', slug: 'phone', description: 'Calls and contacts',
+    icon: 'call', color: '#22C55E', category: 'Communication', version: '1.0.0', size_mb: 8,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/phone', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'messages', name: 'Messages', slug: 'messages', description: 'SMS and chat',
+    icon: 'chatbubble', color: '#3B82F6', category: 'Communication', version: '1.0.0', size_mb: 9,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/messages', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'gallery', name: 'Gallery', slug: 'gallery', description: 'Photos and videos',
+    icon: 'images', color: '#A855F7', category: 'Media', version: '1.0.0', size_mb: 10,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/gallery', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'camera', name: 'Camera', slug: 'camera', description: 'Take photos and videos',
+    icon: 'camera', color: '#EF4444', category: 'Media', version: '1.0.0', size_mb: 7,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/camera', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'settings', name: 'Settings', slug: 'settings', description: 'System settings',
+    icon: 'settings', color: '#64748B', category: 'System', version: '1.0.0', size_mb: 6,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/settings', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'clock', name: 'Clock', slug: 'clock', description: 'Alarm and timer',
+    icon: 'time', color: '#F59E0B', category: 'Utility', version: '1.0.0', size_mb: 5,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/clock', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'calendar', name: 'Calendar', slug: 'calendar', description: 'Events and schedule',
+    icon: 'calendar', color: '#10B981', category: 'Utility', version: '1.0.0', size_mb: 6,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/scheduler', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
+  {
+    id: 'calculator', name: 'Calculator', slug: 'calculator', description: 'Basic calculator',
+    icon: 'calculator', color: '#374151', category: 'Utility', version: '1.0.0', size_mb: 3,
+    is_installed: true, is_system_app: true, requires_auth: false, requires_subscription: false,
+    subscription_tier: 'free', developer: 'MTAA OS', rating: 4.0, review_count: 100,
+    screenshots: [], permissions: [], entry_route: '/calculator', is_native: true, status: 'active',
+    updated_at: '2024-01-01', section: 'android',
+  },
 ];
 
+export function getAppsBySection(section: string): AppManifest[] {
+  return ALL_APPS.filter(app => app.section === section || (section === 'all' && true));
+}
+
 export function getAppById(id: string): AppManifest | undefined {
-  return APP_REGISTRY.find((app) => app.id === id);
+  return ALL_APPS.find(app => app.id === id);
 }
 
-export function getAppsByCategory(category: string): AppManifest[] {
-  return APP_REGISTRY.filter((app) => app.category === category);
+export function getAllApps(): AppManifest[] {
+  return ALL_APPS;
 }
 
-export function getInstalledApps(): AppManifest[] {
-  return APP_REGISTRY.filter((app) => app.isInstalled);
+export function getCategories(): string[] {
+  return [...new Set(ALL_APPS.map(a => a.category))];
 }
 
-export function getInstallableApps(): AppManifest[] {
-  return APP_REGISTRY.filter((app) => !app.isOSApp && !app.isInstalled);
-}
-
-export function getAppsBySection(section: 'mtaa' | 'android' | 'utility'): AppManifest[] {
-  return APP_REGISTRY.filter((app) => app.section === section && (app.isInstalled || app.isOSApp));
-}
-
-export function searchApps(query: string): AppManifest[] {
-  const q = query.toLowerCase();
-  return APP_REGISTRY.filter(
-    (app) =>
-      app.name.toLowerCase().includes(q) ||
-      app.description.toLowerCase().includes(q) ||
-      app.category.toLowerCase().includes(q)
-  );
-}
+export default ALL_APPS;

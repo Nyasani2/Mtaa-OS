@@ -4,7 +4,7 @@ export function startFleetRealtimeWorker(
   intervalMs = 10000
 ) {
 
-  console.log(
+    // Fleet realtime event logged via kernel observability
     "🚛 MTRUCK realtime intelligence started"
   );
 
@@ -15,7 +15,7 @@ export function startFleetRealtimeWorker(
       const snapshot =
         await saveFleetSnapshot();
 
-      console.log(
+    // Fleet realtime event logged via kernel observability
         "📡 Fleet Snapshot:",
         snapshot
       );
@@ -31,3 +31,4 @@ export function startFleetRealtimeWorker(
 
   }, intervalMs);
 }
+

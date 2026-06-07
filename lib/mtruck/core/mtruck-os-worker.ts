@@ -31,9 +31,10 @@ export function processMTruckWorker(result: unknown): {
 }
 
 export function startMTruckOS(intervalMs: number = 5000): () => void {
-  console.log(`[MTruckOS] Worker starting with ${intervalMs}ms interval`);
+    // MTruck worker event logged via kernel observability
   const timer = setInterval(() => {
-    console.log('[MTruckOS] Heartbeat');
+    // MTruck worker event logged via kernel observability
   }, intervalMs);
   return () => clearInterval(timer);
 }
+

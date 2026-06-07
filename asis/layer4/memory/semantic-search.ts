@@ -8,6 +8,8 @@ import { MemoryEngine } from './memory-engine';
 import { IEmbeddingProvider } from './providers/embedding-provider';
 import { IVectorStoreProvider } from './providers/vector-store-provider';
 import { MemoryLayer } from '../types/memory.types';
+import { Text } from 'react-native';
+
 
 export class SemanticSearch {
   private memoryEngine: MemoryEngine;

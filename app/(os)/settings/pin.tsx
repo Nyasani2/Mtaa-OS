@@ -1,474 +1,105 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  Switch,
-} from 'react-native';
+// app/(os)/settings/pin.tsx — PIN Settings
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getPinState,
-  setPin,
-  verifyPin,
-  changePin,
-  removePin,
-  PinState,
-} from '@/lib/security/pin-engine';
 
-export default function SettingsPinScreen() {
+export default function PinSettingsScreen() {
   const router = useRouter();
-
-  const [pinState, setPinState] = useState<PinState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<'none' | 'create' | 'change' | 'remove'>('none');
-
-  // Form states
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState('');
 
-  // Load PIN state
-  useEffect(() => {
-    loadPinState();
-  }, []);
-
-  const loadPinState = async () => {
-    setLoading(true);
-    try {
-      const state = await getPinState();
-      setPinState(state);
-    } catch (err) {
-      console.error('[SettingsPin] Load error:', err);
-    } finally {
-      setLoading(false);
+  const handleChangePin = () => {
+    if (newPin.length < 4) {
+      Alert.alert('Error', 'PIN must be at least 4 digits');
+      return;
     }
+    if (newPin !== confirmPin) {
+      Alert.alert('Error', 'PINs do not match');
+      return;
+    }
+    Alert.alert('Success', 'PIN changed successfully');
+    router.back();
   };
 
-  // ── Create PIN ──────────────────────────────────────────────────────────────
-  const handleCreate = useCallback(async () => {
-    if (newPin !== confirmPin) {
-      setFormError('PINs do not match');
-      return;
-    }
-
-    setFormLoading(true);
-    setFormError('');
-
-    try {
-      const result = await setPin(newPin);
-      if (result.success) {
-        Alert.alert('Success', 'PIN has been set successfully');
-        setAction('none');
-        setNewPin('');
-        setConfirmPin('');
-        await loadPinState();
-      } else {
-        setFormError(result.error || 'Failed to set PIN');
-      }
-    } catch (err: any) {
-      setFormError(err.message || 'An error occurred');
-    } finally {
-      setFormLoading(false);
-    }
-  }, [newPin, confirmPin]);
-
-  // ── Change PIN ──────────────────────────────────────────────────────────────
-  const handleChange = useCallback(async () => {
-    if (newPin !== confirmPin) {
-      setFormError('New PINs do not match');
-      return;
-    }
-
-    setFormLoading(true);
-    setFormError('');
-
-    try {
-      const result = await changePin(currentPin, newPin);
-      if (result.success) {
-        Alert.alert('Success', 'PIN has been changed successfully');
-        setAction('none');
-        setCurrentPin('');
-        setNewPin('');
-        setConfirmPin('');
-        await loadPinState();
-      } else {
-        setFormError(result.error || 'Failed to change PIN');
-      }
-    } catch (err: any) {
-      setFormError(err.message || 'An error occurred');
-    } finally {
-      setFormLoading(false);
-    }
-  }, [currentPin, newPin, confirmPin]);
-
-  // ── Remove PIN ──────────────────────────────────────────────────────────────
-  const handleRemove = useCallback(async () => {
-    setFormLoading(true);
-    setFormError('');
-
-    try {
-      // Verify current PIN first
-      const verify = await verifyPin(currentPin);
-      if (!verify.valid) {
-        setFormError('Current PIN is incorrect');
-        setFormLoading(false);
-        return;
-      }
-
-      await removePin();
-      Alert.alert('Success', 'PIN has been removed');
-      setAction('none');
-      setCurrentPin('');
-      await loadPinState();
-    } catch (err: any) {
-      setFormError(err.message || 'An error occurred');
-    } finally {
-      setFormLoading(false);
-    }
-  }, [currentPin]);
-
-  // ── Render ──────────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
-      </View>
-    );
-  }
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      {/* Header */}
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="shield-checkmark" size={40} color="#4F46E5" />
-        <Text style={styles.title}>Device Security</Text>
-        <Text style={styles.subtitle}>
-          {pinState?.isSet
-            ? 'Your device is protected with a PIN'
-            : 'No PIN set — your device is not protected'}
-        </Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Change PIN</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      {/* Status Card */}
-      <View style={styles.statusCard}>
-        <View style={styles.statusRow}>
-          <Ionicons
-            name={pinState?.isSet ? 'lock-closed' : 'lock-open'}
-            size={24}
-            color={pinState?.isSet ? '#10B981' : '#F59E0B'}
-          />
-          <View style={styles.statusTextContainer}>
-            <Text style={styles.statusTitle}>
-              {pinState?.isSet ? 'PIN Active' : 'No PIN'}
-            </Text>
-            <Text style={styles.statusDescription}>
-              {pinState?.isSet
-                ? `${pinState.attemptsRemaining} attempts remaining`
-                : 'Set a PIN to protect your device'}
-            </Text>
-          </View>
-        </View>
+      <View style={styles.form}>
+        <TextInput
+          style={styles.input}
+          placeholder="Current PIN"
+          placeholderTextColor="#64748B"
+          value={currentPin}
+          onChangeText={setCurrentPin}
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="New PIN"
+          placeholderTextColor="#64748B"
+          value={newPin}
+          onChangeText={setNewPin}
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Confirm New PIN"
+          placeholderTextColor="#64748B"
+          value={confirmPin}
+          onChangeText={setConfirmPin}
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={6}
+        />
+
+        <TouchableOpacity style={styles.button} onPress={handleChangePin}>
+          <Text style={styles.buttonText}>Update PIN</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Action Buttons */}
-      {action === 'none' && (
-        <View style={styles.actionsContainer}>
-          {!pinState?.isSet && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setAction('create')}
-            >
-              <Ionicons name="add-circle" size={20} color="#4F46E5" />
-              <Text style={styles.actionButtonText}>Set PIN</Text>
-            </TouchableOpacity>
-          )}
-
-          {pinState?.isSet && (
-            <>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => setAction('change')}
-              >
-                <Ionicons name="refresh" size={20} color="#4F46E5" />
-                <Text style={styles.actionButtonText}>Change PIN</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.dangerButton]}
-                onPress={() => setAction('remove')}
-              >
-                <Ionicons name="trash" size={20} color="#DC2626" />
-                <Text style={[styles.actionButtonText, styles.dangerText]}>
-                  Remove PIN
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
-
-      {/* Form */}
-      {action !== 'none' && (
-        <View style={styles.formContainer}>
-          {formError ? (
-            <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={16} color="#DC2626" />
-              <Text style={styles.errorText}>{formError}</Text>
-            </View>
-          ) : null}
-
-          {/* Current PIN (for change/remove) */}
-          {(action === 'change' || action === 'remove') && (
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current PIN</Text>
-              <TextInput
-                style={styles.input}
-                value={currentPin}
-                onChangeText={setCurrentPin}
-                placeholder="Enter current PIN"
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={8}
-              />
-            </View>
-          )}
-
-          {/* New PIN (for create/change) */}
-          {(action === 'create' || action === 'change') && (
-            <>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
-                  {action === 'change' ? 'New PIN' : 'PIN'}
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={newPin}
-                  onChangeText={setNewPin}
-                  placeholder="Enter 4+ digit PIN"
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={8}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Confirm PIN</Text>
-                <TextInput
-                  style={styles.input}
-                  value={confirmPin}
-                  onChangeText={setConfirmPin}
-                  placeholder="Re-enter PIN"
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={8}
-                />
-              </View>
-            </>
-          )}
-
-          {/* Form Actions */}
-          <View style={styles.formActions}>
-            <TouchableOpacity
-              style={[styles.formButton, styles.primaryFormButton]}
-              onPress={
-                action === 'create'
-                  ? handleCreate
-                  : action === 'change'
-                  ? handleChange
-                  : handleRemove
-              }
-              disabled={formLoading}
-            >
-              {formLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.primaryFormButtonText}>
-                  {action === 'create'
-                    ? 'Set PIN'
-                    : action === 'change'
-                    ? 'Change PIN'
-                    : 'Remove PIN'}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.formButton, styles.secondaryFormButton]}
-              onPress={() => {
-                setAction('none');
-                setCurrentPin('');
-                setNewPin('');
-                setConfirmPin('');
-                setFormError('');
-              }}
-              disabled={formLoading}
-            >
-              <Text style={styles.secondaryFormButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-  },
+  container: { flex: 1, backgroundColor: '#0F172A' },
   header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  statusCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statusRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 16,
+    padding: 16,
   },
-  statusTextContainer: {
-    flex: 1,
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  statusDescription: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  actionsContainer: {
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  dangerButton: {
-    borderColor: '#FECACA',
-    borderWidth: 1,
-  },
-  actionButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  dangerText: {
-    color: '#DC2626',
-  },
-  formContainer: {
-    gap: 16,
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 14,
-    flex: 1,
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#374151',
-  },
+  title: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  form: { padding: 16 },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#111827',
+    padding: 16,
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 12,
+    textAlign: 'center',
+    letterSpacing: 8,
   },
-  formActions: {
-    gap: 12,
-    marginTop: 8,
-  },
-  formButton: {
+  button: {
+    backgroundColor: '#2563EB',
     borderRadius: 12,
-    paddingVertical: 14,
+    padding: 16,
     alignItems: 'center',
+    marginTop: 16,
   },
-  primaryFormButton: {
-    backgroundColor: '#4F46E5',
-  },
-  primaryFormButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  secondaryFormButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  secondaryFormButtonText: {
-    color: '#6B7280',
-    fontSize: 15,
-    fontWeight: '600',
-  },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

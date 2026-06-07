@@ -25,10 +25,10 @@ export function Wishlist({ visible, onClose }: WishlistProps) {
   const wishlistApps = apps.filter(a => wishlistIds.includes(a.id));
 
   const handleInstall = (appId: string) => installApp(appId);
-  const handleOpen = (route: string) => router.push(route as any);
+  const handleOpen = (route: string) => router.push(route);
   const handleAppPress = (appId: string) => {
     onClose();
-    router.push(`/(os)/appstore/${appId}` as any);
+    router.push(`/(os)/appstore/${appId}`);
   };
 
   if (!visible) return null;
@@ -209,3 +209,4 @@ const styles = StyleSheet.create({
     height: 40,
   },
 });
+

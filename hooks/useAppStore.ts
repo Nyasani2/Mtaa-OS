@@ -57,7 +57,7 @@ export interface AppStoreState {
   searchQuery: string;
   selectedCategory: string;
   selectedApp: AppManifest | null;
-  isInstalling: boolean;
+  isInstallingAny: boolean;
   installProgress: number;
   categories: AppCategory[];
   interests: AppInterest[];
@@ -283,7 +283,7 @@ export const useAppStore = create<AppStoreState>((set, get) => ({
   searchQuery: '',
   selectedCategory: 'All',
   selectedApp: null,
-  isInstalling: false,
+  isInstallingAny: false,
   installProgress: 0,
   categories: DEFAULT_CATEGORIES,
   interests: DEFAULT_INTERESTS,
@@ -366,7 +366,7 @@ export const useAppStore = create<AppStoreState>((set, get) => ({
     if (!app) return false;
     if (app.is_system_app) return true;
 
-    set({ isInstalling: true, installProgress: 0, error: null });
+    set({ isInstallingAny: true, installProgress: 0, error: null });
     set((state) => ({ installingApps: [...state.installingApps, appId] }));
 
     const progressInterval = setInterval(() => {
@@ -390,13 +390,13 @@ export const useAppStore = create<AppStoreState>((set, get) => ({
         apps: state.apps.map(a =>
           a.id === appId ? { ...a, is_installed: true, installed_at: new Date().toISOString() } : a
         ),
-        isInstalling: false, installProgress: 0,
+        isInstallingAny: false, installProgress: 0,
       }));
       return true;
     } catch (err: any) {
       clearInterval(progressInterval);
       set((state) => ({
-        error: err.message, isInstalling: false, installProgress: 0,
+        isInstallingAny: false, installProgress: 0,
         installingApps: state.installingApps.filter(id => id !== appId),
       }));
       return false;
@@ -514,3 +514,4 @@ export const useAppStore = create<AppStoreState>((set, get) => ({
 }));
 
 export default useAppStore;
+
