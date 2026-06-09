@@ -1,6 +1,5 @@
-// app/(os)/index.tsx — MTAA OS Home Screen v5
-// Time-based greeting, PIN gate, ASIS AI tester, Android-standard tiles
-// Full-bleed background, valid routes, no dead links
+// app/(os)/index.tsx — MTAA OS Home Screen v6
+// Android-style dark tiles, Restaurant visible, Wallet privacy, full-bleed background
 
 import React, { useState, useEffect } from "react";
 import {
@@ -14,7 +13,6 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -23,7 +21,7 @@ import {
   Image as ImageIcon, Camera, Settings, Clock, Calendar, Calculator,
   Download, TrendingUp, CreditCard, Landmark, Bus, Bell, Wifi,
   BookOpen, Activity, QrCode, Send, ArrowDownLeft, ArrowUpRight,
-  User, Sparkles, X, ChevronRight, Lock,
+  User, Sparkles, X, Lock, UtensilsCrossed, Eye, EyeOff,
 } from "lucide-react-native";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useWalletStore } from "@/hooks/useWalletStore";
@@ -32,11 +30,11 @@ import { COLORS, FONTS, SIZES } from "@/constants/theme";
 
 const { width, height } = Dimensions.get("window");
 
-// Android standard: 56dp touch target, 48dp icon
-const TILE_SIZE = 72;
-const ICON_SIZE = 28;
-const SMALL_TILE = 56;
-const SMALL_ICON = 22;
+// === ANDROID STANDARD TILE SIZES ===
+const TILE_SIZE = 72;      // Main app tiles
+const ICON_SIZE = 28;      // Main icons
+const SMALL_TILE = 56;     // System tiles (smaller, like Android)
+const SMALL_ICON = 22;     // System icons
 
 // === TIME-BASED GREETING ===
 function getGreeting(name: string): string {
@@ -48,45 +46,46 @@ function getGreeting(name: string): string {
   return `Good night, ${name}`;
 }
 
-// === OS SYSTEM APPS ===
+// === OS SYSTEM APPS (Android-style dark tiles) ===
 const SYSTEM_APPS = [
-  { id: "clock", label: "Clock", icon: Clock, route: "/(os)/clock", color: "#007AFF" },
-  { id: "calculator", label: "Calc", icon: Calculator, route: "/(os)/calculator", color: "#FF9500" },
-  { id: "calendar", label: "Calendar", icon: Calendar, route: "/(os)/calendar", color: "#FF3B30" },
-  { id: "network", label: "Network", icon: Activity, route: "/(os)/network", color: "#34C759" },
-  { id: "wifi", label: "Wi-Fi", icon: Wifi, route: "/(os)/wifi", color: "#007AFF" },
-  { id: "reader", label: "Reader", icon: BookOpen, route: "/(os)/reader", color: "#8E8E93" },
-  { id: "settings", label: "Settings", icon: Settings, route: "/(settings)", color: "#8E8E93" },
-  { id: "profile", label: "Profile", icon: User, route: "/(os)/profile", color: "#AF52DE" },
+  { id: "clock", label: "Clock", icon: Clock, route: "/(os)/clock", color: "#60A5FA" },
+  { id: "calculator", label: "Calc", icon: Calculator, route: "/(os)/calculator", color: "#FBBF24" },
+  { id: "calendar", label: "Calendar", icon: Calendar, route: "/(os)/calendar", color: "#F87171" },
+  { id: "network", label: "Network", icon: Activity, route: "/(os)/network", color: "#34D399" },
+  { id: "wifi", label: "Wi-Fi", icon: Wifi, route: "/(os)/wifi", color: "#818CF8" },
+  { id: "reader", label: "Reader", icon: BookOpen, route: "/(os)/reader", color: "#A78BFA" },
+  { id: "settings", label: "Settings", icon: Settings, route: "/(settings)", color: "#9CA3AF" },
+  { id: "profile", label: "Profile", icon: User, route: "/(os)/profile", color: "#F472B6" },
 ];
 
 // === CORE APPS ===
 const CORE_APPS = [
-  { id: "wallet", label: "Wallet", icon: Wallet, route: "/(os)/wallet", color: "#007AFF" },
-  { id: "messages", label: "Messages", icon: MessageCircle, route: "/(communication)/messages", color: "#34C759" },
-  { id: "phone", label: "Phone", icon: Phone, route: "/(os)/phone", color: "#34C759" },
-  { id: "gallery", label: "Gallery", icon: ImageIcon, route: "/(media)/gallery", color: "#FF9500" },
-  { id: "camera", label: "Camera", icon: Camera, route: "/(media)/camera", color: "#8E8E93" },
-  { id: "appstore", label: "AppStore", icon: Download, route: "/(os)/appstore", color: "#007AFF" },
+  { id: "wallet", label: "Wallet", icon: Wallet, route: "/(os)/wallet", color: "#60A5FA" },
+  { id: "messages", label: "Messages", icon: MessageCircle, route: "/(communication)/messages", color: "#34D399" },
+  { id: "phone", label: "Phone", icon: Phone, route: "/(os)/phone", color: "#34D399" },
+  { id: "gallery", label: "Gallery", icon: ImageIcon, route: "/(media)/gallery", color: "#F472B6" },
+  { id: "camera", label: "Camera", icon: Camera, route: "/(media)/camera", color: "#9CA3AF" },
+  { id: "appstore", label: "AppStore", icon: Download, route: "/(os)/appstore", color: "#60A5FA" },
 ];
 
-// === DOMAIN APPS ===
+// === DOMAIN APPS (MTAA Apps) ===
 const DOMAIN_APPS = [
-  { id: "mtaxi", label: "MTaxi", icon: Car, route: "/(transport)/mtaxi", color: "#FFCC00", badge: "SOON" },
-  { id: "mtruck", label: "MTruck", icon: Truck, route: "/(transport)/mtruck", color: "#FF9500", badge: "SOON" },
-  { id: "boda", label: "Boda", icon: Bus, route: "/(transport)/boda", color: "#FF3B30", badge: "SOON" },
-  { id: "tribes", label: "Tribes", icon: Users, route: "/(social)/tribes", color: "#AF52DE" },
-  { id: "shop", label: "Shop", icon: ShoppingBag, route: "/(commerce)/shop", color: "#FF2D55" },
-  { id: "marketplace", label: "Market", icon: Store, route: "/(commerce)/marketplace", color: "#5856D6" },
-  { id: "jobs", label: "Jobs", icon: Briefcase, route: "/(work)/jobs", color: "#5AC8FA" },
-  { id: "education", label: "Edu", icon: GraduationCap, route: "/(education)", color: "#FF9500" },
-  { id: "health", label: "Health", icon: Heart, route: "/(health)", color: "#FF3B30" },
-  { id: "streets", label: "Streets", icon: MapPin, route: "/(local)/streets", color: "#34C759" },
-  { id: "civic", label: "Civic", icon: Shield, route: "/(civic)", color: "#007AFF" },
-  { id: "courts", label: "Courts", icon: Gavel, route: "/(civic)/courts", color: "#8E8E93" },
-  { id: "finance", label: "Finance", icon: TrendingUp, route: "/(finance)", color: "#34C759" },
-  { id: "credit", label: "Credit", icon: CreditCard, route: "/(finance)/credit", color: "#FF9500" },
-  { id: "land", label: "Land", icon: Landmark, route: "/(civic)/land", color: "#8E8E93" },
+  { id: "mtaxi", label: "MTaxi", icon: Car, route: "/(transport)/mtaxi", color: "#FBBF24", badge: "SOON" },
+  { id: "mtruck", label: "MTruck", icon: Truck, route: "/(transport)/mtruck", color: "#FB923C", badge: "SOON" },
+  { id: "boda", label: "Boda", icon: Bus, route: "/(transport)/boda", color: "#F87171", badge: "SOON" },
+  { id: "tribes", label: "Tribes", icon: Users, route: "/(social)/tribes", color: "#A78BFA" },
+  { id: "shop", label: "Shop", icon: ShoppingBag, route: "/(commerce)/shop", color: "#F472B6" },
+  { id: "marketplace", label: "Market", icon: Store, route: "/(commerce)/marketplace", color: "#60A5FA" },
+  { id: "jobs", label: "Jobs", icon: Briefcase, route: "/(work)/jobs", color: "#34D399" },
+  { id: "education", label: "Edu", icon: GraduationCap, route: "/(education)", color: "#FBBF24" },
+  { id: "health", label: "Health", icon: Heart, route: "/(health)", color: "#F87171" },
+  { id: "streets", label: "Streets", icon: MapPin, route: "/(local)/streets", color: "#34D399" },
+  { id: "civic", label: "Civic", icon: Shield, route: "/(civic)", color: "#60A5FA" },
+  { id: "courts", label: "Courts", icon: Gavel, route: "/(civic)/courts", color: "#9CA3AF" },
+  { id: "finance", label: "Finance", icon: TrendingUp, route: "/(finance)", color: "#34D399" },
+  { id: "credit", label: "Credit", icon: CreditCard, route: "/(finance)/credit", color: "#FBBF24" },
+  { id: "land", label: "Land", icon: Landmark, route: "/(civic)/land", color: "#A78BFA" },
+  { id: "restaurant", label: "Restaurant", icon: UtensilsCrossed, route: "/(os)/restaurant", color: "#F97316" },
 ];
 
 export default function HomeScreen() {
@@ -101,13 +100,13 @@ export default function HomeScreen() {
   const [pinError, setPinError] = useState("");
   const [asisReport, setAsisReport] = useState<string | null>(null);
   const [showAsis, setShowAsis] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(false);
 
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "Warrior";
   const greeting = getGreeting(displayName);
   const safeBalance = (balance ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2 });
 
   useEffect(() => {
-    // Balance is reactive from store
     checkPinRequired?.().then((required: boolean) => {
       if (required && isAuthenticated) setPinModalVisible(true);
     });
@@ -115,7 +114,6 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Balance is reactive from store
     setRefreshing(false);
   };
 
@@ -148,22 +146,23 @@ export default function HomeScreen() {
     }
   };
 
+  // === ANDROID-STYLE DARK TILE RENDERER ===
   const renderTile = (app: any, size: number = TILE_SIZE, iconSize: number = ICON_SIZE) => (
     <TouchableOpacity
       key={app.id}
-      style={[styles.tile, { width: size, height: size + 20 }]}
+      style={styles.tileContainer}
       onPress={() => router.push(app.route)}
-      activeOpacity={0.6}
+      activeOpacity={0.7}
     >
-      <View style={[styles.tileIcon, { width: size, height: size, borderRadius: size * 0.22, backgroundColor: app.color + "25" }]}>
+      <View style={[styles.tile, { width: size, height: size }]}>
         <app.icon size={iconSize} color={app.color} strokeWidth={2} />
+        {app.badge && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{app.badge}</Text>
+          </View>
+        )}
       </View>
       <Text style={styles.tileLabel} numberOfLines={1}>{app.label}</Text>
-      {app.badge && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{app.badge}</Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 
@@ -199,8 +198,15 @@ export default function HomeScreen() {
 
           {/* Balance Card */}
           <View style={styles.balanceCard}>
-            <Text style={styles.balanceLabel}>Wallet Balance</Text>
-            <Text style={styles.balanceValue}>KSh {safeBalance}</Text>
+            <View style={styles.balanceHeader}>
+              <Text style={styles.balanceLabel}>Wallet Balance</Text>
+              <TouchableOpacity onPress={() => setBalanceVisible(!balanceVisible)}>
+                {balanceVisible ? <EyeOff size={16} color="rgba(255,255,255,0.6)" /> : <Eye size={16} color="rgba(255,255,255,0.6)" />}
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.balanceValue}>
+              {balanceVisible ? `KSh ${safeBalance}` : "KSh ••••••"}
+            </Text>
             <View style={styles.quickActions}>
               {[
                 { icon: QrCode, label: "Scan", route: "/(os)/wallet/qr" },
@@ -216,9 +222,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* System Apps */}
+          {/* System Apps — Android-style dark tiles */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>System</Text>
+            <Text style={styles.sectionTitle}>SYSTEM</Text>
             <View style={styles.tileRow}>
               {SYSTEM_APPS.map(app => renderTile(app, SMALL_TILE, SMALL_ICON))}
             </View>
@@ -226,15 +232,15 @@ export default function HomeScreen() {
 
           {/* Core Apps */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Core</Text>
+            <Text style={styles.sectionTitle}>CORE</Text>
             <View style={styles.tileRow}>
               {CORE_APPS.map(app => renderTile(app, TILE_SIZE, ICON_SIZE))}
             </View>
           </View>
 
-          {/* Domain Apps */}
+          {/* Domain Apps — Restaurant now included */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Apps</Text>
+            <Text style={styles.sectionTitle}>APPS</Text>
             <View style={styles.tileRow}>
               {DOMAIN_APPS.map(app => renderTile(app, TILE_SIZE, ICON_SIZE))}
             </View>
@@ -300,6 +306,9 @@ export default function HomeScreen() {
   );
 }
 
+// ============================================================================
+// STYLES — Android-style dark tiles
+// ============================================================================
 const styles = StyleSheet.create({
   bg: { flex: 1, width, height },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.50)" },
@@ -314,7 +323,7 @@ const styles = StyleSheet.create({
   },
   iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", justifyContent: "center", alignItems: "center" },
   liveStats: { flexDirection: "row", alignItems: "center", gap: 6 },
-  statDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34C759" },
+  statDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34D399" },
   statText: { fontFamily: FONTS.medium, fontSize: 12, color: "#fff" },
   notifDot: { position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: "#FF3B30" },
 
@@ -337,6 +346,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
   },
+  balanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   balanceLabel: { fontFamily: FONTS.medium, fontSize: 12, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: 1 },
   balanceValue: { fontFamily: FONTS.bold, fontSize: 34, color: "#fff", marginTop: 4, marginBottom: SIZES.md },
   quickActions: { flexDirection: "row", justifyContent: "space-between", gap: SIZES.sm },
@@ -344,30 +358,66 @@ const styles = StyleSheet.create({
   qaText: { fontFamily: FONTS.medium, fontSize: 11, color: "#fff", marginTop: 4 },
 
   section: { marginBottom: SIZES.lg },
-  sectionTitle: { fontFamily: FONTS.bold, fontSize: 14, color: "rgba(255,255,255,0.8)", marginBottom: SIZES.sm, textTransform: "uppercase", letterSpacing: 1 },
-  tileRow: { flexDirection: "row", flexWrap: "wrap", gap: SIZES.sm },
-  tile: { alignItems: "center", marginBottom: SIZES.sm },
-  tileIcon: {
+  sectionTitle: { fontFamily: FONTS.bold, fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: SIZES.sm, textTransform: "uppercase", letterSpacing: 1.5 },
+
+  // === ANDROID-STYLE TILE GRID ===
+  tileRow: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    justifyContent: "flex-start",
+    gap: 0,
+  },
+
+  tileContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 4,
+    marginVertical: 6,
+    width: TILE_SIZE + 8,
+  },
+
+  // Dark charcoal tile — matches Android Apps section
+  tile: {
+    backgroundColor: "rgba(30, 30, 40, 0.75)",
+    borderRadius: TILE_SIZE * 0.22,
+    borderWidth: 0.5,
+    borderColor: "rgba(255, 255, 255, 0.08)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 3,
+    overflow: "hidden",
   },
-  tileLabel: { fontFamily: FONTS.medium, fontSize: 10, color: "#fff", textAlign: "center", width: TILE_SIZE },
+
+  tileLabel: { 
+    fontFamily: FONTS.medium, 
+    fontSize: 11, 
+    color: "#fff", 
+    textAlign: "center", 
+    marginTop: 6,
+    opacity: 0.9,
+    letterSpacing: 0.2,
+    width: TILE_SIZE,
+  },
+
   badge: {
     position: "absolute",
-    top: -2,
-    right: -2,
+    top: -6,
+    right: -6,
     backgroundColor: "#FF3B30",
-    borderRadius: 6,
-    paddingHorizontal: 3,
-    paddingVertical: 1,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: "#1a1a2e",
   },
-  badgeText: { fontFamily: FONTS.bold, fontSize: 7, color: "#fff" },
+  badgeText: { fontFamily: FONTS.bold, fontSize: 10, color: "#fff" },
 
   footer: { alignItems: "center", marginTop: SIZES.lg, paddingBottom: SIZES.xl },
   footerText: { fontFamily: FONTS.regular, fontSize: 11, color: "rgba(255,255,255,0.4)" },
@@ -405,4 +455,3 @@ const styles = StyleSheet.create({
   asisScroll: { maxHeight: height * 0.5 },
   asisReport: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, lineHeight: 20 },
 });
-
