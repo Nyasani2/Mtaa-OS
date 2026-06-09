@@ -4,6 +4,8 @@ export const SYSTEM_APPS: AppManifest[] = [
   { id: 'wallet', name: 'Wallet', domain: 'wallet', version: '1.0.0', entry_point: '/(os)/wallet', icon: '💰', color: '#10B981', system_app: true, installable: false, enabled: true, permissions: [], routes: [], dependencies: [] },
   { id: 'health', name: 'Health', domain: 'health', version: '1.0.0', entry_point: '/(os)/health', icon: '🏥', color: '#EF4444', system_app: true, installable: false, enabled: true, permissions: [], routes: [], dependencies: [] },
   { id: 'settings', name: 'Settings', domain: 'settings', version: '1.0.0', entry_point: '/(os)/settings', icon: '⚙️', color: '#6B7280', system_app: true, installable: false, enabled: true, permissions: [], routes: [], dependencies: [] },
+  { id: 'clock', name: 'Clock', domain: 'clock', version: '1.0.0', entry_point: '/(os)/clock', icon: '🕐', color: '#3B82F6', system_app: true, installable: false, enabled: true, permissions: [], routes: [], dependencies: [] },
+  { id: 'scheduler', name: 'Calendar', domain: 'scheduler', version: '1.0.0', entry_point: '/(os)/calendar', icon: '📅', color: '#F59E0B', system_app: true, installable: false, enabled: true, permissions: [], routes: [], dependencies: [] },
 ];
 
 export const APP_STORE_REGISTRY: AppManifest[] = [
@@ -17,6 +19,7 @@ export const APP_STORE_REGISTRY: AppManifest[] = [
   { id: 'education', name: 'Education', domain: 'education', version: '1.0.0', entry_point: '/(os)/education', icon: '🎓', color: '#6366F1', system_app: false, installable: true, enabled: true, permissions: ['notifications'], routes: ['/courses','/enrolled','/certificates'], dependencies: [] },
   { id: 'hookup', name: 'Hookup', domain: 'hookup', version: '1.0.0', entry_point: '/(os)/hookup', icon: '💘', color: '#EC4899', system_app: false, installable: true, enabled: true, permissions: ['location','notifications'], routes: ['/discover','/matches','/messages'], dependencies: [] },
   { id: 'civic', name: 'Civic', domain: 'civic', version: '1.0.0', entry_point: '/(os)/civic', icon: '🏛️', color: '#1E40AF', system_app: false, installable: true, enabled: true, permissions: ['location','notifications'], routes: ['/services','/projects','/documents'], dependencies: [] },
+  { id: 'restaurant', name: 'Restaurant', domain: 'restaurant', version: '1.0.0', entry_point: '/(os)/restaurant', icon: '🍽️', color: '#F97316', system_app: false, installable: true, enabled: true, permissions: ['camera','notifications','location'], routes: ['/dashboard','/pos','/kds','/tables','/menu','/inventory','/staff','/payroll','/reports','/delivery','/customers','/settings','/asis'], dependencies: ['wallet'] },
 ];
 
 export const UNIFIED_REGISTRY: AppManifest[] = [...SYSTEM_APPS, ...APP_STORE_REGISTRY];
