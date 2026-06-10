@@ -22,7 +22,7 @@ import {
   Download, TrendingUp, CreditCard, Landmark, Bus, Bell, Wifi,
   BookOpen, Activity, QrCode, Send, ArrowDownLeft, ArrowUpRight,
   User, Sparkles, X, Lock, UtensilsCrossed, Eye, EyeOff,
-  Newspaper, Zap,
+  Newspaper, Zap, Home,
 } from "lucide-react-native";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useWalletStore } from "@/hooks/useWalletStore";
@@ -78,6 +78,7 @@ const DOMAIN_APPS = [
   { id: "streets", label: "Streets", icon: Users, route: "/(os)/streets", color: "#E91E63" },
   { id: "pulse", label: "Pulse", icon: Zap, route: "/(os)/pulse", color: "#FF6B35" },
   { id: "nearby", label: "Nearby", icon: MapPin, route: "/(local)/nearby", color: "#34D399" },
+  { id: "property", label: "Property", icon: Home, route: "/(os)/property", color: "#8B5CF6" },
   { id: "civic", label: "Civic", icon: Shield, route: "/(civic)", color: "#60A5FA" },
   { id: "courts", label: "Courts", icon: Gavel, route: "/(civic)/courts", color: "#9CA3AF" },
   { id: "finance", label: "Finance", icon: TrendingUp, route: "/(finance)", color: "#34D399" },
