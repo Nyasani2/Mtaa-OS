@@ -1,9 +1,13 @@
+// domains/streets/screens/CreatorScreen.tsx
+// MTAA Streets — Creator Dashboard (FIXED imports)
+
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { useCreator } from '../hooks/useCreator';
 
 export default function CreatorScreen() {
-  const { dashboard, subscribers, earnings, activeTab, setActiveTab, updateTiers, withdrawEarnings } = useCreator();
+  const { dashboard, earnings, activeTab, setActiveTab, withdrawEarnings } = useCreator();
 
   const tabs = ['overview', 'subscribers', 'earnings', 'content'];
 
@@ -56,7 +60,7 @@ export default function CreatorScreen() {
       {activeTab === 'earnings' && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Withdraw</Text>
-          <Pressable style={styles.withdrawBtn} onPress={() => withdrawEarnings.mutate(earnings?.available || 0)}>
+          <Pressable style={styles.withdrawBtn} onPress={() => withdrawEarnings?.mutate?.(earnings?.available || 0)}>
             <Text style={styles.withdrawText}>Withdraw ${earnings?.available || '0.00'}</Text>
           </Pressable>
         </View>
@@ -64,8 +68,6 @@ export default function CreatorScreen() {
     </ScrollView>
   );
 }
-
-import { router } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },

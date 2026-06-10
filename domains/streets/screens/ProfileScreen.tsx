@@ -1,6 +1,9 @@
+// domains/streets/screens/ProfileScreen.tsx
+// MTAA Streets — Profile Screen (FIXED imports)
+
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, FlatList, Pressable, Text, StyleSheet } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { FeedCard } from '../components/FeedCard';
 import { useProfile } from '../hooks/useProfile';
@@ -42,13 +45,11 @@ export default function ProfileScreen() {
           />
         )}
         keyExtractor={item => item.id}
+        ListEmptyComponent={<Text style={styles.empty}>No {activeTab} yet</Text>}
       />
     </View>
   );
 }
-
-import { Pressable, Text } from 'react-native';
-import { router } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
@@ -57,4 +58,5 @@ const styles = StyleSheet.create({
   activeTab: { borderBottomWidth: 2, borderBottomColor: '#E91E63' },
   tabText: { fontSize: 14, color: '#888', textTransform: 'capitalize' },
   activeTabText: { color: '#E91E63', fontWeight: '700' },
+  empty: { textAlign: 'center', padding: 40, color: '#888' },
 });
