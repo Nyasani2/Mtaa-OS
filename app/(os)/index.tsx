@@ -22,6 +22,7 @@ import {
   Download, TrendingUp, CreditCard, Landmark, Bus, Bell, Wifi,
   BookOpen, Activity, QrCode, Send, ArrowDownLeft, ArrowUpRight,
   User, Sparkles, X, Lock, UtensilsCrossed, Eye, EyeOff,
+  Newspaper, Zap,
 } from "lucide-react-native";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useWalletStore } from "@/hooks/useWalletStore";
@@ -30,13 +31,11 @@ import { COLORS, FONTS, SIZES } from "@/constants/theme";
 
 const { width, height } = Dimensions.get("window");
 
-// === ANDROID STANDARD TILE SIZES ===
-const TILE_SIZE = 72;      // Main app tiles
-const ICON_SIZE = 28;      // Main icons
-const SMALL_TILE = 56;     // System tiles (smaller, like Android)
-const SMALL_ICON = 22;     // System icons
+const TILE_SIZE = 72;
+const ICON_SIZE = 28;
+const SMALL_TILE = 56;
+const SMALL_ICON = 22;
 
-// === TIME-BASED GREETING ===
 function getGreeting(name: string): string {
   const hour = new Date().getHours();
   if (hour < 6) return `Good night, ${name}`;
@@ -46,7 +45,6 @@ function getGreeting(name: string): string {
   return `Good night, ${name}`;
 }
 
-// === OS SYSTEM APPS (Android-style dark tiles) ===
 const SYSTEM_APPS = [
   { id: "clock", label: "Clock", icon: Clock, route: "/(os)/clock", color: "#60A5FA" },
   { id: "calculator", label: "Calc", icon: Calculator, route: "/(os)/calculator", color: "#FBBF24" },
@@ -58,7 +56,6 @@ const SYSTEM_APPS = [
   { id: "profile", label: "Profile", icon: User, route: "/(os)/profile", color: "#F472B6" },
 ];
 
-// === CORE APPS ===
 const CORE_APPS = [
   { id: "wallet", label: "Wallet", icon: Wallet, route: "/(os)/wallet", color: "#60A5FA" },
   { id: "messages", label: "Messages", icon: MessageCircle, route: "/(communication)/messages", color: "#34D399" },
@@ -68,7 +65,6 @@ const CORE_APPS = [
   { id: "appstore", label: "AppStore", icon: Download, route: "/(os)/appstore", color: "#60A5FA" },
 ];
 
-// === DOMAIN APPS (MTAA Apps) ===
 const DOMAIN_APPS = [
   { id: "mtaxi", label: "MTaxi", icon: Car, route: "/(transport)/mtaxi", color: "#FBBF24", badge: "SOON" },
   { id: "mtruck", label: "MTruck", icon: Truck, route: "/(transport)/mtruck", color: "#FB923C", badge: "SOON" },
@@ -79,7 +75,9 @@ const DOMAIN_APPS = [
   { id: "jobs", label: "Jobs", icon: Briefcase, route: "/(work)/jobs", color: "#34D399" },
   { id: "education", label: "Edu", icon: GraduationCap, route: "/(education)", color: "#FBBF24" },
   { id: "health", label: "Health", icon: Heart, route: "/(health)", color: "#F87171" },
-  { id: "streets", label: "Streets", icon: MapPin, route: "/(local)/streets", color: "#34D399" },
+  { id: "streets", label: "Streets", icon: Users, route: "/(os)/streets", color: "#E91E63" },
+  { id: "pulse", label: "Pulse", icon: Zap, route: "/(os)/pulse", color: "#FF6B35" },
+  { id: "nearby", label: "Nearby", icon: MapPin, route: "/(local)/nearby", color: "#34D399" },
   { id: "civic", label: "Civic", icon: Shield, route: "/(civic)", color: "#60A5FA" },
   { id: "courts", label: "Courts", icon: Gavel, route: "/(civic)/courts", color: "#9CA3AF" },
   { id: "finance", label: "Finance", icon: TrendingUp, route: "/(finance)", color: "#34D399" },
@@ -146,7 +144,6 @@ export default function HomeScreen() {
     }
   };
 
-  // === ANDROID-STYLE DARK TILE RENDERER ===
   const renderTile = (app: any, size: number = TILE_SIZE, iconSize: number = ICON_SIZE) => (
     <TouchableOpacity
       key={app.id}
@@ -178,7 +175,6 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scroll}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
         >
-          {/* Top Bar */}
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(settings)")}>
               <Settings size={20} color="#fff" />
@@ -193,10 +189,8 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Greeting */}
           <Text style={styles.greeting}>{greeting}</Text>
 
-          {/* Balance Card */}
           <View style={styles.balanceCard}>
             <View style={styles.balanceHeader}>
               <Text style={styles.balanceLabel}>Wallet Balance</Text>
@@ -222,7 +216,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* System Apps — Android-style dark tiles */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>SYSTEM</Text>
             <View style={styles.tileRow}>
@@ -230,7 +223,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Core Apps */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>CORE</Text>
             <View style={styles.tileRow}>
@@ -238,7 +230,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Domain Apps — Restaurant now included */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>APPS</Text>
             <View style={styles.tileRow}>
@@ -246,7 +237,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               {liveStats.users.toLocaleString()} users • {liveStats.transactions.toLocaleString()} transactions
@@ -254,13 +244,11 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
 
-        {/* ASIS Floating Button */}
         <TouchableOpacity style={styles.asisBtn} onPress={runAsisAudit}>
           <Sparkles size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* PIN Gate Modal */}
       <Modal visible={pinModalVisible} transparent animationType="fade">
         <View style={styles.pinOverlay}>
           <View style={styles.pinCard}>
@@ -286,7 +274,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* ASIS Report Modal */}
       <Modal visible={showAsis} transparent animationType="slide">
         <View style={styles.asisOverlay}>
           <View style={styles.asisCard}>
@@ -306,9 +293,6 @@ export default function HomeScreen() {
   );
 }
 
-// ============================================================================
-// STYLES — Android-style dark tiles
-// ============================================================================
 const styles = StyleSheet.create({
   bg: { flex: 1, width, height },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.50)" },
@@ -360,7 +344,6 @@ const styles = StyleSheet.create({
   section: { marginBottom: SIZES.lg },
   sectionTitle: { fontFamily: FONTS.bold, fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: SIZES.sm, textTransform: "uppercase", letterSpacing: 1.5 },
 
-  // === ANDROID-STYLE TILE GRID ===
   tileRow: { 
     flexDirection: "row", 
     flexWrap: "wrap", 
@@ -376,7 +359,6 @@ const styles = StyleSheet.create({
     width: TILE_SIZE + 8,
   },
 
-  // Dark charcoal tile — matches Android Apps section
   tile: {
     backgroundColor: "rgba(30, 30, 40, 0.75)",
     borderRadius: TILE_SIZE * 0.22,
