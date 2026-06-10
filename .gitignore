@@ -21,3 +21,12 @@ expo-env.d.ts
 # @end expo-cli
 .vercel
 .env*
+
+node_modules/
+.expo/
+dist/
+build/
+android/app/build/
+ios/build/
+*.log
+
