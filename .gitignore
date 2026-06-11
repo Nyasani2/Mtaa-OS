@@ -30,3 +30,5 @@ android/app/build/
 ios/build/
 *.log
 
+*.zip
+*.tar.gz
