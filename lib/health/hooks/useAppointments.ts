@@ -1,15 +1,39 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AppointmentService } from "../services/appointment.service";
-import type { HealthAppointment } from "../types";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/kernel/supabase";
 
-export function useAppointments(userId: string, role: string) {
-  return useQuery({ queryKey: ["health", "appointments", userId, role], queryFn: () => AppointmentService.getAppointments(userId, role), enabled: !!userId });
-}
-export function useBookAppointment() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: AppointmentService.book, onSuccess: () => qc.invalidateQueries({ queryKey: ["health", "appointments"] }) });
-}
-export function useUpdateAppointmentStatus() {
-  const qc = useQueryClient();
-  return useMutation({ mutationFn: ({ id, status }: { id: string; status: HealthAppointment["status"] }) => AppointmentService.updateStatus(id, status), onSuccess: () => qc.invalidateQueries({ queryKey: ["health", "appointments"] }) });
+export function useAppointments(patientId?: string) {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from("health_appointments").select("*").order("scheduled_at", { ascending: true });
+      if (patientId) query = query.eq("patient_id", patientId);
+      const { data, error } = await query;
+      if (error) throw error;
+      setAppointments(data || []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [patientId]);
+
+  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+
+  const bookAppointment = async (data: any) => {
+    const { error } = await supabase.from("health_appointments").insert(data);
+    if (error) throw error;
+    await fetchAppointments();
+  };
+
+  const cancelAppointment = async (id: string) => {
+    const { error } = await supabase.from("health_appointments").update({ status: "cancelled" }).eq("id", id);
+    if (error) throw error;
+    await fetchAppointments();
+  };
+
+  return { appointments, loading, error, bookAppointment, cancelAppointment, refresh: fetchAppointments };
 }
