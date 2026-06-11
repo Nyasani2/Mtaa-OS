@@ -74,7 +74,7 @@ const DOMAIN_APPS = [
   { id: "marketplace", label: "Market", icon: Store, route: "/(commerce)/marketplace", color: "#60A5FA" },
   { id: "jobs", label: "Jobs", icon: Briefcase, route: "/(work)/jobs", color: "#34D399" },
   { id: "education", label: "Edu", icon: GraduationCap, route: "/(education)", color: "#FBBF24" },
-  { id: "health", label: "Health", icon: Heart, route: "/(health)", color: "#F87171" },
+  { id: "health", label: "Health", icon: Heart, route: "/(os)/health", color: "#F87171" },
   { id: "streets", label: "Streets", icon: Users, route: "/(os)/streets", color: "#E91E63" },
   { id: "pulse", label: "Pulse", icon: Zap, route: "/(os)/pulse", color: "#FF6B35" },
   { id: "nearby", label: "Nearby", icon: MapPin, route: "/(local)/nearby", color: "#34D399" },

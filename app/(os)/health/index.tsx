@@ -1,304 +1,185 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, Alert, ActivityIndicator
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Heart, Calendar, FileText, Pill, FlaskConical,
-  ShieldAlert, Baby, ChevronRight, Clock, MapPin,
-  Stethoscope, Phone, TrendingUp, User
-} from 'lucide-react-native';
-import { useHealthStore } from '@/lib/health/state/health.store';
-import { usePatient } from '@/lib/health/hooks/usePatient';
-import { useAppointments } from '@/lib/health/hooks/useAppointments';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
-import { Colors } from '@/constants/Colors';
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl
+} from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function HealthHomeScreen() {
+const PATIENT_MODULES = [
+  { id: "records", label: "My Records", icon: "document-text", route: "/(os)/health/records", color: "#2563eb" },
+  { id: "appointments", label: "Appointments", icon: "calendar", route: "/(os)/health/appointments", color: "#8b5cf6" },
+  { id: "prescriptions", label: "Prescriptions", icon: "medical", route: "/(os)/health/prescriptions", color: "#10b981" },
+  { id: "lab-results", label: "Lab Results", icon: "flask", route: "/(os)/health/lab-results", color: "#f59e0b" },
+  { id: "find-care", label: "Find Care", icon: "search", route: "/(os)/health/find-care", color: "#ec4899" },
+  { id: "insurance", label: "Insurance", icon: "shield-checkmark", route: "/(os)/health/insurance", color: "#06b6d4" },
+  { id: "wallet", label: "Health Wallet", icon: "wallet", route: "/(os)/health/wallet", color: "#14b8a6" },
+  { id: "children", label: "Child Health", icon: "happy", route: "/(os)/health/children", color: "#f97316" },
+];
+
+const CLINICAL_MODULES = [
+  { id: "doctor", label: "Doctor", icon: "stethoscope", route: "/(os)/health/doctor", color: "#2563eb" },
+  { id: "nurse", label: "Nurse", icon: "heart-pulse", route: "/(os)/health/nurse", color: "#ec4899" },
+  { id: "lab", label: "Laboratory", icon: "flask", route: "/(os)/health/lab", color: "#f59e0b" },
+  { id: "pharmacy", label: "Pharmacy", icon: "medkit", route: "/(os)/health/pharmacy", color: "#10b981" },
+  { id: "radiology", label: "Radiology", icon: "scan", route: "/(os)/health/radiology", color: "#8b5cf6" },
+  { id: "telemedicine", label: "Telemedicine", icon: "videocam", route: "/(os)/health/telemedicine", color: "#06b6d4" },
+];
+
+const OPERATIONS_MODULES = [
+  { id: "hospital-admin", label: "Hospital", icon: "business", route: "/(os)/health/hospital-admin", color: "#2563eb" },
+  { id: "ambulance", label: "Ambulance", icon: "medical", route: "/(os)/health/ambulance", color: "#ef4444" },
+];
+
+const GOVERNMENT_MODULES = [
+  { id: "government", label: "Ministry", icon: "shield", route: "/(os)/health/government", color: "#2563eb" },
+  { id: "system", label: "System", icon: "settings", route: "/(os)/health/system/settings", color: "#6b7280" },
+];
+
+export default function HealthHome() {
   const router = useRouter();
-  const { profile } = useAuthStore();
-  const { patient, loading: patientLoading, refreshPatient } = usePatient(profile?.id);
-  const { appointments, loading: apptLoading, refreshAppointments } = useAppointments(patient?.id);
   const [refreshing, setRefreshing] = useState(false);
+  const [greeting, setGreeting] = useState("Good day");
 
-  const upcomingAppointments = appointments?.filter(
-    (a: any) => ['scheduled', 'checked_in'].includes(a.status)
-  )?.slice(0, 3) || [];
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 17) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refreshPatient(), refreshAppointments()]);
-    setRefreshing(false);
+    setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const quickActions = [
-    { icon: Calendar, label: 'Book Appt', route: '/(os)/health/appointments', color: Colors.primary },
-    { icon: FileText, label: 'Records', route: '/(os)/health/records', color: '#4CAF50' },
-    { icon: Pill, label: 'Prescriptions', route: '/(os)/health/prescriptions', color: '#FF9800' },
-    { icon: FlaskConical, label: 'Lab Results', route: '/(os)/health/lab-results', color: '#9C27B0' },
-  ];
+  const renderModule = (mod: any) => (
+    <TouchableOpacity
+      key={mod.id}
+      style={styles.moduleCard}
+      onPress={() => router.push(mod.route as any)}
+    >
+      <View style={[styles.moduleIcon, { backgroundColor: mod.color + "15" }]}>
+        <Ionicons name={mod.icon as any} size={24} color={mod.color} />
+      </View>
+      <Text style={styles.moduleLabel}>{mod.label}</Text>
+    </TouchableOpacity>
+  );
 
-  const emergencyActions = [
-    { icon: ShieldAlert, label: 'Emergency SOS', route: '/(os)/health/emergency', color: '#F44336', bg: '#FFEBEE' },
-    { icon: Baby, label: 'Child Profiles', route: '/(os)/health/children', color: '#2196F3', bg: '#E3F2FD' },
-    { icon: MapPin, label: 'Find Care', route: '/(os)/health/find-care', color: '#4CAF50', bg: '#E8F5E9' },
-    { icon: Stethoscope, label: 'Telemedicine', route: '/(os)/health/telemedicine', color: '#FF9800', bg: '#FFF3E0' },
-  ];
-
-  if (patientLoading && !patient) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Loading your health profile...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const renderSection = (title: string, modules: any[]) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.moduleGrid}>
+        {modules.map(renderModule)}
+      </View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>{greeting},</Text>
+          <Text style={styles.name}>Health OS</Text>
+        </View>
+        <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push("/(os)/health/emergency")}>
+          <Ionicons name="warning" size={20} color="#fff" />
+          <Text style={styles.emergencyText}>SOS</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Health Dashboard</Text>
-            <Text style={styles.subGreeting}>
-              {profile?.full_name || profile?.phone || 'Welcome'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => router.push('/(os)/health/profile')}
-          >
-            <User size={24} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
         {/* Health Status Card */}
         <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Heart size={20} color="#F44336" fill="#F44336" />
-            <Text style={styles.statusTitle}>Health Status</Text>
-          </View>
-          <View style={styles.statusGrid}>
+          <View style={styles.statusRow}>
             <View style={styles.statusItem}>
-              <Text style={styles.statusValue}>{patient?.blood_group || '--'}</Text>
-              <Text style={styles.statusLabel}>Blood Group</Text>
+              <MaterialCommunityIcons name="heart-pulse" size={28} color="#ef4444" />
+              <Text style={styles.statusValue}>72 BPM</Text>
+              <Text style={styles.statusLabel}>Heart Rate</Text>
             </View>
+            <View style={styles.statusDivider} />
             <View style={styles.statusItem}>
-              <Text style={styles.statusValue}>{patient?.allergies?.length || 0}</Text>
-              <Text style={styles.statusLabel}>Allergies</Text>
+              <MaterialCommunityIcons name="thermometer" size={28} color="#f59e0b" />
+              <Text style={styles.statusValue}>36.6°C</Text>
+              <Text style={styles.statusLabel}>Temperature</Text>
             </View>
+            <View style={styles.statusDivider} />
             <View style={styles.statusItem}>
-              <Text style={styles.statusValue}>{patient?.chronic_conditions?.length || 0}</Text>
-              <Text style={styles.statusLabel}>Conditions</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusValue}>{upcomingAppointments.length}</Text>
-              <Text style={styles.statusLabel}>Upcoming</Text>
+              <MaterialCommunityIcons name="water-percent" size={28} color="#3b82f6" />
+              <Text style={styles.statusValue}>98%</Text>
+              <Text style={styles.statusLabel}>SpO2</Text>
             </View>
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          {quickActions.map((action, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.quickActionButton}
-              onPress={() => router.push(action.route as any)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '15' }]}>
-                <action.icon size={22} color={action.color} />
-              </View>
-              <Text style={styles.quickActionLabel}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Emergency & Special Actions */}
-        <Text style={styles.sectionTitle}>Emergency & Family</Text>
-        <View style={styles.emergencyGrid}>
-          {emergencyActions.map((action, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.emergencyButton, { backgroundColor: action.bg }]}
-              onPress={() => {
-                if (action.label === 'Emergency SOS') {
-                  Alert.alert(
-                    'Emergency SOS',
-                    'This will alert emergency services and share your location. Continue?',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'SOS', style: 'destructive', onPress: () => router.push('/(os)/health/emergency') }
-                    ]
-                  );
-                } else {
-                  router.push(action.route as any);
-                }
-              }}
-            >
-              <action.icon size={24} color={action.color} />
-              <Text style={[styles.emergencyLabel, { color: action.color }]}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Upcoming Appointments */}
-        <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-        {apptLoading ? (
-          <ActivityIndicator style={styles.apptLoader} color={Colors.primary} />
-        ) : upcomingAppointments.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Calendar size={32} color="#999" />
-            <Text style={styles.emptyText}>No upcoming appointments</Text>
-            <TouchableOpacity
-              style={styles.bookButton}
-              onPress={() => router.push('/(os)/health/appointments')}
-            >
-              <Text style={styles.bookButtonText}>Book Appointment</Text>
-            </TouchableOpacity>
+        {/* Upcoming Appointment */}
+        <TouchableOpacity style={styles.appointmentCard} onPress={() => router.push("/(os)/health/appointments")}>
+          <View style={styles.appointmentHeader}>
+            <Ionicons name="calendar" size={20} color="#2563eb" />
+            <Text style={styles.appointmentTitle}>Upcoming Appointment</Text>
           </View>
-        ) : (
-          upcomingAppointments.map((appt: any) => (
-            <TouchableOpacity
-              key={appt.id}
-              style={styles.appointmentCard}
-              onPress={() => router.push({
-                pathname: '/(os)/health/appointments/detail',
-                params: { id: appt.id }
-              } as any)}
-            >
-              <View style={styles.apptLeft}>
-                <View style={[styles.apptIndicator, {
-                  backgroundColor: appt.status === 'checked_in' ? '#4CAF50' : Colors.primary
-                }]} />
-                <View>
-                  <Text style={styles.apptType}>{appt.appointment_type?.replace('_', ' ')}</Text>
-                  <Text style={styles.apptDoctor}>Dr. {appt.doctor?.profile?.full_name || 'Unknown'}</Text>
-                  <View style={styles.apptTimeRow}>
-                    <Clock size={12} color="#666" />
-                    <Text style={styles.apptTime}>
-                      {new Date(appt.scheduled_at).toLocaleDateString()} at{' '}
-                      {new Date(appt.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <ChevronRight size={18} color="#999" />
-            </TouchableOpacity>
-          ))
-        )}
+          <Text style={styles.appointmentDoctor}>Dr. Sarah Kimani — General Checkup</Text>
+          <Text style={styles.appointmentTime}>Today, 2:30 PM · Nairobi Hospital</Text>
+        </TouchableOpacity>
 
-        {/* Recent Activity */}
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <View style={styles.activityCard}>
-          <View style={styles.activityItem}>
-            <TrendingUp size={16} color="#4CAF50" />
-            <Text style={styles.activityText}>Health profile synced</Text>
-            <Text style={styles.activityTime}>Just now</Text>
-          </View>
-          <View style={styles.activityDivider} />
-          <View style={styles.activityItem}>
-            <ShieldAlert size={16} color="#F44336" />
-            <Text style={styles.activityText}>Emergency access enabled</Text>
-            <Text style={styles.activityTime}>2h ago</Text>
-          </View>
-        </View>
-
-        <View style={styles.bottomPadding} />
+        {/* Module Sections */}
+        {renderSection("Patient", PATIENT_MODULES)}
+        {renderSection("Clinical", CLINICAL_MODULES)}
+        {renderSection("Operations", OPERATIONS_MODULES)}
+        {renderSection("Government & System", GOVERNMENT_MODULES)}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#666' },
+  container: { flex: 1, backgroundColor: "#f3f4f6" },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
+    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
   },
-  greeting: { fontSize: 24, fontWeight: '700', color: '#1a1a1a' },
-  subGreeting: { fontSize: 14, color: '#666', marginTop: 2 },
-  profileButton: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 3
+  greeting: { fontSize: 14, color: "#6b7280" },
+  name: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  emergencyBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#ef4444", paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 10,
   },
+  emergencyText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  content: { padding: 12, paddingBottom: 24 },
   statusCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 16,
-    padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2
+    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 12,
+    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
-  statusHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  statusTitle: { fontSize: 16, fontWeight: '600', marginLeft: 8, color: '#1a1a1a' },
-  statusGrid: { flexDirection: 'row', justifyContent: 'space-between' },
-  statusItem: { alignItems: 'center', flex: 1 },
-  statusValue: { fontSize: 20, fontWeight: '700', color: Colors.primary },
-  statusLabel: { fontSize: 11, color: '#666', marginTop: 4 },
-  sectionTitle: {
-    fontSize: 16, fontWeight: '600', color: '#1a1a1a',
-    marginHorizontal: 16, marginTop: 24, marginBottom: 12
-  },
-  quickActionsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 12, gap: 8
-  },
-  quickActionButton: {
-    width: '23%', alignItems: 'center', paddingVertical: 12
-  },
-  quickActionIcon: {
-    width: 52, height: 52, borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center'
-  },
-  quickActionLabel: { fontSize: 11, color: '#333', marginTop: 8, textAlign: 'center' },
-  emergencyGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 12, gap: 10
-  },
-  emergencyButton: {
-    width: '47%', flexDirection: 'row', alignItems: 'center',
-    padding: 14, borderRadius: 12, gap: 10
-  },
-  emergencyLabel: { fontSize: 13, fontWeight: '600' },
-  emptyCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 16,
-    padding: 24, alignItems: 'center'
-  },
-  emptyText: { fontSize: 14, color: '#999', marginTop: 8, marginBottom: 16 },
-  bookButton: {
-    backgroundColor: Colors.primary, paddingHorizontal: 20,
-    paddingVertical: 10, borderRadius: 8
-  },
-  bookButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  statusRow: { flexDirection: "row", justifyContent: "space-between" },
+  statusItem: { flex: 1, alignItems: "center" },
+  statusDivider: { width: 1, backgroundColor: "#e5e7eb" },
+  statusValue: { fontSize: 16, fontWeight: "800", color: "#111827", marginTop: 6 },
+  statusLabel: { fontSize: 11, color: "#6b7280", marginTop: 2 },
   appointmentCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 8,
-    borderRadius: 12, padding: 14, flexDirection: 'row',
-    alignItems: 'center', justifyContent: 'space-between'
+    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 16,
+    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
+    borderLeftWidth: 4, borderLeftColor: "#2563eb",
   },
-  apptLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  apptIndicator: { width: 4, height: 40, borderRadius: 2, marginRight: 12 },
-  apptType: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', textTransform: 'capitalize' },
-  apptDoctor: { fontSize: 12, color: '#666', marginTop: 2 },
-  apptTimeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 },
-  apptTime: { fontSize: 11, color: '#888' },
-  apptLoader: { marginVertical: 20 },
-  activityCard: {
-    backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 12, padding: 16
+  appointmentHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+  appointmentTitle: { fontSize: 14, fontWeight: "700", color: "#2563eb" },
+  appointmentDoctor: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  appointmentTime: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  section: { marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 10, marginLeft: 4 },
+  moduleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  moduleCard: {
+    width: "23%", backgroundColor: "#fff", borderRadius: 14, padding: 12,
+    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
-  activityItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  activityText: { flex: 1, fontSize: 13, color: '#333' },
-  activityTime: { fontSize: 11, color: '#999' },
-  activityDivider: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 10 },
-  bottomPadding: { height: 32 }
+  moduleIcon: {
+    width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", marginBottom: 6,
+  },
+  moduleLabel: { fontSize: 10, fontWeight: "600", color: "#374151", textAlign: "center" },
 });
