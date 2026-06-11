@@ -1,57 +1,76 @@
-import { useState, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { walletService } from '../services/walletService';
-import type { WalletTransaction, WalletTopUpInput } from '../types';
+// domains/streets/hooks/useWallet.ts
+// Streets wallet hook — delegates to canonical wallet domain
+// Previously broken: imported useWalletBalance from non-existent path
+// Fixed: uses domains/wallet/hooks/useWallet
 
-export function useWallet() {
-  const queryClient = useQueryClient();
-  const [showTopUp, setShowTopUp] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState('');
+import { useState, useEffect, useCallback } from 'react';
+import {
+  useWalletBalance,
+  useWalletSend,
+  useWalletReceive,
+  useWalletHistory,
+  type WalletBalance,
+  type WalletTransaction,
+  type SendPayload,
+  type ReceivePayload,
+} from '@/domains/wallet/hooks/useWallet';
 
-  const { data: balance, isLoading } = useQuery({
-    queryKey: ['streets', 'wallet', 'balance'],
-    queryFn: () => walletService.getBalance(),
-  });
+export interface StreetsWalletState {
+  balance: WalletBalance | null;
+  transactions: WalletTransaction[];
+  loading: boolean;
+  error: string | null;
+}
 
-  const { data: transactions } = useQuery({
-    queryKey: ['streets', 'wallet', 'transactions'],
-    queryFn: () => walletService.getTransactions(),
-  });
+export function useStreetsWallet() {
+  const { balance, loading: balanceLoading, error: balanceError, refresh: refreshBalance } = useWalletBalance();
+  const { send, sending, error: sendError, lastTx, clearError: clearSendError } = useWalletSend();
+  const { request, createRequest, cancelRequest, loading: receiveLoading, error: receiveError, clearError: clearReceiveError } = useWalletReceive();
+  const { transactions, loading: historyLoading, error: historyError, refresh: refreshHistory, hasMore, loadMore } = useWalletHistory({ limit: 20 });
 
-  const topUp = useMutation({
-    mutationFn: (input: WalletTopUpInput) => walletService.topUp(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['streets', 'wallet'] });
-      setShowTopUp(false);
-      setTopUpAmount('');
-    },
-  });
+  const [error, setError] = useState<string | null>(null);
 
-  const sendTip = useMutation({
-    mutationFn: ({ recipientId, amount, message }: { recipientId: string; amount: number; message?: string }) =>
-      walletService.sendTip(recipientId, amount, message),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['streets', 'wallet'] });
-    },
-  });
+  useEffect(() => {
+    const errs = [balanceError, sendError, receiveError, historyError].filter(Boolean);
+    setError(errs[0] || null);
+  }, [balanceError, sendError, receiveError, historyError]);
 
-  const withdraw = useMutation({
-    mutationFn: (amount: number) => walletService.withdraw(amount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['streets', 'wallet'] });
-    },
-  });
+  const clearError = useCallback(() => {
+    setError(null);
+    clearSendError();
+    clearReceiveError();
+  }, [clearSendError, clearReceiveError]);
+
+  const refresh = useCallback(() => {
+    refreshBalance();
+    refreshHistory();
+  }, [refreshBalance, refreshHistory]);
 
   return {
+    // Balance
     balance,
+    balanceLoading,
+    // Send
+    send,
+    sending,
+    lastTx,
+    // Receive
+    request,
+    createRequest,
+    cancelRequest,
+    receiveLoading,
+    // History
     transactions,
-    isLoading,
-    showTopUp,
-    setShowTopUp,
-    topUpAmount,
-    setTopUpAmount,
-    topUp,
-    sendTip,
-    withdraw,
+    historyLoading,
+    hasMore,
+    loadMore,
+    // Unified
+    loading: balanceLoading || sending || receiveLoading || historyLoading,
+    error,
+    clearError,
+    refresh,
   };
 }
+
+// Backward-compatible export for files that import useWalletBalance from streets
+export { useWalletBalance } from '@/domains/wallet/hooks/useWallet';
