@@ -32,3 +32,22 @@ ios/build/
 
 *.zip
 *.tar.gz
+
+# Android build artifacts
+android/build/
+android/app/build/
+node_modules/react-native-reanimated/android/build/
+node_modules/expo-modules-core/android/build/
+*.so
+*.apk
+*.aab
+
+# iOS build artifacts
+ios/build/
+*.xcarchive
+*.ipa
+
+# Expo
+.expo/
+dist/
+web-build/
