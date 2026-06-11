@@ -74,7 +74,7 @@ const ALL_APPS: AppManifest[] = [
     icon: 'cart', color: '#EF4444', category: 'Commerce', version: '1.0.0', size_mb: 14,
     is_installed: false, is_system_app: false, requires_auth: true, requires_subscription: false,
     subscription_tier: 'free', developer: 'MTAA', rating: 4.3, review_count: 780,
-    screenshots: [], permissions: [], entry_route: '/shop', is_native: true, status: 'active',
+    screenshots: [], permissions: [], entry_route: '/(commerce)/shop', is_native: true, status: 'active',
     updated_at: '2024-01-01', section: 'mtaa',
   },
   {

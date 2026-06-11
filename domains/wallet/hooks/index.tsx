@@ -1,10 +1,36 @@
 "use client";
 
+// domains/wallet/hooks/index.tsx
+// Unified wallet hooks export
+// Backward compatible: keeps existing useWalletTransactions + useWalletAccount
+// New: useWalletBalance, useWalletSend, useWalletReceive, useWalletHistory
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 
-export interface WalletTransaction {
+// ───────────────────────────────────────────────
+// Re-exports from new core hook
+// ───────────────────────────────────────────────
+
+export {
+  useWalletBalance,
+  useWalletSend,
+  useWalletReceive,
+  useWalletHistory,
+  type WalletBalance,
+  type WalletTransaction,
+  type SendPayload,
+  type ReceivePayload,
+  type ReceiveRequest,
+} from './useWallet';
+
+// ───────────────────────────────────────────────
+// Legacy inline exports (preserved from original index.tsx)
+// These remain for backward compatibility
+// ───────────────────────────────────────────────
+
+export interface LegacyWalletTransaction {
   id: string;
   user_id: string;
   profile_id: string | null;
@@ -27,7 +53,7 @@ export interface WalletTransaction {
   failed_at: string | null;
 }
 
-export interface WalletAccount {
+export interface LegacyWalletAccount {
   id: string;
   user_id: string;
   balance: number;
@@ -40,7 +66,7 @@ export interface WalletAccount {
 
 export function useWalletTransactions() {
   const { user } = useAuthStore();
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [transactions, setTransactions] = useState<LegacyWalletTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +81,7 @@ export function useWalletTransactions() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (sbError) throw sbError;
-      setTransactions((data as WalletTransaction[]) || []);
+      setTransactions((data as LegacyWalletTransaction[]) || []);
     } catch (err: any) {
       setError(err.message || "Failed to load transactions");
     } finally {
@@ -72,7 +98,7 @@ export function useWalletTransactions() {
 
 export function useWalletAccount() {
   const { user } = useAuthStore();
-  const [account, setAccount] = useState<WalletAccount | null>(null);
+  const [account, setAccount] = useState<LegacyWalletAccount | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,7 +114,7 @@ export function useWalletAccount() {
         .eq("is_default", true)
         .single();
       if (sbError) throw sbError;
-      setAccount(data as WalletAccount);
+      setAccount(data as LegacyWalletAccount);
     } catch (err: any) {
       setError(err.message || "Failed to load wallet account");
     } finally {

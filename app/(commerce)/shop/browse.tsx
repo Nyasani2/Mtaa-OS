@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import MarketplaceBrowser from '@/domains/shop/components/MarketplaceBrowser';
 
-export default function MarketplaceScreen() {
+export default function ShopBrowseScreen() {
   return (
     <View style={styles.container}>
       <MarketplaceBrowser />
@@ -11,5 +11,5 @@ export default function MarketplaceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
 });

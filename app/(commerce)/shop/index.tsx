@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import ShopQuickAccess from '@/domains/shop/components/ShopQuickAccess';
 
-export default function ShopScreen() {
+export default function ShopIndexScreen() {
   return (
     <View style={styles.container}>
       <ShopQuickAccess />
@@ -11,5 +11,5 @@ export default function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 }
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
 });

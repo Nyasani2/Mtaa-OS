@@ -1,9 +1,15 @@
-import { Stack } from 'expo-router';
+import { Stack } from "expo-router";
 
 export default function WorkLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="jobs" />
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "#0A0A0F" },
+        animation: "slide_from_right",
+      }}
+    >
+      <Stack.Screen name="jobs" options={{ title: "Jobs" }} />
     </Stack>
   );
 }

@@ -13,22 +13,22 @@ export default function ShopQuickAccess() {
     <View style={styles.container}>
       <Text style={styles.title}>My Shops</Text>
       {shops.length === 0 ? (
-        <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/shop/create' as any)}>
+        <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(commerce)/shop/create' as any)}>
           <Text style={styles.createText}>+ Create Shop</Text>
         </TouchableOpacity>
       ) : (
         shops.map((shop: any) => (
-          <TouchableOpacity key={shop.id} style={styles.card} onPress={() => router.push(`/shop/${shop.id}` as any)}>
+          <TouchableOpacity key={shop.id} style={styles.card} onPress={() => router.push(`/(commerce)/shop/${shop.id}` as any)}>
             <Text style={styles.shopName}>{shop.name}</Text>
             <Text style={styles.location}>{shop.location || 'No location'}</Text>
           </TouchableOpacity>
         ))
       )}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/shop/cart' as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(commerce)/shop/cart' as any)}>
           <Text>Cart</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/shop/orders' as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(commerce)/shop/orders' as any)}>
           <Text>Orders</Text>
         </TouchableOpacity>
       </View>
