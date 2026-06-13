@@ -1,377 +1,457 @@
-// Edge Function: wallet-operations
-// CONSOLIDATED: Replaces wallet-gofund-campaign + wallet-savings-goal + wallet-partner-submit
-// Actions: gofund_list, gofund_get, gofund_create, gofund_contribute,
-//          savings_list, savings_create, savings_contribute, savings_get,
-//          partner_submit, partner_list
+// ============================================================
+// MTAA WALLET OPERATIONS — CONSOLIDATED EDGE FUNCTION
+// Actions: deposit, transfer, withdraw, execute, balance, history
+// ============================================================
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
-      req.headers.get('authorization')?.replace('Bearer ', '') ?? ''
-    );
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const body = await req.json();
-    const { action } = body;
+    const { action, ...params } = body;
 
-    // ═══════════════════════════════════════════════════════════════
-    // GOFUND OPERATIONS
-    // ═══════════════════════════════════════════════════════════════
-
-    if (action === 'gofund_list') {
-      const { data, error } = await supabaseAdmin
-        .from('gofund_campaigns')
-        .select(`*, contribution_count:gofund_contributions(count)`)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return new Response(JSON.stringify({ data }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'gofund_get') {
-      const { campaign_id } = body;
-      const [campaignRes, contribRes, updateRes] = await Promise.all([
-        supabaseAdmin.from('gofund_campaigns').select('*').eq('id', campaign_id).single(),
-        supabaseAdmin.from('gofund_contributions').select('*').eq('campaign_id', campaign_id).order('created_at', { ascending: false }).limit(50),
-        supabaseAdmin.from('gofund_updates').select('*').eq('campaign_id', campaign_id).order('created_at', { ascending: false }),
-      ]);
-
-      if (campaignRes.error) throw campaignRes.error;
-      return new Response(JSON.stringify({
-        campaign: campaignRes.data,
-        contributions: contribRes.data || [],
-        updates: updateRes.data || [],
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (action === 'gofund_create') {
-      const { title, description, target_amount, campaign_type, end_date } = body;
-      if (!title || !target_amount || !end_date) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+    let result;
+    switch (action) {
+      case "deposit":
+        result = await walletDeposit(supabaseAdmin, user.id, params);
+        break;
+      case "transfer":
+        result = await walletTransfer(supabaseAdmin, user.id, params);
+        break;
+      case "withdraw":
+        result = await walletWithdraw(supabaseAdmin, user.id, params);
+        break;
+      case "execute":
+        result = await walletExecute(supabaseAdmin, user.id, params);
+        break;
+      case "balance":
+        result = await walletBalance(supabaseAdmin, user.id, params);
+        break;
+      case "history":
+        result = await walletHistory(supabaseAdmin, user.id, params);
+        break;
+      default:
+        return new Response(JSON.stringify({ error: "Unknown action: " + action }), {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      }
-
-      const { data, error } = await supabaseAdmin
-        .from('gofund_campaigns')
-        .insert({
-          title,
-          description,
-          target_amount,
-          current_amount: 0,
-          currency_code: 'KES',
-          campaign_type,
-          end_date,
-          creator_id: user.id,
-          is_active: true,
-          is_completed: false,
-          donor_count: 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return new Response(JSON.stringify({ success: true, data }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    if (action === 'gofund_contribute') {
-      const { campaign_id, amount } = body;
-      if (!campaign_id || !amount || amount <= 0) {
-        return new Response(JSON.stringify({ error: 'Invalid contribution' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data: campaign } = await supabaseAdmin
-        .from('gofund_campaigns')
-        .select('*')
-        .eq('id', campaign_id)
-        .single();
-
-      if (!campaign) {
-        return new Response(JSON.stringify({ error: 'Campaign not found' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data: contrib, error: contribError } = await supabaseAdmin
-        .from('gofund_contributions')
-        .insert({
-          campaign_id,
-          donor_id: user.id,
-          donor_name: user.user_metadata?.full_name || 'Anonymous',
-          amount,
-          currency_code: campaign.currency_code || 'KES',
-          is_anonymous: false,
-          payment_status: 'completed',
-        })
-        .select()
-        .single();
-
-      if (contribError) throw contribError;
-
-      // Update campaign
-      const newAmount = (campaign.current_amount || 0) + amount;
-      const updates: any = { current_amount: newAmount, donor_count: (campaign.donor_count || 0) + 1 };
-      if (newAmount >= campaign.target_amount && !campaign.is_completed) {
-        updates.is_completed = true;
-        updates.completed_at = new Date().toISOString();
-      }
-
-      await supabaseAdmin.from('gofund_campaigns').update(updates).eq('id', campaign_id);
-
-      return new Response(JSON.stringify({ success: true, contribution: contrib }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // SAVINGS OPERATIONS
-    // ═══════════════════════════════════════════════════════════════
-
-    if (action === 'savings_list') {
-      const { data, error } = await supabaseAdmin
-        .from('wallet_savings')
-        .select(`*, contribution_count:wallet_savings_contributions(count)`)
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return new Response(JSON.stringify({ data: data || [] }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'savings_create') {
-      const { goal_name, description, target_amount, savings_type, target_date } = body;
-      if (!goal_name || !target_amount || !target_date) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data, error } = await supabaseAdmin
-        .from('wallet_savings')
-        .insert({
-          user_id: user.id,
-          goal_name,
-          description,
-          target_amount,
-          current_amount: 0,
-          currency_code: 'KES',
-          savings_type,
-          target_date,
-          is_active: true,
-          is_completed: false,
-          total_contributions: 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return new Response(JSON.stringify({ success: true, data }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'savings_contribute') {
-      const { savings_id, amount } = body;
-      if (!savings_id || !amount || amount <= 0) {
-        return new Response(JSON.stringify({ error: 'Invalid contribution' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data: goal } = await supabaseAdmin
-        .from('wallet_savings')
-        .select('*')
-        .eq('id', savings_id)
-        .single();
-
-      if (!goal) {
-        return new Response(JSON.stringify({ error: 'Goal not found' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data: contrib, error: contribError } = await supabaseAdmin
-        .from('wallet_savings_contributions')
-        .insert({
-          savings_id,
-          contributor_id: user.id,
-          amount,
-          currency_code: goal.currency_code || 'KES',
-          status: 'completed',
-        })
-        .select()
-        .single();
-
-      if (contribError) throw contribError;
-
-      const newAmount = (goal.current_amount || 0) + amount;
-      const updates: any = { current_amount: newAmount, total_contributions: (goal.total_contributions || 0) + 1 };
-      if (newAmount >= goal.target_amount && !goal.is_completed) {
-        updates.is_completed = true;
-        updates.completed_at = new Date().toISOString();
-      }
-
-      await supabaseAdmin.from('wallet_savings').update(updates).eq('id', savings_id);
-
-      return new Response(JSON.stringify({ success: true, contribution: contrib }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'savings_get') {
-      const { savings_id } = body;
-      const [goalRes, contribRes] = await Promise.all([
-        supabaseAdmin.from('wallet_savings').select('*').eq('id', savings_id).single(),
-        supabaseAdmin.from('wallet_savings_contributions').select('*').eq('savings_id', savings_id).order('created_at', { ascending: false }).limit(50),
-      ]);
-
-      if (goalRes.error) throw goalRes.error;
-      return new Response(JSON.stringify({
-        goal: goalRes.data,
-        contributions: contribRes.data || [],
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    // PARTNER OPERATIONS
-    // ═══════════════════════════════════════════════════════════════
-
-    if (action === 'partner_submit') {
-      const {
-        applicant_type,
-        organization_name,
-        country_code,
-        contact_name,
-        contact_email,
-        contact_phone,
-        website,
-        partnership_type,
-        description,
-      } = body;
-
-      if (!organization_name || !contact_email || !contact_phone) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Deduplication check
-      const { data: existing } = await supabaseAdmin
-        .from('wallet_partner_applications')
-        .select('id')
-        .eq('organization_name', organization_name)
-        .eq('applicant_type', applicant_type)
-        .single();
-
-      if (existing) {
-        return new Response(JSON.stringify({ error: 'Application already exists' }), {
-          status: 409,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const { data, error } = await supabaseAdmin
-        .from('wallet_partner_applications')
-        .insert({
-          applicant_type,
-          organization_name,
-          country_code: country_code || 'KE',
-          contact_name,
-          contact_email,
-          contact_phone,
-          website,
-          partnership_type,
-          proposed_services: body.services_offered || [],
-          application_status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Audit log
-      await supabaseAdmin.from('wallet_audit_logs').insert({
-        table_name: 'wallet_partner_applications',
-        record_id: data.id,
-        action: 'INSERT',
-        changed_by: user.id,
-        new_data: { applicant_type, organization_name },
-      });
-
-      return new Response(JSON.stringify({ success: true, data }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'partner_list') {
-      const { data, error } = await supabaseAdmin
-        .from('wallet_partner_applications')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return new Response(JSON.stringify({ data: data || [] }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: 'Unknown action: ' + action }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
+
+// ============================================================
+// ACTION: DEPOSIT
+// Deposit funds via M-Pesa or other methods
+// ============================================================
+async function walletDeposit(supabaseAdmin, userId, params) {
+  const { amount, phone, method = "mpesa" } = params;
+
+  if (!amount || amount <= 0) {
+    throw new Error("Invalid deposit amount");
+  }
+
+  // Get user wallet
+  const { data: wallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, available_balance")
+    .eq("user_id", userId)
+    .eq("wallet_type", "main")
+    .single();
+
+  if (!wallet) throw new Error("Wallet not found");
+
+  // For M-Pesa, initiate STK push via separate mpesa-operations function
+  // This action just records the pending deposit
+  const { data: deposit } = await supabaseAdmin
+    .from("wallet_deposits")
+    .insert({
+      wallet_id: wallet.id,
+      user_id: userId,
+      amount: amount,
+      method: method,
+      phone: phone,
+      status: "pending",
+      metadata: { initiated_at: new Date().toISOString() }
+    })
+    .select()
+    .single();
+
+  return {
+    success: true,
+    deposit: {
+      id: deposit.id,
+      amount: deposit.amount,
+      status: deposit.status,
+      method: deposit.method
+    },
+    message: `Deposit of KES ${amount} initiated via ${method}. Complete payment on your phone.`
+  };
+}
+
+// ============================================================
+// ACTION: TRANSFER
+// P2P transfer between users
+// ============================================================
+async function walletTransfer(supabaseAdmin, userId, params) {
+  const { recipient_id, amount, note } = params;
+
+  if (!recipient_id || !amount || amount <= 0) {
+    throw new Error("Missing recipient_id or invalid amount");
+  }
+
+  // Get sender wallet
+  const { data: senderWallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, available_balance, currency_code")
+    .eq("user_id", userId)
+    .eq("wallet_type", "main")
+    .eq("is_active", true)
+    .single();
+
+  if (!senderWallet) throw new Error("Sender wallet not found");
+  if (senderWallet.available_balance < amount) {
+    throw new Error(`Insufficient balance. Available: KES ${senderWallet.available_balance}`);
+  }
+
+  // Get recipient wallet
+  const { data: recipientWallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, user_id")
+    .eq("user_id", recipient_id)
+    .eq("wallet_type", "main")
+    .eq("is_active", true)
+    .single();
+
+  if (!recipientWallet) throw new Error("Recipient wallet not found");
+
+  // Get MTAA fee
+  const { data: feeConfig } = await supabaseAdmin
+    .from("platform_fees")
+    .select("percentage")
+    .eq("module", "wallet_transfer")
+    .eq("active", true)
+    .maybeSingle();
+
+  const feePercentage = feeConfig?.percentage || 0.5;
+  const fee = Math.round(amount * (feePercentage / 100) * 100) / 100;
+  const netAmount = amount - fee;
+
+  const transactionRef = `WTX-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Debit sender
+  const { error: debitError } = await supabaseAdmin
+    .from("wallets")
+    .update({ available_balance: senderWallet.available_balance - amount })
+    .eq("id", senderWallet.id)
+    .eq("available_balance", senderWallet.available_balance);
+
+  if (debitError) throw new Error("Failed to debit sender");
+
+  // Credit recipient
+  const { data: recipientCurrent } = await supabaseAdmin
+    .from("wallets")
+    .select("available_balance")
+    .eq("id", recipientWallet.id)
+    .single();
+
+  await supabaseAdmin
+    .from("wallets")
+    .update({ available_balance: (recipientCurrent?.available_balance || 0) + netAmount })
+    .eq("id", recipientWallet.id);
+
+  // Record sender transaction
+  await supabaseAdmin.from("wallet_transactions").insert({
+    wallet_id: senderWallet.id,
+    user_id: userId,
+    transaction_type: "transfer",
+    direction: "debit",
+    amount: amount,
+    net_amount: -amount,
+    status: "completed",
+    counterparty_wallet_id: recipientWallet.id,
+    metadata: { note, transaction_ref: transactionRef, fee, fee_percentage: feePercentage }
+  });
+
+  // Record recipient transaction
+  await supabaseAdmin.from("wallet_transactions").insert({
+    wallet_id: recipientWallet.id,
+    user_id: recipientWallet.user_id,
+    transaction_type: "transfer",
+    direction: "credit",
+    amount: netAmount,
+    net_amount: netAmount,
+    status: "completed",
+    counterparty_wallet_id: senderWallet.id,
+    metadata: { note, transaction_ref: transactionRef, fee, fee_percentage: feePercentage }
+  });
+
+  // Record fee if > 0
+  if (fee > 0) {
+    const { data: mtaaWallet } = await supabaseAdmin
+      .from("wallets")
+      .select("id")
+      .eq("wallet_type", "main")
+      .ilike("wallet_name", "%MTAA%")
+      .maybeSingle();
+
+    if (mtaaWallet) {
+      await supabaseAdmin.from("wallet_transactions").insert({
+        wallet_id: mtaaWallet.id,
+        user_id: mtaaWallet.user_id,
+        transaction_type: "platform_fee",
+        direction: "credit",
+        amount: fee,
+        net_amount: fee,
+        status: "completed",
+        counterparty_wallet_id: senderWallet.id,
+        metadata: { transaction_ref: transactionRef, module: "wallet_transfer" }
+      });
+    }
+  }
+
+  return {
+    success: true,
+    transaction_ref: transactionRef,
+    amount: amount,
+    fee: fee,
+    net_amount: netAmount,
+    recipient_id: recipient_id,
+    message: `Transfer of KES ${amount} successful. Fee: KES ${fee}.`
+  };
+}
+
+// ============================================================
+// ACTION: WITHDRAW
+// Withdraw to bank, M-Pesa, or agent
+// ============================================================
+async function walletWithdraw(supabaseAdmin, userId, params) {
+  const { amount, method = "mpesa", destination, agent_id } = params;
+
+  if (!amount || amount <= 0) {
+    throw new Error("Invalid withdrawal amount");
+  }
+
+  // Get user wallet
+  const { data: wallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, available_balance, currency_code")
+    .eq("user_id", userId)
+    .eq("wallet_type", "main")
+    .eq("is_active", true)
+    .single();
+
+  if (!wallet) throw new Error("Wallet not found");
+  if (wallet.available_balance < amount) {
+    throw new Error(`Insufficient balance. Available: KES ${wallet.available_balance}`);
+  }
+
+  // Get withdrawal fee
+  const { data: feeConfig } = await supabaseAdmin
+    .from("platform_fees")
+    .select("percentage")
+    .eq("module", "withdrawal")
+    .eq("active", true)
+    .maybeSingle();
+
+  const feePercentage = feeConfig?.percentage || 1.0;
+  const fee = Math.round(amount * (feePercentage / 100) * 100) / 100;
+  const netAmount = amount - fee;
+
+  const transactionRef = `WWD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  // Create withdrawal record
+  const { data: withdrawal } = await supabaseAdmin
+    .from("wallet_payouts")
+    .insert({
+      wallet_id: wallet.id,
+      user_id: userId,
+      amount: amount,
+      fee: fee,
+      net_amount: netAmount,
+      method: method,
+      destination: destination,
+      agent_id: agent_id,
+      status: "pending",
+      transaction_ref: transactionRef
+    })
+    .select()
+    .single();
+
+  // Debit wallet
+  await supabaseAdmin
+    .from("wallets")
+    .update({ available_balance: wallet.available_balance - amount })
+    .eq("id", wallet.id);
+
+  // Record transaction
+  await supabaseAdmin.from("wallet_transactions").insert({
+    wallet_id: wallet.id,
+    user_id: userId,
+    transaction_type: "withdrawal",
+    direction: "debit",
+    amount: amount,
+    net_amount: -amount,
+    status: "pending",
+    metadata: { transaction_ref: transactionRef, method, destination, fee }
+  });
+
+  return {
+    success: true,
+    withdrawal: {
+      id: withdrawal.id,
+      amount: withdrawal.amount,
+      fee: withdrawal.fee,
+      net_amount: withdrawal.net_amount,
+      status: withdrawal.status,
+      method: withdrawal.method
+    },
+    transaction_ref: transactionRef,
+    message: `Withdrawal of KES ${amount} initiated. Fee: KES ${fee}. Status: pending.`
+  };
+}
+
+// ============================================================
+// ACTION: EXECUTE
+// Execute wallet operation (for hookup/bridge system)
+// ============================================================
+async function walletExecute(supabaseAdmin, userId, params) {
+  const { operation, payload } = params;
+
+  if (!operation) {
+    throw new Error("Missing operation type");
+  }
+
+  // Route to appropriate action based on operation
+  switch (operation) {
+    case "transfer":
+      return await walletTransfer(supabaseAdmin, userId, payload);
+    case "withdraw":
+      return await walletWithdraw(supabaseAdmin, userId, payload);
+    case "deposit":
+      return await walletDeposit(supabaseAdmin, userId, payload);
+    default:
+      throw new Error("Unknown operation: " + operation);
+  }
+}
+
+// ============================================================
+// ACTION: BALANCE
+// Get wallet balance
+// ============================================================
+async function walletBalance(supabaseAdmin, userId, params) {
+  const { wallet_type = "main" } = params;
+
+  const { data: wallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, available_balance, pending_balance, currency_code, wallet_type, wallet_name, is_active")
+    .eq("user_id", userId)
+    .eq("wallet_type", wallet_type)
+    .single();
+
+  if (!wallet) throw new Error("Wallet not found");
+
+  // Get sub-wallets if main
+  let subWallets = [];
+  if (wallet_type === "main") {
+    const { data: subs } = await supabaseAdmin
+      .from("sub_wallets")
+      .select("id, name, balance, type")
+      .eq("parent_wallet_id", wallet.id)
+      .eq("is_active", true);
+    subWallets = subs || [];
+  }
+
+  return {
+    success: true,
+    balance: {
+      wallet_id: wallet.id,
+      available: wallet.available_balance,
+      pending: wallet.pending_balance,
+      currency: wallet.currency_code,
+      type: wallet.wallet_type,
+      name: wallet.wallet_name,
+      is_active: wallet.is_active,
+      sub_wallets: subWallets
+    }
+  };
+}
+
+// ============================================================
+// ACTION: HISTORY
+// Get wallet transaction history
+// ============================================================
+async function walletHistory(supabaseAdmin, userId, params) {
+  const { limit = 20, offset = 0, type } = params;
+
+  let query = supabaseAdmin
+    .from("wallet_transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+    .range(offset, offset + limit - 1);
+
+  if (type) {
+    query = query.eq("transaction_type", type);
+  }
+
+  const { data: transactions, error } = await query;
+
+  if (error) throw new Error("Failed to fetch history: " + error.message);
+
+  // Get total count
+  const { count } = await supabaseAdmin
+    .from("wallet_transactions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  return {
+    success: true,
+    transactions: transactions || [],
+    total: count || 0,
+    limit,
+    offset
+  };
+}

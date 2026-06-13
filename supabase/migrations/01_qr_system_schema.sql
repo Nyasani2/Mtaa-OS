@@ -86,7 +86,7 @@ CREATE TABLE qr_scans (
     action_result TEXT, -- 'success', 'failed', 'cancelled', 'pending'
 
     -- Transaction reference (if payment)
-    transaction_id UUID REFERENCES wallet_transactions(id) ON DELETE SET NULL,
+    transaction_id UUID,
 
     -- Metadata
     metadata JSONB DEFAULT '{}',

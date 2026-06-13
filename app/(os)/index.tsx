@@ -334,7 +334,7 @@ export default function HomeScreen() {
     }
   };
 
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || user?.user_metadata?.full_name || user?.user_metadata?.name || "Warrior";
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || "Warrior";
   const greeting = getGreeting(displayName);
   const safeBalance = (balance ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2 });
 
@@ -425,7 +425,7 @@ export default function HomeScreen() {
         )}
         <TouchableOpacity
           style={styles.tileContainer}
-          onPress={() => !editMode && router.push(app.route)}
+          onPress={() => !editMode && router.push(app.route as any)}
           onLongPress={() => handleLongPress(app)}
           delayLongPress={400}
           activeOpacity={0.7}
