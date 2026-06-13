@@ -51,3 +51,13 @@ ios/build/
 .expo/
 dist/
 web-build/
+
+# Node modules build artifacts (too large for GitHub)
+node_modules/**/build/
+node_modules/**/android/build/
+node_modules/**/ios/build/
+node_modules/**/*.so
+node_modules/**/*.a
+node_modules/**/*.jar
+*.so
+*.a
