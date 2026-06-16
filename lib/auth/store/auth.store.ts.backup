@@ -1,7 +1,6 @@
 // lib/auth/store/auth.store.ts
 // Authentication store — user session, login, logout, PIN, biometric
-// v2.1: Wired to pin-engine, exposes profile, checkPinRequired
-// v2.2: Added getUserId() helper for cross-store access
+// v2: Wired to pin-engine, exposes profile, checkPinRequired
 
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
@@ -17,7 +16,7 @@ export interface User {
   created_at: string;
 }
 
-export interface AuthState {
+interface AuthState {
   user: User | null;
   session: any | null;
   profile: User | null;

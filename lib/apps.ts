@@ -17,8 +17,9 @@ export const socialApps = [
     icon: "🎬",
     title: "Studio",
     description: "Creator tools for media production and publishing.",
-    status: "Coming Soon",
+    status: "Built",
     color: "purple",
+    route: "/(os)/studio/dashboard",
   },
   {
     icon: "💬",
@@ -130,5 +131,13 @@ export const civicApps = [
     description: "Import/export logistics and cargo coordination.",
     status: "Coming Soon",
     color: "orange",
+  },
+  {
+    icon: "🗳️",
+    title: "Voting",
+    description: "Universal voting engine for elections and governance.",
+    status: "Built",
+    color: "purple",
+    route: "/(os)/voting",
   },
 ];
