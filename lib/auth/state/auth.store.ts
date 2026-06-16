@@ -1,11 +1,7 @@
-// ═══════════════════════════════════════════════════════════════
+// lib/auth/state/auth.store.ts
 // AUTH STORE COMPATIBILITY BRIDGE
-// Existing health files import from @/lib/auth/state/auth.store
-// Actual file lives at lib/auth/store/auth.store.ts
-// This bridge re-exports from the correct location
-// ═══════════════════════════════════════════════════════════════
-
-import { useAuthStore as actualUseAuthStore } from "../store/auth.store";
+// Re-exports from the canonical location: lib/auth/store/auth.store.ts
+// DO NOT add fallbacks — if the real store fails to load, the app should crash
+// so we know there's a real problem, not silently serve dummy data.
 
 export { useAuthStore } from "../store/auth.store";
-export default { useAuthStore: actualUseAuthStore };

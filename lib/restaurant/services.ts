@@ -731,16 +731,6 @@ export const tableService = {
 // EXPORT ALL SERVICES
 // ════════════════════════════════════════════════════════════════════════════
 
-export {
-  orderService,
-  kdsService,
-  attendanceService,
-  payrollService,
-  inventoryService,
-  reportsService,
-  menuService,
-  tableService,
-};
 
 export default {
   orders: orderService,

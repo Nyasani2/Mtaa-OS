@@ -205,3 +205,94 @@ export interface AsisProviderConfig {
   maxRetries: number;
   timeout: number;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// M-THEORY TYPES — Proliferative Arithmetic for ASIS
+// 1 × 1 = 1 + f(growth, replication, interaction, observation)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Domain-specific growth coefficient formula
+ * f = base_growth × constitutional_score × interaction_strength × observation_boost
+ */
+export interface GrowthFactor {
+  /** Base value from the interaction itself (always ≥ 0) */
+  base: number;
+  /** Constitutional alignment (-1.0 to +1.0, negative = suppress) */
+  constitutional: number;
+  /** How strongly the entities interact (0.0 to 1.0) */
+  interaction: number;
+  /** Boost from observation/measurement (1.0 = unobserved, >1.0 = observed) */
+  observation: number;
+  /** Computed: base × constitutional × interaction × observation */
+  computed: number;
+  /** Safety immune system modifier (0.0 = blocked, 1.0 = full growth) */
+  immune: number;
+  /** Final: computed × immune */
+  final: number;
+}
+
+/**
+ * A single 1 × 1 interaction event recorded in the growth substrate
+ */
+export interface GrowthEvent {
+  id: string;
+  entityA: string;
+  entityB: string;
+  context: string;
+  domain: AsisDomain;
+  factor: GrowthFactor;
+  /** What new capabilities/records this interaction spawned */
+  spawned: SpawnedCapability[];
+  timestamp: string;
+  userId: string;
+}
+
+/**
+ * Something that grew from an interaction
+ */
+export interface SpawnedCapability {
+  type: 'insight' | 'workflow' | 'notification' | 'memory' | 'action' | 'alert';
+  targetModule: string;
+  description: string;
+  payload?: Record<string, any>;
+  /** Whether this spawn requires human confirmation */
+  requiresConfirmation: boolean;
+}
+
+/**
+ * Result of the proliferative process step
+ */
+export interface ProliferationResult {
+  /** The original request/response pair */
+  input: AsisRequest;
+  output: AsisResponse;
+  /** The growth factor that governed this interaction */
+  growthFactor: GrowthFactor;
+  /** What new things were created */
+  spawned: SpawnedCapability[];
+  /** Whether the immune system intervened */
+  immuneIntervention: boolean;
+  /** Audit trail for transparency */
+  auditLog: GrowthEvent;
+}
+
+/**
+ * Constitutional principles for growth scoring
+ * Each domain defines its own weights
+ */
+export interface ConstitutionalWeights {
+  domain: AsisDomain;
+  /** Human dignity — never negative */
+  humanDignity: number;
+  /** Fairness — equitable treatment */
+  fairness: number;
+  /** Transparency — auditable decisions */
+  transparency: number;
+  /** Sovereignty — user/country control */
+  sovereignty: number;
+  /** Non-harm — prevent damage */
+  nonHarm: number;
+  /** Consent — explicit permission */
+  consent: number;
+}

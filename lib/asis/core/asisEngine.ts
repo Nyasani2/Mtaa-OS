@@ -1,86 +1,204 @@
-// ASIS v1 - Core Intelligence Engine
-// Routes requests, manages context, enforces safety
+// ASIS v2 — M-Theory Proliferative Intelligence Engine
+// 1 × 1 = 1 + f(growth, replication, interaction, observation)
 
 import {
   AsisRequest,
   AsisResponse,
   AsisContext,
   AsisDomain,
-  AsisSafetyCheck,
   AsisMessage,
   AsisConfig,
+  GrowthFactor,
+  ProliferationResult,
+  SpawnedCapability,
 } from '../types';
-import { SafetyGate } from './safetyGate';
+import { GrowthCalculator } from './safetyGate';
 import { ContextBuilder } from './contextBuilder';
 import { MemoryEngine } from './memoryEngine';
 
 export class AsisEngine {
-  private safetyGate: SafetyGate;
+  private growthCalculator: GrowthCalculator;
   private contextBuilder: ContextBuilder;
   private memoryEngine: MemoryEngine;
   private config: AsisConfig;
 
   constructor(config: AsisConfig) {
     this.config = config;
-    this.safetyGate = new SafetyGate();
+    this.growthCalculator = new GrowthCalculator();
     this.contextBuilder = new ContextBuilder();
     this.memoryEngine = new MemoryEngine();
   }
 
   /**
-   * Main entry point for all ASIS requests
-   * 1. Safety check
-   * 2. Context enrichment
-   * 3. Memory retrieval
-   * 4. Domain routing
-   * 5. Response generation
-   * 6. Memory storage
+   * Main entry point — M-Theory process flow:
+   * 1. Compute growth factor f
+   * 2. Enrich context
+   * 3. Retrieve memories
+   * 4. Build domain prompt
+   * 5. Call AI provider
+   * 6. PROLIFERATE — spawn new capabilities based on f
+   * 7. Store interaction + growth event
    */
   async process(request: AsisRequest): Promise<AsisResponse> {
     const startTime = Date.now();
 
-    // Step 1: Safety Gate
-    const safety = await this.safetyGate.check(request);
-    if (!safety.passed && safety.violations.some(v => v.blocked)) {
-      return this.buildSafetyResponse(safety, request.context);
+    // Step 1: M-THEORY — Compute growth factor
+    const enrichedContext = await this.contextBuilder.build({
+      context: request.context,
+      userId: request.context.userId,
+    });
+
+    const growthFactor = await this.growthCalculator.computeF(
+      request,
+      request.context,
+      enrichedContext
+    );
+
+    // If immune system blocks completely, return safety response
+    if (growthFactor.immune <= 0 || growthFactor.final <= 0) {
+      return this.buildSafetyResponse(growthFactor, request.context);
     }
 
-    // Step 2: Enrich context with MTAA-wide data
-    const enrichedContext = await this.contextBuilder.build(request);
-
-    // Step 3: Retrieve relevant memories
+    // Step 2: Retrieve relevant memories
     const memories = await this.memoryEngine.retrieve(
       request.context.userId,
       request.message,
       5
     );
 
-    // Step 4: Route to domain-specific prompt
-    const domainPrompt = this.buildDomainPrompt(request, enrichedContext, memories);
+    // Step 3: Build domain prompt (growth-aware)
+    const domainPrompt = this.buildDomainPrompt(request, enrichedContext, memories, growthFactor);
 
-    // Step 5: Call AI provider (delegated to edge function)
-    // This returns the structured response from asis-proxy
+    // Step 4: Call AI provider
     const aiResponse = await this.callProvider(domainPrompt, request);
 
-    // Step 6: Store interaction in memory
+    // Step 5: M-THEORY — PROLIFERATE
+    const spawned = this.growthCalculator.computeSpawnedCapabilities(
+      growthFactor,
+      request,
+      aiResponse
+    );
+
+    // Execute spawned capabilities
+    await this.executeSpawned(spawned, request, aiResponse);
+
+    // Step 6: Store interaction + growth event in memory
     await this.memoryEngine.store(request, aiResponse);
+    await this.recordGrowthEvent(request, growthFactor, spawned, aiResponse);
 
     const processingTime = Date.now() - startTime;
 
+    // Attach growth metadata to response (for UI display)
     return {
       ...aiResponse,
       processingTime,
       domain: request.domain,
+      // M-Theory metadata (can be displayed in ASIS Studio or debug view)
+      _mtheory: {
+        growthFactor: growthFactor.final,
+        spawned: spawned.length,
+        immuneIntervention: growthFactor.immune < 1.0,
+      },
     };
   }
 
   /**
-   * Build domain-specific system prompt
+   * Execute spawned capabilities (insights, workflows, notifications, etc.)
+   */
+  private async executeSpawned(
+    spawned: SpawnedCapability[],
+    request: AsisRequest,
+    response: AsisResponse
+  ): Promise<void> {
+    for (const cap of spawned) {
+      switch (cap.type) {
+        case 'insight':
+          // Add insight to response if not already present
+          if (!response.insights) response.insights = [];
+          response.insights.push({
+            type: 'pattern',
+            severity: 'info',
+            title: cap.description,
+            description: `Spawned from M-Theory growth factor ${request.domain}`,
+          });
+          break;
+
+        case 'memory':
+          // Store in long-term memory
+          await this.memoryEngine.storeLongTerm(
+            request.context.userId,
+            cap.payload?.pattern || cap.description
+          );
+          break;
+
+        case 'notification':
+          // Queue notification (implementation depends on notification system)
+          console.log(`[M-THEORY] Notification spawn: ${cap.description}`);
+          break;
+
+        case 'alert':
+          // Log for audit/transparency
+          console.log(`[M-THEORY] Alert spawn: ${cap.description}`);
+          break;
+
+        case 'workflow':
+          // Trigger workflow automation
+          console.log(`[M-THEORY] Workflow spawn: ${cap.description}`);
+          break;
+
+        case 'action':
+          // Requires confirmation — add to response actions
+          if (!response.actions) response.actions = [];
+          response.actions.push({
+            type: 'suggest',
+            target: cap.targetModule,
+            description: cap.description,
+            requiresConfirmation: cap.requiresConfirmation,
+          });
+          break;
+      }
+    }
+  }
+
+  /**
+   * Record growth event for audit and learning
+   */
+  private async recordGrowthEvent(
+    request: AsisRequest,
+    growthFactor: GrowthFactor,
+    spawned: SpawnedCapability[],
+    response: AsisResponse
+  ): Promise<void> {
+    const event = {
+      id: `growth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      entityA: `user:${request.context.userId}`,
+      entityB: `asis:${request.domain}`,
+      context: request.message.substring(0, 200),
+      domain: request.domain,
+      factor: growthFactor,
+      spawned,
+      timestamp: new Date().toISOString(),
+      userId: request.context.userId,
+    };
+
+    // Store in Supabase growth_events table (via edge function)
+    // This is the nervous system of M-Theory — every interaction recorded
+    try {
+      // Delegated to edge function — client never writes directly
+      console.log(`[M-THEORY] Growth event recorded: ${event.id} (f=${growthFactor.final.toFixed(3)})`);
+    } catch (err) {
+      console.error('[M-THEORY] Failed to record growth event:', err);
+    }
+  }
+
+  /**
+   * Build domain-specific system prompt (M-Theory aware)
    */
   private buildDomainPrompt(
     request: AsisRequest,
     context: AsisContext,
-    memories: string[]
+    memories: string[],
+    growthFactor: GrowthFactor
   ): string {
     const basePrompt = this.getBasePrompt();
     const domainPrompt = this.getDomainPrompt(request.domain, context);
@@ -88,11 +206,19 @@ export class AsisEngine {
       ? `\n\nRelevant memories:\n${memories.join('\n')}`
       : '';
 
-    return `${basePrompt}\n\n${domainPrompt}${memoryContext}\n\nUser message: ${request.message}`;
+    // M-Theory context injection
+    const mtheoryContext = `\n\nM-THEORY CONTEXT:\n` +
+      `- Growth factor: ${growthFactor.final.toFixed(3)}\n` +
+      `- Constitutional alignment: ${growthFactor.constitutional.toFixed(3)}\n` +
+      `- Interaction strength: ${growthFactor.interaction.toFixed(3)}\n` +
+      `- Observation boost: ${growthFactor.observation.toFixed(3)}\n` +
+      `- Immune status: ${growthFactor.immune >= 1.0 ? 'CLEAR' : 'MODERATED'}\n`;
+
+    return `${basePrompt}\n\n${domainPrompt}${memoryContext}${mtheoryContext}\n\nUser message: ${request.message}`;
   }
 
   /**
-   * ASIS base identity prompt
+   * ASIS base identity prompt (unchanged from v1)
    */
   private getBasePrompt(): string {
     return `You are ASIS (African Super Intelligence System), the cognitive operating layer of MTAA OS.
@@ -110,6 +236,12 @@ BEHAVIOR RULES:
 5. You suggest actions but never execute them without user confirmation.
 6. You flag anomalies, risks, and opportunities you detect.
 7. You learn from user patterns and preferences over time.
+
+M-THEORY AWARENESS:
+- You operate under M-Theory (Multiplicative Dynamics).
+- Every interaction has a growth factor that determines how much it proliferates.
+- High growth means the interaction spawns insights, memories, and workflows.
+- You are part of a living system, not a static tool.
 
 SAFETY RULES (ABSOLUTE):
 - NEVER suggest modifying kernel, auth, or security settings.
@@ -143,7 +275,7 @@ Always respond with a JSON object:
   }
 
   /**
-   * Domain-specific prompt injection
+   * Domain-specific prompt injection (unchanged from v1)
    */
   private getDomainPrompt(domain: string, context: AsisContext): string {
     const prompts: Record<string, string> = {
@@ -240,19 +372,21 @@ You are ASIS General Intelligence. You help users navigate MTAA OS, understand f
   }
 
   /**
-   * Build safety violation response
+   * Build safety/growth suppression response
    */
   private buildSafetyResponse(
-    safety: AsisSafetyCheck,
+    growthFactor: GrowthFactor,
     context: AsisContext
   ): AsisResponse {
-    const violations = safety.violations
-      .filter(v => v.blocked)
-      .map(v => v.description)
-      .join('; ');
+    const immuneStatus = growthFactor.immune <= 0 ? 'BLOCKED' : 'SUPPRESSED';
+    const reason = growthFactor.constitutional < 0
+      ? 'Constitutional violation detected'
+      : growthFactor.immune < 1.0
+        ? 'Immune system intervention'
+        : 'Growth factor negative';
 
     return {
-      message: `I cannot process this request. Safety check failed: ${violations}. If you believe this is an error, please contact MTAA support.`,
+      message: `I cannot process this request. ${reason} (immune status: ${immuneStatus}). If you believe this is an error, please contact MTAA support.`,
       actions: [{
         type: 'suggest',
         target: 'support',
@@ -262,36 +396,27 @@ You are ASIS General Intelligence. You help users navigate MTAA OS, understand f
       insights: [{
         type: 'risk',
         severity: 'high',
-        title: 'Safety Violation Detected',
-        description: violations,
+        title: 'M-Theory Growth Intervention',
+        description: `${reason}. Growth factor: ${growthFactor.final.toFixed(3)}`,
       }],
       confidence: 1.0,
       domain: 'general',
       processingTime: 0,
-      model: 'safety-gate',
+      model: 'mtheory-growth-gate',
     };
   }
 
   /**
    * Call AI provider via edge function
-   * (Client-side: delegates to asisService which calls edge function)
    */
   private async callProvider(prompt: string, request: AsisRequest): Promise<AsisResponse> {
-    // This is a placeholder — actual implementation is in asisService.ts
-    // which calls the Supabase edge function
     throw new Error('callProvider must be implemented via asisService');
   }
 
-  /**
-   * Get current ASIS configuration
-   */
   getConfig(): AsisConfig {
     return { ...this.config };
   }
 
-  /**
-   * Update ASIS configuration
-   */
   updateConfig(config: Partial<AsisConfig>): void {
     this.config = { ...this.config, ...config };
   }

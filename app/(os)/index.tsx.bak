@@ -27,7 +27,6 @@ import {
   User, Sparkles, X, Lock, UtensilsCrossed, Eye, EyeOff,
   Newspaper, Zap, Home, ShieldCheck, Signal, Battery, BatteryFull,
   BatteryWarning, Trash2, RefreshCw, Info, GripVertical, ArrowUp, ArrowDown,
-  Video, Vote, Film,
 } from "lucide-react-native";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
 import { useWalletStore } from "@/hooks/useWalletStore";
@@ -86,8 +85,6 @@ const DEFAULT_DOMAIN_APPS = [
   { id: "education", label: "Edu", icon: "GraduationCap", route: "/(education)", color: "#FBBF24" },
   { id: "health", label: "Health", icon: "Heart", route: "/(os)/health", color: "#F87171" },
   { id: "streets", label: "Streets", icon: "Users", route: "/(os)/streets", color: "#E91E63" },
-  { id: "studio", label: "Studio", icon: "Film", route: "/(os)/studio/dashboard", color: "#A78BFA" },
-  { id: "voting", label: "Voting", icon: "Vote", route: "/(os)/voting", color: "#8B5CF6" },
   { id: "pulse", label: "Pulse", icon: "Zap", route: "/(os)/pulse", color: "#FF6B35" },
   { id: "nearby", label: "Nearby", icon: "MapPin", route: "/(local)/nearby", color: "#34D399" },
   { id: "property", label: "Property", icon: "Home", route: "/(os)/property", color: "#8B5CF6" },
@@ -109,7 +106,6 @@ const ICON_MAP: Record<string, any> = {
   User, Sparkles, X, Lock, UtensilsCrossed, Eye, EyeOff,
   Newspaper, Zap, Home, ShieldCheck, Signal, Battery, BatteryFull,
   BatteryWarning, Trash2, RefreshCw, Info, GripVertical, ArrowUp, ArrowDown,
-  Video, Vote, Film,
 };
 
 interface AppDef {
@@ -283,9 +279,9 @@ export default function HomeScreen() {
       const saved = await AsyncStorage.getItem(APP_STORAGE_KEY);
       if (saved) {
         const layout: AppLayout = JSON.parse(saved);
-        if (layout.system?.length) setSystemApps(layout.system.filter((v,i,a)=>a.findIndex(t=>t.id===v.id)===i));
-        if (layout.core?.length) setCoreApps(layout.core.filter((v,i,a)=>a.findIndex(t=>t.id===v.id)===i));
-        if (layout.domain?.length) setDomainApps(layout.domain.filter((v,i,a)=>a.findIndex(t=>t.id===v.id)===i));
+        if (layout.system?.length) setSystemApps(layout.system);
+        if (layout.core?.length) setCoreApps(layout.core);
+        if (layout.domain?.length) setDomainApps(layout.domain);
       }
     } catch (e) {
       console.log("No saved layout, using defaults");
@@ -338,8 +334,7 @@ export default function HomeScreen() {
     }
   };
 
-  // FIXED: No "Warrior" fallback — uses user account name or empty string
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || "User";
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || (user as any)?.user_metadata?.full_name || (user as any)?.user_metadata?.name || "Warrior";
   const greeting = getGreeting(displayName);
   const safeBalance = (balance ?? 0).toLocaleString("en-KE", { minimumFractionDigits: 2 });
 
