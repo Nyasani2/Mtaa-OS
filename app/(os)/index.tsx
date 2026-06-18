@@ -623,8 +623,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginTop: SIZES.sm,
     marginBottom: SIZES.md,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 2 },
+    // textShadowColor: "rgba(0,0,0,0.5)",
+    // textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
 
