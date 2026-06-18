@@ -88,7 +88,7 @@ export default function MarketplaceIndexScreen() {
   };
 
   const handleCartPress = () => {
-    router.push('/(marketplace)/cart');
+    router.push('/(commerce)/marketplace/cart');
   };
 
   const handleAffiliatePress = () => {

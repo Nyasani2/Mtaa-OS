@@ -61,3 +61,28 @@ node_modules/**/*.a
 node_modules/**/*.jar
 *.so
 *.a
+
+# === MTAA OS — NEVER COMMIT THESE ===
+_STAGING/
+_BACKUP_ARCHIVE/
+_CLEANUP_BACKUP/
+_ARCHIVE/
+*.backup
+*.bak
+*.old
+*.orig
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# === Build Artifacts ===
+.expo/
+dist/
+web-build/
+coverage/
+
+# === Environment ===
+.env
+.env.local
+.env.*.local

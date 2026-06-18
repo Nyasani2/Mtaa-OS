@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // AUTH STORE BRIDGE — MTAA OS
 // Re-exports the auth store from its actual location
-// This allows all screens to import from @/lib/kernel/stores/authStore
+// This allows all screens to import from @/lib/stores/authStore
 // ═══════════════════════════════════════════════════════════════
 
 // Try to import from the kernel location first, then fall back to auth location

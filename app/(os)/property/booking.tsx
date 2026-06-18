@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useProperty } from "@/domains/property/hooks/useProperty";
-import { useWalletAccount } from "@/app/(os)/wallet/hooks/useWalletAccount";
+import { useWalletAccount } from "@/lib/wallet/hooks/useWalletAccount";
 import { CalendarDays, ChevronLeft, Home, Users, Clock } from "lucide-react-native";
 import { useState } from "react";
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/kernel/stores/useAuthStore';
+import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Save, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 

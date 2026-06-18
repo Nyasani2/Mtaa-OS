@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useProperty } from "@/domains/property/hooks/useProperty";
 import { useWallet } from "@/hooks/useWallet";
-import { useWalletAccount } from "@/app/(os)/wallet/hooks/useWalletAccount";
+import { useWalletAccount } from "@/lib/wallet/hooks/useWalletAccount";
 import { CreditCard, ChevronLeft, ShieldCheck, Wallet } from "lucide-react-native";
 import { useState } from "react";
 

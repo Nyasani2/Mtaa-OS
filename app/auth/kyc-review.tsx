@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/kernel/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 import { supabase } from '@/lib/integrations/supabase/client';
 
 interface KYCLevel {

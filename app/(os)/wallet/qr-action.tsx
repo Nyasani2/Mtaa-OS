@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useIdentity } from "@/hooks/useAuthStore";
-import { supabase } from "@/lib/supabase";
+import { useIdentity } from "@/lib/auth/useAuthStore";
+import { supabase } from "@/lib/supabase/client";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   ArrowLeft,

@@ -1,421 +1,322 @@
-// ============================================================================
-// MTAA Profile OS — Edit Profile Screen
-// Full profile creation/editing form
-// ============================================================================
+// app/(os)/profile/edit.tsx
+// FIXED: import path @/lib/supabase (not /client)
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   Image,
+  ScrollView,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useProfile } from '@/lib/profile';
-import { useAuth } from '@/hooks/useAuth';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 
-// Available options
-const GENDER_OPTIONS = ['male', 'female', 'other', 'prefer_not_to_say'];
-const ID_TYPE_OPTIONS = ['national_id', 'passport', 'drivers_license', 'other'];
-const OCCUPATION_OPTIONS = [
-  'student', 'employed', 'self_employed', 'business_owner',
-  'freelancer', 'unemployed', 'retired', 'other'
-];
-const INCOME_OPTIONS = [
-  'under_10k', '10k_30k', '30k_50k', '50k_100k', '100k_300k', 'above_300k'
-];
+interface ProfileData {
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+  bio: string | null;
+  location: string | null;
+}
 
-export default function EditProfileScreen() {
+export default function ProfileEditScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { profile, isLoading, updateProfile, loadProfile } = useProfile();
-
+  const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<'basic' | 'contact' | 'professional' | 'bio'>('basic');
-
-  // Form state
-  const [form, setForm] = useState({
+  const [profile, setProfile] = useState<ProfileData>({
     full_name: '',
-    display_name: '',
     username: '',
+    avatar_url: null,
+    cover_url: null,
     bio: '',
-    short_bio: '',
-    headline: '',
-    date_of_birth: '',
-    gender: '',
-    nationality: '',
-    id_number: '',
-    id_type: '',
-    phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    region: '',
-    country: 'KE',
-    postal_code: '',
-    occupation: '',
-    employer: '',
-    income_range: '',
-    profession: '',
-    years_of_experience: '',
-    education_level: '',
-    languages: '',
-    skills: '',
-    interests: '',
-    website_url: '',
-    mission: '',
-    vision: '',
+    location: '',
   });
+  const [newAvatar, setNewAvatar] = useState<string | null>(null);
+  const [newCover, setNewCover] = useState<string | null>(null);
 
-  // Load existing profile data into form
+  const userId = user?.id;
+
   useEffect(() => {
-    if (profile) {
-      setForm({
-        full_name: profile.full_name || '',
-        display_name: profile.display_name || '',
-        username: profile.username || '',
-        bio: profile.bio || '',
-        short_bio: profile.short_bio || '',
-        headline: profile.headline || '',
-        date_of_birth: profile.date_of_birth || '',
-        gender: profile.gender || '',
-        nationality: profile.nationality || '',
-        id_number: profile.id_number || '',
-        id_type: profile.id_type || '',
-        phone: profile.phone || '',
-        address_line1: profile.address_line1 || '',
-        address_line2: profile.address_line2 || '',
-        city: profile.city || '',
-        region: profile.region || '',
-        country: profile.country || 'KE',
-        postal_code: profile.postal_code || '',
-        occupation: profile.occupation || '',
-        employer: profile.employer || '',
-        income_range: profile.income_range || '',
-        profession: profile.profession || '',
-        years_of_experience: profile.years_of_experience?.toString() || '',
-        education_level: profile.education_level || '',
-        languages: Array.isArray(profile.languages) ? profile.languages.join(', ') : '',
-        skills: Array.isArray(profile.skills) ? profile.skills.join(', ') : '',
-        interests: Array.isArray(profile.interests) ? profile.interests.join(', ') : '',
-        website_url: profile.website_url || '',
-        mission: profile.mission || '',
-        vision: profile.vision || '',
-      });
-    }
-  }, [profile]);
+    fetchProfile();
+  }, []);
 
-  const updateField = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  };
+  const fetchProfile = async () => {
+    if (!userId) return;
 
-  const handleSave = async () => {
-    if (!form.full_name.trim()) {
-      Alert.alert('Required', 'Full name is required');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, username, avatar_url, cover_url, bio, location')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      Alert.alert('Error', 'Failed to load profile');
       return;
     }
 
+    setProfile(data || {});
+    setLoading(false);
+  };
+
+  const pickImage = async (type: 'avatar' | 'cover') => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission Required', 'Please allow access to your photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: type === 'avatar' ? [1, 1] : [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      if (type === 'avatar') {
+        setNewAvatar(result.assets[0].uri);
+      } else {
+        setNewCover(result.assets[0].uri);
+      }
+    }
+  };
+
+  const uploadImage = async (uri: string, path: string): Promise<string> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
+  };
+
+  const handleSave = async () => {
+    if (!userId) return;
     setSaving(true);
+
     try {
-      const updates: any = {
-        full_name: form.full_name.trim(),
-        display_name: form.display_name.trim() || form.full_name.trim(),
-        username: form.username.trim().toLowerCase(),
-        bio: form.bio.trim(),
-        short_bio: form.short_bio.trim(),
-        headline: form.headline.trim(),
-        date_of_birth: form.date_of_birth || null,
-        gender: form.gender || null,
-        nationality: form.nationality.trim() || null,
-        id_number: form.id_number.trim() || null,
-        id_type: form.id_type || null,
-        phone: form.phone.trim() || null,
-        address_line1: form.address_line1.trim() || null,
-        address_line2: form.address_line2.trim() || null,
-        city: form.city.trim() || null,
-        region: form.region.trim() || null,
-        country: form.country.trim() || 'KE',
-        postal_code: form.postal_code.trim() || null,
-        occupation: form.occupation || null,
-        employer: form.employer.trim() || null,
-        income_range: form.income_range || null,
-        profession: form.profession.trim() || null,
-        years_of_experience: form.years_of_experience ? parseInt(form.years_of_experience) : null,
-        education_level: form.education_level || null,
-        languages: form.languages ? form.languages.split(',').map(s => s.trim()).filter(Boolean) : null,
-        skills: form.skills ? form.skills.split(',').map(s => s.trim()).filter(Boolean) : null,
-        interests: form.interests ? form.interests.split(',').map(s => s.trim()).filter(Boolean) : null,
-        website_url: form.website_url.trim() || null,
-        mission: form.mission.trim() || null,
-        vision: form.vision.trim() || null,
+      let updates: any = {
+        full_name: profile.full_name || null,
+        username: profile.username || null,
+        bio: profile.bio || null,
+        location: profile.location || null,
         updated_at: new Date().toISOString(),
       };
 
-      await updateProfile(updates);
-      Alert.alert('Success', 'Profile saved successfully!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save profile');
+      if (newAvatar) {
+        const avatarUrl = await uploadImage(newAvatar, `${userId}/avatar.jpg`);
+        updates.avatar_url = avatarUrl;
+      }
+
+      if (newCover) {
+        const coverUrl = await uploadImage(newCover, `${userId}/cover.jpg`);
+        updates.cover_url = coverUrl;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      Alert.alert('Success', 'Profile updated successfully');
+      router.back();
+    } catch (err: any) {
+      console.error('Save error:', err);
+      Alert.alert('Error', err.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }
   };
 
-  const SectionButton = ({ section, label, icon }: { section: typeof activeSection; label: string; icon: string }) => (
-    <TouchableOpacity
-      style={[styles.sectionTab, activeSection === section && styles.sectionTabActive]}
-      onPress={() => setActiveSection(section)}
-    >
-      <Ionicons name={icon as any} size={18} color={activeSection === section ? '#6366f1' : '#64748b'} />
-      <Text style={[styles.sectionTabText, activeSection === section && styles.sectionTabTextActive]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const InputField = ({ label, field, placeholder, multiline = false, numeric = false }: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <TextInput
-        style={[styles.input, multiline && styles.inputMultiline]}
-        placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
-        value={form[field]}
-        onChangeText={(text) => updateField(field, text)}
-        multiline={multiline}
-        keyboardType={numeric ? 'numeric' : 'default'}
-      />
-    </View>
-  );
-
-  const SelectField = ({ label, field, options }: { label: string; field: string; options: string[] }) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <View style={styles.selectRow}>
-        {options.map((opt) => (
-          <TouchableOpacity
-            key={opt}
-            style={[styles.selectChip, form[field] === opt && styles.selectChipActive]}
-            onPress={() => updateField(field, opt === form[field] ? '' : opt)}
-          >
-            <Text style={[styles.selectChipText, form[field] === opt && styles.selectChipTextActive]}>
-              {opt.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  if (isLoading && !profile) {
+  if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
+  const avatarUri = newAvatar || profile.avatar_url || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name || 'User')}&background=6366f1&color=fff`;
+  const coverUri = newCover || profile.cover_url;
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      {/* Header */}
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} disabled={saving}>
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>{profile ? 'Edit Profile' : 'Create Profile'}</Text>
+        <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           {saving ? (
             <ActivityIndicator size="small" color="#6366f1" />
           ) : (
-            <Text style={styles.saveButton}>Save</Text>
+            <Text style={styles.saveText}>Save</Text>
           )}
         </TouchableOpacity>
       </View>
 
-      {/* Section Tabs */}
-      <View style={styles.sectionBar}>
-        <SectionButton section="basic" label="Basic" icon="person-outline" />
-        <SectionButton section="contact" label="Contact" icon="location-outline" />
-        <SectionButton section="professional" label="Work" icon="briefcase-outline" />
-        <SectionButton section="bio" label="Bio" icon="document-text-outline" />
+      <TouchableOpacity style={styles.coverContainer} onPress={() => pickImage('cover')}>
+        {coverUri ? (
+          <Image source={{ uri: coverUri }} style={styles.coverImage} />
+        ) : (
+          <View style={styles.coverPlaceholder}>
+            <Ionicons name="image" size={32} color="#6b7280" />
+            <Text style={styles.coverText}>Add Cover Photo</Text>
+          </View>
+        )}
+        <View style={styles.coverOverlay}>
+          <Ionicons name="camera" size={20} color="#fff" />
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.avatarSection}>
+        <TouchableOpacity style={styles.avatarContainer} onPress={() => pickImage('avatar')}>
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          <View style={styles.avatarOverlay}>
+            <Ionicons name="camera" size={16} color="#fff" />
+          </View>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {/* ===== BASIC INFO ===== */}
-        {activeSection === 'basic' && (
-          <View>
-            <InputField label="Full Name *" field="full_name" placeholder="John Doe" />
-            <InputField label="Display Name" field="display_name" placeholder="How you want to be called" />
-            <InputField label="Username" field="username" placeholder="johndoe (no spaces)" />
-            <InputField label="Date of Birth" field="date_of_birth" placeholder="YYYY-MM-DD" />
-            <SelectField label="Gender" field="gender" options={GENDER_OPTIONS} />
-            <InputField label="Nationality" field="nationality" placeholder="Kenyan" />
-            <SelectField label="ID Type" field="id_type" options={ID_TYPE_OPTIONS} />
-            <InputField label="ID Number" field="id_number" placeholder="ID / Passport number" />
-            <InputField label="Phone" field="phone" placeholder="+254 700 000 000" />
-          </View>
-        )}
+      <View style={styles.form}>
+        <View style={styles.field}>
+          <Text style={styles.label}>Full Name</Text>
+          <TextInput
+            style={styles.input}
+            value={profile.full_name || ''}
+            onChangeText={(text) => setProfile(p => ({ ...p, full_name: text }))}
+            placeholder="Your full name"
+            placeholderTextColor="#6b7280"
+          />
+        </View>
 
-        {/* ===== CONTACT INFO ===== */}
-        {activeSection === 'contact' && (
-          <View>
-            <InputField label="Address Line 1" field="address_line1" placeholder="Street address" />
-            <InputField label="Address Line 2" field="address_line2" placeholder="Apartment, suite, etc." />
-            <InputField label="City" field="city" placeholder="Nairobi" />
-            <InputField label="Region / County" field="region" placeholder="Nairobi County" />
-            <InputField label="Country" field="country" placeholder="KE" />
-            <InputField label="Postal Code" field="postal_code" placeholder="00100" />
-          </View>
-        )}
+        <View style={styles.field}>
+          <Text style={styles.label}>Username</Text>
+          <TextInput
+            style={styles.input}
+            value={profile.username || ''}
+            onChangeText={(text) => setProfile(p => ({ ...p, username: text.replace(/\s/g, '').toLowerCase() }))}
+            placeholder="username"
+            placeholderTextColor="#6b7280"
+            autoCapitalize="none"
+          />
+        </View>
 
-        {/* ===== PROFESSIONAL INFO ===== */}
-        {activeSection === 'professional' && (
-          <View>
-            <InputField label="Headline" field="headline" placeholder="e.g. Software Engineer at MTAA" />
-            <SelectField label="Occupation" field="occupation" options={OCCUPATION_OPTIONS} />
-            <InputField label="Profession" field="profession" placeholder="e.g. Software Engineering" />
-            <InputField label="Employer" field="employer" placeholder="Company or organization" />
-            <SelectField label="Income Range (KES/month)" field="income_range" options={INCOME_OPTIONS} />
-            <InputField label="Years of Experience" field="years_of_experience" placeholder="5" numeric />
-            <InputField label="Education Level" field="education_level" placeholder="e.g. Bachelor's Degree" />
-            <InputField label="Languages (comma separated)" field="languages" placeholder="English, Swahili, French" />
-            <InputField label="Skills (comma separated)" field="skills" placeholder="React, Node.js, Design" />
-            <InputField label="Website" field="website_url" placeholder="https://yourwebsite.com" />
-          </View>
-        )}
+        <View style={styles.field}>
+          <Text style={styles.label}>Bio</Text>
+          <TextInput
+            style={[styles.input, styles.bioInput]}
+            value={profile.bio || ''}
+            onChangeText={(text) => setProfile(p => ({ ...p, bio: text }))}
+            placeholder="Tell us about yourself"
+            placeholderTextColor="#6b7280"
+            multiline
+            maxLength={160}
+          />
+          <Text style={styles.charCount}>{(profile.bio || '').length}/160</Text>
+        </View>
 
-        {/* ===== BIO ===== */}
-        {activeSection === 'bio' && (
-          <View>
-            <InputField label="Short Bio" field="short_bio" placeholder="One-line bio" />
-            <InputField
-              label="Full Bio"
-              field="bio"
-              placeholder="Tell your story..."
-              multiline
-            />
-            <InputField
-              label="Mission"
-              field="mission"
-              placeholder="Your personal mission statement"
-              multiline
-            />
-            <InputField
-              label="Vision"
-              field="vision"
-              placeholder="Your vision for the future"
-              multiline
-            />
-            <InputField label="Interests (comma separated)" field="interests" placeholder="Technology, Music, Travel" />
-          </View>
-        )}
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <View style={styles.field}>
+          <Text style={styles.label}>Location</Text>
+          <TextInput
+            style={styles.input}
+            value={profile.location || ''}
+            onChangeText={(text) => setProfile(p => ({ ...p, location: text }))}
+            placeholder="City, Country"
+            placeholderTextColor="#6b7280"
+          />
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, color: '#64748b' },
+  container: { flex: 1, backgroundColor: '#0f0f0f' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f' },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingTop: 50,
+    paddingBottom: 16,
   },
-  title: { fontSize: 17, fontWeight: '700', color: '#1e293b' },
-  saveButton: { fontSize: 15, fontWeight: '600', color: '#6366f1' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#fff' },
+  saveText: { color: '#6366f1', fontWeight: '600', fontSize: 16 },
 
-  sectionBar: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    gap: 4,
+  coverContainer: {
+    width: '100%',
+    height: 160,
+    position: 'relative',
   },
-  sectionTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+  coverImage: { width: '100%', height: '100%' },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#1f1f1f',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
+    alignItems: 'center',
   },
-  sectionTabActive: { backgroundColor: '#eef2ff' },
-  sectionTabText: { fontSize: 12, color: '#64748b', fontWeight: '500' },
-  sectionTabTextActive: { color: '#6366f1', fontWeight: '600' },
-
-  scroll: { flex: 1 },
-  scrollContent: { padding: 16 },
-
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1e293b',
-  },
-  inputMultiline: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-
-  selectRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  selectChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  coverText: { color: '#6b7280', marginTop: 8, fontSize: 14 },
+  coverOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
+    padding: 8,
+  },
+
+  avatarSection: { alignItems: 'center', marginTop: -40 },
+  avatarContainer: { position: 'relative' },
+  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: '#0f0f0f' },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 12,
+    padding: 4,
+  },
+
+  form: { padding: 16, paddingTop: 24 },
+  field: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: '600', color: '#9ca3af', marginBottom: 6 },
+  input: {
+    backgroundColor: '#1f1f1f',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    fontSize: 15,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#374151',
   },
-  selectChipActive: {
-    backgroundColor: '#eef2ff',
-    borderColor: '#6366f1',
-  },
-  selectChipText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  selectChipTextActive: {
-    color: '#6366f1',
-    fontWeight: '600',
-  },
+  bioInput: { minHeight: 80, textAlignVertical: 'top' },
+  charCount: { color: '#6b7280', fontSize: 12, textAlign: 'right', marginTop: 4 },
 });

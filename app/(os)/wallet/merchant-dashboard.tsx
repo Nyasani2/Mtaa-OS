@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 import { useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';
 
