@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useWalletStore } from '@/lib/stores/wallet-store';
 
 export default function HistoryScreen() {
   const { transactions } = useWalletStore();

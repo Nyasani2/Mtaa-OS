@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useHealthStore } from "@/domains/health/state/healthStore";
-import { useAuthStore } from "@/lib/stores/authStore";
+import { useAuthStore } from "@/lib/auth/useAuthStore";
 
 interface ImagingRequest {
   id: string;

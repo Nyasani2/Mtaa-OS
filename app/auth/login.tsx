@@ -28,7 +28,7 @@ export default function LoginScreen() {
     setError('');
     const { error: err } = await signIn(email.trim(), password);
     if (err) {
-      setError(err.message);
+      setError(err);
       setLoading(false);
       return;
     }

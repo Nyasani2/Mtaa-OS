@@ -1,3 +1,3 @@
-// app/(os)/wallet/hooks/index.ts
-export { useWalletAccount } from './useWalletAccount';
-export { useWalletTaxes } from './useWalletTaxes';
+export { useWallet } from '@/domains/wallet/hooks/useWallet';
+export { useWalletAccount } from '@/domains/wallet/hooks';
+export { useWalletStore } from '@/lib/stores/wallet-store';

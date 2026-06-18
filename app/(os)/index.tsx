@@ -30,7 +30,7 @@ import {
   Video, Vote, Film,
 } from "lucide-react-native";
 import { useAuthStore } from "@/lib/auth/useAuthStore";
-import { useWalletStore } from "@/hooks/useWalletStore";
+import { useWalletStore } from "@/lib/stores/wallet-store";
 import { asisTester } from "@/lib/asis/asis-tester";
 import { COLORS, FONTS, SIZES } from "@/constants/theme";
 
@@ -60,7 +60,7 @@ const DEFAULT_SYSTEM_APPS = [
   { id: "network", label: "Network", icon: "Activity", route: "/(os)/network", color: "#34D399" },
   { id: "wifi", label: "Wi-Fi", icon: "Wifi", route: "/(os)/wifi", color: "#818CF8" },
   { id: "reader", label: "Reader", icon: "BookOpen", route: "/(os)/reader", color: "#A78BFA" },
-  { id: "settings", label: "Settings", icon: "Settings", route: "/(settings)", color: "#9CA3AF" },
+  { id: "settings", label: "Settings", icon: "Settings", route: "/(os)/settings", color: "#9CA3AF" },
   { id: "profile", label: "Profile", icon: "User", route: "/(os)/profile", color: "#F472B6" },
   { id: "asis", label: "ASIS", icon: "Sparkles", route: "/(os)/asis", color: "#6366f1" },
 ];
@@ -464,7 +464,7 @@ export default function HomeScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
         >
           <View style={styles.topBar}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(settings)")}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => router.push("/(os)/settings")}>
               <Settings size={20} color="#fff" />
             </TouchableOpacity>
             <View style={styles.liveStats}>

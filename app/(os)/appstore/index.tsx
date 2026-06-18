@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore, AppItem } from '@/hooks/useAppStore';
+import { useAppStore, AppItem } from '@/lib/stores/app-store';
 import { getAppsBySection } from '@/lib/mtaa/appstore/unified-registry';
 
 export default function AppStoreScreen() {

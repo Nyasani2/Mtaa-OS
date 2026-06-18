@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useWalletTaxes } from './hooks/useWalletTaxes';
+import { useWalletTaxes } from '@/lib/wallet/hooks/useWalletTaxes';
 
 export default function TaxScreen() {
   const { taxes, loading, refresh, exportTaxCSV } = useWalletTaxes();

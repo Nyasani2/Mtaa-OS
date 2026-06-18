@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useWalletAccount } from './hooks/useWalletAccount';
+import { useWalletAccount } from '@/lib/wallet/hooks';
 
 export default function WalletScreen() {
   const router = useRouter();

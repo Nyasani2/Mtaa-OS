@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useProperty } from "@/domains/property/hooks/useProperty";
-import { useWallet } from "@/hooks/useWallet";
-import { useWalletAccount } from "@/lib/wallet/hooks/useWalletAccount";
+import { useWallet } from "@/lib/wallet/hooks";
+import { useWalletAccount } from "@/lib/wallet/hooks";
 import { CreditCard, ChevronLeft, ShieldCheck, Wallet } from "lucide-react-native";
 import { useState } from "react";
 

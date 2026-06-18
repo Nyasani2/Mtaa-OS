@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Lin
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Phone, MessageSquare, X, Navigation, Clock, Star, User } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuthStore";
 
 export default function RideTracking() {
   const router = useRouter();

@@ -71,15 +71,15 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
-    const { error, user } = await signUp(email.trim(), password, { phone: phone.trim(), full_name: name.trim() });
+    const { error, success } = await signUp(email.trim(), password, { phone: phone.trim(), full_name: name.trim() });
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Error', error);
       return;
     }
 
-    if (user && !user.email_confirmed_at) {
+    if (success) {
       Alert.alert(
         'Verify Your Email',
         'Account created. Please check your email and verify before signing in.',
