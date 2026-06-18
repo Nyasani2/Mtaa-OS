@@ -43,6 +43,8 @@ export interface AuthState {
   checkPinRequired: () => Promise<boolean>;
   enableBiometric: (enabled: boolean) => void;
   clearError: () => void;
+  setUser: (user: User | null) => void;
+  setSession: (session: any | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -243,4 +245,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+  setUser: (user: User | null) => set({ user }),
+  setSession: (session: any | null) => set({ session }),
 }));
