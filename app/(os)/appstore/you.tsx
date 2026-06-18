@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '@/hooks/useAppStore';
+import { useAppStore } from '@/lib/stores/app-store';
 import { useIdentity } from '@/lib/auth/useAuthStore';
 
 export default function AppStoreYou() {

@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Lin
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, Phone, MessageSquare, CheckCircle, Flag, AlertTriangle } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuthStore";
 import { supabase } from "@/lib/supabase";
 
 export default function DriverRide() {

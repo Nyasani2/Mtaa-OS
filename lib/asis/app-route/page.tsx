@@ -6,7 +6,7 @@ import React from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { Stack } from 'expo-router';
 import { AsisChatScreen } from '@/lib/asis/components/AsisChatScreen';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/auth/useAuthStore';
 
 export default function AsisPage() {
   const { user } = useAuth();

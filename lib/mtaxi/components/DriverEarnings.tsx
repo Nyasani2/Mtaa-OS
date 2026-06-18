@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator
 import { useRouter } from "expo-router";
 import { DollarSign, TrendingUp, Calendar, Clock, ChevronLeft } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuthStore";
 
 export default function DriverEarnings() {
   const router = useRouter();

@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import { rankingEngine } from '@/domains/pulse/services/rankingEngine';
 

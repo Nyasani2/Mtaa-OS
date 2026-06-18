@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useWalletStore } from '@/lib/stores/wallet-store';
 import { supabase } from '@/lib/supabase';
 
 interface BusinessProfile {

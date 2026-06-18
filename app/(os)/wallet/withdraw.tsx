@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet } from '@/lib/wallet/hooks';
 import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 const WITHDRAW_METHODS = [

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getAppsBySection } from '@/lib/mtaa/appstore/unified-registry';
-import { AppItem } from '@/hooks/useAppStore';
+import { AppItem } from '@/lib/stores/app-store';
 
 export default function TopChartsScreen() {
   const router = useRouter();

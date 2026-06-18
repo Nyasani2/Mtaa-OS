@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Activi
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, CreditCard, Wallet, Banknote, Bike, Package, Users } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuthStore";
 import type { VehicleType, PaymentMethod } from "../types";
 
 const BODA_TYPES: { type: VehicleType; label: string; base: string; icon: typeof Bike; color: string; desc: string }[] = [
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8f9fa" },
   header: { flexDirection: "row", alignItems: "center", padding: 20, paddingTop: 60, backgroundColor: "#1e293b", justifyContent: "center" },
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff", marginLeft: 10 },
-  locationBox: { margin: 16, padding: 16, backgroundColor: "#fff", borderRadius: 12, // shadowColor: "#000", // shadowOffset: { width: 0, height: 2 }, // shadowOpacity: 0.08, // shadowRadius: 4, elevation: 3 },
+  locationBox: { margin: 16, padding: 16, backgroundColor: "#fff", borderRadius: 12, elevation: 3 },
   locationRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8 },
   locationInput: { flex: 1, marginLeft: 12, fontSize: 16, color: "#1a1a1a" },
   divider: { height: 1, backgroundColor: "#e5e7eb", marginVertical: 4 },
   estimateBtn: { marginHorizontal: 16, padding: 14, backgroundColor: "#f59e0b", borderRadius: 10, alignItems: "center" },
   estimateBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  fareBox: { margin: 16, padding: 20, backgroundColor: "#fff", borderRadius: 12, alignItems: "center", // shadowColor: "#000", // shadowOffset: { width: 0, height: 2 }, // shadowOpacity: 0.08, // shadowRadius: 4, elevation: 3 },
+  fareBox: { margin: 16, padding: 20, backgroundColor: "#fff", borderRadius: 12, alignItems: "center", elevation: 3 },
   fareLabel: { fontSize: 14, color: "#666" },
   fareAmount: { fontSize: 36, fontWeight: "800", color: "#1a1a1a", marginVertical: 4 },
   fareDetail: { fontSize: 14, color: "#666" },

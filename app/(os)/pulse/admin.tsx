@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Alert, Text } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/auth/useAuthStore';
 import type { PulseReport, PulseModerationItem } from '@/domains/pulse/types';
 
 export default function PulseAdmin() {

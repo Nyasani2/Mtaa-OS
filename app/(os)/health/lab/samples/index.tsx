@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, QrCode, Package, User, CheckCircle2, AlertTriangle } from 'lucide-react-native';
 

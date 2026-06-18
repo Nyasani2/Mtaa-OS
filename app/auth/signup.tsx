@@ -16,7 +16,7 @@ export default function SignupScreen() {
     const { error } = await signUp(email, password);
     setLoading(false);
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('Error', error);
     } else {
       Alert.alert('Success', 'Check your email for verification link');
       router.replace('/auth/login');

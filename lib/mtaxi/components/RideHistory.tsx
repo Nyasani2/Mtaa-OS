@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator }
 import { useRouter } from "expo-router";
 import { MapPin, Clock, Star, ChevronRight, Car, Navigation } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/lib/auth/useAuthStore";
 
 const STATUS_COLORS: Record<string, string> = {
   completed: "#10b981",
