@@ -2,7 +2,6 @@
 // Single secure backend for all AI calls
 // Handles: auth, rate limiting, provider routing, context injection, streaming, safety
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Provider configurations (loaded from Supabase secrets)
 const PROVIDERS = {

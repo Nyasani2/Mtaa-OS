@@ -1,421 +1,522 @@
-import React, { useCallback } from 'react';
+// app/(os)/profile/index.tsx
+// FIXED: Uses creator_id (not user_id) — matches your actual streets_posts schema
+
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
+  Image,
   RefreshControl,
   ActivityIndicator,
-  Pressable,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  useProfile,
-  useProfileRoles,
-  useProfileVerifications,
-  useProfileReputation,
-  useProfileAchievements,
-  useProfilePortfolio,
-  useProfileAnalytics,
-  useBusiness,
-} from '@/lib/profile';
-import { useWallet } from '@/hooks/useWallet';
-import { useAuth } from '@/hooks/useAuth';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { supabase } from '@/lib/supabase';
+import { MediaGallery } from '@/components/media/MediaGallery';
+import { Ionicons } from '@expo/vector-icons';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const { width } = Dimensions.get('window');
 
-export default function ProfileHomeScreen() {
+interface ProfileData {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+  bio: string | null;
+  location: string | null;
+  verified: boolean;
+  created_at: string;
+}
+
+interface ProfileStats {
+  posts_count: number;
+  followers_count: number;
+  following_count: number;
+  businesses_count: number;
+}
+
+function useWalletBalance() {
+  const [balance, setBalance] = useState(0);
+  const [currency, setCurrency] = useState('KES');
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('wallets')
+      .select('balance, currency')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setBalance(data.balance || 0);
+          setCurrency(data.currency || 'KES');
+        }
+      });
+  }, [user?.id]);
+
+  return { balance, currency };
+}
+
+export default function ProfileScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { profile, isLoading: profileLoading, refreshProfile } = useProfile();
-  const { roles } = useProfileRoles();
-  const { verifications } = useProfileVerifications();
-  const { reputation } = useProfileReputation();
-  const { achievements } = useProfileAchievements();
-  const { portfolios } = useProfilePortfolio();
-  const { analytics } = useProfileAnalytics();
-  const { businesses } = useBusiness();
-  const { balance } = useWallet();
+  const { user } = useAuthStore();
+  const { balance, currency } = useWalletBalance();
 
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [stats, setStats] = useState<ProfileStats>({
+    posts_count: 0,
+    followers_count: 0,
+    following_count: 0,
+    businesses_count: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'business' | 'shop' | 'cv'>('content');
 
-  const onRefresh = useCallback(async () => {
+  const userId = user?.id;
+
+  const fetchProfile = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+      setProfile(profileData);
+
+      const [
+        { count: postsCount },
+        { count: followersCount },
+        { count: followingCount },
+        { count: businessesCount },
+      ] = await Promise.all([
+        supabase.from('streets_posts').select('*', { count: 'exact', head: true }).eq('creator_id', userId),
+        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('owner_id', userId),
+      ]);
+
+      setStats({
+        posts_count: postsCount || 0,
+        followers_count: followersCount || 0,
+        following_count: followingCount || 0,
+        businesses_count: businessesCount || 0,
+      });
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+      Alert.alert('Error', 'Failed to load profile data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    await refreshProfile();
-    setRefreshing(false);
-  }, [refreshProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
-  // --- Helpers ---
-  const getKycProgress = () => {
-    if (!verifications?.length) return 0;
-    const approved = verifications.filter((v) => v.status === 'approved').length;
-    return Math.round((approved / verifications.length) * 100);
+  const handleEditProfile = () => {
+    router.push('/(os)/profile/edit');
   };
 
-  const getVerificationLevelLabel = () => {
-    const approved = verifications?.filter((v) => v.status === 'approved').length || 0;
-    if (approved >= 5) return 'Fully Verified';
-    if (approved >= 3) return 'Level 3';
-    if (approved >= 2) return 'Level 2';
-    if (approved >= 1) return 'Level 1';
-    return 'Unverified';
+  const handleWalletPress = () => {
+    router.push('/(os)/wallet');
   };
 
-  const getTrustColor = (score: number) => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 50) return '#f59e0b';
-    return '#ef4444';
+  const handleUploadPress = () => {
+    router.push('/(os)/upload');
   };
 
-  const kycProgress = getKycProgress();
-  const trustScore = reputation?.trust_score || profile?.trust_score || 50;
-  const trustColor = getTrustColor(trustScore);
-
-  // --- Loading State ---
-  if (profileLoading && !profile) {
+  if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
     );
   }
 
-  // --- Empty State ---
-  if (!profile) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="person-circle-outline" size={64} color="#9ca3af" />
-        <Text style={styles.emptyTitle}>No Profile Found</Text>
-        <Text style={styles.emptySubtitle}>Complete your profile to unlock all features.</Text>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => router.push('/(os)/profile/edit')}
-        >
-          <Text style={styles.primaryButtonText}>Create Profile</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const displayName = profile?.full_name || profile?.username || 'User';
+  const handleText = profile?.username ? `@${profile.username}` : `@user_${userId?.slice(0, 8)}`;
+  const avatarUri = profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=6366f1&color=fff';
+  const coverUri = profile?.cover_url;
 
   return (
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* ===== COVER + HEADER ===== */}
+      {/* Cover Photo */}
       <View style={styles.coverContainer}>
-        <Image
-          source={{ uri: profile.cover_photo_url || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=800' }}
-          style={styles.coverImage}
-        />
-        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.coverOverlay} />
+        {coverUri ? (
+          <Image source={{ uri: coverUri }} style={styles.coverImage} />
+        ) : (
+          <View style={styles.coverPlaceholder}>
+            <Ionicons name="image-outline" size={48} color="#6b7280" />
+          </View>
+        )}
+        <TouchableOpacity style={styles.editCoverBtn} onPress={handleEditProfile}>
+          <Ionicons name="camera" size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => router.push('/(os)/profile/settings')} style={styles.iconButton}>
-            <Ionicons name="settings-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(os)/profile/qr')} style={styles.iconButton}>
-            <Ionicons name="qr-code-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(os)/profile/share')} style={styles.iconButton}>
-            <Ionicons name="share-outline" size={22} color="#fff" />
-          </TouchableOpacity>
+      {/* Avatar & Basic Info */}
+      <View style={styles.headerSection}>
+        <View style={styles.avatarContainer}>
+          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          {profile?.verified && (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            </View>
+          )}
         </View>
 
-        <View style={styles.avatarRow}>
-          <Image
-            source={{ uri: profile.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }}
-            style={styles.avatar}
-          />
-          <View style={styles.nameColumn}>
-            <Text style={styles.displayName}>{profile.display_name || profile.full_name || 'Your Name'}</Text>
-            <Text style={styles.username}>@{profile.username || 'username'}</Text>
-            <View style={styles.badgeRow}>
-              {profile.is_verified && (
-                <View style={[styles.badge, { backgroundColor: '#dbeafe' }]}>
-                  <Ionicons name="checkmark-circle" size={12} color="#2563eb" />
-                  <Text style={[styles.badgeText, { color: '#2563eb' }]}>Verified</Text>
-                </View>
-              )}
-              {roles?.map((r) => (
-                <View key={r.role} style={[styles.badge, { backgroundColor: '#f3e8ff' }]}>
-                  <Text style={[styles.badgeText, { color: '#7c3aed' }]}>{r.role}</Text>
-                </View>
-              ))}
+        <View style={styles.nameSection}>
+          <Text style={styles.name}>{displayName}</Text>
+          <Text style={styles.handle}>{handleText}</Text>
+          {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+          {profile?.location && (
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={14} color="#6b7280" />
+              <Text style={styles.locationText}>{profile.location}</Text>
             </View>
-          </View>
+          )}
         </View>
       </View>
 
-      {/* ===== TRUST SCORE CARD ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(100)} style={styles.card} onPress={() => router.push('/(os)/profile/reputation')}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="shield-checkmark" size={20} color={trustColor} />
-          <Text style={styles.cardTitle}>Trust Score</Text>
-          <Text style={[styles.scoreValue, { color: trustColor }]}>{trustScore}</Text>
-        </View>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${trustScore}%`, backgroundColor: trustColor }]} />
-        </View>
-        <Text style={styles.cardSubtitle}>{getVerificationLevelLabel()} · {kycProgress}% KYC Complete</Text>
-      </AnimatedPressable>
+      {/* Action Buttons */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.primaryBtn} onPress={handleEditProfile}>
+          <Text style={styles.primaryBtnText}>Edit Profile</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={handleUploadPress}>
+          <Ionicons name="add-circle" size={18} color="#6366f1" />
+          <Text style={styles.secondaryBtnText}>Upload</Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* ===== QUICK STATS ROW ===== */}
-      <Animated.View entering={FadeInUp.delay(150)} style={styles.statsRow}>
-        <TouchableOpacity style={styles.statBox} onPress={() => router.push('/(os)/profile/network')}>
-          <Text style={styles.statNumber}>{analytics?.total_followers || 0}</Text>
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('content')}>
+          <Text style={styles.statNumber}>{stats.posts_count}</Text>
+          <Text style={styles.statLabel}>Posts</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(os)/followers')}>
+          <Text style={styles.statNumber}>{stats.followers_count}</Text>
           <Text style={styles.statLabel}>Followers</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.statBox} onPress={() => router.push('/(os)/profile/network')}>
-          <Text style={styles.statNumber}>{analytics?.total_following || 0}</Text>
+        <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(os)/following')}>
+          <Text style={styles.statNumber}>{stats.following_count}</Text>
           <Text style={styles.statLabel}>Following</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.statBox} onPress={() => router.push('/(os)/profile/portfolio')}>
-          <Text style={styles.statNumber}>{portfolios?.length || 0}</Text>
-          <Text style={styles.statLabel}>Projects</Text>
+        <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('business')}>
+          <Text style={styles.statNumber}>{stats.businesses_count}</Text>
+          <Text style={styles.statLabel}>Business</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.statBox} onPress={() => router.push('/(os)/profile/achievements')}>
-          <Text style={styles.statNumber}>{achievements?.length || 0}</Text>
-          <Text style={styles.statLabel}>Badges</Text>
-        </TouchableOpacity>
-      </Animated.View>
+      </View>
 
-      {/* ===== WALLET QUICK LINK ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(200)} style={styles.card} onPress={() => router.push('/(os)/wallet')}>
-        <View style={styles.cardHeader}>
+      {/* Wallet Card */}
+      <TouchableOpacity style={styles.walletCard} onPress={handleWalletPress}>
+        <View style={styles.walletHeader}>
           <Ionicons name="wallet-outline" size={20} color="#6366f1" />
-          <Text style={styles.cardTitle}>Wallet</Text>
-          <Text style={styles.cardAction}>Open →</Text>
+          <Text style={styles.walletTitle}>MTAA Wallet</Text>
+          <Ionicons name="chevron-forward" size={18} color="#6b7280" />
         </View>
-        <Text style={styles.walletBalance}>KES {balance?.toLocaleString() || '0.00'}</Text>
-        <Text style={styles.cardSubtitle}>Available Balance</Text>
-      </AnimatedPressable>
-
-      {/* ===== MY BUSINESSES ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(250)} style={styles.card} onPress={() => router.push('/(os)/profile/businesses')}>
-        <View style={styles.cardHeader}>
-          <MaterialCommunityIcons name="storefront-outline" size={20} color="#059669" />
-          <Text style={styles.cardTitle}>My Businesses</Text>
-          <Text style={styles.cardAction}>Manage →</Text>
-        </View>
-        {businesses && businesses.length > 0 ? (
-          businesses.slice(0, 2).map((b) => (
-            <View key={b.id} style={styles.businessRow}>
-              <View style={[styles.statusDot, { backgroundColor: b.status === 'active' ? '#22c55e' : '#f59e0b' }]} />
-              <Text style={styles.businessName}>{b.name}</Text>
-              <Text style={styles.businessType}>{b.business_type}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.cardSubtitle}>No businesses yet. Create one to start selling.</Text>
-        )}
-        <TouchableOpacity style={styles.inlineButton} onPress={() => router.push('/(os)/profile/businesses/create')}>
-          <Ionicons name="add-circle" size={16} color="#6366f1" />
-          <Text style={styles.inlineButtonText}>Add Business</Text>
-        </TouchableOpacity>
-      </AnimatedPressable>
-
-      {/* ===== PORTFOLIO SUMMARY ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(300)} style={styles.card} onPress={() => router.push('/(os)/profile/portfolio')}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="briefcase-outline" size={20} color="#7c3aed" />
-          <Text style={styles.cardTitle}>Portfolio</Text>
-          <Text style={styles.cardAction}>View All →</Text>
-        </View>
-        {portfolios && portfolios.length > 0 ? (
-          portfolios.slice(0, 2).map((p) => (
-            <View key={p.id} style={styles.portfolioRow}>
-              <Text style={styles.portfolioTitle}>{p.title}</Text>
-              <Text style={styles.portfolioType}>{p.portfolio_type}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.cardSubtitle}>No portfolio items yet. Showcase your work.</Text>
-        )}
-        <TouchableOpacity style={styles.inlineButton} onPress={() => router.push('/(os)/profile/portfolio/create')}>
-          <Ionicons name="add-circle" size={16} color="#6366f1" />
-          <Text style={styles.inlineButtonText}>Add Portfolio Item</Text>
-        </TouchableOpacity>
-      </AnimatedPressable>
-
-      {/* ===== ACHIEVEMENTS ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(350)} style={styles.card} onPress={() => router.push('/(os)/profile/achievements')}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="trophy-outline" size={20} color="#d97706" />
-          <Text style={styles.cardTitle}>Achievements</Text>
-          <Text style={styles.cardAction}>View All →</Text>
-        </View>
-        {achievements && achievements.length > 0 ? (
-          <View style={styles.achievementRow}>
-            {achievements.slice(0, 4).map((a) => (
-              <View key={a.id} style={styles.achievementBadge}>
-                <Ionicons name="medal" size={24} color="#d97706" />
-                <Text style={styles.achievementText} numberOfLines={1}>{a.title}</Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.cardSubtitle}>No achievements yet. Complete verifications to earn badges.</Text>
-        )}
-      </AnimatedPressable>
-
-      {/* ===== SERVICES & COMMUNITY ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(400)} style={styles.card} onPress={() => router.push('/(os)/profile/services')}>
-        <View style={styles.cardHeader}>
-          <FontAwesome5 name="tools" size={18} color="#0891b2" />
-          <Text style={styles.cardTitle}>My Services</Text>
-          <Text style={styles.cardAction}>Manage →</Text>
-        </View>
-        <Text style={styles.cardSubtitle}>List your services, set pricing, and get booked.</Text>
-      </AnimatedPressable>
-
-      <AnimatedPressable entering={FadeInUp.delay(450)} style={styles.card} onPress={() => router.push('/(os)/streets')}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="people-outline" size={20} color="#db2777" />
-          <Text style={styles.cardTitle}>My Communities</Text>
-          <Text style={styles.cardAction}>Open →</Text>
-        </View>
-        <Text style={styles.cardSubtitle}>Tribes, groups, and associations you belong to.</Text>
-      </AnimatedPressable>
-
-      {/* ===== ANALYTICS CENTER ===== */}
-      <AnimatedPressable entering={FadeInUp.delay(500)} style={styles.card} onPress={() => router.push('/(os)/profile/analytics')}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="bar-chart-outline" size={20} color="#7c3aed" />
-          <Text style={styles.cardTitle}>Analytics Center</Text>
-          <Text style={styles.cardAction}>View →</Text>
-        </View>
-        <View style={styles.analyticsRow}>
-          <View style={styles.analyticsItem}>
-            <Text style={styles.analyticsNumber}>{analytics?.total_views || 0}</Text>
-            <Text style={styles.analyticsLabel}>Profile Views</Text>
-          </View>
-          <View style={styles.analyticsItem}>
-            <Text style={styles.analyticsNumber}>{analytics?.total_leads || 0}</Text>
-            <Text style={styles.analyticsLabel}>Leads</Text>
-          </View>
-          <View style={styles.analyticsItem}>
-            <Text style={styles.analyticsNumber}>{analytics?.total_revenue || 0}</Text>
-            <Text style={styles.analyticsLabel}>Revenue</Text>
-          </View>
-        </View>
-      </AnimatedPressable>
-
-      {/* ===== EDIT PROFILE CTA ===== */}
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => router.push('/(os)/profile/edit')}
-      >
-        <Ionicons name="create-outline" size={18} color="#fff" />
-        <Text style={styles.editButtonText}>Edit Profile</Text>
+        <Text style={styles.walletBalance}>
+          {currency} {balance.toLocaleString()}
+        </Text>
+        <Text style={styles.walletLabel}>Available Balance</Text>
       </TouchableOpacity>
 
-      <View style={{ height: 40 }} />
+      {/* Tab Navigation */}
+      <View style={styles.tabRow}>
+        {(['content', 'business', 'shop', 'cv'] as const).map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Tab Content */}
+      {activeTab === 'content' && (
+        <MediaGallery userId={userId} onUploadPress={handleUploadPress} />
+      )}
+
+      {activeTab === 'business' && (
+        <BusinessSection userId={userId} />
+      )}
+
+      {activeTab === 'shop' && (
+        <ShopSection userId={userId} />
+      )}
+
+      {activeTab === 'cv' && (
+        <CVSection userId={userId} />
+      )}
     </ScrollView>
   );
 }
 
+// ─── Sub-components ────────────────────────────────────────────────
+
+function BusinessSection({ userId }: { userId: string | undefined }) {
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('businesses')
+      .select('*')
+      .eq('owner_id', userId)
+      .then(({ data }) => {
+        setBusinesses(data || []);
+        setLoading(false);
+      });
+  }, [userId]);
+
+  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (businesses.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="business-outline" size={48} color="#d1d5db" />
+        <Text style={styles.emptyText}>No businesses yet</Text>
+        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/business/register')}>
+          <Text style={styles.emptyBtnText}>Register Business</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.sectionList}>
+      {businesses.map((biz) => (
+        <TouchableOpacity key={biz.id} style={styles.businessCard} onPress={() => router.push(`/(os)/business/${biz.id}`)}>
+          <Ionicons name="storefront-outline" size={32} color="#6366f1" />
+          <View style={styles.businessInfo}>
+            <Text style={styles.businessName}>{biz.name}</Text>
+            <Text style={styles.businessType}>{biz.type}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#6b7280" />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+}
+
+function ShopSection({ userId }: { userId: string | undefined }) {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchUserProducts = async () => {
+      const { data: shops } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', userId);
+
+      if (!shops || shops.length === 0) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
+      const shopIds = shops.map((s: any) => s.id);
+
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('id, name, description, selling_price, images, stock_quantity, is_active, shop_id')
+        .in('shop_id', shopIds)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      setProducts(productsData || []);
+      setLoading(false);
+    };
+
+    fetchUserProducts();
+  }, [userId]);
+
+  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (products.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="cart-outline" size={48} color="#d1d5db" />
+        <Text style={styles.emptyText}>No products in your shop</Text>
+        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/shop/add-product')}>
+          <Text style={styles.emptyBtnText}>Add Product</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.productGrid}>
+      {products.map((product) => {
+        const imageUrl = product.images && product.images.length > 0 
+          ? product.images[0] 
+          : 'https://via.placeholder.com/150';
+
+        return (
+          <TouchableOpacity 
+            key={product.id} 
+            style={styles.productCard} 
+            onPress={() => router.push(`/(os)/shop/edit-product/${product.id}`)}
+          >
+            <Image source={{ uri: imageUrl }} style={styles.productImage} />
+            <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
+            <Text style={styles.productPrice}>KES {product.selling_price}</Text>
+            <Text style={styles.productStock}>{product.stock_quantity} in stock</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function CVSection({ userId }: { userId: string | undefined }) {
+  const [cv, setCv] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('cv_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+      .then(({ data }) => {
+        setCv(data);
+        setLoading(false);
+      });
+  }, [userId]);
+
+  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (!cv) {
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name="document-text-outline" size={48} color="#d1d5db" />
+        <Text style={styles.emptyText}>No CV yet</Text>
+        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/cv/create')}>
+          <Text style={styles.emptyBtnText}>Create CV</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.cvCard}>
+      <Text style={styles.cvTitle}>{cv.title || 'My CV'}</Text>
+      {cv.summary && <Text style={styles.cvSummary}>{cv.summary}</Text>}
+      {cv.skills && cv.skills.length > 0 && (
+        <View style={styles.skillsRow}>
+          {cv.skills.map((skill: string, i: number) => (
+            <View key={i} style={styles.skillBadge}>
+              <Text style={styles.skillText}>{skill}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <TouchableOpacity style={styles.cvEditBtn} onPress={() => router.push('/(os)/cv/edit')}>
+        <Text style={styles.cvEditText}>Edit CV</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, color: '#64748b', fontSize: 14 },
-  emptyTitle: { marginTop: 16, fontSize: 18, fontWeight: '700', color: '#1e293b' },
-  emptySubtitle: { marginTop: 4, fontSize: 14, color: '#64748b', textAlign: 'center' },
-  primaryButton: { marginTop: 20, backgroundColor: '#6366f1', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
-  primaryButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  container: { flex: 1, backgroundColor: '#0f0f0f' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f' },
 
-  // Cover
-  coverContainer: { position: 'relative', height: 220 },
+  coverContainer: { width: '100%', height: 180, position: 'relative' },
   coverImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  coverOverlay: { ...StyleSheet.absoluteFillObject },
-  headerActions: { position: 'absolute', top: 48, right: 16, flexDirection: 'row', gap: 8 },
-  iconButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  coverPlaceholder: { width: '100%', height: '100%', backgroundColor: '#1f1f1f', justifyContent: 'center', alignItems: 'center' },
+  editCoverBtn: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', padding: 8, borderRadius: 20 },
 
-  // Avatar
-  avatarRow: { position: 'absolute', bottom: 16, left: 16, flexDirection: 'row', alignItems: 'flex-end' },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#fff' },
-  nameColumn: { marginLeft: 12, marginBottom: 4 },
-  displayName: { fontSize: 20, fontWeight: '700', color: '#fff', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-  username: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 2 },
-  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
-  badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, gap: 4 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
+  headerSection: { paddingHorizontal: 16, paddingTop: 12 },
+  avatarContainer: { position: 'relative', marginTop: -50, alignSelf: 'flex-start' },
+  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: '#0f0f0f' },
+  verifiedBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#0f0f0f', borderRadius: 12 },
+  nameSection: { marginTop: 12 },
+  name: { fontSize: 22, fontWeight: '700', color: '#fff' },
+  handle: { fontSize: 15, color: '#9ca3af', marginTop: 2 },
+  bio: { fontSize: 14, color: '#d1d5db', marginTop: 8, lineHeight: 20 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  locationText: { fontSize: 13, color: '#9ca3af', marginLeft: 4 },
 
-  // Cards
-  card: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  cardTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1e293b', marginLeft: 8 },
-  cardAction: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
-  cardSubtitle: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  actionRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, gap: 10 },
+  primaryBtn: { flex: 1, backgroundColor: '#6366f1', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  secondaryBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: '#374151', borderRadius: 8, gap: 6 },
+  secondaryBtnText: { color: '#6366f1', fontWeight: '600', fontSize: 14 },
 
-  // Trust
-  scoreValue: { fontSize: 18, fontWeight: '800' },
-  progressBarBg: { height: 6, backgroundColor: '#e2e8f0', borderRadius: 3, marginTop: 8, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, marginTop: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#1f1f1f' },
+  statItem: { alignItems: 'center' },
+  statNumber: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  statLabel: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
 
-  // Stats
-  statsRow: { flexDirection: 'row', marginHorizontal: 16, marginTop: 12, gap: 8 },
-  statBox: { flex: 1, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  statNumber: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
-  statLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  walletCard: { margin: 16, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#374151' },
+  walletHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  walletTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: '#9ca3af', marginLeft: 8 },
+  walletBalance: { fontSize: 28, fontWeight: '700', color: '#fff' },
+  walletLabel: { fontSize: 12, color: '#6b7280', marginTop: 4 },
 
-  // Wallet
-  walletBalance: { fontSize: 24, fontWeight: '800', color: '#1e293b', marginTop: 4 },
+  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#1f1f1f' },
+  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  tabActive: { borderBottomWidth: 2, borderColor: '#6366f1' },
+  tabText: { fontSize: 14, color: '#9ca3af', fontWeight: '500' },
+  tabTextActive: { color: '#6366f1', fontWeight: '600' },
 
-  // Business
-  businessRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 8 },
-  statusDot: { width: 8, height: 8, borderRadius: 4 },
-  businessName: { flex: 1, fontSize: 14, color: '#1e293b', fontWeight: '500' },
-  businessType: { fontSize: 12, color: '#64748b', textTransform: 'capitalize' },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 14, color: '#6b7280', marginTop: 12 },
+  emptyBtn: { marginTop: 16, backgroundColor: '#6366f1', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  emptyBtnText: { color: '#fff', fontWeight: '600' },
 
-  // Portfolio
-  portfolioRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  portfolioTitle: { fontSize: 14, color: '#1e293b', fontWeight: '500' },
-  portfolioType: { fontSize: 12, color: '#64748b', textTransform: 'capitalize' },
+  sectionList: { padding: 16 },
+  businessCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1f1f1f', padding: 16, borderRadius: 12, marginBottom: 10 },
+  businessInfo: { flex: 1, marginLeft: 12 },
+  businessName: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  businessType: { fontSize: 13, color: '#9ca3af', marginTop: 2 },
 
-  // Inline buttons
-  inlineButton: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 6 },
-  inlineButtonText: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
+  productGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8 },
+  productCard: { width: (width - 48) / 2, margin: 8, backgroundColor: '#1f1f1f', borderRadius: 12, overflow: 'hidden' },
+  productImage: { width: '100%', height: 120, resizeMode: 'cover' },
+  productName: { fontSize: 13, color: '#fff', padding: 8, paddingBottom: 4 },
+  productPrice: { fontSize: 14, fontWeight: '700', color: '#6366f1', paddingHorizontal: 8 },
+  productStock: { fontSize: 11, color: '#6b7280', paddingHorizontal: 8, paddingBottom: 8 },
 
-  // Achievements
-  achievementRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  achievementBadge: { alignItems: 'center', width: 60 },
-  achievementText: { fontSize: 10, color: '#64748b', marginTop: 4, textAlign: 'center' },
-
-  // Analytics
-  analyticsRow: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 8 },
-  analyticsItem: { alignItems: 'center' },
-  analyticsNumber: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
-  analyticsLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
-
-  // Edit
-  editButton: {
-    marginHorizontal: 16,
-    marginTop: 20,
-    backgroundColor: '#1e293b',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  editButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  cvCard: { margin: 16, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16 },
+  cvTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  cvSummary: { fontSize: 14, color: '#d1d5db', marginTop: 8, lineHeight: 20 },
+  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  skillBadge: { backgroundColor: '#374151', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  skillText: { color: '#9ca3af', fontSize: 12 },
+  cvEditBtn: { marginTop: 12, alignSelf: 'flex-start', backgroundColor: '#374151', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  cvEditText: { color: '#fff', fontWeight: '600' },
 });

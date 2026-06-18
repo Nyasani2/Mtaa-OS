@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 import { supabase } from '@/lib/supabase';
 
 export default function ProfileScreen() {

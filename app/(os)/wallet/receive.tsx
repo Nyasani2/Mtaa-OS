@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 
 export default function ReceiveScreen() {
   const router = useRouter();

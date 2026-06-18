@@ -8,7 +8,7 @@ import {
   ActivityIndicator, RefreshControl, SafeAreaView
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 
 // ─── Types ─────────────────────────────────────────────────────
 

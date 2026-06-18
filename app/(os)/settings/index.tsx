@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useIdentity } from '@/hooks/useAuthStore';
+import { useIdentity } from '@/lib/auth/useAuthStore';
 
 export default function SettingsScreen() {
   const router = useRouter();

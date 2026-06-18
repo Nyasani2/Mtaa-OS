@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/useAuthStore';
 
 export default function AuthScreen() {
   const router = useRouter();
