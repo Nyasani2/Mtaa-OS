@@ -11,7 +11,7 @@ export async function fetchConversations(userId: string): Promise<StreetConversa
     .from('streets_conversations')
     .select(`
       *,
-      participants:profiles(id, display_name, handle, avatar_url, is_verified),
+      participants:user_profiles(id, display_name, handle, avatar_url, is_verified),
       last_message:streets_messages!inner(id, content, created_at, sender_id, media_type)
     `)
     .contains('participant_ids', [userId])
@@ -41,7 +41,7 @@ export async function fetchMessages(
     .from('streets_messages')
     .select(`
       *,
-      sender:profiles(id, display_name, handle, avatar_url, is_verified)
+      sender:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
@@ -87,7 +87,7 @@ export async function sendMessage(
     })
     .select(`
       *,
-      sender:profiles(id, display_name, handle, avatar_url, is_verified)
+      sender:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .single();
 
@@ -163,7 +163,7 @@ export async function subscribeToMessages(
           .from('streets_messages')
           .select(`
             *,
-            sender:profiles(id, display_name, handle, avatar_url, is_verified)
+            sender:user_profiles(id, display_name, handle, avatar_url, is_verified)
           `)
           .eq('id', payload.new.id)
           .single();

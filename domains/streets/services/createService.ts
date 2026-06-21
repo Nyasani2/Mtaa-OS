@@ -22,7 +22,7 @@ export async function createPost(
   const { data, error } = await supabase
     .from('streets_posts')
     .insert({
-      user_id: userId,
+      creator_id: userId,
       content: input.content,
       media_urls: input.media_urls || [],
       media_type: input.media_type || 'none',
@@ -40,7 +40,7 @@ export async function createPost(
     })
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .single();
 

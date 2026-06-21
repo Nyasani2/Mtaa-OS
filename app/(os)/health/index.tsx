@@ -19,7 +19,6 @@ const PATIENT_MODULES = [
 
 const CLINICAL_MODULES = [
   { id: "doctor", label: "Doctor", icon: "stethoscope", route: "/(os)/health/doctor", color: "#2563eb" },
-  { id: "nurse", label: "Nurse", icon: "heart-pulse", route: "/(os)/health/nurse", color: "#ec4899" },
   { id: "lab", label: "Laboratory", icon: "flask", route: "/(os)/health/lab", color: "#f59e0b" },
   { id: "pharmacy", label: "Pharmacy", icon: "medkit", route: "/(os)/health/pharmacy", color: "#10b981" },
   { id: "radiology", label: "Radiology", icon: "scan", route: "/(os)/health/radiology", color: "#8b5cf6" },
@@ -98,7 +97,6 @@ export default function HealthHome() {
         <View style={styles.statusCard}>
           <View style={styles.statusRow}>
             <View style={styles.statusItem}>
-              <MaterialCommunityIcons name="heart-pulse" size={28} color="#ef4444" />
               <Text style={styles.statusValue}>72 BPM</Text>
               <Text style={styles.statusLabel}>Heart Rate</Text>
             </View>

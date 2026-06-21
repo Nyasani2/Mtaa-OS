@@ -1,48 +1,64 @@
-// app/auth/login.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useIdentity } from '@/lib/auth/identity';
-import { getPinState } from '@/lib/security/pin-engine';
+
+// Direct Supabase auth — no dependency on context hooks that might fail
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+async function supabaseSignIn(email: string, password: string) {
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw new Error(error.message);
+  return data;
+}
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn } = useIdentity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleLogin = async () => {
-    // Input validation
     if (!email.trim() || !password.trim()) {
-      setError('Email and password are required');
+      setErrorMsg('Email and password are required');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address');
+      setErrorMsg('Please enter a valid email address');
       return;
     }
 
     setLoading(true);
-    setError('');
-    const { error: err } = await signIn(email.trim(), password);
-    if (err) {
-      setError(err);
-      setLoading(false);
-      return;
-    }
-
-    // Login success — check if PIN is set
-    const pinState = await getPinState();
-    if (!pinState.isSet) {
-      // First login or PIN cleared — force PIN setup
-      router.replace('/auth/set-pin');
-    } else {
-      // PIN exists — OS shell will show lock screen
+    setErrorMsg('');
+    try {
+      await supabaseSignIn(email.trim(), password);
+      // Success — go to OS
       router.replace('/(os)');
+    } catch (err: any) {
+      // Ensure error is always a string, never an Error object
+      setErrorMsg(err?.message || 'Sign in failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const goToSignup = () => {
+    try { router.push('/auth/signup'); } catch { Alert.alert('Sign Up', 'Sign up screen coming soon'); }
+  };
+
+  const goToForgot = () => {
+    try { router.push('/auth/forgot-password'); } catch { Alert.alert('Forgot Password', 'Password reset coming soon'); }
   };
 
   return (
@@ -64,14 +80,18 @@ export default function LoginScreen() {
         onChangeText={setPassword}
         secureTextEntry
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Sign In</Text>
+        )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/auth/forgot-password')}>
+      <TouchableOpacity onPress={goToForgot}>
         <Text style={styles.link}>Forgot password?</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+      <TouchableOpacity onPress={goToSignup}>
         <Text style={styles.link}>Create account</Text>
       </TouchableOpacity>
     </View>

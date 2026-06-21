@@ -1,55 +1,42 @@
-# MTAA Admin Diagnostics Dashboard
+# MTAA Streets Frontend Fix
 
-## Files
+## Extraction Commands
 
-| File | Destination |
-|------|-------------|
-| `app/(os)/admin/diagnostics.tsx` | `~/MTAA_OS_V10/app/(os)/admin/diagnostics.tsx` |
-| `components/admin/DiagnosticsButton.tsx` | `~/MTAA_OS_V10/components/admin/DiagnosticsButton.tsx` |
-
-## Install
+Run these from ~/MTAA_OS_V10:
 
 ```bash
 cd ~/MTAA_OS_V10
-mkdir -p app/(os)/admin components/admin
 
-# Extract files
-unzip -o mtaa_admin_diagnostics.zip
+# Backup current files
+cp domains/streets/services/commentService.ts domains/streets/services/commentService.ts.bak 2>/dev/null || true
+cp domains/streets/hooks/useComments.ts domains/streets/hooks/useComments.ts.bak 2>/dev/null || true
+cp domains/streets/components/CommentThread.tsx domains/streets/components/CommentThread.tsx.bak 2>/dev/null || true
+cp domains/streets/components/CreateModal.tsx domains/streets/components/CreateModal.tsx.bak 2>/dev/null || true
+cp domains/streets/components/InboxList.tsx domains/streets/components/InboxList.tsx.bak 2>/dev/null || true
+cp domains/streets/screens/CreateScreen.tsx domains/streets/screens/CreateScreen.tsx.bak 2>/dev/null || true
+cp domains/streets/screens/ShareScreen.tsx domains/streets/screens/ShareScreen.tsx.bak 2>/dev/null || true
 
-# Or copy manually:
-cp app/\(os\)/admin/diagnostics.tsx ~/MTAA_OS_V10/app/\(os\)/admin/
-cp components/admin/DiagnosticsButton.tsx ~/MTAA_OS_V10/components/admin/
+# Copy fixed files
+cp streets_frontend_fix/domains/streets/services/commentService.ts domains/streets/services/commentService.ts
+cp streets_frontend_fix/domains/streets/hooks/useComments.ts domains/streets/hooks/useComments.ts
+cp streets_frontend_fix/domains/streets/components/CommentThread.tsx domains/streets/components/CommentThread.tsx
+cp streets_frontend_fix/domains/streets/components/CreateModal.tsx domains/streets/components/CreateModal.tsx
+cp streets_frontend_fix/domains/streets/components/InboxList.tsx domains/streets/components/InboxList.tsx
+cp streets_frontend_fix/domains/streets/screens/CreateScreen.tsx domains/streets/screens/CreateScreen.tsx
+cp streets_frontend_fix/domains/streets/screens/ShareScreen.tsx domains/streets/screens/ShareScreen.tsx
+
+# Restart
+npx expo start -c
 ```
 
-## Usage
+## Files Fixed
 
-In your home screen:
-
-```tsx
-import { DiagnosticsButton } from '@/components/admin/DiagnosticsButton';
-
-// In JSX:
-<DiagnosticsButton />
-```
-
-Or manually:
-
-```tsx
-import { useRouter } from 'expo-router';
-const router = useRouter();
-
-<TouchableOpacity onPress={() => router.push('/(os)/admin/diagnostics')}>
-  <Text>🔧 Diagnostics</Text>
-</TouchableOpacity>
-```
-
-## Admin Gate
-
-Only users with `role === 'admin'` or `is_super_admin === true` can access.
-Non-admins see 🚫 screen.
-
-## Layers
-
-1. Kernel (event bus, registry, boot sequence, panic handler, safe mode)
-2. Auth & Identity (auth store, session)
-3-20. Placeholder — expand as we audit
+| File | Fix |
+|------|-----|
+| commentService.ts | Fixed column names, added addComment/addReply aliases |
+| useComments.ts | Added useQuery to fetch comments data |
+| CommentThread.tsx | Uses real comments data instead of data={[]} |
+| CreateModal.tsx | Added visible prop for modal usage |
+| InboxList.tsx | Fixed TextInput import order |
+| CreateScreen.tsx | Proper modal wrapper |
+| ShareScreen.tsx | Fixed router import order |

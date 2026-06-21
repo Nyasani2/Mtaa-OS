@@ -14,7 +14,7 @@ export async function fetchShopItems(
     .from('streets_shop_items')
     .select(`
       *,
-      seller:profiles(id, display_name, handle, avatar_url, is_verified)
+      seller:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -63,7 +63,7 @@ export async function createShopItem(
     .insert({ ...item, user_id: userId, sold_count: 0 })
     .select(`
       *,
-      seller:profiles(id, display_name, handle, avatar_url, is_verified)
+      seller:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .single();
 

@@ -1,2 +1,3 @@
-export { useAuthStore } from './store/auth.store';
-export type { AuthState } from './store/auth.store';
+// lib/auth/useAuthStore.ts
+export { useAuth, useIdentity, useAuthStore } from './useAuth';
+export type { AuthState, User } from './store/auth.store';

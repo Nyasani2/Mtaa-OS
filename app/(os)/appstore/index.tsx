@@ -1,116 +1,79 @@
-// app/(os)/appstore/index.tsx — App Store Home
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppStore, AppItem } from '@/lib/stores/app-store';
-import { getAppsBySection } from '@/lib/mtaa/appstore/unified-registry';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const apps = [
+  { id: 'wallet', name: 'Wallet', description: 'Manage your MTAA balance, top up, withdraw, and transfer funds.', icon: '💰', route: '/(os)/wallet', color: '#10B981' },
+  { id: 'streets', name: 'Streets', description: 'Share posts, photos, videos, and articles with your community.', icon: '📰', route: '/streets', color: '#3B82F6' },
+  { id: 'health', name: 'Health', description: 'Access health records, book appointments, and find providers.', icon: '🏥', route: '/(os)/health', color: '#EF4444' },
+  { id: 'education', name: 'Education', description: 'School management, classes, assignments, and grades.', icon: '🎓', route: '/(os)/education', color: '#8B5CF6' },
+  { id: 'marketplace', name: 'Marketplace', description: 'Buy and sell products in your local community.', icon: '🛒', route: '/(marketplace)', color: '#F59E0B' },
+  { id: 'mtaxi', name: 'MTaxi', description: 'Book rides and manage transportation.', icon: '🚕', route: '/(os)/mtaxi', color: '#06B6D4' },
+  { id: 'mtruck', name: 'MTruck', description: 'Logistics and freight management.', icon: '🚛', route: '/(os)/mtruck', color: '#84CC16' },
+  { id: 'shop', name: 'Shop', description: 'Manage your store, inventory, and sales.', icon: '🏪', route: '/(commerce)/shop', color: '#EC4899' },
+  { id: 'jobs', name: 'Jobs', description: 'Find and post job opportunities.', icon: '💼', route: '/(os)/jobs', color: '#6366F1' },
+  { id: 'tribes', name: 'Tribes', description: 'Join and manage community groups.', icon: '👥', route: '/(os)/tribes', color: '#14B8A6' },
+  { id: 'settings', name: 'Settings', description: 'App preferences, security, and account settings.', icon: '⚙️', route: '/(os)/settings', color: '#6B7280' },
+];
 
 export default function AppStoreScreen() {
   const router = useRouter();
-  const { installedApps, isInstalled, installApp } = useAppStore();
-  const [featured, setFeatured] = useState<AppItem[]>([]);
+  const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    const apps = getAppsBySection('mtaa');
-    setFeatured(apps.slice(0, 6));
-  }, []);
+  const handleOpenApp = (route: string) => {
+    // @ts-ignore
+    router.push(route);
+  };
 
-  const renderAppCard = (app: AppItem) => (
+  const renderAppItem = ({ item }: { item: typeof apps[0] }) => (
     <TouchableOpacity
-      key={app.id}
-      style={styles.card}
-      onPress={() => router.push(`/appstore/${app.id}`)}
+      style={[styles.appCard, { borderLeftColor: item.color }]}
+      onPress={() => handleOpenApp(item.route)}
+      activeOpacity={0.7}
     >
-      <View style={[styles.iconBox, { backgroundColor: app.color || '#2563EB' }]}>
-        <Ionicons name={app.icon} size={32} color="#fff" />
+      <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+        <Text style={styles.iconText}>{item.icon}</Text>
       </View>
-      <View style={styles.info}>
-        <Text style={styles.name}>{app.name}</Text>
-        <Text style={styles.category}>{app.category}</Text>
-        <Text style={styles.rating}>★ {app.rating || 0}</Text>
+      <View style={styles.appInfo}>
+        <Text style={styles.appName}>{item.name}</Text>
+        <Text style={styles.appDescription} numberOfLines={2}>{item.description}</Text>
       </View>
-      <TouchableOpacity
-        style={[styles.installBtn, isInstalled(app.id) && styles.installedBtn]}
-        onPress={() => !isInstalled(app.id) && installApp(app.id)}
-      >
-        <Text style={styles.installText}>
-          {isInstalled(app.id) ? 'Open' : 'Get'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.openButton}>
+        <Text style={styles.openButtonText}>Open</Text>
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Text style={styles.title}>App Store</Text>
-          <TouchableOpacity onPress={() => router.push('/appstore/search')}>
-            <Ionicons name="search" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionTitle}>Featured Apps</Text>
-        {featured.map(renderAppCard)}
-
-        <TouchableOpacity
-          style={styles.categoriesBtn}
-          onPress={() => router.push('/appstore/categories')}
-        >
-          <Text style={styles.categoriesText}>Browse Categories →</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>App Store</Text>
+        <Text style={styles.headerSubtitle}>Discover MTAA apps</Text>
+      </View>
+      <FlatList
+        data={apps}
+        keyExtractor={(item) => item.id}
+        renderItem={renderAppItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  scroll: { padding: 16 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  sectionTitle: { color: '#94A3B8', fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  info: { flex: 1, marginLeft: 12 },
-  name: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  category: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
-  rating: { color: '#FBBF24', fontSize: 13, marginTop: 2 },
-  installBtn: {
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-  },
-  installedBtn: { backgroundColor: '#374151' },
-  installText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  categoriesBtn: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  categoriesText: { color: '#60A5FA', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  header: { paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: '#111827' },
+  headerSubtitle: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  listContent: { padding: 16, gap: 12 },
+  appCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderLeftWidth: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  iconContainer: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  iconText: { fontSize: 24 },
+  appInfo: { flex: 1 },
+  appName: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  appDescription: { fontSize: 13, color: '#6B7280', marginTop: 2, lineHeight: 18 },
+  openButton: { backgroundColor: '#3B82F6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  openButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
 });
-

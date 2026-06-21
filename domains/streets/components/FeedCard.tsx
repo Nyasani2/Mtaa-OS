@@ -1,78 +1,320 @@
-// domains/streets/components/FeedCard.tsx
-// MTAA Streets — Feed Card (FIXED to match feedService output)
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Share as RNShare,
+  Pressable,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Video } from 'expo-av';
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal } from 'lucide-react-native';
+import { StreetPostWithAuthor } from '@/lib/services/streets-service';
+import { toggleLike, toggleSave, recordShare, isLiked } from '@/lib/services/streets-service';
 
-import React, { memo } from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
-import { useFeed } from '../hooks/useFeed';
-import type { StreetPost } from '../state/state';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface FeedCardProps {
-  post: StreetPost;
-  onProfilePress: (userId: string) => void;
-  onCommentPress: (postId: string) => void;
+  post: StreetPostWithAuthor;
+  onRefresh?: () => void;
 }
 
-export const FeedCard = memo(function FeedCard({ post, onProfilePress, onCommentPress }: FeedCardProps) {
-  const { toggleLike, toggleSave } = useFeed();
+export default function FeedCard({ post, onRefresh }: FeedCardProps) {
+  const router = useRouter();
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes_count || 0);
+  const [commentCount] = useState(post.comments_count || 0);
+  const [shareCount] = useState(post.shares_count || 0);
+  const [saveCount] = useState(post.saves_count || 0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  const author = post.author as any;
-  const avatarUrl = author?.avatar_url || 'https://via.placeholder.com/40';
-  const displayName = author?.display_name || author?.handle || 'Anonymous';
-  const isVerified = author?.is_verified || false;
+  // Check initial like state
+  React.useEffect(() => {
+    isLiked(post.id).then(setLiked).catch(() => {});
+  }, [post.id]);
+
+  const authorName = post.author?.display_name || 'User';
+  const avatarUrl = post.author?.avatar_url;
+  const postId = post.id;
+
+  const handleLike = useCallback(async () => {
+    try {
+      const newLiked = await toggleLike(postId);
+      setLiked(newLiked);
+      setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
+    } catch (err) {
+      console.error('Like error:', err);
+    }
+  }, [postId]);
+
+  const handleComment = useCallback(() => {
+    if (!postId) return;
+    router.push({
+      pathname: '/streets/comments/[id]',
+      params: { id: postId },
+    });
+  }, [router, postId]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await recordShare(postId);
+      await RNShare.share({
+        message: `Check out this post on MTAA Streets: ${post.caption || ''}`,
+        url: post.media_url || undefined,
+      });
+    } catch (err) {
+      console.error('Share error:', err);
+    }
+  }, [postId, post.caption, post.media_url]);
+
+  const handleSave = useCallback(async () => {
+    try {
+      const newSaved = await toggleSave(postId);
+      setSaved(newSaved);
+    } catch (err) {
+      console.error('Save error:', err);
+    }
+  }, [postId]);
+
+  const handleProfile = useCallback(() => {
+    if (!post.creator_id) return;
+    router.push({
+      pathname: '/streets/profile/[id]',
+      params: { id: post.creator_id },
+    });
+  }, [router, post.creator_id]);
+
+  const isVideo = post.media_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov|avi|webm)$/i));
+  const hasMedia = !!post.media_url;
 
   return (
-    <View style={styles.card}>
-      <Pressable onPress={() => onProfilePress(post.user_id)} style={styles.header}>
-        <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-        <View style={styles.headerText}>
-          <View style={styles.nameRow}>
-            <Text style={styles.username}>{displayName}</Text>
-            {isVerified && <Text style={styles.verified}>✓</Text>}
-          </View>
-          <Text style={styles.timestamp}>{new Date(post.created_at).toLocaleDateString()}</Text>
+    <View style={styles.container}>
+      {/* Author Header */}
+      <TouchableOpacity style={styles.header} onPress={handleProfile}>
+        <View style={styles.avatarContainer}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarFallbackText}>
+                {authorName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
         </View>
-      </Pressable>
+        <View style={styles.headerInfo}>
+          <Text style={styles.authorName}>{authorName}</Text>
+          <Text style={styles.timestamp}>
+            {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.moreButton}>
+          <MoreHorizontal size={20} color="#666" />
+        </TouchableOpacity>
+      </TouchableOpacity>
 
-      <Text style={styles.caption}>{post.content}</Text>
-      {post.media_urls && post.media_urls.length > 0 && (
-        <Image source={{ uri: post.media_urls[0] }} style={styles.media} resizeMode="cover" />
+      {/* Media Content */}
+      {hasMedia && (
+        <Pressable
+          style={styles.mediaContainer}
+          onPress={() => isVideo && setIsVideoPlaying(!isVideoPlaying)}
+        >
+          {isVideo ? (
+            <Video
+              source={{ uri: post.media_url! }}
+              style={styles.media}
+              resizeMode="cover"
+              isLooping
+              shouldPlay={isVideoPlaying}
+              isMuted={!isVideoPlaying}
+              useNativeControls={isVideoPlaying}
+            />
+          ) : (
+            <Image
+              source={{ uri: post.media_url! }}
+              style={styles.media}
+              resizeMode="cover"
+            />
+          )}
+          {!isVideoPlaying && isVideo && (
+            <View style={styles.playOverlay}>
+              <View style={styles.playButton}>
+                <Text style={styles.playText}>▶</Text>
+              </View>
+            </View>
+          )}
+        </Pressable>
       )}
 
-      <View style={styles.actions}>
-        <Pressable onPress={() => toggleLike(post.id)} style={styles.actionBtn}>
-          <Text style={[styles.actionText, post.liked_by_me && styles.active]}>
-            {post.liked_by_me ? '❤️' : '🤍'} {post.like_count}
+      {/* Caption */}
+      {(post.caption || post.content) && (
+        <View style={styles.captionContainer}>
+          <Text style={styles.caption}>
+            <Text style={styles.captionAuthor}>{authorName} </Text>
+            {post.caption || post.content}
           </Text>
-        </Pressable>
-        <Pressable onPress={() => onCommentPress(post.id)} style={styles.actionBtn}>
-          <Text style={styles.actionText}>💬 {post.comment_count}</Text>
-        </Pressable>
-        <Pressable onPress={() => {}} style={styles.actionBtn}>
-          <Text style={styles.actionText}>↗️ {post.share_count}</Text>
-        </Pressable>
-        <Pressable onPress={() => toggleSave(post.id)} style={styles.actionBtn}>
-          <Text style={[styles.actionText, post.saved_by_me && styles.active]}>
-            {post.saved_by_me ? '🔖' : '🔖'}
+        </View>
+      )}
+
+      {/* Action Bar */}
+      <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
+          <Heart
+            size={24}
+            color={liked ? '#FF2D55' : '#333'}
+            fill={liked ? '#FF2D55' : 'none'}
+          />
+          <Text style={[styles.actionCount, liked && styles.actionCountActive]}>
+            {likeCount > 0 ? likeCount : 'Like'}
           </Text>
-        </Pressable>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleComment}>
+          <MessageCircle size={24} color="#333" />
+          <Text style={styles.actionCount}>
+            {commentCount > 0 ? commentCount : 'Comment'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+          <Share2 size={24} color="#333" />
+          <Text style={styles.actionCount}>
+            {shareCount > 0 ? shareCount : 'Share'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionButton} onPress={handleSave}>
+          <Bookmark
+            size={24}
+            color={saved ? '#007AFF' : '#333'}
+            fill={saved ? '#007AFF' : 'none'}
+          />
+          <Text style={[styles.actionCount, saved && styles.actionCountActive]}>
+            {saveCount > 0 ? saveCount : 'Save'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', marginBottom: 12, padding: 12, borderRadius: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
-  headerText: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center' },
-  username: { fontWeight: '700', fontSize: 14 },
-  verified: { marginLeft: 4, color: '#E91E63', fontWeight: '700' },
-  timestamp: { fontSize: 12, color: '#888' },
-  caption: { fontSize: 14, marginBottom: 8, lineHeight: 20 },
-  media: { width: '100%', height: 300, borderRadius: 8, marginBottom: 8 },
-  actions: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 },
-  actionBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  actionText: { fontSize: 14, color: '#333' },
-  active: { color: '#E91E63' },
+  container: {
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  avatarContainer: {
+    marginRight: 10,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarFallback: {
+    backgroundColor: '#FF2D55',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  moreButton: {
+    padding: 4,
+  },
+  mediaContainer: {
+    width: SCREEN_WIDTH - 24,
+    height: SCREEN_WIDTH - 24,
+    alignSelf: 'center',
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+  },
+  media: {
+    width: '100%',
+    height: '100%',
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playText: {
+    fontSize: 24,
+    color: '#333',
+    marginLeft: 4,
+  },
+  captionContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  caption: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#333',
+  },
+  captionAuthor: {
+    fontWeight: '600',
+  },
+  actionBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  actionCount: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  actionCountActive: {
+    color: '#FF2D55',
+    fontWeight: '600',
+  },
 });

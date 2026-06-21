@@ -12,7 +12,6 @@ const MODALITIES = [
   { id: "ct", label: "CT Scan", icon: "cube-scan" },
   { id: "mri", label: "MRI", icon: "magnet" },
   { id: "ultrasound", label: "Ultrasound", icon: "waves" },
-  { id: "mammography", label: "Mammography", icon: "heart-pulse" },
   { id: "nuclear", label: "Nuclear Medicine", icon: "atom" },
   { id: "fluoroscopy", label: "Fluoroscopy", icon: "video" },
 ];

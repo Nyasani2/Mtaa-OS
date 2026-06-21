@@ -3,7 +3,7 @@
 
 export interface StreetPost {
   id: string;
-  user_id: string;
+  creator_id: string;
   content: string;
   media_urls: string[];
   media_type: 'image' | 'video' | 'audio' | 'none';
