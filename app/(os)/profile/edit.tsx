@@ -1,155 +1,108 @@
-// app/(os)/profile/edit.tsx
-// FIXED: import path @/lib/supabase (not /client)
-
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/lib/auth/useAuth';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { Ionicons } from '@expo/vector-icons';
 
-interface ProfileData {
-  full_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  cover_url: string | null;
-  bio: string | null;
-  location: string | null;
-}
-
-export default function ProfileEditScreen() {
+export default function EditProfileScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const [loading, setLoading] = useState(true);
+  const { user, profile } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [profile, setProfile] = useState<ProfileData>({
+  const [form, setForm] = useState({
     full_name: '',
     username: '',
-    avatar_url: null,
-    cover_url: null,
     bio: '',
+    phone: '',
+    profession: '',
     location: '',
+    city: '',
+    region: '',
+    country: '',
+    website: '',
+    avatar_url: '',
   });
-  const [newAvatar, setNewAvatar] = useState<string | null>(null);
-  const [newCover, setNewCover] = useState<string | null>(null);
-
-  const userId = user?.id;
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    if (!userId) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('full_name, username, avatar_url, cover_url, bio, location')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      Alert.alert('Error', 'Failed to load profile');
-      return;
-    }
-
-    setProfile(data || {});
-    setLoading(false);
-  };
-
-  const pickImage = async (type: 'avatar' | 'cover') => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission Required', 'Please allow access to your photos');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: type === 'avatar' ? [1, 1] : [16, 9],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      if (type === 'avatar') {
-        setNewAvatar(result.assets[0].uri);
-      } else {
-        setNewCover(result.assets[0].uri);
-      }
-    }
-  };
-
-  const uploadImage = async (uri: string, path: string): Promise<string> => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-
-    const { data, error } = await supabase.storage
-      .from('avatars')
-      .upload(path, blob, {
-        contentType: 'image/jpeg',
-        upsert: true,
+    if (profile) {
+      setForm({
+        full_name: profile.full_name || '',
+        username: profile.username || '',
+        bio: profile.bio || '',
+        phone: profile.phone || '',
+        profession: profile.profession || '',
+        location: profile.location || '',
+        city: profile.city || '',
+        region: profile.region || '',
+        country: profile.country || '',
+        website: profile.website || '',
+        avatar_url: profile.avatar_url || '',
       });
-
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(data.path);
-
-    return publicUrl;
-  };
+    }
+    setLoading(false);
+  }, [profile]);
 
   const handleSave = async () => {
-    if (!userId) return;
+    if (!user) {
+      Alert.alert('Error', 'Not authenticated');
+      return;
+    }
+
     setSaving(true);
-
     try {
-      let updates: any = {
-        full_name: profile.full_name || null,
-        username: profile.username || null,
-        bio: profile.bio || null,
-        location: profile.location || null,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (newAvatar) {
-        const avatarUrl = await uploadImage(newAvatar, `${userId}/avatar.jpg`);
-        updates.avatar_url = avatarUrl;
-      }
-
-      if (newCover) {
-        const coverUrl = await uploadImage(newCover, `${userId}/cover.jpg`);
-        updates.cover_url = coverUrl;
-      }
-
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
-        .eq('id', userId);
+        .update({
+          full_name: form.full_name.trim() || null,
+          username: form.username.trim() || null,
+          bio: form.bio.trim() || null,
+          phone: form.phone.trim() || null,
+          profession: form.profession.trim() || null,
+          location: form.location.trim() || null,
+          city: form.city.trim() || null,
+          region: form.region.trim() || null,
+          country: form.country.trim() || null,
+          website: form.website.trim() || null,
+          avatar_url: form.avatar_url.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        Alert.alert('Error', error.message);
+        return;
+      }
 
-      Alert.alert('Success', 'Profile updated successfully');
-      router.back();
+      Alert.alert('Saved', 'Profile updated successfully', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (err: any) {
-      console.error('Save error:', err);
-      Alert.alert('Error', err.message || 'Failed to save profile');
+      Alert.alert('Error', err.message);
     } finally {
       setSaving(false);
     }
   };
+
+  const handleAvatarUrl = () => {
+    Alert.alert(
+      'Change Avatar',
+      'Enter an image URL or use a default avatar',
+      [
+        { 
+          text: 'Use Default', 
+          onPress: () => setForm(prev => ({ 
+            ...prev, 
+            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.full_name || 'User')}&background=6366f1&color=fff&size=256` 
+          })) 
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const avatarUri = form.avatar_url || 
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(form.full_name || 'User')}&background=6366f1&color=fff&size=256`;
 
   if (loading) {
     return (
@@ -159,17 +112,13 @@ export default function ProfileEditScreen() {
     );
   }
 
-  const avatarUri = newAvatar || profile.avatar_url || 
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.full_name || 'User')}&background=6366f1&color=fff`;
-  const coverUri = newCover || profile.cover_url;
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#111" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.title}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           {saving ? (
             <ActivityIndicator size="small" color="#6366f1" />
@@ -179,144 +128,67 @@ export default function ProfileEditScreen() {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.coverContainer} onPress={() => pickImage('cover')}>
-        {coverUri ? (
-          <Image source={{ uri: coverUri }} style={styles.coverImage} />
-        ) : (
-          <View style={styles.coverPlaceholder}>
-            <Ionicons name="image" size={32} color="#6b7280" />
-            <Text style={styles.coverText}>Add Cover Photo</Text>
-          </View>
-        )}
-        <View style={styles.coverOverlay}>
-          <Ionicons name="camera" size={20} color="#fff" />
-        </View>
-      </TouchableOpacity>
-
+      {/* Avatar */}
       <View style={styles.avatarSection}>
-        <TouchableOpacity style={styles.avatarContainer} onPress={() => pickImage('avatar')}>
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-          <View style={styles.avatarOverlay}>
-            <Ionicons name="camera" size={16} color="#fff" />
-          </View>
+        <Image source={{ uri: avatarUri }} style={styles.avatar} />
+        <TouchableOpacity style={styles.changeAvatarBtn} onPress={handleAvatarUrl}>
+          <Ionicons name="camera" size={16} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleAvatarUrl}>
+          <Text style={styles.changeAvatarText}>Change Photo</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Form Fields */}
       <View style={styles.form}>
-        <View style={styles.field}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            value={profile.full_name || ''}
-            onChangeText={(text) => setProfile(p => ({ ...p, full_name: text }))}
-            placeholder="Your full name"
-            placeholderTextColor="#6b7280"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            style={styles.input}
-            value={profile.username || ''}
-            onChangeText={(text) => setProfile(p => ({ ...p, username: text.replace(/\s/g, '').toLowerCase() }))}
-            placeholder="username"
-            placeholderTextColor="#6b7280"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Bio</Text>
-          <TextInput
-            style={[styles.input, styles.bioInput]}
-            value={profile.bio || ''}
-            onChangeText={(text) => setProfile(p => ({ ...p, bio: text }))}
-            placeholder="Tell us about yourself"
-            placeholderTextColor="#6b7280"
-            multiline
-            maxLength={160}
-          />
-          <Text style={styles.charCount}>{(profile.bio || '').length}/160</Text>
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Location</Text>
-          <TextInput
-            style={styles.input}
-            value={profile.location || ''}
-            onChangeText={(text) => setProfile(p => ({ ...p, location: text }))}
-            placeholder="City, Country"
-            placeholderTextColor="#6b7280"
-          />
-        </View>
+        <Field label="Full Name" value={form.full_name} onChange={(v) => setForm(p => ({ ...p, full_name: v }))} />
+        <Field label="Username" value={form.username} onChange={(v) => setForm(p => ({ ...p, username: v }))} />
+        <Field label="Bio" value={form.bio} onChange={(v) => setForm(p => ({ ...p, bio: v }))} multiline />
+        <Field label="Phone" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} keyboardType="phone-pad" />
+        <Field label="Profession" value={form.profession} onChange={(v) => setForm(p => ({ ...p, profession: v }))} />
+        <Field label="Location" value={form.location} onChange={(v) => setForm(p => ({ ...p, location: v }))} />
+        <Field label="City" value={form.city} onChange={(v) => setForm(p => ({ ...p, city: v }))} />
+        <Field label="Region" value={form.region} onChange={(v) => setForm(p => ({ ...p, region: v }))} />
+        <Field label="Country" value={form.country} onChange={(v) => setForm(p => ({ ...p, country: v }))} />
+        <Field label="Website" value={form.website} onChange={(v) => setForm(p => ({ ...p, website: v }))} keyboardType="url" />
+        <Field label="Avatar URL" value={form.avatar_url} onChange={(v) => setForm(p => ({ ...p, avatar_url: v }))} placeholder="https://..." />
       </View>
     </ScrollView>
   );
 }
 
+function Field({ label, value, onChange, multiline, keyboardType, placeholder }: any) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        style={[styles.fieldInput, multiline && styles.fieldInputMultiline]}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder || label}
+        placeholderTextColor="#9ca3af"
+        multiline={multiline}
+        numberOfLines={multiline ? 3 : 1}
+        keyboardType={keyboardType || 'default'}
+        textAlignVertical={multiline ? 'top' : 'center'}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f0f' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f' },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#fff' },
-  saveText: { color: '#6366f1', fontWeight: '600', fontSize: 16 },
-
-  coverContainer: {
-    width: '100%',
-    height: 160,
-    position: 'relative',
-  },
-  coverImage: { width: '100%', height: '100%' },
-  coverPlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#1f1f1f',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  coverText: { color: '#6b7280', marginTop: 8, fontSize: 14 },
-  coverOverlay: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 20,
-    padding: 8,
-  },
-
-  avatarSection: { alignItems: 'center', marginTop: -40 },
-  avatarContainer: { position: 'relative' },
-  avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: '#0f0f0f' },
-  avatarOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 12,
-    padding: 4,
-  },
-
-  form: { padding: 16, paddingTop: 24 },
-  field: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#9ca3af', marginBottom: 6 },
-  input: {
-    backgroundColor: '#1f1f1f',
-    borderRadius: 8,
-    padding: 12,
-    color: '#fff',
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  bioInput: { minHeight: 80, textAlignVertical: 'top' },
-  charCount: { color: '#6b7280', fontSize: 12, textAlign: 'right', marginTop: 4 },
+  container: { flex: 1, backgroundColor: '#fff' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  title: { fontSize: 18, fontWeight: '700', color: '#111' },
+  saveText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
+  avatarSection: { alignItems: 'center', padding: 24 },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#f3f4f6' },
+  changeAvatarBtn: { position: 'absolute', bottom: 50, right: '35%', width: 32, height: 32, borderRadius: 16, backgroundColor: '#6366f1', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
+  changeAvatarText: { color: '#6366f1', fontSize: 14, fontWeight: '500', marginTop: 12 },
+  form: { padding: 16 },
+  field: { marginBottom: 16 },
+  fieldLabel: { fontSize: 13, color: '#6b7280', marginBottom: 6, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
+  fieldInput: { fontSize: 16, color: '#111', padding: 12, backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
+  fieldInputMultiline: { minHeight: 80, paddingTop: 12 },
 });

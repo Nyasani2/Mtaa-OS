@@ -33,7 +33,6 @@ const SCENARIOS = [
   { id: 'auth-check', name: 'Auth Security', description: 'Verify auth & authorization', icon: 'lock', checks: ['auth'] },
   { id: 'wallet-audit', name: 'Wallet Integrity', description: 'Check wallet functions', icon: 'wallet', checks: ['wallet'] },
   { id: 'route-scan', name: 'Route Scanner', description: 'Verify app routes', icon: 'route', checks: ['routes'] },
-  { id: 'pulse-health', name: 'Pulse Health', description: 'Check Pulse feed', icon: 'newspaper', checks: ['pulse'] },
   { id: 'db-integrity', name: 'Database Check', description: 'Verify tables & RLS', icon: 'database', checks: ['database'] },
 ];
 
@@ -58,10 +57,6 @@ const ALL_CHECKS: AuditCheck[] = [
   { id: 'routes-8', category: 'Routes', name: 'Route /(os)/calendar', status: 'passed', message: 'Exists', duration: 10 },
   { id: 'routes-9', category: 'Routes', name: 'Route /(os)/network', status: 'passed', message: 'Exists', duration: 10 },
   { id: 'routes-10', category: 'Routes', name: 'Route /(os)/wifi', status: 'passed', message: 'Exists', duration: 10 },
-  { id: 'pulse-1', category: 'Pulse', name: 'Pulse events table', status: 'passed', message: 'Exists', duration: 25 },
-  { id: 'pulse-2', category: 'Pulse', name: 'Resolved media URLs', status: 'passed', message: 'Working', duration: 30 },
-  { id: 'pulse-3', category: 'Pulse', name: 'VideoPlayer component', status: 'warning', message: 'Using web fallback', duration: 15, details: 'expo-av not compatible with web' },
-  { id: 'pulse-4', category: 'Pulse', name: 'Feed engine', status: 'passed', message: 'Functional', duration: 40 },
   { id: 'db-1', category: 'Database', name: 'Supabase connection', status: 'passed', message: 'Connected', duration: 50 },
   { id: 'db-2', category: 'Database', name: 'RLS policies', status: 'warning', message: '46 tables need RLS', duration: 200, details: 'Run rls-remaining-tables.sql' },
   { id: 'db-3', category: 'Database', name: 'Edge functions', status: 'passed', message: '12 deployed', duration: 100 },
@@ -86,7 +81,6 @@ export default function AsisSimulator() {
     setIsRunning(true);
     setResult(null);
     const scenario = SCENARIOS.find((s) => s.id === scenarioId);
-    const targetCategories = scenario?.checks || ['auth', 'wallet', 'routes', 'pulse', 'database', 'api', 'storage'];
     const checks: AuditCheck[] = [];
     const totalChecks = ALL_CHECKS.filter((c) => targetCategories.some((tc) => c.category.toLowerCase().includes(tc)));
     for (const check of totalChecks) {
@@ -113,7 +107,6 @@ export default function AsisSimulator() {
       'wallet-4': 'Add send() method to wallet store. Implement transfer logic with PIN confirmation.',
       'wallet-5': 'Add receive() method to wallet store. Handle incoming transfer notifications.',
       'wallet-6': 'Complete wallet store implementation. Add send, receive, deposit, withdraw methods.',
-      'pulse-3': 'VideoPlayer uses web fallback. For native, install react-native-video or use expo-av.',
       'db-2': 'Run sql/rls-remaining-tables.sql in Supabase SQL Editor to add RLS policies.',
     };
     return fixes[check.id] || 'Review the component/service and ensure all required methods/properties exist.';

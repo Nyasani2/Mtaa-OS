@@ -15,8 +15,8 @@ export function ProfileHeader({ userId, onEditPress, onFollowPress }: ProfileHea
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-      <Text style={styles.name}>{profile.displayName}</Text>
+      <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
+      <Text style={styles.name}>{profile.display_name}</Text>
       <Text style={styles.handle}>@{profile.username}</Text>
       <Text style={styles.bio}>{profile.bio}</Text>
 

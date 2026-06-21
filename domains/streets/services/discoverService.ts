@@ -14,7 +14,7 @@ export async function fetchDiscover(
     .from('streets_posts')
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .eq('visibility', 'public')
     .order('like_count', { ascending: false })
@@ -81,7 +81,7 @@ export async function searchPosts(queryText: string, page: number = 0): Promise<
     .from('streets_posts')
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .textSearch('content', queryText)
     .eq('visibility', 'public')
@@ -118,7 +118,7 @@ export async function searchPosts(queryText: string, page: number = 0): Promise<
 
 export async function searchUsers(queryText: string): Promise<any[]> {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('id, display_name, handle, avatar_url, is_verified, follower_count')
     .or(`display_name.ilike.%${queryText}%,handle.ilike.%${queryText}%`)
     .limit(20);

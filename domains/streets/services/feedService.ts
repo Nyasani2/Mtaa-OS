@@ -15,7 +15,7 @@ export async function fetchFeed(
     .from('streets_posts')
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified),
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified),
       liked_by_me:streets_likes!inner(user_id)
     `)
     .order('created_at', { ascending: false })
@@ -100,7 +100,7 @@ export async function unlikePost(postId: string, userId: string): Promise<void> 
     .from('streets_likes')
     .delete()
     .eq('post_id', postId)
-    .eq('user_id', userId);
+    .eq('creator_id', userId);
   if (error) throw error;
 }
 
@@ -116,7 +116,7 @@ export async function unsavePost(postId: string, userId: string): Promise<void> 
     .from('streets_saves')
     .delete()
     .eq('post_id', postId)
-    .eq('user_id', userId);
+    .eq('creator_id', userId);
   if (error) throw error;
 }
 
@@ -125,7 +125,7 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
     .from('streets_posts')
     .delete()
     .eq('id', postId)
-    .eq('user_id', userId);
+    .eq('creator_id', userId);
   if (error) throw error;
 }
 
@@ -134,6 +134,6 @@ export async function pinPost(postId: string, userId: string, pinned: boolean): 
     .from('streets_posts')
     .update({ is_pinned: pinned })
     .eq('id', postId)
-    .eq('user_id', userId);
+    .eq('creator_id', userId);
   if (error) throw error;
 }

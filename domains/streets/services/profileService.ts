@@ -8,7 +8,7 @@ const PAGE_SIZE = 20;
 
 export async function fetchProfile(userId: string, viewerId?: string): Promise<StreetProfile | null> {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select(`
       id, user_id, display_name, handle, avatar_url, cover_url, bio, location, website,
       follower_count, following_count, post_count, is_verified, is_business, created_at,
@@ -48,7 +48,7 @@ export async function fetchProfilePosts(
     .from('streets_posts')
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -104,7 +104,7 @@ export async function updateProfile(
   updates: Partial<Pick<StreetProfile, 'display_name' | 'bio' | 'location' | 'website' | 'avatar_url' | 'cover_url'>>
 ): Promise<void> {
   const { error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .update(updates)
     .eq('user_id', userId);
   if (error) throw error;

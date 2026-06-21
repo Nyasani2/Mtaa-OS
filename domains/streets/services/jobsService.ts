@@ -14,7 +14,7 @@ export async function fetchJobs(
     .from('streets_jobs')
     .select(`
       *,
-      poster:profiles(id, display_name, handle, avatar_url, is_verified)
+      poster:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .eq('status', 'open')
     .order('created_at', { ascending: false })
@@ -69,7 +69,7 @@ export async function createJob(
     .insert({ ...job, user_id: userId, application_count: 0 })
     .select(`
       *,
-      poster:profiles(id, display_name, handle, avatar_url, is_verified)
+      poster:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .single();
 

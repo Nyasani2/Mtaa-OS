@@ -13,7 +13,7 @@ export interface StreetUser {
 
 export interface StreetPost {
   id: string;
-  author_id: string;
+  creator_id: string;
   author: StreetUser;
   content: string;
   media_urls: string[];
@@ -30,7 +30,7 @@ export interface StreetPost {
 export interface StreetComment {
   id: string;
   post_id: string;
-  author_id: string;
+  creator_id: string;
   author: StreetUser;
   content: string;
   likes_count: number;

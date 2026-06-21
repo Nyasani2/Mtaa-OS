@@ -9,7 +9,7 @@ export async function fetchLives(status?: 'live' | 'ended' | 'scheduled'): Promi
     .from('streets_lives')
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .order('created_at', { ascending: false });
 
@@ -61,7 +61,7 @@ export async function createLive(
     })
     .select(`
       *,
-      author:profiles(id, display_name, handle, avatar_url, is_verified)
+      author:user_profiles(id, display_name, handle, avatar_url, is_verified)
     `)
     .single();
 

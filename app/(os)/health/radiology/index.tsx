@@ -27,7 +27,6 @@ const MODALITY_ICONS: Record<string, string> = {
   ct: "cube-scan",
   mri: "magnet",
   ultrasound: "waves",
-  mammography: "heart-pulse",
   nuclear: "atom",
   fluoroscopy: "video",
 };

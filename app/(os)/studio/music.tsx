@@ -95,7 +95,6 @@ export default function MusicStudioScreen() {
             onPress={() => setActiveTab(tab)}
           >
             <Ionicons
-              name={tab === 'library' ? 'library' : tab === 'generate' ? 'sparkles' : 'pulse'}
               size={16}
               color={activeTab === tab ? '#FFF' : '#94A3B8'}
             />
@@ -189,7 +188,6 @@ export default function MusicStudioScreen() {
 
         {activeTab === 'beats' && (
           <View style={styles.empty}>
-            <Ionicons name="pulse" size={48} color="#475569" />
             <Text style={styles.emptyText}>Beat Maker coming in v2</Text>
             <Text style={styles.emptySubtext}>Create drum patterns, basslines, and melodies</Text>
           </View>

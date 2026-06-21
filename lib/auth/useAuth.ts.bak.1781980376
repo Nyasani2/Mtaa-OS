@@ -1,0 +1,102 @@
+import { useState, useEffect, useCallback } from 'react';
+
+function getSupabase() {
+  const { createClient } = require('@supabase/supabase-js');
+  const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    realtime: { enabled: false },
+  });
+}
+
+/**
+ * UNIFIED AUTH HOOK
+ * Reads directly from Supabase session — works everywhere, no store dependency.
+ */
+export function useAuth() {
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const supabase = getSupabase();
+      const { data } = await supabase.auth.getSession();
+      const s = data.session;
+      const u = s?.user || null;
+
+      let p = null;
+      if (u) {
+        const { data: pd } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', u.id)
+          .single();
+        p = pd || null;
+      }
+
+      setSession(s);
+      setUser(u);
+      setProfile(p);
+      setIsReady(true);
+    } catch {
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setIsReady(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    await refresh();
+    return data;
+  }, [refresh]);
+
+  const signUp = useCallback(async (email: string, password: string, metadata?: Record<string, any>) => {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: metadata },
+    });
+    if (error) throw new Error(error.message);
+    await refresh();
+    return data;
+  }, [refresh]);
+
+  const signOut = useCallback(async () => {
+    const supabase = getSupabase();
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+  }, []);
+
+  return {
+    user,
+    profile,
+    session,
+    isLoading,
+    isReady,
+    isAuthenticated: !!user,
+    signIn,
+    signUp,
+    signOut,
+    refresh,
+  };
+}
+
+export function useIdentity() {
+  return useAuth();
+}

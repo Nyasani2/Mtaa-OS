@@ -1,0 +1,195 @@
+// app/(os)/index.tsx — MTAA OS Home Screen
+// v3.1: Reads full_name from unified auth store (aligned to actual schema)
+
+import { useEffect, useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/lib/auth/useAuth';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
+
+const SYSTEM_APPS = [
+  { id: 'clock', name: 'Clock', icon: 'time-outline', route: '/(os)/clock', color: '#6366f1' },
+  { id: 'calc', name: 'Calc', icon: 'calculator-outline', route: '/(os)/calc', color: '#8b5cf6' },
+  { id: 'calendar', name: 'Calendar', icon: 'calendar-outline', route: '/(os)/calendar', color: '#ec4899' },
+  { id: 'network', name: 'Network', icon: 'globe-outline', route: '/(os)/network', color: '#10b981' },
+  { id: 'wifi', name: 'Wi-Fi', icon: 'wifi-outline', route: '/(os)/wifi', color: '#06b6d4' },
+  { id: 'reader', name: 'Reader', icon: 'book-outline', route: '/(os)/reader', color: '#f59e0b' },
+  { id: 'settings', name: 'Settings', icon: 'settings-outline', route: '/(os)/settings', color: '#64748b' },
+  { id: 'asis', name: 'ASIS', icon: 'sparkles-outline', route: '/(os)/asis', color: '#ef4444' },
+  { id: 'profile', name: 'Profile', icon: 'person-outline', route: '/(os)/profile', color: '#6366f1' },
+];
+
+const CORE_APPS = [
+  { id: 'wallet', name: 'Wallet', icon: 'wallet-outline', route: '/(os)/wallet', color: '#10b981', badge: 'NEW' },
+  { id: 'messages', name: 'Messages', icon: 'chatbubble-outline', route: '/(os)/messages', color: '#6366f1' },
+  { id: 'phone', name: 'Phone', icon: 'call-outline', route: '/(os)/phone', color: '#10b981' },
+  { id: 'gallery', name: 'Gallery', icon: 'images-outline', route: '/(os)/gallery', color: '#ec4899' },
+  { id: 'camera', name: 'Camera', icon: 'camera-outline', route: '/(os)/camera', color: '#64748b' },
+  { id: 'appstore', name: 'AppStore', icon: 'apps-outline', route: '/(os)/appstore', color: '#6366f1' },
+  { id: 'command', name: 'Command', icon: 'terminal-outline', route: '/(os)/command', color: '#1a1a1a' },
+];
+
+const APPS_ROW1 = [
+  { id: 'mtaxi', name: 'MTaxi', icon: 'car-outline', route: '/(mtaxi)', color: '#f59e0b' },
+  { id: 'mtruck', name: 'MTruck', icon: 'bus-outline', route: '/(mtruck)', color: '#f97316' },
+  { id: 'boda', name: 'Boda', icon: 'bicycle-outline', route: '/(boda)', color: '#ef4444' },
+  { id: 'tribes', name: 'Tribes', icon: 'people-outline', route: '/(os)/tribes', color: '#8b5cf6' },
+  { id: 'shop', name: 'Shop', icon: 'cart-outline', route: '/(os)/shop', color: '#ec4899' },
+  { id: 'market', name: 'Market', icon: 'storefront-outline', route: '/(os)/market', color: '#10b981' },
+  { id: 'jobs', name: 'Jobs', icon: 'briefcase-outline', route: '/(os)/jobs', color: '#6366f1' },
+  { id: 'edu', name: 'Edu', icon: 'school-outline', route: '/(os)/edu', color: '#06b6d4' },
+  { id: 'health', name: 'Health', icon: 'heart-outline', route: '/(os)/health', color: '#ef4444' },
+  { id: 'streets', name: 'Streets', icon: 'map-outline', route: '/(os)/streets', color: '#f59e0b' },
+];
+
+const APPS_ROW2 = [
+  { id: 'pulse', name: 'Pulse', icon: 'pulse-outline', route: '/(os)/pulse', color: '#ef4444' },
+  { id: 'nearby', name: 'Nearby', icon: 'location-outline', route: '/(os)/nearby', color: '#10b981' },
+  { id: 'property', name: 'Property', icon: 'home-outline', route: '/(os)/property', color: '#8b5cf6' },
+  { id: 'civic', name: 'Civic', icon: 'shield-outline', route: '/(os)/civic', color: '#6366f1' },
+  { id: 'regulatory', name: 'Regulatory', icon: 'document-lock-outline', route: '/(os)/regulatory', color: '#64748b' },
+  { id: 'courts', name: 'Courts', icon: 'scale-outline', route: '/(os)/courts', color: '#f59e0b' },
+  { id: 'finance', name: 'Finance', icon: 'trending-up-outline', route: '/(os)/finance', color: '#10b981' },
+  { id: 'credit', name: 'Credit', icon: 'card-outline', route: '/(os)/credit', color: '#06b6d4' },
+  { id: 'land', name: 'Land', icon: 'earth-outline', route: '/(os)/land', color: '#84cc16' },
+  { id: 'restaurant', name: 'Restaurant', icon: 'restaurant-outline', route: '/(os)/restaurant', color: '#f97316' },
+];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function AppIcon({ app, onPress }: { app: any; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.appItem} onPress={onPress}>
+      <View style={[styles.appIcon, { backgroundColor: app.color + '18' }]}>
+        <Ionicons name={app.icon} size={22} color={app.color} />
+        {app.badge && (
+          <View style={styles.badge}><Text style={styles.badgeText}>{app.badge}</Text></View>
+        )}
+      </View>
+      <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { user, isAuthenticated, initialize } = useAuth();
+  const [greeting, setGreeting] = useState(getGreeting());
+
+  useEffect(() => {
+    initialize();
+    const interval = setInterval(() => setGreeting(getGreeting()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Use full_name first, then display_name, then email prefix, then 'User'
+  const userName = isAuthenticated && user
+    ? (user.full_name || user.display_name || user.email?.split('@')[0] || 'User')
+    : 'User';
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.greeting}>{greeting},</Text>
+              <Text style={styles.userName}>{userName}</Text>
+            </View>
+            <TouchableOpacity style={styles.avatarBtn} onPress={() => router.push('/(os)/profile')}>
+              <Ionicons name="person-circle" size={40} color="#6366f1" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.walletCard} onPress={() => router.push('/(os)/wallet')}>
+            <Text style={styles.walletLabel}>WALLET BALANCE</Text>
+            <Text style={styles.walletAmount}>KSh ••••••</Text>
+            <View style={styles.walletActions}>
+              {['Scan', 'Send', 'Deposit', 'Withdraw'].map((action) => (
+                <View key={action} style={styles.walletAction}>
+                  <View style={styles.walletActionIcon}>
+                    <Ionicons name={
+                      action === 'Scan' ? 'scan-outline' :
+                      action === 'Send' ? 'paper-plane-outline' :
+                      action === 'Deposit' ? 'arrow-down-outline' : 'arrow-up-outline'
+                    } size={16} color="#fff" />
+                  </View>
+                  <Text style={styles.walletActionText}>{action}</Text>
+                </View>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>SYSTEM</Text>
+          <View style={styles.appsGrid}>
+            {SYSTEM_APPS.map((app) => (
+              <AppIcon key={app.id} app={app} onPress={() => router.push(app.route as any)} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>CORE</Text>
+          <View style={styles.appsGrid}>
+            {CORE_APPS.map((app) => (
+              <AppIcon key={app.id} app={app} onPress={() => router.push(app.route as any)} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>APPS</Text>
+          <View style={styles.appsGrid}>
+            {APPS_ROW1.map((app) => (
+              <AppIcon key={app.id} app={app} onPress={() => router.push(app.route as any)} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.appsGrid}>
+            {APPS_ROW2.map((app) => (
+              <AppIcon key={app.id} app={app} onPress={() => router.push(app.route as any)} />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f0f23' },
+  header: { padding: 16, paddingTop: 8 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  greeting: { color: '#9ca3af', fontSize: 14 },
+  userName: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  avatarBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(99,102,241,0.15)', justifyContent: 'center', alignItems: 'center' },
+  walletCard: { backgroundColor: 'rgba(99,102,241,0.12)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)' },
+  walletLabel: { color: '#9ca3af', fontSize: 11, fontWeight: '600', letterSpacing: 1 },
+  walletAmount: { color: '#fff', fontSize: 28, fontWeight: '700', marginTop: 4 },
+  walletActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  walletAction: { alignItems: 'center' },
+  walletActionIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(99,102,241,0.25)', justifyContent: 'center', alignItems: 'center' },
+  walletActionText: { color: '#fff', fontSize: 11, marginTop: 6, fontWeight: '500' },
+  section: { paddingHorizontal: 16, marginBottom: 16 },
+  sectionTitle: { color: '#6b7280', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 10 },
+  appsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  appItem: { width: width / 5 - 8, alignItems: 'center', marginBottom: 12, marginHorizontal: 2 },
+  appIcon: { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  appName: { color: '#d1d5db', fontSize: 10, marginTop: 6, fontWeight: '500', textAlign: 'center' },
+  badge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 1 },
+  badgeText: { color: '#fff', fontSize: 8, fontWeight: '700' },
+});

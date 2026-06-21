@@ -14,7 +14,7 @@ export async function fetchCreatorMetrics(userId: string): Promise<StreetCreator
   if (postsError) throw postsError;
 
   const { data: profile, error: profileError } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('follower_count, post_count')
     .eq('user_id', userId)
     .single();

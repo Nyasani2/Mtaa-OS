@@ -1,522 +1,217 @@
-// app/(os)/profile/index.tsx
-// FIXED: Uses creator_id (not user_id) — matches your actual streets_posts schema
+// app/(os)/profile/index.tsx — MTAA Identity Engine Dashboard
+// v3.1: Uses full_name, username, bio, location, avatar_url, cover_url from actual schema
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  RefreshControl,
-  ActivityIndicator,
-  Dimensions,
-  Alert,
+  View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator,
+  ScrollView, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { supabase } from '@/lib/supabase';
-import { MediaGallery } from '@/components/media/MediaGallery';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/lib/auth/useAuth';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
-interface ProfileData {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  cover_url: string | null;
-  bio: string | null;
-  location: string | null;
-  verified: boolean;
-  created_at: string;
-}
-
-interface ProfileStats {
-  posts_count: number;
-  followers_count: number;
-  following_count: number;
-  businesses_count: number;
-}
-
-function useWalletBalance() {
-  const [balance, setBalance] = useState(0);
-  const [currency, setCurrency] = useState('KES');
-  const { user } = useAuthStore();
-
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('wallets')
-      .select('balance, currency')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setBalance(data.balance || 0);
-          setCurrency(data.currency || 'KES');
-        }
-      });
-  }, [user?.id]);
-
-  return { balance, currency };
-}
-
 export default function ProfileScreen() {
+  const { user, profile, isLoading, isAuthenticated, initialize, signOut } = useAuth();
   const router = useRouter();
-  const { user } = useAuthStore();
-  const { balance, currency } = useWalletBalance();
 
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [stats, setStats] = useState<ProfileStats>({
-    posts_count: 0,
-    followers_count: 0,
-    following_count: 0,
-    businesses_count: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'business' | 'shop' | 'cv'>('content');
+  useEffect(() => { initialize(); }, []);
 
-  const userId = user?.id;
-
-  const fetchProfile = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (profileError) throw profileError;
-      setProfile(profileData);
-
-      const [
-        { count: postsCount },
-        { count: followersCount },
-        { count: followingCount },
-        { count: businessesCount },
-      ] = await Promise.all([
-        supabase.from('streets_posts').select('*', { count: 'exact', head: true }).eq('creator_id', userId),
-        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('following_id', userId),
-        supabase.from('followers').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
-        supabase.from('businesses').select('*', { count: 'exact', head: true }).eq('owner_id', userId),
-      ]);
-
-      setStats({
-        posts_count: postsCount || 0,
-        followers_count: followersCount || 0,
-        following_count: followingCount || 0,
-        businesses_count: businessesCount || 0,
-      });
-    } catch (err) {
-      console.error('Profile fetch error:', err);
-      Alert.alert('Error', 'Failed to load profile data');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchProfile();
-  }, [fetchProfile]);
-
-  const handleEditProfile = () => {
-    router.push('/(os)/profile/edit');
-  };
-
-  const handleWalletPress = () => {
-    router.push('/(os)/wallet');
-  };
-
-  const handleUploadPress = () => {
-    router.push('/(os)/upload');
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <View style={styles.center}>
+      <SafeAreaView style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color="#6366f1" />
-      </View>
+        <Text style={styles.loadingText}>Loading identity...</Text>
+      </SafeAreaView>
     );
   }
 
-  const displayName = profile?.full_name || profile?.username || 'User';
-  const handleText = profile?.username ? `@${profile.username}` : `@user_${userId?.slice(0, 8)}`;
-  const avatarUri = profile?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(displayName) + '&background=6366f1&color=fff';
-  const coverUri = profile?.cover_url;
+  if (!isAuthenticated || !user) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <View style={styles.notSignedCard}>
+          <Ionicons name="person-circle-outline" size={64} color="#ccc" />
+          <Text style={styles.notSignedTitle}>Not Signed In</Text>
+          <Text style={styles.notSignedText}>Sign in to view your MTAA Identity</Text>
+          <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/auth/sign-in')}>
+            <Text style={styles.signInBtnText}>Sign In</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.createAccountBtn} onPress={() => router.push('/auth/signup')}>
+            <Text style={styles.createAccountText}>Create Account</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const displayName = user.full_name || user.display_name || user.username || user.email?.split('@')[0] || 'User';
+  const handle = user.username ? `@${user.username}` : user.email;
+  const avatarUri = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`;
+  const coverUri = user.cover_url || user.cover_photo_url;
+
+  const sections = [
+    { key: 'edit', icon: 'person-outline', label: 'Edit Profile', color: '#6366f1', route: '/(os)/profile/edit' },
+    { key: 'wallet', icon: 'wallet-outline', label: 'Wallet', color: '#10b981', route: '/(os)/wallet' },
+    { key: 'professional', icon: 'briefcase-outline', label: 'Professional CV', color: '#f59e0b', route: '/(os)/profile/professional' },
+    { key: 'business', icon: 'storefront-outline', label: 'My Business', color: '#8b5cf6', route: '/(os)/profile/business' },
+    { key: 'family', icon: 'people-outline', label: 'Family', color: '#ec4899', route: '/(os)/profile/family' },
+    { key: 'creator', icon: 'create-outline', label: 'Creator', color: '#ef4444', route: '/(os)/profile/creator' },
+    { key: 'reputation', icon: 'star-outline', label: 'Reputation', color: '#f97316', route: '/(os)/profile/reputation' },
+    { key: 'qr', icon: 'qr-code-outline', label: 'QR Identity', color: '#06b6d4', route: '/(os)/profile/qr' },
+    { key: 'documents', icon: 'document-text-outline', label: 'Documents', color: '#64748b', route: '/(os)/profile/documents' },
+    { key: 'assets', icon: 'cube-outline', label: 'Assets', color: '#84cc16', route: '/(os)/profile/assets' },
+  ];
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      {/* Cover Photo */}
-      <View style={styles.coverContainer}>
-        {coverUri ? (
-          <Image source={{ uri: coverUri }} style={styles.coverImage} />
-        ) : (
-          <View style={styles.coverPlaceholder}>
-            <Ionicons name="image-outline" size={48} color="#6b7280" />
-          </View>
-        )}
-        <TouchableOpacity style={styles.editCoverBtn} onPress={handleEditProfile}>
-          <Ionicons name="camera" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Avatar & Basic Info */}
-      <View style={styles.headerSection}>
-        <View style={styles.avatarContainer}>
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-          {profile?.verified && (
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-            </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Cover + Avatar Header */}
+        <View style={styles.header}>
+          {coverUri && (
+            <Image source={{ uri: coverUri }} style={styles.coverImage} />
           )}
-        </View>
-
-        <View style={styles.nameSection}>
+          <View style={[styles.avatarWrap, coverUri && styles.avatarWrapOverlay]}>
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          </View>
           <Text style={styles.name}>{displayName}</Text>
-          <Text style={styles.handle}>{handleText}</Text>
-          {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
-          {profile?.location && (
+          {handle && <Text style={styles.handle}>{handle}</Text>}
+          {user.bio && <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>}
+          {user.location && (
             <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="#6b7280" />
-              <Text style={styles.locationText}>{profile.location}</Text>
+              <Ionicons name="location-outline" size={14} color="#888" />
+              <Text style={styles.locationText}>{user.location}</Text>
             </View>
           )}
-        </View>
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.primaryBtn} onPress={handleEditProfile}>
-          <Text style={styles.primaryBtnText}>Edit Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn} onPress={handleUploadPress}>
-          <Ionicons name="add-circle" size={18} color="#6366f1" />
-          <Text style={styles.secondaryBtnText}>Upload</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('content')}>
-          <Text style={styles.statNumber}>{stats.posts_count}</Text>
-          <Text style={styles.statLabel}>Posts</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(os)/followers')}>
-          <Text style={styles.statNumber}>{stats.followers_count}</Text>
-          <Text style={styles.statLabel}>Followers</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(os)/following')}>
-          <Text style={styles.statNumber}>{stats.following_count}</Text>
-          <Text style={styles.statLabel}>Following</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.statItem} onPress={() => setActiveTab('business')}>
-          <Text style={styles.statNumber}>{stats.businesses_count}</Text>
-          <Text style={styles.statLabel}>Business</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Wallet Card */}
-      <TouchableOpacity style={styles.walletCard} onPress={handleWalletPress}>
-        <View style={styles.walletHeader}>
-          <Ionicons name="wallet-outline" size={20} color="#6366f1" />
-          <Text style={styles.walletTitle}>MTAA Wallet</Text>
-          <Ionicons name="chevron-forward" size={18} color="#6b7280" />
-        </View>
-        <Text style={styles.walletBalance}>
-          {currency} {balance.toLocaleString()}
-        </Text>
-        <Text style={styles.walletLabel}>Available Balance</Text>
-      </TouchableOpacity>
-
-      {/* Tab Navigation */}
-      <View style={styles.tabRow}>
-        {(['content', 'business', 'shop', 'cv'] as const).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Tab Content */}
-      {activeTab === 'content' && (
-        <MediaGallery userId={userId} onUploadPress={handleUploadPress} />
-      )}
-
-      {activeTab === 'business' && (
-        <BusinessSection userId={userId} />
-      )}
-
-      {activeTab === 'shop' && (
-        <ShopSection userId={userId} />
-      )}
-
-      {activeTab === 'cv' && (
-        <CVSection userId={userId} />
-      )}
-    </ScrollView>
-  );
-}
-
-// ─── Sub-components ────────────────────────────────────────────────
-
-function BusinessSection({ userId }: { userId: string | undefined }) {
-  const [businesses, setBusinesses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!userId) return;
-    supabase
-      .from('businesses')
-      .select('*')
-      .eq('owner_id', userId)
-      .then(({ data }) => {
-        setBusinesses(data || []);
-        setLoading(false);
-      });
-  }, [userId]);
-
-  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
-  if (businesses.length === 0) {
-    return (
-      <View style={styles.emptyState}>
-        <Ionicons name="business-outline" size={48} color="#d1d5db" />
-        <Text style={styles.emptyText}>No businesses yet</Text>
-        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/business/register')}>
-          <Text style={styles.emptyBtnText}>Register Business</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.sectionList}>
-      {businesses.map((biz) => (
-        <TouchableOpacity key={biz.id} style={styles.businessCard} onPress={() => router.push(`/(os)/business/${biz.id}`)}>
-          <Ionicons name="storefront-outline" size={32} color="#6366f1" />
-          <View style={styles.businessInfo}>
-            <Text style={styles.businessName}>{biz.name}</Text>
-            <Text style={styles.businessType}>{biz.type}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#6b7280" />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
-function ShopSection({ userId }: { userId: string | undefined }) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchUserProducts = async () => {
-      const { data: shops } = await supabase
-        .from('shops')
-        .select('id')
-        .eq('owner_id', userId);
-
-      if (!shops || shops.length === 0) {
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-
-      const shopIds = shops.map((s: any) => s.id);
-
-      const { data: productsData } = await supabase
-        .from('products')
-        .select('id, name, description, selling_price, images, stock_quantity, is_active, shop_id')
-        .in('shop_id', shopIds)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      setProducts(productsData || []);
-      setLoading(false);
-    };
-
-    fetchUserProducts();
-  }, [userId]);
-
-  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
-  if (products.length === 0) {
-    return (
-      <View style={styles.emptyState}>
-        <Ionicons name="cart-outline" size={48} color="#d1d5db" />
-        <Text style={styles.emptyText}>No products in your shop</Text>
-        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/shop/add-product')}>
-          <Text style={styles.emptyBtnText}>Add Product</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.productGrid}>
-      {products.map((product) => {
-        const imageUrl = product.images && product.images.length > 0 
-          ? product.images[0] 
-          : 'https://via.placeholder.com/150';
-
-        return (
-          <TouchableOpacity 
-            key={product.id} 
-            style={styles.productCard} 
-            onPress={() => router.push(`/(os)/shop/edit-product/${product.id}`)}
-          >
-            <Image source={{ uri: imageUrl }} style={styles.productImage} />
-            <Text style={styles.productName} numberOfLines={1}>{product.name}</Text>
-            <Text style={styles.productPrice}>KES {product.selling_price}</Text>
-            <Text style={styles.productStock}>{product.stock_quantity} in stock</Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
-
-function CVSection({ userId }: { userId: string | undefined }) {
-  const [cv, setCv] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!userId) return;
-    supabase
-      .from('cv_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
-      .then(({ data }) => {
-        setCv(data);
-        setLoading(false);
-      });
-  }, [userId]);
-
-  if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />;
-  if (!cv) {
-    return (
-      <View style={styles.emptyState}>
-        <Ionicons name="document-text-outline" size={48} color="#d1d5db" />
-        <Text style={styles.emptyText}>No CV yet</Text>
-        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/cv/create')}>
-          <Text style={styles.emptyBtnText}>Create CV</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.cvCard}>
-      <Text style={styles.cvTitle}>{cv.title || 'My CV'}</Text>
-      {cv.summary && <Text style={styles.cvSummary}>{cv.summary}</Text>}
-      {cv.skills && cv.skills.length > 0 && (
-        <View style={styles.skillsRow}>
-          {cv.skills.map((skill: string, i: number) => (
-            <View key={i} style={styles.skillBadge}>
-              <Text style={styles.skillText}>{skill}</Text>
+          {user.is_verified && (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={14} color="#fff" />
+              <Text style={styles.verifiedText}>Verified</Text>
             </View>
+          )}
+          {user.role !== 'user' && (
+            <View style={[styles.roleBadge, { backgroundColor: user.role === 'admin' ? '#ef4444' : '#6366f1' }]}>
+              <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/(os)/profile/edit')}>
+            <Text style={styles.editBtnText}>Edit Profile</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{user.content_count || 0}</Text>
+            <Text style={styles.statLabel}>Posts</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{user.followers_count || 0}</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{user.following_count || 0}</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{user.trust_score || 0}</Text>
+            <Text style={styles.statLabel}>Trust</Text>
+          </View>
+        </View>
+
+        {/* Section Grid */}
+        <View style={styles.grid}>
+          {sections.map((s) => (
+            <TouchableOpacity key={s.key} style={styles.gridItem} onPress={() => router.push(s.route as any)}>
+              <View style={[styles.gridIcon, { backgroundColor: s.color + '15' }]}>
+                <Ionicons name={s.icon as any} size={24} color={s.color} />
+              </View>
+              <Text style={styles.gridLabel}>{s.label}</Text>
+              <Ionicons name="chevron-forward" size={14} color="#999" style={styles.gridArrow} />
+            </TouchableOpacity>
           ))}
         </View>
-      )}
-      <TouchableOpacity style={styles.cvEditBtn} onPress={() => router.push('/(os)/cv/edit')}>
-        <Text style={styles.cvEditText}>Edit CV</Text>
-      </TouchableOpacity>
-    </View>
+
+        {/* Bottom */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity style={styles.row} onPress={() => router.push('/(os)/settings')}>
+            <Ionicons name="settings-outline" size={22} color="#333" />
+            <Text style={styles.rowText}>Settings</Text>
+            <Ionicons name="chevron-forward" size={20} color="#999" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.row, styles.signOutRow]} onPress={signOut}>
+            <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+            <Text style={[styles.rowText, styles.signOutText]}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Profile Completeness */}
+        <View style={styles.completenessCard}>
+          <Text style={styles.completenessLabel}>Profile Completeness</Text>
+          <View style={styles.completenessBar}>
+            <View style={[styles.completenessFill, { width: `${Math.min(user.profile_completeness || 0, 100)}%` }]} />
+          </View>
+          <Text style={styles.completenessText}>{user.profile_completeness || 0}% complete</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f0f' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f' },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: '#666', fontSize: 14 },
+  notSignedCard: { alignItems: 'center', padding: 32 },
+  notSignedTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a1a', marginTop: 16 },
+  notSignedText: { fontSize: 14, color: '#888', marginTop: 4, marginBottom: 24 },
+  signInBtn: { backgroundColor: '#6366f1', paddingHorizontal: 48, paddingVertical: 14, borderRadius: 12, width: '80%', alignItems: 'center' },
+  signInBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  createAccountBtn: { marginTop: 12 },
+  createAccountText: { color: '#6366f1', fontSize: 14, fontWeight: '500' },
 
-  coverContainer: { width: '100%', height: 180, position: 'relative' },
-  coverImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  coverPlaceholder: { width: '100%', height: '100%', backgroundColor: '#1f1f1f', justifyContent: 'center', alignItems: 'center' },
-  editCoverBtn: { position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', padding: 8, borderRadius: 20 },
+  header: { alignItems: 'center', paddingVertical: 24, backgroundColor: '#fff', marginBottom: 12, position: 'relative' },
+  coverImage: { position: 'absolute', top: 0, left: 0, right: 0, height: 120, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+  avatarWrap: { marginBottom: 12 },
+  avatarWrapOverlay: { marginTop: 60 },
+  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: '#fff' },
+  name: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
+  handle: { fontSize: 14, color: '#888', marginTop: 2 },
+  bio: { fontSize: 13, color: '#666', marginTop: 6, textAlign: 'center', paddingHorizontal: 32 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  locationText: { fontSize: 12, color: '#888', marginLeft: 4 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10b981', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
+  verifiedText: { color: '#fff', fontSize: 11, fontWeight: '600', marginLeft: 4 },
+  roleBadge: { marginTop: 6, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  roleText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  editBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
+  editBtnText: { color: '#6366f1', fontSize: 13, fontWeight: '600' },
 
-  headerSection: { paddingHorizontal: 16, paddingTop: 12 },
-  avatarContainer: { position: 'relative', marginTop: -50, alignSelf: 'flex-start' },
-  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 4, borderColor: '#0f0f0f' },
-  verifiedBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#0f0f0f', borderRadius: 12 },
-  nameSection: { marginTop: 12 },
-  name: { fontSize: 22, fontWeight: '700', color: '#fff' },
-  handle: { fontSize: 15, color: '#9ca3af', marginTop: 2 },
-  bio: { fontSize: 14, color: '#d1d5db', marginTop: 8, lineHeight: 20 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  locationText: { fontSize: 13, color: '#9ca3af', marginLeft: 4 },
+  statsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 16, marginBottom: 12 },
+  statItem: { alignItems: 'center', flex: 1 },
+  statNumber: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
+  statLabel: { fontSize: 11, color: '#888', marginTop: 2 },
+  statDivider: { width: 1, height: 30, backgroundColor: '#e2e8f0' },
 
-  actionRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 16, gap: 10 },
-  primaryBtn: { flex: 1, backgroundColor: '#6366f1', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  secondaryBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: '#374151', borderRadius: 8, gap: 6 },
-  secondaryBtnText: { color: '#6366f1', fontWeight: '600', fontSize: 14 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingBottom: 12 },
+  gridItem: { width: (width - 48) / 2, backgroundColor: '#fff', borderRadius: 12, padding: 16, margin: 4, flexDirection: 'row', alignItems: 'center' },
+  gridIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  gridLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: '#333' },
+  gridArrow: { marginLeft: 4 },
 
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, marginTop: 8, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#1f1f1f' },
-  statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  statLabel: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+  bottomSection: { backgroundColor: '#fff', marginHorizontal: 12, borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  rowText: { flex: 1, fontSize: 15, marginLeft: 12, color: '#333', fontWeight: '500' },
+  signOutRow: { borderBottomWidth: 0 },
+  signOutText: { color: '#ef4444' },
 
-  walletCard: { margin: 16, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#374151' },
-  walletHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  walletTitle: { flex: 1, fontSize: 14, fontWeight: '600', color: '#9ca3af', marginLeft: 8 },
-  walletBalance: { fontSize: 28, fontWeight: '700', color: '#fff' },
-  walletLabel: { fontSize: 12, color: '#6b7280', marginTop: 4 },
-
-  tabRow: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#1f1f1f' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderColor: '#6366f1' },
-  tabText: { fontSize: 14, color: '#9ca3af', fontWeight: '500' },
-  tabTextActive: { color: '#6366f1', fontWeight: '600' },
-
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 14, color: '#6b7280', marginTop: 12 },
-  emptyBtn: { marginTop: 16, backgroundColor: '#6366f1', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
-  emptyBtnText: { color: '#fff', fontWeight: '600' },
-
-  sectionList: { padding: 16 },
-  businessCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1f1f1f', padding: 16, borderRadius: 12, marginBottom: 10 },
-  businessInfo: { flex: 1, marginLeft: 12 },
-  businessName: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  businessType: { fontSize: 13, color: '#9ca3af', marginTop: 2 },
-
-  productGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 8 },
-  productCard: { width: (width - 48) / 2, margin: 8, backgroundColor: '#1f1f1f', borderRadius: 12, overflow: 'hidden' },
-  productImage: { width: '100%', height: 120, resizeMode: 'cover' },
-  productName: { fontSize: 13, color: '#fff', padding: 8, paddingBottom: 4 },
-  productPrice: { fontSize: 14, fontWeight: '700', color: '#6366f1', paddingHorizontal: 8 },
-  productStock: { fontSize: 11, color: '#6b7280', paddingHorizontal: 8, paddingBottom: 8 },
-
-  cvCard: { margin: 16, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16 },
-  cvTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  cvSummary: { fontSize: 14, color: '#d1d5db', marginTop: 8, lineHeight: 20 },
-  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  skillBadge: { backgroundColor: '#374151', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  skillText: { color: '#9ca3af', fontSize: 12 },
-  cvEditBtn: { marginTop: 12, alignSelf: 'flex-start', backgroundColor: '#374151', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
-  cvEditText: { color: '#fff', fontWeight: '600' },
+  completenessCard: { backgroundColor: '#fff', marginHorizontal: 12, borderRadius: 12, padding: 16, marginBottom: 24 },
+  completenessLabel: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 8 },
+  completenessBar: { height: 6, backgroundColor: '#e2e8f0', borderRadius: 3, overflow: 'hidden' },
+  completenessFill: { height: '100%', backgroundColor: '#6366f1', borderRadius: 3 },
+  completenessText: { fontSize: 12, color: '#888', marginTop: 6 },
 });
