@@ -1,76 +1,89 @@
-// domains/streets/hooks/useWallet.ts
-// Streets wallet hook — delegates to canonical wallet domain
-// Previously broken: imported useWalletBalance from non-existent path
-// Fixed: uses domains/wallet/hooks/useWallet
-
 import { useState, useEffect, useCallback } from 'react';
-import {
-  useWalletBalance,
-  useWalletSend,
-  useWalletReceive,
-  useWalletHistory,
-  type WalletBalance,
-  type WalletTransaction,
-  type SendPayload,
-  type ReceivePayload,
-} from '@/domains/wallet/hooks/useWallet';
+import { supabase } from '@/lib/supabase';
 
-export interface StreetsWalletState {
-  balance: WalletBalance | null;
-  transactions: WalletTransaction[];
-  loading: boolean;
-  error: string | null;
+export interface WalletBalance {
+  available: number;
+  escrow: number;
+  pending: number;
+  currency: string;
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: 'credit' | 'debit' | 'escrow' | 'release';
+  amount: number;
+  description: string;
+  status: 'completed' | 'pending' | 'failed';
+  created_at: string;
 }
 
 export function useStreetsWallet() {
-  const { balance, loading: balanceLoading, error: balanceError, refresh: refreshBalance } = useWalletBalance();
-  const { send, sending, error: sendError, lastTx, clearError: clearSendError } = useWalletSend();
-  const { request, createRequest, cancelRequest, loading: receiveLoading, error: receiveError, clearError: clearReceiveError } = useWalletReceive();
-  const { transactions, loading: historyLoading, error: historyError, refresh: refreshHistory, hasMore, loadMore } = useWalletHistory({ limit: 20 });
+  const [balance, setBalance] = useState<WalletBalance | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [error, setError] = useState<string | null>(null);
+  const fetchBalance = useCallback(async () => {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+
+    const { data, error } = await supabase
+      .from('wallet_balances')
+      .select('*')
+      .eq('user_id', user.user.id)
+      .single();
+
+    if (error) {
+      console.error('[useStreetsWallet] fetchBalance error:', error);
+      return;
+    }
+
+    setBalance(data);
+  }, []);
+
+  const fetchTransactions = useCallback(async (limit = 20) => {
+    const { data: user } = await supabase.auth.getUser();
+    if (!user.user) return;
+
+    const { data, error } = await supabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('user_id', user.user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('[useStreetsWallet] fetchTransactions error:', error);
+      return;
+    }
+
+    setTransactions(data || []);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.all([fetchBalance(), fetchTransactions()]);
+    setIsLoading(false);
+  }, [fetchBalance, fetchTransactions]);
 
   useEffect(() => {
-    const errs = [balanceError, sendError, receiveError, historyError].filter(Boolean);
-    setError(errs[0] || null);
-  }, [balanceError, sendError, receiveError, historyError]);
-
-  const clearError = useCallback(() => {
-    setError(null);
-    clearSendError();
-    clearReceiveError();
-  }, [clearSendError, clearReceiveError]);
-
-  const refresh = useCallback(() => {
-    refreshBalance();
-    refreshHistory();
-  }, [refreshBalance, refreshHistory]);
+    refresh();
+  }, [refresh]);
 
   return {
-    // Balance
     balance,
-    balanceLoading,
-    // Send
-    send,
-    sending,
-    lastTx,
-    // Receive
-    request,
-    createRequest,
-    cancelRequest,
-    receiveLoading,
-    // History
     transactions,
-    historyLoading,
-    hasMore,
-    loadMore,
-    // Unified
-    loading: balanceLoading || sending || receiveLoading || historyLoading,
-    error,
-    clearError,
+    isLoading,
     refresh,
+    fetchBalance,
+    fetchTransactions,
   };
 }
 
-// Backward-compatible export for files that import useWalletBalance from streets
-export { useWalletBalance } from '@/domains/wallet/hooks/useWallet';
+// CRITICAL: Compatibility export for components still calling useWallet()
+export const useWallet = useStreetsWallet;
+
+// Also export the balance hook for direct use
+export function useWalletBalance() {
+  const { balance, isLoading, fetchBalance } = useStreetsWallet();
+  return { balance, isLoading, refresh: fetchBalance };
+}
