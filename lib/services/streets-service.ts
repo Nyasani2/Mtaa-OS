@@ -5,7 +5,7 @@ export interface StreetPost {
   creator_id: string;
   content: string;
   media_url?: string;
-  media_type?: 'image' | 'video' | 'audio' | 'none';
+  media_type?: 'image' | 'video' | 'audio' | 'text' | 'none';
   is_public: boolean;
   likes_count: number;
   comments_count: number;
@@ -38,6 +38,58 @@ export interface StreetComment {
     display_name: string;
     avatar_url?: string;
   };
+}
+
+// ============================================
+// PROFILE / IDENTITY
+// ============================================
+
+export async function ensureUserProfile(displayName?: string, avatarUrl?: string): Promise<void> {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) throw new Error('Not authenticated');
+
+  const { data: existing } = await supabase
+    .from('user_profiles')
+    .select('user_id, display_name')
+    .eq('user_id', user.user.id)
+    .single();
+
+  if (!existing) {
+    // Create profile if missing
+    const { error } = await supabase.from('user_profiles').insert({
+      user_id: user.user.id,
+      display_name: displayName || user.user.email?.split('@')[0] || 'User',
+      avatar_url: avatarUrl || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    if (error) console.error('[ensureUserProfile] insert error:', error);
+  } else if (displayName && existing.display_name !== displayName) {
+    // Update display name if provided
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ display_name: displayName, updated_at: new Date().toISOString() })
+      .eq('user_id', user.user.id);
+    if (error) console.error('[ensureUserProfile] update error:', error);
+  }
+}
+
+export async function getUserProfile(userId?: string) {
+  const { data: user } = await supabase.auth.getUser();
+  const targetId = userId || user.user?.id;
+  if (!targetId) return null;
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', targetId)
+    .single();
+
+  if (error) {
+    console.error('[getUserProfile] error:', error);
+    return null;
+  }
+  return data;
 }
 
 // ============================================
@@ -74,8 +126,9 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]
     console.log('[getFeedPosts] First post:', {
       id: data[0].id,
       creator: data[0].creator,
-      media_url: data[0].media_url?.substring(0, 50),
+      media_url: data[0].media_url?.substring(0, 60),
       media_type: data[0].media_type,
+      content: data[0].content?.substring(0, 50),
     });
   }
 
@@ -102,15 +155,18 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]
 export async function createPost(post: {
   content: string;
   media_url?: string;
-  media_type?: 'image' | 'video' | 'audio' | 'none';
+  media_type?: 'image' | 'video' | 'audio' | 'text' | 'none';
   is_public?: boolean;
 }): Promise<StreetPost> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
+  // Ensure user profile exists before creating post
+  await ensureUserProfile();
+
   console.log('[createPost] Creating post:', {
     content: post.content?.substring(0, 50),
-    media_url: post.media_url?.substring(0, 50),
+    media_url: post.media_url?.substring(0, 60),
     media_type: post.media_type,
     is_public: post.is_public,
   });
@@ -121,7 +177,7 @@ export async function createPost(post: {
       creator_id: user.user.id,
       content: post.content,
       media_url: post.media_url || null,
-      media_type: post.media_type || 'none',
+      media_type: post.media_type || 'text',
       is_public: post.is_public !== false,
       likes_count: 0, comments_count: 0, saves_count: 0, shares_count: 0, view_count: 0,
     })
@@ -133,7 +189,7 @@ export async function createPost(post: {
     throw error;
   }
 
-  console.log('[createPost] Success:', data.id);
+  console.log('[createPost] Success:', data.id, 'media_url:', data.media_url?.substring(0, 60));
   return data;
 }
 
@@ -143,12 +199,13 @@ export async function deletePost(postId: string): Promise<void> {
 }
 
 // ============================================
-// MEDIA UPLOAD
+// MEDIA UPLOAD — FIXED: Uses 'media' bucket (not 'streets-media')
 // ============================================
 
 export async function uploadMedia(
-  file: File | Blob | { uri: string; type: string; name?: string },
-  bucket: string = 'streets-media'
+  file: File | Blob | { uri: string; type?: string; name?: string },
+  bucket: string = 'media',
+  folder: string = 'images'
 ): Promise<string> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
@@ -156,10 +213,10 @@ export async function uploadMedia(
   const ext = (file as any).name?.split('.').pop()
     || (file as any).type?.split('/').pop()
     || 'jpg';
-  const filename = `${user.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const filename = `${folder}/${user.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-  console.log('[uploadMedia] Uploading to bucket:', bucket, 'filename:', filename);
-  console.log('[uploadMedia] File type:', (file as any).type, 'uri:', (file as any).uri?.substring(0, 50));
+  console.log('[uploadMedia] Uploading to bucket:', bucket, 'path:', filename);
+  console.log('[uploadMedia] File type:', (file as any).type, 'name:', (file as any).name);
 
   const { data, error } = await supabase.storage
     .from(bucket)
@@ -228,7 +285,7 @@ export async function checkIsSaved(postId: string): Promise<boolean> {
 }
 
 // ============================================
-// COMMENTS — FIXED to use user:user_profiles with user_id
+// COMMENTS — FIXED: uses user:user_profiles with user_id
 // ============================================
 
 export async function getComments(postId: string, parentId?: string | null): Promise<StreetComment[]> {

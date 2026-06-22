@@ -24,7 +24,6 @@ interface FeedCardProps {
   onRefresh?: () => void;
 }
 
-// Web-safe video component
 function VideoPlayer({ uri, isPlaying, isMuted, onToggleMute }: { 
   uri: string; 
   isPlaying: boolean; 
@@ -62,7 +61,6 @@ function VideoPlayer({ uri, isPlaying, isMuted, onToggleMute }: {
     );
   }
 
-  // Native
   const { Video } = require('expo-av');
   return (
     <View style={styles.videoContainer}>
@@ -92,9 +90,21 @@ export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) 
   const [saveCount] = useState(post.saves_count || 0);
   const [isMuted, setIsMuted] = useState(true);
   const [showHeart, setShowHeart] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const heartAnim = useRef(new Animated.Value(0)).current;
 
-  // Check initial like state
+  // DEBUG: Log post data on mount
+  useEffect(() => {
+    console.log('[FeedCard] Post:', {
+      id: post.id?.slice(0, 8),
+      creatorName: post.creator?.display_name,
+      media_url: post.media_url?.substring(0, 60),
+      media_type: post.media_type,
+      content: post.content?.substring(0, 40),
+    });
+  }, [post.id]);
+
   useEffect(() => {
     isLiked(post.id).then(setLiked).catch(() => {});
   }, [post.id]);
@@ -104,7 +114,7 @@ export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) 
   const postId = post.id;
 
   const isVideo = post.media_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov|avi|webm)$/i));
-  const hasMedia = !!post.media_url;
+  const hasMedia = !!post.media_url && !imageError;
 
   const handleLike = useCallback(async () => {
     try {
@@ -172,19 +182,36 @@ export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) 
               onToggleMute={() => setIsMuted(!isMuted)}
             />
           ) : (
-            <Image
-              source={{ uri: post.media_url! }}
-              style={styles.fullMedia}
-              resizeMode="cover"
-            />
+            <>
+              <Image
+                source={{ uri: post.media_url! }}
+                style={styles.fullMedia}
+                resizeMode="cover"
+                onError={(e) => {
+                  console.error('[FeedCard] Image load error:', e.nativeEvent?.error, 'URL:', post.media_url);
+                  setImageError(true);
+                }}
+                onLoad={() => {
+                  console.log('[FeedCard] Image loaded:', post.media_url?.substring(0, 50));
+                  setImageLoaded(true);
+                }}
+              />
+              {!imageLoaded && (
+                <View style={[styles.fullMedia, styles.loadingOverlay]}>
+                  <Text style={styles.loadingText}>Loading...</Text>
+                </View>
+              )}
+            </>
           )
         ) : (
           <View style={[styles.fullMedia, styles.noMedia]}>
-            <Text style={styles.noMediaText}>📄</Text>
+            <Text style={styles.noMediaIcon}>✍️</Text>
+            <Text style={styles.noMediaText} numberOfLines={4}>
+              {post.content || post.caption || 'No content'}
+            </Text>
           </View>
         )}
 
-        {/* Double-tap heart animation */}
         {showHeart && (
           <Animated.View style={[styles.heartOverlay, { opacity: heartOpacity, transform: [{ scale: heartScale }] }]}>
             <Heart size={120} color="#FF2D55" fill="#FF2D55" />
@@ -259,7 +286,6 @@ export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) 
           <MoreHorizontal size={28} color="#fff" />
         </TouchableOpacity>
 
-        {/* Spinning disc at bottom */}
         <View style={styles.disc}>
           <View style={styles.discInner}>
             {avatarUrl ? (
@@ -281,6 +307,7 @@ const styles = StyleSheet.create({
     width: SCREEN_W,
     height: SCREEN_H,
     backgroundColor: '#000',
+    position: 'relative',
   },
   mediaWrapper: {
     ...StyleSheet.absoluteFillObject,
@@ -298,9 +325,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 40,
+  },
+  noMediaIcon: {
+    fontSize: 64,
+    marginBottom: 16,
   },
   noMediaText: {
-    fontSize: 64,
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#666',
+    fontSize: 14,
   },
   muteButton: {
     position: 'absolute',
@@ -322,12 +367,14 @@ const styles = StyleSheet.create({
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.15)',
+    zIndex: 1,
   },
   bottomLeft: {
     position: 'absolute',
     bottom: 20,
     left: 12,
     right: 90,
+    zIndex: 2,
   },
   authorRow: {
     flexDirection: 'row',
@@ -389,14 +436,20 @@ const styles = StyleSheet.create({
   },
   rightActions: {
     position: 'absolute',
-    right: 8,
-    bottom: 20,
+    right: 12,
+    bottom: 100,
     alignItems: 'center',
     width: 64,
+    zIndex: 2,
   },
   actionBtn: {
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    marginBottom: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   actionAvatar: {
     width: 44,
