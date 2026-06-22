@@ -23,12 +23,15 @@ export interface StreetPost {
   is_saved?: boolean;
 }
 
+export interface StreetPostWithAuthor extends StreetPost {}
+
 export interface StreetComment {
   id: string;
   post_id: string;
   user_id: string;
   content: string;
   likes_count: number;
+  parent_id?: string;
   created_at: string;
   user?: {
     user_id: string;
@@ -38,7 +41,7 @@ export interface StreetComment {
 }
 
 // ============================================
-// FEED (alias for getFeedPosts - what frontend calls)
+// FEED
 // ============================================
 
 export async function fetchFeed(limit = 20, offset = 0): Promise<StreetPost[]> {
@@ -48,6 +51,8 @@ export async function fetchFeed(limit = 20, offset = 0): Promise<StreetPost[]> {
 export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]> {
   const { data: user } = await supabase.auth.getUser();
   const userId = user.user?.id;
+
+  console.log('[getFeedPosts] Fetching posts, userId:', userId);
 
   const { data, error } = await supabase
     .from('streets_posts')
@@ -60,37 +65,31 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('getFeedPosts error:', error);
+    console.error('[getFeedPosts] ERROR:', error);
     throw error;
+  }
+
+  console.log('[getFeedPosts] Returned', data?.length || 0, 'posts');
+  if (data && data.length > 0) {
+    console.log('[getFeedPosts] First post:', {
+      id: data[0].id,
+      creator: data[0].creator,
+      media_url: data[0].media_url?.substring(0, 50),
+      media_type: data[0].media_type,
+    });
   }
 
   if (!data) return [];
 
-  // Check like/save status for current user
   if (userId) {
     const postIds = data.map(p => p.id);
-
     const [{ data: likes }, { data: saves }] = await Promise.all([
-      supabase
-        .from('streets_likes')
-        .select('post_id')
-        .in('post_id', postIds)
-        .eq('user_id', userId),
-      supabase
-        .from('streets_saves')
-        .select('post_id')
-        .in('post_id', postIds)
-        .eq('user_id', userId),
+      supabase.from('streets_likes').select('post_id').in('post_id', postIds).eq('user_id', userId),
+      supabase.from('streets_saves').select('post_id').in('post_id', postIds).eq('user_id', userId),
     ]);
-
     const likedSet = new Set(likes?.map(l => l.post_id) || []);
     const savedSet = new Set(saves?.map(s => s.post_id) || []);
-
-    return data.map(post => ({
-      ...post,
-      is_liked: likedSet.has(post.id),
-      is_saved: savedSet.has(post.id),
-    }));
+    return data.map(post => ({ ...post, is_liked: likedSet.has(post.id), is_saved: savedSet.has(post.id) }));
   }
 
   return data;
@@ -109,6 +108,13 @@ export async function createPost(post: {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
+  console.log('[createPost] Creating post:', {
+    content: post.content?.substring(0, 50),
+    media_url: post.media_url?.substring(0, 50),
+    media_type: post.media_type,
+    is_public: post.is_public,
+  });
+
   const { data, error } = await supabase
     .from('streets_posts')
     .insert({
@@ -117,70 +123,55 @@ export async function createPost(post: {
       media_url: post.media_url || null,
       media_type: post.media_type || 'none',
       is_public: post.is_public !== false,
-      likes_count: 0,
-      comments_count: 0,
-      saves_count: 0,
-      shares_count: 0,
-      view_count: 0,
+      likes_count: 0, comments_count: 0, saves_count: 0, shares_count: 0, view_count: 0,
     })
-    .select(`
-      *,
-      creator:user_profiles!streets_posts_creator_id_fkey(user_id, display_name, avatar_url)
-    `)
+    .select(`*, creator:user_profiles!streets_posts_creator_id_fkey(user_id, display_name, avatar_url)`)
     .single();
 
   if (error) {
-    console.error('createPost error:', error);
+    console.error('[createPost] ERROR:', error);
     throw error;
   }
 
+  console.log('[createPost] Success:', data.id);
   return data;
 }
 
 export async function deletePost(postId: string): Promise<void> {
-  const { error } = await supabase
-    .from('streets_posts')
-    .delete()
-    .eq('id', postId);
-
+  const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
   if (error) throw error;
 }
 
 // ============================================
-// MEDIA UPLOAD (what create.tsx calls)
+// MEDIA UPLOAD
 // ============================================
 
 export async function uploadMedia(
-  file: File | Blob | { uri: string; type: string; name: string },
+  file: File | Blob | { uri: string; type: string; name?: string },
   bucket: string = 'streets-media'
 ): Promise<string> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
-  // Generate unique filename
-  const ext = (file as any).name?.split('.').pop() || 
-              (file as any).type?.split('/').pop() || 
-              'jpg';
+  const ext = (file as any).name?.split('.').pop()
+    || (file as any).type?.split('/').pop()
+    || 'jpg';
   const filename = `${user.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
 
-  // Upload to Supabase Storage
+  console.log('[uploadMedia] Uploading to bucket:', bucket, 'filename:', filename);
+  console.log('[uploadMedia] File type:', (file as any).type, 'uri:', (file as any).uri?.substring(0, 50));
+
   const { data, error } = await supabase.storage
     .from(bucket)
-    .upload(filename, file as any, {
-      cacheControl: '3600',
-      upsert: false,
-    });
+    .upload(filename, file as any, { cacheControl: '3600', upsert: false });
 
   if (error) {
-    console.error('uploadMedia error:', error);
+    console.error('[uploadMedia] ERROR:', error.message, error);
     throw error;
   }
 
-  // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(data.path);
-
+  const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(data.path);
+  console.log('[uploadMedia] Success, publicUrl:', publicUrl);
   return publicUrl;
 }
 
@@ -191,49 +182,22 @@ export async function uploadMedia(
 export async function likePost(postId: string): Promise<void> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('streets_likes')
-    .insert({ post_id: postId, user_id: user.user.id })
-    .select()
-    .maybeSingle();
-
-  // Ignore unique constraint violations (already liked)
-  if (error && error.code !== '23505') {
-    console.error('likePost error:', error);
-    throw error;
-  }
+  const { error } = await supabase.from('streets_likes').insert({ post_id: postId, user_id: user.user.id }).select().maybeSingle();
+  if (error && error.code !== '23505') { console.error('likePost error:', error); throw error; }
 }
 
 export async function unlikePost(postId: string): Promise<void> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('streets_likes')
-    .delete()
-    .eq('post_id', postId)
-    .eq('user_id', user.user.id);
-
+  const { error } = await supabase.from('streets_likes').delete().eq('post_id', postId).eq('user_id', user.user.id);
   if (error) throw error;
 }
 
 export async function checkIsLiked(postId: string): Promise<boolean> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) return false;
-
-  const { data, error } = await supabase
-    .from('streets_likes')
-    .select('post_id')
-    .eq('post_id', postId)
-    .eq('user_id', user.user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error('checkIsLiked error:', error);
-    return false;
-  }
-
+  const { data, error } = await supabase.from('streets_likes').select('post_id').eq('post_id', postId).eq('user_id', user.user.id).maybeSingle();
+  if (error) { console.error('checkIsLiked error:', error); return false; }
   return !!data;
 }
 
@@ -244,57 +208,31 @@ export async function checkIsLiked(postId: string): Promise<boolean> {
 export async function savePost(postId: string): Promise<void> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('streets_saves')
-    .insert({ post_id: postId, user_id: user.user.id })
-    .select()
-    .maybeSingle();
-
-  if (error && error.code !== '23505') {
-    console.error('savePost error:', error);
-    throw error;
-  }
+  const { error } = await supabase.from('streets_saves').insert({ post_id: postId, user_id: user.user.id }).select().maybeSingle();
+  if (error && error.code !== '23505') { console.error('savePost error:', error); throw error; }
 }
 
 export async function unsavePost(postId: string): Promise<void> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('streets_saves')
-    .delete()
-    .eq('post_id', postId)
-    .eq('user_id', user.user.id);
-
+  const { error } = await supabase.from('streets_saves').delete().eq('post_id', postId).eq('user_id', user.user.id);
   if (error) throw error;
 }
 
 export async function checkIsSaved(postId: string): Promise<boolean> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) return false;
-
-  const { data, error } = await supabase
-    .from('streets_saves')
-    .select('post_id')
-    .eq('post_id', postId)
-    .eq('user_id', user.user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error('checkIsSaved error:', error);
-    return false;
-  }
-
+  const { data, error } = await supabase.from('streets_saves').select('post_id').eq('post_id', postId).eq('user_id', user.user.id).maybeSingle();
+  if (error) { console.error('checkIsSaved error:', error); return false; }
   return !!data;
 }
 
 // ============================================
-// COMMENTS
+// COMMENTS — FIXED to use user:user_profiles with user_id
 // ============================================
 
-export async function getComments(postId: string): Promise<StreetComment[]> {
-  const { data, error } = await supabase
+export async function getComments(postId: string, parentId?: string | null): Promise<StreetComment[]> {
+  let query = supabase
     .from('streets_comments')
     .select(`
       *,
@@ -303,34 +241,42 @@ export async function getComments(postId: string): Promise<StreetComment[]> {
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
+  if (parentId === null) {
+    query = query.is('parent_id', null);
+  } else if (parentId) {
+    query = query.eq('parent_id', parentId);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
-    console.error('getComments error:', error);
+    console.error('[getComments] ERROR:', error);
     throw error;
   }
 
   return data || [];
 }
 
-export async function createComment(postId: string, content: string): Promise<StreetComment> {
+export async function createComment(postId: string, content: string, parentId?: string): Promise<StreetComment> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
 
+  const insertData: any = {
+    post_id: postId,
+    user_id: user.user.id,
+    content,
+    likes_count: 0,
+  };
+  if (parentId) insertData.parent_id = parentId;
+
   const { data, error } = await supabase
     .from('streets_comments')
-    .insert({
-      post_id: postId,
-      user_id: user.user.id,
-      content,
-      likes_count: 0,
-    })
-    .select(`
-      *,
-      user:user_profiles!streets_comments_user_id_fkey(user_id, display_name, avatar_url)
-    `)
+    .insert(insertData)
+    .select(`*, user:user_profiles!streets_comments_user_id_fkey(user_id, display_name, avatar_url)`)
     .single();
 
   if (error) {
-    console.error('createComment error:', error);
+    console.error('[createComment] ERROR:', error);
     throw error;
   }
 
@@ -338,11 +284,7 @@ export async function createComment(postId: string, content: string): Promise<St
 }
 
 export async function deleteComment(commentId: string): Promise<void> {
-  const { error } = await supabase
-    .from('streets_comments')
-    .delete()
-    .eq('id', commentId);
-
+  const { error } = await supabase.from('streets_comments').delete().eq('id', commentId);
   if (error) throw error;
 }
 
@@ -353,17 +295,8 @@ export async function deleteComment(commentId: string): Promise<void> {
 export async function sharePost(postId: string): Promise<void> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
-    .from('streets_shares')
-    .insert({ post_id: postId, user_id: user.user.id })
-    .select()
-    .maybeSingle();
-
-  if (error && error.code !== '23505') {
-    console.error('sharePost error:', error);
-    throw error;
-  }
+  const { error } = await supabase.from('streets_shares').insert({ post_id: postId, user_id: user.user.id }).select().maybeSingle();
+  if (error && error.code !== '23505') { console.error('sharePost error:', error); throw error; }
 }
 
 // ============================================
@@ -372,16 +305,9 @@ export async function sharePost(postId: string): Promise<void> {
 
 export async function incrementViewCount(postId: string): Promise<void> {
   try {
-    await supabase.rpc('increment_streets_counter', {
-      p_post_id: postId,
-      p_column_name: 'view_count',
-    });
+    await supabase.rpc('increment_streets_counter', { p_post_id: postId, p_column_name: 'view_count' });
   } catch {
-    // Fallback: direct update
-    await supabase
-      .from('streets_posts')
-      .update({ view_count: supabase.rpc('coalesce', { val: 'view_count', default: 0 }).add(1) })
-      .eq('id', postId);
+    await supabase.from('streets_posts').update({ view_count: supabase.rpc('coalesce', { val: 'view_count', default: 0 }).add(1) }).eq('id', postId);
   }
 }
 
@@ -390,16 +316,30 @@ export async function incrementViewCount(postId: string): Promise<void> {
 // ============================================
 
 export async function getCreatorStats(creatorId: string) {
-  const { data, error } = await supabase
-    .from('streets_creator_stats')
-    .select('*')
-    .eq('creator_id', creatorId)
-    .single();
-
-  if (error && error.code !== 'PGRST116') {
-    console.error('getCreatorStats error:', error);
-    throw error;
-  }
-
+  const { data, error } = await supabase.from('streets_creator_stats').select('*').eq('creator_id', creatorId).single();
+  if (error && error.code !== 'PGRST116') { console.error('getCreatorStats error:', error); throw error; }
   return data;
+}
+
+// ============================================
+// MISSING EXPORTS — FeedCard.tsx compatibility
+// ============================================
+
+export const isLiked = checkIsLiked;
+export const isSaved = checkIsSaved;
+
+export async function toggleLike(postId: string): Promise<boolean> {
+  const currentlyLiked = await checkIsLiked(postId);
+  if (currentlyLiked) { await unlikePost(postId); return false; }
+  else { await likePost(postId); return true; }
+}
+
+export async function toggleSave(postId: string): Promise<boolean> {
+  const currentlySaved = await checkIsSaved(postId);
+  if (currentlySaved) { await unsavePost(postId); return false; }
+  else { await savePost(postId); return true; }
+}
+
+export async function recordShare(postId: string): Promise<void> {
+  return sharePost(postId);
 }
