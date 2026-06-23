@@ -64,13 +64,20 @@ export default function CreateScreen() {
         let fileToUpload: any;
 
         if (Platform.OS === 'web') {
-          // CRITICAL FIX: Create File from blob to prevent bucket corruption
-          const response = await fetch(mediaAsset.uri);
-          const blob = await response.blob();
-          const ext = mediaAsset.type === 'video' ? 'mp4' : 'jpg';
-          const mimeType = mediaAsset.type === 'video' ? 'video/mp4' : 'image/jpeg';
-          fileToUpload = new File([blob], `media_${Date.now()}.${ext}`, { type: mimeType });
-          console.log('[CreateScreen] Created File from blob:', fileToUpload.name, fileToUpload.type);
+          // FIX: Use the File object directly if available (expo-image-picker web >= 16)
+          // Otherwise fetch the blob URL and create a proper File
+          const asset: any = mediaAsset;
+          if (asset.file instanceof File) {
+            fileToUpload = asset.file;
+            console.log('[CreateScreen] Using picker File directly:', fileToUpload.name);
+          } else {
+            const response = await fetch(mediaAsset.uri);
+            const blob = await response.blob();
+            const ext = mediaAsset.type === 'video' ? 'mp4' : 'jpg';
+            const mimeType = mediaAsset.type === 'video' ? 'video/mp4' : 'image/jpeg';
+            fileToUpload = new File([blob], `media_${Date.now()}.${ext}`, { type: mimeType });
+            console.log('[CreateScreen] Created File from blob:', fileToUpload.name, fileToUpload.type);
+          }
         } else {
           fileToUpload = {
             uri: mediaAsset.uri,

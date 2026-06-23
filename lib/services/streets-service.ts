@@ -97,21 +97,24 @@ export async function toggleLike(postId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // FIX: Use .maybeSingle() instead of .single() to avoid 406 when no row exists
   const { data: existing } = await supabase
     .from('streets_likes')
     .select('id')
     .eq('post_id', postId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     await supabase.from('streets_likes').delete().eq('id', existing.id);
-    await supabase.rpc('decrement_likes', { post_id: postId });
+    // FIX: Use correct RPC name decrement_post_likes
+    await supabase.rpc('decrement_post_likes', { post_id: postId });
     console.log('[streets-service] Unliked');
     return false;
   } else {
     await supabase.from('streets_likes').insert({ post_id: postId, user_id: user.id });
-    await supabase.rpc('increment_likes', { post_id: postId });
+    // FIX: Use correct RPC name increment_post_likes
+    await supabase.rpc('increment_post_likes', { post_id: postId });
     console.log('[streets-service] Liked');
     return true;
   }
@@ -131,7 +134,7 @@ export async function toggleSave(postId: string): Promise<boolean> {
     .select('id')
     .eq('post_id', postId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     await supabase.from('streets_saves').delete().eq('id', existing.id);
@@ -218,7 +221,7 @@ export async function createPost(input: CreatePostInput) {
     .from('streets_posts')
     .insert({
       creator_id: user.id,
-      content: input.content,
+      content: input.content || null,
       media_url: input.media_url || null,
       media_type: input.media_type || 'text',
       is_public: input.is_public !== false,

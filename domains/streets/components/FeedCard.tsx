@@ -12,10 +12,21 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Volume2, VolumeX, Flag, Link2, Edit3, Trash2 } from 'lucide-react-native';
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  MoreHorizontal,
+  Flag,
+  Link2,
+  Edit3,
+  Trash2,
+} from 'lucide-react-native';
 import type { StreetPostWithAuthor } from '@/lib/services/streets-service';
 import { toggleLike, toggleSave, recordShare, deletePost } from '@/lib/services/streets-service';
 import { supabase } from '@/lib/supabase';
+import VideoPlayer from './VideoPlayer';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -39,58 +50,7 @@ function getPostColor(id: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-function VideoPlayer({ uri, isVisible }: { uri: string; isVisible: boolean }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = useState(true);
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    if (Platform.OS === 'web' && videoRef.current) {
-      if (isVisible) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isVisible]);
-
-  if (hasError) {
-    return <MediaFallback content="" />;
-  }
-
-  if (Platform.OS === 'web') {
-    return (
-      <View style={styles.fullMedia}>
-        <video
-          ref={videoRef}
-          src={uri}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          muted={isMuted}
-          loop
-          playsInline
-          onError={() => setHasError(true)}
-        />
-        <TouchableOpacity style={styles.muteBtn} onPress={() => setIsMuted((m) => !m)}>
-          {isMuted ? <VolumeX size={20} color="#fff" /> : <Volume2 size={20} color="#fff" />}
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const { Video } = require('expo-av');
-  return (
-    <Video
-      source={{ uri }}
-      style={styles.fullMedia}
-      resizeMode="cover"
-      isLooping
-      shouldPlay={isVisible}
-      isMuted={isMuted}
-    />
-  );
-}
-
-function MediaFallback({ content, postId }: { content?: string; postId?: string }) {
+function MediaFallback({ content, postId }: { content?: string | null; postId?: string }) {
   const bgColor = postId ? getPostColor(postId) : '#1a1a2e';
 
   return (
@@ -110,7 +70,7 @@ function MediaFallback({ content, postId }: { content?: string; postId?: string 
 
 function WebImage({ uri, content, postId }: { 
   uri: string; 
-  content?: string;
+  content?: string | null;
   postId?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -725,15 +685,6 @@ const styles = StyleSheet.create({
     top: '40%',
     left: '35%',
     zIndex: 10,
-  },
-  muteBtn: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    padding: 8,
-    zIndex: 5,
   },
   modalOverlay: {
     flex: 1,
