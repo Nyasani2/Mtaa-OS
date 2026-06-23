@@ -29,15 +29,22 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'likes' | 'saved'>('posts');
 
+  // Validate ID
+  const hasValidId = !!id && typeof id === 'string' && id.length > 0 && id !== 'undefined';
+
   useEffect(() => {
+    console.log('[ProfileScreen] Mounting with id:', id, 'hasValidId:', hasValidId);
     loadProfile();
   }, [id]);
 
   async function loadProfile() {
-    if (!id) return;
+    if (!hasValidId) {
+      console.warn('[ProfileScreen] No valid ID provided');
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      // Load profile
       const { data: profileData } = await supabase
         .from('user_profiles')
         .select('*')
@@ -48,7 +55,6 @@ export default function ProfileScreen() {
         setProfile(profileData);
       }
 
-      // Load posts
       const { data: postsData } = await supabase
         .from('streets_posts')
         .select('*')
@@ -72,6 +78,25 @@ export default function ProfileScreen() {
     );
   }
 
+  if (!hasValidId) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Invalid Profile</Text>
+          <Text style={styles.emptySub}>No user ID was provided</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
+            <Text style={styles.retryText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   if (!profile) {
     return (
       <View style={styles.container}>
@@ -90,7 +115,6 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#333" />
@@ -102,7 +126,6 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView>
-        {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrap}>
             {profile.avatar_url ? (
@@ -120,7 +143,6 @@ export default function ProfileScreen() {
           {profile.username && <Text style={styles.username}>@{profile.username}</Text>}
           {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
-          {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNumber}>{posts.length}</Text>
@@ -136,13 +158,11 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* Follow Button */}
           <TouchableOpacity style={styles.followBtn}>
             <Text style={styles.followBtnText}>Follow</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Tabs */}
         <View style={styles.tabs}>
           <TouchableOpacity 
             style={[styles.tab, activeTab === 'posts' && styles.tabActive]}
@@ -164,7 +184,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Posts Grid */}
         <View style={styles.grid}>
           {posts.length === 0 ? (
             <View style={styles.noPosts}>
@@ -175,7 +194,7 @@ export default function ProfileScreen() {
               <TouchableOpacity 
                 key={post.id} 
                 style={styles.gridItem}
-                onPress={() => router.push(`/streets/feed`)} // Go back to feed
+                onPress={() => router.push(`/streets/feed`)}
               >
                 {post.media_url ? (
                   <Image source={{ uri: post.media_url }} style={styles.gridImage} />
@@ -235,6 +254,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 8,
+  },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   profileSection: {
     alignItems: 'center',

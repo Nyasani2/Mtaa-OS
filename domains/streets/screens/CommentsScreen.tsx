@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Send } from 'lucide-react-native';
@@ -22,38 +23,62 @@ export default function CommentsScreen() {
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Validate post ID
+  const hasValidId = !!id && typeof id === 'string' && id.length > 0 && id !== 'undefined';
 
   const loadComments = useCallback(async () => {
-    if (!id) return;
+    if (!hasValidId) {
+      setError('No post ID provided');
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
-      const data = await getComments(id);
+      setError(null);
+      console.log('[CommentsScreen] Loading comments for:', id);
+
+      const data = await getComments(id as string);
+      console.log('[CommentsScreen] Loaded:', data.length, 'comments');
       setComments(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[CommentsScreen] Load error:', err);
+      setError(err.message || 'Failed to load comments');
     } finally {
       setIsLoading(false);
     }
-  }, [id]);
+  }, [id, hasValidId]);
 
   useEffect(() => {
+    console.log('[CommentsScreen] Mounting with id:', id, 'hasValidId:', hasValidId);
     loadComments();
   }, [loadComments]);
 
   const handleSubmit = useCallback(async () => {
-    if (!newComment.trim() || !id) return;
+    if (!hasValidId) {
+      Alert.alert('Error', 'No post ID provided');
+      return;
+    }
+    if (!newComment.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
+
     try {
-      await createComment(id, newComment.trim());
+      console.log('[CommentsScreen] Submitting comment:', newComment.trim());
+      await createComment(id as string, newComment.trim());
+      console.log('[CommentsScreen] Comment submitted successfully');
       setNewComment('');
-      await loadComments(); // Refresh
-    } catch (err) {
+      await loadComments();
+    } catch (err: any) {
       console.error('[CommentsScreen] Submit error:', err);
+      setError(err.message || 'Failed to post comment');
+      Alert.alert('Error', err.message || 'Failed to post comment');
     } finally {
       setIsSubmitting(false);
     }
-  }, [newComment, id, loadComments]);
+  }, [newComment, id, hasValidId, loadComments]);
 
   const renderComment = useCallback(({ item }: { item: StreetComment }) => (
     <View style={styles.commentItem}>
@@ -87,10 +112,30 @@ export default function CommentsScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Error Banner */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+          {hasValidId && (
+            <TouchableOpacity onPress={loadComments}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Comments List */}
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#2196F3" />
+        </View>
+      ) : !hasValidId ? (
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>Invalid Post</Text>
+          <Text style={styles.emptySub}>No post ID was provided</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => router.back()}>
+            <Text style={styles.retryText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
       ) : comments.length === 0 ? (
         <View style={styles.center}>
@@ -116,11 +161,12 @@ export default function CommentsScreen() {
           onChangeText={setNewComment}
           multiline
           maxLength={500}
+          editable={!isSubmitting && hasValidId}
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!newComment.trim() || isSubmitting) && styles.sendBtnDisabled]}
+          style={[styles.sendBtn, (!newComment.trim() || isSubmitting || !hasValidId) && styles.sendBtnDisabled]}
           onPress={handleSubmit}
-          disabled={!newComment.trim() || isSubmitting}
+          disabled={!newComment.trim() || isSubmitting || !hasValidId}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#fff" />
@@ -152,6 +198,23 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
   },
+  errorBanner: {
+    backgroundColor: '#ffebee',
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#c62828',
+    fontSize: 13,
+    flex: 1,
+  },
+  retryText: {
+    color: '#2196F3',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -166,6 +229,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 4,
+  },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#2196F3',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   list: {
     padding: 16,
