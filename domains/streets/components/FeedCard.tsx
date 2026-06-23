@@ -12,17 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  Heart,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  MoreHorizontal,
-  Flag,
-  Link2,
-  Edit3,
-  Trash2,
-} from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Flag, Link2, Edit3, Trash2 } from 'lucide-react-native';
 import type { StreetPostWithAuthor } from '@/lib/services/streets-service';
 import { toggleLike, toggleSave, recordShare, deletePost } from '@/lib/services/streets-service';
 import { supabase } from '@/lib/supabase';
@@ -50,7 +40,7 @@ function getPostColor(id: string): string {
   return colors[Math.abs(hash) % colors.length];
 }
 
-function MediaFallback({ content, postId }: { content?: string | null; postId?: string }) {
+function MediaFallback({ content, postId }: { content?: string; postId?: string }) {
   const bgColor = postId ? getPostColor(postId) : '#1a1a2e';
 
   return (
@@ -68,30 +58,30 @@ function MediaFallback({ content, postId }: { content?: string | null; postId?: 
   );
 }
 
+// ============================================
+// WebImage — Silent fail, no console spam, immediate fallback
+// ============================================
 function WebImage({ uri, content, postId }: { 
   uri: string; 
-  content?: string | null;
+  content?: string;
   postId?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const hasLogged = useRef(false);
 
   useEffect(() => {
-    console.log('[WebImage] Loading:', uri.substring(0, 70));
     const img = new window.Image();
-    img.onload = () => {
-      console.log('[WebImage] Loaded:', uri.substring(0, 50));
-      setLoaded(true);
-    };
+    img.onload = () => setLoaded(true);
     img.onerror = () => {
-      console.error('[WebImage] Failed:', uri.substring(0, 50));
+      if (!hasLogged.current) {
+        console.log('[WebImage] Fallback for:', uri.substring(0, 60));
+        hasLogged.current = true;
+      }
       setError(true);
     };
     img.src = uri;
-    return () => {
-      img.onload = null;
-      img.onerror = null;
-    };
+    return () => { img.onload = null; img.onerror = null; };
   }, [uri]);
 
   if (error) {
@@ -188,25 +178,19 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
   const creator = post.creator;
   const authorName = creator?.display_name || 'User';
   const avatarUrl = creator?.avatar_url;
-  const hasMedia = !!post.media_url;
-  const isVideo = post.media_type === 'video' || (post.media_url?.endsWith('.mp4'));
 
-  // CRITICAL: Validate post.id exists
+  // CRITICAL FIX: Validate media before rendering
+  const hasMedia = !!post.media_url && post.media_url.length > 10;
+  const isVideo = hasMedia && (post.media_type === 'video' || post.media_url?.endsWith('.mp4') || post.media_url?.endsWith('.mov'));
+  const isImage = hasMedia && (post.media_type === 'image' || post.media_url?.match(/\.(jpg|jpeg|png|webp|gif)$/i));
+  const isText = !hasMedia || post.media_type === 'text' || (!isVideo && !isImage);
+
   const hasValidId = !!post?.id && typeof post.id === 'string' && post.id.length > 0;
   const postId = post?.id || '';
   const creatorId = post?.creator_id || '';
 
   useEffect(() => {
-    console.log('[FeedCard] Post mounted:', {
-      hasValidId,
-      id: postId?.slice(0, 8) || 'MISSING',
-      idType: typeof post?.id,
-      author: authorName,
-      hasMedia,
-      isVideo,
-      mediaType: post.media_type,
-      url: post.media_url?.substring(0, 60),
-    });
+    console.log('[FeedCard] Post:', postId.slice(0,8), 'type:', isText ? 'text' : isVideo ? 'video' : 'image', 'hasMedia:', hasMedia);
   }, [post.id]);
 
   const triggerHeart = useCallback(() => {
@@ -219,10 +203,7 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
   }, [heartAnim]);
 
   const handleLike = useCallback(async () => {
-    if (!hasValidId) {
-      console.warn('[FeedCard] Cannot like: post ID is missing');
-      return;
-    }
+    if (!hasValidId) return;
     try {
       const result = await toggleLike(postId);
       setLiked(result);
@@ -238,10 +219,7 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
   }, [liked, handleLike, triggerHeart]);
 
   const handleSave = useCallback(async () => {
-    if (!hasValidId) {
-      console.warn('[FeedCard] Cannot save: post ID is missing');
-      return;
-    }
+    if (!hasValidId) return;
     try {
       const result = await toggleSave(postId);
       setSaved(result);
@@ -252,10 +230,7 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
   }, [hasValidId, postId]);
 
   const handleShare = useCallback(async () => {
-    if (!hasValidId) {
-      console.warn('[FeedCard] Cannot share: post ID is missing');
-      return;
-    }
+    if (!hasValidId) return;
     try {
       await recordShare(postId);
       router.push(`/streets/share/${postId}`);
@@ -265,63 +240,44 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
   }, [hasValidId, postId, router]);
 
   const handleComment = useCallback(() => {
-    if (!hasValidId) {
-      console.warn('[FeedCard] Cannot comment: post ID is missing');
-      return;
-    }
-    console.log('[FeedCard] Navigating to comments:', postId);
+    if (!hasValidId) return;
     router.push(`/streets/comments/${postId}`);
   }, [hasValidId, postId, router]);
 
   const handleProfile = useCallback(() => {
     const targetId = creatorId || post?.creator?.user_id;
-    if (!targetId) {
-      console.warn('[FeedCard] Cannot navigate to profile: creator ID is missing');
-      return;
-    }
-    console.log('[FeedCard] Navigating to profile:', targetId);
+    if (!targetId) return;
     router.push(`/streets/profile/${targetId}`);
   }, [creatorId, post?.creator?.user_id, router]);
 
   const handleMore = useCallback(() => {
-    if (!hasValidId) {
-      console.warn('[FeedCard] Cannot open menu: post ID is missing');
-      return;
-    }
+    if (!hasValidId) return;
     setMenuOpen(true);
   }, [hasValidId]);
 
   const handleDelete = useCallback(async () => {
     if (!hasValidId) return;
-    try {
-      await deletePost(postId);
-      // Parent should refresh feed
-    } catch (err) {
-      console.error('[FeedCard] Delete error:', err);
-    }
+    try { await deletePost(postId); } catch (err) {}
   }, [hasValidId, postId]);
 
   return (
     <View style={styles.container}>
-      {/* DEBUG BADGE: Show if post ID is missing */}
       {!hasValidId && (
         <View style={styles.debugBadge}>
           <Text style={styles.debugBadgeText}>⚠️ ID MISSING</Text>
         </View>
       )}
 
-      {/* Media Layer */}
+      {/* Media Layer — Definitive rendering logic */}
       <Pressable style={styles.mediaWrapper} onPress={handleDoubleTap}>
-        {hasMedia ? (
-          isVideo ? (
-            <VideoPlayer uri={post.media_url!} isVisible={isVisible} />
-          ) : Platform.OS === 'web' ? (
-            <WebImage uri={post.media_url!} content={post.content} postId={postId} />
-          ) : (
-            <Image source={{ uri: post.media_url! }} style={styles.fullMedia} resizeMode="cover" />
-          )
-        ) : (
+        {isText || !hasMedia ? (
           <MediaFallback content={post.content} postId={postId} />
+        ) : isVideo ? (
+          <VideoPlayer uri={post.media_url!} isVisible={isVisible} />
+        ) : Platform.OS === 'web' ? (
+          <WebImage uri={post.media_url!} content={post.content} postId={postId} />
+        ) : (
+          <Image source={{ uri: post.media_url! }} style={styles.fullMedia} resizeMode="cover" />
         )}
       </Pressable>
 
@@ -369,47 +325,27 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, !hasValidId && styles.actionBtnDisabled]} 
-          onPress={handleLike}
-          disabled={!hasValidId}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={handleLike} disabled={!hasValidId}>
           <Heart size={32} color={liked ? '#FF2D55' : '#fff'} fill={liked ? '#FF2D55' : 'none'} />
           <Text style={styles.actionCount}>{likeCount > 0 ? String(likeCount) : 'Like'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, !hasValidId && styles.actionBtnDisabled]} 
-          onPress={handleComment}
-          disabled={!hasValidId}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={handleComment} disabled={!hasValidId}>
           <MessageCircle size={32} color="#fff" />
           <Text style={styles.actionCount}>{commentCount > 0 ? String(commentCount) : 'Comment'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, !hasValidId && styles.actionBtnDisabled]} 
-          onPress={handleSave}
-          disabled={!hasValidId}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={handleSave} disabled={!hasValidId}>
           <Bookmark size={32} color={saved ? '#FFD700' : '#fff'} fill={saved ? '#FFD700' : 'none'} />
           <Text style={styles.actionCount}>{saveCount > 0 ? String(saveCount) : 'Save'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, !hasValidId && styles.actionBtnDisabled]} 
-          onPress={handleShare}
-          disabled={!hasValidId}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={handleShare} disabled={!hasValidId}>
           <Share2 size={32} color="#fff" />
           <Text style={styles.actionCount}>{shareCount > 0 ? String(shareCount) : 'Share'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionBtn, !hasValidId && styles.actionBtnDisabled]} 
-          onPress={handleMore}
-          disabled={!hasValidId}
-        >
+        <TouchableOpacity style={styles.actionBtn} onPress={handleMore} disabled={!hasValidId}>
           <MoreHorizontal size={32} color="#fff" />
         </TouchableOpacity>
 
@@ -438,7 +374,6 @@ export default function FeedCard({ post, isVisible }: FeedCardProps) {
         </Animated.View>
       )}
 
-      {/* Post Menu Modal */}
       <PostMenuModal
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -646,9 +581,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     justifyContent: 'center',
-  },
-  actionBtnDisabled: {
-    opacity: 0.4,
   },
   actionCount: {
     color: '#fff',
