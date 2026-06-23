@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,55 +6,71 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Share as RNShare,
   Pressable,
-  Platform,
   Animated,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Volume2, VolumeX } from 'lucide-react-native';
-import { StreetPostWithAuthor } from '@/lib/services/streets-service';
-import { toggleLike, toggleSave, recordShare, isLiked } from '@/lib/services/streets-service';
+import type { StreetPostWithAuthor } from '@/lib/services/streets-service';
+import { toggleLike, toggleSave, recordShare } from '@/lib/services/streets-service';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 interface FeedCardProps {
   post: StreetPostWithAuthor;
   isVisible: boolean;
-  onRefresh?: () => void;
 }
 
-function VideoPlayer({ uri, isPlaying, isMuted, onToggleMute }: { 
-  uri: string; 
-  isPlaying: boolean; 
-  isMuted: boolean;
-  onToggleMute: () => void;
-}) {
-  const videoRef = useRef<any>(null);
+/* ─── Generate a deterministic gradient from post ID ─── */
+function getPostColor(id: string): string {
+  const colors = [
+    '#1a1a2e', '#16213e', '#0f3460', '#533483',
+    '#1a1a40', '#312c51', '#48426d', '#5c4d7d',
+    '#0d1b2a', '#1b263b', '#415a77', '#778da9',
+    '#240046', '#3c096c', '#5a189a', '#7b2cbf',
+    '#10002b', '#240046', '#3c096c', '#5a189a',
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+/* ─── Web Video Player ─── */
+function VideoPlayer({ uri, isVisible }: { uri: string; isVisible: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === 'web' && videoRef.current) {
-      if (isPlaying) {
+      if (isVisible) {
         videoRef.current.play().catch(() => {});
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isPlaying]);
+  }, [isVisible]);
+
+  if (hasError) {
+    return <MediaFallback content="" />;
+  }
 
   if (Platform.OS === 'web') {
     return (
-      <View style={styles.videoContainer}>
+      <View style={styles.fullMedia}>
         <video
           ref={videoRef}
           src={uri}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          loop
           muted={isMuted}
+          loop
           playsInline
-          autoPlay={isPlaying}
+          onError={() => setHasError(true)}
         />
-        <TouchableOpacity style={styles.muteButton} onPress={onToggleMute}>
+        <TouchableOpacity style={styles.muteBtn} onPress={() => setIsMuted((m) => !m)}>
           {isMuted ? <VolumeX size={20} color="#fff" /> : <Volume2 size={20} color="#fff" />}
         </TouchableOpacity>
       </View>
@@ -63,204 +79,236 @@ function VideoPlayer({ uri, isPlaying, isMuted, onToggleMute }: {
 
   const { Video } = require('expo-av');
   return (
-    <View style={styles.videoContainer}>
-      <Video
-        source={{ uri }}
-        style={styles.fullMedia}
-        resizeMode="cover"
-        isLooping
-        shouldPlay={isPlaying}
-        isMuted={isMuted}
-        useNativeControls={false}
-      />
-      <TouchableOpacity style={styles.muteButton} onPress={onToggleMute}>
-        {isMuted ? <VolumeX size={20} color="#fff" /> : <Volume2 size={20} color="#fff" />}
-      </TouchableOpacity>
+    <Video
+      source={{ uri }}
+      style={styles.fullMedia}
+      resizeMode="cover"
+      isLooping
+      shouldPlay={isVisible}
+      isMuted={isMuted}
+    />
+  );
+}
+
+/* ─── Media Fallback (when image/video fails) ─── */
+function MediaFallback({ content, postId }: { content?: string; postId?: string }) {
+  const bgColor = postId ? getPostColor(postId) : '#1a1a2e';
+
+  return (
+    <View style={[styles.fullMedia, styles.fallbackBg, { backgroundColor: bgColor }]}>
+      <View style={styles.fallbackPattern}>
+        <Text style={styles.fallbackEmoji}>🎨</Text>
+        <Text style={styles.fallbackLabel}>MTAA Content</Text>
+        {content ? (
+          <Text style={styles.fallbackText} numberOfLines={6}>{content}</Text>
+        ) : (
+          <Text style={styles.fallbackSub}>Visual content unavailable</Text>
+        )}
+      </View>
     </View>
   );
 }
 
-export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) {
+/* ─── Web Image - loads without CORS, falls back gracefully ─── */
+function WebImage({ uri, content, postId }: { 
+  uri: string; 
+  content?: string;
+  postId?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    console.log('[WebImage] Loading:', uri.substring(0, 70));
+
+    // Create image WITHOUT crossOrigin to avoid CORS preflight issues
+    const img = new window.Image();
+    // Note: NOT setting crossOrigin - let browser handle it naturally
+
+    img.onload = () => {
+      console.log('[WebImage] Loaded:', uri.substring(0, 50));
+      setLoaded(true);
+    };
+
+    img.onerror = () => {
+      console.error('[WebImage] Failed:', uri.substring(0, 50));
+      setError(true);
+    };
+
+    img.src = uri;
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [uri]);
+
+  if (error) {
+    return <MediaFallback content={content} postId={postId} />;
+  }
+
+  return (
+    <View style={styles.fullMedia}>
+      {!loaded && <MediaFallback content={content} postId={postId} />}
+      <img
+        src={uri}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          display: loaded ? 'block' : 'none',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+        alt=""
+        // No crossOrigin - prevents CORS issues
+      />
+    </View>
+  );
+}
+
+/* ─── Main FeedCard ─── */
+export default function FeedCard({ post, isVisible }: FeedCardProps) {
   const router = useRouter();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes_count || 0);
-  const [commentCount] = useState(post.comments_count || 0);
+  const [saveCount, setSaveCount] = useState(post.saves_count || 0);
   const [shareCount] = useState(post.shares_count || 0);
-  const [saveCount] = useState(post.saves_count || 0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [commentCount] = useState(post.comments_count || 0);
   const [showHeart, setShowHeart] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
   const heartAnim = useRef(new Animated.Value(0)).current;
 
-  // DEBUG: Log post data on mount
+  const creator = post.creator;
+  const authorName = creator?.display_name || 'User';
+  const avatarUrl = creator?.avatar_url;
+  const hasMedia = !!post.media_url;
+  const isVideo = post.media_type === 'video' || (post.media_url?.endsWith('.mp4'));
+
   useEffect(() => {
     console.log('[FeedCard] Post:', {
       id: post.id?.slice(0, 8),
-      creatorName: post.creator?.display_name,
-      media_url: post.media_url?.substring(0, 60),
-      media_type: post.media_type,
-      content: post.content?.substring(0, 40),
+      author: authorName,
+      hasMedia,
+      isVideo,
+      mediaType: post.media_type,
+      url: post.media_url?.substring(0, 60),
     });
   }, [post.id]);
 
-  useEffect(() => {
-    isLiked(post.id).then(setLiked).catch(() => {});
-  }, [post.id]);
-
-  const authorName = post.creator?.display_name || 'User';
-  const avatarUrl = post.creator?.avatar_url;
-  const postId = post.id;
-
-  const isVideo = post.media_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov|avi|webm)$/i));
-  const hasMedia = !!post.media_url && !imageError;
-
-  const handleLike = useCallback(async () => {
-    try {
-      const newLiked = await toggleLike(postId);
-      setLiked(newLiked);
-      setLikeCount(prev => newLiked ? prev + 1 : Math.max(0, prev - 1));
-    } catch (err) {
-      console.error('Like error:', err);
-    }
-  }, [postId]);
-
-  const handleDoubleTap = useCallback(() => {
+  const triggerHeart = useCallback(() => {
     setShowHeart(true);
+    heartAnim.setValue(0);
     Animated.sequence([
       Animated.timing(heartAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
       Animated.timing(heartAnim, { toValue: 0, duration: 300, delay: 400, useNativeDriver: true }),
     ]).start(() => setShowHeart(false));
-    if (!liked) handleLike();
-  }, [liked, handleLike, heartAnim]);
+  }, [heartAnim]);
 
-  const handleComment = useCallback(() => {
-    if (!postId) return;
-    router.push({ pathname: '/streets/comments/[id]', params: { id: postId } });
-  }, [router, postId]);
-
-  const handleShare = useCallback(async () => {
+  const handleLike = useCallback(async () => {
     try {
-      await recordShare(postId);
-      await RNShare.share({
-        message: `Check out this post on MTAA Streets: ${post.caption || post.content || ''}`,
-        url: post.media_url || undefined,
-      });
+      const result = await toggleLike(post.id);
+      setLiked(result);
+      setLikeCount((c) => (result ? c + 1 : Math.max(0, c - 1)));
     } catch (err) {
-      console.error('Share error:', err);
+      console.error('[FeedCard] Like error:', err);
     }
-  }, [postId, post.caption, post.content, post.media_url]);
+  }, [post.id]);
+
+  const handleDoubleTap = useCallback(() => {
+    triggerHeart();
+    if (!liked) handleLike();
+  }, [liked, handleLike, triggerHeart]);
 
   const handleSave = useCallback(async () => {
     try {
-      const newSaved = await toggleSave(postId);
-      setSaved(newSaved);
+      const result = await toggleSave(post.id);
+      setSaved(result);
+      setSaveCount((c) => (result ? c + 1 : Math.max(0, c - 1)));
     } catch (err) {
-      console.error('Save error:', err);
+      console.error('[FeedCard] Save error:', err);
     }
-  }, [postId]);
+  }, [post.id]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await recordShare(post.id);
+    } catch (err) {
+      console.error('[FeedCard] Share error:', err);
+    }
+  }, [post.id]);
+
+  const handleComment = useCallback(() => {
+    router.push(`/streets/comments/${post.id}`);
+  }, [router, post.id]);
 
   const handleProfile = useCallback(() => {
-    if (!post.creator_id) return;
-    router.push({ pathname: '/streets/profile/[id]', params: { id: post.creator_id } });
+    if (post.creator_id) {
+      router.push(`/streets/profile/${post.creator_id}`);
+    }
   }, [router, post.creator_id]);
-
-  const heartScale = heartAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.5] });
-  const heartOpacity = heartAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] });
 
   return (
     <View style={styles.container}>
-      {/* Full Screen Media */}
+      {/* Media Layer */}
       <Pressable style={styles.mediaWrapper} onPress={handleDoubleTap}>
         {hasMedia ? (
           isVideo ? (
-            <VideoPlayer
-              uri={post.media_url!}
-              isPlaying={isVisible}
-              isMuted={isMuted}
-              onToggleMute={() => setIsMuted(!isMuted)}
-            />
+            <VideoPlayer uri={post.media_url!} isVisible={isVisible} />
+          ) : Platform.OS === 'web' ? (
+            <WebImage uri={post.media_url!} content={post.content} postId={post.id} />
           ) : (
-            <>
-              <Image
-                source={{ uri: post.media_url! }}
-                style={styles.fullMedia}
-                resizeMode="cover"
-                onError={(e) => {
-                  console.error('[FeedCard] Image load error:', e.nativeEvent?.error, 'URL:', post.media_url);
-                  setImageError(true);
-                }}
-                onLoad={() => {
-                  console.log('[FeedCard] Image loaded:', post.media_url?.substring(0, 50));
-                  setImageLoaded(true);
-                }}
-              />
-              {!imageLoaded && (
-                <View style={[styles.fullMedia, styles.loadingOverlay]}>
-                  <Text style={styles.loadingText}>Loading...</Text>
-                </View>
-              )}
-            </>
+            <Image source={{ uri: post.media_url! }} style={styles.fullMedia} resizeMode="cover" />
           )
         ) : (
-          <View style={[styles.fullMedia, styles.noMedia]}>
-            <Text style={styles.noMediaIcon}>✍️</Text>
-            <Text style={styles.noMediaText} numberOfLines={4}>
-              {post.content || post.caption || 'No content'}
-            </Text>
-          </View>
-        )}
-
-        {showHeart && (
-          <Animated.View style={[styles.heartOverlay, { opacity: heartOpacity, transform: [{ scale: heartScale }] }]}>
-            <Heart size={120} color="#FF2D55" fill="#FF2D55" />
-          </Animated.View>
+          <MediaFallback content={post.content} postId={post.id} />
         )}
       </Pressable>
 
-      {/* Gradient overlay for text readability */}
-      <View style={styles.gradientOverlay} pointerEvents="none" />
+      {/* Bottom gradient for text readability */}
+      <View style={styles.bottomGradient} pointerEvents="none" />
 
-      {/* Bottom-left: Author info + Caption */}
+      {/* Bottom-left: author + caption */}
       <View style={styles.bottomLeft} pointerEvents="box-none">
         <TouchableOpacity style={styles.authorRow} onPress={handleProfile}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.avatarFallbackText}>{authorName.charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
+          <View style={styles.avatar}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
+            ) : (
+              <Text style={styles.avatarLetter}>{authorName.charAt(0).toUpperCase()}</Text>
+            )}
+          </View>
           <Text style={styles.authorName}>{authorName}</Text>
           <View style={styles.followBadge}>
             <Text style={styles.followText}>Follow</Text>
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.caption} numberOfLines={3}>
-          {post.caption || post.content || ''}
-        </Text>
+        {post.content ? (
+          <Text style={styles.caption} numberOfLines={3}>{post.content}</Text>
+        ) : null}
 
-        <Text style={styles.musicRow}>
-          🎵 Original Sound — {authorName}
-        </Text>
+        <View style={styles.musicRow}>
+          <Text style={styles.musicIcon}>🎵</Text>
+          <Text style={styles.musicText}>Original Sound — {authorName}</Text>
+        </View>
       </View>
 
-      {/* Right side: Action buttons */}
+      {/* Right-side actions */}
       <View style={styles.rightActions} pointerEvents="box-none">
-        <TouchableOpacity style={styles.actionBtn} onPress={handleProfile}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.actionAvatar} />
-          ) : (
-            <View style={[styles.actionAvatar, styles.actionAvatarFallback]}>
-              <Text style={styles.actionAvatarText}>{authorName.charAt(0)}</Text>
-            </View>
-          )}
+        <View style={styles.profilePicWrap}>
+          <View style={styles.profilePic}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.profilePicImg} />
+            ) : (
+              <Text style={styles.profilePicLetter}>{authorName.charAt(0).toUpperCase()}</Text>
+            )}
+          </View>
           <View style={styles.plusBadge}>
             <Text style={styles.plusText}>+</Text>
           </View>
-        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
           <Heart size={32} color={liked ? '#FF2D55' : '#fff'} fill={liked ? '#FF2D55' : 'none'} />
@@ -283,21 +331,33 @@ export default function FeedCard({ post, isVisible, onRefresh }: FeedCardProps) 
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn}>
-          <MoreHorizontal size={28} color="#fff" />
+          <MoreHorizontal size={32} color="#fff" />
         </TouchableOpacity>
 
         <View style={styles.disc}>
           <View style={styles.discInner}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.discImage} />
-            ) : (
-              <View style={[styles.discImage, styles.discFallback]}>
-                <Text style={styles.discText}>{authorName.charAt(0)}</Text>
-              </View>
-            )}
+            <Text style={styles.discLetter}>{authorName.charAt(0).toUpperCase()}</Text>
           </View>
         </View>
       </View>
+
+      {/* Double-tap heart animation */}
+      {showHeart && (
+        <Animated.View
+          style={[
+            styles.heartOverlay,
+            {
+              opacity: heartAnim,
+              transform: [
+                { scale: heartAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.5, 1.5, 1] }) },
+              ],
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Heart size={120} color="#FF2D55" fill="#FF2D55" />
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -308,72 +368,62 @@ const styles = StyleSheet.create({
     height: SCREEN_H,
     backgroundColor: '#000',
     position: 'relative',
+    overflow: 'hidden',
   },
   mediaWrapper: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
   },
   fullMedia: {
     width: '100%',
     height: '100%',
   },
-  videoContainer: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  noMedia: {
-    backgroundColor: '#1a1a1a',
+  fallbackBg: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
   },
-  noMediaIcon: {
-    fontSize: 64,
+  fallbackPattern: {
+    alignItems: 'center',
+    padding: 30,
+  },
+  fallbackEmoji: {
+    fontSize: 60,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  fallbackLabel: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    opacity: 0.9,
     marginBottom: 16,
   },
-  noMediaText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#111',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#666',
+  fallbackText: {
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  muteButton: {
+  fallbackSub: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  bottomGradient: {
     position: 'absolute',
-    bottom: 120,
-    right: 80,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heartOverlay: {
-    position: 'absolute',
-    top: '40%',
-    left: '35%',
-    zIndex: 10,
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 300,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     zIndex: 1,
   },
   bottomLeft: {
     position: 'absolute',
-    bottom: 20,
     left: 12,
-    right: 90,
+    bottom: 80,
+    right: 80,
     zIndex: 2,
   },
   authorRow: {
@@ -385,115 +435,120 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    marginRight: 8,
-  },
-  avatarFallback: {
     backgroundColor: '#FF2D55',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
-  avatarFallbackText: {
+  avatarImg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  avatarLetter: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   authorName: {
     color: '#fff',
     fontSize: 15,
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontWeight: '600',
   },
   followBadge: {
-    marginLeft: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 4,
     backgroundColor: '#FF2D55',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 8,
   },
   followText: {
     color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   caption: {
     color: '#fff',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   musicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  musicIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  musicText: {
     color: '#fff',
     fontSize: 12,
-    opacity: 0.9,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    opacity: 0.8,
   },
   rightActions: {
     position: 'absolute',
-    right: 12,
+    right: 8,
     bottom: 100,
     alignItems: 'center',
     width: 64,
     zIndex: 2,
   },
-  actionBtn: {
+  profilePicWrap: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    position: 'relative',
+  },
+  profilePic: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  actionAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#fff',
   },
-  actionAvatarFallback: {
-    backgroundColor: '#FF2D55',
-    justifyContent: 'center',
-    alignItems: 'center',
+  profilePicImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
-  actionAvatarText: {
+  profilePicLetter: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   plusBadge: {
     position: 'absolute',
-    bottom: -6,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    bottom: -8,
     backgroundColor: '#FF2D55',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: '#000',
   },
   plusText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 'bold',
     lineHeight: 16,
   },
+  actionBtn: {
+    alignItems: 'center',
+    marginBottom: 12,
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+  },
   actionCount: {
     color: '#fff',
-    fontSize: 11,
-    marginTop: 3,
-    fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
   },
   disc: {
     width: 44,
@@ -502,27 +557,36 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
+    borderWidth: 4,
+    borderColor: '#111',
   },
   discInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  discImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-  },
-  discFallback: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#FF2D55',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  discText: {
+  discLetter: {
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  heartOverlay: {
+    position: 'absolute',
+    top: '40%',
+    left: '35%',
+    zIndex: 10,
+  },
+  muteBtn: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 5,
   },
 });
