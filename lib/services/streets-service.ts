@@ -89,7 +89,7 @@ export async function fetchFeed(options?: { limit?: number; offset?: number }): 
 }
 
 // ============================================
-// LIKES
+// LIKES — Fixed: upsert prevents 409 conflicts
 // ============================================
 export async function toggleLike(postId: string): Promise<boolean> {
   console.log('[streets-service] toggleLike:', postId);
@@ -97,7 +97,6 @@ export async function toggleLike(postId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  // FIX: Use .maybeSingle() instead of .single() to avoid 406 when no row exists
   const { data: existing } = await supabase
     .from('streets_likes')
     .select('id')
@@ -107,13 +106,15 @@ export async function toggleLike(postId: string): Promise<boolean> {
 
   if (existing) {
     await supabase.from('streets_likes').delete().eq('id', existing.id);
-    // FIX: Use correct RPC name decrement_post_likes
     await supabase.rpc('decrement_post_likes', { post_id: postId });
     console.log('[streets-service] Unliked');
     return false;
   } else {
-    await supabase.from('streets_likes').insert({ post_id: postId, user_id: user.id });
-    // FIX: Use correct RPC name increment_post_likes
+    // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
+    await supabase.from('streets_likes').upsert(
+      { post_id: postId, user_id: user.id },
+      { onConflict: 'post_id,user_id', ignoreDuplicates: true }
+    );
     await supabase.rpc('increment_post_likes', { post_id: postId });
     console.log('[streets-service] Liked');
     return true;
@@ -121,7 +122,7 @@ export async function toggleLike(postId: string): Promise<boolean> {
 }
 
 // ============================================
-// SAVES
+// SAVES — Fixed: upsert prevents 409 conflicts
 // ============================================
 export async function toggleSave(postId: string): Promise<boolean> {
   console.log('[streets-service] toggleSave:', postId);
@@ -141,14 +142,18 @@ export async function toggleSave(postId: string): Promise<boolean> {
     await supabase.rpc('decrement_saves', { post_id: postId });
     return false;
   } else {
-    await supabase.from('streets_saves').insert({ post_id: postId, user_id: user.id });
+    // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
+    await supabase.from('streets_saves').upsert(
+      { post_id: postId, user_id: user.id },
+      { onConflict: 'post_id,user_id', ignoreDuplicates: true }
+    );
     await supabase.rpc('increment_saves', { post_id: postId });
     return true;
   }
 }
 
 // ============================================
-// SHARES
+// SHARES — Fixed: upsert prevents 409 conflicts
 // ============================================
 export async function recordShare(postId: string): Promise<void> {
   console.log('[streets-service] recordShare:', postId);
@@ -156,7 +161,11 @@ export async function recordShare(postId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  await supabase.from('streets_shares').insert({ post_id: postId, user_id: user.id });
+  // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
+  await supabase.from('streets_shares').upsert(
+    { post_id: postId, user_id: user.id },
+    { onConflict: 'post_id,user_id', ignoreDuplicates: true }
+  );
   await supabase.rpc('increment_shares', { post_id: postId });
 }
 
