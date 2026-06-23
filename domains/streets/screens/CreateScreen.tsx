@@ -21,7 +21,6 @@ export default function CreateScreen() {
   const router = useRouter();
   const [content, setContent] = useState('');
   const [mediaAsset, setMediaAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [allowComments, setAllowComments] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,57 +38,14 @@ export default function CreateScreen() {
         quality: 0.8,
       });
 
-      console.log('[CreateScreen] ImagePicker result:', {
-        canceled: result.canceled,
-        assetsCount: result.assets?.length,
-      });
-
       if (!result.canceled && result.assets && result.assets[0]) {
-        const asset = result.assets[0];
-        setMediaAsset(asset);
-        console.log('[CreateScreen] Selected asset:', {
-          uri: asset.uri?.substring(0, 50),
-          type: asset.type,
-          width: asset.width,
-          height: asset.height,
-        });
+        setMediaAsset(result.assets[0]);
       }
     } catch (err) {
       console.error('[CreateScreen] Pick media error:', err);
       Alert.alert('Error', 'Failed to pick media');
     }
   }, []);
-
-  const uploadSelectedMedia = useCallback(async (): Promise<string | null> => {
-    if (!mediaAsset) return null;
-
-    console.log('[CreateScreen] Starting upload...');
-
-    let fileToUpload: any;
-
-    if (Platform.OS === 'web') {
-      // On web, fetch the blob from the URI
-      try {
-        const response = await fetch(mediaAsset.uri);
-        const blob = await response.blob();
-        fileToUpload = blob;
-        console.log('[CreateScreen] Web blob created, size:', blob.size);
-      } catch (err) {
-        console.error('[CreateScreen] Blob creation failed:', err);
-        throw new Error('Failed to prepare file for upload');
-      }
-    } else {
-      fileToUpload = {
-        uri: mediaAsset.uri,
-        type: mediaAsset.type === 'video' ? 'video/mp4' : 'image/jpeg',
-        name: mediaAsset.fileName || `media_${Date.now()}.${mediaAsset.type === 'video' ? 'mp4' : 'jpg'}`,
-      };
-    }
-
-    const url = await uploadMedia(fileToUpload, 'media');
-    console.log('[CreateScreen] Upload success:', url?.substring(0, 60));
-    return url;
-  }, [mediaAsset]);
 
   const handleSubmit = useCallback(async () => {
     if (!content.trim() && !mediaAsset) {
@@ -99,25 +55,40 @@ export default function CreateScreen() {
 
     setIsLoading(true);
     try {
-      let uploadedUrl = mediaUrl;
+      let uploadedUrl: string | null = null;
+      let mediaType: 'image' | 'video' | 'text' = 'text';
 
-      // Upload media if selected but not yet uploaded
-      if (mediaAsset && !mediaUrl) {
-        uploadedUrl = await uploadSelectedMedia();
-        setMediaUrl(uploadedUrl);
+      if (mediaAsset) {
+        console.log('[CreateScreen] Uploading media...');
+
+        let fileToUpload: any;
+
+        if (Platform.OS === 'web') {
+          // CRITICAL FIX: Create File from blob to prevent bucket corruption
+          const response = await fetch(mediaAsset.uri);
+          const blob = await response.blob();
+          const ext = mediaAsset.type === 'video' ? 'mp4' : 'jpg';
+          const mimeType = mediaAsset.type === 'video' ? 'video/mp4' : 'image/jpeg';
+          fileToUpload = new File([blob], `media_${Date.now()}.${ext}`, { type: mimeType });
+          console.log('[CreateScreen] Created File from blob:', fileToUpload.name, fileToUpload.type);
+        } else {
+          fileToUpload = {
+            uri: mediaAsset.uri,
+            type: mediaAsset.type === 'video' ? 'video/mp4' : 'image/jpeg',
+            name: mediaAsset.fileName || `media_${Date.now()}.${mediaAsset.type === 'video' ? 'mp4' : 'jpg'}`,
+          };
+        }
+
+        uploadedUrl = await uploadMedia(fileToUpload, 'media');
+        mediaType = mediaAsset.type === 'video' ? 'video' : 'image';
+        console.log('[CreateScreen] Upload success:', uploadedUrl?.substring(0, 60));
       }
 
-      console.log('[CreateScreen] Creating post with:', {
-        content: content.trim(),
-        media_url: uploadedUrl,
-        media_type: mediaAsset?.type,
-        is_public: isPublic,
-      });
-
+      console.log('[CreateScreen] Creating post...');
       await createPost({
         content: content.trim(),
         media_url: uploadedUrl || undefined,
-        media_type: mediaAsset?.type === 'video' ? 'video' : mediaAsset?.type === 'image' ? 'image' : 'text',
+        media_type: mediaType,
         is_public: isPublic,
       });
 
@@ -129,16 +100,14 @@ export default function CreateScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [content, mediaAsset, mediaUrl, isPublic, uploadSelectedMedia, router]);
+  }, [content, mediaAsset, isPublic, router]);
 
   const removeMedia = useCallback(() => {
     setMediaAsset(null);
-    setMediaUrl(null);
   }, []);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <X size={24} color="#333" />
@@ -158,7 +127,6 @@ export default function CreateScreen() {
       </View>
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Text Input */}
         <TextInput
           style={styles.input}
           placeholder="What's on your mind?"
@@ -169,7 +137,6 @@ export default function CreateScreen() {
           maxLength={2000}
         />
 
-        {/* Media Preview */}
         {mediaAsset && (
           <View style={styles.previewWrap}>
             {mediaAsset.type === 'video' ? (
@@ -186,7 +153,6 @@ export default function CreateScreen() {
           </View>
         )}
 
-        {/* Media Pickers */}
         <View style={styles.mediaButtons}>
           <TouchableOpacity style={styles.mediaBtn} onPress={() => pickMedia('image')}>
             <ImageIcon size={20} color="#2196F3" />
@@ -198,13 +164,11 @@ export default function CreateScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Location */}
         <TouchableOpacity style={styles.optionRow}>
           <MapPin size={18} color="#666" />
           <Text style={styles.optionText}>Add location</Text>
         </TouchableOpacity>
 
-        {/* Hashtags */}
         <View style={styles.optionRow}>
           <Hash size={18} color="#666" />
           <TextInput
@@ -216,7 +180,6 @@ export default function CreateScreen() {
           />
         </View>
 
-        {/* Toggles */}
         <View style={styles.toggleRow}>
           <Text style={styles.toggleLabel}>Public Post</Text>
           <Switch value={isPublic} onValueChange={setIsPublic} />
@@ -231,10 +194,7 @@ export default function CreateScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,10 +205,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
   sendBtn: {
     backgroundColor: '#2196F3',
     width: 36,
@@ -257,13 +214,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  sendBtnDisabled: {
-    opacity: 0.5,
-  },
-  scroll: {
-    flex: 1,
-    padding: 16,
-  },
+  sendBtnDisabled: { opacity: 0.5 },
+  scroll: { flex: 1, padding: 16 },
   input: {
     fontSize: 16,
     lineHeight: 22,
@@ -290,10 +242,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
   },
-  videoLabel: {
-    color: '#fff',
-    marginTop: 8,
-  },
+  videoLabel: { color: '#fff', marginTop: 8 },
   removeBtn: {
     position: 'absolute',
     top: 8,
@@ -316,10 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
-  mediaBtnText: {
-    fontSize: 14,
-    color: '#333',
-  },
+  mediaBtnText: { fontSize: 14, color: '#333' },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,15 +274,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
     gap: 12,
   },
-  optionText: {
-    fontSize: 15,
-    color: '#333',
-  },
-  hashtagInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333',
-  },
+  optionText: { fontSize: 15, color: '#333' },
+  hashtagInput: { flex: 1, fontSize: 15, color: '#333' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -345,8 +284,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  toggleLabel: {
-    fontSize: 15,
-    color: '#333',
-  },
+  toggleLabel: { fontSize: 15, color: '#333' },
 });

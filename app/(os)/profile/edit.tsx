@@ -11,7 +11,7 @@ export default function EditProfileScreen() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    full_name: '',
+    display_name: '',
     username: '',
     bio: '',
     phone: '',
@@ -27,7 +27,7 @@ export default function EditProfileScreen() {
   useEffect(() => {
     if (profile) {
       setForm({
-        full_name: profile.full_name || '',
+        display_name: profile.display_name || profile.full_name || '',
         username: profile.username || '',
         bio: profile.bio || '',
         phone: profile.phone || '',
@@ -51,10 +51,12 @@ export default function EditProfileScreen() {
 
     setSaving(true);
     try {
+      // CRITICAL FIX: Use user_profiles table, not profiles
+      // Also update display_name (what Streets reads) not just full_name
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({
-          full_name: form.full_name.trim() || null,
+          display_name: form.display_name.trim() || null,
           username: form.username.trim() || null,
           bio: form.bio.trim() || null,
           phone: form.phone.trim() || null,
@@ -67,7 +69,7 @@ export default function EditProfileScreen() {
           avatar_url: form.avatar_url.trim() || null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
 
       if (error) {
         Alert.alert('Error', error.message);
@@ -93,7 +95,7 @@ export default function EditProfileScreen() {
           text: 'Use Default', 
           onPress: () => setForm(prev => ({ 
             ...prev, 
-            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.full_name || 'User')}&background=6366f1&color=fff&size=256` 
+            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.display_name || 'User')}&background=6366f1&color=fff&size=256` 
           })) 
         },
         { text: 'Cancel', style: 'cancel' },
@@ -102,7 +104,7 @@ export default function EditProfileScreen() {
   };
 
   const avatarUri = form.avatar_url || 
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(form.full_name || 'User')}&background=6366f1&color=fff&size=256`;
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(form.display_name || 'User')}&background=6366f1&color=fff&size=256`;
 
   if (loading) {
     return (
@@ -128,7 +130,6 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Avatar */}
       <View style={styles.avatarSection}>
         <Image source={{ uri: avatarUri }} style={styles.avatar} />
         <TouchableOpacity style={styles.changeAvatarBtn} onPress={handleAvatarUrl}>
@@ -139,9 +140,8 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Form Fields */}
       <View style={styles.form}>
-        <Field label="Full Name" value={form.full_name} onChange={(v) => setForm(p => ({ ...p, full_name: v }))} />
+        <Field label="Display Name" value={form.display_name} onChange={(v) => setForm(p => ({ ...p, display_name: v }))} />
         <Field label="Username" value={form.username} onChange={(v) => setForm(p => ({ ...p, username: v }))} />
         <Field label="Bio" value={form.bio} onChange={(v) => setForm(p => ({ ...p, bio: v }))} multiline />
         <Field label="Phone" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} keyboardType="phone-pad" />
