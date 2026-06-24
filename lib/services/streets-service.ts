@@ -1,323 +1,243 @@
 import { supabase } from '@/lib/supabase';
 
-// ============================================
-// TYPES
-// ============================================
 export interface StreetPost {
   id: string;
   creator_id: string;
-  content: string | null;
+  title: string | null;
+  content: string;
+  media_type: string | null;
   media_url: string | null;
-  media_type: 'image' | 'video' | 'text' | null;
+  thumbnail_url: string | null;
+  hashtags: string[] | null;
+  location: string | null;
+  music_id: string | null;
+  music_title: string | null;
+  duration: number | null;
   is_public: boolean;
+  allow_comments: boolean;
+  allow_duet: boolean;
+  is_live: boolean;
+  is_sponsored: boolean;
+  product_id: string | null;
+  job_id: string | null;
+  shop_id: string | null;
+  views_count: number;
   likes_count: number;
   comments_count: number;
   shares_count: number;
-  saves_count: number;
-  view_count: number;
-  location: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface StreetPostWithAuthor extends StreetPost {
-  creator?: {
-    user_id: string;
-    display_name: string;
-    avatar_url?: string;
-    username?: string;
-  };
-}
-
-export interface StreetComment {
-  id: string;
-  post_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  user?: {
-    user_id: string;
-    display_name: string;
-    avatar_url?: string;
-  };
+  scheduled_at: string | null;
+  published_at: string | null;
+  caption: string | null;
+  video_duration: number | null;
+  video_thumbnail_url: string | null;
+  saves_count: number;
+  view_count: number;
 }
 
 export interface CreatePostInput {
+  creator_id: string;
+  title?: string;
   content: string;
-  media_url?: string;
-  media_type?: 'image' | 'video' | 'text';
+  media_url?: string | null;
+  media_type?: string | null;
+  thumbnail_url?: string | null;
+  hashtags?: string[] | null;
+  location?: string | null;
+  music_id?: string | null;
+  music_title?: string | null;
+  duration?: number | null;
   is_public?: boolean;
-  location?: string;
+  allow_comments?: boolean;
+  allow_duet?: boolean;
+  caption?: string | null;
+  video_duration?: number | null;
+  video_thumbnail_url?: string | null;
 }
 
-// ============================================
-// FEED
-// ============================================
-export async function getFeedPosts(limit = 10, offset = 0): Promise<StreetPostWithAuthor[]> {
-  console.log('[streets-service] getFeedPosts:', { limit, offset });
+const STORAGE_BUCKET = 'media';
+const STORAGE_PATH = 'streets';
 
+export async function getFeedPosts(offset: number = 0, limit: number = 20): Promise<StreetPost[]> {
   const { data, error } = await supabase
     .from('streets_posts')
-    .select(`
-      *,
-      creator:user_profiles!streets_posts_creator_id_fkey(user_id, display_name, avatar_url, username)
-    `)
+    .select('*')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('[streets-service] getFeedPosts error:', error);
-    throw error;
+    console.error('Feed load error:', error);
+    throw new Error(`Feed error: ${error.message}`);
   }
 
-  const posts = (data || []).map((post: any) => ({
-    ...post,
-    creator: Array.isArray(post.creator) ? post.creator[0] : post.creator,
-  }));
+  return (data ?? []) as StreetPost[];
+}
 
-  console.log('[streets-service] getFeedPosts returned:', posts.length, 'posts');
-  if (posts.length > 0) {
-    console.log('[streets-service] First post ID:', posts[0].id, 'creator_id:', posts[0].creator_id);
+export async function getUserPosts(userId: string, offset: number = 0, limit: number = 20): Promise<StreetPost[]> {
+  const { data, error } = await supabase
+    .from('streets_posts')
+    .select('*')
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    throw new Error(`User posts error: ${error.message}`);
   }
-  return posts;
+
+  return (data ?? []) as StreetPost[];
 }
 
-export async function fetchFeed(options?: { limit?: number; offset?: number }): Promise<StreetPostWithAuthor[]> {
-  console.log('[streets-service] fetchFeed called');
-  return getFeedPosts(options?.limit, options?.offset);
-}
-
-// ============================================
-// LIKES — Fixed: upsert prevents 409 conflicts
-// ============================================
-export async function toggleLike(postId: string): Promise<boolean> {
-  console.log('[streets-service] toggleLike:', postId);
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { data: existing } = await supabase
-    .from('streets_likes')
-    .select('id')
-    .eq('post_id', postId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase.from('streets_likes').delete().eq('id', existing.id);
-    await supabase.rpc('decrement_post_likes', { post_id: postId });
-    console.log('[streets-service] Unliked');
-    return false;
-  } else {
-    // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
-    await supabase.from('streets_likes').upsert(
-      { post_id: postId, user_id: user.id },
-      { onConflict: 'post_id,user_id', ignoreDuplicates: true }
-    );
-    await supabase.rpc('increment_post_likes', { post_id: postId });
-    console.log('[streets-service] Liked');
-    return true;
+export async function getFollowingFeed(userId: string, offset: number = 0, limit: number = 20): Promise<StreetPost[]> {
+  if (!userId) {
+    return getFeedPosts(offset, limit);
   }
-}
 
-// ============================================
-// SAVES — Fixed: upsert prevents 409 conflicts
-// ============================================
-export async function toggleSave(postId: string): Promise<boolean> {
-  console.log('[streets-service] toggleSave:', postId);
+  const { data: following, error: followsError } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', userId);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  if (followsError || !following || following.length === 0) {
+    const { data, error } = await supabase
+      .from('streets_posts')
+      .select('*')
+      .or(`creator_id.eq.${userId},is_public.eq.true`)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  const { data: existing } = await supabase
-    .from('streets_saves')
-    .select('id')
-    .eq('post_id', postId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase.from('streets_saves').delete().eq('id', existing.id);
-    await supabase.rpc('decrement_saves', { post_id: postId });
-    return false;
-  } else {
-    // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
-    await supabase.from('streets_saves').upsert(
-      { post_id: postId, user_id: user.id },
-      { onConflict: 'post_id,user_id', ignoreDuplicates: true }
-    );
-    await supabase.rpc('increment_saves', { post_id: postId });
-    return true;
+    if (error) {
+      throw new Error(`Following feed error: ${error.message}`);
+    }
+    return (data ?? []) as StreetPost[];
   }
-}
 
-// ============================================
-// SHARES — Fixed: upsert prevents 409 conflicts
-// ============================================
-export async function recordShare(postId: string): Promise<void> {
-  console.log('[streets-service] recordShare:', postId);
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  // FIX: Use upsert with ignoreDuplicates to prevent 409 on race conditions
-  await supabase.from('streets_shares').upsert(
-    { post_id: postId, user_id: user.id },
-    { onConflict: 'post_id,user_id', ignoreDuplicates: true }
-  );
-  await supabase.rpc('increment_shares', { post_id: postId });
-}
-
-// ============================================
-// COMMENTS
-// ============================================
-export async function getComments(postId: string): Promise<StreetComment[]> {
-  console.log('[streets-service] getComments:', postId);
+  const followingIds = following.map((f: any) => f.following_id);
+  followingIds.push(userId);
 
   const { data, error } = await supabase
-    .from('streets_comments')
-    .select(`
-      *,
-      user:user_profiles(user_id, display_name, avatar_url)
-    `)
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
+    .from('streets_posts')
+    .select('*')
+    .in('creator_id', followingIds)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error('[streets-service] getComments error:', error);
-    throw error;
+    throw new Error(`Following feed error: ${error.message}`);
   }
 
-  console.log('[streets-service] getComments returned:', data?.length || 0);
-  return (data || []) as StreetComment[];
+  return (data ?? []) as StreetPost[];
 }
 
-export async function createComment(postId: string, content: string): Promise<void> {
-  console.log('[streets-service] createComment:', { postId, content: content.substring(0, 30) });
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('You must be logged in to comment');
+export async function createPost(input: CreatePostInput): Promise<StreetPost> {
+  if (!input.creator_id) {
+    throw new Error('You must be logged in to create a post');
   }
 
-  const { error } = await supabase
-    .from('streets_comments')
-    .insert({ 
-      post_id: postId, 
-      content: content.trim(),
-      user_id: user.id,
-    });
-
-  if (error) {
-    console.error('[streets-service] createComment error:', error);
-    throw new Error(error.message || 'Failed to post comment');
-  }
-
-  console.log('[streets-service] createComment success');
-}
-
-// ============================================
-// POSTS
-// ============================================
-export async function createPost(input: CreatePostInput) {
-  console.log('[streets-service] createPost:', input);
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('streets_posts')
     .insert({
-      creator_id: user.id,
-      content: input.content || null,
-      media_url: input.media_url || null,
-      media_type: input.media_type || 'text',
-      is_public: input.is_public !== false,
-      location: input.location || null,
-    });
+      creator_id: input.creator_id,
+      title: input.title ?? null,
+      content: input.content,
+      media_url: input.media_url ?? null,
+      media_type: input.media_type ?? null,
+      thumbnail_url: input.thumbnail_url ?? null,
+      hashtags: input.hashtags ?? null,
+      location: input.location ?? null,
+      music_id: input.music_id ?? null,
+      music_title: input.music_title ?? null,
+      duration: input.duration ?? null,
+      is_public: input.is_public ?? true,
+      allow_comments: input.allow_comments ?? true,
+      allow_duet: input.allow_duet ?? false,
+      caption: input.caption ?? null,
+      video_duration: input.video_duration ?? null,
+      video_thumbnail_url: input.video_thumbnail_url ?? null,
+      views_count: 0,
+      likes_count: 0,
+      comments_count: 0,
+      shares_count: 0,
+      saves_count: 0,
+      view_count: 0,
+    })
+    .select()
+    .single();
 
   if (error) {
-    console.error('[streets-service] createPost error:', error);
-    throw error;
+    throw new Error(`Create post error: ${error.message}`);
   }
 
-  console.log('[streets-service] createPost success');
+  return data as StreetPost;
 }
 
-export async function deletePost(postId: string): Promise<void> {
-  console.log('[streets-service] deletePost:', postId);
-  const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
-  if (error) throw error;
-}
+export async function uploadMedia(file: File | Blob, fileName: string): Promise<string> {
+  const path = `${STORAGE_PATH}/${Date.now()}_${fileName}`;
+  const { error: uploadError } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, file, { upsert: true });
 
-// ============================================
-// UPLOAD
-// ============================================
-export async function uploadMedia(
-  file: File | Blob | { uri: string; type: string; name: string },
-  bucket: string = 'media'
-): Promise<string> {
-  console.log('[streets-service] uploadMedia called');
-  console.log('[streets-service] bucket param:', bucket);
-  console.log('[streets-service] file constructor:', file?.constructor?.name);
-
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error('Not authenticated');
-
-  let cleanBucket: string;
-  let cleanFile: any;
-
-  if (typeof bucket === 'string' && bucket.length < 50 && !bucket.startsWith('data:')) {
-    cleanBucket = bucket;
-    cleanFile = file;
-  } else if (typeof file === 'string' && file.length < 50) {
-    cleanBucket = file;
-    cleanFile = bucket;
-  } else {
-    cleanBucket = 'media';
-    cleanFile = file;
-  }
-
-  cleanBucket = String(cleanBucket).trim();
-  console.log('[streets-service] cleanBucket:', cleanBucket);
-
-  // CRITICAL FIX: Convert Blob to File to prevent bucket corruption (2Q== bug)
-  if (cleanFile instanceof Blob && !(cleanFile instanceof File)) {
-    const blobType = cleanFile.type || 'image/jpeg';
-    const ext = blobType.includes('video') ? 'mp4' : 'jpg';
-    const fileName = `media_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    cleanFile = new File([cleanFile], fileName, { type: blobType });
-    console.log('[streets-service] Converted Blob to File:', fileName);
-  }
-
-  console.log('[streets-service] cleanFile instanceof File:', cleanFile instanceof File);
-  console.log('[streets-service] cleanFile name:', cleanFile?.name);
-
-  const fileExt = cleanFile instanceof File 
-    ? cleanFile.name.split('.').pop() 
-    : cleanFile?.name?.split('.').pop() || 'jpg';
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const filePath = `${user.id}/${fileName}`;
-
-  console.log('[streets-service] Uploading to bucket:', cleanBucket, 'path:', filePath);
-
-  const { data, error } = await supabase.storage
-    .from(cleanBucket)
-    .upload(filePath, cleanFile, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
-  if (error) {
-    console.error('[streets-service] Upload error:', error);
-    throw error;
+  if (uploadError) {
+    throw new Error(`Upload error: ${uploadError.message}`);
   }
 
   const { data: urlData } = supabase.storage
-    .from(cleanBucket)
-    .getPublicUrl(filePath);
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(path);
 
-  console.log('[streets-service] Upload success:', urlData.publicUrl.substring(0, 60));
   return urlData.publicUrl;
+}
+
+export async function likePost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('streets_posts')
+    .update({ likes_count: supabase.rpc('increment', { x: 1 }) })
+    .eq('id', postId);
+
+  if (error) {
+    throw new Error(`Like error: ${error.message}`);
+  }
+}
+
+export async function unlikePost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('streets_posts')
+    .update({ likes_count: supabase.rpc('decrement', { x: 1 }) })
+    .eq('id', postId);
+
+  if (error) {
+    throw new Error(`Unlike error: ${error.message}`);
+  }
+}
+
+export async function deletePost(postId: string, userId: string): Promise<void> {
+  if (!userId) {
+    throw new Error('You must be logged in to delete a post');
+  }
+
+  const { error } = await supabase
+    .from('streets_posts')
+    .delete()
+    .eq('id', postId)
+    .eq('creator_id', userId);
+
+  if (error) {
+    throw new Error(`Delete error: ${error.message}`);
+  }
+}
+
+export async function getPostById(postId: string): Promise<StreetPost | null> {
+  const { data, error } = await supabase
+    .from('streets_posts')
+    .select('*')
+    .eq('id', postId)
+    .single();
+
+  if (error) {
+    throw new Error(`Get post error: ${error.message}`);
+  }
+
+  return data as StreetPost | null;
 }
