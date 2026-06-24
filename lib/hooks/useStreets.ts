@@ -1,145 +1,179 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  getFeedPosts,
-  getUserPosts,
-  getFollowingFeed,
+  loadFeed,
+  loadFollowing,
+  loadDiscover,
+  getCreatorProfiles,
   createPost,
-  uploadMedia,
+  deletePost,
   likePost,
   unlikePost,
-  deletePost,
-  getPostById,
+  checkUserLiked,
+  uploadMedia,
   type StreetPost,
-  type CreatePostInput,
+  type CreatorProfile,
 } from '@/lib/services/streets-service';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
+export type TabType = 'feed' | 'following' | 'discover';
+
 export function useStreets() {
-  const [posts, setPosts] = useState<StreetPost[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const offsetRef = useRef(0);
   const user = useAuthStore((s) => s.user);
+  const userId = user?.id;
 
-  const loadFeed = useCallback(async (newOffset: number = 0, limit: number = 20) => {
+  const [posts, setPosts] = useState<StreetPost[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, CreatorProfile>>({});
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('feed');
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const offsetRef = useRef(0);
+
+  const fetchProfiles = useCallback(async (postList: StreetPost[]) => {
+    const ids = postList.map((p) => p.creator_id).filter(Boolean);
+    if (ids.length === 0) return;
+    const map = await getCreatorProfiles(ids);
+    setProfiles((prev) => ({ ...prev, ...map }));
+  }, []);
+
+  const checkLikes = useCallback(async (postList: StreetPost[]) => {
+    if (!userId) return;
+    const checks = await Promise.all(
+      postList.map((p) => checkUserLiked(p.id, userId).then((liked) => ({ id: p.id, liked })))
+    );
+    setLikedPosts((prev) => {
+      const next = new Set(prev);
+      checks.forEach((c) => {
+        if (c.liked) next.add(c.id);
+        else next.delete(c.id);
+      });
+      return next;
+    });
+  }, [userId]);
+
+  const loadPosts = useCallback(async (tab: TabType, offset = 0, append = false) => {
     setLoading(true);
-    setError(null);
     try {
-      const data = await getFeedPosts(newOffset, limit);
-      setPosts((prev) => (newOffset === 0 ? data : [...prev, ...data]));
-      setHasMore(data.length === limit);
-      offsetRef.current = newOffset + data.length;
-    } catch (err: any) {
-      setError(err.message);
+      let data: StreetPost[] = [];
+      if (tab === 'feed') data = await loadFeed(offset);
+      else if (tab === 'following') {
+        if (!userId) { setPosts([]); setHasMore(false); return; }
+        data = await loadFollowing(userId, offset);
+      } else if (tab === 'discover') data = await loadDiscover(offset);
+
+      if (append) {
+        setPosts((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newPosts = data.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...newPosts];
+        });
+      } else {
+        setPosts(data);
+      }
+
+      setHasMore(data.length >= 10);
+      await fetchProfiles(data);
+      await checkLikes(data);
+    } catch (e) {
+      console.error('loadPosts error:', e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [userId, fetchProfiles, checkLikes]);
 
-  const loadFollowing = useCallback(async (newOffset: number = 0, limit: number = 20) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getFollowingFeed(user?.id ?? '', newOffset, limit);
-      setPosts((prev) => (newOffset === 0 ? data : [...prev, ...data]));
-      setHasMore(data.length === limit);
-      offsetRef.current = newOffset + data.length;
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    offsetRef.current = 0;
+    loadPosts(activeTab, 0, false);
+  }, [activeTab, loadPosts]);
 
-  const loadDiscover = useCallback(async (newOffset: number = 0, limit: number = 20) => {
-    return loadFeed(newOffset, limit);
-  }, [loadFeed]);
+  const loadMore = useCallback(() => {
+    if (loading || !hasMore) return;
+    offsetRef.current += 10;
+    loadPosts(activeTab, offsetRef.current, true);
+  }, [loading, hasMore, activeTab, loadPosts]);
 
-  const submitPost = useCallback(async (input: Omit<CreatePostInput, 'creator_id'>) => {
-    if (!user?.id) {
-      throw new Error('You must be logged in to create a post');
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const post = await createPost({ ...input, creator_id: user.id });
-      setPosts((prev) => [post, ...prev]);
-      return post;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
-
-  const upload = useCallback(async (file: File | Blob, fileName: string) => {
-    return uploadMedia(file, fileName);
-  }, []);
-
-  const likePostFn = useCallback(async (postId: string) => {
-    try {
-      await likePost(postId);
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, likes_count: p.likes_count + 1 } : p
-        )
-      );
-    } catch (err: any) {
-      setError(err.message);
-    }
-  }, []);
-
-  const unlikePostFn = useCallback(async (postId: string) => {
-    try {
-      await unlikePost(postId);
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId ? { ...p, likes_count: Math.max(0, p.likes_count - 1) } : p
-        )
-      );
-    } catch (err: any) {
-      setError(err.message);
-    }
-  }, []);
-
-  const remove = useCallback(async (postId: string) => {
-    if (!user?.id) return;
-    try {
-      await deletePost(postId, user.id);
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } catch (err: any) {
-      setError(err.message);
-    }
-  }, [user?.id]);
-
-  const getPost = useCallback(async (postId: string) => {
-    return getPostById(postId);
-  }, []);
-
-  const reset = useCallback(() => {
-    setPosts([]);
+  const switchTab = useCallback((tab: TabType) => {
+    setActiveTab(tab);
     offsetRef.current = 0;
     setHasMore(true);
-    setError(null);
-  }, []);
+    loadPosts(tab, 0, false);
+  }, [loadPosts]);
+
+  const handleCreate = useCallback(async (post: Partial<StreetPost>, mediaFile?: File) => {
+    let mediaUrl = post.media_url;
+    if (mediaFile) {
+      mediaUrl = await uploadMedia(mediaFile);
+    }
+    const created = await createPost({ ...post, media_url: mediaUrl });
+    setPosts((prev) => [created, ...prev]);
+    await fetchProfiles([created]);
+    return created;
+  }, [fetchProfiles]);
+
+  const handleDelete = useCallback(async (postId: string) => {
+    if (!userId) throw new Error('Not authenticated');
+    await deletePost(postId, userId);
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  }, [userId]);
+
+  const handleLike = useCallback(async (postId: string) => {
+    if (!userId) return;
+    const isLiked = likedPosts.has(postId);
+    setLikedPosts((prev) => {
+      const next = new Set(prev);
+      if (isLiked) next.delete(postId);
+      else next.add(postId);
+      return next;
+    });
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, likes_count: Math.max(0, p.likes_count + (isLiked ? -1 : 1)) }
+          : p
+      )
+    );
+    try {
+      if (isLiked) await unlikePost(postId, userId);
+      else await likePost(postId, userId);
+    } catch (e) {
+      setLikedPosts((prev) => {
+        const next = new Set(prev);
+        if (isLiked) next.add(postId);
+        else next.delete(postId);
+        return next;
+      });
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, likes_count: Math.max(0, p.likes_count + (isLiked ? 1 : -1)) }
+            : p
+        )
+      );
+    }
+  }, [userId, likedPosts]);
+
+  useEffect(() => {
+    offsetRef.current = 0;
+    loadPosts('feed', 0, false);
+  }, [loadPosts]);
 
   return {
     posts,
+    profiles,
     loading,
-    error,
+    refreshing,
     hasMore,
-    user,
-    loadFeed,
-    loadFollowing,
-    loadDiscover,
-    submitPost,
-    upload,
-    likePost: likePostFn,
-    unlikePost: unlikePostFn,
-    remove,
-    getPost,
-    reset,
+    activeTab,
+    likedPosts,
+    userId,
+    refresh,
+    loadMore,
+    switchTab,
+    handleCreate,
+    handleDelete,
+    handleLike,
   };
 }

@@ -2,9 +2,9 @@ import { Stack } from 'expo-router';
 
 export default function StreetsLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="create" />
+      <Stack.Screen name="create" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
