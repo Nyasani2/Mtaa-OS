@@ -1,341 +1,440 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
   StyleSheet,
   Dimensions,
+  TouchableOpacity,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Video, ResizeMode } from 'expo-av';
 import { useStreets } from '@/lib/hooks/useStreets';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { StreetPost } from '@/lib/services/streets-service';
-import { supabase } from '@/lib/supabase';
+import type { StreetPost, CreatorProfile } from '@/lib/services/streets-service';
 
-const { width } = Dimensions.get('window');
+const { height: SCREEN_H, width: SCREEN_W } = Dimensions.get('window');
+const POST_HEIGHT = SCREEN_H;
 
-interface CreatorProfile {
-  id: string;
-  username: string | null;
-  full_name: string | null;
-  avatar_url: string | null;
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  return String(n);
 }
 
-export default function StreetsScreen() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'feed' | 'following' | 'discover'>('feed');
-  const [creatorProfiles, setCreatorProfiles] = useState<Record<string, CreatorProfile>>({});
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
-  const LIMIT = 20;
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return new Date(dateStr).toLocaleDateString();
+}
 
-  const {
-    posts,
-    loading,
-    error,
-    hasMore,
-    loadFeed,
-    loadFollowing,
-    loadDiscover,
-    likePost,
-    reset,
-  } = useStreets();
+// ============================================
+// SINGLE POST (full screen like TikTok)
+// ============================================
+interface PostItemProps {
+  post: StreetPost;
+  profile: CreatorProfile | undefined;
+  isLiked: boolean;
+  isActive: boolean;
+  isOwner: boolean;
+  onLike: (id: string) => void;
+  onDelete: (id: string) => void;
+  onProfileTap: (creatorId: string) => void;
+}
 
-  // AUTO-LOAD on mount and when tab changes
+function PostItem({ post, profile, isLiked, isActive, isOwner, onLike, onDelete, onProfileTap }: PostItemProps) {
+  const videoRef = useRef<Video>(null);
+  const [showMenu, setShowMenu] = useState(false);
+
   useEffect(() => {
-    reset();
-    if (activeTab === 'feed') loadFeed(0, LIMIT);
-    else if (activeTab === 'following') loadFollowing(0, LIMIT);
-    else loadDiscover(0, LIMIT);
-  }, [activeTab]);
-
-  // Fetch creator profiles for visible posts
-  useEffect(() => {
-    if (posts.length === 0) return;
-    const creatorIds = [...new Set(posts.map((p) => p.creator_id))];
-    const missingIds = creatorIds.filter((id) => !creatorProfiles[id]);
-    if (missingIds.length === 0) return;
-
-    supabase
-      .from('profiles')
-      .select('id, username, full_name, avatar_url')
-      .in('id', missingIds)
-      .then(({ data, error }) => {
-        if (error || !data) return;
-        const map: Record<string, CreatorProfile> = {};
-        data.forEach((p: any) => { map[p.id] = p; });
-        setCreatorProfiles((prev) => ({ ...prev, ...map }));
-      });
-  }, [posts]);
-
-  const onRefresh = useCallback(() => {
-    reset();
-    if (activeTab === 'feed') loadFeed(0, LIMIT);
-    else if (activeTab === 'following') loadFollowing(0, LIMIT);
-    else loadDiscover(0, LIMIT);
-  }, [activeTab, loadFeed, loadFollowing, loadDiscover, reset]);
-
-  const onEndReached = useCallback(() => {
-    if (!loading && hasMore) {
-      if (activeTab === 'feed') loadFeed(0, LIMIT);
-      else if (activeTab === 'following') loadFollowing(0, LIMIT);
-      else loadDiscover(0, LIMIT);
+    if (post.media_type === 'video' && videoRef.current) {
+      if (isActive) {
+        videoRef.current.playAsync();
+      } else {
+        videoRef.current.pauseAsync();
+      }
     }
-  }, [loading, hasMore, activeTab, loadFeed, loadFollowing, loadDiscover]);
+  }, [isActive, post.media_type]);
 
-  const switchTab = useCallback(
-    (tab: typeof activeTab) => {
-      setActiveTab(tab);
-    },
-    []
-  );
+  const handleDelete = useCallback(() => {
+    Alert.alert('Delete Post?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => onDelete(post.id) },
+    ]);
+  }, [post.id, onDelete]);
 
-  const handleImageError = useCallback((postId: string) => {
-    setImageErrors((prev) => ({ ...prev, [postId]: true }));
-    setImageLoading((prev) => ({ ...prev, [postId]: false }));
-  }, []);
-
-  const handleImageLoad = useCallback((postId: string) => {
-    setImageLoading((prev) => ({ ...prev, [postId]: false }));
-  }, []);
-
-  const handleImageLoadStart = useCallback((postId: string) => {
-    setImageLoading((prev) => ({ ...prev, [postId]: true }));
-  }, []);
-
-  const renderPost = useCallback(
-    ({ item }: { item: StreetPost }) => {
-      const creator = creatorProfiles[item.creator_id];
-      const displayName = creator?.username || creator?.full_name || 'User';
-      const avatarUrl = creator?.avatar_url;
-      const hasMedia = !!item.media_url;
-      const isVideo = item.media_type === 'video';
-      const imgError = imageErrors[item.id];
-      const imgLoading = imageLoading[item.id];
-
-      return (
-        <View style={styles.postCard}>
-          <View style={styles.postHeader}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person-circle" size={40} color="#666" />
-              </View>
-            )}
-            <View style={styles.headerText}>
-              <Text style={styles.username}>{displayName}</Text>
-              <Text style={styles.timestamp}>
-                {new Date(item.created_at).toLocaleDateString()}
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.moreBtn}>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {item.caption ? <Text style={styles.caption}>{item.caption}</Text> : null}
-          {item.content ? <Text style={styles.content}>{item.content}</Text> : null}
-
-          {hasMedia && !imgError && (
-            <View style={styles.mediaContainer}>
-              {imgLoading && (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="large" color="#007AFF" />
-                </View>
-              )}
-              {isVideo ? (
-                <View style={[styles.media, styles.videoPlaceholder]}>
-                  <Ionicons name="play-circle" size={60} color="#fff" />
-                  <Text style={styles.videoText}>Video</Text>
-                </View>
-              ) : (
-                <Image
-                  source={{ uri: item.media_url! }}
-                  style={styles.media}
-                  resizeMode="cover"
-                  onError={() => handleImageError(item.id)}
-                  onLoad={() => handleImageLoad(item.id)}
-                  onLoadStart={() => handleImageLoadStart(item.id)}
-                />
-              )}
-            </View>
-          )}
-
-          {hasMedia && imgError && (
-            <View style={styles.mediaError}>
-              <Ionicons name="image-outline" size={40} color="#999" />
-              <Text style={styles.mediaErrorText}>Image unavailable</Text>
-            </View>
-          )}
-
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => likePost(item.id)}>
-              <Ionicons name="heart-outline" size={24} color="#333" />
-              <Text style={styles.actionText}>{item.likes_count}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn}>
-              <Ionicons name="chatbubble-outline" size={22} color="#333" />
-              <Text style={styles.actionText}>{item.comments_count}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn}>
-              <Ionicons name="share-outline" size={22} color="#333" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    },
-    [creatorProfiles, imageErrors, imageLoading, likePost, handleImageError, handleImageLoad, handleImageLoadStart]
-  );
+  const displayName = profile?.full_name || profile?.username || 'User';
+  const avatarUrl = profile?.avatar_url;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.postContainer}>
+      {/* Full-screen background media */}
+      <View style={styles.mediaBg}>
+        {post.media_type === 'video' && post.media_url ? (
+          <Video
+            ref={videoRef}
+            source={{ uri: post.media_url }}
+            style={styles.fullMedia}
+            resizeMode={ResizeMode.COVER}
+            isLooping
+            shouldPlay={isActive}
+            isMuted={false}
+            useNativeControls={false}
+          />
+        ) : post.media_type === 'image' && post.media_url ? (
+          <Image source={{ uri: post.media_url }} style={styles.fullMedia} resizeMode="cover" />
+        ) : (
+          <View style={[styles.fullMedia, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+            <Ionicons name="musical-note" size={60} color="#444" />
+          </View>
+        )}
+        <View style={styles.mediaOverlay} />
+      </View>
+
+      {/* Right-side action buttons */}
+      <View style={styles.rightActions}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => onLike(post.id)}>
+          <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={34} color={isLiked ? '#ff2d55' : '#fff'} />
+          <Text style={styles.actionCount}>{formatCount(post.likes_count)}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn}>
+          <Ionicons name="chatbubble-ellipses" size={30} color="#fff" />
+          <Text style={styles.actionCount}>{formatCount(post.comments_count)}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn}>
+          <Ionicons name="share-social" size={28} color="#fff" />
+          <Text style={styles.actionCount}>{formatCount(post.shares_count)}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn}>
+          <Ionicons name="bookmark-outline" size={28} color="#fff" />
+          <Text style={styles.actionCount}>{formatCount(post.saves_count)}</Text>
+        </TouchableOpacity>
+
+        {isOwner && (
+          <TouchableOpacity style={styles.actionBtn} onPress={handleDelete}>
+            <Ionicons name="trash-outline" size={28} color="#ff3b30" />
+            <Text style={[styles.actionCount, { color: '#ff3b30' }]}>Delete</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Bottom info */}
+      <View style={styles.bottomInfo}>
+        <TouchableOpacity style={styles.creatorRow} onPress={() => onProfileTap(post.creator_id)}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: '#444', justifyContent: 'center', alignItems: 'center' }]}>
+              <Ionicons name="person" size={16} color="#888" />
+            </View>
+          )}
+          <Text style={styles.creatorName}>{displayName}</Text>
+          <Text style={styles.timeAgo}> · {timeAgo(post.created_at)}</Text>
+        </TouchableOpacity>
+
+        {post.content ? (
+          <Text style={styles.postContent} numberOfLines={3}>{post.content}</Text>
+        ) : null}
+
+        {post.caption ? (
+          <Text style={styles.postCaption} numberOfLines={2}>{post.caption}</Text>
+        ) : null}
+
+        {post.music_title ? (
+          <View style={styles.musicRow}>
+            <Ionicons name="musical-note" size={14} color="#fff" />
+            <Text style={styles.musicText} numberOfLines={1}>{post.music_title}</Text>
+          </View>
+        ) : null}
+
+        {post.hashtags && post.hashtags.length > 0 ? (
+          <Text style={styles.hashtags} numberOfLines={1}>{post.hashtags.join(' ')}</Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+// ============================================
+// MAIN SCREEN
+// ============================================
+export default function StreetsFeedScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const {
+    posts, profiles, loading, refreshing, hasMore, activeTab, likedPosts, userId,
+    refresh, loadMore, switchTab, handleDelete, handleLike,
+  } = useStreets();
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setActiveIndex(viewableItems[0].index || 0);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+
+  const renderItem = useCallback(({ item, index }: { item: StreetPost; index: number }) => (
+    <PostItem
+      post={item}
+      profile={profiles[item.creator_id]}
+      isLiked={likedPosts.has(item.id)}
+      isActive={index === activeIndex}
+      isOwner={item.creator_id === userId}
+      onLike={handleLike}
+      onDelete={handleDelete}
+      onProfileTap={(id) => router.push(`/(os)/profile/${id}` as any)}
+    />
+  ), [profiles, likedPosts, activeIndex, userId, handleLike, handleDelete, router]);
+
+  const keyExtractor = useCallback((item: StreetPost) => item.id, []);
+
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: POST_HEIGHT,
+    offset: POST_HEIGHT * index,
+    index,
+  }), []);
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Floating header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Streets</Text>
-        <TouchableOpacity
-          style={styles.createBtn}
-          onPress={() => router.push('/(os)/streets/create')}
-        >
-          <Ionicons name="add-circle" size={28} color="#007AFF" />
+        <Text style={styles.headerTitle}>Streets</Text>
+        <View style={styles.tabRow}>
+          {(['following', 'feed', 'discover'] as const).map((tab) => (
+            <TouchableOpacity key={tab} onPress={() => switchTab(tab)} style={styles.tabBtn}>
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                {tab === 'feed' ? 'For You' : tab === 'following' ? 'Following' : 'Discover'}
+              </Text>
+              {activeTab === tab && <View style={styles.tabIndicator} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/streets/create' as any)}>
+          <Ionicons name="add-circle" size={32} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabs}>
-        {(['feed', 'following', 'discover'] as const).map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => switchTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {loading && posts.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : error && posts.length === 0 ? (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={onRefresh}>
-            <Text style={styles.retryText}>Retry</Text>
+      {posts.length === 0 && !loading ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="videocam-off" size={48} color="#ccc" />
+          <Text style={styles.emptyText}>
+            {activeTab === 'following' ? 'Follow users to see their posts' : 'No posts yet'}
+          </Text>
+          <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/streets/create' as any)}>
+            <Text style={styles.emptyBtnText}>Create First Post</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
+          ref={flatListRef}
           data={posts}
-          keyExtractor={(item) => item.id}
-          renderItem={renderPost}
-          refreshControl={
-            <RefreshControl refreshing={loading && posts.length === 0} onRefresh={onRefresh} />
-          }
-          onEndReached={onEndReached}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          pagingEnabled
+          snapToInterval={POST_HEIGHT}
+          decelerationRate="fast"
+          showsVerticalScrollIndicator={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          getItemLayout={getItemLayout}
+          onEndReached={loadMore}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loading && posts.length > 0 ? <ActivityIndicator style={styles.footerLoader} /> : null
-          }
-          contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={refresh}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== 'web'}
         />
+      )}
+
+      {loading && posts.length === 0 && (
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#000' },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingVertical: 8,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#111' },
-  createBtn: { padding: 4 },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#007AFF' },
-  tabText: { fontSize: 14, color: '#666', fontWeight: '500' },
-  tabTextActive: { color: '#007AFF', fontWeight: '600' },
-  listContent: { paddingBottom: 20 },
-  postCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  headerTitle: {
+    position: 'absolute',
+    left: 16,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
-  avatarPlaceholder: { marginRight: 10 },
-  headerText: { flex: 1 },
-  username: { fontSize: 14, fontWeight: '600', color: '#111' },
-  timestamp: { fontSize: 12, color: '#999', marginTop: 2 },
-  moreBtn: { padding: 4 },
-  caption: { fontSize: 15, fontWeight: '600', color: '#111', marginBottom: 4 },
-  content: { fontSize: 14, color: '#333', lineHeight: 20, marginBottom: 8 },
-  mediaContainer: {
-    width: width - 32,
-    height: width - 32,
-    borderRadius: 8,
-    marginBottom: 8,
-    overflow: 'hidden',
-    backgroundColor: '#f5f5f5',
+  tabRow: { flexDirection: 'row', gap: 20, alignItems: 'center' },
+  tabBtn: { alignItems: 'center', paddingVertical: 4 },
+  tabText: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.6)' },
+  tabTextActive: { color: '#fff' },
+  tabIndicator: { marginTop: 4, width: 20, height: 3, borderRadius: 2, backgroundColor: '#fff' },
+  createBtn: { position: 'absolute', right: 16 },
+  postContainer: {
+    height: POST_HEIGHT,
+    width: SCREEN_W,
     position: 'relative',
   },
-  media: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingOverlay: {
+  mediaBg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
+    backgroundColor: '#111',
   },
-  videoPlaceholder: {
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
+  fullMedia: {
+    width: SCREEN_W,
+    height: POST_HEIGHT,
   },
-  videoText: {
+  mediaOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  rightActions: {
+    position: 'absolute',
+    right: 10,
+    bottom: 100,
+    alignItems: 'center',
+    gap: 18,
+    zIndex: 10,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  actionCount: {
     color: '#fff',
-    marginTop: 8,
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  mediaError: {
-    width: width - 32,
-    height: 200,
-    borderRadius: 8,
+  bottomInfo: {
+    position: 'absolute',
+    left: 16,
+    right: 80,
+    bottom: 80,
+    zIndex: 10,
+  },
+  creatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 8,
-    backgroundColor: '#f5f5f5',
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  creatorName: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  timeAgo: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+  },
+  postContent: {
+    color: '#fff',
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  postCaption: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14,
+    marginBottom: 6,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  musicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  musicText: {
+    color: '#fff',
+    fontSize: 13,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  hashtags: {
+    color: '#4dabf7',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  emptyState: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 16,
+    backgroundColor: '#000',
   },
-  mediaErrorText: {
-    color: '#999',
-    marginTop: 8,
-    fontSize: 14,
+  emptyText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
   },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { fontSize: 13, color: '#666' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  errorText: { fontSize: 14, color: '#e74c3c', textAlign: 'center', marginBottom: 12 },
-  retryBtn: { backgroundColor: '#007AFF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  retryText: { color: '#fff', fontWeight: '600' },
-  footerLoader: { paddingVertical: 16 },
+  emptyBtn: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  emptyBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
 });
