@@ -1,15 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Alert,
+  View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,24 +16,26 @@ interface Comment {
   parent_id: string | null;
   is_pinned: boolean;
   created_at: string;
-  profiles: {
-    id: string;
+  likes_count: number;
+  user_profiles: {
+    user_id: string;
     full_name: string | null;
+    display_name: string | null;
     username: string | null;
     avatar_url: string | null;
   } | null;
   replies?: Comment[];
-  likes_count: number;
 }
 
 export default function CommentsScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const isGuest = !isAuthenticated || !user;
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
   const fetchComments = useCallback(async () => {
@@ -51,7 +45,7 @@ export default function CommentsScreen() {
       .from('streets_comments')
       .select(`
         id, content, user_id, post_id, parent_id, is_pinned, created_at, likes_count,
-        profiles:user_id (id, full_name, username, avatar_url)
+        user_profiles:user_id (user_id, full_name, display_name, username, avatar_url)
       `)
       .eq('post_id', postId)
       .order('is_pinned', { ascending: false })
@@ -74,6 +68,13 @@ export default function CommentsScreen() {
   useEffect(() => { fetchComments(); }, [fetchComments]);
 
   const handleSend = useCallback(async () => {
+    if (isGuest) {
+      Alert.alert('Sign In Required', 'Please sign in to post comments.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(os)/auth/login') }
+      ]);
+      return;
+    }
     if (!inputText.trim() || !user || !postId) return;
     setSending(true);
     const { error } = await supabase.from('streets_comments').insert({
@@ -90,24 +91,33 @@ export default function CommentsScreen() {
       setReplyTo(null);
       fetchComments();
     }
-  }, [inputText, user, postId, replyTo, fetchComments]);
+  }, [inputText, user, postId, replyTo, fetchComments, isGuest, router]);
 
   const handlePin = useCallback(async (commentId: string) => {
+    if (isGuest) return;
     const { error } = await supabase
       .from('streets_comments')
       .update({ is_pinned: true })
       .eq('id', commentId);
     if (!error) fetchComments();
-  }, [fetchComments]);
+  }, [fetchComments, isGuest]);
 
   const handleReport = useCallback((commentId: string) => {
+    if (isGuest) {
+      Alert.alert('Sign In Required', 'Please sign in to report comments.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign In', onPress: () => router.push('/(os)/auth/login') }
+      ]);
+      return;
+    }
     Alert.alert('Report Comment', 'Are you sure you want to report this comment?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => {
+      { text: 'Report', style: 'destructive', onPress: async () => {
+        await supabase.from('streets_reports').insert({ target_id: commentId, target_type: 'comment', reporter_id: user?.id });
         Alert.alert('Reported', 'Thank you. We will review this comment.');
       }},
     ]);
-  }, []);
+  }, [user?.id, isGuest, router]);
 
   const openProfile = useCallback((userId: string) => {
     router.push(`/(os)/profile/${userId}`);
@@ -118,22 +128,24 @@ export default function CommentsScreen() {
       <TouchableOpacity onPress={() => openProfile(reply.user_id)}>
         <View style={[styles.avatar, styles.replyAvatar]}>
           <Text style={styles.avatarText}>
-            {(reply.profiles?.full_name || reply.profiles?.username || 'U').charAt(0)}
+            {(reply.user_profiles?.full_name || reply.user_profiles?.display_name || reply.user_profiles?.username || 'U').charAt(0)}
           </Text>
         </View>
       </TouchableOpacity>
       <View style={styles.replyContent}>
         <TouchableOpacity onPress={() => openProfile(reply.user_id)}>
           <Text style={styles.replyName}>
-            {reply.profiles?.full_name || reply.profiles?.username || 'User'}
+            {reply.user_profiles?.full_name || reply.user_profiles?.display_name || reply.user_profiles?.username || 'User'}
           </Text>
         </TouchableOpacity>
         <Text style={styles.replyText}>{reply.content}</Text>
         <View style={styles.replyActions}>
           <Text style={styles.replyTime}>{new Date(reply.created_at).toLocaleDateString()}</Text>
-          <TouchableOpacity onPress={() => setReplyTo(reply)}>
-            <Text style={styles.replyActionText}>Reply</Text>
-          </TouchableOpacity>
+          {!isGuest && (
+            <TouchableOpacity onPress={() => setReplyTo(reply)}>
+              <Text style={styles.replyActionText}>Reply</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -151,26 +163,30 @@ export default function CommentsScreen() {
         <TouchableOpacity onPress={() => openProfile(item.user_id)}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {(item.profiles?.full_name || item.profiles?.username || 'U').charAt(0)}
+              {(item.user_profiles?.full_name || item.user_profiles?.display_name || item.user_profiles?.username || 'U').charAt(0)}
             </Text>
           </View>
         </TouchableOpacity>
         <View style={styles.commentBody}>
           <TouchableOpacity onPress={() => openProfile(item.user_id)}>
             <Text style={styles.commentName}>
-              {item.profiles?.full_name || item.profiles?.username || 'User'}
+              {item.user_profiles?.full_name || item.user_profiles?.display_name || item.user_profiles?.username || 'User'}
             </Text>
           </TouchableOpacity>
           <Text style={styles.commentText}>{item.content}</Text>
           <View style={styles.commentMeta}>
             <Text style={styles.commentTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
-            <TouchableOpacity onPress={() => setReplyTo(item)}>
-              <Text style={styles.metaAction}>Reply</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleReport(item.id)}>
-              <Text style={styles.metaAction}>Report</Text>
-            </TouchableOpacity>
-            {user?.id && item.user_id === user.id && (
+            {!isGuest && (
+              <TouchableOpacity onPress={() => setReplyTo(item)}>
+                <Text style={styles.metaAction}>Reply</Text>
+              </TouchableOpacity>
+            )}
+            {!isGuest && (
+              <TouchableOpacity onPress={() => handleReport(item.id)}>
+                <Text style={styles.metaAction}>Report</Text>
+              </TouchableOpacity>
+            )}
+            {user?.id && item.user_id === user.id && !isGuest && (
               <TouchableOpacity onPress={() => handlePin(item.id)}>
                 <Text style={styles.metaAction}>Pin</Text>
               </TouchableOpacity>
@@ -188,7 +204,7 @@ export default function CommentsScreen() {
         </View>
       )}
     </View>
-  ), [user, openProfile, handlePin, handleReport]);
+  ), [user, openProfile, handlePin, handleReport, isGuest]);
 
   return (
     <KeyboardAvoidingView
@@ -197,7 +213,7 @@ export default function CommentsScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/streets')} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Comments</Text>
@@ -216,7 +232,7 @@ export default function CommentsScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No comments yet. Be the first!</Text>
+              <Text style={styles.emptyText}>{loading ? 'Loading comments...' : 'No comments yet. Be the first!'}</Text>
             </View>
           }
         />
@@ -224,34 +240,41 @@ export default function CommentsScreen() {
 
       {replyTo && (
         <View style={styles.replyBar}>
-          <Text style={styles.replyBarText}>Replying to {replyTo.profiles?.username || 'User'}</Text>
+          <Text style={styles.replyBarText}>Replying to {replyTo.user_profiles?.username || 'User'}</Text>
           <TouchableOpacity onPress={() => setReplyTo(null)}>
             <Ionicons name="close" size={18} color="#888" />
           </TouchableOpacity>
         </View>
       )}
 
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder={replyTo ? 'Write a reply...' : 'Add a comment...'}
-          placeholderTextColor="#666"
-          value={inputText}
-          onChangeText={setInputText}
-          multiline
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!inputText.trim() || sending) && styles.sendBtnDisabled]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || sending}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Ionicons name="send" size={20} color="#fff" />
-          )}
+      {!isGuest ? (
+        <View style={styles.inputBar}>
+          <TextInput
+            style={styles.input}
+            placeholder={replyTo ? 'Write a reply...' : 'Add a comment...'}
+            placeholderTextColor="#666"
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+          />
+          <TouchableOpacity
+            style={[styles.sendBtn, (!inputText.trim() || sending) && styles.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || sending}
+          >
+            {sending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.guestSignInBar} onPress={() => router.push('/(os)/auth/login')}>
+          <Text style={styles.guestSignInText}>Sign in to comment</Text>
+          <Ionicons name="arrow-forward" size={16} color="#2196F3" />
         </TouchableOpacity>
-      </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -352,4 +375,15 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   sendBtnDisabled: { backgroundColor: '#333' },
+  guestSignInBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+    backgroundColor: '#0a0a0a',
+  },
+  guestSignInText: { color: '#2196F3', fontSize: 14, fontWeight: '600' },
 });

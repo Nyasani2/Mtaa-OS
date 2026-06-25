@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export interface CreatePostPayload {
-  title: string;
+  title?: string;
   content?: string;
   media_type?: 'image' | 'video' | 'audio' | 'text';
   media_url?: string | null;
@@ -57,8 +57,9 @@ export interface StreetPost {
   scheduled_at: string | null;
   published_at: string | null;
   creator?: {
-    id: string;
+    user_id: string;
     full_name: string | null;
+    display_name: string | null;
     username: string | null;
     avatar_url: string | null;
     verified: boolean | null;
@@ -72,430 +73,183 @@ export interface StreetComment {
   content: string;
   created_at: string;
   user?: {
-    id: string;
+    user_id: string;
     full_name: string | null;
+    display_name: string | null;
     username: string | null;
     avatar_url: string | null;
   };
 }
 
-export interface StreetMessage {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  read: boolean;
-}
-
-export interface StreetFollow {
-  id: string;
-  follower_id: string;
-  following_id: string;
-  created_at: string;
-}
-
-export interface StreetLike {
-  id: string;
-  post_id: string;
-  user_id: string;
-  created_at: string;
-}
-
-export interface StreetSave {
-  id: string;
-  post_id: string;
-  user_id: string;
-  created_at: string;
-}
-
-export interface StreetShare {
-  id: string;
-  post_id: string;
-  user_id: string;
-  created_at: string;
-}
-
-// ============================================================
-// POST CRUD
-// ============================================================
-
-export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]> {
+// ===================== FEED =====================
+export async function getFeedPosts(page = 0, limit = 10) {
   const { data, error } = await supabase
     .from('streets_posts')
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
+    .select('id, creator_id, content, media_url, media_type, likes_count, comments_count, shares_count, views_count, creator:user_profiles(user_id, full_name, display_name, username, avatar_url, verified)')
     .eq('is_public', true)
     .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
+    .range(page * limit, (page + 1) * limit - 1);
   if (error) throw error;
-  return (data || []) as StreetPost[];
+  return data as StreetPost[];
 }
 
-export async function getPostById(postId: string): Promise<StreetPost | null> {
+// ===================== USER POSTS (for profile) =====================
+export async function getUserPosts(userId: string, page = 0, limit = 20) {
   const { data, error } = await supabase
     .from('streets_posts')
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
-    .eq('id', postId)
-    .single();
-
-  if (error) return null;
-  return data as StreetPost;
-}
-
-export async function createPost(creatorId: string, payload: CreatePostPayload): Promise<StreetPost | null> {
-  const { data, error } = await supabase
-    .from('streets_posts')
-    .insert({
-      creator_id: creatorId,
-      ...payload,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
-    .single();
-
-  if (error) throw error;
-  return data as StreetPost;
-}
-
-export async function updatePost(postId: string, creatorId: string, payload: Partial<CreatePostPayload>): Promise<StreetPost | null> {
-  const { data, error } = await supabase
-    .from('streets_posts')
-    .update({
-      ...payload,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', postId)
-    .eq('creator_id', creatorId)
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
-    .single();
-
-  if (error) return null;
-  return data as StreetPost;
-}
-
-export async function deletePost(postId: string, creatorId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_posts')
-    .delete()
-    .eq('id', postId)
-    .eq('creator_id', creatorId);
-
-  return !error;
-}
-
-// ============================================================
-// USER POSTS
-// ============================================================
-
-export async function getUserPosts(userId: string): Promise<StreetPost[]> {
-  const { data, error } = await supabase
-    .from('streets_posts')
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
+    .select('id, creator_id, content, media_url, media_type, likes_count, comments_count, shares_count, views_count, created_at, updated_at, is_public, allow_comments, caption, hashtags')
     .eq('creator_id', userId)
-    .order('created_at', { ascending: false });
-
+    .order('created_at', { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1);
   if (error) throw error;
-  return (data || []) as StreetPost[];
+  return data as StreetPost[];
 }
 
-// ============================================================
-// LIKES
-// ============================================================
-
-export async function likePost(postId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_likes')
-    .upsert({ post_id: postId, user_id: userId }, { onConflict: 'post_id,user_id' });
-
-  return !error;
+// ===================== SINGLE POST =====================
+export async function getPostById(postId: string) {
+  const { data, error } = await supabase
+    .from('streets_posts')
+    .select('*, creator:user_profiles(user_id, full_name, display_name, username, avatar_url, verified)')
+    .eq('id', postId)
+    .single();
+  if (error) throw error;
+  return data as StreetPost;
 }
 
-export async function unlikePost(postId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_likes')
-    .delete()
+// ===================== CREATE POST =====================
+export async function createPost(payload: CreatePostPayload & { creator_id: string }) {
+  const { data, error } = await supabase
+    .from('streets_posts')
+    .insert({ ...payload, created_at: new Date().toISOString() })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as StreetPost;
+}
+
+// ===================== UPDATE POST =====================
+export async function updatePost(postId: string, payload: Partial<CreatePostPayload>) {
+  const { data, error } = await supabase
+    .from('streets_posts')
+    .update({ ...payload, updated_at: new Date().toISOString() })
+    .eq('id', postId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as StreetPost;
+}
+
+// ===================== DELETE POST =====================
+export async function deletePost(postId: string) {
+  const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
+  if (error) throw error;
+  return true;
+}
+
+// ===================== COMMENTS =====================
+export async function getComments(postId: string) {
+  const { data, error } = await supabase
+    .from('streets_comments')
+    .select('id, post_id, user_id, content, created_at, user:user_profiles(user_id, full_name, display_name, username, avatar_url)')
     .eq('post_id', postId)
-    .eq('user_id', userId);
-
-  return !error;
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data as StreetComment[];
 }
 
-export async function isPostLiked(postId: string, userId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('streets_likes')
-    .select('id')
-    .eq('post_id', postId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  return !!data;
-}
-
-export async function getPostLikesCount(postId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('streets_likes')
-    .select('id', { count: 'exact', head: true })
-    .eq('post_id', postId);
-
-  if (error) return 0;
-  return count || 0;
-}
-
-// ============================================================
-// SAVES
-// ============================================================
-
-export async function savePost(postId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_saves')
-    .upsert({ post_id: postId, user_id: userId }, { onConflict: 'post_id,user_id' });
-
-  return !error;
-}
-
-export async function unsavePost(postId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_saves')
-    .delete()
-    .eq('post_id', postId)
-    .eq('user_id', userId);
-
-  return !error;
-}
-
-export async function isPostSaved(postId: string, userId: string): Promise<boolean> {
-  const { data } = await supabase
-    .from('streets_saves')
-    .select('id')
-    .eq('post_id', postId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  return !!data;
-}
-
-// ============================================================
-// SHARES
-// ============================================================
-
-export async function sharePost(postId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_shares')
-    .insert({ post_id: postId, user_id: userId });
-
-  return !error;
-}
-
-// ============================================================
-// COMMENTS
-// ============================================================
-
-export async function addComment(postId: string, userId: string, content: string): Promise<StreetComment | null> {
+export async function addComment(postId: string, userId: string, content: string) {
   const { data, error } = await supabase
     .from('streets_comments')
     .insert({ post_id: postId, user_id: userId, content })
-    .select(`
-      *,
-      user:profiles(id, full_name, username, avatar_url)
-    `)
+    .select()
     .single();
-
-  if (error) return null;
-  return data as StreetComment;
+  if (error) throw error;
+  // Increment comment count
+  await supabase.rpc('increment_comment_count', { post_id: postId });
+  return data;
 }
 
-export async function getComments(postId: string): Promise<StreetComment[]> {
+// ===================== LIKES =====================
+export async function likePost(postId: string, userId: string) {
+  const { error } = await supabase.from('streets_likes').insert({ post_id: postId, user_id: userId });
+  if (error) throw error;
+  await supabase.rpc('increment_like_count', { post_id: postId });
+}
+
+export async function unlikePost(postId: string, userId: string) {
+  const { error } = await supabase.from('streets_likes').delete().eq('post_id', postId).eq('user_id', userId);
+  if (error) throw error;
+  await supabase.rpc('decrement_like_count', { post_id: postId });
+}
+
+// ===================== SAVES =====================
+export async function savePost(postId: string, userId: string) {
+  const { error } = await supabase.from('streets_saves').insert({ post_id: postId, user_id: userId });
+  if (error) throw error;
+}
+
+// ===================== SHARES =====================
+export async function sharePost(postId: string, userId: string) {
+  const { error } = await supabase.from('streets_shares').insert({ post_id: postId, user_id: userId });
+  if (error) throw error;
+  await supabase.rpc('increment_share_count', { post_id: postId });
+}
+
+// ===================== FOLLOW =====================
+export async function followUser(followerId: string, followingId: string) {
+  const { error } = await supabase.from('streets_follows').insert({ follower_id: followerId, following_id: followingId });
+  if (error) throw error;
+}
+
+export async function unfollowUser(followerId: string, followingId: string) {
+  const { error } = await supabase.from('streets_follows').delete().eq('follower_id', followerId).eq('following_id', followingId);
+  if (error) throw error;
+}
+
+export async function isFollowing(followerId: string, followingId: string) {
   const { data, error } = await supabase
-    .from('streets_comments')
-    .select(`
-      *,
-      user:profiles(id, full_name, username, avatar_url)
-    `)
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
-
-  if (error) return [];
-  return (data || []) as StreetComment[];
-}
-
-export async function deleteComment(commentId: string, userId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_comments')
-    .delete()
-    .eq('id', commentId)
-    .eq('user_id', userId);
-
-  return !error;
-}
-
-// ============================================================
-// FOLLOWS
-// ============================================================
-
-export async function followUser(followerId: string, followingId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_follows')
-    .upsert({ follower_id: followerId, following_id: followingId }, { onConflict: 'follower_id,following_id' });
-
-  return !error;
-}
-
-export async function unfollowUser(followerId: string, followingId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_follows')
-    .delete()
-    .eq('follower_id', followerId)
-    .eq('following_id', followingId);
-
-  return !error;
-}
-
-export async function isFollowing(followerId: string, followingId: string): Promise<boolean> {
-  const { data } = await supabase
     .from('streets_follows')
     .select('id')
     .eq('follower_id', followerId)
     .eq('following_id', followingId)
-    .maybeSingle();
-
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
   return !!data;
 }
 
-export async function getFollowersCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('streets_follows')
-    .select('id', { count: 'exact', head: true })
-    .eq('following_id', userId);
-
-  if (error) return 0;
+export async function getFollowerCount(userId: string) {
+  const { count, error } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('following_id', userId);
+  if (error) throw error;
   return count || 0;
 }
 
-export async function getFollowingCount(userId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('streets_follows')
-    .select('id', { count: 'exact', head: true })
-    .eq('follower_id', userId);
-
-  if (error) return 0;
+export async function getFollowingCount(userId: string) {
+  const { count, error } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId);
+  if (error) throw error;
   return count || 0;
 }
 
-// ============================================================
-// MESSAGES
-// ============================================================
-
-export async function sendMessage(senderId: string, receiverId: string, content: string): Promise<StreetMessage | null> {
-  const { data, error } = await supabase
-    .from('streets_messages')
-    .insert({ sender_id: senderId, receiver_id: receiverId, content, read: false })
-    .select()
-    .single();
-
-  if (error) return null;
-  return data as StreetMessage;
-}
-
-export async function getMessages(userId: string, partnerId: string): Promise<StreetMessage[]> {
-  const { data, error } = await supabase
-    .from('streets_messages')
-    .select('*')
-    .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
-    .order('created_at', { ascending: true });
-
-  if (error) return [];
-  return (data || []) as StreetMessage[];
-}
-
-export async function markMessagesRead(userId: string, senderId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('streets_messages')
-    .update({ read: true })
-    .eq('receiver_id', userId)
-    .eq('sender_id', senderId)
-    .eq('read', false);
-
-  return !error;
-}
-
-// ============================================================
-// DISCOVER / SEARCH
-// ============================================================
-
-export async function searchPosts(query: string, limit = 50): Promise<StreetPost[]> {
+// ===================== SEARCH =====================
+export async function searchPosts(query: string, page = 0, limit = 20) {
   const { data, error } = await supabase
     .from('streets_posts')
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
+    .select('id, creator_id, content, media_url, media_type, likes_count, comments_count, shares_count, views_count, creator:user_profiles(user_id, full_name, display_name, username, avatar_url, verified)')
+    .or(`content.ilike.%${query}%,hashtags.cs.{"${query}"}`)
     .eq('is_public', true)
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%,hashtags.cs.{${query}}`)
     .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) return [];
-  return (data || []) as StreetPost[];
+    .range(page * limit, (page + 1) * limit - 1);
+  if (error) throw error;
+  return data as StreetPost[];
 }
 
-export async function getTrendingPosts(limit = 20): Promise<StreetPost[]> {
+// ===================== TRENDING =====================
+export async function getTrendingPosts(limit = 20) {
   const { data, error } = await supabase
     .from('streets_posts')
-    .select(`
-      *,
-      creator:profiles(id, full_name, username, avatar_url, verified)
-    `)
+    .select('id, creator_id, content, media_url, media_type, likes_count, comments_count, shares_count, views_count, creator:user_profiles(user_id, full_name, display_name, username, avatar_url, verified)')
     .eq('is_public', true)
-    .order('views_count', { ascending: false })
+    .order('likes_count', { ascending: false })
     .limit(limit);
-
-  if (error) return [];
-  return (data || []) as StreetPost[];
-}
-
-// ============================================================
-// VIEWS
-// ============================================================
-
-export async function incrementViews(postId: string): Promise<void> {
-  try {
-    await supabase.rpc('increment_streets_views', { post_id: postId });
-  } catch {
-    // Silent fail
-  }
-}
-
-// ============================================================
-// USER STATS
-// ============================================================
-
-export async function getUserStats(userId: string): Promise<{ posts: number; followers: number; following: number }> {
-  const [postsRes, followersRes, followingRes] = await Promise.all([
-    supabase.from('streets_posts').select('id', { count: 'exact', head: true }).eq('creator_id', userId),
-    supabase.from('streets_follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
-    supabase.from('streets_follows').select('id', { count: 'exact', head: true }).eq('follower_id', userId),
-  ]);
-
-  return {
-    posts: postsRes.count || 0,
-    followers: followersRes.count || 0,
-    following: followingRes.count || 0,
-  };
+  if (error) throw error;
+  return data as StreetPost[];
 }
