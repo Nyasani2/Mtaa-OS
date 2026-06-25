@@ -46,6 +46,32 @@ interface Comment {
   };
 }
 
+function PostVideo({ uri, style }: { uri: string; style: any }) {
+  if (Platform.OS === 'web') {
+    const flattened = StyleSheet.flatten([
+      { width: '100%', height: '100%', objectFit: 'cover' },
+      style,
+    ]);
+    return (
+      <video
+        src={uri}
+        style={flattened}
+        autoPlay
+        muted
+        loop
+        playsInline
+        controls
+        preload="auto"
+      />
+    );
+  }
+  return (
+    <View style={[style, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
+      <Ionicons name="videocam" size={48} color="#00d4ff" />
+    </View>
+  );
+}
+
 export default function PostDetailScreen() {
   const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
@@ -53,7 +79,6 @@ export default function PostDetailScreen() {
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [commentText, setCommentText] = useState('');
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
@@ -72,7 +97,6 @@ export default function PostDetailScreen() {
       if (error) throw error;
       setPost(data);
 
-      // Load comments
       const { data: cmts } = await supabase
         .from('streets_comments')
         .select('id, user_id, content, created_at, user:user_profiles(user_id, full_name, display_name, username, avatar_url)')
@@ -80,7 +104,6 @@ export default function PostDetailScreen() {
         .order('created_at', { ascending: true });
       setComments(cmts || []);
 
-      // Check if liked
       if (user?.id) {
         const { data: likeData } = await supabase
           .from('streets_likes')
@@ -98,10 +121,7 @@ export default function PostDetailScreen() {
   };
 
   const handleLike = async () => {
-    if (!isAuthenticated || !user) {
-      Alert.alert('Sign In Required', 'Please sign in to like posts.');
-      return;
-    }
+    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to like posts.'); return; }
     try {
       if (isLiked) {
         await supabase.from('streets_likes').delete().eq('post_id', postId).eq('user_id', user.id);
@@ -112,25 +132,17 @@ export default function PostDetailScreen() {
         setIsLiked(true);
         setPost(prev => prev ? { ...prev, likes_count: prev.likes_count + 1 } : prev);
       }
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
-    }
+    } catch (e: any) { Alert.alert('Error', e.message); }
   };
 
   const handleShare = async () => {
-    if (!isAuthenticated || !user) {
-      Alert.alert('Sign In Required', 'Please sign in to share posts.');
-      return;
-    }
+    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to share posts.'); return; }
     await supabase.from('streets_shares').insert({ post_id: postId, user_id: user.id });
     Alert.alert('Shared', 'Post shared to your timeline.');
   };
 
   const handleSave = async () => {
-    if (!isAuthenticated || !user) {
-      Alert.alert('Sign In Required', 'Please sign in to save posts.');
-      return;
-    }
+    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to save posts.'); return; }
     await supabase.from('streets_saves').insert({ post_id: postId, user_id: user.id });
     Alert.alert('Saved', 'Post saved to your collection.');
   };
@@ -158,10 +170,10 @@ export default function PostDetailScreen() {
 
   const creatorName = post.creator?.full_name || post.creator?.display_name || post.creator?.username || 'Unknown';
   const isOwnPost = user?.id === post.creator_id;
+  const displayContent = post.content || post.caption || '';
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -174,7 +186,6 @@ export default function PostDetailScreen() {
         )}
       </View>
 
-      {/* Creator */}
       <TouchableOpacity style={styles.creatorRow} onPress={() => goToCreator(post.creator_id)}>
         {post.creator?.avatar_url ? (
           <Image source={{ uri: post.creator.avatar_url }} style={styles.avatar} />
@@ -189,27 +200,20 @@ export default function PostDetailScreen() {
         </View>
       </TouchableOpacity>
 
-      {/* Media */}
       {post.media_url && post.media_type !== 'text' && (
         <View style={styles.mediaContainer}>
           {post.media_type === 'video' ? (
-            <View style={[styles.media, styles.videoPlaceholder]}>
-              <Ionicons name="videocam" size={48} color="#00d4ff" />
-              <Text style={styles.videoText}>Video</Text>
-            </View>
+            <PostVideo uri={post.media_url} style={styles.media} />
           ) : (
             <Image source={{ uri: post.media_url }} style={styles.media} resizeMode="cover" />
           )}
         </View>
       )}
 
-      {/* Content */}
       <View style={styles.contentSection}>
-        <Text style={styles.content}>{post.content}</Text>
-        {post.caption && <Text style={styles.caption}>{post.caption}</Text>}
+        {displayContent ? <Text style={styles.content}>{displayContent}</Text> : null}
       </View>
 
-      {/* Actions */}
       <View style={styles.actionsRow}>
         <TouchableOpacity onPress={handleLike} style={styles.actionBtn}>
           <Ionicons name={isLiked ? "heart" : "heart-outline"} size={26} color={isLiked ? "#ff4444" : "#fff"} />
@@ -228,7 +232,6 @@ export default function PostDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Comments */}
       <View style={styles.commentsSection}>
         <Text style={styles.commentsTitle}>Comments</Text>
         {comments.length === 0 ? (
@@ -258,10 +261,7 @@ export default function PostDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12 },
   headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   creatorRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
@@ -270,11 +270,8 @@ const styles = StyleSheet.create({
   creatorName: { color: '#fff', fontSize: 15, fontWeight: '600' },
   mediaContainer: { width: '100%', backgroundColor: '#111' },
   media: { width: '100%', height: SCREEN_W * 0.75 },
-  videoPlaceholder: { justifyContent: 'center', alignItems: 'center' },
-  videoText: { color: '#fff', fontSize: 16, marginTop: 8 },
   contentSection: { padding: 16 },
   content: { color: '#fff', fontSize: 15, lineHeight: 22 },
-  caption: { color: '#aaa', fontSize: 14, marginTop: 8 },
   actionsRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 24, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
   actionBtn: { alignItems: 'center' },
   actionText: { color: '#fff', fontSize: 11, marginTop: 2 },

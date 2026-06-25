@@ -12,6 +12,8 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const GRID_COLS = 3;
 const CELL_SIZE = SCREEN_W / GRID_COLS;
 
+type FilterType = 'all' | 'images' | 'videos';
+
 interface UserProfile {
   user_id: string;
   full_name: string | null;
@@ -27,9 +29,35 @@ interface UserPost {
   media_url: string | null;
   media_type: string;
   content: string | null;
+  caption: string | null;
   likes_count: number;
   comments_count: number;
   created_at: string;
+}
+
+function GridVideo({ uri, style }: { uri: string; style: any }) {
+  if (Platform.OS === 'web') {
+    const flattened = StyleSheet.flatten([
+      { width: '100%', height: '100%', objectFit: 'cover' },
+      style,
+    ]);
+    return (
+      <video
+        src={uri}
+        style={flattened}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+      />
+    );
+  }
+  return (
+    <View style={[style, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
+      <Ionicons name="videocam" size={24} color="#00d4ff" />
+    </View>
+  );
 }
 
 export default function CreatorScreen() {
@@ -41,13 +69,16 @@ export default function CreatorScreen() {
   const isGuest = !isAuthenticated || !user;
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [posts, setPosts] = useState<UserPost[]>([]);
+  const [allPosts, setAllPosts] = useState<UserPost[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [followers, setFollowers] = useState(0);
   const [following, setFollowing] = useState(0);
   const [isFollowingUser, setIsFollowingUser] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async () => {
     if (!targetUserId) { setError('No user specified'); setLoading(false); return; }
@@ -63,12 +94,13 @@ export default function CreatorScreen() {
 
       const { data: postsData, error: postsErr } = await supabase
         .from('streets_posts')
-        .select('id, media_url, media_type, content, likes_count, comments_count, created_at')
+        .select('id, media_url, media_type, content, caption, likes_count, comments_count, created_at')
         .eq('creator_id', targetUserId)
         .eq('is_public', true)
         .order('created_at', { ascending: false });
       if (postsErr) throw postsErr;
-      setPosts(postsData || []);
+      setAllPosts(postsData || []);
+      setFilteredPosts(postsData || []);
 
       const { count: fwc } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('following_id', targetUserId);
       const { count: fgc } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('follower_id', targetUserId);
@@ -88,6 +120,16 @@ export default function CreatorScreen() {
   }, [targetUserId, user?.id, isGuest, isOwnProfile]);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
+
+  useEffect(() => {
+    if (activeFilter === 'all') {
+      setFilteredPosts(allPosts);
+    } else if (activeFilter === 'images') {
+      setFilteredPosts(allPosts.filter(p => p.media_type === 'image'));
+    } else if (activeFilter === 'videos') {
+      setFilteredPosts(allPosts.filter(p => p.media_type === 'video'));
+    }
+  }, [activeFilter, allPosts]);
 
   const handleFollow = async () => {
     if (isGuest) { Alert.alert('Sign In Required', 'Please sign in to follow users.'); return; }
@@ -115,7 +157,7 @@ export default function CreatorScreen() {
         onPress: async () => {
           const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
           if (error) { Alert.alert('Error', error.message); return; }
-          setPosts(prev => prev.filter(p => p.id !== postId));
+          setAllPosts(prev => prev.filter(p => p.id !== postId));
           Alert.alert('Deleted', 'Post removed.');
         },
       },
@@ -126,38 +168,54 @@ export default function CreatorScreen() {
     router.push(`/streets/create?editPostId=${postId}`);
   };
 
-  const renderPost = ({ item }: { item: UserPost }) => (
-    <TouchableOpacity
-      style={styles.gridCell}
-      onPress={() => router.push(`/streets/post/${item.id}`)}
-      onLongPress={() => {
-        if (isOwnProfile) {
-          Alert.alert('Manage Post', '', [
-            { text: 'Edit', onPress: () => handleEditPost(item.id) },
-            { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(item.id) },
-            { text: 'Cancel', style: 'cancel' },
-          ]);
-        }
-      }}
-    >
-      {item.media_url && item.media_type !== 'text' ? (
-        <Image source={{ uri: item.media_url }} style={styles.gridImage} />
-      ) : (
-        <View style={[styles.gridImage, styles.textCell]}>
-          <Text style={styles.textCellText} numberOfLines={4}>{item.content || ''}</Text>
+  const renderPost = ({ item }: { item: UserPost }) => {
+    const isHovered = hoveredPostId === item.id;
+    const isVideo = item.media_type === 'video';
+
+    return (
+      <TouchableOpacity
+        style={styles.gridCell}
+        onPress={() => router.push(`/streets/post/${item.id}`)}
+        onLongPress={() => {
+          if (isOwnProfile) {
+            Alert.alert('Manage Post', '', [
+              { text: 'Edit', onPress: () => handleEditPost(item.id) },
+              { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(item.id) },
+              { text: 'Cancel', style: 'cancel' },
+            ]);
+          }
+        }}
+        onMouseEnter={() => setHoveredPostId(item.id)}
+        onMouseLeave={() => setHoveredPostId(null)}
+      >
+        {item.media_url && item.media_type !== 'text' ? (
+          isVideo && isHovered ? (
+            <GridVideo uri={item.media_url} style={styles.gridImage} />
+          ) : (
+            <Image source={{ uri: item.media_url }} style={styles.gridImage} />
+          )
+        ) : (
+          <View style={[styles.gridImage, styles.textCell]}>
+            <Text style={styles.textCellText} numberOfLines={4}>{item.content || item.caption || ''}</Text>
+          </View>
+        )}
+        <View style={styles.gridOverlay}>
+          <Ionicons name="heart" size={12} color="#fff" />
+          <Text style={styles.gridCount}>{item.likes_count}</Text>
         </View>
-      )}
-      <View style={styles.gridOverlay}>
-        <Ionicons name="heart" size={12} color="#fff" />
-        <Text style={styles.gridCount}>{item.likes_count}</Text>
-      </View>
-      {isOwnProfile && (
-        <TouchableOpacity style={styles.editBtn} onPress={() => handleEditPost(item.id)}>
-          <Ionicons name="create" size={14} color="#fff" />
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
+        {isVideo && (
+          <View style={styles.videoBadge}>
+            <Ionicons name="videocam" size={12} color="#fff" />
+          </View>
+        )}
+        {isOwnProfile && (
+          <TouchableOpacity style={styles.editBtn} onPress={() => handleEditPost(item.id)}>
+            <Ionicons name="create" size={14} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -183,6 +241,8 @@ export default function CreatorScreen() {
   }
 
   const displayName = profile?.full_name || profile?.display_name || profile?.username || 'User';
+  const imageCount = allPosts.filter(p => p.media_type === 'image').length;
+  const videoCount = allPosts.filter(p => p.media_type === 'video').length;
 
   return (
     <View style={styles.container}>
@@ -214,7 +274,7 @@ export default function CreatorScreen() {
 
       <View style={styles.statsRow}>
         <View style={styles.stat}>
-          <Text style={styles.statNum}>{posts.length}</Text>
+          <Text style={styles.statNum}>{allPosts.length}</Text>
           <Text style={styles.statLabel}>Posts</Text>
         </View>
         <View style={styles.stat}>
@@ -242,8 +302,22 @@ export default function CreatorScreen() {
         )}
       </View>
 
+      <View style={styles.filterRow}>
+        <TouchableOpacity style={[styles.filterBtn, activeFilter === 'all' && styles.filterBtnActive]} onPress={() => setActiveFilter('all')}>
+          <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>All</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterBtn, activeFilter === 'images' && styles.filterBtnActive]} onPress={() => setActiveFilter('images')}>
+          <Ionicons name="image" size={14} color={activeFilter === 'images' ? '#00d4ff' : '#888'} />
+          <Text style={[styles.filterText, activeFilter === 'images' && styles.filterTextActive]}>Pics ({imageCount})</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterBtn, activeFilter === 'videos' && styles.filterBtnActive]} onPress={() => setActiveFilter('videos')}>
+          <Ionicons name="videocam" size={14} color={activeFilter === 'videos' ? '#00d4ff' : '#888'} />
+          <Text style={[styles.filterText, activeFilter === 'videos' && styles.filterTextActive]}>Videos ({videoCount})</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
-        data={posts}
+        data={filteredPosts}
         keyExtractor={item => item.id}
         renderItem={renderPost}
         numColumns={GRID_COLS}
@@ -251,8 +325,10 @@ export default function CreatorScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="images-outline" size={48} color="#444" />
-            <Text style={styles.emptyText}>No posts yet</Text>
-            {isOwnProfile && (
+            <Text style={styles.emptyText}>
+              {activeFilter === 'all' ? 'No posts yet' : activeFilter === 'images' ? 'No photos yet' : 'No videos yet'}
+            </Text>
+            {isOwnProfile && activeFilter === 'all' && (
               <TouchableOpacity onPress={() => router.push('/streets/create')} style={styles.createBtn}>
                 <Text style={styles.createBtnText}>Create your first post</Text>
               </TouchableOpacity>
@@ -267,10 +343,7 @@ export default function CreatorScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12 },
   headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   profileCard: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   profileAvatar: { width: 80, height: 80, borderRadius: 40, marginRight: 16 },
@@ -284,19 +357,22 @@ const styles = StyleSheet.create({
   statNum: { color: '#fff', fontSize: 18, fontWeight: '700' },
   statLabel: { color: '#888', fontSize: 12, marginTop: 2 },
   actionRow: { flexDirection: 'row', justifyContent: 'center', paddingVertical: 12 },
-  actionBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#00d4ff',
-    paddingHorizontal: 24, paddingVertical: 10, borderRadius: 24,
-  },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#00d4ff', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 24 },
   actionBtnFollowing: { backgroundColor: '#222', borderWidth: 1, borderColor: '#444' },
   actionBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
   actionBtnTextFollowing: { color: '#fff' },
-  gridCell: { width: CELL_SIZE, height: CELL_SIZE, padding: 1 },
+  filterRow: { flexDirection: 'row', justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 8, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  filterBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#111', gap: 4 },
+  filterBtnActive: { backgroundColor: '#00d4ff22', borderWidth: 1, borderColor: '#00d4ff' },
+  filterText: { color: '#888', fontSize: 12 },
+  filterTextActive: { color: '#00d4ff', fontWeight: '600' },
+  gridCell: { width: CELL_SIZE, height: CELL_SIZE, padding: 1, position: 'relative' },
   gridImage: { width: '100%', height: '100%', backgroundColor: '#111' },
   textCell: { justifyContent: 'center', alignItems: 'center', padding: 8 },
   textCellText: { color: '#fff', fontSize: 10, textAlign: 'center' },
   gridOverlay: { position: 'absolute', bottom: 4, left: 4, flexDirection: 'row', alignItems: 'center' },
   gridCount: { color: '#fff', fontSize: 10, marginLeft: 2 },
+  videoBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 2 },
   editBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, padding: 4 },
   empty: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: '#666', fontSize: 14, marginTop: 12 },
