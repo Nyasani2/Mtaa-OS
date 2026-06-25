@@ -1,440 +1,187 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Alert,
-  Platform,
+  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
+  Dimensions, Platform, Animated, TouchableOpacity, Image, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
-import { useStreets } from '@/lib/hooks/useStreets';
-import type { StreetPost, CreatorProfile } from '@/lib/services/streets-service';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
 const { height: SCREEN_H, width: SCREEN_W } = Dimensions.get('window');
-const POST_HEIGHT = SCREEN_H;
 
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
-  return String(n);
+interface Post {
+  id: string; creator_id: string; content: string | null;
+  media_url: string | null; media_type: string;
+  likes_count: number; comments_count: number; shares_count: number; views_count: number;
+  creator: { id: string; full_name: string | null; username: string | null; avatar_url: string | null; verified: boolean; } | null;
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'now';
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d`;
-  return new Date(dateStr).toLocaleDateString();
-}
+const FEATURES = [
+  { label: 'For You', icon: 'home', route: null },
+  { label: 'Live', icon: 'videocam', route: '/streets/live' },
+  { label: 'Creator', icon: 'person', route: '/streets/creator' },
+  { label: 'Shop', icon: 'cart', route: '/streets/shop' },
+  { label: 'Jobs', icon: 'briefcase', route: '/streets/jobs' },
+  { label: 'Ads', icon: 'megaphone', route: '/streets/ads' },
+  { label: 'Wallet', icon: 'wallet', route: '/streets/wallet' },
+  { label: 'Settings', icon: 'settings', route: '/streets/settings' },
+];
 
-// ============================================
-// SINGLE POST (full screen like TikTok)
-// ============================================
-interface PostItemProps {
-  post: StreetPost;
-  profile: CreatorProfile | undefined;
-  isLiked: boolean;
-  isActive: boolean;
-  isOwner: boolean;
-  onLike: (id: string) => void;
-  onDelete: (id: string) => void;
-  onProfileTap: (creatorId: string) => void;
-}
-
-function PostItem({ post, profile, isLiked, isActive, isOwner, onLike, onDelete, onProfileTap }: PostItemProps) {
-  const videoRef = useRef<Video>(null);
-  const [showMenu, setShowMenu] = useState(false);
-
-  useEffect(() => {
-    if (post.media_type === 'video' && videoRef.current) {
-      if (isActive) {
-        videoRef.current.playAsync();
-      } else {
-        videoRef.current.pauseAsync();
-      }
-    }
-  }, [isActive, post.media_type]);
-
-  const handleDelete = useCallback(() => {
-    Alert.alert('Delete Post?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => onDelete(post.id) },
-    ]);
-  }, [post.id, onDelete]);
-
-  const displayName = profile?.full_name || profile?.username || 'User';
-  const avatarUrl = profile?.avatar_url;
-
-  return (
-    <View style={styles.postContainer}>
-      {/* Full-screen background media */}
-      <View style={styles.mediaBg}>
-        {post.media_type === 'video' && post.media_url ? (
-          <Video
-            ref={videoRef}
-            source={{ uri: post.media_url }}
-            style={styles.fullMedia}
-            resizeMode={ResizeMode.COVER}
-            isLooping
-            shouldPlay={isActive}
-            isMuted={false}
-            useNativeControls={false}
-          />
-        ) : post.media_type === 'image' && post.media_url ? (
-          <Image source={{ uri: post.media_url }} style={styles.fullMedia} resizeMode="cover" />
-        ) : (
-          <View style={[styles.fullMedia, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
-            <Ionicons name="musical-note" size={60} color="#444" />
-          </View>
-        )}
-        <View style={styles.mediaOverlay} />
-      </View>
-
-      {/* Right-side action buttons */}
-      <View style={styles.rightActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => onLike(post.id)}>
-          <Ionicons name={isLiked ? 'heart' : 'heart-outline'} size={34} color={isLiked ? '#ff2d55' : '#fff'} />
-          <Text style={styles.actionCount}>{formatCount(post.likes_count)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="chatbubble-ellipses" size={30} color="#fff" />
-          <Text style={styles.actionCount}>{formatCount(post.comments_count)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="share-social" size={28} color="#fff" />
-          <Text style={styles.actionCount}>{formatCount(post.shares_count)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="bookmark-outline" size={28} color="#fff" />
-          <Text style={styles.actionCount}>{formatCount(post.saves_count)}</Text>
-        </TouchableOpacity>
-
-        {isOwner && (
-          <TouchableOpacity style={styles.actionBtn} onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={28} color="#ff3b30" />
-            <Text style={[styles.actionCount, { color: '#ff3b30' }]}>Delete</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Bottom info */}
-      <View style={styles.bottomInfo}>
-        <TouchableOpacity style={styles.creatorRow} onPress={() => onProfileTap(post.creator_id)}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, { backgroundColor: '#444', justifyContent: 'center', alignItems: 'center' }]}>
-              <Ionicons name="person" size={16} color="#888" />
-            </View>
-          )}
-          <Text style={styles.creatorName}>{displayName}</Text>
-          <Text style={styles.timeAgo}> · {timeAgo(post.created_at)}</Text>
-        </TouchableOpacity>
-
-        {post.content ? (
-          <Text style={styles.postContent} numberOfLines={3}>{post.content}</Text>
-        ) : null}
-
-        {post.caption ? (
-          <Text style={styles.postCaption} numberOfLines={2}>{post.caption}</Text>
-        ) : null}
-
-        {post.music_title ? (
-          <View style={styles.musicRow}>
-            <Ionicons name="musical-note" size={14} color="#fff" />
-            <Text style={styles.musicText} numberOfLines={1}>{post.music_title}</Text>
-          </View>
-        ) : null}
-
-        {post.hashtags && post.hashtags.length > 0 ? (
-          <Text style={styles.hashtags} numberOfLines={1}>{post.hashtags.join(' ')}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-// ============================================
-// MAIN SCREEN
-// ============================================
-export default function StreetsFeedScreen() {
+export default function StreetsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const {
-    posts, profiles, loading, refreshing, hasMore, activeTab, likedPosts, userId,
-    refresh, loadMore, switchTab, handleDelete, handleLike,
-  } = useStreets();
+  const { user } = useAuthStore();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [visibleIndex, setVisibleIndex] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('For You');
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const fetchPosts = useCallback(async (page = 0, refresh = false) => {
+    if (refresh) setRefreshing(true);
+    const { data, error } = await supabase
+      .from('streets_posts')
+      .select('id, creator_id, content, media_url, media_type, likes_count, comments_count, shares_count, views_count, creator:profiles(id, full_name, username, avatar_url, verified)')
+      .order('created_at', { ascending: false })
+      .range(page * 10, (page + 1) * 10 - 1);
+    if (!error && data) {
+      const mapped = (data as any[]).map(p => ({ ...p, creator: Array.isArray(p.creator) ? p.creator[0] : p.creator }));
+      if (refresh) { setPosts(mapped); } else { setPosts(prev => [...prev, ...mapped]); }
+      setHasMore(data.length === 10);
+    } else if (error) { console.error('Feed error:', error); }
+    setLoading(false); setRefreshing(false);
+  }, []);
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setActiveIndex(viewableItems[0].index || 0);
-    }
-  }).current;
+  useEffect(() => { fetchPosts(0, true); }, [fetchPosts]);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) setVisibleIndex(viewableItems[0].index || 0);
+  }, []);
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
-  const renderItem = useCallback(({ item, index }: { item: StreetPost; index: number }) => (
-    <PostItem
-      post={item}
-      profile={profiles[item.creator_id]}
-      isLiked={likedPosts.has(item.id)}
-      isActive={index === activeIndex}
-      isOwner={item.creator_id === userId}
-      onLike={handleLike}
-      onDelete={handleDelete}
-      onProfileTap={(id) => router.push(`/(os)/profile/${id}` as any)}
-    />
-  ), [profiles, likedPosts, activeIndex, userId, handleLike, handleDelete, router]);
+  const toggleDropdown = useCallback(() => {
+    if (dropdownOpen) {
+      Animated.timing(dropdownAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => setDropdownOpen(false));
+    } else { setDropdownOpen(true); Animated.timing(dropdownAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start(); }
+  }, [dropdownOpen, dropdownAnim]);
 
-  const keyExtractor = useCallback((item: StreetPost) => item.id, []);
+  const navigateFeature = useCallback((route: string | null, label: string) => {
+    setActiveTab(label); toggleDropdown(); if (route) router.push(route as any);
+  }, [router, toggleDropdown]);
 
-  const getItemLayout = useCallback((_: any, index: number) => ({
-    length: POST_HEIGHT,
-    offset: POST_HEIGHT * index,
-    index,
-  }), []);
+  const openProfile = useCallback((userId: string) => { router.push(`/(os)/profile/${userId}`); }, [router]);
+  const openComments = useCallback((postId: string) => { router.push(`/streets/comments/${postId}`); }, [router]);
+  const openShare = useCallback((postId: string, content: string) => { router.push({ pathname: '/streets/share', params: { postId, content } }); }, [router]);
+  const openAds = useCallback((postId: string) => { router.push({ pathname: '/streets/ads', params: { postId } }); }, [router]);
+  const likePost = useCallback(async (postId: string) => { await supabase.from('streets_posts').update({ likes_count: supabase.rpc('increment', { x: 1 }) }).eq('id', postId); }, []);
+
+  const renderPost = useCallback(({ item, index }: { item: Post; index: number }) => {
+    const creatorName = item.creator?.full_name || item.creator?.username || 'User';
+    return (
+      <View style={styles.postContainer}>
+        <View style={styles.mediaBox}>
+          {item.media_url ? (
+            <Image source={{ uri: item.media_url }} style={styles.mediaImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.mediaFallback}><Text style={styles.mediaFallbackEmoji}>📝</Text></View>
+          )}
+        </View>
+        <View style={styles.sidebar}>
+          <TouchableOpacity style={styles.sideBtn} onPress={() => likePost(item.id)}>
+            <Ionicons name="heart" size={32} color="#fff" /><Text style={styles.sideCount}>{item.likes_count || 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sideBtn} onPress={() => openComments(item.id)}>
+            <Ionicons name="chatbubble" size={30} color="#fff" /><Text style={styles.sideCount}>{item.comments_count || 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sideBtn} onPress={() => openShare(item.id, item.content || '')}>
+            <Ionicons name="share-social" size={30} color="#fff" /><Text style={styles.sideCount}>{item.shares_count || 0}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sideBtn} onPress={() => openAds(item.id)}>
+            <Ionicons name="megaphone" size={28} color="#fff" /><Text style={styles.sideCount}>Promote</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.infoOverlay}>
+          <TouchableOpacity style={styles.creatorRow} onPress={() => openProfile(item.creator_id)}>
+            {item.creator?.avatar_url ? (
+              <Image source={{ uri: item.creator.avatar_url }} style={styles.creatorAvatar} />
+            ) : (
+              <View style={styles.creatorAvatar}><Text style={styles.creatorAvatarText}>{creatorName.charAt(0)}</Text></View>
+            )}
+            <Text style={styles.creatorName}>{creatorName}</Text>
+            {item.creator?.verified && <Ionicons name="checkmark-circle" size={14} color="#2196F3" style={{ marginLeft: 4 }} />}
+            <TouchableOpacity style={styles.followChip} onPress={() => openProfile(item.creator_id)}><Text style={styles.followChipText}>Follow</Text></TouchableOpacity>
+          </TouchableOpacity>
+          <Text style={styles.postContent} numberOfLines={3}>{item.content || ''}</Text>
+        </View>
+      </View>
+    );
+  }, [visibleIndex, likePost, openComments, openShare, openAds, openProfile]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Floating header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Streets</Text>
-        <View style={styles.tabRow}>
-          {(['following', 'feed', 'discover'] as const).map((tab) => (
-            <TouchableOpacity key={tab} onPress={() => switchTab(tab)} style={styles.tabBtn}>
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab === 'feed' ? 'For You' : tab === 'following' ? 'Following' : 'Discover'}
-              </Text>
-              {activeTab === tab && <View style={styles.tabIndicator} />}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={toggleDropdown} style={styles.tabSelector}>
+          <Text style={styles.tabText}>{activeTab}</Text>
+          <Ionicons name={dropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#fff" style={{ marginLeft: 4 }} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/streets/search')}><Ionicons name="search" size={22} color="#fff" /></TouchableOpacity>
+      </View>
+      {dropdownOpen && (
+        <Animated.View style={[styles.dropdown, { opacity: dropdownAnim, transform: [{ translateY: dropdownAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
+          {FEATURES.map((feat, idx) => (
+            <TouchableOpacity key={idx} style={[styles.dropdownItem, activeTab === feat.label && styles.dropdownItemActive]} onPress={() => navigateFeature(feat.route, feat.label)}>
+              <Ionicons name={feat.icon as any} size={20} color={activeTab === feat.label ? '#2196F3' : '#fff'} />
+              <Text style={[styles.dropdownLabel, activeTab === feat.label && styles.dropdownLabelActive]}>{feat.label}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-        <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/streets/create' as any)}>
-          <Ionicons name="add-circle" size={32} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      {posts.length === 0 && !loading ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="videocam-off" size={48} color="#ccc" />
-          <Text style={styles.emptyText}>
-            {activeTab === 'following' ? 'Follow users to see their posts' : 'No posts yet'}
-          </Text>
-          <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/streets/create' as any)}>
-            <Text style={styles.emptyBtnText}>Create First Post</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={posts}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          pagingEnabled
-          snapToInterval={POST_HEIGHT}
-          decelerationRate="fast"
-          showsVerticalScrollIndicator={false}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-          getItemLayout={getItemLayout}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          refreshing={refreshing}
-          onRefresh={refresh}
-          maxToRenderPerBatch={3}
-          windowSize={5}
-          removeClippedSubviews={Platform.OS !== 'web'}
-        />
+        </Animated.View>
       )}
-
-      {loading && posts.length === 0 && (
-        <View style={styles.loaderOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-        </View>
-      )}
+      <FlatList
+        data={posts} renderItem={renderPost} keyExtractor={item => item.id} pagingEnabled snapToInterval={SCREEN_H} snapToAlignment="start" decelerationRate="fast" showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchPosts(0, true)} tintColor="#fff" />}
+        onEndReached={() => hasMore && fetchPosts(Math.floor(posts.length / 10))} onEndReachedThreshold={0.5}
+        onViewableItemsChanged={onViewableItemsChanged} viewabilityConfig={viewabilityConfig}
+        getItemLayout={(data, index) => ({ length: SCREEN_H, offset: SCREEN_H * index, index })}
+        ListEmptyComponent={<View style={[styles.empty, { height: SCREEN_H }]}><Text style={styles.emptyText}>{loading ? 'Loading feed...' : 'No posts yet. Create one!'}</Text></View>}
+        initialNumToRender={2} maxToRenderPerBatch={3} windowSize={5} removeClippedSubviews={Platform.OS !== 'web'}
+      />
+      {dropdownOpen && <TouchableOpacity style={styles.dropdownOverlay} onPress={toggleDropdown} activeOpacity={1} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  headerTitle: {
-    position: 'absolute',
-    left: 16,
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  tabRow: { flexDirection: 'row', gap: 20, alignItems: 'center' },
-  tabBtn: { alignItems: 'center', paddingVertical: 4 },
-  tabText: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.6)' },
-  tabTextActive: { color: '#fff' },
-  tabIndicator: { marginTop: 4, width: 20, height: 3, borderRadius: 2, backgroundColor: '#fff' },
-  createBtn: { position: 'absolute', right: 16 },
-  postContainer: {
-    height: POST_HEIGHT,
-    width: SCREEN_W,
-    position: 'relative',
-  },
-  mediaBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#111',
-  },
-  fullMedia: {
-    width: SCREEN_W,
-    height: POST_HEIGHT,
-  },
-  mediaOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  rightActions: {
-    position: 'absolute',
-    right: 10,
-    bottom: 100,
-    alignItems: 'center',
-    gap: 18,
-    zIndex: 10,
-  },
-  actionBtn: {
-    alignItems: 'center',
-    gap: 2,
-  },
-  actionCount: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  bottomInfo: {
-    position: 'absolute',
-    left: 16,
-    right: 80,
-    bottom: 80,
-    zIndex: 10,
-  },
-  creatorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  creatorName: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  timeAgo: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-  },
-  postContent: {
-    color: '#fff',
-    fontSize: 15,
-    lineHeight: 20,
-    marginBottom: 6,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  postCaption: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 14,
-    marginBottom: 6,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  musicRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  musicText: {
-    color: '#fff',
-    fontSize: 13,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  hashtags: {
-    color: '#4dabf7',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-    backgroundColor: '#000',
-  },
-  emptyText: {
-    color: '#888',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  emptyBtn: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  emptyBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  loaderOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
+  topBar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: Platform.OS === 'ios' ? 48 : 24, paddingBottom: 12, paddingHorizontal: 16 },
+  tabSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.4)' },
+  tabText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  searchBtn: { position: 'absolute', right: 16, top: Platform.OS === 'ios' ? 48 : 24, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  dropdown: { position: 'absolute', top: Platform.OS === 'ios' ? 88 : 64, left: '50%', marginLeft: -100, width: 200, backgroundColor: 'rgba(20,20,20,0.95)', borderRadius: 16, paddingVertical: 8, zIndex: 60, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  dropdownOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 55 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  dropdownItemActive: { backgroundColor: 'rgba(33,150,243,0.15)' },
+  dropdownLabel: { color: '#fff', fontSize: 15, fontWeight: '500' },
+  dropdownLabelActive: { color: '#2196F3', fontWeight: '700' },
+  postContainer: { width: SCREEN_W, height: SCREEN_H, backgroundColor: '#000', position: 'relative' },
+  mediaBox: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#111' },
+  mediaImage: { width: '100%', height: '100%' },
+  mediaFallback: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  mediaFallbackEmoji: { fontSize: 80 },
+  sidebar: { position: 'absolute', right: 8, bottom: 120, alignItems: 'center', gap: 16, zIndex: 10 },
+  sideBtn: { alignItems: 'center' },
+  sideCount: { color: '#fff', fontSize: 12, marginTop: 4, fontWeight: '500' },
+  infoOverlay: { position: 'absolute', bottom: 40, left: 16, right: 80, zIndex: 10 },
+  creatorRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  creatorAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center', marginRight: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  creatorAvatarText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  creatorName: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  followChip: { backgroundColor: '#ff4444', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 10 },
+  followChipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  postContent: { color: '#fff', fontSize: 14, lineHeight: 20, opacity: 0.9 },
+  empty: { justifyContent: 'center', alignItems: 'center' },
+  emptyText: { color: '#fff', fontSize: 16 },
 });

@@ -1,217 +1,244 @@
-// app/(os)/profile/index.tsx — MTAA Identity Engine Dashboard
-// v3.1: Uses full_name, username, bio, location, avatar_url, cover_url from actual schema
-
-import { useEffect } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator,
-  ScrollView, Dimensions,
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useProfile } from '@/lib/profile/hooks/useProfile'; // YOUR existing hook
+import { useProfileTimeline } from '@/lib/profile/hooks/useProfileTimeline'; // NEW
 
 const { width } = Dimensions.get('window');
+const GRID_SIZE = (width - 48) / 3;
 
-export default function ProfileScreen() {
-  const { user, profile, isLoading, isAuthenticated, initialize, signOut } = useAuth();
+function Avatar({ url, name, size = 80 }: { url: string | null; name: string; size?: number }) {
+  if (url) return <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: size / 2 }} />;
+  const initial = (name || 'U').charAt(0).toUpperCase();
+  return (
+    <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
+      <Text style={{ color: '#fff', fontSize: size * 0.35, fontWeight: '700' }}>{initial}</Text>
+    </View>
+  );
+}
+
+function TimelineCard({ item }: { item: any }) {
   const router = useRouter();
-
-  useEffect(() => { initialize(); }, []);
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#6366f1" />
-        <Text style={styles.loadingText}>Loading identity...</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <View style={styles.notSignedCard}>
-          <Ionicons name="person-circle-outline" size={64} color="#ccc" />
-          <Text style={styles.notSignedTitle}>Not Signed In</Text>
-          <Text style={styles.notSignedText}>Sign in to view your MTAA Identity</Text>
-          <TouchableOpacity style={styles.signInBtn} onPress={() => router.push('/auth/sign-in')}>
-            <Text style={styles.signInBtnText}>Sign In</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.createAccountBtn} onPress={() => router.push('/auth/signup')}>
-            <Text style={styles.createAccountText}>Create Account</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const displayName = user.full_name || user.display_name || user.username || user.email?.split('@')[0] || 'User';
-  const handle = user.username ? `@${user.username}` : user.email;
-  const avatarUri = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=6366f1&color=fff`;
-  const coverUri = user.cover_url || user.cover_photo_url;
-
-  const sections = [
-    { key: 'edit', icon: 'person-outline', label: 'Edit Profile', color: '#6366f1', route: '/(os)/profile/edit' },
-    { key: 'wallet', icon: 'wallet-outline', label: 'Wallet', color: '#10b981', route: '/(os)/wallet' },
-    { key: 'professional', icon: 'briefcase-outline', label: 'Professional CV', color: '#f59e0b', route: '/(os)/profile/professional' },
-    { key: 'business', icon: 'storefront-outline', label: 'My Business', color: '#8b5cf6', route: '/(os)/profile/business' },
-    { key: 'family', icon: 'people-outline', label: 'Family', color: '#ec4899', route: '/(os)/profile/family' },
-    { key: 'creator', icon: 'create-outline', label: 'Creator', color: '#ef4444', route: '/(os)/profile/creator' },
-    { key: 'reputation', icon: 'star-outline', label: 'Reputation', color: '#f97316', route: '/(os)/profile/reputation' },
-    { key: 'qr', icon: 'qr-code-outline', label: 'QR Identity', color: '#06b6d4', route: '/(os)/profile/qr' },
-    { key: 'documents', icon: 'document-text-outline', label: 'Documents', color: '#64748b', route: '/(os)/profile/documents' },
-    { key: 'assets', icon: 'cube-outline', label: 'Assets', color: '#84cc16', route: '/(os)/profile/assets' },
-  ];
+  const icons: Record<string, string> = {
+    streets_post: 'videocam', marketplace_listing: 'cart', job_listing: 'briefcase', tribes_post: 'people'
+  };
+  const colors: Record<string, string> = {
+    streets_post: '#ef4444', marketplace_listing: '#84cc16', job_listing: '#f59e0b', tribes_post: '#d946ef'
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Cover + Avatar Header */}
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => {
+        if (item.source_app === 'streets') router.push(`/streets?postId=${item.source_id}`);
+        else if (item.source_app === 'marketplace') router.push(`/(commerce)/marketplace/${item.source_id}`);
+        else if (item.source_app === 'jobs') router.push(`/(work)/jobs/details/${item.source_id}`);
+      }}
+    >
+      {item.thumbnail_url || item.media_url ? (
+        <Image source={{ uri: item.thumbnail_url || item.media_url }} style={styles.cardMedia} />
+      ) : (
+        <View style={[styles.cardMedia, { backgroundColor: '#1a1a1a', alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name={icons[item.content_type] as any || 'apps'} size={28} color={colors[item.content_type] || '#666'} />
+        </View>
+      )}
+      <View style={styles.cardOverlay}>
+        <View style={[styles.sourceBadge, { backgroundColor: colors[item.content_type] || '#666' }]}>
+          <Ionicons name={icons[item.content_type] as any || 'apps'} size={10} color="#fff" />
+          <Text style={styles.sourceText}>{item.source_app}</Text>
+        </View>
+      </View>
+      {item.title && <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>}
+      <View style={styles.cardStats}>
+        <Text style={styles.cardStat}>👁 {item.view_count || 0}</Text>
+        <Text style={styles.cardStat}>❤ {item.like_count || 0}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+export default function ProfileOSScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { user } = useAuthStore();
+  const profileUserId = id || user?.id;
+  const isOwnProfile = user?.id === profileUserId;
+
+  // YOUR existing hook — gets profile, roles, verifications, etc.
+  const { profile, isLoading: profileLoading } = useProfile();
+
+  // NEW timeline hook
+  const {
+    timeline, stats, loading: timelineLoading, following,
+    activeTab, setActiveTab, refresh, handleFollow
+  } = useProfileTimeline(profileUserId || '');
+
+  const loading = profileLoading || timelineLoading;
+  const name = profile?.display_name || profile?.full_name || 'User';
+  const username = profile?.username ? `@${profile.username}` : '';
+
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#0af" />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
         <View style={styles.header}>
-          {coverUri && (
-            <Image source={{ uri: coverUri }} style={styles.coverImage} />
-          )}
-          <View style={[styles.avatarWrap, coverUri && styles.avatarWrapOverlay]}>
-            <Image source={{ uri: avatarUri }} style={styles.avatar} />
-          </View>
-          <Text style={styles.name}>{displayName}</Text>
-          {handle && <Text style={styles.handle}>{handle}</Text>}
-          {user.bio && <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>}
-          {user.location && (
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="#888" />
-              <Text style={styles.locationText}>{user.location}</Text>
-            </View>
-          )}
-          {user.is_verified && (
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#fff" />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
-          )}
-          {user.role !== 'user' && (
-            <View style={[styles.roleBadge, { backgroundColor: user.role === 'admin' ? '#ef4444' : '#6366f1' }]}>
-              <Text style={styles.roleText}>{user.role.toUpperCase()}</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/(os)/profile/edit')}>
-            <Text style={styles.editBtnText}>Edit Profile</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{name}</Text>
+          <TouchableOpacity onPress={() => router.push('/settings/profile')}>
+            <Ionicons name="settings-outline" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.content_count || 0}</Text>
-            <Text style={styles.statLabel}>Posts</Text>
+        {/* Profile Info */}
+        <View style={styles.profileSection}>
+          <Avatar url={profile?.avatar_url} name={name} size={90} />
+          <Text style={styles.name}>{name}</Text>
+          {username ? <Text style={styles.username}>{username}</Text> : null}
+          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.content_count}</Text>
+              <Text style={styles.statLabel}>Posts</Text>
+            </View>
+            <TouchableOpacity style={styles.statItem} onPress={() => router.push(`/profile/followers?id=${profileUserId}`)}>
+              <Text style={styles.statNumber}>{stats.followers_count}</Text>
+              <Text style={styles.statLabel}>Followers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statItem} onPress={() => router.push(`/profile/following?id=${profileUserId}`)}>
+              <Text style={styles.statNumber}>{stats.following_count}</Text>
+              <Text style={styles.statLabel}>Following</Text>
+            </TouchableOpacity>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.total_views}</Text>
+              <Text style={styles.statLabel}>Views</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.followers_count || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.following_count || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{user.trust_score || 0}</Text>
-            <Text style={styles.statLabel}>Trust</Text>
+
+          {/* Actions */}
+          <View style={styles.actionRow}>
+            {isOwnProfile ? (
+              <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/settings/profile')}>
+                <Text style={styles.editBtnText}>Edit Profile</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity style={[styles.followBtn, following && styles.followingBtn]} onPress={handleFollow}>
+                  <Text style={[styles.followBtnText, following && styles.followingBtnText]}>
+                    {following ? 'Following' : 'Follow'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.messageBtn} onPress={() => router.push(`/(communication)/messages?userId=${profileUserId}`)}>
+                  <Ionicons name="mail" size={18} color="#fff" />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Section Grid */}
-        <View style={styles.grid}>
-          {sections.map((s) => (
-            <TouchableOpacity key={s.key} style={styles.gridItem} onPress={() => router.push(s.route as any)}>
-              <View style={[styles.gridIcon, { backgroundColor: s.color + '15' }]}>
-                <Ionicons name={s.icon as any} size={24} color={s.color} />
-              </View>
-              <Text style={styles.gridLabel}>{s.label}</Text>
-              <Ionicons name="chevron-forward" size={14} color="#999" style={styles.gridArrow} />
+        {/* Content Tabs */}
+        <View style={styles.tabs}>
+          {[
+            { key: 'all', label: 'All', icon: 'apps' },
+            { key: 'streets', label: 'Streets', icon: 'videocam' },
+            { key: 'marketplace', label: 'Market', icon: 'cart' },
+            { key: 'jobs', label: 'Jobs', icon: 'briefcase' },
+            { key: 'tribes', label: 'Tribes', icon: 'people' },
+          ].map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, activeTab === tab.key && styles.tabActive]}
+              onPress={() => setActiveTab(tab.key as any)}
+            >
+              <Ionicons name={tab.icon as any} size={16} color={activeTab === tab.key ? '#0af' : '#888'} />
+              <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Bottom */}
-        <View style={styles.bottomSection}>
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/(os)/settings')}>
-            <Ionicons name="settings-outline" size={22} color="#333" />
-            <Text style={styles.rowText}>Settings</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.row, styles.signOutRow]} onPress={signOut}>
-            <Ionicons name="log-out-outline" size={22} color="#ef4444" />
-            <Text style={[styles.rowText, styles.signOutText]}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Completeness */}
-        <View style={styles.completenessCard}>
-          <Text style={styles.completenessLabel}>Profile Completeness</Text>
-          <View style={styles.completenessBar}>
-            <View style={[styles.completenessFill, { width: `${Math.min(user.profile_completeness || 0, 100)}%` }]} />
+        {/* Content Grid */}
+        {timeline.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="images-outline" size={48} color="#333" />
+            <Text style={styles.emptyText}>No content yet</Text>
+            {isOwnProfile && (
+              <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/streets/create')}>
+                <Text style={styles.createBtnText}>Create First Post</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={styles.completenessText}>{user.profile_completeness || 0}% complete</Text>
-        </View>
+        ) : (
+          <View style={styles.grid}>
+            {timeline.map((item) => <TimelineCard key={item.id} item={item} />)}
+          </View>
+        )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 12, color: '#666', fontSize: 14 },
-  notSignedCard: { alignItems: 'center', padding: 32 },
-  notSignedTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a1a', marginTop: 16 },
-  notSignedText: { fontSize: 14, color: '#888', marginTop: 4, marginBottom: 24 },
-  signInBtn: { backgroundColor: '#6366f1', paddingHorizontal: 48, paddingVertical: 14, borderRadius: 12, width: '80%', alignItems: 'center' },
-  signInBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  createAccountBtn: { marginTop: 12 },
-  createAccountText: { color: '#6366f1', fontSize: 14, fontWeight: '500' },
-
-  header: { alignItems: 'center', paddingVertical: 24, backgroundColor: '#fff', marginBottom: 12, position: 'relative' },
-  coverImage: { position: 'absolute', top: 0, left: 0, right: 0, height: 120, borderTopLeftRadius: 0, borderTopRightRadius: 0 },
-  avatarWrap: { marginBottom: 12 },
-  avatarWrapOverlay: { marginTop: 60 },
-  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 3, borderColor: '#fff' },
-  name: { fontSize: 22, fontWeight: '700', color: '#1a1a1a' },
-  handle: { fontSize: 14, color: '#888', marginTop: 2 },
-  bio: { fontSize: 13, color: '#666', marginTop: 6, textAlign: 'center', paddingHorizontal: 32 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  locationText: { fontSize: 12, color: '#888', marginLeft: 4 },
-  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#10b981', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8 },
-  verifiedText: { color: '#fff', fontSize: 11, fontWeight: '600', marginLeft: 4 },
-  roleBadge: { marginTop: 6, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  roleText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  editBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
-  editBtnText: { color: '#6366f1', fontSize: 13, fontWeight: '600' },
-
-  statsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 16, marginBottom: 12 },
-  statItem: { alignItems: 'center', flex: 1 },
-  statNumber: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
-  statLabel: { fontSize: 11, color: '#888', marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: '#e2e8f0' },
-
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingBottom: 12 },
-  gridItem: { width: (width - 48) / 2, backgroundColor: '#fff', borderRadius: 12, padding: 16, margin: 4, flexDirection: 'row', alignItems: 'center' },
-  gridIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  gridLabel: { flex: 1, fontSize: 13, fontWeight: '600', color: '#333' },
-  gridArrow: { marginLeft: 4 },
-
-  bottomSection: { backgroundColor: '#fff', marginHorizontal: 12, borderRadius: 12, marginBottom: 12, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  rowText: { flex: 1, fontSize: 15, marginLeft: 12, color: '#333', fontWeight: '500' },
-  signOutRow: { borderBottomWidth: 0 },
-  signOutText: { color: '#ef4444' },
-
-  completenessCard: { backgroundColor: '#fff', marginHorizontal: 12, borderRadius: 12, padding: 16, marginBottom: 24 },
-  completenessLabel: { fontSize: 13, fontWeight: '600', color: '#333', marginBottom: 8 },
-  completenessBar: { height: 6, backgroundColor: '#e2e8f0', borderRadius: 3, overflow: 'hidden' },
-  completenessFill: { height: '100%', backgroundColor: '#6366f1', borderRadius: 3 },
-  completenessText: { fontSize: 12, color: '#888', marginTop: 6 },
+  container: { flex: 1, backgroundColor: '#000' },
+  header: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12,
+  },
+  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  profileSection: { alignItems: 'center', paddingVertical: 16 },
+  avatarFallback: { backgroundColor: '#333', alignItems: 'center', justifyContent: 'center' },
+  name: { color: '#fff', fontSize: 20, fontWeight: '700', marginTop: 12 },
+  username: { color: '#888', fontSize: 14, marginTop: 2 },
+  bio: { color: '#ccc', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 32 },
+  statsRow: { flexDirection: 'row', marginTop: 16, gap: 24 },
+  statItem: { alignItems: 'center' },
+  statNumber: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  statLabel: { color: '#888', fontSize: 12, marginTop: 2 },
+  actionRow: { flexDirection: 'row', marginTop: 16, gap: 10 },
+  editBtn: { backgroundColor: '#222', paddingHorizontal: 32, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
+  editBtnText: { color: '#fff', fontWeight: '600' },
+  followBtn: { backgroundColor: '#0af', paddingHorizontal: 32, paddingVertical: 10, borderRadius: 8 },
+  followBtnText: { color: '#fff', fontWeight: '600' },
+  followingBtn: { backgroundColor: '#222', borderWidth: 1, borderColor: '#444' },
+  followingBtnText: { color: '#ccc' },
+  messageBtn: { backgroundColor: '#222', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
+  tabs: {
+    flexDirection: 'row', justifyContent: 'space-around',
+    borderTopWidth: 1, borderTopColor: '#222',
+    borderBottomWidth: 1, borderBottomColor: '#222',
+    paddingVertical: 8,
+  },
+  tab: { alignItems: 'center', gap: 4, paddingVertical: 6, paddingHorizontal: 8 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#0af' },
+  tabText: { color: '#888', fontSize: 11 },
+  tabTextActive: { color: '#0af', fontWeight: '600' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, gap: 4 },
+  card: { width: GRID_SIZE, marginBottom: 4 },
+  cardMedia: { width: GRID_SIZE, height: GRID_SIZE * 1.3, borderRadius: 8, backgroundColor: '#111' },
+  cardOverlay: { position: 'absolute', top: 6, left: 6 },
+  sourceBadge: { flexDirection: 'row', alignItems: 'center', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, gap: 3 },
+  sourceText: { color: '#fff', fontSize: 9, fontWeight: '600' },
+  cardTitle: { color: '#ccc', fontSize: 11, marginTop: 4, paddingHorizontal: 2 },
+  cardStats: { flexDirection: 'row', gap: 8, marginTop: 2, paddingHorizontal: 2 },
+  cardStat: { color: '#888', fontSize: 10 },
+  empty: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { color: '#555', marginTop: 12 },
+  createBtn: { marginTop: 16, backgroundColor: '#0af', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  createBtnText: { color: '#fff', fontWeight: '600' },
 });
