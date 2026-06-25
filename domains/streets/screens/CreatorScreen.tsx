@@ -1,408 +1,308 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Dimensions,
-  ActivityIndicator,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, Image,
+  Dimensions, Platform, RefreshControl, Alert, ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
-const { width } = Dimensions.get('window');
-const COL_COUNT = 3;
-const ITEM_W = (width - 32 - (COL_COUNT - 1) * 2) / COL_COUNT;
+const { width: SCREEN_W } = Dimensions.get('window');
+const GRID_COLS = 3;
+const CELL_SIZE = SCREEN_W / GRID_COLS;
 
-interface Post {
+interface UserProfile {
+  user_id: string;
+  full_name: string | null;
+  display_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  verified: boolean | null;
+  bio: string | null;
+}
+
+interface UserPost {
   id: string;
   media_url: string | null;
   media_type: string;
-  views_count: number;
+  content: string | null;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
 }
 
 export default function CreatorScreen() {
   const router = useRouter();
-  const { userId } = useLocalSearchParams<{ userId: string }>();
-  const { user: currentUser } = useAuthStore();
-  const [creator, setCreator] = useState<any>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [stats, setStats] = useState({ followers: 0, following: 0, totalViews: 0, totalLikes: 0 });
+  const { userId } = useLocalSearchParams<{ userId?: string }>();
+  const { user, isAuthenticated } = useAuthStore();
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
+  const isGuest = !isAuthenticated || !user;
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'posts' | 'analytics'>('posts');
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [followers, setFollowers] = useState(0);
+  const [following, setFollowing] = useState(0);
+  const [isFollowingUser, setIsFollowingUser] = useState(false);
 
-  const targetId = userId || currentUser?.id;
+  const fetchProfile = useCallback(async () => {
+    if (!targetUserId) { setError('No user specified'); setLoading(false); return; }
+    setError(null);
+    try {
+      const { data, error: profErr } = await supabase
+        .from('user_profiles')
+        .select('user_id, full_name, display_name, username, avatar_url, verified, bio')
+        .eq('user_id', targetUserId)
+        .single();
+      if (profErr) throw profErr;
+      setProfile(data);
 
-  const fetchCreator = useCallback(async () => {
-    if (!targetId) return;
-    setLoading(true);
+      const { data: postsData, error: postsErr } = await supabase
+        .from('streets_posts')
+        .select('id, media_url, media_type, content, likes_count, comments_count, created_at')
+        .eq('creator_id', targetUserId)
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+      if (postsErr) throw postsErr;
+      setPosts(postsData || []);
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, full_name, username, avatar_url, bio, verified')
-      .eq('id', targetId)
-      .single();
+      const { count: fwc } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('following_id', targetUserId);
+      const { count: fgc } = await supabase.from('streets_follows').select('*', { count: 'exact', head: true }).eq('follower_id', targetUserId);
+      setFollowers(fwc || 0);
+      setFollowing(fgc || 0);
 
-    const { data: userPosts } = await supabase
-      .from('streets_posts')
-      .select('id, media_url, media_type, views_count, likes_count')
-      .eq('creator_id', targetId)
-      .order('created_at', { ascending: false });
-
-    const { count: followers } = await supabase
-      .from('streets_follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', targetId);
-
-    const { count: following } = await supabase
-      .from('streets_follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', targetId);
-
-    const totalViews = (userPosts || []).reduce((sum: number, p: any) => sum + (p.views_count || 0), 0);
-    const totalLikes = (userPosts || []).reduce((sum: number, p: any) => sum + (p.likes_count || 0), 0);
-
-    setCreator(profile);
-    setPosts(userPosts || []);
-    setStats({ followers: followers || 0, following: following || 0, totalViews, totalLikes });
-
-    if (currentUser?.id && currentUser.id !== targetId) {
-      const { data: followData } = await supabase
-        .from('streets_follows')
-        .select('id')
-        .eq('follower_id', currentUser.id)
-        .eq('following_id', targetId)
-        .maybeSingle();
-      setIsFollowing(!!followData);
+      if (!isGuest && !isOwnProfile && user) {
+        const { data: fw } = await supabase.from('streets_follows').select('id').eq('follower_id', user.id).eq('following_id', targetUserId).single();
+        setIsFollowingUser(!!fw);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Failed to load profile');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, [targetUserId, user?.id, isGuest, isOwnProfile]);
 
-    setLoading(false);
-  }, [targetId, currentUser]);
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  useEffect(() => { fetchCreator(); }, [fetchCreator]);
-
-  const handleFollow = useCallback(async () => {
-    if (!currentUser?.id || !targetId || currentUser.id === targetId) return;
-    if (isFollowing) {
-      await supabase
-        .from('streets_follows')
-        .delete()
-        .eq('follower_id', currentUser.id)
-        .eq('following_id', targetId);
-      setIsFollowing(false);
-      setStats(s => ({ ...s, followers: s.followers - 1 }));
-    } else {
-      await supabase.from('streets_follows').insert({
-        follower_id: currentUser.id,
-        following_id: targetId,
-      });
-      setIsFollowing(true);
-      setStats(s => ({ ...s, followers: s.followers + 1 }));
+  const handleFollow = async () => {
+    if (isGuest) { Alert.alert('Sign In Required', 'Please sign in to follow users.'); return; }
+    if (!user || isOwnProfile) return;
+    try {
+      if (isFollowingUser) {
+        await supabase.from('streets_follows').delete().eq('follower_id', user.id).eq('following_id', targetUserId);
+        setIsFollowingUser(false);
+        setFollowers(prev => Math.max(0, prev - 1));
+      } else {
+        await supabase.from('streets_follows').insert({ follower_id: user.id, following_id: targetUserId });
+        setIsFollowingUser(true);
+        setFollowers(prev => prev + 1);
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
     }
-  }, [currentUser, targetId, isFollowing]);
+  };
 
-  const openProfile = useCallback(() => {
-    if (targetId) router.push(`/(os)/profile/${targetId}`);
-  }, [router, targetId]);
+  const handleDeletePost = (postId: string) => {
+    Alert.alert('Delete Post?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive',
+        onPress: async () => {
+          const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
+          if (error) { Alert.alert('Error', error.message); return; }
+          setPosts(prev => prev.filter(p => p.id !== postId));
+          Alert.alert('Deleted', 'Post removed.');
+        },
+      },
+    ]);
+  };
 
-  const shareQR = useCallback(() => {
-    router.push({
-      pathname: '/streets/share',
-      params: { userId: targetId, mode: 'qr' },
-    });
-  }, [router, targetId]);
+  const handleEditPost = (postId: string) => {
+    router.push(`/streets/create?editPostId=${postId}`);
+  };
 
-  const renderPost = useCallback(({ item }: { item: Post }) => (
+  const renderPost = ({ item }: { item: UserPost }) => (
     <TouchableOpacity
-      style={[styles.gridItem, { width: ITEM_W, height: ITEM_W }]}
+      style={styles.gridCell}
       onPress={() => router.push(`/streets/post/${item.id}`)}
+      onLongPress={() => {
+        if (isOwnProfile) {
+          Alert.alert('Manage Post', '', [
+            { text: 'Edit', onPress: () => handleEditPost(item.id) },
+            { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(item.id) },
+            { text: 'Cancel', style: 'cancel' },
+          ]);
+        }
+      }}
     >
-      {item.media_url ? (
+      {item.media_url && item.media_type !== 'text' ? (
         <Image source={{ uri: item.media_url }} style={styles.gridImage} />
       ) : (
-        <View style={[styles.gridImage, styles.gridFallback]}>
-          <Ionicons name="image" size={24} color="#555" />
+        <View style={[styles.gridImage, styles.textCell]}>
+          <Text style={styles.textCellText} numberOfLines={4}>{item.content || ''}</Text>
         </View>
       )}
       <View style={styles.gridOverlay}>
-        <Ionicons name="eye" size={12} color="#fff" />
-        <Text style={styles.gridViews}>{item.views_count || 0}</Text>
+        <Ionicons name="heart" size={12} color="#fff" />
+        <Text style={styles.gridCount}>{item.likes_count}</Text>
       </View>
+      {isOwnProfile && (
+        <TouchableOpacity style={styles.editBtn} onPress={() => handleEditPost(item.id)}>
+          <Ionicons name="create" size={14} color="#fff" />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
-  ), [router]);
+  );
 
   if (loading) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator color="#2196F3" />
+        <ActivityIndicator size="large" color="#00d4ff" />
       </View>
     );
   }
 
-  const displayName = creator?.full_name || creator?.username || 'Creator';
+  if (error) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Ionicons name="alert-circle" size={48} color="#ff4444" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchProfile} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.retryBtn, { marginTop: 8 }]}>
+          <Text style={styles.retryText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const displayName = profile?.full_name || profile?.display_name || profile?.username || 'User';
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{displayName}</Text>
-        <TouchableOpacity onPress={shareQR} style={styles.backBtn}>
-          <Ionicons name="qr-code" size={22} color="#fff" />
+        <Text style={styles.headerTitle}>{displayName}</Text>
+        <TouchableOpacity onPress={() => router.push('/streets/settings')}>
+          <Ionicons name="settings-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <TouchableOpacity onPress={openProfile}>
-            {creator?.avatar_url ? (
-              <Image source={{ uri: creator.avatar_url }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{displayName.charAt(0)}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View style={styles.nameRow}>
-            <TouchableOpacity onPress={openProfile}>
-              <Text style={styles.displayName}>{displayName}</Text>
-            </TouchableOpacity>
-            {creator?.verified && <Ionicons name="checkmark-circle" size={16} color="#2196F3" />}
-          </View>
-          {creator?.username && <Text style={styles.username}>@{creator.username}</Text>}
-          {creator?.bio && <Text style={styles.bio} numberOfLines={2}>{creator.bio}</Text>}
-
-          <View style={styles.statsRow}>
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{posts.length}</Text>
-              <Text style={styles.statLabel}>Posts</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.followers.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statBox}>
-              <Text style={styles.statValue}>{stats.following.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Following</Text>
-            </View>
-          </View>
-
-          {currentUser?.id && currentUser.id !== targetId && (
-            <TouchableOpacity
-              style={[styles.followBtn, isFollowing && styles.followingBtn]}
-              onPress={handleFollow}
-            >
-              <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-                {isFollowing ? 'Following' : 'Follow'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Tabs */}
-        <View style={styles.tabRow}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'posts' && styles.tabActive]}
-            onPress={() => setActiveTab('posts')}
-          >
-            <Ionicons name="grid" size={18} color={activeTab === 'posts' ? '#fff' : '#666'} />
-            <Text style={[styles.tabText, activeTab === 'posts' && styles.tabTextActive]}>Posts</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'analytics' && styles.tabActive]}
-            onPress={() => setActiveTab('analytics')}
-          >
-            <Ionicons name="stats-chart" size={18} color={activeTab === 'analytics' ? '#fff' : '#666'} />
-            <Text style={[styles.tabText, activeTab === 'analytics' && styles.tabTextActive]}>Analytics</Text>
-          </TouchableOpacity>
-        </View>
-
-        {activeTab === 'posts' ? (
-          <View style={styles.grid}>
-            {posts.map((item, index) => (
-              <View key={item.id} style={{ marginRight: (index + 1) % COL_COUNT !== 0 ? 2 : 0, marginBottom: 2 }}>
-                {renderPost({ item })}
-              </View>
-            ))}
-            {posts.length === 0 && (
-              <View style={styles.emptyGrid}>
-                <Text style={styles.emptyText}>No posts yet</Text>
-              </View>
-            )}
-          </View>
+      <View style={styles.profileCard}>
+        {profile?.avatar_url ? (
+          <Image source={{ uri: profile.avatar_url }} style={styles.profileAvatar} />
         ) : (
-          <View style={styles.analyticsSection}>
-            <View style={styles.analyticsCard}>
-              <Text style={styles.analyticsTitle}>30-Day Summary</Text>
-              <View style={styles.analyticsRow}>
-                <View style={styles.analyticBox}>
-                  <Text style={styles.analyticValue}>{stats.totalViews.toLocaleString()}</Text>
-                  <Text style={styles.analyticLabel}>Total Views</Text>
-                </View>
-                <View style={styles.analyticBox}>
-                  <Text style={styles.analyticValue}>{stats.totalLikes.toLocaleString()}</Text>
-                  <Text style={styles.analyticLabel}>Total Likes</Text>
-                </View>
-              </View>
-              <View style={styles.analyticsRow}>
-                <View style={styles.analyticBox}>
-                  <Text style={styles.analyticValue}>{stats.followers.toLocaleString()}</Text>
-                  <Text style={styles.analyticLabel}>Followers</Text>
-                </View>
-                <View style={styles.analyticBox}>
-                  <Text style={styles.analyticValue}>{posts.length}</Text>
-                  <Text style={styles.analyticLabel}>Posts</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.analyticsCard}>
-              <Text style={styles.analyticsTitle}>Verification</Text>
-              <View style={styles.verificationRow}>
-                <Ionicons
-                  name={creator?.verified ? 'checkmark-circle' : 'ellipse-outline'}
-                  size={28}
-                  color={creator?.verified ? '#4CAF50' : '#666'}
-                />
-                <View style={{ marginLeft: 12 }}>
-                  <Text style={styles.verificationStatus}>
-                    {creator?.verified ? 'Verified Creator' : 'Not Verified'}
-                  </Text>
-                  <Text style={styles.verificationSub}>
-                    {creator?.verified
-                      ? 'Your account has been verified.'
-                      : 'Apply for verification to unlock creator features.'}
-                  </Text>
-                </View>
-              </View>
-            </View>
+          <View style={[styles.profileAvatar, styles.avatarPlaceholder]}>
+            <Ionicons name="person" size={40} color="#fff" />
           </View>
         )}
+        <View style={styles.profileInfo}>
+          <Text style={styles.profileName}>{displayName}</Text>
+          {profile?.verified && <Ionicons name="checkmark-circle" size={16} color="#00d4ff" />}
+          <Text style={styles.profileHandle}>@{profile?.username || 'user'}</Text>
+          {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        </View>
+      </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <Text style={styles.statNum}>{posts.length}</Text>
+          <Text style={styles.statLabel}>Posts</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statNum}>{followers}</Text>
+          <Text style={styles.statLabel}>Followers</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={styles.statNum}>{following}</Text>
+          <Text style={styles.statLabel}>Following</Text>
+        </View>
+      </View>
+
+      <View style={styles.actionRow}>
+        {isOwnProfile ? (
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/streets/create')}>
+            <Ionicons name="add-circle" size={18} color="#000" />
+            <Text style={styles.actionBtnText}>New Post</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={[styles.actionBtn, isFollowingUser && styles.actionBtnFollowing]} onPress={handleFollow}>
+            <Text style={[styles.actionBtnText, isFollowingUser && styles.actionBtnTextFollowing]}>
+              {isFollowingUser ? 'Following' : 'Follow'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <FlatList
+        data={posts}
+        keyExtractor={item => item.id}
+        renderItem={renderPost}
+        numColumns={GRID_COLS}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchProfile(); }} tintColor="#fff" />}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="images-outline" size={48} color="#444" />
+            <Text style={styles.emptyText}>No posts yet</Text>
+            {isOwnProfile && (
+              <TouchableOpacity onPress={() => router.push('/streets/create')} style={styles.createBtn}>
+                <Text style={styles.createBtnText}>Create your first post</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  center: { justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#000' },
+  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12,
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700', maxWidth: 200, textAlign: 'center' },
-  profileHeader: { alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16 },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  displayName: { color: '#fff', fontSize: 20, fontWeight: '700' },
-  username: { color: '#888', fontSize: 14, marginTop: 2 },
-  bio: { color: '#aaa', fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    gap: 20,
-  },
-  statBox: { alignItems: 'center', minWidth: 60 },
-  statValue: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  profileCard: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  profileAvatar: { width: 80, height: 80, borderRadius: 40, marginRight: 16 },
+  avatarPlaceholder: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  profileInfo: { flex: 1 },
+  profileName: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  profileHandle: { color: '#888', fontSize: 14, marginTop: 2 },
+  bio: { color: '#aaa', fontSize: 13, marginTop: 6, lineHeight: 18 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#1a1a1a', borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  stat: { alignItems: 'center' },
+  statNum: { color: '#fff', fontSize: 18, fontWeight: '700' },
   statLabel: { color: '#888', fontSize: 12, marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: '#333' },
-  followBtn: {
-    backgroundColor: '#2196F3',
-    borderRadius: 20,
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    marginTop: 16,
+  actionRow: { flexDirection: 'row', justifyContent: 'center', paddingVertical: 12 },
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#00d4ff',
+    paddingHorizontal: 24, paddingVertical: 10, borderRadius: 24,
   },
-  followingBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#444' },
-  followBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  followingBtnText: { color: '#ccc' },
-  tabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 12,
-  },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#fff' },
-  tabText: { color: '#666', fontSize: 14, fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingTop: 2,
-  },
-  gridItem: { backgroundColor: '#1a1a1a', borderRadius: 4, overflow: 'hidden' },
-  gridImage: { width: '100%', height: '100%' },
-  gridFallback: { justifyContent: 'center', alignItems: 'center' },
-  gridOverlay: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  gridViews: { color: '#fff', fontSize: 10 },
-  emptyGrid: { width: '100%', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#666', fontSize: 15 },
-  analyticsSection: { paddingHorizontal: 16, paddingTop: 16 },
-  analyticsCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  analyticsTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  analyticsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  analyticBox: {
-    flex: 1,
-    backgroundColor: '#0a0a0a',
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-  },
-  analyticValue: { color: '#2196F3', fontSize: 20, fontWeight: '700' },
-  analyticLabel: { color: '#888', fontSize: 12, marginTop: 4 },
-  verificationRow: { flexDirection: 'row', alignItems: 'center' },
-  verificationStatus: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  verificationSub: { color: '#888', fontSize: 13, marginTop: 2 },
+  actionBtnFollowing: { backgroundColor: '#222', borderWidth: 1, borderColor: '#444' },
+  actionBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  actionBtnTextFollowing: { color: '#fff' },
+  gridCell: { width: CELL_SIZE, height: CELL_SIZE, padding: 1 },
+  gridImage: { width: '100%', height: '100%', backgroundColor: '#111' },
+  textCell: { justifyContent: 'center', alignItems: 'center', padding: 8 },
+  textCellText: { color: '#fff', fontSize: 10, textAlign: 'center' },
+  gridOverlay: { position: 'absolute', bottom: 4, left: 4, flexDirection: 'row', alignItems: 'center' },
+  gridCount: { color: '#fff', fontSize: 10, marginLeft: 2 },
+  editBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, padding: 4 },
+  empty: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { color: '#666', fontSize: 14, marginTop: 12 },
+  createBtn: { marginTop: 16, backgroundColor: '#00d4ff', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  createBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  errorText: { color: '#ff4444', fontSize: 14, marginTop: 12, textAlign: 'center' },
+  retryBtn: { marginTop: 16, backgroundColor: '#222', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  retryText: { color: '#00d4ff', fontWeight: '700', fontSize: 14 },
 });
