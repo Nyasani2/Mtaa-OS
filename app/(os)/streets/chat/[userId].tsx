@@ -27,10 +27,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12 },
   headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   text: { color: '#888', fontSize: 16, marginTop: 12 },
