@@ -1,194 +1,150 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Image, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
+  ActivityIndicator, Platform, Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
-import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
-export default function EditProfileScreen() {
+export default function ProfileEditScreen() {
   const router = useRouter();
-  const { user, profile } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [form, setForm] = useState({
     display_name: '',
     username: '',
     bio: '',
-    phone: '',
-    profession: '',
-    location: '',
     city: '',
-    region: '',
     country: '',
+    profession: '',
     website: '',
-    avatar_url: '',
+    phone: '',
+    date_of_birth: '',
+    gender: '',
+    languages: '',
+    skills: '',
   });
 
   useEffect(() => {
-    if (profile) {
-      setForm({
-        display_name: profile.display_name || profile.full_name || '',
-        username: profile.username || '',
-        bio: profile.bio || '',
-        phone: profile.phone || '',
-        profession: profile.profession || '',
-        location: profile.location || '',
-        city: profile.city || '',
-        region: profile.region || '',
-        country: profile.country || '',
-        website: profile.website || '',
-        avatar_url: profile.avatar_url || '',
+    if (!user?.id) return;
+    supabase.from('profiles')
+      .select('display_name, username, bio, city, country, profession, website, phone, date_of_birth, gender, languages, skills')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setForm({
+            display_name: data.display_name || '',
+            username: data.username || '',
+            bio: data.bio || '',
+            city: data.city || '',
+            country: data.country || '',
+            profession: data.profession || '',
+            website: data.website || '',
+            phone: data.phone || '',
+            date_of_birth: data.date_of_birth || '',
+            gender: data.gender || '',
+            languages: (data.languages || []).join(', '),
+            skills: (data.skills || []).join(', '),
+          });
+        }
+        setLoading(false);
       });
-    }
-    setLoading(false);
-  }, [profile]);
+  }, [user?.id]);
 
   const handleSave = async () => {
-    if (!user) {
-      Alert.alert('Error', 'Not authenticated');
-      return;
-    }
-
+    if (!user?.id) return;
     setSaving(true);
     try {
-      // CRITICAL FIX: Use user_profiles table, not profiles
-      // Also update display_name (what Streets reads) not just full_name
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({
-          display_name: form.display_name.trim() || null,
-          username: form.username.trim() || null,
-          bio: form.bio.trim() || null,
-          phone: form.phone.trim() || null,
-          profession: form.profession.trim() || null,
-          location: form.location.trim() || null,
-          city: form.city.trim() || null,
-          region: form.region.trim() || null,
-          country: form.country.trim() || null,
-          website: form.website.trim() || null,
-          avatar_url: form.avatar_url.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+      const { error } = await supabase.from('profiles').update({
+        display_name: form.display_name || null,
+        username: form.username || null,
+        bio: form.bio || null,
+        city: form.city || null,
+        country: form.country || null,
+        profession: form.profession || null,
+        website: form.website || null,
+        phone: form.phone || null,
+        date_of_birth: form.date_of_birth || null,
+        gender: form.gender || null,
+        languages: form.languages ? form.languages.split(',').map(s => s.trim()).filter(Boolean) : null,
+        skills: form.skills ? form.skills.split(',').map(s => s.trim()).filter(Boolean) : null,
+        updated_at: new Date().toISOString(),
+      }).eq('user_id', user.id);
 
-      if (error) {
-        Alert.alert('Error', error.message);
-        return;
-      }
-
-      Alert.alert('Saved', 'Profile updated successfully', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
+      if (error) throw error;
+      Alert.alert('Saved', 'Profile updated successfully');
+      router.back();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAvatarUrl = () => {
-    Alert.alert(
-      'Change Avatar',
-      'Enter an image URL or use a default avatar',
-      [
-        { 
-          text: 'Use Default', 
-          onPress: () => setForm(prev => ({ 
-            ...prev, 
-            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.display_name || 'User')}&background=6366f1&color=fff&size=256` 
-          })) 
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
-  const avatarUri = form.avatar_url || 
-    `https://ui-avatars.com/api/?name=${encodeURIComponent(form.display_name || 'User')}&background=6366f1&color=fff&size=256`;
-
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#6366f1" />
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#00d4ff" />
       </View>
     );
   }
 
+  const renderField = (label: string, key: keyof typeof form, props?: any) => (
+    <View style={styles.field} key={key}>
+      <Text style={styles.label}>{label}</Text>
+      <TextInput
+        style={styles.input}
+        value={form[key]}
+        onChangeText={text => setForm(prev => ({ ...prev, [key]: text }))}
+        placeholderTextColor="#555"
+        {...props}
+      />
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator size="small" color="#6366f1" />
-          ) : (
-            <Text style={styles.saveText}>Save</Text>
-          )}
+          {saving ? <ActivityIndicator size="small" color="#00d4ff" /> : <Text style={styles.saveBtn}>Save</Text>}
         </TouchableOpacity>
       </View>
 
-      <View style={styles.avatarSection}>
-        <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        <TouchableOpacity style={styles.changeAvatarBtn} onPress={handleAvatarUrl}>
-          <Ionicons name="camera" size={16} color="#fff" />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleAvatarUrl}>
-          <Text style={styles.changeAvatarText}>Change Photo</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.form}>
-        <Field label="Display Name" value={form.display_name} onChange={(v) => setForm(p => ({ ...p, display_name: v }))} />
-        <Field label="Username" value={form.username} onChange={(v) => setForm(p => ({ ...p, username: v }))} />
-        <Field label="Bio" value={form.bio} onChange={(v) => setForm(p => ({ ...p, bio: v }))} multiline />
-        <Field label="Phone" value={form.phone} onChange={(v) => setForm(p => ({ ...p, phone: v }))} keyboardType="phone-pad" />
-        <Field label="Profession" value={form.profession} onChange={(v) => setForm(p => ({ ...p, profession: v }))} />
-        <Field label="Location" value={form.location} onChange={(v) => setForm(p => ({ ...p, location: v }))} />
-        <Field label="City" value={form.city} onChange={(v) => setForm(p => ({ ...p, city: v }))} />
-        <Field label="Region" value={form.region} onChange={(v) => setForm(p => ({ ...p, region: v }))} />
-        <Field label="Country" value={form.country} onChange={(v) => setForm(p => ({ ...p, country: v }))} />
-        <Field label="Website" value={form.website} onChange={(v) => setForm(p => ({ ...p, website: v }))} keyboardType="url" />
-        <Field label="Avatar URL" value={form.avatar_url} onChange={(v) => setForm(p => ({ ...p, avatar_url: v }))} placeholder="https://..." />
-      </View>
-    </ScrollView>
-  );
-}
-
-function Field({ label, value, onChange, multiline, keyboardType, placeholder }: any) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={[styles.fieldInput, multiline && styles.fieldInputMultiline]}
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder || label}
-        placeholderTextColor="#9ca3af"
-        multiline={multiline}
-        numberOfLines={multiline ? 3 : 1}
-        keyboardType={keyboardType || 'default'}
-        textAlignVertical={multiline ? 'top' : 'center'}
-      />
+      <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+        {renderField('Display Name', 'display_name')}
+        {renderField('Username', 'username', { autoCapitalize: 'none' })}
+        {renderField('Bio', 'bio', { multiline: true, numberOfLines: 3 })}
+        {renderField('Profession', 'profession')}
+        {renderField('City', 'city')}
+        {renderField('Country', 'country')}
+        {renderField('Website', 'website', { autoCapitalize: 'none', keyboardType: 'url' })}
+        {renderField('Phone', 'phone', { keyboardType: 'phone-pad' })}
+        {renderField('Date of Birth (YYYY-MM-DD)', 'date_of_birth')}
+        {renderField('Gender', 'gender', { placeholder: 'male | female | non_binary | prefer_not_to_say' })}
+        {renderField('Languages (comma separated)', 'languages', { placeholder: 'English, Swahili, French' })}
+        {renderField('Skills (comma separated)', 'skills', { placeholder: 'React, Node.js, Design' })}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  title: { fontSize: 18, fontWeight: '700', color: '#111' },
-  saveText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
-  avatarSection: { alignItems: 'center', padding: 24 },
-  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#f3f4f6' },
-  changeAvatarBtn: { position: 'absolute', bottom: 50, right: '35%', width: 32, height: 32, borderRadius: 16, backgroundColor: '#6366f1', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
-  changeAvatarText: { color: '#6366f1', fontSize: 14, fontWeight: '500', marginTop: 12 },
+  container: { flex: 1, backgroundColor: '#000' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtn: { color: '#00d4ff', fontWeight: '700', fontSize: 14 },
   form: { padding: 16 },
   field: { marginBottom: 16 },
-  fieldLabel: { fontSize: 13, color: '#6b7280', marginBottom: 6, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
-  fieldInput: { fontSize: 16, color: '#111', padding: 12, backgroundColor: '#f9fafb', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' },
-  fieldInputMultiline: { minHeight: 80, paddingTop: 12 },
+  label: { color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: '#111', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: '#222' },
 });

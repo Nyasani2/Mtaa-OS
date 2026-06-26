@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import { useAppointments } from '@/lib/health/hooks/useAppointments';
 import { usePatient } from '@/lib/health/hooks/usePatient';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 export default function AppointmentsScreen() {

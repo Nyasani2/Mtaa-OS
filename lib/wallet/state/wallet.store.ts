@@ -1,5 +1,5 @@
 // lib/wallet/state/wallet.store.ts
-// DEPRECATED — use lib/stores/wallet-store.ts instead
+// DEPRECATED — use lib/wallet/state/wallet.store.ts instead
 // This file exists for backward compatibility only
 
-export { useWalletStore, type WalletState, type WalletTransaction } from '@/lib/stores/wallet-store';
+export { useWalletStore, type WalletState, type WalletTransaction } from '@/lib/wallet/state/wallet.store';

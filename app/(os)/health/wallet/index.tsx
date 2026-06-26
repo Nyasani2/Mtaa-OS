@@ -10,7 +10,7 @@ import {
   FlaskConical, Scan, CreditCard, ChevronRight, Calendar,
   TrendingUp, TrendingDown, Filter
 } from 'lucide-react-native';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 interface HealthTransaction {

@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAppStore } from '@/lib/appstore';
 import { getAppById } from '@/lib/mtaa/appstore/unified-registry';
 
 export default function AppDetailScreen() {

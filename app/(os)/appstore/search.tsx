@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore, AppItem } from '@/lib/stores/app-store';
+import { useAppStore, AppItem } from '@/lib/appstore';
 
 export default function SearchScreen() {
   const router = useRouter();

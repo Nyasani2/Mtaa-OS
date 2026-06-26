@@ -1,151 +1,80 @@
-// app/(os)/profile/reputation/index.tsx — Reputation & Verification
-
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-
-const APPS = ['Jobs', 'MTaxi', 'Market', 'Shop', 'Property', 'Streets', 'Pulse'];
 
 export default function ReputationScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, initialize } = useAuth();
-  const [scores, setScores] = useState<any[]>([]);
+  const { user } = useAuthStore();
+  const [trustScore, setTrustScore] = useState(50);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { initialize(); }, []);
-  useEffect(() => {
-    if (isAuthenticated && user?.id) loadReputationData();
-  }, [isAuthenticated, user?.id]);
+  useEffect(() => { if (!user?.id) return; supabase.from('profiles').select('trust_score, is_verified').eq('user_id', user.id).single().then(({ data }) => { if (data) setTrustScore(data.trust_score || 50); setLoading(false); }); }, [user?.id]);
+  if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#00d4ff" /></View>;
 
-  async function loadReputationData() {
-    if (!user?.id) return;
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('reputation_scores')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('rating', { ascending: false });
-      setScores(data || []);
-    } catch (err) { console.error('[Reputation] Load error:', err); }
-    finally { setLoading(false); }
-  }
-
-  const overallRating = scores.length > 0
-    ? (scores.reduce((sum, s) => sum + (s.rating || 0), 0) / scores.length).toFixed(1)
-    : '0.0';
-
-  if (!isAuthenticated) {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <Ionicons name="star-outline" size={64} color="#ccc" />
-        <Text style={styles.emptyTitle}>Sign in to view Reputation</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/sign-in')}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  const ratings = [
+    { label: 'Seller Rating', score: 4.8, icon: 'storefront-outline', color: '#00d4ff' },
+    { label: 'Buyer Rating', score: 4.9, icon: 'cart-outline', color: '#00ff88' },
+    { label: 'Creator Rating', score: 4.7, icon: 'sparkles-outline', color: '#ff00ff' },
+    { label: 'Driver Rating', score: 0, icon: 'car-outline', color: '#ffaa00' },
+    { label: 'Employer Rating', score: 0, icon: 'business-outline', color: '#aa66ff' },
+    { label: 'Worker Rating', score: 0, icon: 'hammer-outline', color: '#ff4444' },
+  ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Reputation</Text>
         <View style={{ width: 24 }} />
       </View>
-
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#f97316" />
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Overall Score */}
-          <View style={styles.overallCard}>
-            <Text style={styles.overallScore}>{overallRating}</Text>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Ionicons key={s} name={s <= Math.round(parseFloat(overallRating)) ? "star" : "star-outline"}
-                  size={20} color="#f59e0b" />
-              ))}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.trustCard}>
+          <View style={styles.trustCircle}><Text style={styles.trustScore}>{trustScore}</Text><Text style={styles.trustLabel}>Trust Score</Text></View>
+          <View style={styles.trustBarBg}><View style={[styles.trustBarFill, { width: `${trustScore}%`, backgroundColor: trustScore > 70 ? '#00ff88' : trustScore > 40 ? '#ffaa00' : '#ff4444' }]} /></View>
+          <Text style={styles.trustSub}>{trustScore > 70 ? 'Excellent reputation' : trustScore > 40 ? 'Good standing' : 'Build your reputation'}</Text>
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ratings by Role</Text>
+          {ratings.map(r => (
+            <View key={r.label} style={styles.ratingRow}>
+              <Ionicons name={r.icon as any} size={20} color={r.color} />
+              <Text style={styles.ratingLabel}>{r.label}</Text>
+              <View style={styles.stars}>{[1,2,3,4,5].map(star => <Ionicons key={star} name={star <= Math.round(r.score) ? 'star' : 'star-outline'} size={14} color={r.color} />)}</View>
+              <Text style={[styles.ratingScore, { color: r.color }]}>{r.score > 0 ? r.score.toFixed(1) : '—'}</Text>
             </View>
-            <Text style={styles.overallLabel}>Overall Rating across {scores.length} apps</Text>
-          </View>
-
-          {/* Trust Score */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Trust Score</Text>
-            <View style={styles.trustBar}>
-              <View style={[styles.trustFill, { width: `${Math.min(user?.trust_score || 0, 100)}%` }]} />
-            </View>
-            <Text style={styles.trustText}>{user?.trust_score || 0} / 100</Text>
-          </View>
-
-          {/* KYC Status */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Verification Status</Text>
-            <View style={styles.kycRow}>
-              <Ionicons name={user?.is_verified ? "shield-checkmark" : "shield-outline"}
-                size={24} color={user?.is_verified ? "#10b981" : "#888"} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={styles.kycTitle}>{user?.is_verified ? 'Verified' : 'Unverified'}</Text>
-                <Text style={styles.kycSub}>Level {user?.verification_level || 0} • {user?.kyc_status || 'unverified'}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Per-App Ratings */}
-          <Text style={styles.sectionTitle}>App Ratings</Text>
-          {APPS.map((app) => {
-            const score = scores.find((s) => s.app === app.toLowerCase());
-            return (
-              <View key={app} style={styles.appRow}>
-                <Text style={styles.appName}>{app}</Text>
-                <View style={styles.appRating}>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Ionicons key={s} name={s <= Math.round(score?.rating || 0) ? "star" : "star-outline"}
-                      size={14} color="#f59e0b" />
-                  ))}
-                </View>
-                <Text style={styles.appCount}>{score?.count || 0} reviews</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
-    </SafeAreaView>
+          ))}
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>History</Text>
+          <TouchableOpacity style={styles.row} onPress={() => {}}><Ionicons name="shield-checkmark-outline" size={20} color="#00d4ff" /><Text style={styles.rowText}>Verified History</Text><Ionicons name="chevron-forward" size={16} color="#444" /></TouchableOpacity>
+          <TouchableOpacity style={styles.row} onPress={() => {}}><Ionicons name="warning-outline" size={20} color="#ff4444" /><Text style={styles.rowText}>Warnings & Appeals</Text><Ionicons name="chevron-forward" size={16} color="#444" /></TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
-  content: { padding: 16 },
-  overallCard: { backgroundColor: '#fff', borderRadius: 12, padding: 24, alignItems: 'center', marginBottom: 12 },
-  overallScore: { fontSize: 48, fontWeight: '700', color: '#f59e0b' },
-  stars: { flexDirection: 'row', gap: 4, marginTop: 8 },
-  overallLabel: { fontSize: 13, color: '#888', marginTop: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 12, fontWeight: '700', color: '#9ca3af', letterSpacing: 1, marginBottom: 12 },
-  trustBar: { height: 8, backgroundColor: '#e2e8f0', borderRadius: 4, overflow: 'hidden' },
-  trustFill: { height: '100%', backgroundColor: '#f97316', borderRadius: 4 },
-  trustText: { fontSize: 13, color: '#888', marginTop: 6 },
-  kycRow: { flexDirection: 'row', alignItems: 'center' },
-  kycTitle: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
-  kycSub: { fontSize: 13, color: '#888', marginTop: 2 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#9ca3af', letterSpacing: 1, marginBottom: 8, marginTop: 4 },
-  appRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8 },
-  appName: { width: 100, fontSize: 14, fontWeight: '600', color: '#333' },
-  appRating: { flexDirection: 'row', gap: 2, flex: 1 },
-  appCount: { fontSize: 12, color: '#888' },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#333', marginTop: 16, marginBottom: 16, textAlign: 'center' },
-  button: { backgroundColor: '#f97316', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 10 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#000' },
+  center: { justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  trustCard: { margin: 16, backgroundColor: '#111', borderRadius: 16, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a' },
+  trustCircle: { width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#00d4ff', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  trustScore: { color: '#fff', fontSize: 32, fontWeight: '700' },
+  trustLabel: { color: '#888', fontSize: 11, marginTop: 2 },
+  trustBarBg: { width: '100%', height: 6, backgroundColor: '#222', borderRadius: 3, overflow: 'hidden', marginTop: 8 },
+  trustBarFill: { height: '100%', borderRadius: 3 },
+  trustSub: { color: '#888', fontSize: 12, marginTop: 8 },
+  section: { paddingHorizontal: 16, marginTop: 16 },
+  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#1a1a1a' },
+  ratingLabel: { color: '#fff', fontSize: 14, flex: 1, marginLeft: 12 },
+  stars: { flexDirection: 'row', gap: 2, marginRight: 8 },
+  ratingScore: { fontSize: 14, fontWeight: '700', minWidth: 30, textAlign: 'right' },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#1a1a1a' },
+  rowText: { color: '#fff', fontSize: 14, flex: 1, marginLeft: 12 },
 });

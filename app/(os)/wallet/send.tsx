@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useWalletStore } from '@/lib/wallet/state/wallet.store';
 
 export default function SendScreen() {
   const router = useRouter();

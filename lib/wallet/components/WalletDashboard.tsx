@@ -1,7 +1,7 @@
 // lib/wallet/components/WalletDashboard.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useWalletStore } from '@/lib/stores/wallet-store';
+import { useWalletStore } from '@/lib/wallet/state/wallet.store';
 
 export function WalletDashboard() {
   const { wallet, transactions, loading } = useWalletStore();
