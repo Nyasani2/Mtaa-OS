@@ -1,4 +1,4 @@
-import { useAppStore } from '@/lib/stores/app-store';
+import { useAppStore } from '@/lib/appstore';
 import { getAppById, getAllApps } from './unified-registry';
 
 export function useInstallLifecycle() {

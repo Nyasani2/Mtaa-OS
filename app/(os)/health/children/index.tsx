@@ -9,7 +9,7 @@ import {
   Baby, Plus, ChevronRight, Shield, Calendar, Heart,
   Syringe, Activity, QrCode, AlertTriangle
 } from 'lucide-react-native';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 interface ChildProfile {

@@ -54,7 +54,7 @@ class ASISTester {
   async testWalletFlow(): Promise<void> {
     const start = Date.now();
     try {
-      const { useWalletStore } = require('@/lib/stores/wallet-store');
+      const { useWalletStore } = require('@/lib/wallet/state/wallet.store');
       const store = useWalletStore.getState();
 
       // Test 1: Balance exists

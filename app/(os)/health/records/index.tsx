@@ -10,7 +10,7 @@ import {
   ChevronRight, Calendar, Clock, AlertCircle,
   Heart, Activity, TrendingUp, Filter
 } from 'lucide-react-native';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 interface TimelineEvent {

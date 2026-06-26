@@ -11,7 +11,7 @@ import {
   CheckCircle2, XCircle, Timer
 } from 'lucide-react-native';
 import { useHealthStore } from '@/lib/health/state/health.store';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 interface PatientQueueItem {

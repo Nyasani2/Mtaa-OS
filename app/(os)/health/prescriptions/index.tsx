@@ -9,7 +9,7 @@ import {
   Pill, Clock, ChevronRight, AlertCircle, CheckCircle2,
   Calendar, User, Building2, RefreshCw
 } from 'lucide-react-native';
-import { useAuthStore } from '@/lib/auth/state/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Colors } from '@/constants/Colors';
 
 interface Prescription {

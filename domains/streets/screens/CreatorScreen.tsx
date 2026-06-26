@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Image,
-  Dimensions, Platform, RefreshControl, Alert, ActivityIndicator,
+  Dimensions, Platform, RefreshControl, Alert, ActivityIndicator, Modal,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,31 +33,18 @@ interface UserPost {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  thumbnail_url: string | null;
+  video_thumbnail_url: string | null;
 }
 
-function GridVideo({ uri, style }: { uri: string; style: any }) {
-  if (Platform.OS === 'web') {
-    const flattened = StyleSheet.flatten([
-      { width: '100%', height: '100%', objectFit: 'cover' },
-      style,
-    ]);
-    return (
-      <video
-        src={uri}
-        style={flattened}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      />
-    );
+function getPosterUrl(post: UserPost): string | null {
+  if (post.media_type === 'video') {
+    return post.video_thumbnail_url || post.thumbnail_url || null;
   }
-  return (
-    <View style={[style, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
-      <Ionicons name="videocam" size={24} color="#00d4ff" />
-    </View>
-  );
+  if (post.media_type === 'image') {
+    return post.media_url || post.thumbnail_url || null;
+  }
+  return null;
 }
 
 export default function CreatorScreen() {
@@ -79,6 +66,9 @@ export default function CreatorScreen() {
   const [isFollowingUser, setIsFollowingUser] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
+  const [deleteModalPost, setDeleteModalPost] = useState<UserPost | null>(null);
+  const [previewPost, setPreviewPost] = useState<UserPost | null>(null);
+  const videoRefs = useRef<Record<string, HTMLVideoElement>>({});
 
   const fetchProfile = useCallback(async () => {
     if (!targetUserId) { setError('No user specified'); setLoading(false); return; }
@@ -94,7 +84,7 @@ export default function CreatorScreen() {
 
       const { data: postsData, error: postsErr } = await supabase
         .from('streets_posts')
-        .select('id, media_url, media_type, content, caption, likes_count, comments_count, created_at')
+        .select('id, media_url, media_type, content, caption, likes_count, comments_count, created_at, thumbnail_url, video_thumbnail_url')
         .eq('creator_id', targetUserId)
         .eq('is_public', true)
         .order('created_at', { ascending: false });
@@ -149,19 +139,16 @@ export default function CreatorScreen() {
     }
   };
 
-  const handleDeletePost = (postId: string) => {
-    Alert.alert('Delete Post?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
-          if (error) { Alert.alert('Error', error.message); return; }
-          setAllPosts(prev => prev.filter(p => p.id !== postId));
-          Alert.alert('Deleted', 'Post removed.');
-        },
-      },
-    ]);
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const { error } = await supabase.from('streets_posts').delete().eq('id', postId);
+      if (error) { Alert.alert('Error', error.message); return; }
+      setAllPosts(prev => prev.filter(p => p.id !== postId));
+      setDeleteModalPost(null);
+      Alert.alert('Deleted', 'Post removed successfully.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to delete post');
+    }
   };
 
   const handleEditPost = (postId: string) => {
@@ -171,49 +158,104 @@ export default function CreatorScreen() {
   const renderPost = ({ item }: { item: UserPost }) => {
     const isHovered = hoveredPostId === item.id;
     const isVideo = item.media_type === 'video';
+    const isText = item.media_type === 'text' || (!item.media_url && !item.content);
+    const posterUrl = getPosterUrl(item);
 
     return (
-      <TouchableOpacity
-        style={styles.gridCell}
-        onPress={() => router.push(`/streets/post/${item.id}`)}
-        onLongPress={() => {
-          if (isOwnProfile) {
-            Alert.alert('Manage Post', '', [
-              { text: 'Edit', onPress: () => handleEditPost(item.id) },
-              { text: 'Delete', style: 'destructive', onPress: () => handleDeletePost(item.id) },
-              { text: 'Cancel', style: 'cancel' },
-            ]);
-          }
-        }}
-        onMouseEnter={() => setHoveredPostId(item.id)}
-        onMouseLeave={() => setHoveredPostId(null)}
-      >
-        {item.media_url && item.media_type !== 'text' ? (
-          isVideo && isHovered ? (
-            <GridVideo uri={item.media_url} style={styles.gridImage} />
+      <View style={styles.gridCellWrapper}>
+        <TouchableOpacity
+          style={styles.gridCell}
+          activeOpacity={0.9}
+          onPress={() => setPreviewPost(item)}
+          onLongPress={() => {
+            if (isOwnProfile) {
+              Alert.alert('Manage Post', item.content?.substring(0, 30) || 'Post', [
+                { text: 'Edit', onPress: () => handleEditPost(item.id) },
+                { text: 'Delete', style: 'destructive', onPress: () => setDeleteModalPost(item) },
+                { text: 'Cancel', style: 'cancel' },
+              ]);
+            }
+          }}
+          onMouseEnter={() => {
+            setHoveredPostId(item.id);
+            if (isVideo && videoRefs.current[item.id]) {
+              videoRefs.current[item.id].play().catch(() => {});
+            }
+          }}
+          onMouseLeave={() => {
+            setHoveredPostId(null);
+            if (isVideo && videoRefs.current[item.id]) {
+              videoRefs.current[item.id].pause();
+              videoRefs.current[item.id].currentTime = 0;
+            }
+          }}
+        >
+          {isVideo ? (
+            isHovered && item.media_url ? (
+              <video
+                ref={ref => { if (ref) videoRefs.current[item.id] = ref; }}
+                src={item.media_url}
+                style={styles.gridVideo}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                poster={posterUrl || undefined}
+              />
+            ) : (
+              <View style={styles.posterContainer}>
+                {posterUrl ? (
+                  <Image source={{ uri: posterUrl }} style={styles.gridImage} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.gridImage, styles.fallbackBg]}>
+                    <Ionicons name="videocam" size={28} color="#444" />
+                  </View>
+                )}
+                <View style={styles.playOverlay}>
+                  <Ionicons name="play" size={24} color="#fff" />
+                </View>
+              </View>
+            )
+          ) : isText ? (
+            <View style={[styles.gridImage, styles.textCell]}>
+              <Text style={styles.textCellText} numberOfLines={5}>{item.content || item.caption || 'Text post'}</Text>
+            </View>
           ) : (
-            <Image source={{ uri: item.media_url }} style={styles.gridImage} />
-          )
-        ) : (
-          <View style={[styles.gridImage, styles.textCell]}>
-            <Text style={styles.textCellText} numberOfLines={4}>{item.content || item.caption || ''}</Text>
+            <View style={styles.posterContainer}>
+              {posterUrl ? (
+                <Image source={{ uri: posterUrl }} style={styles.gridImage} resizeMode="cover" />
+              ) : (
+                <View style={[styles.gridImage, styles.fallbackBg]}>
+                  <Ionicons name="image" size={28} color="#444" />
+                </View>
+              )}
+            </View>
+          )}
+
+          <View style={styles.gridOverlay}>
+            <Ionicons name="heart" size={11} color="#fff" />
+            <Text style={styles.gridCount}>{item.likes_count || 0}</Text>
           </View>
-        )}
-        <View style={styles.gridOverlay}>
-          <Ionicons name="heart" size={12} color="#fff" />
-          <Text style={styles.gridCount}>{item.likes_count}</Text>
-        </View>
-        {isVideo && (
-          <View style={styles.videoBadge}>
-            <Ionicons name="videocam" size={12} color="#fff" />
-          </View>
-        )}
+
+          {isVideo && (
+            <View style={styles.typeBadge}>
+              <Ionicons name="videocam" size={10} color="#fff" />
+            </View>
+          )}
+          {isText && (
+            <View style={[styles.typeBadge, { backgroundColor: '#00d4ff' }]}>
+              <Ionicons name="text" size={10} color="#000" />
+            </View>
+          )}
+        </TouchableOpacity>
+
         {isOwnProfile && (
-          <TouchableOpacity style={styles.editBtn} onPress={() => handleEditPost(item.id)}>
-            <Ionicons name="create" size={14} color="#fff" />
+          <TouchableOpacity style={styles.deleteBtn} onPress={() => setDeleteModalPost(item)}>
+            <Ionicons name="trash" size={14} color="#ff4444" />
           </TouchableOpacity>
         )}
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -233,9 +275,6 @@ export default function CreatorScreen() {
         <TouchableOpacity onPress={fetchProfile} style={styles.retryBtn}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.back()} style={[styles.retryBtn, { marginTop: 8 }]}>
-          <Text style={styles.retryText}>Go Back</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -250,7 +289,7 @@ export default function CreatorScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{displayName}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>{displayName}</Text>
         <TouchableOpacity onPress={() => router.push('/streets/settings')}>
           <Ionicons name="settings-outline" size={22} color="#fff" />
         </TouchableOpacity>
@@ -265,8 +304,10 @@ export default function CreatorScreen() {
           </View>
         )}
         <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>{displayName}</Text>
-          {profile?.verified && <Ionicons name="checkmark-circle" size={16} color="#00d4ff" />}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.profileName}>{displayName}</Text>
+            {profile?.verified && <Ionicons name="checkmark-circle" size={16} color="#00d4ff" style={{ marginLeft: 4 }} />}
+          </View>
           <Text style={styles.profileHandle}>@{profile?.username || 'user'}</Text>
           {profile?.bio && <Text style={styles.bio}>{profile.bio}</Text>}
         </View>
@@ -277,14 +318,14 @@ export default function CreatorScreen() {
           <Text style={styles.statNum}>{allPosts.length}</Text>
           <Text style={styles.statLabel}>Posts</Text>
         </View>
-        <View style={styles.stat}>
+        <TouchableOpacity style={styles.stat} onPress={() => router.push(`/streets/followers?userId=${targetUserId}`)}>
           <Text style={styles.statNum}>{followers}</Text>
           <Text style={styles.statLabel}>Followers</Text>
-        </View>
-        <View style={styles.stat}>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.stat} onPress={() => router.push(`/streets/following?userId=${targetUserId}`)}>
           <Text style={styles.statNum}>{following}</Text>
           <Text style={styles.statLabel}>Following</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.actionRow}>
@@ -336,6 +377,52 @@ export default function CreatorScreen() {
           </View>
         }
       />
+
+      {/* Delete Confirmation Modal */}
+      <Modal visible={!!deleteModalPost} transparent animationType="fade" onRequestClose={() => setDeleteModalPost(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons name="trash-outline" size={40} color="#ff4444" />
+            <Text style={styles.modalTitle}>Delete Post?</Text>
+            <Text style={styles.modalText}>This action cannot be undone.</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setDeleteModalPost(null)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={() => deleteModalPost && handleDeletePost(deleteModalPost.id)}>
+                <Text style={styles.modalConfirmText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Preview Modal */}
+      <Modal visible={!!previewPost} transparent animationType="slide" onRequestClose={() => setPreviewPost(null)}>
+        <View style={styles.previewOverlay}>
+          <TouchableOpacity style={styles.previewClose} onPress={() => setPreviewPost(null)}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {previewPost?.media_type === 'video' && previewPost.media_url ? (
+            <video src={previewPost.media_url} style={styles.previewMedia} autoPlay loop playsInline controls />
+          ) : previewPost?.media_url ? (
+            <Image source={{ uri: previewPost.media_url }} style={styles.previewMedia} resizeMode="contain" />
+          ) : (
+            <View style={[styles.previewMedia, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+              <Text style={{ color: '#fff', fontSize: 18, textAlign: 'center' }}>{previewPost?.content || previewPost?.caption || ''}</Text>
+            </View>
+          )}
+          {previewPost && (
+            <View style={styles.previewInfo}>
+              <Text style={styles.previewCaption}>{previewPost.content || previewPost.caption || ''}</Text>
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+                <Text style={styles.previewMeta}>❤ {previewPost.likes_count || 0}</Text>
+                <Text style={styles.previewMeta}>💬 {previewPost.comments_count || 0}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -344,9 +431,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12 },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700', maxWidth: 200 },
   profileCard: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  profileAvatar: { width: 80, height: 80, borderRadius: 40, marginRight: 16 },
+  profileAvatar: { width: 80, height: 80, borderRadius: 40, marginRight: 16, borderWidth: 2, borderColor: '#00d4ff' },
   avatarPlaceholder: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
   profileInfo: { flex: 1 },
   profileName: { color: '#fff', fontSize: 20, fontWeight: '700' },
@@ -366,19 +453,39 @@ const styles = StyleSheet.create({
   filterBtnActive: { backgroundColor: '#00d4ff22', borderWidth: 1, borderColor: '#00d4ff' },
   filterText: { color: '#888', fontSize: 12 },
   filterTextActive: { color: '#00d4ff', fontWeight: '600' },
-  gridCell: { width: CELL_SIZE, height: CELL_SIZE, padding: 1, position: 'relative' },
-  gridImage: { width: '100%', height: '100%', backgroundColor: '#111' },
-  textCell: { justifyContent: 'center', alignItems: 'center', padding: 8 },
-  textCellText: { color: '#fff', fontSize: 10, textAlign: 'center' },
-  gridOverlay: { position: 'absolute', bottom: 4, left: 4, flexDirection: 'row', alignItems: 'center' },
-  gridCount: { color: '#fff', fontSize: 10, marginLeft: 2 },
-  videoBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 2 },
-  editBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, padding: 4 },
-  empty: { alignItems: 'center', paddingVertical: 60 },
+  gridCellWrapper: { width: CELL_SIZE, height: CELL_SIZE, padding: 1, position: 'relative' },
+  gridCell: { width: '100%', height: '100%', overflow: 'hidden' },
+  gridImage: { width: '100%', height: '100%' },
+  gridVideo: { width: '100%', height: '100%', objectFit: 'cover' },
+  posterContainer: { width: '100%', height: '100%', position: 'relative' },
+  fallbackBg: { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
+  playOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
+  textCell: { justifyContent: 'center', alignItems: 'center', padding: 10, backgroundColor: '#1a1a2e' },
+  textCellText: { color: '#fff', fontSize: 13, textAlign: 'center', lineHeight: 18 },
+  gridOverlay: { position: 'absolute', bottom: 4, left: 4, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 8, paddingHorizontal: 4, paddingVertical: 2 },
+  gridCount: { color: '#fff', fontSize: 10, marginLeft: 2, fontWeight: '600' },
+  typeBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 3 },
+  deleteBtn: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 12, padding: 4, zIndex: 10 },
+  empty: { alignItems: 'center', paddingVertical: 60, width: SCREEN_W },
   emptyText: { color: '#666', fontSize: 14, marginTop: 12 },
   createBtn: { marginTop: 16, backgroundColor: '#00d4ff', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   createBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
   errorText: { color: '#ff4444', fontSize: 14, marginTop: 12, textAlign: 'center' },
   retryBtn: { marginTop: 16, backgroundColor: '#222', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   retryText: { color: '#00d4ff', fontWeight: '700', fontSize: 14 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 24, alignItems: 'center', width: '100%', maxWidth: 320 },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: 12 },
+  modalText: { color: '#888', fontSize: 14, marginTop: 8, textAlign: 'center' },
+  modalActions: { flexDirection: 'row', marginTop: 20, gap: 12 },
+  modalCancel: { flex: 1, backgroundColor: '#333', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  modalCancelText: { color: '#fff', fontWeight: '600' },
+  modalConfirm: { flex: 1, backgroundColor: '#ff4444', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  modalConfirmText: { color: '#fff', fontWeight: '700' },
+  previewOverlay: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  previewClose: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 16, right: 16, zIndex: 10, padding: 8 },
+  previewMedia: { width: SCREEN_W, height: SCREEN_W * 1.2 },
+  previewInfo: { position: 'absolute', bottom: 40, left: 16, right: 16 },
+  previewCaption: { color: '#fff', fontSize: 14, lineHeight: 20 },
+  previewMeta: { color: '#888', fontSize: 12 },
 });
