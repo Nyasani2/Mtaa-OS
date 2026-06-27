@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Share, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -11,7 +11,7 @@ export default function QRProfileScreen() {
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [qrType, setQrType] = useState<'profile' | 'business' | 'resume' | 'creator'>('profile');
+  const [qrType, setQrType] = useState<'profile'|'business'|'resume'|'creator'>('profile');
 
   useEffect(() => {
     if (!user?.id) return;
@@ -19,84 +19,64 @@ export default function QRProfileScreen() {
       .then(({ data }) => { setProfile(data); setLoading(false); });
   }, [user?.id]);
 
-  const getQRData = () => {
-    const base = `mtaa://profile/${user?.id}`;
-    switch (qrType) {
-      case 'business': return `${base}?mode=business`;
-      case 'resume': return `${base}?mode=resume`;
-      case 'creator': return `${base}?mode=creator`;
-      default: return base;
-    }
+  const getQrData = () => {
+    const base = `https://mtaa.app/u/${profile?.username || profile?.mtaa_id || user?.id}`;
+    const types: Record<string, string> = { profile: base, business: `${base}?type=business`, resume: `${base}?type=resume`, creator: `${base}?type=creator` };
+    return types[qrType] || base;
   };
 
   const handleShare = async () => {
-    await Share.share({ message: `Check out my MTAA profile: mtaa.app/@${profile?.username || profile?.mtaa_id}` });
+    const message = `Check out my MTAA profile: ${getQrData()}`;
+    if (Platform.OS === 'web') { Alert.alert('Share Profile', message, [{ text: 'OK' }]); return; }
+    try { await Share.share({ message, title: 'My MTAA Profile' }); } catch { Alert.alert('Error', 'Could not share'); }
   };
 
-  if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#00d4ff" /></View>;
-
-  const types = [
-    { key: 'profile', label: 'Profile', icon: 'person-outline' },
-    { key: 'business', label: 'Business', icon: 'business-outline' },
-    { key: 'resume', label: 'Resume', icon: 'document-text-outline' },
-    { key: 'creator', label: 'Creator', icon: 'sparkles-outline' },
-  ] as const;
+  const handleScan = () => { Alert.alert('Scan QR', 'QR scanner coming soon'); };
+  if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#2563EB" /></View>;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#0f172a" /></TouchableOpacity>
         <Text style={styles.headerTitle}>My QR Code</Text>
-        <TouchableOpacity onPress={handleShare}><Ionicons name="share-outline" size={22} color="#fff" /></TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
-
-      <View style={styles.qrCard}>
-        <View style={styles.qrWrap}>
-          <QRCode value={getQRData()} size={200} backgroundColor="#111" color="#00d4ff" />
+      <View style={styles.content}>
+        <View style={styles.qrContainer}><QRCode value={getQrData()} size={200} backgroundColor="#fff" color="#0f172a" /></View>
+        <Text style={styles.username}>@{profile?.username || 'username'}</Text>
+        <Text style={styles.scanText}>Scan to view profile</Text>
+        <View style={styles.typeRow}>
+          {(['profile','business','resume','creator'] as const).map(type => (
+            <TouchableOpacity key={type} style={[styles.typeBtn, qrType === type && styles.typeBtnActive]} onPress={() => setQrType(type)}>
+              <Ionicons name={type==='profile'?'person':type==='business'?'business':type==='resume'?'document':'sparkles'} size={16} color={qrType===type?'#fff':'#64748b'} />
+              <Text style={[styles.typeText, qrType===type&&styles.typeTextActive]}>{type.charAt(0).toUpperCase()+type.slice(1)}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <Text style={styles.qrLabel}>@{profile?.username || profile?.mtaa_id || 'user'}</Text>
-        <Text style={styles.qrSub}>Scan to view {qrType} profile</Text>
       </View>
-
-      <View style={styles.typeSelector}>
-        {types.map(t => (
-          <TouchableOpacity key={t.key} style={[styles.typeBtn, qrType === t.key && styles.typeBtnActive]} onPress={() => setQrType(t.key as any)}>
-            <Ionicons name={t.icon as any} size={18} color={qrType === t.key ? '#00d4ff' : '#888'} />
-            <Text style={[styles.typeText, qrType === t.key && styles.typeTextActive]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
-          <Ionicons name="share-social-outline" size={18} color="#000" />
-          <Text style={styles.actionText}>Share Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.secondaryBtn]} onPress={() => router.push('/profile/qr/scan')}>
-          <Ionicons name="scan-outline" size={18} color="#fff" />
-          <Text style={[styles.actionText, { color: '#fff' }]}>Scan QR</Text>
-        </TouchableOpacity>
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.footerBtn} onPress={handleShare}><Ionicons name="share-outline" size={20} color="#2563EB" /><Text style={styles.footerText}>Share Profile</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.footerBtn} onPress={handleScan}><Ionicons name="scan-outline" size={20} color="#2563EB" /><Text style={styles.footerText}>Scan QR</Text></TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: '#ffffff' },
   center: { justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  qrCard: { margin: 24, backgroundColor: '#111', borderRadius: 20, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a' },
-  qrWrap: { padding: 16, backgroundColor: '#fff', borderRadius: 12 },
-  qrLabel: { color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 16 },
-  qrSub: { color: '#888', fontSize: 12, marginTop: 4 },
-  typeSelector: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingHorizontal: 16 },
-  typeBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: '#111', gap: 6, borderWidth: 1, borderColor: '#222' },
-  typeBtnActive: { backgroundColor: '#00d4ff22', borderColor: '#00d4ff' },
-  typeText: { color: '#888', fontSize: 12 },
-  typeTextActive: { color: '#00d4ff', fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: 12, padding: 24, marginTop: 'auto' },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#00d4ff', paddingVertical: 14, borderRadius: 20, gap: 8 },
-  secondaryBtn: { backgroundColor: '#222', borderWidth: 1, borderColor: '#333' },
-  actionText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  headerTitle: { color: '#0f172a', fontSize: 18, fontWeight: '700' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  qrContainer: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 20 },
+  username: { color: '#0f172a', fontSize: 18, fontWeight: '700', marginTop: 8 },
+  scanText: { color: '#64748b', fontSize: 13, marginTop: 4 },
+  typeRow: { flexDirection: 'row', gap: 8, marginTop: 24 },
+  typeBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f8fafc', gap: 6, borderWidth: 1, borderColor: '#e2e8f0' },
+  typeBtnActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  typeText: { color: '#64748b', fontSize: 12, fontWeight: '500' },
+  typeTextActive: { color: '#fff', fontWeight: '600' },
+  footer: { flexDirection: 'row', padding: 16, gap: 12, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  footerBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', paddingVertical: 14, borderRadius: 12, gap: 8, borderWidth: 1, borderColor: '#e2e8f0' },
+  footerText: { color: '#0f172a', fontSize: 14, fontWeight: '600' },
 });

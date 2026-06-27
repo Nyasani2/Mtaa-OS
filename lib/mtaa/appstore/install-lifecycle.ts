@@ -1,30 +1,26 @@
-import { useAppStore } from '@/lib/appstore';
-import { getAppById, getAllApps } from './unified-registry';
+import { useAppStore } from '@/lib/stores/app-store';
+import type { AppManifest } from '@/lib/appstore';
 
 export function useInstallLifecycle() {
   const { installApp, uninstallApp, installedApps } = useAppStore();
 
-  const install = (appId: string) => {
-    const app = getAppById(appId);
-    if (!app) return false;
-    installApp(appId);
-    return true;
-  };
-
-  const uninstall = (appId: string) => {
-    if (!installedApps.includes(appId)) return false;
-    uninstallApp(appId);
-    return true;
-  };
-
   const isInstalled = (appId: string) => installedApps.includes(appId);
 
-  const getInstalledApps = () => {
-    return getAllApps().filter((app) => installedApps.includes(app.id));
+  const install = (manifest: AppManifest) => {
+    installApp(manifest.id);
   };
 
-  return { install, uninstall, isInstalled, getInstalledApps };
+  const uninstall = (manifest: AppManifest) => {
+    uninstallApp(manifest.id);
+  };
+
+  const toggle = (manifest: AppManifest) => {
+    if (isInstalled(manifest.id)) {
+      uninstall(manifest);
+    } else {
+      install(manifest);
+    }
+  };
+
+  return { install, uninstall, toggle, isInstalled };
 }
-
-export default useInstallLifecycle;
-

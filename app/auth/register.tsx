@@ -12,7 +12,6 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   if (/[A-Z]/.test(password)) score++;
   if (/\d/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
-
   const levels = [
     { label: 'Too weak', color: '#ef4444' },
     { label: 'Weak', color: '#f97316' },
@@ -40,50 +39,29 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    // Input validation
-    if (!name.trim()) {
-      Alert.alert('Error', 'Full name is required');
-      return;
-    }
-    if (!email.trim()) {
-      Alert.alert('Error', 'Email is required');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
-    if (!phone.trim()) {
-      Alert.alert('Error', 'Phone number is required');
-      return;
-    }
-    if (!/^\+?[0-9\s-]{10,}$/.test(phone)) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
-    }
-    if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
-      return;
-    }
-    if (passwordStrength.score < 2) {
-      Alert.alert('Error', 'Password is too weak. Add uppercase, numbers, or symbols.');
-      return;
-    }
+    if (!name.trim()) { Alert.alert('Error', 'Full name is required'); return; }
+    if (!email.trim()) { Alert.alert('Error', 'Email is required'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Alert.alert('Error', 'Please enter a valid email address'); return; }
+    if (!phone.trim()) { Alert.alert('Error', 'Phone number is required'); return; }
+    if (!/^\+?[0-9\s-]{10,}$/.test(phone)) { Alert.alert('Error', 'Please enter a valid phone number'); return; }
+    if (password.length < 8) { Alert.alert('Error', 'Password must be at least 8 characters'); return; }
+    if (passwordStrength.score < 2) { Alert.alert('Error', 'Password is too weak. Add uppercase, numbers, or symbols.'); return; }
 
     setLoading(true);
-    const { error, success } = await signUp(email.trim(), password, { phone: phone.trim(), full_name: name.trim() });
+    const result = await signUp(email.trim(), password, { phone: phone.trim(), full_name: name.trim() });
     setLoading(false);
 
-    if (error) {
-      Alert.alert('Error', error);
+    if (result.error) {
+      Alert.alert('Error', result.error.message || 'Registration failed');
       return;
     }
 
-    if (success) {
+    // signUp returns { user } on success, not { success }
+    if (result.user) {
       Alert.alert(
         'Verify Your Email',
         'Account created. Please check your email and verify before signing in.',
-        [{ text: 'OK', onPress: () => router.replace('/auth/login') }]
+        [{ text: 'OK', onPress: () => router.replace('/auth') }]
       );
     } else {
       Alert.alert('Success', 'Account created. Please set your PIN.', [
@@ -98,13 +76,7 @@ export default function RegisterScreen() {
       <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
       <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={handlePasswordChange}
-        secureTextEntry
-      />
+      <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={handlePasswordChange} secureTextEntry />
       {password.length > 0 && (
         <View style={styles.strengthContainer}>
           <View style={[styles.strengthBar, { width: `${(passwordStrength.score / 5) * 100}%`, backgroundColor: passwordStrength.color }]} />
@@ -114,7 +86,7 @@ export default function RegisterScreen() {
       <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Create Account'}</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/auth/login')}>
+      <TouchableOpacity onPress={() => router.push('/auth')}>
         <Text style={styles.link}>Already have an account? Sign in</Text>
       </TouchableOpacity>
     </View>
