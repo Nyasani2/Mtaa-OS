@@ -25,15 +25,17 @@ export function useIdentity(): IdentityContextValue {
   if (context === undefined) {
     const store = useAuthStore();
     return {
-      user: store.user, session: store.session,
-      isLoading: store.isLoading, isAuthenticated: store.isAuthenticated,
+      user: store.user,
+      session: store.session,
+      isLoading: store.isLoading,
+      isAuthenticated: store.isAuthenticated,
       signIn: async (email, password) => {
         const r = await store.signIn(email, password);
         return { error: r.error ? new Error(r.error) : undefined };
       },
       signUp: async (email, password, metadata) => {
         const r = await store.signUp(email, password, metadata);
-        return { error: r.error ? new Error(r.error) : undefined };
+        return { error: r.error ? new Error(r.error) : undefined, user: r.user };
       },
       signOut: store.signOut,
       resetPassword: async (email) => {
@@ -55,15 +57,17 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { store.initialize(); }, []);
 
   const value: IdentityContextValue = {
-    user: store.user, session: store.session,
-    isLoading: store.isLoading, isAuthenticated: store.isAuthenticated,
+    user: store.user,
+    session: store.session,
+    isLoading: store.isLoading,
+    isAuthenticated: store.isAuthenticated,
     signIn: async (email, password) => {
       const r = await store.signIn(email, password);
       return { error: r.error ? new Error(r.error) : undefined };
     },
     signUp: async (email, password, metadata) => {
       const r = await store.signUp(email, password, metadata);
-      return { error: r.error ? new Error(r.error) : undefined };
+      return { error: r.error ? new Error(r.error) : undefined, user: r.user };
     },
     signOut: store.signOut,
     resetPassword: async (email) => {

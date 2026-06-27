@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,15 @@ import {
   ImageBackground,
   Dimensions,
   StatusBar,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useHomeStore } from '@/lib/home/store/home.store';
+import SmartDock from '@/lib/home/components/SmartDock';
+import { WallpaperPicker } from '@/lib/home/components/WallpaperPicker';
+import LongPressMenu from '@/lib/home/components/LongPressMenu';
 
 const { width } = Dimensions.get('window');
 const ICON_SIZE = 52;
@@ -20,79 +25,131 @@ const COLS = 4;
 const TILE_WIDTH = (width - 40 - (COLS - 1) * GRID_GAP) / COLS;
 
 interface AppTile {
+  id: string;
   name: string;
   icon: string;
   iconSet: 'Ionicons' | 'MaterialCommunityIcons';
   route: string;
   color: string;
   bgColor: string;
+  ownerOnly: boolean;
 }
 
-// ALL APPS — alphabetically sorted within sections
+// ─── ALL APPS — Complete Catalog (~60+ apps) — ALPHABETICAL ───
+
 const ALL_APPS: AppTile[] = [
-  // Owner Only (hidden from regular users)
-  { name: 'Audit', icon: 'shield-checkmark', iconSet: 'Ionicons', route: '/kernel-audit', color: '#fff', bgColor: '#dc2626' },
-  { name: 'Command', icon: 'command', iconSet: 'MaterialCommunityIcons', route: '/command/asis-simulator', color: '#fff', bgColor: '#8b5cf6' },
-  { name: 'Dev', icon: 'code-slash', iconSet: 'Ionicons', route: '/developer', color: '#fff', bgColor: '#334155' },
-  { name: 'Regulatory', icon: 'document-text', iconSet: 'Ionicons', route: '/regulatory', color: '#fff', bgColor: '#7c3aed' },
-  { name: 'Treasury', icon: 'vault', iconSet: 'MaterialCommunityIcons', route: '/(civic)/treasury', color: '#fff', bgColor: '#b45309' },
-
-  // MTAA Apps
-  { name: 'Ads', icon: 'megaphone', iconSet: 'Ionicons', route: '/(business)/ads', color: '#fff', bgColor: '#f97316' },
-  { name: 'Boda', icon: 'bicycle', iconSet: 'Ionicons', route: '/(boda)', color: '#fff', bgColor: '#22c55e' },
-  { name: 'Central Bank', icon: 'bank', iconSet: 'MaterialCommunityIcons', route: '/(finance)/credit', color: '#fff', bgColor: '#1e40af' },
-  { name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6' },
-  { name: 'Edu', icon: 'school', iconSet: 'Ionicons', route: '/(education)', color: '#fff', bgColor: '#14b8a6' },
-  { name: 'Health', icon: 'medical', iconSet: 'Ionicons', route: '/health', color: '#fff', bgColor: '#06b6d4' },
-  { name: 'Hookup', icon: 'heart', iconSet: 'Ionicons', route: '/(social)/hookup', color: '#fff', bgColor: '#f43f5e' },
-  { name: 'Jobs', icon: 'briefcase', iconSet: 'Ionicons', route: '/(work)/jobs', color: '#fff', bgColor: '#f59e0b' },
-  { name: 'Market', icon: 'cart', iconSet: 'Ionicons', route: '/(commerce)/marketplace', color: '#fff', bgColor: '#84cc16' },
-  { name: 'MTruck', icon: 'truck-delivery', iconSet: 'MaterialCommunityIcons', route: '/(mtruck)', color: '#fff', bgColor: '#a855f7' },
-  { name: 'MTaxi', icon: 'car', iconSet: 'Ionicons', route: '/(boda)', color: '#fff', bgColor: '#10b981' },
-  { name: 'Shop', icon: 'storefront', iconSet: 'Ionicons', route: '/(commerce)/shop', color: '#fff', bgColor: '#ec4899' },
-  { name: 'Streets', icon: 'videocam', iconSet: 'Ionicons', route: '/streets', color: '#fff', bgColor: '#ef4444' },
-  { name: 'Studio', icon: 'film', iconSet: 'Ionicons', route: '/studio', color: '#fff', bgColor: '#6366f1' },
-  { name: 'Tribes', icon: 'people', iconSet: 'Ionicons', route: '/(social)/tribes', color: '#fff', bgColor: '#d946ef' },
-  { name: 'Wallet', icon: 'wallet', iconSet: 'Ionicons', route: '/wallet', color: '#fff', bgColor: '#f97316' },
-
-  // System Apps
-  { name: 'ASIS', icon: 'hardware-chip', iconSet: 'Ionicons', route: '/asis', color: '#fff', bgColor: '#0ea5e9' },
-  { name: 'Calendar', icon: 'calendar', iconSet: 'Ionicons', route: '/calendar', color: '#fff', bgColor: '#f59e0b' },
-  { name: 'Network', icon: 'wifi', iconSet: 'Ionicons', route: '/network', color: '#fff', bgColor: '#3b82f6' },
-  { name: 'Property', icon: 'home', iconSet: 'Ionicons', route: '/property', color: '#fff', bgColor: '#f59e0b' },
-  { name: 'Reader', icon: 'book', iconSet: 'Ionicons', route: '/reader', color: '#fff', bgColor: '#059669' },
-  { name: 'Restaurant', icon: 'restaurant', iconSet: 'Ionicons', route: '/restaurant', color: '#fff', bgColor: '#ef4444' },
-  { name: 'Revenue', icon: 'cash', iconSet: 'Ionicons', route: '/(civic)/revenue', color: '#fff', bgColor: '#059669' },
-  { name: 'Upload', icon: 'cloud-upload', iconSet: 'Ionicons', route: '/upload', color: '#fff', bgColor: '#0891b2' },
-
-  // Android / Utility Apps
-  { name: 'Binance', icon: 'logo-bitcoin', iconSet: 'Ionicons', route: '/(finance)/binance', color: '#fff', bgColor: '#f59e0b' },
-  { name: 'Calculator', icon: 'calculator', iconSet: 'Ionicons', route: '/calculator', color: '#fff', bgColor: '#6366f1' },
-  { name: 'Clock', icon: 'time', iconSet: 'Ionicons', route: '/clock', color: '#fff', bgColor: '#f97316' },
-  { name: 'Contacts', icon: 'people', iconSet: 'Ionicons', route: '/phone/contacts', color: '#fff', bgColor: '#3b82f6' },
-  { name: 'Credit', icon: 'card', iconSet: 'Ionicons', route: '/(finance)/credit', color: '#fff', bgColor: '#10b981' },
-  { name: 'Documents', icon: 'document', iconSet: 'Ionicons', route: '/(productivity)/documents', color: '#fff', bgColor: '#f59e0b' },
-  { name: 'Gallery', icon: 'images', iconSet: 'Ionicons', route: '/(media)/gallery', color: '#fff', bgColor: '#ec4899' },
-  { name: 'Messages', icon: 'chatbubble', iconSet: 'Ionicons', route: '/(communication)/messages', color: '#fff', bgColor: '#3b82f6' },
-  { name: 'Phone', icon: 'call', iconSet: 'Ionicons', route: '/phone', color: '#fff', bgColor: '#22c55e' },
-  { name: 'Recents', icon: 'time', iconSet: 'Ionicons', route: '/(system)/recents', color: '#fff', bgColor: '#6b7280' },
-  { name: 'Scheduler', icon: 'calendar', iconSet: 'Ionicons', route: '/(productivity)/scheduler', color: '#fff', bgColor: '#14b8a6' },
-  { name: 'Settings', icon: 'settings', iconSet: 'Ionicons', route: '/settings', color: '#fff', bgColor: '#6b7280' },
-  { name: 'SIM', icon: 'sim', iconSet: 'Ionicons', route: '/(utility)/sim', color: '#fff', bgColor: '#f97316' },
-  { name: 'Weather', icon: 'cloud', iconSet: 'Ionicons', route: '/(utility)/weather', color: '#fff', bgColor: '#06b6d4' },
-  { name: 'World Time', icon: 'globe', iconSet: 'Ionicons', route: '/(utility)/time', color: '#fff', bgColor: '#8b5cf6' },
+  { id: 'ads', name: 'Ads', icon: 'megaphone', iconSet: 'Ionicons', route: '/(business)/ads', color: '#fff', bgColor: '#f97316', ownerOnly: false },
+  { id: 'ambulance', name: 'Ambulance', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health/ambulance', color: '#fff', bgColor: '#ef4444', ownerOnly: false },
+  { id: 'appstore', name: 'App Store', icon: 'apps', iconSet: 'Ionicons', route: '/(os)/appstore', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false },
+  { id: 'asis', name: 'ASIS', icon: 'hardware-chip', iconSet: 'Ionicons', route: '/(os)/asis', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false },
+  { id: 'binance', name: 'Binance', icon: 'logo-bitcoin', iconSet: 'Ionicons', route: '/(finance)/binance', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'boda', name: 'Boda', icon: 'bicycle', iconSet: 'Ionicons', route: '/(boda)', color: '#fff', bgColor: '#22c55e', ownerOnly: false },
+  { id: 'calculator', name: 'Calculator', icon: 'calculator', iconSet: 'Ionicons', route: '/(os)/calculator', color: '#fff', bgColor: '#6366f1', ownerOnly: false },
+  { id: 'calendar', name: 'Calendar', icon: 'calendar', iconSet: 'Ionicons', route: '/(os)/calendar', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'camera', name: 'Camera', icon: 'camera', iconSet: 'Ionicons', route: '/(media)/camera', color: '#fff', bgColor: '#6b7280', ownerOnly: false },
+  { id: 'central-bank', name: 'Central Bank', icon: 'bank', iconSet: 'MaterialCommunityIcons', route: '/(admin)/command-centre/treasury/central-bank', color: '#fff', bgColor: '#1e40af', ownerOnly: true },
+  { id: 'civic', name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'clock', name: 'Clock', icon: 'time', iconSet: 'Ionicons', route: '/(os)/clock', color: '#fff', bgColor: '#f97316', ownerOnly: false },
+  { id: 'command-centre', name: 'Command Centre', icon: 'desktop-tower-monitor', iconSet: 'MaterialCommunityIcons', route: '/(admin)/command-centre', color: '#fff', bgColor: '#8b5cf6', ownerOnly: true },
+  { id: 'contacts', name: 'Contacts', icon: 'people', iconSet: 'Ionicons', route: '/(os)/phone', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'courts', name: 'Courts', icon: 'scale', iconSet: 'MaterialCommunityIcons', route: '/(civic)/courts', color: '#fff', bgColor: '#7c3aed', ownerOnly: false },
+  { id: 'credit', name: 'Credit', icon: 'card', iconSet: 'Ionicons', route: '/(finance)/credit', color: '#fff', bgColor: '#10b981', ownerOnly: false },
+  { id: 'developer', name: 'Dev', icon: 'code-slash', iconSet: 'Ionicons', route: '/(os)/developer', color: '#fff', bgColor: '#334155', ownerOnly: true },
+  { id: 'dispatch', name: 'Dispatch', icon: 'navigate', iconSet: 'Ionicons', route: '/(os)/health/ambulance/dispatch', color: '#fff', bgColor: '#dc2626', ownerOnly: false },
+  { id: 'doctor', name: 'Doctor', icon: 'medkit', iconSet: 'Ionicons', route: '/(os)/health/doctor', color: '#fff', bgColor: '#06b6d4', ownerOnly: false },
+  { id: 'documents', name: 'Documents', icon: 'document', iconSet: 'Ionicons', route: '/(os)/profile/documents', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'edu', name: 'Edu', icon: 'school', iconSet: 'Ionicons', route: '/(education)', color: '#fff', bgColor: '#14b8a6', ownerOnly: false },
+  { id: 'emergency', name: 'Emergency', icon: 'warning', iconSet: 'Ionicons', route: '/(os)/health/emergency', color: '#fff', bgColor: '#dc2626', ownerOnly: false },
+  { id: 'find-care', name: 'Find Care', icon: 'search', iconSet: 'Ionicons', route: '/(os)/health/find-care', color: '#fff', bgColor: '#0891b2', ownerOnly: false },
+  { id: 'gallery', name: 'Gallery', icon: 'images', iconSet: 'Ionicons', route: '/(media)/gallery', color: '#fff', bgColor: '#ec4899', ownerOnly: false },
+  { id: 'gofund', name: 'GoFund', icon: 'heart-circle', iconSet: 'Ionicons', route: '/(os)/wallet/gofund', color: '#fff', bgColor: '#f43f5e', ownerOnly: false },
+  { id: 'government', name: 'Government', icon: 'business', iconSet: 'Ionicons', route: '/(os)/health/government', color: '#fff', bgColor: '#1e40af', ownerOnly: false },
+  { id: 'health', name: 'Health', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health', color: '#fff', bgColor: '#06b6d4', ownerOnly: false },
+  { id: 'hookup', name: 'Hookup', icon: 'heart', iconSet: 'Ionicons', route: '/(social)/hookup', color: '#fff', bgColor: '#f43f5e', ownerOnly: false },
+  { id: 'hospital', name: 'Hospital', icon: 'fitness', iconSet: 'Ionicons', route: '/(os)/health/hospital-admin', color: '#fff', bgColor: '#ef4444', ownerOnly: false },
+  { id: 'immigration', name: 'Immigration', icon: 'airplane', iconSet: 'Ionicons', route: '/(civic)/immigration', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'insurance', name: 'Insurance', icon: 'shield', iconSet: 'Ionicons', route: '/(os)/health/insurance', color: '#fff', bgColor: '#059669', ownerOnly: false },
+  { id: 'jobs', name: 'Jobs', icon: 'briefcase', iconSet: 'Ionicons', route: '/(work)/jobs', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'lab', name: 'Lab', icon: 'flask', iconSet: 'Ionicons', route: '/(os)/health/lab', color: '#fff', bgColor: '#a855f7', ownerOnly: false },
+  { id: 'land', name: 'Land', icon: 'map', iconSet: 'Ionicons', route: '/(civic)/land', color: '#fff', bgColor: '#84cc16', ownerOnly: false },
+  { id: 'marketplace', name: 'Market', icon: 'cart', iconSet: 'Ionicons', route: '/(commerce)/marketplace', color: '#fff', bgColor: '#84cc16', ownerOnly: false },
+  { id: 'messages', name: 'Messages', icon: 'chatbubble', iconSet: 'Ionicons', route: '/(communication)/messages', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'mtaxi', name: 'MTaxi', icon: 'car', iconSet: 'Ionicons', route: '/(mtaxi)', color: '#fff', bgColor: '#10b981', ownerOnly: false },
+  { id: 'mtruck', name: 'MTruck', icon: 'truck-delivery', iconSet: 'MaterialCommunityIcons', route: '/(mtruck)', color: '#fff', bgColor: '#a855f7', ownerOnly: false },
+  { id: 'network', name: 'Network', icon: 'wifi', iconSet: 'Ionicons', route: '/(os)/network', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'nurse', name: 'Nurse', icon: 'pulse', iconSet: 'Ionicons', route: '/(os)/health/nurse', color: '#fff', bgColor: '#ec4899', ownerOnly: false },
+  { id: 'onboarding', name: 'Onboarding', icon: 'person-add', iconSet: 'Ionicons', route: '/(os)/wallet/onboarding', color: '#fff', bgColor: '#6366f1', ownerOnly: false },
+  { id: 'phone', name: 'Phone', icon: 'call', iconSet: 'Ionicons', route: '/(os)/phone', color: '#fff', bgColor: '#22c55e', ownerOnly: false },
+  { id: 'pharmacy', name: 'Pharmacy', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health/pharmacy', color: '#fff', bgColor: '#14b8a6', ownerOnly: false },
+  { id: 'police', name: 'Police', icon: 'shield', iconSet: 'Ionicons', route: '/(civic)/police', color: '#fff', bgColor: '#1e40af', ownerOnly: false },
+  { id: 'portfolio', name: 'Portfolio', icon: 'briefcase', iconSet: 'Ionicons', route: '/(work)/jobs/portfolio', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'prisons', name: 'Prisons', icon: 'lock-closed', iconSet: 'Ionicons', route: '/(civic)/prisons', color: '#fff', bgColor: '#7c2d12', ownerOnly: false },
+  { id: 'profile', name: 'Profile', icon: 'person', iconSet: 'Ionicons', route: '/(os)/profile', color: '#fff', bgColor: '#6366f1', ownerOnly: false },
+  { id: 'property', name: 'Property', icon: 'home', iconSet: 'Ionicons', route: '/(os)/property', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'qr', name: 'QR', icon: 'qr-code', iconSet: 'Ionicons', route: '/(os)/profile/qr', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false },
+  { id: 'radiology', name: 'Radiology', icon: 'scan', iconSet: 'Ionicons', route: '/(os)/health/radiology', color: '#fff', bgColor: '#8b5cf6', ownerOnly: false },
+  { id: 'reader', name: 'Reader', icon: 'book', iconSet: 'Ionicons', route: '/(os)/reader', color: '#fff', bgColor: '#059669', ownerOnly: false },
+  { id: 'records', name: 'Records', icon: 'folder', iconSet: 'Ionicons', route: '/(os)/health/records', color: '#fff', bgColor: '#6b7280', ownerOnly: false },
+  { id: 'regulatory', name: 'Regulatory', icon: 'document-text', iconSet: 'Ionicons', route: '/(os)/regulatory', color: '#fff', bgColor: '#7c3aed', ownerOnly: true },
+  { id: 'restaurant', name: 'Restaurant', icon: 'restaurant', iconSet: 'Ionicons', route: '/(os)/restaurant', color: '#fff', bgColor: '#ef4444', ownerOnly: false },
+  { id: 'revenue', name: 'Revenue', icon: 'cash', iconSet: 'Ionicons', route: '/(admin)/command-centre/revenue', color: '#fff', bgColor: '#059669', ownerOnly: true },
+  { id: 'savings', name: 'Savings', icon: 'wallet', iconSet: 'Ionicons', route: '/(os)/wallet/savings', color: '#fff', bgColor: '#22c55e', ownerOnly: false },
+  { id: 'scan', name: 'Scan', icon: 'scan', iconSet: 'Ionicons', route: '/(os)/wallet/scan', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false },
+  { id: 'search', name: 'Search', icon: 'search', iconSet: 'Ionicons', route: '/(os)/search', color: '#fff', bgColor: '#6b7280', ownerOnly: false },
+  { id: 'settings', name: 'Settings', icon: 'settings', iconSet: 'Ionicons', route: '/(os)/settings', color: '#fff', bgColor: '#6b7280', ownerOnly: false },
+  { id: 'shop', name: 'Shop', icon: 'storefront', iconSet: 'Ionicons', route: '/(commerce)/shop', color: '#fff', bgColor: '#ec4899', ownerOnly: false },
+  { id: 'streets', name: 'Streets', icon: 'videocam', iconSet: 'Ionicons', route: '/(os)/streets', color: '#fff', bgColor: '#ef4444', ownerOnly: false },
+  { id: 'studio', name: 'Studio', icon: 'film', iconSet: 'Ionicons', route: '/(os)/studio', color: '#fff', bgColor: '#6366f1', ownerOnly: false },
+  { id: 'telemedicine', name: 'Telemed', icon: 'videocam', iconSet: 'Ionicons', route: '/(os)/health/telemedicine', color: '#fff', bgColor: '#06b6d4', ownerOnly: false },
+  { id: 'topup', name: 'Top Up', icon: 'add-circle', iconSet: 'Ionicons', route: '/(os)/wallet/top-up', color: '#fff', bgColor: '#22c55e', ownerOnly: false },
+  { id: 'transfer', name: 'Transfer', icon: 'swap-horizontal', iconSet: 'Ionicons', route: '/(os)/wallet/transfer', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'transport', name: 'Transport', icon: 'bus', iconSet: 'Ionicons', route: '/(civic)/transport', color: '#fff', bgColor: '#f59e0b', ownerOnly: false },
+  { id: 'tribes', name: 'Tribes', icon: 'people', iconSet: 'Ionicons', route: '/(os)/tribes', color: '#fff', bgColor: '#d946ef', ownerOnly: false },
+  { id: 'upload', name: 'Upload', icon: 'cloud-upload', iconSet: 'Ionicons', route: '/(os)/upload', color: '#fff', bgColor: '#0891b2', ownerOnly: false },
+  { id: 'wallet', name: 'Wallet', icon: 'wallet', iconSet: 'Ionicons', route: '/(os)/wallet', color: '#fff', bgColor: '#f97316', ownerOnly: false },
+  { id: 'wifi', name: 'WiFi', icon: 'wifi', iconSet: 'Ionicons', route: '/(os)/wifi', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
+  { id: 'withdraw', name: 'Withdraw', icon: 'arrow-down-circle', iconSet: 'Ionicons', route: '/(os)/wallet/withdraw', color: '#fff', bgColor: '#dc2626', ownerOnly: false },
 ];
 
 // Sort alphabetically
 ALL_APPS.sort((a, b) => a.name.localeCompare(b.name));
 
-const OWNER_APP_NAMES = ['Audit', 'Command', 'Dev', 'Regulatory', 'Treasury'];
-
 function AppIcon({ app }: { app: AppTile }) {
   const IconComponent = app.iconSet === 'MaterialCommunityIcons' ? MaterialCommunityIcons : Ionicons;
   return (
     <View style={[styles.iconContainer, { backgroundColor: app.bgColor }]}>
-      <IconComponent name={app.icon as any} size={24} color={app.color} />
+      <IconComponent name={app.icon as any} size={22} color={app.color} />
+    </View>
+  );
+}
+
+// ─── Status Bar Component ───
+function StatusBarInfo() {
+  const [time, setTime] = useState('');
+  const [battery, setBattery] = useState(85);
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTime(`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`);
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View style={styles.statusBar}>
+      <View style={styles.statusLeft}>
+        <Ionicons name="cellular" size={14} color="#fff" />
+        <Ionicons name="wifi" size={14} color="#fff" style={{ marginLeft: 4 }} />
+      </View>
+      <Text style={styles.statusTime}>{time}</Text>
+      <View style={styles.statusRight}>
+        <Ionicons name="bluetooth" size={14} color="#fff" />
+        <Text style={styles.statusBattery}>{battery}%</Text>
+        <Ionicons name="battery-half" size={14} color="#fff" style={{ marginLeft: 2 }} />
+      </View>
     </View>
   );
 }
@@ -100,50 +157,84 @@ function AppIcon({ app }: { app: AppTile }) {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const {
+    settings, loadSettings, loadLayouts,
+    isEditMode, setEditMode,
+    setSelectedApp, setShowMenu,
+    setShowWallpaperPicker,
+    trackAppOpen,
+  } = useHomeStore();
+
   const [greeting, setGreeting] = useState('Good evening');
   const [currentDate, setCurrentDate] = useState('');
+  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Replace with your actual email
-  const isOwner = user?.email === 'your-email@example.com';
+  // Owner check
+  const isOwner = user?.email === 'OWNER_EMAIL_HERE';
 
   useEffect(() => {
+    loadSettings();
+    loadLayouts();
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
-
     const now = new Date();
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     setCurrentDate(`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`);
   }, []);
 
-  const launchApp = (route: string) => {
-    try { router.push(route as any); } catch (e) { router.push('/coming-soon'); }
+  const handlePressIn = useCallback((app: AppTile) => {
+    const timer = setTimeout(() => {
+      setSelectedApp({
+        id: app.id, appId: app.id, appName: app.name, appIcon: app.icon,
+        appRoute: app.route, positionX: 0, positionY: 0, pageNumber: 0,
+        folderId: null, isHidden: false, isPinned: false,
+      });
+      setShowMenu(true);
+    }, 500);
+    setPressTimer(timer);
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    if (pressTimer) { clearTimeout(pressTimer); setPressTimer(null); }
+  }, [pressTimer]);
+
+  const launchApp = (app: AppTile) => {
+    if (pressTimer) { clearTimeout(pressTimer); setPressTimer(null); }
+    trackAppOpen(app.id);
+    router.push(app.route as any);
   };
 
-  // Filter apps based on ownership
-  const visibleApps = isOwner 
-    ? ALL_APPS 
-    : ALL_APPS.filter(app => !OWNER_APP_NAMES.includes(app.name));
+  const handleEmptySpaceLongPress = () => {
+    setShowWallpaperPicker(true);
+  };
+
+  const visibleApps = isOwner
+    ? ALL_APPS
+    : ALL_APPS.filter((app) => !app.ownerOnly);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <ImageBackground
-        source={require('@/assets/images/mtaa_home.png')}
+        source={settings.wallpaperType === 'default'
+          ? require('@/assets/images/mtaa_home.png')
+          : { uri: settings.wallpaperUrl }
+        }
         style={styles.background}
         resizeMode="cover"
       >
-        {/* Light overlay for text readability — NOT dark/blurred */}
-        <View style={styles.overlay} />
+        {/* Status Bar */}
+        <StatusBarInfo />
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.username}>{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}</Text>
+              <Text style={styles.username}>{user?.user_metadata?.full_name || 'User'}</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <TouchableOpacity onPress={() => router.push('/notifications')}>
@@ -161,64 +252,56 @@ export default function HomeScreen() {
             <Text style={styles.monthYear}>{currentDate}</Text>
           </View>
 
-          {/* Alphabetical App Grid */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {isOwner ? 'All Apps' : 'Apps'}
-              </Text>
-              <TouchableOpacity onPress={() => router.push('/appstore')}>
-                <Text style={styles.appStoreLink}>App Store ›</Text>
+          {/* Edit Mode Banner */}
+          {isEditMode && (
+            <View style={styles.editBanner}>
+              <Text style={styles.editText}>Edit Mode — Drag apps to rearrange</Text>
+              <TouchableOpacity onPress={() => setEditMode(false)}>
+                <Text style={styles.doneText}>Done</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.grid}>
-              {visibleApps.map(app => (
-                <TouchableOpacity
-                  key={app.name}
-                  style={styles.tile}
-                  onPress={() => launchApp(app.route)}
-                  activeOpacity={0.7}
-                >
-                  <AppIcon app={app} />
-                  <Text style={styles.tileLabel}>{app.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          )}
+
+          {/* App Count */}
+          <Text style={styles.appCount}>{visibleApps.length} Apps</Text>
+
+          {/* All Apps — Single Alphabetical Grid */}
+          <View style={styles.grid}>
+            {visibleApps.map((app) => (
+              <Pressable
+                key={app.id}
+                style={styles.tile}
+                onPress={() => launchApp(app)}
+                onPressIn={() => handlePressIn(app)}
+                onPressOut={handlePressOut}
+                delayLongPress={500}
+              >
+                <AppIcon app={app} />
+                <Text style={styles.tileLabel}>{app.name}</Text>
+                {isEditMode && (
+                  <View style={styles.editBadge}>
+                    <Ionicons name="remove-circle" size={18} color="#f44" />
+                  </View>
+                )}
+              </Pressable>
+            ))}
           </View>
 
-          {/* Spacer for dock */}
-          <View style={{ height: 80 }} />
+          {/* Empty space for long-press wallpaper */}
+          <Pressable
+            style={{ height: 120 }}
+            onLongPress={handleEmptySpaceLongPress}
+            delayLongPress={600}
+          />
         </ScrollView>
 
         {/* Smart Dock */}
-        <View style={styles.dock}>
-          <TouchableOpacity style={styles.dockItem} onPress={() => launchApp('/phone')}>
-            <View style={[styles.dockIcon, { backgroundColor: '#22c55e' }]}>
-              <Ionicons name="call" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dockItem} onPress={() => launchApp('/(communication)/messages')}>
-            <View style={[styles.dockIcon, { backgroundColor: '#3b82f6' }]}>
-              <Ionicons name="chatbubble" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dockItem} onPress={() => launchApp('/wallet')}>
-            <View style={[styles.dockIcon, { backgroundColor: '#f97316' }]}>
-              <Ionicons name="wallet" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dockItem} onPress={() => launchApp('/profile')}>
-            <View style={[styles.dockIcon, { backgroundColor: '#8b5cf6' }]}>
-              <Ionicons name="person" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.dockItem} onPress={() => launchApp('/search')}>
-            <View style={[styles.dockIcon, { backgroundColor: '#6b7280' }]}>
-              <Ionicons name="search" size={22} color="#fff" />
-            </View>
-          </TouchableOpacity>
-        </View>
+        <SmartDock />
       </ImageBackground>
+
+      {/* Overlays */}
+      <WallpaperPicker />
+      <LongPressMenu />
     </View>
   );
 }
@@ -226,39 +309,58 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   background: { flex: 1, width: '100%', height: '100%' },
-  // Very light overlay so warrior is FULLY VISIBLE
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.15)', // Was 0.4 — now warrior is CLEAR
+
+  // Status Bar
+  statusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+    zIndex: 10,
   },
-  scroll: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20 },
+  statusLeft: { flexDirection: 'row', alignItems: 'center' },
+  statusTime: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  statusRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statusBattery: { color: '#fff', fontSize: 11, marginLeft: 4 },
+
+  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 120 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  greeting: { color: 'rgba(255,255,255,0.85)', fontSize: 13, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-  username: { color: '#fff', fontSize: 17, fontWeight: '700', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  greeting: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
+  username: { color: '#fff', fontSize: 17, fontWeight: '700' },
   dateSection: { alignItems: 'center', marginBottom: 20 },
-  dayNumber: { color: '#fff', fontSize: 56, fontWeight: '200', lineHeight: 62, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-  monthYear: { color: 'rgba(255,255,255,0.9)', fontSize: 13, marginTop: 2, textShadowColor: 'rgba(0,0,0,0.4)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-  section: { marginBottom: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#fff', fontSize: 15, fontWeight: '600', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
-  appStoreLink: { color: '#0ea5e9', fontSize: 12, fontWeight: '600' },
+  dayNumber: { color: '#fff', fontSize: 52, fontWeight: '200', lineHeight: 58 },
+  monthYear: { color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 },
+  editBanner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,170,255,0.2)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  editText: { color: '#0af', fontSize: 13, fontWeight: '600' },
+  doneText: { color: '#0af', fontSize: 13, fontWeight: '600' },
+  appCount: { color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 12, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
-  tile: { width: TILE_WIDTH, alignItems: 'center', marginBottom: 8 },
+  tile: { width: TILE_WIDTH, alignItems: 'center', marginBottom: 4 },
   iconContainer: {
     width: ICON_SIZE,
     height: ICON_SIZE,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 5,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 3,
     elevation: 4,
   },
@@ -266,31 +368,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowColor: 'rgba(0,0,0,0.6)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
-    fontWeight: '500',
   },
-  dock: {
+  editBadge: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backdropFilter: 'blur(10px)',
-  },
-  dockItem: { alignItems: 'center' },
-  dockIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: -4,
+    right: 4,
   },
 });

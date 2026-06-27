@@ -1,101 +1,56 @@
-// lib/appstore/index.ts
-import { create } from 'zustand';
-import { AppManifest } from './types';
-export type { AppManifest } from './types';
+// lib/appstore/index.ts — Re-export from unified registry with correct types
+import ALL_APPS, { type AppManifest as UnifiedAppManifest } from '@/lib/mtaa/appstore/unified-registry';
 
-interface AppStoreState {
-  installedApps: AppManifest[];
-  currentApp: AppManifest | null;
-  isLoading: boolean;
-  setInstalledApps: (apps: AppManifest[]) => void;
-  addInstalledApp: (app: AppManifest) => void;
-  removeInstalledApp: (appId: string) => void;
-  setCurrentApp: (app: AppManifest | null) => void;
-  setLoading: (loading: boolean) => void;
-  isAppInstalled: (appId: string) => boolean;
-  getInstalledApp: (appId: string) => AppManifest | undefined;
+// Re-export with compatible type (unified registry uses entry_route, old uses entryPoint/route)
+export interface AppManifest {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  icon: string;
+  entryPoint: string;
+  route?: string;
+  isSystem: boolean;
+  isInstalled: boolean;
+  version: string;
+  developer: string;
+  permissions: string[];
+  size: number;
+  rating: number;
+  downloads: number;
+  tags: string[];
+  isOSCore?: boolean;
 }
 
-export const useAppStore = create<AppStoreState>((set, get) => ({
-  installedApps: [],
-  currentApp: null,
-  isLoading: false,
-  setInstalledApps: (apps) => set({ installedApps: apps }),
-  addInstalledApp: (app) => {
-    const { installedApps } = get();
-    if (!installedApps.find((a) => a.id === app.id)) {
-      set({ installedApps: [...installedApps, app] });
-    }
-  },
-  removeInstalledApp: (appId) => {
-    set({ installedApps: get().installedApps.filter((a) => a.id !== appId) });
-  },
-  setCurrentApp: (app) => set({ currentApp: app }),
-  setLoading: (loading) => set({ isLoading: loading }),
-  isAppInstalled: (appId) => get().installedApps.some((a) => a.id === appId),
-  getInstalledApp: (appId) => get().installedApps.find((a) => a.id === appId),
-}));
+export function getAllApps(): AppManifest[] {
+  return ALL_APPS.map(a => ({
+    id: a.id,
+    name: a.name,
+    description: a.description,
+    category: a.category,
+    icon: a.icon,
+    entryPoint: a.entry_route,
+    route: a.entry_route,
+    isSystem: a.is_system_app,
+    isInstalled: a.is_installed,
+    version: a.version,
+    developer: a.developer,
+    permissions: a.permissions,
+    size: a.size_mb,
+    rating: a.rating,
+    downloads: a.review_count,
+    tags: [],
+    isOSCore: a.is_system_app,
+  }));
+}
 
-let _registry: AppManifest[] | null = null;
-
-export async function loadRegistry(): Promise<AppManifest[]> {
-  if (_registry) return _registry;
-  try {
-    const { getAllApps } = await import('@/lib/mtaa/appstore/unified-registry');
-    _registry = getAllApps();
-    return _registry;
-  } catch {
-    _registry = loadLocalManifests();
-    return _registry;
-  }
+export function getInstalledApps(): AppManifest[] {
+  return getAllApps().filter(a => a.isInstalled || a.isSystem);
 }
 
 export function getAppById(id: string): AppManifest | undefined {
-  if (_registry) return _registry.find((app) => app.id === id);
-  const local = loadLocalManifests();
-  return local.find((app) => app.id === id);
+  return getAllApps().find(a => a.id === id);
 }
 
-export function getAppsByCategory(category: string): AppManifest[] {
-  const registry = _registry || loadLocalManifests();
-  return registry.filter((app) => app.category === category);
-}
-
-export function getOSApps(): AppManifest[] {
-  const registry = _registry || loadLocalManifests();
-  return registry.filter((app) => app.isOSApp === true);
-}
-
-export function getThirdPartyApps(): AppManifest[] {
-  const registry = _registry || loadLocalManifests();
-  return registry.filter((app) => app.isOSApp !== true);
-}
-
-function loadLocalManifests(): AppManifest[] {
-  const manifests: AppManifest[] = [];
-  try { const b = require('./apps/border.manifest'); manifests.push(b.default || b.manifest || b); } catch {}
-  try { const c = require('./apps/customs.manifest'); manifests.push(c.default || c.manifest || c); } catch {}
-  try { const i = require('./apps/immigration.manifest'); manifests.push(i.default || i.manifest || i); } catch {}
-  return manifests;
-}
-
-export async function installApp(appId: string): Promise<boolean> {
-  const store = useAppStore.getState();
-  const app = getAppById(appId);
-  if (!app) return false;
-  if (store.isAppInstalled(appId)) return true;
-  store.addInstalledApp(app);
-  return true;
-}
-
-export async function uninstallApp(appId: string): Promise<boolean> {
-  useAppStore.getState().removeInstalledApp(appId);
-  return true;
-}
-
-export async function launchApp(appId: string): Promise<boolean> {
-  const app = getAppById(appId);
-  if (!app) return false;
-  useAppStore.getState().setCurrentApp(app);
-  return true;
-}
+export { ALL_APPS as appRegistry };
+export type { UnifiedAppManifest };

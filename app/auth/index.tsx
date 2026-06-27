@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -24,6 +24,9 @@ export default function AuthScreen() {
         });
         if (signUpError) throw signUpError;
         setSession(data.session);
+        if (data.user) {
+          setUser(data.user, data.session);
+        }
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -37,7 +40,10 @@ export default function AuthScreen() {
             .select('*')
             .eq('id', data.user.id)
             .single();
-          setUser(profile);
+          setUser(data.user, data.session);
+          if (profile) {
+            useAuthStore.getState().setProfile(profile);
+          }
         }
       }
       router.replace('/');
@@ -96,4 +102,3 @@ const styles = StyleSheet.create({
   buttonText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
   toggle: { color: '#0f0', fontSize: 14, marginTop: 16, textAlign: 'center' },
 });
-

@@ -2,8 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/lib/supabase';
 
-interface AuthState {
-  user: any | null;
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface AuthState {
+  user: User | null;
   session: any | null;
   profile: any | null;
   isAuthenticated: boolean;
@@ -17,11 +24,19 @@ interface AuthState {
   getUserRole: () => string;
   getTrustScore: () => number;
 
+  // Actions
   initialize: () => Promise<void>;
-  setUser: (user: any, session: any) => void;
+  setUser: (user: User | null, session?: any) => void;
+  setSession: (session: any) => void;
   setProfile: (profile: any) => void;
   signOut: () => Promise<void>;
   updateProfileField: (field: string, value: any) => void;
+
+  // Missing methods that consumers expect
+  signIn: (email: string, password: string) => Promise<{ error?: string; data?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error?: string; success?: boolean; user?: User | null }>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -34,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       initialized: false,
 
-      // IDENTITY GETTERS — priority: full_name > display_name > username > email prefix
+      // IDENTITY GETTERS
       getDisplayName: () => {
         const { profile, user } = get();
         if (profile?.full_name?.trim()) return profile.full_name.trim();
@@ -71,7 +86,6 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          // Get current session
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
           if (sessionError || !session) {
@@ -79,7 +93,6 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          // Get user
           const { data: { user }, error: userError } = await supabase.auth.getUser();
 
           if (userError || !user) {
@@ -87,7 +100,6 @@ export const useAuthStore = create<AuthState>()(
             return;
           }
 
-          // Fetch profile from public.profiles
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -107,7 +119,6 @@ export const useAuthStore = create<AuthState>()(
             initialized: true,
           });
 
-          // Set up auth state listener for live sync
           supabase.auth.onAuthStateChange(async (event, newSession) => {
             if (event === 'SIGNED_IN' && newSession) {
               const { data: { user: newUser } } = await supabase.auth.getUser();
@@ -148,6 +159,10 @@ export const useAuthStore = create<AuthState>()(
         set({ user, session, isAuthenticated: !!user });
       },
 
+      setSession: (session) => {
+        set({ session });
+      },
+
       setProfile: (profile) => {
         set({ profile });
       },
@@ -167,6 +182,67 @@ export const useAuthStore = create<AuthState>()(
         const { profile } = get();
         if (profile) {
           set({ profile: { ...profile, [field]: value } });
+        }
+      },
+
+      // NEW: signIn
+      signIn: async (email, password) => {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) return { error: error.message };
+          set({
+            user: data.user,
+            session: data.session,
+            isAuthenticated: true,
+          });
+          return { data };
+        } catch (e: any) {
+          return { error: e.message || 'Sign in failed' };
+        }
+      },
+
+      // NEW: signUp
+      signUp: async (email, password, metadata) => {
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: metadata },
+          });
+          if (error) return { error: error.message, success: false };
+          set({
+            user: data.user,
+            session: data.session,
+            isAuthenticated: !!data.session,
+          });
+          return { success: true, user: data.user };
+        } catch (e: any) {
+          return { error: e.message || 'Sign up failed', success: false };
+        }
+      },
+
+      // NEW: resetPassword
+      resetPassword: async (email) => {
+        try {
+          const { error } = await supabase.auth.resetPasswordForEmail(email);
+          if (error) return { error: error.message };
+          return {};
+        } catch (e: any) {
+          return { error: e.message || 'Reset failed' };
+        }
+      },
+
+      // NEW: updateProfile
+      updateProfile: async (data) => {
+        try {
+          const { user } = get();
+          if (!user) return { error: 'Not authenticated' };
+          const { error } = await supabase.auth.updateUser({ data });
+          if (error) return { error: error.message };
+          set({ user: { ...user, ...data } });
+          return {};
+        } catch (e: any) {
+          return { error: e.message || 'Update failed' };
         }
       },
     }),
