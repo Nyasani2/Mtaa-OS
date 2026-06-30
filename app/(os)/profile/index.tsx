@@ -1,293 +1,118 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
-  RefreshControl, ActivityIndicator, Alert, Pressable
+  View, Text, Image, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import {
-  User, Settings, ChevronRight, Shield, Award, Briefcase,
-  Users, QrCode, TrendingUp, Edit3, LogOut, CreditCard,
-  MessageCircle, Bell, Globe, MapPin, Link, Star, Copy
-} from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-// Conditional clipboard import
-try {
-  var Clipboard = require('expo-clipboard');
-} catch {
-  var Clipboard = null;
-}
-
-interface ProfileData {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  location: string | null;
-  website: string | null;
-  verified: boolean;
-  followers_count: number;
-  following_count: number;
-  posts_count: number;
-  reputation_score: number;
-}
-
-function getFallbackProfile(user: any): ProfileData {
-  return {
-    id: user?.id || '',
-    full_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Your Name',
-    avatar_url: null,
-    bio: null,
-    location: null,
-    website: null,
-    verified: false,
-    followers_count: 0,
-    following_count: 0,
-    posts_count: 0,
-    reputation_score: 0,
-  };
-}
-
-export default function ProfileIndex() {
+export default function ProfileIndexScreen() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [syncing, setSyncing] = useState(false);
+  const { user, profile, refreshProfile } = useAuthStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [postCount, setPostCount] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
-  // IMMEDIATE RENDER: compute fallback from user metadata, no async
-  const displayProfile = profile || (user ? getFallbackProfile(user) : null);
-
-  // Background fetch — fire once on mount, no deps that change
-  useEffect(() => {
+  const fetchCounts = useCallback(async () => {
     if (!user?.id) return;
-    let cancelled = false;
-    setSyncing(true);
-
-    const timeout = setTimeout(async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (cancelled) return;
-
-        if (data) {
-          setProfile(data);
-        } else if (error && error.code === 'PGRST116') {
-          // No row found — create one silently
-          const fallback = getFallbackProfile(user);
-          await supabase.from('user_profiles').upsert({
-            id: user.id,
-            full_name: fallback.full_name,
-            avatar_url: null,
-            bio: null,
-            location: null,
-            website: null,
-            verified: false,
-            followers_count: 0,
-            following_count: 0,
-            posts_count: 0,
-            reputation_score: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-          setProfile(fallback);
-        }
-      } catch (err) {
-        console.error('Profile sync error:', err);
-      } finally {
-        if (!cancelled) setSyncing(false);
-      }
-    }, 100); // 100ms delay lets React finish first render
-
-    return () => { cancelled = true; clearTimeout(timeout); };
-  }, []); // EMPTY deps — runs once only
-
-  const onRefresh = async () => {
-    if (!user?.id) return;
-    setRefreshing(true);
     try {
-      const { data } = await supabase.from('user_profiles').select('*').eq('id', user.id).single();
-      if (data) setProfile(data);
+      const { count: posts } = await supabase.from('streets_posts').select('*', { count: 'exact', head: true }).eq('creator_id', user.id);
+      setPostCount(posts || 0);
+      const { count: followers } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id);
+      setFollowerCount(followers || 0);
+      const { count: following } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id);
+      setFollowingCount(following || 0);
     } catch (err) {
-      console.error('Refresh error:', err);
-    } finally {
-      setRefreshing(false);
+      console.error('Count fetch error:', err);
     }
-  };
+  }, [user?.id]);
 
-  const handleCopyLink = async () => {
-    const link = `https://mtaa.app/u/${user?.id}`;
-    if (Clipboard?.setStringAsync) {
-      await Clipboard.setStringAsync(link);
-    } else {
-      Alert.alert('Copy Link', link);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
-  const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: () => { logout(); router.replace('/(auth)/login'); } }
-    ]);
-  };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshProfile();
+    await fetchCounts();
+    setRefreshing(false);
+  }, [refreshProfile, fetchCounts]);
 
   const menuItems = [
-    { icon: Edit3, label: 'Edit Profile', route: '/(os)/profile/edit', color: '#38bdf8' },
-    { icon: Shield, label: 'Privacy & Security', route: '/(os)/profile/privacy', color: '#a78bfa' },
-    { icon: Award, label: 'Achievements', route: '/(os)/profile/achievements', color: '#fbbf24' },
-    { icon: Briefcase, label: 'Professional', route: '/(os)/profile/professional', color: '#34d399' },
-    { icon: Users, label: 'Family', route: '/(os)/profile/family', color: '#fb923c' },
-    { icon: QrCode, label: 'My QR Code', route: '/(os)/profile/qr', color: '#f472b6' },
-    { icon: TrendingUp, label: 'Analytics', route: '/(os)/profile/analytics', color: '#60a5fa' },
-    { icon: CreditCard, label: 'Creator Earnings', route: '/(os)/profile/earnings', color: '#10b981' },
-    { icon: MessageCircle, label: 'Messages', route: '/(os)/messages', color: '#818cf8' },
-    { icon: Bell, label: 'Notifications', route: '/(os)/notifications', color: '#f87171' },
-    { icon: Settings, label: 'Settings', route: '/(os)/settings', color: '#94a3b8' },
+    { icon: 'create-outline', label: 'Edit Profile', color: '#3b82f6', route: '/profile/edit' },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#10b981', route: '/profile/privacy' },
+    { icon: 'trophy-outline', label: 'Achievements', color: '#f59e0b', route: '/profile/achievements' },
+    { icon: 'briefcase-outline', label: 'Professional', color: '#8b5cf6', route: '/profile/professional' },
+    { icon: 'people-outline', label: 'Family', color: '#ef4444', route: '/profile/family' },
+    { icon: 'qr-code-outline', label: 'My QR Code', color: '#06b6d4', route: '/profile/qr' },
   ];
 
-  // If absolutely no user, show minimal state
-  if (!displayProfile) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#38bdf8" />
-        <Text style={{ color: '#64748b', marginTop: 12 }}>Loading profile...</Text>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38bdf8" />}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          {displayProfile.avatar_url ? (
-            <Image source={{ uri: displayProfile.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <User size={40} color="#94a3b8" />
-            </View>
-          )}
-          {displayProfile.verified && (
-            <View style={styles.verifiedBadge}>
-              <Star size={12} color="#0f172a" fill="#fbbf24" />
-            </View>
-          )}
-        </View>
-        <Text style={styles.name}>{displayProfile.full_name || 'Your Name'}</Text>
-        <Text style={styles.handle}>@{user?.email?.split('@')[0] || 'user'}</Text>
-        {displayProfile.bio ? <Text style={styles.bio}>{displayProfile.bio}</Text> : null}
-
-        <View style={styles.metaRow}>
-          {displayProfile.location && (
-            <View style={styles.metaItem}>
-              <MapPin size={14} color="#64748b" />
-              <Text style={styles.metaText}>{displayProfile.location}</Text>
-            </View>
-          )}
-          {displayProfile.website && (
-            <View style={styles.metaItem}>
-              <Link size={14} color="#64748b" />
-              <Text style={styles.metaText}>{displayProfile.website}</Text>
-            </View>
-          )}
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+      <ScrollView style={{ flex: 1 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Profile</Text>
+          <TouchableOpacity onPress={() => router.push('/profile/settings' as any)}>
+            <Ionicons name="settings-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{displayProfile.posts_count || 0}</Text>
-            <Text style={styles.statLabel}>Posts</Text>
+        <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+          <View style={{ position: 'relative' }}>
+            {profile?.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#3b82f6' }} resizeMode="cover" onError={(e) => console.error('Profile avatar load error:', e.nativeEvent.error)} />
+            ) : (
+              <View style={{ width: 120, height: 120, borderRadius: 60, backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#333' }}>
+                <Ionicons name="person" size={50} color="#555" />
+              </View>
+            )}
+            {profile?.verified && (
+              <View style={{ position: 'absolute', bottom: 4, right: 4, backgroundColor: '#3b82f6', width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0a0a0a' }}>
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              </View>
+            )}
           </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{displayProfile.followers_count || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{displayProfile.following_count || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{displayProfile.reputation_score || 0}</Text>
-            <Text style={styles.statLabel}>Rep</Text>
-          </View>
+          <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700', marginTop: 16 }}>{profile?.display_name || profile?.full_name || 'User'}</Text>
+          {profile?.username ? <Text style={{ color: '#888', fontSize: 15, marginTop: 4 }}>@{profile.username}</Text> : null}
+          {profile?.bio ? <Text style={{ color: '#aaa', fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 32 }}>{profile.bio}</Text> : null}
+          {(profile?.city || profile?.country) ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+              <Ionicons name="location-outline" size={14} color="#666" />
+              <Text style={{ color: '#666', fontSize: 13, marginLeft: 4 }}>{[profile.city, profile.country].filter(Boolean).join(', ')}</Text>
+            </View>
+          ) : null}
         </View>
 
-        {/* Copy Link */}
-        <TouchableOpacity style={styles.copyButton} onPress={handleCopyLink}>
-          <Copy size={16} color="#38bdf8" />
-          <Text style={styles.copyText}>{copied ? 'Copied!' : 'Copy Profile Link'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1a1a1a', borderRadius: 12 }}>
+          <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => router.push('/profile/posts' as any)}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{postCount}</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Posts</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => router.push('/profile/followers' as any)}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{followerCount}</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Followers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ alignItems: 'center' }} onPress={() => router.push('/profile/following' as any)}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{followingCount}</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Following</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ marginHorizontal: 16, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity key={item.route} onPress={() => router.push(item.route as any)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: index < menuItems.length - 1 ? 1 : 0, borderBottomColor: '#252525' }}>
+              <Ionicons name={item.icon as any} size={22} color={item.color} style={{ marginRight: 14 }} />
+              <Text style={{ color: '#fff', fontSize: 15, flex: 1 }}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#555" />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/'); }} style={{ marginHorizontal: 16, marginTop: 24, marginBottom: 32, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+          <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>Log Out</Text>
         </TouchableOpacity>
-
-        {syncing && (
-          <Text style={styles.syncText}>Syncing profile...</Text>
-        )}
-      </View>
-
-      {/* Menu */}
-      <View style={styles.menuContainer}>
-        {menuItems.map((item, index) => (
-          <Pressable
-            key={index}
-            style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
-            onPress={() => router.push(item.route as any)}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: item.color + '20' }]}>
-              <item.icon size={20} color={item.color} />
-            </View>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <ChevronRight size={18} color="#475569" />
-          </Pressable>
-        ))}
-      </View>
-
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <LogOut size={18} color="#ef4444" />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { justifyContent: 'center', alignItems: 'center', flex: 1 },
-  header: { alignItems: 'center', padding: 24, paddingTop: 60, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  avatarContainer: { position: 'relative', marginBottom: 16 },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#38bdf8' },
-  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#334155' },
-  verifiedBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#fbbf24', borderRadius: 10, padding: 4, borderWidth: 2, borderColor: '#0f172a' },
-  name: { fontSize: 24, fontWeight: '700', color: '#f8fafc', marginBottom: 4 },
-  handle: { fontSize: 14, color: '#64748b', marginBottom: 8 },
-  bio: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginBottom: 12, paddingHorizontal: 20 },
-  metaRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: '#64748b' },
-  statsRow: { flexDirection: 'row', gap: 24 },
-  stat: { alignItems: 'center' },
-  statNumber: { fontSize: 20, fontWeight: '700', color: '#f8fafc' },
-  statLabel: { fontSize: 12, color: '#64748b', marginTop: 2 },
-  copyButton: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1, borderColor: '#334155' },
-  copyText: { fontSize: 13, color: '#38bdf8', fontWeight: '600' },
-  syncText: { fontSize: 11, color: '#64748b', marginTop: 8, fontStyle: 'italic' },
-  menuContainer: { padding: 16, gap: 2 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: '#1e293b', borderRadius: 12, marginBottom: 8 },
-  menuItemPressed: { opacity: 0.7 },
-  menuIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  menuLabel: { flex: 1, fontSize: 15, color: '#e2e8f0', fontWeight: '500' },
-  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: 16, marginTop: 8, padding: 14, backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#ef444440' },
-  logoutText: { fontSize: 15, color: '#ef4444', fontWeight: '600' },
-});
