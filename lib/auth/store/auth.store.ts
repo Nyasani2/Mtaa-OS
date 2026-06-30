@@ -16,23 +16,18 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   initialized: boolean;
-
-  // Identity getters
   getDisplayName: () => string;
   getAvatarUrl: () => string | null;
   getUserInitials: () => string;
   getUserRole: () => string;
   getTrustScore: () => number;
-
-  // Actions
   initialize: () => Promise<void>;
   setUser: (user: User | null, session?: any) => void;
   setSession: (session: any) => void;
   setProfile: (profile: any) => void;
   signOut: () => Promise<void>;
   updateProfileField: (field: string, value: any) => void;
-
-  // Missing methods that consumers expect
+  refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error?: string; data?: any }>;
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error?: string; success?: boolean; user?: User | null }>;
   resetPassword: (email: string) => Promise<{ error?: string }>;
@@ -42,14 +37,9 @@ export interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      user: null,
-      session: null,
-      profile: null,
-      isAuthenticated: false,
-      isLoading: true,
-      initialized: false,
+      user: null, session: null, profile: null,
+      isAuthenticated: false, isLoading: true, initialized: false,
 
-      // IDENTITY GETTERS
       getDisplayName: () => {
         const { profile, user } = get();
         if (profile?.full_name?.trim()) return profile.full_name.trim();
@@ -58,22 +48,18 @@ export const useAuthStore = create<AuthState>()(
         if (user?.email) return user.email.split('@')[0];
         return 'User';
       },
-
       getAvatarUrl: () => {
         const { profile } = get();
         return profile?.avatar_url || profile?.cover_photo_url || null;
       },
-
       getUserInitials: () => {
         const name = get().getDisplayName();
         return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
       },
-
       getUserRole: () => {
         const { profile } = get();
         return profile?.role || 'user';
       },
-
       getTrustScore: () => {
         const { profile } = get();
         return profile?.trust_score || 0;
@@ -82,146 +68,113 @@ export const useAuthStore = create<AuthState>()(
       initialize: async () => {
         const state = get();
         if (state.initialized) return;
-
         set({ isLoading: true });
-
         try {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
           if (sessionError || !session) {
             set({ isLoading: false, initialized: true });
             return;
           }
-
           const { data: { user }, error: userError } = await supabase.auth.getUser();
-
           if (userError || !user) {
             set({ isLoading: false, initialized: true });
             return;
           }
-
+          // FIX: query user_profiles instead of profiles
           const { data: profile, error: profileError } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('*')
             .eq('user_id', user.id)
             .single();
-
           if (profileError && profileError.code !== 'PGRST116') {
             console.warn('Profile fetch error:', profileError);
           }
-
           set({
-            user,
-            session,
+            user, session,
             profile: profile || null,
             isAuthenticated: true,
             isLoading: false,
             initialized: true,
           });
-
           supabase.auth.onAuthStateChange(async (event, newSession) => {
             if (event === 'SIGNED_IN' && newSession) {
               const { data: { user: newUser } } = await supabase.auth.getUser();
               const { data: newProfile } = await supabase
-                .from('profiles')
+                .from('user_profiles')
                 .select('*')
                 .eq('user_id', newUser?.id)
                 .single();
-
               set({
-                user: newUser,
-                session: newSession,
+                user: newUser, session: newSession,
                 profile: newProfile || null,
-                isAuthenticated: true,
-                isLoading: false,
+                isAuthenticated: true, isLoading: false,
               });
             } else if (event === 'SIGNED_OUT') {
-              set({
-                user: null,
-                session: null,
-                profile: null,
-                isAuthenticated: false,
-                isLoading: false,
-              });
+              set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
             } else if (event === 'USER_UPDATED' && newSession) {
               const { data: { user: updatedUser } } = await supabase.auth.getUser();
               set({ user: updatedUser, session: newSession });
             }
           });
-
         } catch (error) {
           console.error('Auth initialization error:', error);
           set({ isLoading: false, initialized: true });
         }
       },
 
-      setUser: (user, session) => {
-        set({ user, session, isAuthenticated: !!user });
-      },
-
-      setSession: (session) => {
-        set({ session });
-      },
-
-      setProfile: (profile) => {
-        set({ profile });
-      },
+      setUser: (user, session) => set({ user, session, isAuthenticated: !!user }),
+      setSession: (session) => set({ session }),
+      setProfile: (profile) => set({ profile }),
 
       signOut: async () => {
         await supabase.auth.signOut();
-        set({
-          user: null,
-          session: null,
-          profile: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
       },
 
       updateProfileField: (field, value) => {
         const { profile } = get();
-        if (profile) {
-          set({ profile: { ...profile, [field]: value } });
+        if (profile) set({ profile: { ...profile, [field]: value } });
+      },
+
+      // NEW: refreshProfile
+      refreshProfile: async () => {
+        const { user } = get();
+        if (!user) return;
+        try {
+          const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          if (error && error.code !== 'PGRST116') {
+            console.warn('refreshProfile error:', error);
+          }
+          set({ profile: profile || null });
+        } catch (e) {
+          console.error('refreshProfile failed:', e);
         }
       },
 
-      // NEW: signIn
       signIn: async (email, password) => {
         try {
           const { data, error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) return { error: error.message };
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: true,
-          });
+          set({ user: data.user, session: data.session, isAuthenticated: true });
           return { data };
         } catch (e: any) {
           return { error: e.message || 'Sign in failed' };
         }
       },
-
-      // NEW: signUp
       signUp: async (email, password, metadata) => {
         try {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: metadata },
-          });
+          const { data, error } = await supabase.auth.signUp({ email, password, options: { data: metadata } });
           if (error) return { error: error.message, success: false };
-          set({
-            user: data.user,
-            session: data.session,
-            isAuthenticated: !!data.session,
-          });
+          set({ user: data.user, session: data.session, isAuthenticated: !!data.session });
           return { success: true, user: data.user };
         } catch (e: any) {
           return { error: e.message || 'Sign up failed', success: false };
         }
       },
-
-      // NEW: resetPassword
       resetPassword: async (email) => {
         try {
           const { error } = await supabase.auth.resetPasswordForEmail(email);
@@ -231,8 +184,6 @@ export const useAuthStore = create<AuthState>()(
           return { error: e.message || 'Reset failed' };
         }
       },
-
-      // NEW: updateProfile
       updateProfile: async (data) => {
         try {
           const { user } = get();
@@ -249,10 +200,8 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'mtaa-auth-storage',
       partialize: (state) => ({
-        user: state.user,
-        session: state.session,
-        profile: state.profile,
-        isAuthenticated: state.isAuthenticated,
+        user: state.user, session: state.session,
+        profile: state.profile, isAuthenticated: state.isAuthenticated,
       }),
     }
   )
