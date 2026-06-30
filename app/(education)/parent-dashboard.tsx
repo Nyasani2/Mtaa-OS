@@ -1,197 +1,228 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Dimensions
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width: SCREEN_W } = Dimensions.get('window');
-
-interface Child {
-  id: string;
-  student_id: string;
-  student_name: string;
-  institution_name: string;
-  grade: string;
-}
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: string;
-  created_at: string;
-}
+import { useEducation } from '@/lib/hooks/useEducation';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ParentDashboard() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [children, setChildren] = useState<Child[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { getParentConnections, getStudentGrades, getStudentAttendance, getStudentAssignments } = useEducation();
+  const [children, setChildren] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [grades, setGrades] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const { data: connections } = await supabase
-        .from('education_parent_connections')
-        .select('student_id')
-        .eq('parent_id', user.id);
-
-      if (connections && connections.length > 0) {
-        const studentIds = connections.map(c => c.student_id);
-        const { data: students } = await supabase
-          .from('education_students')
-          .select('id, full_name, institution_id, grade')
-          .in('id', studentIds);
-
-        if (students) {
-          const enriched = await Promise.all(
-            students.map(async (s) => {
-              const { data: inst } = await supabase
-                .from('education_institutions')
-                .select('name')
-                .eq('id', s.institution_id)
-                .maybeSingle();
-              return {
-                id: s.id,
-                student_id: s.id,
-                student_name: s.full_name,
-                institution_name: inst?.name || 'Unknown School',
-                grade: s.grade || 'N/A',
-              };
-            })
-          );
-          setChildren(enriched);
-        }
-      }
-
-      const { data: ann } = await supabase
-        .from('education_feeds')
-        .select('id, title, content, priority, created_at')
-        .eq('target_audience', 'parents')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (ann) setAnnouncements(ann);
-    } catch (err) {
-      console.error('Parent dashboard error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  const loadData = async () => {
+    if (!user?.id) return;
+    const connections = await getParentConnections(user.id);
+    const kids = connections?.map(c => c.student) || [];
+    setChildren(kids);
+    if (kids.length > 0 && !selectedChild) {
+      setSelectedChild(kids[0]);
+      await loadChildData(kids[0].id);
     }
-  }, [user]);
+  };
 
-  useEffect(() => { loadData(); }, [loadData]);
-  const onRefresh = () => { setRefreshing(true); loadData(); };
+  const loadChildData = async (studentId) => {
+    const [g, a, as] = await Promise.all([
+      getStudentGrades(studentId),
+      getStudentAttendance(studentId),
+      getStudentAssignments(studentId),
+    ]);
+    setGrades(g || []);
+    setAttendance(a || []);
+    setAssignments(as || []);
+  };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00d4ff" />
-      </View>
-    );
-  }
+  useEffect(() => { loadData(); }, [user?.id]);
+
+  const attendanceRate = attendance.length > 0
+    ? Math.round((attendance.filter(a => a.status === 'present').length / attendance.length) * 100)
+    : 0;
+
+  const pendingAssignments = assignments.filter(a => a.status === 'pending');
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4ff" />}
-    >
-      <View style={styles.header}>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}>
+      <LinearGradient colors={['#8b5cf6', '#a78bfa']} style={styles.header}>
         <Text style={styles.headerTitle}>Parent Portal</Text>
-        <Text style={styles.headerSub}>Monitor your children's progress</Text>
-      </View>
+        <Text style={styles.headerSubtitle}>{user?.email || 'Parent'}</Text>
+      </LinearGradient>
 
-      <View style={styles.quickRow}>
-        <QuickAction icon="cash-outline" label="Pay Fees" onPress={() => router.push('/education/fees')} />
-        <QuickAction icon="calendar-outline" label="Timetable" onPress={() => router.push('/education/timetable')} />
-        <QuickAction icon="mail-outline" label="Messages" onPress={() => router.push('/education/messages')} />
-        <QuickAction icon="person-outline" label="Profile" onPress={() => router.push('/profile')} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Children</Text>
-        {children.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No children linked yet</Text>
-            <TouchableOpacity style={styles.linkBtn} onPress={() => {}}>
-              <Text style={styles.linkBtnText}>Link Child Account</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          children.map(child => (
-            <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => router.push(`/education/my-grades?studentId=${child.student_id}`)}>
+      {/* Child Selector */}
+      {children.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.childSelector}>
+          {children.map(child => (
+            <TouchableOpacity
+              key={child.id}
+              style={[styles.childChip, selectedChild?.id === child.id && styles.childChipActive]}
+              onPress={() => { setSelectedChild(child); loadChildData(child.id); }}
+            >
               <View style={styles.childAvatar}>
-                <Text style={styles.childInitial}>{child.student_name.charAt(0)}</Text>
+                <Text style={styles.childAvatarText}>{child.full_name?.charAt(0)}</Text>
               </View>
-              <View style={styles.childInfo}>
-                <Text style={styles.childName}>{child.student_name}</Text>
-                <Text style={styles.childMeta}>{child.institution_name} · Grade {child.grade}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#888" />
+              <Text style={[styles.childName, selectedChild?.id === child.id && styles.childNameActive]}>{child.full_name}</Text>
+              <Text style={styles.childClass}>{child.current_class?.name}</Text>
             </TouchableOpacity>
-          ))
-        )}
-      </View>
+          ))}
+        </ScrollView>
+      )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>School Announcements</Text>
-        {announcements.length === 0 ? (
-          <Text style={styles.emptyText}>No announcements</Text>
-        ) : (
-          announcements.map(a => (
-            <View key={a.id} style={styles.annCard}>
-              <View style={styles.annHeader}>
-                <Text style={styles.annTitle}>{a.title}</Text>
-                {a.priority === 'urgent' && <View style={styles.urgentBadge}><Text style={styles.urgentText}>URGENT</Text></View>}
-              </View>
-              <Text style={styles.annContent} numberOfLines={2}>{a.content}</Text>
+      {selectedChild && (
+        <>
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <StatCard icon="school-outline" label="Attendance" value={`${attendanceRate}%`} color="#8b5cf6" />
+            <StatCard icon="document-text-outline" label="Pending" value={pendingAssignments.length} color="#f59e0b" />
+            <StatCard icon="trophy-outline" label="Avg Grade" value={calculateAvg(grades)} color="#10b981" />
+          </View>
+
+          {/* Recent Grades */}
+          <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education)/grades')}>
+            {grades.length === 0 ? (
+              <Text style={styles.emptyText}>No grades yet</Text>
+            ) : (
+              grades.slice(0, 3).map((g, i) => (
+                <View key={i} style={styles.gradeRow}>
+                  <Text style={styles.gradeSubject}>{g.subject?.name}</Text>
+                  <Text style={[styles.gradeScore, getGradeColor(g.score)]}>{g.score}/{g.max_score}</Text>
+                  <Text style={styles.gradeLabel}>{g.grade_label || getGradeLabel(g.score, g.max_score)}</Text>
+                </View>
+              ))
+            )}
+          </Section>
+
+          {/* Pending Assignments */}
+          <Section title="Pending Assignments" icon="alert-circle-outline" action="View All" onAction={() => router.push('/(education)/assignments')}>
+            {pendingAssignments.length === 0 ? (
+              <Text style={styles.emptyText}>All caught up! 🎉</Text>
+            ) : (
+              pendingAssignments.slice(0, 3).map((a, i) => (
+                <View key={i} style={styles.assignmentRow}>
+                  <Text style={styles.assignmentTitle}>{a.title}</Text>
+                  <Text style={styles.assignmentDue}>Due: {formatDate(a.due_date)}</Text>
+                </View>
+              ))
+            )}
+          </Section>
+
+          {/* Attendance Summary */}
+          <Section title="Attendance This Term" icon="calendar-outline">
+            <View style={styles.attendanceBar}>
+              <View style={[styles.attendanceFill, { width: `${attendanceRate}%`, backgroundColor: attendanceRate >= 80 ? '#10b981' : attendanceRate >= 60 ? '#f59e0b' : '#ef4444' }]} />
             </View>
-          ))
-        )}
+            <Text style={styles.attendanceText}>{attendance.filter(a => a.status === 'present').length} present out of {attendance.length} days</Text>
+          </Section>
+        </>
+      )}
+
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <QuickAction icon="card-outline" label="Pay Fees" onPress={() => router.push('/(education)/fees')} color="#8b5cf6" />
+        <QuickAction icon="chatbubble-outline" label="Message Teacher" onPress={() => router.push('/(education)/messages')} color="#6366f1" />
+        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education)/transport')} color="#059669" />
+        <QuickAction icon="qr-code-outline" label="QR Check-in" onPress={() => router.push('/(education)/qr-checkin')} color="#f59e0b" />
       </View>
     </ScrollView>
   );
 }
 
-function QuickAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+function StatCard({ icon, label, value, color }) {
   return (
-    <TouchableOpacity style={styles.quickBtn} onPress={onPress}>
-      <Ionicons name={icon as any} size={24} color="#00d4ff" />
-      <Text style={styles.quickLabel}>{label}</Text>
+    <View style={[styles.statCard, { borderTopColor: color }]}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function Section({ title, icon, action, onAction, children }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Ionicons name={icon} size={18} color="#374151" />
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {action && <TouchableOpacity onPress={onAction}><Text style={styles.sectionAction}>{action}</Text></TouchableOpacity>}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function QuickAction({ icon, label, onPress, color }) {
+  return (
+    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={[styles.quickActionLabel, { color }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
+function calculateAvg(grades) {
+  if (!grades?.length) return 'N/A';
+  const avg = grades.reduce((sum, g) => sum + (g.score / g.max_score), 0) / grades.length;
+  return `${Math.round(avg * 100)}%`;
+}
+
+function getGradeColor(score) {
+  if (score >= 80) return { color: '#10b981' };
+  if (score >= 60) return { color: '#f59e0b' };
+  return { color: '#ef4444' };
+}
+
+function getGradeLabel(score, max) {
+  const pct = (score / max) * 100;
+  if (pct >= 80) return 'A';
+  if (pct >= 70) return 'B';
+  if (pct >= 60) return 'C';
+  if (pct >= 50) return 'D';
+  return 'E';
+}
+
+function formatDate(date) {
+  if (!date) return 'No date';
+  return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#111', borderBottomWidth: 1, borderBottomColor: '#222' },
-  headerTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  headerSub: { color: '#888', fontSize: 14, marginTop: 4 },
-  quickRow: { flexDirection: 'row', justifyContent: 'space-around', padding: 16, backgroundColor: '#111', marginBottom: 8 },
-  quickBtn: { alignItems: 'center', padding: 12 },
-  quickLabel: { color: '#ccc', fontSize: 12, marginTop: 6 },
-  section: { padding: 16, marginBottom: 8 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  emptyBox: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 24, alignItems: 'center' },
-  emptyText: { color: '#666', fontSize: 14 },
-  linkBtn: { marginTop: 12, backgroundColor: '#00d4ff', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  linkBtnText: { color: '#000', fontWeight: '600' },
-  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 10 },
-  childAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#00d4ff', justifyContent: 'center', alignItems: 'center' },
-  childInitial: { color: '#000', fontSize: 20, fontWeight: 'bold' },
-  childInfo: { flex: 1, marginLeft: 12 },
-  childName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  childMeta: { color: '#888', fontSize: 13, marginTop: 2 },
-  annCard: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 10 },
-  annHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  annTitle: { color: '#fff', fontSize: 15, fontWeight: '600', flex: 1 },
-  urgentBadge: { backgroundColor: '#ff4444', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  urgentText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  annContent: { color: '#aaa', fontSize: 13, lineHeight: 18 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  header: { padding: 24, paddingTop: 60 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
+  headerSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  childSelector: { padding: 16, backgroundColor: '#fff' },
+  childChip: { alignItems: 'center', marginRight: 16, padding: 12, borderRadius: 16, backgroundColor: '#f3f4f6' },
+  childChipActive: { backgroundColor: '#ede9fe' },
+  childAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#ddd6fe', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  childAvatarText: { fontSize: 20, fontWeight: '700', color: '#7c3aed' },
+  childName: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  childNameActive: { color: '#7c3aed' },
+  childClass: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  statsRow: { flexDirection: 'row', padding: 16, gap: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', borderTopWidth: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  statValue: { fontSize: 20, fontWeight: '700', marginTop: 8 },
+  statLabel: { fontSize: 12, color: '#6b7280', marginTop: 4 },
+  section: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111827', marginLeft: 8 },
+  sectionAction: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
+  emptyText: { color: '#9ca3af', fontSize: 14, textAlign: 'center', paddingVertical: 16 },
+  gradeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  gradeSubject: { flex: 1, fontSize: 14, color: '#111827' },
+  gradeScore: { fontSize: 16, fontWeight: '700', marginRight: 8 },
+  gradeLabel: { fontSize: 12, color: '#6b7280', width: 24, textAlign: 'right' },
+  assignmentRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  assignmentTitle: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  assignmentDue: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  attendanceBar: { height: 12, backgroundColor: '#e5e7eb', borderRadius: 6, overflow: 'hidden', marginBottom: 8 },
+  attendanceFill: { height: '100%', borderRadius: 6 },
+  attendanceText: { fontSize: 13, color: '#6b7280' },
+  quickActions: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12, marginBottom: 32 },
+  quickAction: { width: '47%', backgroundColor: '#fff', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  quickActionLabel: { fontSize: 13, fontWeight: '600' },
 });

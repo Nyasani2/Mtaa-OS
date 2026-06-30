@@ -1,87 +1,64 @@
 #!/bin/bash
-# MTAA OS V10 — CLEANUP + ROUTE INSTALL SCRIPT (FIXED)
-# Run from ~/MTAA_OS_V10/
-
 set -e
 
-echo "=========================================="
-echo "MTAA OS V10 — CLEANUP & ROUTE INSTALL"
-echo "=========================================="
+echo "=== MTAA Profile Complete Fix Installer ==="
 echo ""
 
-# Step 1: Run cleanup (already done, skip if completed)
-echo "[1/5] Cleanup already completed. Skipping..."
+# Backup existing files
+mkdir -p app/\(os\)/profile/.backup
+cp app/\(os\)/profile/index.tsx app/\(os\)/profile/.backup/index.tsx 2>/dev/null || true
+cp app/\(os\)/profile/edit.tsx app/\(os\)/profile/.backup/edit.tsx 2>/dev/null || true
+cp app/\(os\)/profile/analytics.tsx app/\(os\)/profile/.backup/analytics.tsx 2>/dev/null || true
+cp app/\(os\)/profile/privacy.tsx app/\(os\)/profile/.backup/privacy.tsx 2>/dev/null || true
+cp app/\(os\)/profile/earnings.tsx app/\(os\)/profile/.backup/earnings.tsx 2>/dev/null || true
+
+echo "[1/6] Backed up existing files to app/(os)/profile/.backup/"
+
+# Copy fixed files
+cp index.tsx app/\(os\)/profile/index.tsx
+cp edit.tsx app/\(os\)/profile/edit.tsx
+cp analytics.tsx app/\(os\)/profile/analytics.tsx
+cp privacy.tsx app/\(os\)/profile/privacy.tsx
+cp earnings.tsx app/\(os\)/profile/earnings.tsx
+
+echo "[2/6] Copied fixed profile files"
+
+# Messages route — check if app/(os)/messages/index.tsx exists
+if [ ! -f "app/\(os\)/messages/index.tsx" ]; then
+    mkdir -p app/\(os\)/messages
+    cp messages.tsx app/\(os\)/messages/index.tsx
+    echo "[3/6] Created app/(os)/messages/index.tsx"
+else
+    cp messages.tsx app/\(os\)/messages/index.tsx
+    echo "[3/6] Updated app/(os)/messages/index.tsx"
+fi
+
+# Verify no conflicting flat files exist
+echo "[4/6] Checking for conflicting flat route files..."
+for f in transfer top-up withdraw privacy earnings messages analytics; do
+    if [ -f "app/\(os\)/profile/${f}.tsx" ]; then
+        echo "  WARNING: Found conflicting flat file app/(os)/profile/${f}.tsx — DELETING"
+        rm "app/\(os\)/profile/${f}.tsx"
+    fi
+done
+
+# Also check wallet flat files
+for f in transfer top-up withdraw; do
+    if [ -f "app/\(os\)/wallet/${f}.tsx" ]; then
+        echo "  WARNING: Found conflicting flat file app/(os)/wallet/${f}.tsx — DELETING"
+        rm "app/\(os\)/wallet/${f}.tsx"
+    fi
+done
+
+echo "[5/6] Conflicting flat files cleaned"
+
+# List final state
 echo ""
-
-# Step 2: Move manifests to lib/modules/
-echo "[2/5] Installing missing manifests..."
-mkdir -p lib/modules/business
-mkdir -p lib/modules/phone
-mkdir -p lib/modules/property
-mkdir -p lib/modules/pulse
-mkdir -p lib/modules/regulatory
-
-cp business_manifest.ts lib/modules/business/manifest.ts
-cp phone_manifest.ts lib/modules/phone/manifest.ts
-cp property_manifest.ts lib/modules/property/manifest.ts
-cp pulse_manifest.ts lib/modules/pulse/manifest.ts
-cp regulatory_manifest.ts lib/modules/regulatory/manifest.ts
-
-echo "  ✓ business manifest"
-echo "  ✓ phone manifest"
-echo "  ✓ property manifest"
-echo "  ✓ pulse manifest"
-echo "  ✓ regulatory manifest"
+echo "=== Final Profile Routes ==="
+ls -la app/\(os\)/profile/*.tsx 2>/dev/null || echo "  (no .tsx files found)"
 echo ""
+echo "=== Final Messages Route ==="
+ls -la app/\(os\)/messages/*.tsx 2>/dev/null || echo "  (no .tsx files found)"
 
-# Step 3: Create civic sub-module routes
-# NOTE: Use quotes around paths with parentheses
-echo "[3/5] Creating civic sub-module routes..."
-mkdir -p "app/(civic)/agriculture"
-mkdir -p "app/(civic)/border"
-mkdir -p "app/(civic)/customs"
-mkdir -p "app/(civic)/immigration"
-mkdir -p "app/(civic)/transport"
-
-cp agriculture_index.tsx "app/(civic)/agriculture/index.tsx"
-cp border_index.tsx "app/(civic)/border/index.tsx"
-cp customs_index.tsx "app/(civic)/customs/index.tsx"
-cp immigration_index.tsx "app/(civic)/immigration/index.tsx"
-cp transport_index.tsx "app/(civic)/transport/index.tsx"
-
-echo "  ✓ app/(civic)/agriculture/index.tsx"
-echo "  ✓ app/(civic)/border/index.tsx"
-echo "  ✓ app/(civic)/customs/index.tsx"
-echo "  ✓ app/(civic)/immigration/index.tsx"
-echo "  ✓ app/(civic)/transport/index.tsx"
 echo ""
-
-# Step 4: Update civic layout
-echo "[4/5] Updating civic layout..."
-cp civic_layout.tsx "app/(civic)/_layout.tsx"
-echo "  ✓ Updated app/(civic)/_layout.tsx"
-echo ""
-
-# Step 5: Clean up install artifacts
-echo "[5/5] Cleaning install artifacts..."
-rm -f business_manifest.ts phone_manifest.ts property_manifest.ts pulse_manifest.ts regulatory_manifest.ts
-rm -f agriculture_index.tsx border_index.tsx customs_index.tsx immigration_index.tsx transport_index.tsx
-rm -f civic_layout.tsx mtaa_cleanup.sh install_cleanup.sh
-echo "  ✓ Install artifacts cleaned"
-echo ""
-
-echo "=========================================="
-echo "INSTALL COMPLETE"
-echo "=========================================="
-echo ""
-echo "Summary:"
-echo "  • 80+ orphaned files cleaned"
-echo "  • 7 backup files removed"
-echo "  • 5 manifests installed"
-echo "  • 5 civic routes created"
-echo "  • asis/ root folder removed"
-echo ""
-echo "Next:"
-echo "  npx tsc --noEmit"
-echo "  npx expo start --clear"
-echo ""
+echo "[6/6] DONE. Run: npx expo start --clear"

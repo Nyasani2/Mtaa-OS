@@ -1,0 +1,4 @@
+
+[functions.education-operations]
+enabled = true
+verify_jwt = true

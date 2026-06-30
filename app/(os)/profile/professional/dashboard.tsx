@@ -1,64 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfessionalDashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState({ job_applications: 0, interviews: 0, offers: 0, profile_views: 0 });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { if (!user?.id) return; supabase.from('profiles').select('profession, skills, experience_years, languages').eq('user_id', user.id).single().then(({ data }) => { setProfile(data); setLoading(false); }); }, [user?.id]);
-  if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#00d4ff" /></View>;
+  useEffect(() => { fetchStats(); }, []);
 
-  const sections = [
-    { label: 'Resume / CV', icon: 'document-text-outline', route: '/profile/professional/resume' },
-    { label: 'Portfolio', icon: 'images-outline', route: '/profile/professional/portfolio' },
-    { label: 'Certificates', icon: 'ribbon-outline', route: '/profile/professional/certificates' },
-    { label: 'Experience', icon: 'time-outline', route: '/profile/professional/experience' },
-    { label: 'Skills', icon: 'hammer-outline', route: '/profile/professional/skills' },
-    { label: 'Recommendations', icon: 'thumbs-up-outline', route: '/profile/professional/recommendations' },
-    { label: 'QR Resume', icon: 'qr-code-outline', route: '/profile/qr' },
+  const fetchStats = async () => {
+    if (!user?.id) return;
+    try {
+      const { count: apps } = await supabase.from('job_applications').select('*', { count: 'exact', head: true }).eq('applicant_id', user.id);
+      const { count: views } = await supabase.from('post_views').select('*', { count: 'exact', head: true }).eq('viewer_id', user.id);
+      setStats({ job_applications: apps || 0, interviews: 0, offers: 0, profile_views: views || 0 });
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
+
+  const statCards = [
+    { label: 'Applications', value: stats.job_applications, icon: 'document-text', color: '#3b82f6' },
+    { label: 'Interviews', value: stats.interviews, icon: 'mic', color: '#10b981' },
+    { label: 'Offers', value: stats.offers, icon: 'trophy', color: '#f59e0b' },
+    { label: 'Profile Views', value: stats.profile_views, icon: 'eye', color: '#8b5cf6' },
   ];
 
+  if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Professional Profile</Text>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Career Dashboard</Text>
         <View style={{ width: 24 }} />
       </View>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.profession}>{profile?.profession || 'No profession set'}</Text>
-          <Text style={styles.experience}>{profile?.experience_years || 0} years experience</Text>
-          {profile?.skills && <View style={styles.skillsRow}>{profile.skills.map((skill: string) => <View key={skill} style={styles.skillChip}><Text style={styles.skillText}>{skill}</Text></View>)}</View>}
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Professional Tools</Text>
-          {sections.map(s => <TouchableOpacity key={s.label} style={styles.row} onPress={() => router.push(s.route as any)}><Ionicons name={s.icon as any} size={20} color="#00ff88" /><Text style={styles.rowText}>{s.label}</Text><Ionicons name="chevron-forward" size={16} color="#444" /></TouchableOpacity>)}
-        </View>
-      </ScrollView>
-    </View>
+      <View style={styles.statsGrid}>
+        {statCards.map((stat) => (
+          <View key={stat.label} style={styles.statCard}>
+            <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}><Ionicons name={stat.icon as any} size={24} color={stat.color} /></View>
+            <Text style={styles.statValue}>{stat.value}</Text>
+            <Text style={styles.statLabel}>{stat.label}</Text>
+          </View>
+        ))}
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/jobs')}>
+          <Ionicons name="search" size={20} color="#3b82f6" /><Text style={styles.actionText}>Find Jobs</Text><Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/professional/edit')}>
+          <Ionicons name="create" size={20} color="#10b981" /><Text style={styles.actionText}>Edit Profile</Text><Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: { justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  summaryCard: { margin: 16, backgroundColor: '#111', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#1a1a1a' },
-  profession: { color: '#00ff88', fontSize: 18, fontWeight: '700' },
-  experience: { color: '#888', fontSize: 13, marginTop: 4 },
-  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  skillChip: { backgroundColor: '#00ff8822', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#00ff8844' },
-  skillText: { color: '#00ff88', fontSize: 11 },
-  section: { paddingHorizontal: 16, marginTop: 8 },
-  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#1a1a1a' },
-  rowText: { color: '#fff', fontSize: 14, flex: 1, marginLeft: 12 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12, gap: 12 },
+  statCard: { width: '47%', backgroundColor: '#1e293b', borderRadius: 12, padding: 16, alignItems: 'center' },
+  statIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  statValue: { fontSize: 24, fontWeight: '700', color: '#f1f5f9' },
+  statLabel: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f1f5f9', marginBottom: 12 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', padding: 16, borderRadius: 10, marginBottom: 8 },
+  actionText: { flex: 1, fontSize: 15, color: '#f1f5f9', marginLeft: 12, fontWeight: '500' },
 });

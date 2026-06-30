@@ -1,100 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function ChildDetailScreen() {
-  const router = useRouter();
+interface FamilyMember { id: string; name: string; relationship: string; avatar_url: string | null; email: string | null; phone: string | null; date_of_birth: string | null; is_primary: boolean; created_at: string; }
+
+export default function FamilyDetailScreen() {
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const { user } = useAuthStore();
-  const [child, setChild] = useState<any>(null);
+  const [member, setMember] = useState<FamilyMember | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadChild();
-  }, [id]);
+  useEffect(() => { fetchMember(); }, [id]);
 
-  async function loadChild() {
-    if (!id) return;
-    const { data } = await supabase.from('family_profiles').select('*').eq('id', id).single();
-    setChild(data);
-    setLoading(false);
-  }
+  const fetchMember = async () => {
+    try {
+      const { data, error } = await supabase.from('family_members').select('*').eq('id', id).single();
+      if (error) throw error;
+      setMember(data);
+    } catch (err) { Alert.alert('Error', 'Failed to load member details'); }
+    finally { setLoading(false); }
+  };
 
-  const handleDelete = async () => {
-    Alert.alert('Remove Child', `Remove ${child?.child_name} from your family profile?`, [
+  const removeMember = () => {
+    Alert.alert('Remove Member', `Remove ${member?.name} from your family?`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          await supabase.from('family_profiles').delete().eq('id', id);
-          router.back();
-        },
-      },
+      { text: 'Remove', style: 'destructive', onPress: async () => {
+        try { const { error } = await supabase.from('family_members').delete().eq('id', id); if (error) throw error; router.back(); }
+        catch (err) { Alert.alert('Error', 'Failed to remove member'); }
+      }}
     ]);
   };
 
-  if (!child) return null;
+  if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  if (!member) return <View style={styles.container}><Text style={styles.errorText}>Member not found</Text></View>;
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{child.child_name}</Text>
-        <TouchableOpacity onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={22} color="#ff4444" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Member Details</Text>
+        <TouchableOpacity onPress={removeMember}><Ionicons name="trash-outline" size={22} color="#ef4444" /></TouchableOpacity>
       </View>
-
-      <ScrollView style={styles.content}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{child.child_name?.charAt(0) || '?'}</Text>
+      <View style={styles.profileSection}>
+        <View style={styles.avatarLarge}>
+          {member.avatar_url ? <Image source={{ uri: member.avatar_url }} style={styles.avatarImgLarge} /> : <Ionicons name="person" size={40} color="#94a3b8" />}
         </View>
-
-        <View style={styles.card}>
-          <DetailRow icon="school-outline" label="School" value={child.school || 'Not set'} />
-          <DetailRow icon="book-outline" label="Grade" value={child.grade || 'Not set'} />
-          <DetailRow icon="cash-outline" label="Allowance" value={`KSh ${child.allowance_balance || 0}`} />
-          <DetailRow icon="bus-outline" label="Transport" value={child.transport_allowed ? 'Allowed' : 'Not allowed'} />
-        </View>
-
-        <TouchableOpacity style={styles.editBtn} onPress={() => router.push(`/(os)/profile/family/edit/${id}` as any)}>
-          <Text style={styles.editText}>Edit Details</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
-  );
-}
-
-function DetailRow({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <View style={styles.row}>
-      <Ionicons name={icon as any} size={20} color="#00d4ff" />
-      <View style={styles.rowText}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.name}>{member.name}</Text>
+        <Text style={styles.relationship}>{member.relationship}</Text>
+        {member.is_primary && <View style={styles.primaryBadge}><Text style={styles.primaryText}>Primary Account</Text></View>}
       </View>
-    </View>
+      <View style={styles.infoSection}>
+        {member.email && <View style={styles.infoRow}><Ionicons name="mail-outline" size={18} color="#64748b" /><Text style={styles.infoLabel}>Email</Text><Text style={styles.infoValue}>{member.email}</Text></View>}
+        {member.phone && <View style={styles.infoRow}><Ionicons name="call-outline" size={18} color="#64748b" /><Text style={styles.infoLabel}>Phone</Text><Text style={styles.infoValue}>{member.phone}</Text></View>}
+        {member.date_of_birth && <View style={styles.infoRow}><Ionicons name="calendar-outline" size={18} color="#64748b" /><Text style={styles.infoLabel}>Date of Birth</Text><Text style={styles.infoValue}>{new Date(member.date_of_birth).toLocaleDateString()}</Text></View>}
+        <View style={styles.infoRow}><Ionicons name="time-outline" size={18} color="#64748b" /><Text style={styles.infoLabel}>Added</Text><Text style={styles.infoValue}>{new Date(member.created_at).toLocaleDateString()}</Text></View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  content: { padding: 16 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#00d4ff', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginVertical: 24 },
-  avatarText: { color: '#000', fontSize: 32, fontWeight: '700' },
-  card: { backgroundColor: '#111', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#1a1a1a' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  rowText: { marginLeft: 12, flex: 1 },
-  label: { color: '#888', fontSize: 12 },
-  value: { color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 2 },
-  editBtn: { backgroundColor: '#00d4ff', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 24 },
-  editText: { color: '#000', fontSize: 16, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
+  profileSection: { alignItems: 'center', paddingVertical: 32 },
+  avatarLarge: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#334155', alignItems: 'center', justifyContent: 'center' },
+  avatarImgLarge: { width: 80, height: 80, borderRadius: 40 },
+  name: { fontSize: 22, fontWeight: '700', color: '#f1f5f9', marginTop: 16 },
+  relationship: { fontSize: 15, color: '#94a3b8', marginTop: 4 },
+  primaryBadge: { backgroundColor: '#3b82f6', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, marginTop: 8 },
+  primaryText: { color: '#fff', fontWeight: '600', fontSize: 12 },
+  infoSection: { paddingHorizontal: 16, paddingTop: 16 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  infoLabel: { fontSize: 14, color: '#64748b', width: 100, marginLeft: 12 },
+  infoValue: { flex: 1, fontSize: 14, color: '#f1f5f9', fontWeight: '500' },
+  errorText: { color: '#ef4444', fontSize: 16, textAlign: 'center', marginTop: 40 },
 });

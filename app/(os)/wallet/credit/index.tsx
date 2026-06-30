@@ -82,7 +82,7 @@ export default function CreditHubScreen() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={[styles.advanceButton, creditScore < 600 && styles.advanceButtonDisabled]}
-          onPress={() => router.push('/wallet/advance')}
+          onPress={() => router.push('/(os)/wallet/advance')}
           disabled={creditScore < 600}
         >
           <Text style={styles.advanceButtonText}>

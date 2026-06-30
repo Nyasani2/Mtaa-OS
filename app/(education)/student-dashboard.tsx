@@ -1,241 +1,233 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Dimensions
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width: SCREEN_W } = Dimensions.get('window');
-
-interface Assignment {
-  id: string; title: string; subject: string; due_date: string; status: string;
-}
-interface Grade {
-  id: string; subject: string; score: number; total: number; grade: string;
-}
-interface Course {
-  id: string; title: string; teacher_name: string; progress: number;
-}
+import { useEducation } from '@/lib/hooks/useEducation';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function StudentDashboard() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { getStudentByUserId, getStudentAssignments, getStudentGrades, getStudentAttendance, getStudentTimetable } = useEducation();
+  const [student, setStudent] = useState(null);
+  const [assignments, setAssignments] = useState([]);
+  const [grades, setGrades] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [timetable, setTimetable] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
+  const loadData = async () => {
+    if (!user?.id) return;
     try {
-      const { data: student } = await supabase
-        .from('education_students')
-        .select('id, institution_id, grade')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!student) {
-        setLoading(false);
-        return;
+      const s = await getStudentByUserId(user.id);
+      setStudent(s);
+      if (s) {
+        const [a, g, att, tt] = await Promise.all([
+          getStudentAssignments(s.id),
+          getStudentGrades(s.id),
+          getStudentAttendance(s.id),
+          getStudentTimetable(s.current_class_id),
+        ]);
+        setAssignments(a || []);
+        setGrades(g || []);
+        setAttendance(att || []);
+        setTimetable(tt || []);
       }
-
-      const { data: assigns } = await supabase
-        .from('education_assignments')
-        .select('id, title, subject, due_date, status')
-        .eq('student_id', student.id)
-        .order('due_date', { ascending: true })
-        .limit(5);
-      if (assigns) setAssignments(assigns);
-
-      const { data: grds } = await supabase
-        .from('education_grades')
-        .select('id, subject, score, total, grade')
-        .eq('student_id', student.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (grds) setGrades(grds);
-
-      const { data: crs } = await supabase
-        .from('education_classes')
-        .select('id, name, teacher_id')
-        .eq('institution_id', student.institution_id)
-        .eq('grade', student.grade)
-        .limit(4);
-
-      if (crs) {
-        const enriched = await Promise.all(
-          crs.map(async (c) => {
-            const { data: t } = await supabase
-              .from('education_teachers')
-              .select('full_name')
-              .eq('id', c.teacher_id)
-              .maybeSingle();
-            return {
-              id: c.id,
-              title: c.name,
-              teacher_name: t?.full_name || 'Unknown',
-              progress: Math.floor(Math.random() * 40) + 60,
-            };
-          })
-        );
-        setCourses(enriched);
-      }
-    } catch (err) {
-      console.error('Student dashboard error:', err);
+    } catch (e) {
+      console.error('Student load error:', e);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  }, [user]);
+  };
 
-  useEffect(() => { loadData(); }, [loadData]);
-  const onRefresh = () => { setRefreshing(true); loadData(); };
+  useEffect(() => { loadData(); }, [user?.id]);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00d4ff" />
-      </View>
-    );
-  }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const todayTimetable = timetable.filter(l => {
+    const d = new Date().getDay();
+    const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+    return l.day_of_week?.toLowerCase() === days[d];
+  });
+
+  const pendingAssignments = assignments.filter(a => a.status === 'pending');
+  const attendanceRate = attendance.length > 0
+    ? Math.round((attendance.filter(a => a.status === 'present').length / attendance.length) * 100)
+    : 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4ff" />}
-    >
-      <View style={styles.header}>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      {/* Header */}
+      <LinearGradient colors={['#6366f1', '#8b5cf6']} style={styles.header}>
         <Text style={styles.headerTitle}>Student Portal</Text>
-        <Text style={styles.headerSub}>Welcome back, {user?.user_metadata?.full_name || 'Student'}</Text>
+        <Text style={styles.headerSubtitle}>{student?.full_name || 'Loading...'}</Text>
+        <Text style={styles.headerClass}>{student?.current_class?.name || ''} • {student?.institution?.name || ''}</Text>
+      </LinearGradient>
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <StatCard icon="book-outline" label="Assignments" value={assignments.length} color="#6366f1" />
+        <StatCard icon="school-outline" label="Grades" value={grades.length} color="#10b981" />
+        <StatCard icon="calendar-outline" label="Attendance" value={`${attendanceRate}%`} color="#f59e0b" />
       </View>
 
-      <View style={styles.quickRow}>
-        <QuickAction icon="book-outline" label="Courses" onPress={() => router.push('/education/courses')} />
-        <QuickAction icon="clipboard-outline" label="Assignments" onPress={() => router.push('/education/assignments')} />
-        <QuickAction icon="school-outline" label="Grades" onPress={() => router.push('/education/my-grades')} />
-        <QuickAction icon="calendar-outline" label="Timetable" onPress={() => router.push('/education/timetable')} />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming Assignments</Text>
-          <TouchableOpacity onPress={() => router.push('/education/assignments')}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-        {assignments.length === 0 ? (
-          <Text style={styles.emptyText}>No upcoming assignments</Text>
+      {/* Today's Classes */}
+      <Section title="Today's Classes" icon="time-outline" action="View Full" onAction={() => router.push('/(education)/timetable')}>
+        {todayTimetable.length === 0 ? (
+          <Text style={styles.emptyText}>No classes scheduled today</Text>
         ) : (
-          assignments.map(a => (
-            <TouchableOpacity key={a.id} style={styles.assignCard} onPress={() => router.push(`/education/assignments/${a.id}`)}>
-              <View style={styles.assignIcon}>
-                <Ionicons name="document-text-outline" size={20} color="#00d4ff" />
-              </View>
-              <View style={styles.assignInfo}>
-                <Text style={styles.assignTitle}>{a.title}</Text>
-                <Text style={styles.assignMeta}>{a.subject} · Due {new Date(a.due_date).toLocaleDateString()}</Text>
-              </View>
-              <View style={[styles.statusBadge, a.status === 'submitted' ? styles.statusDone : styles.statusPending]}>
-                <Text style={styles.statusText}>{a.status}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Grades</Text>
-          <TouchableOpacity onPress={() => router.push('/education/my-grades')}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-        {grades.length === 0 ? (
-          <Text style={styles.emptyText}>No grades yet</Text>
-        ) : (
-          grades.map(g => (
-            <View key={g.id} style={styles.gradeCard}>
-              <Text style={styles.gradeSubject}>{g.subject}</Text>
-              <Text style={styles.gradeScore}>{g.score}/{g.total}</Text>
-              <View style={[styles.gradeBadge, g.grade === 'A' ? styles.gradeA : g.grade === 'B' ? styles.gradeB : styles.gradeC]}>
-                <Text style={styles.gradeText}>{g.grade}</Text>
-              </View>
+          todayTimetable.map((lesson, i) => (
+            <View key={i} style={styles.lessonRow}>
+              <Text style={styles.lessonTime}>{lesson.start_time?.slice(0,5)} - {lesson.end_time?.slice(0,5)}</Text>
+              <Text style={styles.lessonSubject}>{lesson.subject?.name}</Text>
+              <Text style={styles.lessonTeacher}>{lesson.teacher?.full_name}</Text>
             </View>
           ))
         )}
-      </View>
+      </Section>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Courses</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {courses.map(c => (
-            <TouchableOpacity key={c.id} style={styles.courseCard} onPress={() => router.push(`/education/courses/${c.id}`)}>
-              <View style={styles.courseIcon}>
-                <Ionicons name="book" size={28} color="#00d4ff" />
+      {/* Pending Assignments */}
+      <Section title="Pending Assignments" icon="document-text-outline" action="View All" onAction={() => router.push('/(education)/assignments')}>
+        {pendingAssignments.length === 0 ? (
+          <Text style={styles.emptyText}>No pending assignments 🎉</Text>
+        ) : (
+          pendingAssignments.slice(0, 3).map((a, i) => (
+            <TouchableOpacity key={i} style={styles.assignmentCard} onPress={() => router.push(`/(education)/assignments/${a.id}`)}>
+              <View style={styles.assignmentLeft}>
+                <Text style={styles.assignmentTitle}>{a.title}</Text>
+                <Text style={styles.assignmentSubject}>{a.subject?.name} • {a.teacher?.full_name}</Text>
               </View>
-              <Text style={styles.courseTitle} numberOfLines={2}>{c.title}</Text>
-              <Text style={styles.courseTeacher}>{c.teacher_name}</Text>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${c.progress}%` }]} />
+              <View style={[styles.dueBadge, isOverdue(a.due_date) && styles.overdueBadge]}>
+                <Text style={styles.dueText}>{formatDue(a.due_date)}</Text>
               </View>
-              <Text style={styles.progressText}>{c.progress}% complete</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          ))
+        )}
+      </Section>
+
+      {/* Recent Grades */}
+      <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education)/grades')}>
+        {grades.length === 0 ? (
+          <Text style={styles.emptyText}>No grades yet</Text>
+        ) : (
+          grades.slice(0, 3).map((g, i) => (
+            <View key={i} style={styles.gradeRow}>
+              <Text style={styles.gradeSubject}>{g.subject?.name}</Text>
+              <Text style={[styles.gradeScore, getGradeColor(g.score)]}>{g.score}/{g.max_score}</Text>
+              <Text style={styles.gradeLabel}>{g.grade_label || getGradeLabel(g.score, g.max_score)}</Text>
+            </View>
+          ))
+        )}
+      </Section>
+
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <QuickAction icon="library-outline" label="Library" onPress={() => router.push('/(education)/library')} />
+        <QuickAction icon="chatbubble-outline" label="Messages" onPress={() => router.push('/(education)/messages')} />
+        <QuickAction icon="qr-code-outline" label="Check In" onPress={() => router.push('/(education)/qr-checkin')} />
+        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education)/transport')} />
       </View>
     </ScrollView>
   );
 }
 
-function QuickAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+function StatCard({ icon, label, value, color }) {
   return (
-    <TouchableOpacity style={styles.quickBtn} onPress={onPress}>
-      <Ionicons name={icon as any} size={24} color="#00d4ff" />
-      <Text style={styles.quickLabel}>{label}</Text>
+    <View style={[styles.statCard, { borderTopColor: color }]}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function Section({ title, icon, action, onAction, children }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Ionicons name={icon} size={18} color="#374151" />
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {action && <TouchableOpacity onPress={onAction}><Text style={styles.sectionAction}>{action}</Text></TouchableOpacity>}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function QuickAction({ icon, label, onPress }) {
+  return (
+    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+      <Ionicons name={icon} size={24} color="#6366f1" />
+      <Text style={styles.quickActionLabel}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
+function isOverdue(date) {
+  return date && new Date(date) < new Date();
+}
+
+function formatDue(date) {
+  if (!date) return 'No due';
+  const d = new Date(date);
+  const diff = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return `${Math.abs(diff)}d overdue`;
+  if (diff === 0) return 'Due today';
+  return `${diff}d left`;
+}
+
+function getGradeColor(score) {
+  if (score >= 80) return { color: '#10b981' };
+  if (score >= 60) return { color: '#f59e0b' };
+  return { color: '#ef4444' };
+}
+
+function getGradeLabel(score, max) {
+  const pct = (score / max) * 100;
+  if (pct >= 80) return 'A';
+  if (pct >= 70) return 'B';
+  if (pct >= 60) return 'C';
+  if (pct >= 50) return 'D';
+  return 'E';
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#111', borderBottomWidth: 1, borderBottomColor: '#222' },
-  headerTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  headerSub: { color: '#888', fontSize: 14, marginTop: 4 },
-  quickRow: { flexDirection: 'row', justifyContent: 'space-around', padding: 16, backgroundColor: '#111', marginBottom: 8 },
-  quickBtn: { alignItems: 'center', padding: 12 },
-  quickLabel: { color: '#ccc', fontSize: 12, marginTop: 6 },
-  section: { padding: 16, marginBottom: 8 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  seeAll: { color: '#00d4ff', fontSize: 14 },
-  emptyText: { color: '#666', fontSize: 14, fontStyle: 'italic' },
-  assignCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10 },
-  assignIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' },
-  assignInfo: { flex: 1, marginLeft: 12 },
-  assignTitle: { color: '#fff', fontSize: 15, fontWeight: '500' },
-  assignMeta: { color: '#888', fontSize: 12, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  statusPending: { backgroundColor: '#ffaa00' },
-  statusDone: { backgroundColor: '#00cc66' },
-  statusText: { color: '#000', fontSize: 11, fontWeight: '600' },
-  gradeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10 },
-  gradeSubject: { color: '#fff', fontSize: 15, flex: 1 },
-  gradeScore: { color: '#ccc', fontSize: 14, marginRight: 12 },
-  gradeBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 },
-  gradeA: { backgroundColor: '#00cc66' },
-  gradeB: { backgroundColor: '#ffaa00' },
-  gradeC: { backgroundColor: '#ff4444' },
-  gradeText: { color: '#000', fontSize: 12, fontWeight: 'bold' },
-  courseCard: { width: 160, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginRight: 12 },
-  courseIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  courseTitle: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  courseTeacher: { color: '#888', fontSize: 12, marginBottom: 10 },
-  progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, marginBottom: 6 },
-  progressFill: { height: 4, backgroundColor: '#00d4ff', borderRadius: 2 },
-  progressText: { color: '#888', fontSize: 11 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  header: { padding: 24, paddingTop: 60 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
+  headerSubtitle: { fontSize: 18, color: 'rgba(255,255,255,0.9)', marginTop: 4 },
+  headerClass: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  statsRow: { flexDirection: 'row', padding: 16, gap: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', borderTopWidth: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  statValue: { fontSize: 20, fontWeight: '700', marginTop: 8 },
+  statLabel: { fontSize: 12, color: '#6b7280', marginTop: 4 },
+  section: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111827', marginLeft: 8 },
+  sectionAction: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
+  emptyText: { color: '#9ca3af', fontSize: 14, textAlign: 'center', paddingVertical: 16 },
+  lessonRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  lessonTime: { width: 80, fontSize: 13, color: '#6b7280', fontWeight: '600' },
+  lessonSubject: { flex: 1, fontSize: 14, color: '#111827', fontWeight: '600' },
+  lessonTeacher: { fontSize: 12, color: '#6b7280' },
+  assignmentCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  assignmentLeft: { flex: 1 },
+  assignmentTitle: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  assignmentSubject: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  dueBadge: { backgroundColor: '#e0e7ff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  overdueBadge: { backgroundColor: '#fee2e2' },
+  dueText: { fontSize: 11, color: '#6366f1', fontWeight: '600' },
+  gradeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  gradeSubject: { flex: 1, fontSize: 14, color: '#111827' },
+  gradeScore: { fontSize: 16, fontWeight: '700', marginRight: 8 },
+  gradeLabel: { fontSize: 12, color: '#6b7280', width: 24, textAlign: 'right' },
+  quickActions: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12, marginBottom: 32 },
+  quickAction: { width: '22%', backgroundColor: '#fff', borderRadius: 16, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  quickActionLabel: { fontSize: 11, color: '#374151', marginTop: 8, textAlign: 'center' },
 });

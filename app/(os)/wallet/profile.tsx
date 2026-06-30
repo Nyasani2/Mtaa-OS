@@ -36,7 +36,7 @@ export default function WalletProfileScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Wallet</Text>
-        <TouchableOpacity onPress={() => router.push('/wallet/settings')}><Ionicons name="settings-outline" size={22} color="#fff" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/(os)/wallet/settings')}><Ionicons name="settings-outline" size={22} color="#fff" /></TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -51,15 +51,15 @@ export default function WalletProfileScreen() {
           <Text style={styles.balanceLabel}>Total Balance</Text>
           <Text style={styles.balanceValue}>KES 0.00</Text>
           <View style={styles.balanceActions}>
-            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/wallet/send')}>
+            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/(os)/wallet/send')}>
               <Ionicons name="arrow-up-outline" size={18} color="#000" />
               <Text style={styles.balanceBtnText}>Send</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/wallet/receive')}>
+            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/(os)/wallet/receive')}>
               <Ionicons name="arrow-down-outline" size={18} color="#000" />
               <Text style={styles.balanceBtnText}>Receive</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/wallet/qr')}>
+            <TouchableOpacity style={styles.balanceBtn} onPress={() => router.push('/(os)/wallet/qr')}>
               <Ionicons name="qr-code-outline" size={18} color="#000" />
               <Text style={styles.balanceBtnText}>QR</Text>
             </TouchableOpacity>
