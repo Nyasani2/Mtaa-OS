@@ -40,10 +40,14 @@ export default function ProfileEdit() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateValue, setDateValue] = useState(new Date());
 
+  // FIXED: Inline fetch with .catch() guarantee — spinner NEVER hangs
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) { setLoading(false); return; }
+    let cancelled = false;
+
     supabase.from('user_profiles').select('*').eq('id', user.id).single()
       .then(({ data, error }) => {
+        if (cancelled) return;
         if (data) {
           setForm({
             full_name: data.full_name || '',
@@ -57,14 +61,19 @@ export default function ProfileEdit() {
           setAvatarUrl(data.avatar_url);
           if (data.date_of_birth) setDateValue(new Date(data.date_of_birth));
         }
-        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Edit profile load error:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
+
+    return () => { cancelled = true; };
   }, [user?.id]);
 
   const handleAvatarUpload = async () => {
     if (!user?.id) return;
-
-    // Web file picker
     if (Platform.OS === 'web') {
       const input = document.createElement('input');
       input.type = 'file';
@@ -76,12 +85,9 @@ export default function ProfileEdit() {
       };
       input.click();
     } else {
-      // Native — use Alert to inform user
       Alert.alert('Upload Photo', 'Choose a photo from your library', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Continue', onPress: () => {
-          // On native, we'd use expo-image-picker but it's not installed
-          // For now, show a placeholder instruction
           Alert.alert('Note', 'Please install expo-image-picker for native image selection. For now, use the web version.');
         }}
       ]);
@@ -107,8 +113,6 @@ export default function ProfileEdit() {
         .getPublicUrl(filePath);
 
       setAvatarUrl(publicUrl);
-
-      // Also update the profile record
       await supabase.from('user_profiles').update({
         avatar_url: publicUrl,
         updated_at: new Date().toISOString()
@@ -172,7 +176,6 @@ export default function ProfileEdit() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#f8fafc" />
@@ -184,7 +187,6 @@ export default function ProfileEdit() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
             {avatarUrl ? (
@@ -205,7 +207,6 @@ export default function ProfileEdit() {
           <Text style={styles.avatarHint}>Tap camera to change photo</Text>
         </View>
 
-        {/* Form Fields */}
         <View style={styles.form}>
           <FormField label="Full Name" value={form.full_name} onChange={v => updateField('full_name', v)} />
           <FormField label="Bio" value={form.bio} onChange={v => updateField('bio', v)} multiline numberOfLines={3} />
@@ -213,7 +214,6 @@ export default function ProfileEdit() {
           <FormField label="Website" value={form.website} onChange={v => updateField('website', v)} />
           <FormField label="Phone" value={form.phone} onChange={v => updateField('phone', v)} keyboardType="phone-pad" />
 
-          {/* Date of Birth */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Date of Birth</Text>
             <TouchableOpacity style={styles.dateButton} onPress={openDatePicker}>
@@ -240,7 +240,6 @@ export default function ProfileEdit() {
             )}
           </View>
 
-          {/* Gender */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Gender</Text>
             <View style={styles.chipRow}>

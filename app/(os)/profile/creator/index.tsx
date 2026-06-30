@@ -1,160 +1,157 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
-interface CreatorData {
-  posts: number;
-  followers: number;
-  following: number;
-  earnings: number;
-  views: number;
-  likes: number;
+interface CreatorProfile {
+  id: string;
+  display_name: string | null;
+  bio: string | null;
+  niche: string | null;
+  follower_count: number;
+  post_count: number;
+  is_verified: boolean;
+  monetization_enabled: boolean;
 }
 
-export default function CreatorDashboardScreen() {
+export default function CreatorProfileScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
-  const [data, setData] = useState<CreatorData | null>(null);
+  const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async () => {
+  useEffect(() => { fetchProfile(); }, [user?.id]);
+
+  const fetchProfile = async () => {
     if (!user?.id) { setLoading(false); return; }
-    setLoading(true);
     try {
-      const [
-        { count: posts },
-        { count: followers },
-        { count: following },
-        { data: earnings },
-        { data: postStats },
-      ] = await Promise.all([
-        supabase.from('streets_posts').select('*', { count: 'exact', head: true }).eq('creator_id', user.id),
-        supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
-        supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
-        supabase.from('content_earnings').select('creator_amount').eq('user_id', user.id),
-        supabase.from('post_stats').select('views, likes_count').in('post_id', (await supabase.from('streets_posts').select('id').eq('creator_id', user.id)).data?.map(p => p.id) || []),
-      ]);
+      const { data, error } = await supabase
+        .from('creator_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-      const totalEarnings = (earnings || []).reduce((sum, e) => sum + (e.creator_amount || 0), 0);
-      const totalViews = postStats?.reduce((sum, p) => sum + (p.views || 0), 0) || 0;
-      const totalLikes = postStats?.reduce((sum, p) => sum + (p.likes_count || 0), 0) || 0;
+      if (error && error.code !== 'PGRST116') console.error('Creator profile error:', error);
+      setProfile(data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); setRefreshing(false); }
+  };
 
-      setData({ posts: posts || 0, followers: followers || 0, following: following || 0, earnings: totalEarnings, views: totalViews, likes: totalLikes });
-    } catch (err) {
-      console.error('Creator load error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user?.id]);
+  const onRefresh = () => { setRefreshing(true); fetchProfile(); };
 
-  useEffect(() => { loadData(); }, [loadData]);
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#00d4ff" />
+  if (loading) return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Creator Profile</Text>
+        <View style={{ width: 24 }} />
       </View>
-    );
-  }
+      <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>
+    </View>
+  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#00d4ff" />}
-      >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Creator Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Manage your content and profile</Text>
-        </View>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Creator Profile</Text>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/creator/edit')}>
+          <Ionicons name="create-outline" size={22} color="#3b82f6" />
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{data?.posts || 0}</Text>
-            <Text style={styles.statLabel}>Posts</Text>
+      <View style={styles.profileCard}>
+        <View style={styles.avatar}><Ionicons name="person" size={40} color="#94a3b8" /></View>
+        <Text style={styles.name}>{profile?.display_name || user?.user_metadata?.display_name || 'Creator'}</Text>
+        {profile?.is_verified && (
+          <View style={styles.verifiedBadge}>
+            <Ionicons name="checkmark-circle" size={14} color="#fff" />
+            <Text style={styles.verifiedText}>Verified</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{data?.followers || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{data?.following || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-        </View>
+        )}
+        <Text style={styles.bio}>{profile?.bio || 'No bio yet. Tap edit to add one.'}</Text>
+        {profile?.niche && <Text style={styles.niche}>{profile.niche}</Text>}
+      </View>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{(data?.views || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Views</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{(data?.likes || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Likes</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>KES {(data?.earnings || 0).toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Earnings</Text>
-          </View>
+      <View style={styles.statsRow}>
+        <View style={styles.statBox}>
+          <Text style={styles.statValue}>{profile?.follower_count || 0}</Text>
+          <Text style={styles.statLabel}>Followers</Text>
         </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statValue}>{profile?.post_count || 0}</Text>
+          <Text style={styles.statLabel}>Posts</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statValue}>{profile?.monetization_enabled ? 'On' : 'Off'}</Text>
+          <Text style={styles.statLabel}>Monetization</Text>
+        </View>
+      </View>
 
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#00d4ff' }]} onPress={() => router.push('/(os)/streets/create')}>
-            <Ionicons name="add-circle-outline" size={24} color="#000" />
-            <Text style={styles.actionButtonText}>New Post</Text>
-            <Text style={styles.actionButtonSubtext}>Create content on Streets</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#00ff88' }]} onPress={() => router.push('/(os)/profile/edit')}>
-            <Ionicons name="create-outline" size={24} color="#000" />
-            <Text style={styles.actionButtonText}>Edit Profile</Text>
-            <Text style={styles.actionButtonSubtext}>Update your profile info</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#ff00ff' }]} onPress={() => router.push('/(os)/profile/creator/earnings')}>
-            <Ionicons name="cash-outline" size={24} color="#fff" />
-            <Text style={[styles.actionButtonText, { color: '#fff' }]}>Earnings</Text>
-            <Text style={[styles.actionButtonSubtext, { color: '#fff' }]}>View and withdraw earnings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#ffaa00' }]} onPress={() => router.push('/(os)/profile/creator/dashboard')}>
-            <Ionicons name="analytics-outline" size={24} color="#000" />
-            <Text style={styles.actionButtonText}>Analytics</Text>
-            <Text style={styles.actionButtonSubtext}>Detailed creator stats</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Creator Tools</Text>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/earnings')}>
+          <Ionicons name="cash-outline" size={20} color="#10b981" />
+          <Text style={styles.actionText}>Earnings</Text>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/dashboard')}>
+          <Ionicons name="analytics-outline" size={20} color="#3b82f6" />
+          <Text style={styles.actionText}>Analytics Dashboard</Text>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/streets/create')}>
+          <Ionicons name="add-circle-outline" size={20} color="#f59e0b" />
+          <Text style={styles.actionText}>Create Post</Text>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/edit')}>
+          <Ionicons name="create-outline" size={20} color="#8b5cf6" />
+          <Text style={styles.actionText}>Edit Profile</Text>
+          <Ionicons name="chevron-forward" size={18} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Getting Started</Text>
-          <Text style={styles.infoText}>Create content on Streets to build your audience. Share photos, videos, and articles. Earn from tips, ads, and subscriptions through the creator program.</Text>
+      {!profile?.monetization_enabled && (
+        <View style={[styles.card, { borderColor: '#f59e0b', borderWidth: 1 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="sparkles" size={20} color="#f59e0b" />
+            <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Enable Monetization</Text>
+          </View>
+          <Text style={styles.hintText}>Turn on monetization to start earning from your content.</Text>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#f59e0b' }]} onPress={() => router.push('/(os)/profile/creator/earnings')}>
+            <Text style={styles.actionBtnText}>Get Started</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scrollContent: { paddingBottom: 32 },
-  header: { paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#111', borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#888', marginTop: 4 },
-  statsContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 12 },
-  statCard: { flex: 1, backgroundColor: '#111', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#1a1a1a' },
-  statNumber: { fontSize: 20, fontWeight: '700', color: '#00d4ff' },
-  statLabel: { fontSize: 11, color: '#888', marginTop: 4 },
-  actionsContainer: { paddingHorizontal: 16, gap: 12, marginTop: 8 },
-  actionButton: { borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center' },
-  actionButtonText: { color: '#000', fontSize: 16, fontWeight: '600', marginLeft: 12, flex: 1 },
-  actionButtonSubtext: { color: '#000', fontSize: 12, opacity: 0.7 },
-  infoCard: { marginHorizontal: 16, marginTop: 20, backgroundColor: '#111', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#1a1a1a' },
-  infoTitle: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 8 },
-  infoText: { fontSize: 14, color: '#888', lineHeight: 20 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  profileCard: { alignItems: 'center', paddingVertical: 32 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#334155', alignItems: 'center', justifyContent: 'center' },
+  name: { fontSize: 22, fontWeight: '700', color: '#f1f5f9', marginTop: 16 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3b82f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, marginTop: 8 },
+  verifiedText: { color: '#fff', fontWeight: '600', fontSize: 12, marginLeft: 4 },
+  bio: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 12, paddingHorizontal: 32 },
+  niche: { fontSize: 13, color: '#64748b', marginTop: 4 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, borderTopWidth: 1, borderTopColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  statBox: { alignItems: 'center' },
+  statValue: { fontSize: 20, fontWeight: '700', color: '#f1f5f9' },
+  statLabel: { fontSize: 12, color: '#94a3b8', marginTop: 4 },
+  card: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, margin: 16, marginBottom: 0 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#f1f5f9', marginBottom: 12 },
+  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  actionText: { flex: 1, fontSize: 15, color: '#f1f5f9', marginLeft: 12 },
+  actionBtn: { backgroundColor: '#3b82f6', paddingVertical: 12, borderRadius: 8, marginTop: 12, alignItems: 'center' },
+  actionBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  hintText: { fontSize: 13, color: '#94a3b8', marginBottom: 8 },
 });

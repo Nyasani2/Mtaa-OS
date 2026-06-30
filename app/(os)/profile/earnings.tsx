@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, Wallet, CreditCard, ArrowRight } from 'lucide-react-native';
+import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react-native';
 
 interface EarningsData {
   total_earnings: number;
@@ -24,6 +24,14 @@ interface EarningRecord {
   created_at: string;
 }
 
+// Timeout wrapper for Supabase queries
+async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 4000): Promise<T> {
+  return Promise.race([
+    promise.catch(() => fallback),
+    new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export default function CreatorEarnings() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -32,8 +40,73 @@ export default function CreatorEarnings() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchEarnings = useCallback(async () => {
+  // FIXED: Inline fetch, no useCallback dependency loop
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const profile = await withTimeout(
+          supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('id', user.id).single().then(r => r.data),
+          null,
+          4000
+        );
+        const txs = await withTimeout(
+          supabase.from('wallet_transactions')
+            .select('*').eq('user_id', user.id).eq('type', 'credit').eq('category', 'creator')
+            .order('created_at', { ascending: false }).limit(20)
+            .then(r => r.data || []),
+          [],
+          4000
+        );
+
+        if (cancelled) return;
+
+        const total = profile?.creator_earnings || 0;
+        const available = profile?.creator_balance || 0;
+        const pending = profile?.creator_pending || 0;
+        const now = new Date();
+        const thisMonth = now.getMonth();
+        const thisYear = now.getFullYear();
+        const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+        const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+
+        setData({
+          total_earnings: total,
+          available_balance: available,
+          pending_balance: pending,
+          lifetime_payouts: Math.max(0, total - available - pending),
+          this_month: txs.filter((t: any) => {
+            const d = new Date(t.created_at);
+            return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+          }).reduce((s: number, t: any) => s + (t.amount || 0), 0),
+          last_month: txs.filter((t: any) => {
+            const d = new Date(t.created_at);
+            return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+          }).reduce((s: number, t: any) => s + (t.amount || 0), 0),
+        });
+        setRecords((txs || []).map((t: any) => ({
+          id: t.id,
+          source: t.description || 'Creator earnings',
+          amount: t.amount,
+          status: t.status || 'available',
+          created_at: t.created_at
+        })));
+      } catch (err) {
+        console.error('Earnings load error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const onRefresh = async () => {
     if (!user?.id) return;
+    setRefreshing(true);
     try {
       const { data: profile } = await supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('id', user.id).single();
       const { data: txs } = await supabase.from('wallet_transactions')
@@ -43,27 +116,39 @@ export default function CreatorEarnings() {
       const total = profile?.creator_earnings || 0;
       const available = profile?.creator_balance || 0;
       const pending = profile?.creator_pending || 0;
+      const now = new Date();
+      const thisMonth = now.getMonth();
+      const thisYear = now.getFullYear();
+      const lastMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+      const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear;
 
       setData({
         total_earnings: total,
         available_balance: available,
         pending_balance: pending,
-        lifetime_payouts: total - available - pending,
-        this_month: txs?.filter(t => new Date(t.created_at).getMonth() === new Date().getMonth()).reduce((s, t) => s + (t.amount || 0), 0) || 0,
-        last_month: txs?.filter(t => new Date(t.created_at).getMonth() === new Date().getMonth() - 1).reduce((s, t) => s + (t.amount || 0), 0) || 0,
+        lifetime_payouts: Math.max(0, total - available - pending),
+        this_month: (txs || []).filter((t: any) => {
+          const d = new Date(t.created_at);
+          return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+        }).reduce((s: number, t: any) => s + (t.amount || 0), 0),
+        last_month: (txs || []).filter((t: any) => {
+          const d = new Date(t.created_at);
+          return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+        }).reduce((s: number, t: any) => s + (t.amount || 0), 0),
       });
-      setRecords((txs || []).map(t => ({
+      setRecords((txs || []).map((t: any) => ({
         id: t.id,
         source: t.description || 'Creator earnings',
         amount: t.amount,
         status: t.status || 'available',
         created_at: t.created_at
       })));
-    } catch (err) { console.error('Earnings fetch error:', err); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, [user?.id]);
-
-  useEffect(() => { fetchEarnings(); }, [fetchEarnings]);
+    } catch (err) {
+      console.error('Refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -92,9 +177,8 @@ export default function CreatorEarnings() {
 
       <ScrollView
         style={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchEarnings(); }} tintColor="#38bdf8" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38bdf8" />}
       >
-        {/* Balance Card */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available Balance</Text>
           <Text style={styles.balanceAmount}>KSh {(data?.available_balance || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
@@ -114,7 +198,6 @@ export default function CreatorEarnings() {
           </TouchableOpacity>
         </View>
 
-        {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <TrendingUp size={20} color="#10b981" />
@@ -128,7 +211,6 @@ export default function CreatorEarnings() {
           </View>
         </View>
 
-        {/* Records */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Earnings</Text>
           {records.length === 0 ? (

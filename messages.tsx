@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl
 } from 'react-native';
@@ -24,20 +24,92 @@ export default function MessagesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchConversations = useCallback(async () => {
+  // FIXED: Inline fetch, no useCallback dependency loop
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        // FIXED: Safe query — use .in() instead of string interpolation in .or()
+        const { data } = await supabase
+          .from('messages')
+          .select('*')
+          .in('sender_id', [user.id])
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        // Also fetch as recipient
+        const { data: received } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('recipient_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (cancelled) return;
+
+        const allMsgs = [...(data || []), ...(received || [])]
+          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 50);
+
+        // Group by conversation partner
+        const convoMap = new Map<string, Conversation>();
+        allMsgs.forEach((msg: any) => {
+          const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
+          if (!convoMap.has(partnerId)) {
+            convoMap.set(partnerId, {
+              id: msg.id,
+              participant_id: partnerId,
+              participant_name: 'User',
+              participant_avatar: null,
+              last_message: msg.content,
+              last_message_at: msg.created_at,
+              unread_count: msg.sender_id !== user.id && !msg.read ? 1 : 0,
+            });
+          } else {
+            const existing = convoMap.get(partnerId)!;
+            if (msg.sender_id !== user.id && !msg.read) {
+              existing.unread_count += 1;
+            }
+          }
+        });
+
+        setConversations(Array.from(convoMap.values()));
+      } catch (err) {
+        console.error('Messages load error:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const onRefresh = async () => {
     if (!user?.id) return;
+    setRefreshing(true);
     try {
-      // Query from messages table grouped by conversation
       const { data } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .in('sender_id', [user.id])
+        .order('created_at', { ascending: false })
+        .limit(50);
+      const { data: received } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('recipient_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      // Group by conversation partner
+      const allMsgs = [...(data || []), ...(received || [])]
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 50);
+
       const convoMap = new Map<string, Conversation>();
-      (data || []).forEach(msg => {
+      allMsgs.forEach((msg: any) => {
         const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
         if (!convoMap.has(partnerId)) {
           convoMap.set(partnerId, {
@@ -58,13 +130,12 @@ export default function MessagesScreen() {
       });
 
       setConversations(Array.from(convoMap.values()));
-    } catch (err) { console.error('Messages fetch error:', err); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, [user?.id]);
-
-  useEffect(() => { fetchConversations(); }, [fetchConversations]);
-
-  const onRefresh = () => { setRefreshing(true); fetchConversations(); };
+    } catch (err) {
+      console.error('Refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
