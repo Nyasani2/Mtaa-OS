@@ -57,7 +57,7 @@ export default function GovernmentHubScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.reportButton} onPress={() => router.push('/wallet/gov-portal')}>
+        <TouchableOpacity style={styles.reportButton} onPress={() => router.push('/(os)/wallet/gov-portal')}>
           <Text style={styles.reportButtonText}>View Full Reports</Text>
         </TouchableOpacity>
       </View>

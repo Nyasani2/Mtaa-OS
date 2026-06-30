@@ -65,3 +65,6 @@ export * from './restaurant-service';
 
 // Default export
 export { default } from './streets-service';
+export * from './treasury-service';
+export * from './escrow-service';
+export * from './tax-service';

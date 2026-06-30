@@ -1,196 +1,103 @@
-// app/(os)/profile/professional/index.tsx — Professional CV
-// Reads from profiles table (headline, profession, skills, education, experience)
-
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function ProfessionalScreen() {
+interface ProfProfile { id: string; job_title: string; company: string | null; industry: string | null; years_experience: number; skills: string[]; bio: string | null; linkedin_url: string | null; portfolio_url: string | null; is_public: boolean; }
+
+export default function ProfessionalIndexScreen() {
   const router = useRouter();
-  const { user, isAuthenticated, initialize } = useAuth();
-  const [profData, setProfData] = useState<any>(null);
+  const { user } = useAuthStore();
+  const [profile, setProfile] = useState<ProfProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => { initialize(); }, []);
-  useEffect(() => {
-    if (isAuthenticated && user?.id) loadProfessionalData();
-  }, [isAuthenticated, user?.id]);
-
-  async function loadProfessionalData() {
+  const fetchProfile = useCallback(async () => {
     if (!user?.id) return;
-    setLoading(true);
     try {
-      // Try professional_profiles table first, fallback to profiles
-      const { data, error } = await supabase
-        .from('professional_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      const { data, error } = await supabase.from('professional_profiles').select('*').eq('user_id', user.id).single();
+      if (error && error.code !== 'PGRST116') throw error;
+      setProfile(data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [user?.id]);
 
-      if (data && !error) {
-        setProfData(data);
-      } else {
-        // Fallback: use profiles table data
-        setProfData({
-          headline: user.headline,
-          summary: user.bio,
-          profession: user.profession,
-          skills: user.skills || [],
-          experience: [],
-          education: [],
-          certificates: [],
-          portfolio: [],
-          availability: 'available',
-        });
-      }
-    } catch (err) {
-      console.error('[Professional] Load error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
-  if (!isAuthenticated) {
+  if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+
+  if (!profile) {
     return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <Ionicons name="briefcase-outline" size={64} color="#ccc" />
-        <Text style={styles.emptyTitle}>Sign in to view your Professional CV</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/sign-in')}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+          <Text style={styles.headerTitle}>Professional Profile</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.emptyState}>
+          <Ionicons name="briefcase" size={48} color="#334155" />
+          <Text style={styles.emptyTitle}>No Professional Profile</Text>
+          <Text style={styles.emptySub}>Set up your professional profile to showcase your career</Text>
+          <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/profile/professional/edit')}><Text style={styles.createBtnText}>Create Profile</Text></TouchableOpacity>
+        </View>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchProfile(); }} tintColor="#3b82f6" />}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Professional CV</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit')}>
-          <Ionicons name="create-outline" size={22} color="#6366f1" />
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Professional</Text>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit')}><Ionicons name="create-outline" size={22} color="#3b82f6" /></TouchableOpacity>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.jobTitle}>{profile.job_title}</Text>
+        {profile.company && <Text style={styles.company}>{profile.company}</Text>}
+        {profile.industry && <Text style={styles.industry}>{profile.industry}</Text>}
+        <View style={styles.expBadge}><Text style={styles.expText}>{profile.years_experience} years experience</Text></View>
+      </View>
+      {profile.bio && <View style={styles.section}><Text style={styles.sectionTitle}>Bio</Text><Text style={styles.bioText}>{profile.bio}</Text></View>}
+      {profile.skills && profile.skills.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Skills</Text>
+          <View style={styles.skillsContainer}>
+            {profile.skills.map((skill, i) => <View key={i} style={styles.skillChip}><Text style={styles.skillText}>{skill}</Text></View>)}
+          </View>
+        </View>
+      )}
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/professional/dashboard')}>
+          <Ionicons name="stats-chart" size={20} color="#3b82f6" /><Text style={styles.actionText}>Career Dashboard</Text><Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
       </View>
-
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#f59e0b" />
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Headline */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Headline</Text>
-            <Text style={styles.cardText}>{profData?.headline || user?.headline || 'No headline set'}</Text>
-          </View>
-
-          {/* Summary */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Summary</Text>
-            <Text style={styles.cardText}>{profData?.summary || user?.bio || 'No summary yet'}</Text>
-          </View>
-
-          {/* Profession */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Profession</Text>
-            <Text style={styles.cardText}>{profData?.profession || user?.profession || 'Not specified'}</Text>
-          </View>
-
-          {/* Skills */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Skills</Text>
-            {profData?.skills?.length > 0 ? (
-              <View style={styles.tagsRow}>
-                {profData.skills.map((skill: string, i: number) => (
-                  <View key={i} style={styles.tag}><Text style={styles.tagText}>{skill}</Text></View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.emptyText}>No skills added yet</Text>
-            )}
-          </View>
-
-          {/* Experience */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Experience</Text>
-            {profData?.experience?.length > 0 ? (
-              profData.experience.map((exp: any, i: number) => (
-                <View key={i} style={styles.listItem}>
-                  <Text style={styles.listTitle}>{exp.title}</Text>
-                  <Text style={styles.listSub}>{exp.company} • {exp.duration}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>No experience added yet</Text>
-            )}
-          </View>
-
-          {/* Education */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Education</Text>
-            {profData?.education?.length > 0 ? (
-              profData.education.map((edu: any, i: number) => (
-                <View key={i} style={styles.listItem}>
-                  <Text style={styles.listTitle}>{edu.degree}</Text>
-                  <Text style={styles.listSub}>{edu.institution} • {edu.year}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>No education added yet</Text>
-            )}
-          </View>
-
-          {/* Availability */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Availability</Text>
-            <View style={[styles.availabilityBadge, { backgroundColor: profData?.availability === 'available' ? '#d1fae5' : '#fee2e2' }]}>
-              <Text style={[styles.availabilityText, { color: profData?.availability === 'available' ? '#059669' : '#dc2626' }]}>
-                {profData?.availability === 'available' ? '✓ Available for work' : '✗ Not available'}
-              </Text>
-            </View>
-          </View>
-
-          {/* QR Hire */}
-          <TouchableOpacity style={styles.qrCard} onPress={() => router.push('/(os)/profile/qr')}>
-            <Ionicons name="qr-code-outline" size={24} color="#f59e0b" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.qrTitle}>Share Professional Card</Text>
-              <Text style={styles.qrSub}>Scan QR to view CV, Portfolio, and Hire</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1a1a1a' },
-  content: { padding: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
-  cardTitle: { fontSize: 12, fontWeight: '700', color: '#9ca3af', letterSpacing: 1, marginBottom: 8 },
-  cardText: { fontSize: 15, color: '#333', lineHeight: 22 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  tagText: { fontSize: 12, color: '#6366f1', fontWeight: '500' },
-  listItem: { marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  listTitle: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
-  listSub: { fontSize: 13, color: '#888', marginTop: 2 },
-  emptyText: { fontSize: 14, color: '#aaa', fontStyle: 'italic' },
-  availabilityBadge: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start' },
-  availabilityText: { fontSize: 13, fontWeight: '600' },
-  qrCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 24 },
-  qrTitle: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
-  qrSub: { fontSize: 12, color: '#888', marginTop: 2 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#333', marginTop: 16, marginBottom: 16, textAlign: 'center' },
-  button: { backgroundColor: '#f59e0b', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 10 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#f1f5f9', marginTop: 16 },
+  emptySub: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },
+  createBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 20 },
+  createBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  card: { backgroundColor: '#1e293b', margin: 16, padding: 20, borderRadius: 12 },
+  jobTitle: { fontSize: 20, fontWeight: '700', color: '#f1f5f9' },
+  company: { fontSize: 15, color: '#94a3b8', marginTop: 4 },
+  industry: { fontSize: 13, color: '#64748b', marginTop: 2 },
+  expBadge: { backgroundColor: '#3b82f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginTop: 12 },
+  expText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  section: { paddingHorizontal: 16, marginTop: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f1f5f9', marginBottom: 10 },
+  bioText: { fontSize: 14, color: '#94a3b8', lineHeight: 22 },
+  skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillChip: { backgroundColor: '#334155', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  skillText: { color: '#cbd5e1', fontSize: 13 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', padding: 16, borderRadius: 10 },
+  actionText: { flex: 1, fontSize: 15, color: '#f1f5f9', marginLeft: 12, fontWeight: '500' },
 });

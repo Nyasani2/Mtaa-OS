@@ -1,222 +1,163 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Dimensions
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-
-const { width: SCREEN_W } = Dimensions.get('window');
-
-interface Class {
-  id: string; name: string; grade: string; student_count: number;
-}
-interface PendingWork {
-  id: string; title: string; type: string; count: number; due_date: string;
-}
+import { useEducation } from '@/lib/hooks/useEducation';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function TeacherDashboard() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [pending, setPending] = useState<PendingWork[]>([]);
-  const [stats, setStats] = useState({ students: 0, classes: 0, assignments: 0 });
-  const [loading, setLoading] = useState(true);
+  const { getTeacherByUserId, getTeacherClasses, getTeacherAssignments, getPendingSubmissions } = useEducation();
+  const [teacher, setTeacher] = useState(null);
+  const [classes, setClasses] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const { data: teacher } = await supabase
-        .from('education_teachers')
-        .select('id, institution_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!teacher) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: cls } = await supabase
-        .from('education_classes')
-        .select('id, name, grade')
-        .eq('teacher_id', teacher.id)
-        .limit(5);
-
-      if (cls) {
-        const enriched = await Promise.all(
-          cls.map(async (c) => {
-            const { count } = await supabase
-              .from('education_students')
-              .select('*', { count: 'exact', head: true })
-              .eq('class_id', c.id);
-            return { ...c, student_count: count || 0 };
-          })
-        );
-        setClasses(enriched);
-        setStats(s => ({ ...s, classes: cls.length }));
-      }
-
-      const { data: pend } = await supabase
-        .from('education_submissions')
-        .select('id, assignment_id, created_at')
-        .eq('status', 'submitted')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (pend) {
-        const enriched = await Promise.all(
-          pend.map(async (p) => {
-            const { data: a } = await supabase
-              .from('education_assignments')
-              .select('title, due_date')
-              .eq('id', p.assignment_id)
-              .maybeSingle();
-            return {
-              id: p.id,
-              title: a?.title || 'Untitled',
-              type: 'Submission',
-              count: 1,
-              due_date: a?.due_date || p.created_at,
-            };
-          })
-        );
-        setPending(enriched);
-      }
-
-      const { count: stCount } = await supabase
-        .from('education_students')
-        .select('*', { count: 'exact', head: true })
-        .eq('institution_id', teacher.institution_id);
-      setStats(s => ({ ...s, students: stCount || 0 }));
-
-    } catch (err) {
-      console.error('Teacher dashboard error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  const loadData = async () => {
+    if (!user?.id) return;
+    const t = await getTeacherByUserId(user.id);
+    setTeacher(t);
+    if (t) {
+      const [c, a, s] = await Promise.all([
+        getTeacherClasses(t.id),
+        getTeacherAssignments(t.id),
+        getPendingSubmissions(t.id),
+      ]);
+      setClasses(c || []);
+      setAssignments(a || []);
+      setSubmissions(s || []);
     }
-  }, [user]);
+  };
 
-  useEffect(() => { loadData(); }, [loadData]);
-  const onRefresh = () => { setRefreshing(true); loadData(); };
+  useEffect(() => { loadData(); }, [user?.id]);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00d4ff" />
-      </View>
-    );
-  }
+  const pendingCount = submissions.filter(s => s.status === 'submitted').length;
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4ff" />}
-    >
-      <View style={styles.header}>
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}>
+      <LinearGradient colors={['#059669', '#10b981']} style={styles.header}>
         <Text style={styles.headerTitle}>Teacher Portal</Text>
-        <Text style={styles.headerSub}>Manage your classes and students</Text>
-      </View>
+        <Text style={styles.headerSubtitle}>{teacher?.full_name || 'Loading...'}</Text>
+        <Text style={styles.headerClass}>{teacher?.institution?.name || ''} • {teacher?.subjects?.join(', ') || ''}</Text>
+      </LinearGradient>
 
       <View style={styles.statsRow}>
-        <StatBox number={stats.students} label="Students" icon="people-outline" />
-        <StatBox number={stats.classes} label="Classes" icon="grid-outline" />
-        <StatBox number={pending.length} label="To Grade" icon="checkbox-outline" />
+        <StatCard icon="people-outline" label="My Classes" value={classes.length} color="#059669" />
+        <StatCard icon="document-text-outline" label="Assignments" value={assignments.length} color="#6366f1" />
+        <StatCard icon="mail-unread-outline" label="To Grade" value={pendingCount} color="#f59e0b" />
       </View>
 
-      <View style={styles.quickRow}>
-        <QuickAction icon="add-circle-outline" label="Create Course" onPress={() => router.push('/education/courses/create')} />
-        <QuickAction icon="create-outline" label="Assignment" onPress={() => router.push('/education/assignments/create')} />
-        <QuickAction icon="clipboard-outline" label="Exam" onPress={() => router.push('/education/exams/create')} />
-        <QuickAction icon="checkbox-outline" label="Attendance" onPress={() => router.push('/education/attendance')} />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Classes</Text>
+      <Section title="My Classes" icon="school-outline" action="Manage" onAction={() => router.push('/(education)/classes')}>
         {classes.length === 0 ? (
           <Text style={styles.emptyText}>No classes assigned yet</Text>
         ) : (
-          classes.map(c => (
-            <TouchableOpacity key={c.id} style={styles.classCard} onPress={() => router.push(`/education/courses/${c.id}`)}>
+          classes.map((cls, i) => (
+            <TouchableOpacity key={i} style={styles.classRow} onPress={() => router.push(`/(education)/classes/${cls.id}`)}>
               <View style={styles.classIcon}>
-                <Ionicons name="school" size={24} color="#00d4ff" />
+                <Text style={styles.classIconText}>{cls.name?.charAt(0)}</Text>
               </View>
               <View style={styles.classInfo}>
-                <Text style={styles.className}>{c.name}</Text>
-                <Text style={styles.classMeta}>Grade {c.grade} · {c.student_count} students</Text>
+                <Text style={styles.className}>{cls.name}</Text>
+                <Text style={styles.classMeta}>{cls.student_count || 0} students • {cls.stream || ''}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#888" />
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
             </TouchableOpacity>
           ))
         )}
-      </View>
+      </Section>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pending to Grade</Text>
-        {pending.length === 0 ? (
-          <Text style={styles.emptyText}>All caught up!</Text>
+      <Section title="Pending Submissions" icon="alert-circle-outline" action="Grade All" onAction={() => router.push('/(education)/submissions')}>
+        {submissions.length === 0 ? (
+          <Text style={styles.emptyText}>All caught up! 🎉</Text>
         ) : (
-          pending.map(p => (
-            <TouchableOpacity key={p.id} style={styles.pendingCard} onPress={() => router.push('/education/grades')}>
-              <Ionicons name="alert-circle" size={20} color="#ffaa00" />
-              <View style={styles.pendingInfo}>
-                <Text style={styles.pendingTitle}>{p.title}</Text>
-                <Text style={styles.pendingMeta}>{p.type} · Due {new Date(p.due_date).toLocaleDateString()}</Text>
+          submissions.slice(0, 5).map((sub, i) => (
+            <TouchableOpacity key={i} style={styles.submissionRow} onPress={() => router.push(`/(education)/submissions/${sub.id}`)}>
+              <View>
+                <Text style={styles.subStudent}>{sub.student?.full_name}</Text>
+                <Text style={styles.subAssignment}>{sub.assignment?.title}</Text>
               </View>
+              <Text style={styles.subDate}>{formatDate(sub.submitted_at)}</Text>
             </TouchableOpacity>
           ))
         )}
+      </Section>
+
+      <View style={styles.quickActions}>
+        <QuickAction icon="add-circle-outline" label="Create Assignment" onPress={() => router.push('/(education)/assignments/create')} color="#6366f1" />
+        <QuickAction icon="checkbox-outline" label="Mark Attendance" onPress={() => router.push('/(education)/attendance')} color="#059669" />
+        <QuickAction icon="calendar-outline" label="Timetable" onPress={() => router.push('/(education)/timetable')} color="#f59e0b" />
+        <QuickAction icon="chatbubble-outline" label="Messages" onPress={() => router.push('/(education)/messages')} color="#8b5cf6" />
       </View>
     </ScrollView>
   );
 }
 
-function StatBox({ number, label, icon }: { number: number; label: string; icon: string }) {
+function StatCard({ icon, label, value, color }) {
   return (
-    <View style={styles.statBox}>
-      <Ionicons name={icon as any} size={24} color="#00d4ff" />
-      <Text style={styles.statNumber}>{number}</Text>
+    <View style={[styles.statCard, { borderTopColor: color }]}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function QuickAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+function Section({ title, icon, action, onAction, children }) {
   return (
-    <TouchableOpacity style={styles.quickBtn} onPress={onPress}>
-      <Ionicons name={icon as any} size={24} color="#00d4ff" />
-      <Text style={styles.quickLabel}>{label}</Text>
+    <View style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <Ionicons name={icon} size={18} color="#374151" />
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {action && <TouchableOpacity onPress={onAction}><Text style={styles.sectionAction}>{action}</Text></TouchableOpacity>}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function QuickAction({ icon, label, onPress, color }) {
+  return (
+    <TouchableOpacity style={styles.quickAction} onPress={onPress}>
+      <Ionicons name={icon} size={24} color={color} />
+      <Text style={[styles.quickActionLabel, { color }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
+function formatDate(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#111', borderBottomWidth: 1, borderBottomColor: '#222' },
-  headerTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
-  headerSub: { color: '#888', fontSize: 14, marginTop: 4 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around', padding: 16, backgroundColor: '#111', marginBottom: 8 },
-  statBox: { alignItems: 'center', padding: 12 },
-  statNumber: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 8 },
-  statLabel: { color: '#888', fontSize: 12, marginTop: 2 },
-  quickRow: { flexDirection: 'row', justifyContent: 'space-around', padding: 16, backgroundColor: '#111', marginBottom: 8 },
-  quickBtn: { alignItems: 'center', padding: 12 },
-  quickLabel: { color: '#ccc', fontSize: 12, marginTop: 6 },
-  section: { padding: 16, marginBottom: 8 },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 12 },
-  emptyText: { color: '#666', fontSize: 14, fontStyle: 'italic' },
-  classCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 10 },
-  classIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' },
-  classInfo: { flex: 1, marginLeft: 12 },
-  className: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  classMeta: { color: '#888', fontSize: 13, marginTop: 2 },
-  pendingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10 },
-  pendingInfo: { marginLeft: 12, flex: 1 },
-  pendingTitle: { color: '#fff', fontSize: 15, fontWeight: '500' },
-  pendingMeta: { color: '#888', fontSize: 12, marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  header: { padding: 24, paddingTop: 60 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
+  headerSubtitle: { fontSize: 18, color: 'rgba(255,255,255,0.9)', marginTop: 4 },
+  headerClass: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  statsRow: { flexDirection: 'row', padding: 16, gap: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center', borderTopWidth: 3, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  statValue: { fontSize: 20, fontWeight: '700', marginTop: 8 },
+  statLabel: { fontSize: 12, color: '#6b7280', marginTop: 4 },
+  section: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 16, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111827', marginLeft: 8 },
+  sectionAction: { fontSize: 13, color: '#6366f1', fontWeight: '600' },
+  emptyText: { color: '#9ca3af', fontSize: 14, textAlign: 'center', paddingVertical: 16 },
+  classRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  classIcon: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  classIconText: { fontSize: 16, fontWeight: '700', color: '#6366f1' },
+  classInfo: { flex: 1 },
+  className: { fontSize: 15, fontWeight: '600', color: '#111827' },
+  classMeta: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  submissionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  subStudent: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  subAssignment: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  subDate: { fontSize: 12, color: '#9ca3af' },
+  quickActions: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12, marginBottom: 32 },
+  quickAction: { width: '47%', backgroundColor: '#fff', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  quickActionLabel: { fontSize: 13, fontWeight: '600' },
 });

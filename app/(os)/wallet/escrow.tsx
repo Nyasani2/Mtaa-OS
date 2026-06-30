@@ -317,7 +317,7 @@ export default function EscrowScreen() {
 
                 {escrow.qr_code_id && (
                   <TouchableOpacity
-                    onPress={() => router.push(`/wallet/qr?escrow=${escrow.id}`)}
+                    onPress={() => router.push(`/(os)/wallet/qr?escrow=${escrow.id}`)}
                     style={{ backgroundColor: "#334155", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
                   >
                     <QrCode size={14} color="#3b82f6" />

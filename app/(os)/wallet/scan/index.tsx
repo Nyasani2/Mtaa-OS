@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Alert
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
 export default function ScanScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [scanData, setScanData] = useState<string | null>(null);
 
   useEffect(() => {
     if (!permission?.granted) {
@@ -21,108 +21,103 @@ export default function ScanScreen() {
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     if (scanned) return;
     setScanned(true);
-    setScanData(data);
 
-    // Parse QR data — expecting format: mtaa://pay?to=...&amount=...
     try {
-      if (data.startsWith('mtaa://')) {
-        const url = new URL(data);
-        const to = url.searchParams.get('to');
-        const amount = url.searchParams.get('amount');
-        const till = url.searchParams.get('till');
-
-        if (till) {
-          router.push({
-            pathname: '/wallet/transfer',
-            params: { recipient: till, type: 'till', amount: amount || '' }
-          });
-        } else if (to) {
-          router.push({
-            pathname: '/wallet/transfer',
-            params: { recipient: to, type: 'wallet', amount: amount || '' }
-          });
-        }
+      const parsed = JSON.parse(data);
+      if (parsed.type === 'payment') {
+        router.push({
+          pathname: '/(os)/wallet/qr-pay',
+          params: { recipient: parsed.recipient, amount: parsed.amount }
+        });
+      } else if (parsed.type === 'escrow') {
+        router.push({
+          pathname: '/(os)/wallet/escrow',
+          params: { escrowId: parsed.escrowId }
+        });
       } else {
-        Alert.alert('QR Scanned', `Data: ${data}`, [
-          { text: 'OK', onPress: () => setScanned(false) }
-        ]);
+        router.push({
+          pathname: '/(os)/wallet/qr-action',
+          params: { data }
+        });
       }
     } catch {
-      Alert.alert('Invalid QR', 'This QR code is not a valid MTAA payment code.', [
-        { text: 'Scan Again', onPress: () => setScanned(false) }
-      ]);
+      // Not JSON — treat as plain QR data
+      router.push({
+        pathname: '/(os)/wallet/qr-action',
+        params: { data }
+      });
     }
   };
 
   if (!permission?.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Camera Permission Required</Text>
-        <Text style={styles.subtitle}>We need camera access to scan QR codes for payments.</Text>
-        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <Ionicons name="camera-outline" size={48} color="#8E8E93" />
+          <Text style={styles.permissionText}>Camera permission required</Text>
+          <TouchableOpacity style={styles.permissionBtn} onPress={requestPermission}>
+            <Text style={styles.permissionBtnText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Scan to Pay</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <View style={styles.cameraContainer}>
-        <CameraView
-          style={styles.camera}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        >
-          <View style={styles.overlay}>
-            <View style={styles.scanFrame} />
+    <SafeAreaView style={styles.container}>
+      <CameraView
+        style={styles.camera}
+        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+      >
+        {/* Overlay */}
+        <View style={styles.overlay}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Scan QR Code</Text>
+            <View style={{ width: 40 }} />
           </View>
-          {scanned && (
-            <View style={styles.scanningOverlay}>
-              <ActivityIndicator color="#fff" size="large" />
-              <Text style={styles.scanningText}>Processing...</Text>
-            </View>
-          )}
-        </CameraView>
-      </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.hint}>Align QR code within the frame to scan</Text>
-        {scanned && (
-          <TouchableOpacity style={styles.scanAgainBtn} onPress={() => setScanned(false)}>
-            <Text style={styles.scanAgainText}>Scan Again</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
+          <View style={styles.scanFrame}>
+            <View style={[styles.corner, styles.cornerTL]} />
+            <View style={[styles.corner, styles.cornerTR]} />
+            <View style={[styles.corner, styles.cornerBL]} />
+            <View style={[styles.corner, styles.cornerBR]} />
+          </View>
+
+          <Text style={styles.hint}>Align QR code within the frame</Text>
+
+          {scanned && (
+            <TouchableOpacity style={styles.rescanBtn} onPress={() => setScanned(false)}>
+              <Text style={styles.rescanText}>Tap to scan again</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </CameraView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  subtitle: { color: '#9ca3af', textAlign: 'center', marginTop: 8, paddingHorizontal: 32 },
-  btn: { backgroundColor: '#6366f1', marginHorizontal: 32, padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 24 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  cameraContainer: { flex: 1, margin: 16, borderRadius: 24, overflow: 'hidden' },
+  container: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  scanFrame: { width: 250, height: 250, borderWidth: 2, borderColor: '#6366f1', borderRadius: 16, backgroundColor: 'transparent' },
-  scanningOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
-  scanningText: { color: '#fff', marginTop: 12, fontSize: 16 },
-  footer: { padding: 24, alignItems: 'center' },
-  hint: { color: '#9ca3af', fontSize: 14 },
-  scanAgainBtn: { marginTop: 12, backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 20 },
-  scanAgainText: { color: '#fff', fontWeight: '600' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'space-between', padding: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20 },
+  backBtn: { padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
+  scanFrame: { width: 250, height: 250, alignSelf: 'center', justifyContent: 'center', alignItems: 'center' },
+  corner: { position: 'absolute', width: 30, height: 30, borderColor: '#22C55E', borderWidth: 3 },
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 12 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 12 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 12 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 12 },
+  hint: { textAlign: 'center', color: '#fff', fontSize: 14, marginBottom: 40 },
+  rescanBtn: { alignSelf: 'center', backgroundColor: '#22C55E', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginBottom: 40 },
+  rescanText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  permissionText: { fontSize: 16, color: '#8E8E93', marginTop: 16 },
+  permissionBtn: { marginTop: 20, backgroundColor: '#22C55E', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  permissionBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

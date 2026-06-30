@@ -1,9 +1,5 @@
 import { Stack } from 'expo-router';
 
-export default function MediaLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="gallery" />
-    </Stack>
-  );
+export default function PlaceholderLayout() {
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

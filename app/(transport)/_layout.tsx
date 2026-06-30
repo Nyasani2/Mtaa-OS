@@ -1,10 +1,5 @@
 import { Stack } from 'expo-router';
 
-export default function TransportLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="mtaxi" />
-      <Stack.Screen name="mtruck" />
-    </Stack>
-  );
+export default function PlaceholderLayout() {
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

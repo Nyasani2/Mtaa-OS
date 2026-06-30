@@ -1,189 +1,136 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { useShipperStore } from '@/lib/mtruck/stores/useShipperStore';
-import { useIdentity } from '@/lib/auth/identity';
-import { Truck, Package, MapPin, Clock, TrendingUp, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 
-export default function MTruckHome() {
+export default function MTruckScreen() {
   const router = useRouter();
-  const { user } = useIdentity();
-  const { requests, jobs, isLoading, error, loadRequests, loadJobs, clearError } = useShipperStore();
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [haulType, setHaulType] = useState<'local' | 'longhaul' | 'heavy'>('local');
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    if (user?.id) {
-      await loadRequests(user.id);
-      await loadJobs(user.id);
-    }
-    setRefreshing(false);
-  }, [user?.id]);
+  const mapHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    var map = L.map('map').setView([-1.2921, 36.8219], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-  const activeJobs = jobs.filter((j) => ['accepted','assigned','pickup','in_transit'].includes(j.status));
-  const completedJobs = jobs.filter((j) => ['delivered','completed'].includes(j.status));
-  const pendingRequests = requests.filter((r) => r.status === 'pending');
+    // Sample truck markers
+    L.marker([-1.2921, 36.8219]).addTo(map).bindPopup('Depot');
+    L.marker([-1.3500, 36.7800]).addTo(map).bindPopup('Destination A');
+    L.marker([-1.2500, 36.9000]).addTo(map).bindPopup('Destination B');
+
+    var latlngs = [[-1.2921, 36.8219], [-1.3500, 36.7800]];
+    L.polyline(latlngs, {color: '#84CC16', weight: 5, dashArray: '10, 10'}).addTo(map);
+  </script>
+</body>
+</html>
+  `;
+
+  const prices = { local: 3500, longhaul: 15000, heavy: 25000 };
 
   return (
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>MTruck</Text>
-        <Text style={styles.headerSubtitle}>Freight & Heavy Haulage</Text>
+        <TouchableOpacity onPress={() => router.push('/(mtruck)/haul-history')}>
+          <Ionicons name="time-outline" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.actionsRow}>
-        <Pressable style={styles.actionCard} onPress={() => router.push('/request-haul')}>
-          <Truck size={28} color="#4f46e5" />
-          <Text style={styles.actionText}>Request Haul</Text>
-        </Pressable>
-        <Pressable style={styles.actionCard} onPress={() => router.push('/haul-history')}>
-          <Clock size={28} color="#d97706" />
-          <Text style={styles.actionText}>History</Text>
-        </Pressable>
-        <Pressable style={styles.actionCard} onPress={() => router.push('/equipment')}>
-          <Package size={28} color="#059669" />
-          <Text style={styles.actionText}>Equipment</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{activeJobs.length}</Text>
-          <Text style={styles.statLabel}>Active</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{completedJobs.length}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{pendingRequests.length}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-      </View>
-
-      {error && (
-        <View style={styles.errorBox}>
-          <AlertCircle size={16} color="#ef4444" />
-          <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={clearError}><Text style={styles.errorDismiss}>Dismiss</Text></Pressable>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Active Deliveries</Text>
-        {activeJobs.length === 0 ? (
-          <View style={styles.emptyState}>
-            <MapPin size={32} color="#6b7280" />
-            <Text style={styles.emptyText}>No active deliveries</Text>
-            <Pressable style={styles.emptyButton} onPress={() => router.push('/request-haul')}>
-              <Text style={styles.emptyButtonText}>Request a Haul</Text>
-            </Pressable>
+      <View style={styles.mapContainer}>
+        <WebView
+          originWhitelist={['*']}
+          source={{ html: mapHtml }}
+          style={styles.map}
+          onLoad={() => setLoading(false)}
+        />
+        {loading && (
+          <View style={styles.mapLoading}>
+            <ActivityIndicator size="large" color="#84CC16" />
+            <Text style={styles.mapLoadingText}>Loading logistics map...</Text>
           </View>
-        ) : (
-          activeJobs.map((job) => (
-            <Pressable key={job.id} style={styles.jobCard}
-              onPress={() => router.push({ pathname: '/haul-tracking', params: { jobId: job.id } })}>
-              <View style={styles.jobHeader}>
-                <Text style={styles.jobCargo}>{job.cargoType}</Text>
-                <View style={[styles.badge, { backgroundColor: getStatusColor(job.status) }]}>
-                  <Text style={styles.badgeText}>{job.status.replace('_', ' ')}</Text>
-                </View>
-              </View>
-              <View style={styles.jobRoute}>
-                <MapPin size={14} color="#4f46e5" />
-                <Text style={styles.routeText} numberOfLines={1}>
-                  {job.origin.address} → {job.destination.address}
-                </Text>
-              </View>
-              <View style={styles.jobMeta}>
-                <Text style={styles.metaText}>{job.weightKg.toLocaleString()} kg</Text>
-                <Text style={styles.metaText}>•</Text>
-                <Text style={styles.metaText}>{job.distanceKm} km</Text>
-                {job.etaMinutes && (
-                  <><Text style={styles.metaText}>•</Text>
-                  <Text style={styles.metaText}>ETA {Math.round(job.etaMinutes)} min</Text></>
-                )}
-              </View>
-              <ChevronRight size={16} color="#6b7280" style={styles.chevron} />
-            </Pressable>
-          ))
         )}
       </View>
 
-      {pendingRequests.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pending Quotes</Text>
-          {pendingRequests.map((req) => (
-            <View key={req.id} style={styles.requestCard}>
-              <View style={styles.requestHeader}>
-                <Text style={styles.requestCargo}>{req.cargoType}</Text>
-                <Text style={styles.requestWeight}>{req.weightKg.toLocaleString()} kg</Text>
-              </View>
-              <Text style={styles.requestRoute}>{req.originAddress} → {req.destAddress}</Text>
-              <Text style={styles.requestDate}>Pickup: {new Date(req.pickupDate).toLocaleDateString()}</Text>
-              {req.quotes.length > 0 && (
-                <View style={styles.quoteBadge}>
-                  <TrendingUp size={12} color="#059669" />
-                  <Text style={styles.quoteText}>{req.quotes.length} quote{req.quotes.length > 1 ? 's' : ''} received</Text>
-                </View>
-              )}
-            </View>
+      <View style={styles.haulPanel}>
+        <Text style={styles.panelTitle}>Request Haul</Text>
+
+        <View style={styles.haulTypes}>
+          {(['local', 'longhaul', 'heavy'] as const).map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[styles.haulOption, haulType === type && styles.haulOptionActive]}
+              onPress={() => setHaulType(type)}
+            >
+              <Ionicons
+                name={type === 'local' ? 'car-outline' : type === 'longhaul' ? 'bus-outline' : 'cube-outline'}
+                size={24}
+                color={haulType === type ? '#84CC16' : '#94a3b8'}
+              />
+              <Text style={[styles.haulTypeName, haulType === type && styles.haulTypeNameActive]}>
+                {type === 'longhaul' ? 'Long Haul' : type.charAt(0).toUpperCase() + type.slice(1)}
+              </Text>
+              <Text style={styles.haulPrice}>From KES {prices[type].toLocaleString()}</Text>
+            </TouchableOpacity>
           ))}
         </View>
-      )}
-    </ScrollView>
+
+        <TouchableOpacity style={styles.requestBtn} onPress={() => router.push('/(mtruck)/request-haul')}>
+          <Text style={styles.requestBtnText}>Request {haulType === 'longhaul' ? 'Long Haul' : haulType} — KES {prices[haulType].toLocaleString()}</Text>
+        </TouchableOpacity>
+
+        <View style={styles.quickActions}>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => router.push('/(mtruck)/equipment')}>
+            <Ionicons name="construct-outline" size={20} color="#84CC16" />
+            <Text style={styles.quickBtnText}>Equipment</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => router.push('/(mtruck)/haul-tracking')}>
+            <Ionicons name="navigate-outline" size={20} color="#3b82f6" />
+            <Text style={styles.quickBtnText}>Track</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'accepted': return '#4f46e5';
-    case 'assigned': return '#7c3aed';
-    case 'pickup': return '#d97706';
-    case 'in_transit': return '#059669';
-    case 'delivered': return '#0891b2';
-    case 'completed': return '#10b981';
-    default: return '#6b7280';
-  }
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f23' },
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#1a1a2e' },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 4 },
-  actionsRow: { flexDirection: 'row', padding: 16, gap: 12 },
-  actionCard: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2d2d44' },
-  actionText: { fontSize: 12, color: '#e5e7eb', marginTop: 8, fontWeight: '600' },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 16 },
-  statBox: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2d2d44' },
-  statNumber: { fontSize: 24, fontWeight: '800', color: '#fff' },
-  statLabel: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
-  errorBox: { margin: 16, backgroundColor: '#450a0a', borderRadius: 8, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  errorText: { flex: 1, color: '#fca5a5', fontSize: 13 },
-  errorDismiss: { color: '#f87171', fontSize: 12, fontWeight: '600' },
-  section: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
-  emptyState: { backgroundColor: '#1a1a2e', borderRadius: 12, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#2d2d44' },
-  emptyText: { color: '#9ca3af', marginTop: 12, fontSize: 14 },
-  emptyButton: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  emptyButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  jobCard: { backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#2d2d44' },
-  jobHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  jobCargo: { fontSize: 16, fontWeight: '700', color: '#fff', flex: 1 },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: '700', color: '#fff', textTransform: 'capitalize' },
-  jobRoute: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  routeText: { color: '#d1d5db', fontSize: 13, flex: 1 },
-  jobMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaText: { color: '#9ca3af', fontSize: 12 },
-  chevron: { position: 'absolute', right: 16, top: '50%', marginTop: -8 },
-  requestCard: { backgroundColor: '#1a1a2e', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#2d2d44' },
-  requestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  requestCargo: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  requestWeight: { fontSize: 13, color: '#9ca3af' },
-  requestRoute: { color: '#d1d5db', fontSize: 13, marginBottom: 4 },
-  requestDate: { color: '#9ca3af', fontSize: 12 },
-  quoteBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  quoteText: { color: '#059669', fontSize: 12, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e3a5f', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  mapContainer: { flex: 1, position: 'relative' },
+  map: { flex: 1 },
+  mapLoading: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9' },
+  mapLoadingText: { marginTop: 8, color: '#94a3b8', fontSize: 14 },
+  haulPanel: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, paddingBottom: 30 },
+  panelTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 12 },
+  haulTypes: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  haulOption: { flex: 1, alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0' },
+  haulOptionActive: { borderColor: '#84CC16', backgroundColor: '#84CC1610' },
+  haulTypeName: { fontSize: 12, color: '#64748b', marginTop: 4 },
+  haulTypeNameActive: { color: '#84CC16', fontWeight: '600' },
+  haulPrice: { fontSize: 13, fontWeight: 'bold', color: '#1e293b', marginTop: 2 },
+  requestBtn: { backgroundColor: '#84CC16', borderRadius: 12, padding: 16, alignItems: 'center' },
+  requestBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  quickActions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  quickBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 10, backgroundColor: '#f1f5f9', borderRadius: 10 },
+  quickBtnText: { fontSize: 12, color: '#475569', fontWeight: '500' },
 });
