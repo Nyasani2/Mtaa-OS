@@ -1,23 +1,34 @@
-# Profile Route Fix
+# Profile Complete Fix — MTAA OS V10
 
-## Problem
-The [id].tsx dynamic route was catching /privacy and /earnings before static routes could match.
-This caused "invalid input syntax for type uuid" errors.
+## What Was Broken
 
-## Solution
-Created explicit static route files:
-- app/(os)/profile/privacy.tsx  → Privacy & Security screen
-- app/(os)/profile/earnings.tsx → Creator Earnings screen  
-- app/(os)/profile/messages.tsx → Messages screen
+1. **Auth store queried `profiles` table** — but your schema has `user_profiles`. Profile was always `null`.
+2. **Profile index imported from `@/lib/supabase/client`** — file doesn't exist. Should be `@/lib/supabase`.
+3. **`refreshProfile` didn't exist** in auth store — Profile index called it, got `undefined`.
+4. **Edit screen never refreshed auth store** after save — new avatar not reflected on Profile index.
+
+## What Was Fixed
+
+| File | Fix |
+|------|-----|
+| `lib/auth/store/auth.store.ts` | Query `user_profiles` instead of `profiles`; added `refreshProfile()` method |
+| `app/(os)/profile/index.tsx` | Fixed import path; `refreshProfile` now works |
+| `app/(os)/profile/edit.tsx` | Calls `refreshProfile()` after avatar upload + after profile save |
 
 ## Install
+
 ```bash
 cd ~/MTAA_OS_V10
-bash install.sh
-npx expo start --clear
+mv ~/Downloads/profile-complete-fix.zip ./
+unzip -o profile-complete-fix.zip
+npx tsc --noEmit
+rm profile-complete-fix.zip
 ```
 
-## Notes
-- Messages routes to a new screen in the profile folder
-- If you have an existing messages app at app/(os)/messages/, update the router.push in profile/index.tsx to point there instead
-- Settings route in profile/index.tsx goes to /(os)/settings which is correct
+## Test
+
+1. Open Profile — your name, bio, avatar should now load (was blank before)
+2. Tap Edit Profile
+3. Change avatar — upload should work, avatar stays visible
+4. Tap Save — should save and navigate back
+5. Profile index should show new avatar immediately

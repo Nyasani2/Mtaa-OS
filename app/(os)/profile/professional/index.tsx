@@ -1,103 +1,215 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { Ionicons } from '@expo/vector-icons';
 
-interface ProfProfile { id: string; job_title: string; company: string | null; industry: string | null; years_experience: number; skills: string[]; bio: string | null; linkedin_url: string | null; portfolio_url: string | null; is_public: boolean; }
+interface ProfessionalProfile {
+  id: string;
+  user_id: string;
+  job_title: string;
+  company: string;
+  industry: string;
+  years_experience: number;
+  skills: string[];
+  bio: string;
+  linkedin_url: string;
+  portfolio_url: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export default function ProfessionalIndexScreen() {
+export default function ProfessionalScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [profile, setProfile] = useState<ProfProfile | null>(null);
+  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [tableExists, setTableExists] = useState(true);
 
   const fetchProfile = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.from('professional_profiles').select('*').eq('user_id', user.id).single();
-      if (error && error.code !== 'PGRST116') throw error;
+      const { data, error } = await supabase
+        .from('professional_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        if (error.message?.includes('does not exist') || error.code === '42P01') {
+          setTableExists(false);
+          setProfile(null);
+        } else {
+          console.error('Professional profile fetch error:', error);
+        }
+        setLoading(false);
+        return;
+      }
+
       setProfile(data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); setRefreshing(false); }
+      setTableExists(true);
+    } catch (err) {
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
-  if (loading) return <View style={styles.container}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#3b82f6" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!tableExists) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>Professional</Text>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Ionicons name="briefcase-outline" size={64} color="#333" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 16 }}>
+            Professional Profiles Not Available
+          </Text>
+          <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', marginTop: 8 }}>
+            The professional_profiles table has not been created in your database yet.{'\n'}
+            Run the SQL migration to enable this feature.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!profile) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
-          <Text style={styles.headerTitle}>Professional Profile</Text>
-          <View style={{ width: 24 }} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>Professional</Text>
         </View>
-        <View style={styles.emptyState}>
-          <Ionicons name="briefcase" size={48} color="#334155" />
-          <Text style={styles.emptyTitle}>No Professional Profile</Text>
-          <Text style={styles.emptySub}>Set up your professional profile to showcase your career</Text>
-          <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/profile/professional/edit')}><Text style={styles.createBtnText}>Create Profile</Text></TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Ionicons name="briefcase-outline" size={64} color="#333" />
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 16 }}>
+            No Professional Profile
+          </Text>
+          <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', marginTop: 8, marginBottom: 24 }}>
+            Set up your professional profile to showcase your career
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/profile/professional/edit' as any)}
+            style={{
+              backgroundColor: '#3b82f6',
+              paddingHorizontal: 32,
+              paddingVertical: 14,
+              borderRadius: 12,
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Create Profile</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchProfile(); }} tintColor="#3b82f6" />}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Professional</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit')}><Ionicons name="create-outline" size={22} color="#3b82f6" /></TouchableOpacity>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.jobTitle}>{profile.job_title}</Text>
-        {profile.company && <Text style={styles.company}>{profile.company}</Text>}
-        {profile.industry && <Text style={styles.industry}>{profile.industry}</Text>}
-        <View style={styles.expBadge}><Text style={styles.expText}>{profile.years_experience} years experience</Text></View>
-      </View>
-      {profile.bio && <View style={styles.section}><Text style={styles.sectionTitle}>Bio</Text><Text style={styles.bioText}>{profile.bio}</Text></View>}
-      {profile.skills && profile.skills.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Skills</Text>
-          <View style={styles.skillsContainer}>
-            {profile.skills.map((skill, i) => <View key={i} style={styles.skillChip}><Text style={styles.skillText}>{skill}</Text></View>)}
-          </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+      <ScrollView style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', flex: 1 }}>Professional</Text>
+          <TouchableOpacity onPress={() => router.push('/profile/professional/edit' as any)}>
+            <Ionicons name="create-outline" size={22} color="#3b82f6" />
+          </TouchableOpacity>
         </View>
-      )}
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/professional/dashboard')}>
-          <Ionicons name="stats-chart" size={20} color="#3b82f6" /><Text style={styles.actionText}>Career Dashboard</Text><Ionicons name="chevron-forward" size={18} color="#64748b" />
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={{ padding: 16 }}>
+          <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+            <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>{profile.job_title}</Text>
+            {profile.company ? (
+              <Text style={{ color: '#888', fontSize: 16, marginTop: 4 }}>{profile.company}</Text>
+            ) : null}
+            {profile.industry ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                <Ionicons name="business-outline" size={14} color="#666" />
+                <Text style={{ color: '#666', fontSize: 13, marginLeft: 4 }}>{profile.industry}</Text>
+              </View>
+            ) : null}
+            {profile.years_experience ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Ionicons name="time-outline" size={14} color="#666" />
+                <Text style={{ color: '#666', fontSize: 13, marginLeft: 4 }}>
+                  {profile.years_experience} years experience
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {profile.bio ? (
+            <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <Text style={{ color: '#888', fontSize: 12, textTransform: 'uppercase', marginBottom: 8 }}>About</Text>
+              <Text style={{ color: '#ccc', fontSize: 14, lineHeight: 20 }}>{profile.bio}</Text>
+            </View>
+          ) : null}
+
+          {profile.skills && profile.skills.length > 0 ? (
+            <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <Text style={{ color: '#888', fontSize: 12, textTransform: 'uppercase', marginBottom: 8 }}>Skills</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {profile.skills.map((skill, i) => (
+                  <View key={i} style={{ backgroundColor: '#252525', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
+                    <Text style={{ color: '#ccc', fontSize: 13 }}>{skill}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {(profile.linkedin_url || profile.portfolio_url) ? (
+            <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16 }}>
+              <Text style={{ color: '#888', fontSize: 12, textTransform: 'uppercase', marginBottom: 8 }}>Links</Text>
+              {profile.linkedin_url ? (
+                <TouchableOpacity onPress={() => Alert.alert('Open Link', profile.linkedin_url || '')} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <Ionicons name="logo-linkedin" size={18} color="#3b82f6" />
+                  <Text style={{ color: '#3b82f6', fontSize: 14, marginLeft: 8 }}>LinkedIn Profile</Text>
+                </TouchableOpacity>
+              ) : null}
+              {profile.portfolio_url ? (
+                <TouchableOpacity onPress={() => Alert.alert('Open Link', profile.portfolio_url || '')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="globe-outline" size={18} color="#3b82f6" />
+                  <Text style={{ color: '#3b82f6', fontSize: 14, marginLeft: 8 }}>Portfolio</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#f1f5f9', marginTop: 16 },
-  emptySub: { fontSize: 14, color: '#64748b', marginTop: 8, textAlign: 'center' },
-  createBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 20 },
-  createBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  card: { backgroundColor: '#1e293b', margin: 16, padding: 20, borderRadius: 12 },
-  jobTitle: { fontSize: 20, fontWeight: '700', color: '#f1f5f9' },
-  company: { fontSize: 15, color: '#94a3b8', marginTop: 4 },
-  industry: { fontSize: 13, color: '#64748b', marginTop: 2 },
-  expBadge: { backgroundColor: '#3b82f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start', marginTop: 12 },
-  expText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  section: { paddingHorizontal: 16, marginTop: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f1f5f9', marginBottom: 10 },
-  bioText: { fontSize: 14, color: '#94a3b8', lineHeight: 22 },
-  skillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  skillChip: { backgroundColor: '#334155', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  skillText: { color: '#cbd5e1', fontSize: 13 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', padding: 16, borderRadius: 10 },
-  actionText: { flex: 1, fontSize: 15, color: '#f1f5f9', marginLeft: 12, fontWeight: '500' },
-});
