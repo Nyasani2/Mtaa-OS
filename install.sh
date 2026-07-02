@@ -1,50 +1,72 @@
 #!/bin/bash
+# MTAA Streets Final Fix Installation Script
+# Run this from ~/MTAA_OS_V10
+
 set -e
 
-echo "=== MTAA Profile V2 Fix Installer ==="
+echo "=========================================="
+echo "MTAA STREETS FINAL FIX INSTALLER"
+echo "=========================================="
 echo ""
 
-# Backup
-mkdir -p app/\(os\)/profile/.backup_v2
-cp app/\(os\)/profile/edit.tsx app/\(os\)/profile/.backup_v2/edit.tsx 2>/dev/null || true
-cp app/\(os\)/profile/earnings.tsx app/\(os\)/profile/.backup_v2/earnings.tsx 2>/dev/null || true
-cp app/\(os\)/messages/index.tsx app/\(os\)/messages/.backup_v2_index.tsx 2>/dev/null || true
-
-echo "[1/5] Backed up existing files"
-
-# Copy fixed files
-cp edit.tsx app/\(os\)/profile/edit.tsx
-cp earnings.tsx app/\(os\)/profile/earnings.tsx
-cp messages.tsx app/\(os\)/messages/index.tsx
-
-echo "[2/5] Copied fixed files"
-
-# Delete duplicate messages.tsx under profile/ (dead code)
-if [ -f "app/\(os\)/profile/messages.tsx" ]; then
-    rm app/\(os\)/profile/messages.tsx
-    echo "[3/5] Deleted duplicate app/(os)/profile/messages.tsx"
-else
-    echo "[3/5] No duplicate messages.tsx found (good)"
+# Check we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: Run this script from ~/MTAA_OS_V10"
+    exit 1
 fi
 
-# Verify no conflicting flat files
-echo "[4/5] Checking for route conflicts..."
-for f in privacy earnings messages analytics; do
-    if [ -f "app/\(os\)/profile/${f}.tsx" ]; then
-        echo "  WARNING: Found conflicting flat file app/(os)/profile/${f}.tsx"
-    else
-        echo "  OK: No conflict for ${f}"
-    fi
-done
+echo "📁 Step 1: Backing up current files..."
+cp app/\(os\)/streets/feed.tsx app/\(os\)/streets/feed.tsx.bak.$(date +%s) 2>/dev/null || true
+cp domains/streets/components/CommentThread.tsx domains/streets/components/CommentThread.tsx.bak.$(date +%s) 2>/dev/null || true
+cp domains/streets/components/CreateModal.tsx domains/streets/components/CreateModal.tsx.bak.$(date +%s) 2>/dev/null || true
+cp domains/streets/components/InboxList.tsx domains/streets/components/InboxList.tsx.bak.$(date +%s) 2>/dev/null || true
+cp domains/streets/screens/CreateScreen.tsx domains/streets/screens/CreateScreen.tsx.bak.$(date +%s) 2>/dev/null || true
+cp domains/streets/screens/ShareScreen.tsx domains/streets/screens/ShareScreen.tsx.bak.$(date +%s) 2>/dev/null || true
 
-# List final state
-echo ""
-echo "[5/5] Final Profile Routes:"
-ls -la app/\(os\)/profile/*.tsx 2>/dev/null
+echo "📦 Step 2: Installing fixed files..."
+cp streets_final_fix/app/os/streets/feed.tsx app/\(os\)/streets/feed.tsx
+cp streets_final_fix/domains/streets/components/CommentThread.tsx domains/streets/components/CommentThread.tsx
+cp streets_final_fix/domains/streets/components/CreateModal.tsx domains/streets/components/CreateModal.tsx
+cp streets_final_fix/domains/streets/components/InboxList.tsx domains/streets/components/InboxList.tsx
+cp streets_final_fix/domains/streets/screens/CreateScreen.tsx domains/streets/screens/CreateScreen.tsx
+cp streets_final_fix/domains/streets/screens/ShareScreen.tsx domains/streets/screens/ShareScreen.tsx
+
+echo "🗑️  Step 3: Removing conflicting duplicate files..."
+# Remove the (tabs) duplicate that conflicts with the stack routes
+rm -f app/\(os\)/streets/\(tabs\)/feed.tsx 2>/dev/null || true
+rm -f app/\(os\)/streets/\(tabs\)/create.tsx 2>/dev/null || true
+rm -f app/\(os\)/streets/\(tabs\)/discover.tsx 2>/dev/null || true
+rm -f app/\(os\)/streets/\(tabs\)/inbox.tsx 2>/dev/null || true
+rm -f app/\(os\)/streets/\(tabs\)/profile.tsx 2>/dev/null || true
+
+echo "🗑️  Step 4: Removing old conflicting streets files..."
+rm -f lib/streets/index.ts 2>/dev/null || true
+rm -f lib/streets/components/StreetsShell.tsx 2>/dev/null || true
+rm -f lib_streets_index.ts 2>/dev/null || true
 
 echo ""
-echo "Final Messages Route:"
-ls -la app/\(os\)/messages/*.tsx 2>/dev/null
-
+echo "=========================================="
+echo "✅ FILES INSTALLED SUCCESSFULLY"
+echo "=========================================="
 echo ""
-echo "DONE. Run: npx expo start --clear"
+echo "⚠️  IMPORTANT: You must run the SQL in Supabase BEFORE testing:"
+echo ""
+echo "   1. Open Supabase Dashboard → SQL Editor"
+echo "   2. Open: streets_final_fix/sql/streets_schema_fix.sql"
+echo "   3. Run the entire script"
+echo ""
+echo "📋 What this fix does:"
+echo "   • Creates streets_posts, streets_likes, streets_comments tables"
+echo "   • Creates triggers for auto-counting likes/comments/shares"
+echo "   • Creates RLS policies for security"
+echo "   • Fixes feed.tsx (no broken imports, working comments nav)"
+echo "   • Fixes CommentThread (real data fetching, add/delete/like comments)"
+echo "   • Fixes CreateModal (accepts visible prop, inserts to correct table)"
+echo "   • Fixes CreateScreen (proper modal wrapper)"
+echo "   • Fixes ShareScreen (router import before styles)"
+echo "   • Fixes InboxList (TextInput import at top)"
+echo "   • Removes duplicate (tabs) routes that conflicted"
+echo ""
+echo "🚀 After SQL is run, restart:"
+echo "   npx expo start -c"
+echo ""

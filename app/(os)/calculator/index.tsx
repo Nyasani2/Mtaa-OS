@@ -1,36 +1,73 @@
-// app/(os)/calculator/index.tsx — MTAA OS Calculator
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
+
+const { width } = Dimensions.get('window');
+const BUTTON_SIZE = (width - 48) / 4;
 
 export default function CalculatorScreen() {
-  const router = useRouter();
   const [display, setDisplay] = useState('0');
-  const [prev, setPrev] = useState<string | null>(null);
-  const [op, setOp] = useState<string | null>(null);
-  const [newNum, setNewNum] = useState(true);
+  const [prevValue, setPrevValue] = useState<string | null>(null);
+  const [operator, setOperator] = useState<string | null>(null);
+  const [waitingForOperand, setWaitingForOperand] = useState(false);
 
-  const press = (val: string) => {
-    if (val === 'C') { setDisplay('0'); setPrev(null); setOp(null); setNewNum(true); return; }
-    if (val === '±') { setDisplay(String(Number(display) * -1)); return; }
-    if (val === '%') { setDisplay(String(Number(display) / 100)); return; }
-    if (['+', '-', '×', '÷'].includes(val)) { setPrev(display); setOp(val); setNewNum(true); return; }
-    if (val === '=') {
-      if (!prev || !op) return;
-      const a = Number(prev), b = Number(display);
-      let res = 0;
-      if (op === '+') res = a + b;
-      if (op === '-') res = a - b;
-      if (op === '×') res = a * b;
-      if (op === '÷') res = b !== 0 ? a / b : 0;
-      setDisplay(String(res).slice(0, 12));
-      setPrev(null); setOp(null); setNewNum(true);
+  const inputNumber = (num: string) => {
+    if (waitingForOperand) {
+      setDisplay(num);
+      setWaitingForOperand(false);
+    } else {
+      setDisplay(display === '0' ? num : display + num);
+    }
+  };
+
+  const inputDecimal = () => {
+    if (waitingForOperand) {
+      setDisplay('0.');
+      setWaitingForOperand(false);
       return;
     }
-    if (newNum) { setDisplay(val); setNewNum(false); }
-    else { setDisplay(display === '0' ? val : (display + val).slice(0, 12)); }
+    if (!display.includes('.')) {
+      setDisplay(display + '.');
+    }
+  };
+
+  const clear = () => {
+    setDisplay('0');
+    setPrevValue(null);
+    setOperator(null);
+    setWaitingForOperand(false);
+  };
+
+  const performOperation = (nextOperator: string) => {
+    const inputValue = parseFloat(display);
+
+    if (prevValue === null) {
+      setPrevValue(display);
+    } else if (operator) {
+      const currentValue = parseFloat(prevValue);
+      let newValue: number;
+
+      switch (operator) {
+        case '+': newValue = currentValue + inputValue; break;
+        case '-': newValue = currentValue - inputValue; break;
+        case '×': newValue = currentValue * inputValue; break;
+        case '÷': newValue = inputValue !== 0 ? currentValue / inputValue : 0; break;
+        default: newValue = inputValue;
+      }
+
+      setPrevValue(String(newValue));
+      setDisplay(String(newValue));
+    }
+
+    setWaitingForOperand(true);
+    setOperator(nextOperator);
+  };
+
+  const calculate = () => {
+    if (!operator || prevValue === null) return;
+    performOperation('=');
+    setOperator(null);
+    setPrevValue(null);
   };
 
   const buttons = [
@@ -41,28 +78,47 @@ export default function CalculatorScreen() {
     ['0', '.', '='],
   ];
 
+  const getButtonStyle = (btn: string) => {
+    if (['÷', '×', '-', '+', '='].includes(btn)) return [styles.button, styles.operatorButton];
+    if (['C', '±', '%'].includes(btn)) return [styles.button, styles.functionButton];
+    if (btn === '0') return [styles.button, styles.zeroButton];
+    return [styles.button, styles.numberButton];
+  };
+
+  const getTextStyle = (btn: string) => {
+    if (['÷', '×', '-', '+', '='].includes(btn)) return styles.operatorText;
+    if (['C', '±', '%'].includes(btn)) return styles.functionText;
+    return styles.numberText;
+  };
+
+  const handlePress = (btn: string) => {
+    if (btn >= '0' && btn <= '9') inputNumber(btn);
+    else if (btn === '.') inputDecimal();
+    else if (btn === 'C') clear();
+    else if (btn === '=') calculate();
+    else if (['+', '-', '×', '÷'].includes(btn)) performOperation(btn);
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Calculator</Text>
-        <View style={{ width: 40 }} />
+      {/* Display */}
+      <View style={styles.display}>
+        <Text style={styles.displayText} numberOfLines={1} adjustsFontSizeToFit>
+          {display}
+        </Text>
       </View>
-      <View style={styles.displayWrap}>
-        <Text style={styles.display}>{display}</Text>
-      </View>
-      <View style={styles.pad}>
-        {buttons.map((row, ri) => (
-          <View key={ri} style={styles.row}>
-            {row.map(btn => (
+
+      {/* Buttons */}
+      <View style={styles.buttonContainer}>
+        {buttons.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map((btn) => (
               <TouchableOpacity
                 key={btn}
-                style={[styles.btn, btn === '0' && styles.btnWide, ['+', '-', '×', '÷', '='].includes(btn) && styles.btnOp, ['C', '±', '%'].includes(btn) && styles.btnGray]}
-                onPress={() => press(btn)}
+                style={getButtonStyle(btn)}
+                onPress={() => handlePress(btn)}
               >
-                <Text style={[styles.btnText, ['+', '-', '×', '÷', '='].includes(btn) && styles.btnTextWhite]}>{btn}</Text>
+                <Text style={getTextStyle(btn)}>{btn}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -73,18 +129,28 @@ export default function CalculatorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.md, paddingTop: SIZES.xl, paddingBottom: SIZES.md },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  displayWrap: { flex: 1, justifyContent: 'flex-end', padding: SIZES.lg },
-  display: { fontFamily: FONTS.bold, fontSize: 64, color: COLORS.text, textAlign: 'right' },
-  pad: { padding: SIZES.md, paddingBottom: SIZES.xl },
-  row: { flexDirection: 'row', gap: SIZES.sm, marginBottom: SIZES.sm },
-  btn: { flex: 1, aspectRatio: 1, borderRadius: SIZES.md, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center' },
-  btnWide: { flex: 2.1, aspectRatio: undefined },
-  btnOp: { backgroundColor: COLORS.primary },
-  btnGray: { backgroundColor: '#3A3A3C' },
-  btnText: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.text },
-  btnTextWhite: { color: '#fff' },
+  container: { flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'flex-end' },
+  display: {
+    paddingHorizontal: 24, paddingVertical: 40,
+    alignItems: 'flex-end', justifyContent: 'center',
+  },
+  displayText: { color: '#fff', fontSize: 72, fontWeight: '300' },
+
+  buttonContainer: { paddingHorizontal: 12, paddingBottom: 30 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+
+  button: {
+    width: BUTTON_SIZE, height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  zeroButton: { width: BUTTON_SIZE * 2 + 12, alignItems: 'flex-start', paddingLeft: 28 },
+
+  numberButton: { backgroundColor: '#333' },
+  operatorButton: { backgroundColor: '#E91E63' },
+  functionButton: { backgroundColor: '#a5a5a5' },
+
+  numberText: { color: '#fff', fontSize: 28, fontWeight: '500' },
+  operatorText: { color: '#fff', fontSize: 32, fontWeight: '500' },
+  functionText: { color: '#0a0a0a', fontSize: 24, fontWeight: '500' },
 });

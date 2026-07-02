@@ -1,14 +1,11 @@
-// app/(os)/clock/index.tsx — MTAA OS Clock
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 export default function ClockScreen() {
-  const router = useRouter();
   const [time, setTime] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<'world' | 'alarm' | 'stopwatch' | 'timer'>('world');
+  const [activeTab, setActiveTab] = useState<'clock' | 'alarm' | 'timer' | 'stopwatch'>('clock');
 
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
@@ -19,94 +16,112 @@ export default function ClockScreen() {
     hours: date.getHours().toString().padStart(2, '0'),
     minutes: date.getMinutes().toString().padStart(2, '0'),
     seconds: date.getSeconds().toString().padStart(2, '0'),
-    day: date.toLocaleDateString('en-KE', { weekday: 'long', month: 'long', day: 'numeric' }),
+    day: date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
   });
 
   const t = formatTime(time);
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Clock</Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity onPress={() => {}}>
+          <Ionicons name="add" size={28} color="#E91E63" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.timeDisplay}>
-        <Text style={styles.timeText}>{t.hours}:{t.minutes}</Text>
-        <Text style={styles.secondsText}>:{t.seconds}</Text>
-      </View>
-      <Text style={styles.dateText}>{t.day}</Text>
+      {/* Main Clock */}
+      {activeTab === 'clock' && (
+        <View style={styles.clockContainer}>
+          <Text style={styles.timeText}>{t.hours}:{t.minutes}</Text>
+          <Text style={styles.secondsText}>:{t.seconds}</Text>
+          <Text style={styles.dateText}>{t.day}</Text>
+        </View>
+      )}
 
-      <View style={styles.tabBar}>
-        {(['world', 'alarm', 'stopwatch', 'timer'] as const).map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
+      {/* World Clock List (placeholder) */}
+      <View style={styles.worldClockSection}>
+        <Text style={styles.sectionTitle}>World Clock</Text>
+        <View style={styles.worldClockItem}>
+          <View>
+            <Text style={styles.cityText}>Nairobi</Text>
+            <Text style={styles.offsetText}>Today, +0 HRS</Text>
+          </View>
+          <Text style={styles.worldTimeText}>{t.hours}:{t.minutes}</Text>
+        </View>
+        <View style={styles.worldClockItem}>
+          <View>
+            <Text style={styles.cityText}>London</Text>
+            <Text style={styles.offsetText}>Today, -2 HRS</Text>
+          </View>
+          <Text style={styles.worldTimeText}>{((time.getUTCHours() + 1) % 24).toString().padStart(2, '0')}:{t.minutes}</Text>
+        </View>
+        <View style={styles.worldClockItem}>
+          <View>
+            <Text style={styles.cityText}>New York</Text>
+            <Text style={styles.offsetText}>Today, -7 HRS</Text>
+          </View>
+          <Text style={styles.worldTimeText}>{((time.getUTCHours() - 4 + 24) % 24).toString().padStart(2, '0')}:{t.minutes}</Text>
+        </View>
+      </View>
+
+      {/* Bottom Tabs */}
+      <View style={styles.bottomTabs}>
+        {[
+          { key: 'clock', icon: 'time', label: 'World' },
+          { key: 'alarm', icon: 'alarm', label: 'Alarm' },
+          { key: 'timer', icon: 'hourglass', label: 'Timer' },
+          { key: 'stopwatch', icon: 'stopwatch', label: 'Stopwatch' },
+        ].map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={styles.tabItem}
+            onPress={() => setActiveTab(tab.key as any)}
+          >
+            <Ionicons
+              name={tab.icon as any}
+              size={24}
+              color={activeTab === tab.key ? '#E91E63' : '#666'}
+            />
+            <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>
+              {tab.label}
+            </Text>
           </TouchableOpacity>
         ))}
-      </View>
-
-      <View style={styles.content}>
-        {activeTab === 'world' && (
-          <View style={styles.worldClock}>
-            <Text style={styles.sectionTitle}>World Clock</Text>
-            {['Nairobi', 'London', 'New York', 'Tokyo', 'Dubai'].map(city => {
-              const offset = { Nairobi: 0, London: -2, 'New York': -7, Tokyo: 6, Dubai: 1 }[city] || 0;
-              const cityTime = new Date(time.getTime() + offset * 3600000);
-              return (
-                <View key={city} style={styles.cityRow}>
-                  <Text style={styles.cityName}>{city}</Text>
-                  <Text style={styles.cityTime}>{cityTime.getHours().toString().padStart(2,'0')}:{cityTime.getMinutes().toString().padStart(2,'0')}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-        {activeTab === 'alarm' && (
-          <View style={styles.emptyState}>
-            <Ionicons name="alarm-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.emptyText}>No alarms set</Text>
-          </View>
-        )}
-        {activeTab === 'stopwatch' && (
-          <View style={styles.emptyState}>
-            <Ionicons name="timer-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.emptyText}>Stopwatch ready</Text>
-          </View>
-        )}
-        {activeTab === 'timer' && (
-          <View style={styles.emptyState}>
-            <Ionicons name="hourglass-outline" size={48} color={COLORS.textSecondary} />
-            <Text style={styles.emptyText}>Timer ready</Text>
-          </View>
-        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SIZES.md, paddingTop: SIZES.xl, paddingBottom: SIZES.md },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  timeDisplay: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginTop: SIZES.xl * 2 },
-  timeText: { fontFamily: FONTS.bold, fontSize: 72, color: COLORS.text, letterSpacing: -2 },
-  secondsText: { fontFamily: FONTS.bold, fontSize: 36, color: COLORS.textSecondary },
-  dateText: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.textSecondary, textAlign: 'center', marginTop: SIZES.sm },
-  tabBar: { flexDirection: 'row', marginTop: SIZES.xl, paddingHorizontal: SIZES.md, gap: SIZES.sm },
-  tab: { flex: 1, paddingVertical: SIZES.sm, borderRadius: SIZES.sm, alignItems: 'center', backgroundColor: COLORS.surface },
-  tabActive: { backgroundColor: COLORS.primary },
-  tabText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.textSecondary },
-  tabTextActive: { color: '#fff', fontFamily: FONTS.bold },
-  content: { flex: 1, padding: SIZES.md },
-  worldClock: { paddingTop: SIZES.lg },
-  sectionTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: SIZES.lg },
-  cityRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: SIZES.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  cityName: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.text },
-  cityTime: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.primary },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { fontFamily: FONTS.medium, fontSize: 16, color: COLORS.textSecondary, marginTop: SIZES.md },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingTop: 50, paddingBottom: 16,
+  },
+  headerTitle: { color: '#fff', fontSize: 32, fontWeight: '700' },
+
+  clockContainer: { alignItems: 'center', paddingVertical: 40 },
+  timeText: { color: '#fff', fontSize: 80, fontWeight: '200', letterSpacing: -2 },
+  secondsText: { color: '#E91E63', fontSize: 40, fontWeight: '300', marginTop: -10 },
+  dateText: { color: '#888', fontSize: 18, marginTop: 12 },
+
+  worldClockSection: { flex: 1, paddingHorizontal: 20 },
+  sectionTitle: { color: '#888', fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginBottom: 12 },
+  worldClockItem: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 16, borderBottomWidth: 0.5, borderBottomColor: '#222',
+  },
+  cityText: { color: '#fff', fontSize: 18, fontWeight: '500' },
+  offsetText: { color: '#666', fontSize: 13, marginTop: 2 },
+  worldTimeText: { color: '#fff', fontSize: 28, fontWeight: '300' },
+
+  bottomTabs: {
+    flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#222',
+    paddingVertical: 8, paddingBottom: 20,
+  },
+  tabItem: { flex: 1, alignItems: 'center', gap: 4 },
+  tabLabel: { color: '#666', fontSize: 11 },
+  tabLabelActive: { color: '#E91E63' },
 });

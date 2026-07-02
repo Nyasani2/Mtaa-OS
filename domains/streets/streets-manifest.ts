@@ -1,0 +1,56 @@
+// streets-manifest.ts
+// Updated to match actual Streets app functionality
+
+export const streetsManifest = {
+  id: "streets",
+  name: "Streets",
+  description: "Short-form video and social feed. Create, share, and discover content from creators around the world. Features include posts, likes, comments, shares, saves, live streaming, creator profiles, and more.",
+  entryRoute: "/(os)/streets",
+  category: "social",
+  icon: "videocam",
+  color: "#FF2D55",
+  version: "1.0.0",
+  features: [
+    "Feed (TikTok-style vertical scroll)",
+    "Post creation (text, image, video)",
+    "Post detail with comments",
+    "Like, save, share posts",
+    "Creator profiles",
+    "Search (posts, users, hashtags)",
+    "Hashtag pages",
+    "Follow/unfollow users",
+    "Report content",
+    "Live streaming",
+    "Notifications",
+  ],
+  requiredPermissions: [
+    "camera",
+    "microphone",
+    "photo_library",
+    "notifications",
+  ],
+  schemaTables: [
+    "streets_posts",
+    "streets_comments",
+    "streets_comment_likes",
+    "streets_likes",
+    "streets_saves",
+    "streets_shares",
+    "streets_follows",
+    "streets_hashtags",
+    "streets_live_streams",
+    "streets_live_comments",
+    "streets_live_viewers",
+    "streets_creator_stats",
+    "streets_earnings",
+    "streets_gifts",
+    "streets_gift_catalog",
+    "streets_products",
+    "streets_shops",
+    "streets_ads",
+    "streets_reports",
+    "streets_notifications",
+  ],
+} as const;
+
+export default streetsManifest;

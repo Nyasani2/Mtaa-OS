@@ -1,289 +1,425 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
-  Dimensions, Platform, ActivityIndicator, Alert,
+  View,
+  Text,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import {
+  getPost,
+  getComments,
+  addComment,
+  deleteComment,
+  likePost,
+  unlikePost,
+  checkLiked,
+  deletePost,
+  incrementView,
+  StreetsError,
+} from '@/lib/services/streets-service';
+import type { StreetPost, StreetComment } from '@/lib/services/streets-service';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-interface PostDetail {
-  id: string;
-  creator_id: string;
-  content: string | null;
-  caption: string | null;
-  media_url: string | null;
-  media_type: string;
-  likes_count: number;
-  comments_count: number;
-  shares_count: number;
-  views_count: number;
-  created_at: string;
-  creator?: {
-    user_id: string;
-    full_name: string | null;
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-    verified: boolean | null;
-  };
-}
-
-interface Comment {
-  id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  user?: {
-    user_id: string;
-    full_name: string | null;
-    display_name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  };
-}
-
-function PostVideo({ uri, style }: { uri: string; style: any }) {
-  if (Platform.OS === 'web') {
-    const flattened = StyleSheet.flatten([
-      { width: '100%', height: '100%', objectFit: 'cover' },
-      style,
-    ]);
-    return (
-      <video
-        src={uri}
-        style={flattened}
-        autoPlay
-        muted
-        loop
-        playsInline
-        controls
-        preload="auto"
-      />
-    );
-  }
-  return (
-    <View style={[style, { backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}>
-      <Ionicons name="videocam" size={48} color="#00d4ff" />
-    </View>
-  );
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const then = new Date(dateStr);
+  const diff = Math.floor((now.getTime() - then.getTime()) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  return then.toLocaleDateString();
 }
 
 export default function PostDetailScreen() {
-  const router = useRouter();
   const { postId } = useLocalSearchParams<{ postId: string }>();
-  const { user, isAuthenticated } = useAuthStore();
-  const [post, setPost] = useState<PostDetail | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const router = useRouter();
+  const { user } = useAuthStore();
+
+  const [post, setPost] = useState<StreetPost | null>(null);
+  const [comments, setComments] = useState<StreetComment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
+  const isOwnPost = user?.id === post?.creator_id;
+
+  // ─── LOAD DATA ─────────────────────────────────────
+  const loadData = useCallback(async (showLoader: boolean = true) => {
     if (!postId) return;
-    loadPost();
-  }, [postId]);
-
-  const loadPost = async () => {
-    setLoading(true);
+    if (showLoader) setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('streets_posts')
-        .select('id, creator_id, content, caption, media_url, media_type, likes_count, comments_count, shares_count, views_count, created_at, creator:user_profiles(user_id, full_name, display_name, username, avatar_url, verified)')
-        .eq('id', postId)
-        .single();
-      if (error) throw error;
-      setPost(data);
+      const [postData, commentsData, likedStatus] = await Promise.all([
+        getPost(postId),
+        getComments(postId),
+        user ? checkLiked(postId) : Promise.resolve(false),
+      ]);
+      setPost(postData);
+      setComments(commentsData);
+      setLiked(likedStatus);
+      setLikesCount(postData?.likes_count || 0);
+      setImageError(false);
 
-      const { data: cmts } = await supabase
-        .from('streets_comments')
-        .select('id, user_id, content, created_at, user:user_profiles(user_id, full_name, display_name, username, avatar_url)')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: true });
-      setComments(cmts || []);
-
-      if (user?.id) {
-        const { data: likeData } = await supabase
-          .from('streets_likes')
-          .select('id')
-          .eq('post_id', postId)
-          .eq('user_id', user.id)
-          .single();
-        setIsLiked(!!likeData);
+      // Increment view count
+      if (postData) {
+        incrementView(postId).catch(() => {});
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to load post');
+      console.error('[PostDetail] loadData error:', e);
+      if (showLoader) {
+        Alert.alert('Error', e?.message || 'Failed to load post');
+      }
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [postId, user]);
 
-  const handleLike = async () => {
-    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to like posts.'); return; }
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData(false);
+  }, [loadData]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // ─── LIKE ────────────────────────────────────────────
+  const handleLike = useCallback(async () => {
+    if (!user || !post) return;
     try {
-      if (isLiked) {
-        await supabase.from('streets_likes').delete().eq('post_id', postId).eq('user_id', user.id);
-        setIsLiked(false);
-        setPost(prev => prev ? { ...prev, likes_count: Math.max(0, prev.likes_count - 1) } : prev);
+      if (liked) {
+        await unlikePost(post.id);
+        setLiked(false);
+        setLikesCount(c => Math.max(0, c - 1));
       } else {
-        await supabase.from('streets_likes').insert({ post_id: postId, user_id: user.id });
-        setIsLiked(true);
-        setPost(prev => prev ? { ...prev, likes_count: prev.likes_count + 1 } : prev);
+        await likePost(post.id);
+        setLiked(true);
+        setLikesCount(c => c + 1);
       }
-    } catch (e: any) { Alert.alert('Error', e.message); }
-  };
+    } catch (e) {
+      // silent
+    }
+  }, [liked, post, user]);
 
-  const handleShare = async () => {
-    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to share posts.'); return; }
-    await supabase.from('streets_shares').insert({ post_id: postId, user_id: user.id });
-    Alert.alert('Shared', 'Post shared to your timeline.');
-  };
+  // ─── COMMENT ───────────────────────────────────────
+  const handleSubmitComment = useCallback(async () => {
+    if (!commentText.trim() || !postId || !user) return;
+    setSubmitting(true);
+    try {
+      const newComment = await addComment(postId, commentText.trim());
+      setComments(prev => [...prev, newComment]);
+      setCommentText('');
+      setPost(prev => prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : prev);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to post comment');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [commentText, postId, user]);
 
-  const handleSave = async () => {
-    if (!isAuthenticated || !user) { Alert.alert('Sign In Required', 'Please sign in to save posts.'); return; }
-    await supabase.from('streets_saves').insert({ post_id: postId, user_id: user.id });
-    Alert.alert('Saved', 'Post saved to your collection.');
-  };
+  // ─── DELETE POST ───────────────────────────────────
+  const handleDeletePost = useCallback(() => {
+    if (!isOwnPost || !post) return;
+    Alert.alert(
+      'Delete Post',
+      'Are you sure? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost(post.id);
+              router.back();
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to delete');
+            }
+          },
+        },
+      ]
+    );
+  }, [isOwnPost, post, router]);
 
-  const goToCreator = (creatorId: string) => router.push(`/streets/creator?userId=${creatorId}`);
+  // ─── DELETE COMMENT ─────────────────────────────────
+  const handleDeleteComment = useCallback((commentId: string, commentUserId: string) => {
+    if (commentUserId !== user?.id) return;
+    Alert.alert(
+      'Delete Comment',
+      'Remove this comment?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteComment(commentId);
+              setComments(prev => prev.filter(c => c.id !== commentId));
+              setPost(prev => prev ? { ...prev, comments_count: Math.max(0, (prev.comments_count || 0) - 1) } : prev);
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || 'Failed to delete comment');
+            }
+          },
+        },
+      ]
+    );
+  }, [user]);
 
+  // ─── LOADING ───────────────────────────────────────
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#00d4ff" />
+      <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ff2d55" />
       </View>
     );
   }
 
+  // ─── NOT FOUND ─────────────────────────────────────
   if (!post) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>Post not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>Go Back</Text>
+      <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Ionicons name="alert-circle-outline" size={48} color="#666" />
+        <Text style={{ color: '#666', marginTop: 12, fontSize: 16 }}>Post not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: '#ff2d55', fontSize: 16 }}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const creatorName = post.creator?.full_name || post.creator?.display_name || post.creator?.username || 'Unknown';
-  const isOwnPost = user?.id === post.creator_id;
-  const displayContent = post.content || post.caption || '';
+  const hasMedia = !!post.media_url && post.media_type !== 'text';
+  const creatorName = post.creator?.display_name || post.creator?.full_name || post.creator?.username || 'Unknown';
+  const creatorInitial = creatorName[0].toUpperCase();
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Post</Text>
-        {isOwnPost && (
-          <TouchableOpacity onPress={() => router.push(`/streets/create?editPostId=${post.id}`)}>
-            <Ionicons name="create-outline" size={22} color="#00d4ff" />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: '#0a0a0a' }}
+    >
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ff2d55" />
+        }
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingTop: 50,
+          paddingBottom: 12,
+          borderBottomWidth: 1,
+          borderBottomColor: '#1a1a1a',
+        }}>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
+            <Ionicons name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
-        )}
-      </View>
-
-      <TouchableOpacity style={styles.creatorRow} onPress={() => goToCreator(post.creator_id)}>
-        {post.creator?.avatar_url ? (
-          <Image source={{ uri: post.creator.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Ionicons name="person" size={18} color="#fff" />
-          </View>
-        )}
-        <View style={styles.creatorInfo}>
-          <Text style={styles.creatorName}>{creatorName}</Text>
-          {post.creator?.verified && <Ionicons name="checkmark-circle" size={14} color="#00d4ff" />}
-        </View>
-      </TouchableOpacity>
-
-      {post.media_url && post.media_type !== 'text' && (
-        <View style={styles.mediaContainer}>
-          {post.media_type === 'video' ? (
-            <PostVideo uri={post.media_url} style={styles.media} />
-          ) : (
-            <Image source={{ uri: post.media_url }} style={styles.media} resizeMode="cover" />
+          <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600', flex: 1 }}>Post</Text>
+          {isOwnPost && (
+            <TouchableOpacity onPress={handleDeletePost}>
+              <Ionicons name="trash-outline" size={22} color="#ff3b30" />
+            </TouchableOpacity>
           )}
         </View>
-      )}
 
-      <View style={styles.contentSection}>
-        {displayContent ? <Text style={styles.content}>{displayContent}</Text> : null}
-      </View>
-
-      <View style={styles.actionsRow}>
-        <TouchableOpacity onPress={handleLike} style={styles.actionBtn}>
-          <Ionicons name={isLiked ? "heart" : "heart-outline"} size={26} color={isLiked ? "#ff4444" : "#fff"} />
-          <Text style={styles.actionText}>{post.likes_count}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}>
-          <Ionicons name="chatbubble-outline" size={24} color="#fff" />
-          <Text style={styles.actionText}>{post.comments_count}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleShare} style={styles.actionBtn}>
-          <Ionicons name="share-outline" size={24} color="#fff" />
-          <Text style={styles.actionText}>{post.shares_count}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} style={styles.actionBtn}>
-          <Ionicons name="bookmark-outline" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.commentsSection}>
-        <Text style={styles.commentsTitle}>Comments</Text>
-        {comments.length === 0 ? (
-          <Text style={styles.noComments}>No comments yet</Text>
-        ) : (
-          comments.map(c => (
-            <View key={c.id} style={styles.comment}>
-              {c.user?.avatar_url ? (
-                <Image source={{ uri: c.user.avatar_url }} style={styles.commentAvatar} />
-              ) : (
-                <View style={[styles.commentAvatar, styles.avatarPlaceholder]}>
-                  <Ionicons name="person" size={12} color="#fff" />
-                </View>
-              )}
-              <View style={styles.commentBody}>
-                <Text style={styles.commentUser}>{c.user?.full_name || c.user?.display_name || c.user?.username || 'User'}</Text>
-                <Text style={styles.commentText}>{c.content}</Text>
+        {/* Post Content */}
+        <View style={{ padding: 16 }}>
+          {/* Author */}
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+            onPress={() => router.push(`/(os)/streets/creator/${post.creator_id}`)}
+          >
+            {post.creator?.avatar_url ? (
+              <Image source={{ uri: post.creator.avatar_url }} style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }} />
+            ) : (
+              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#ff2d55', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 17 }}>{creatorInitial}</Text>
               </View>
+            )}
+            <View>
+              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>
+                {creatorName}
+                {post.creator?.verified && <Text style={{ color: '#3897f0' }}> ✓</Text>}
+              </Text>
+              <Text style={{ color: '#666', fontSize: 12 }}>{timeAgo(post.created_at || '')}</Text>
             </View>
-          ))
-        )}
+          </TouchableOpacity>
+
+          {/* Text */}
+          {post.content ? (
+            <Text style={{ color: '#e0e0e0', fontSize: 16, lineHeight: 23, marginBottom: hasMedia ? 12 : 0 }}>
+              {post.content}
+            </Text>
+          ) : null}
+
+          {/* Media */}
+          {hasMedia && !imageError && (
+            <View style={{ marginBottom: 12 }}>
+              <Image
+                source={{ uri: post.media_url!, cache: 'force-cache' }}
+                style={{ width: SCREEN_W - 32, height: (SCREEN_W - 32) * 0.56, borderRadius: 12 }}
+                resizeMode="cover"
+                onError={() => setImageError(true)}
+              />
+            </View>
+          )}
+          {imageError && hasMedia && (
+            <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 20, alignItems: 'center', marginBottom: 12 }}>
+              <Ionicons name="image-outline" size={32} color="#666" />
+              <Text style={{ color: '#666', marginTop: 8 }}>Media unavailable</Text>
+            </View>
+          )}
+
+          {/* Hashtags */}
+          {post.hashtags && post.hashtags.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {post.hashtags.map((tag: string, i: number) => (
+                <TouchableOpacity key={i} onPress={() => router.push(`/(os)/streets/hashtag/${encodeURIComponent(tag)}`)}>
+                  <Text style={{ color: '#3897f0', fontSize: 14 }}>#{tag}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Stats */}
+          <View style={{ flexDirection: 'row', gap: 16, marginBottom: 12 }}>
+            <Text style={{ color: '#888', fontSize: 13 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{likesCount}</Text> likes
+            </Text>
+            <Text style={{ color: '#888', fontSize: 13 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{post.comments_count || 0}</Text> comments
+            </Text>
+            <Text style={{ color: '#888', fontSize: 13 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{post.shares_count || 0}</Text> shares
+            </Text>
+            <Text style={{ color: '#888', fontSize: 13 }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{post.views_count || post.view_count || 0}</Text> views
+            </Text>
+          </View>
+
+          {/* Actions */}
+          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#1a1a1a', paddingVertical: 10, gap: 24 }}>
+            <TouchableOpacity onPress={handleLike} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+              <Ionicons name={liked ? 'heart' : 'heart-outline'} size={22} color={liked ? '#ff2d55' : '#888'} />
+              <Text style={{ color: liked ? '#ff2d55' : '#888', fontWeight: '500' }}>Like</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+              <Ionicons name="chatbubble-outline" size={20} color="#888" />
+              <Text style={{ color: '#888', fontWeight: '500' }}>Comment</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+              <Ionicons name="share-outline" size={20} color="#888" />
+              <Text style={{ color: '#888', fontWeight: '500' }}>Share</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+              <Ionicons name="bookmark-outline" size={20} color="#888" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Comments Section */}
+        <View style={{ paddingHorizontal: 16, paddingBottom: 20 }}>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 }}>
+            Comments ({comments.length})
+          </Text>
+
+          {comments.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 30 }}>
+              <Ionicons name="chatbubbles-outline" size={40} color="#333" />
+              <Text style={{ color: '#555', marginTop: 8, fontSize: 14 }}>No comments yet. Be the first!</Text>
+            </View>
+          ) : (
+            comments.map(comment => {
+              const commentInitial = (comment.user_name || 'U')[0].toUpperCase();
+              const isOwnComment = user?.id === comment.user_id;
+              return (
+                <View key={comment.id} style={{ flexDirection: 'row', marginBottom: 16 }}>
+                  {comment.user_avatar ? (
+                    <Image source={{ uri: comment.user_avatar }} style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10 }} />
+                  ) : (
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#333', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{commentInitial}</Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 10 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>{comment.user_name || 'Unknown'}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ color: '#555', fontSize: 11 }}>{timeAgo(comment.created_at || '')}</Text>
+                        {isOwnComment && (
+                          <TouchableOpacity onPress={() => handleDeleteComment(comment.id, comment.user_id || '')}>
+                            <Ionicons name="trash-outline" size={14} color="#ff3b30" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                    <Text style={{ color: '#ccc', fontSize: 14, lineHeight: 20 }}>{comment.content}</Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Comment Input */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#1a1a1a',
+        backgroundColor: '#0a0a0a',
+      }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#ff2d55', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+            {user?.display_name?.[0]?.toUpperCase() || 'U'}
+          </Text>
+        </View>
+        <TextInput
+          style={{
+            flex: 1, backgroundColor: '#1a1a1a', borderRadius: 20,
+            paddingHorizontal: 14, paddingVertical: 8,
+            color: '#fff', fontSize: 14, maxHeight: 100,
+          }}
+          placeholder="Add a comment..."
+          placeholderTextColor="#666"
+          multiline
+          value={commentText}
+          onChangeText={setCommentText}
+        />
+        <TouchableOpacity
+          onPress={handleSubmitComment}
+          disabled={!commentText.trim() || submitting}
+          style={{ marginLeft: 10, padding: 6 }}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#ff2d55" />
+          ) : (
+            <Ionicons name="send" size={22} color={commentText.trim() ? '#ff2d55' : '#333'} />
+          )}
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 16, paddingBottom: 12 },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  creatorRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
-  avatarPlaceholder: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-  creatorInfo: { flexDirection: 'row', alignItems: 'center' },
-  creatorName: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  mediaContainer: { width: '100%', backgroundColor: '#111' },
-  media: { width: '100%', height: SCREEN_W * 0.75 },
-  contentSection: { padding: 16 },
-  content: { color: '#fff', fontSize: 15, lineHeight: 22 },
-  actionsRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 24, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  actionBtn: { alignItems: 'center' },
-  actionText: { color: '#fff', fontSize: 11, marginTop: 2 },
-  commentsSection: { padding: 16 },
-  commentsTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  noComments: { color: '#666', fontSize: 14 },
-  comment: { flexDirection: 'row', marginBottom: 16 },
-  commentAvatar: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
-  commentBody: { flex: 1 },
-  commentUser: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  commentText: { color: '#ccc', fontSize: 13, marginTop: 2, lineHeight: 18 },
-  errorText: { color: '#ff4444', fontSize: 16 },
-  backBtn: { marginTop: 16, backgroundColor: '#222', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  backText: { color: '#00d4ff', fontWeight: '700' },
-});

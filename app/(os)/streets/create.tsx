@@ -1,362 +1,318 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, Image,
-  ScrollView, Alert, ActivityIndicator, Platform, KeyboardAvoidingView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import { createPost, uploadMedia, StreetsError } from '@/lib/services/streets-service';
+import { compressMedia, formatBytes } from '@/lib/utils/media-compressor';
 
-let ImagePicker: any = null;
-try {
-  ImagePicker = require('expo-image-picker');
-} catch (e) {
-  console.warn('expo-image-picker not available');
-}
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function CreatePostScreen() {
   const router = useRouter();
-  const { editPostId } = useLocalSearchParams<{ editPostId?: string }>();
-  const { user, isAuthenticated } = useAuthStore();
-  const isEditMode = !!editPostId;
-
+  const { user } = useAuthStore();
   const [content, setContent] = useState('');
   const [caption, setCaption] = useState('');
-  const [hashtags, setHashtags] = useState('');
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | 'text'>('text');
-  const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(isEditMode);
+  const [mediaSize, setMediaSize] = useState(0);
+  const [compressedSize, setCompressedSize] = useState(0);
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [hashtagInput, setHashtagInput] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [allowComments, setAllowComments] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [pickerError, setPickerError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    supabase
-      .from('user_profiles')
-      .select('user_id, full_name, display_name, username, avatar_url, verified')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) setUserProfile(data);
-      });
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!editPostId) return;
-    const loadPost = async () => {
-      const { data, error } = await supabase
-        .from('streets_posts')
-        .select('*')
-        .eq('id', editPostId)
-        .single();
-      if (error || !data) {
-        Alert.alert('Error', 'Could not load post for editing');
-        router.back();
-        return;
-      }
-      if (data.creator_id !== user?.id) {
-        Alert.alert('Unauthorized', 'You can only edit your own posts');
-        router.back();
-        return;
-      }
-      setContent(data.content || '');
-      setCaption(data.caption || '');
-      setHashtags((data.hashtags || []).join(' '));
-      setMediaUri(data.media_url);
-      setMediaType(data.media_type || 'text');
-      setIsPublic(data.is_public ?? true);
-      setAllowComments(data.allow_comments ?? true);
-      setLoading(false);
-    };
-    loadPost();
-  }, [editPostId, user?.id]);
-
-  const pickMedia = async (type: 'image' | 'video') => {
-    setPickerError(null);
-    if (!ImagePicker) {
-      setPickerError('Image picker not available. Please install expo-image-picker.');
-      return;
-    }
-    try {
-      let mediaTypes: any;
-      if (ImagePicker.MediaType) {
-        mediaTypes = type === 'image' ? [ImagePicker.MediaType.IMAGE] : [ImagePicker.MediaType.VIDEO];
-      } else if (ImagePicker.MediaTypeOptions) {
-        mediaTypes = type === 'image' ? ImagePicker.MediaTypeOptions.Images : ImagePicker.MediaTypeOptions.Videos;
-      } else {
-        setPickerError('Image picker API not recognized');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes,
-        allowsEditing: true,
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets && result.assets[0]) {
-        setMediaUri(result.assets[0].uri);
-        setMediaType(type);
-      }
-    } catch (e: any) {
-      setPickerError(e.message || 'Failed to pick media');
-    }
-  };
-
-  const uploadMedia = async (uri: string, type: 'image' | 'video'): Promise<string> => {
-    const ext = type === 'image' ? 'jpg' : 'mp4';
-    const fileName = `${user!.id}/${Date.now()}.${ext}`;
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const { error } = await supabase.storage.from('streets-media').upload(fileName, blob, {
-      contentType: type === 'image' ? 'image/jpeg' : 'video/mp4',
-      upsert: false,
+  // ─── PICK IMAGE ────────────────────────────────────
+  const pickImage = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 5],
+      quality: 1, // We compress manually
     });
-    if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from('streets-media').getPublicUrl(fileName);
-    return publicUrl;
-  };
 
-  const handleSubmit = async () => {
-    if (!isAuthenticated || !user) {
-      Alert.alert('Sign In Required', 'Please sign in to create posts.');
-      return;
-    }
-    if (!content.trim() && !mediaUri) {
-      Alert.alert('Empty Post', 'Please add some text or media.');
-      return;
-    }
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setMediaUri(asset.uri);
+      setMediaType('image');
+      setMediaSize(asset.fileSize || 0);
 
-    if (!isEditMode) {
-      const draft = {
-        content: content.trim(),
-        caption: caption.trim(),
-        hashtags: hashtags.split(/\s+/).map((h: string) => h.trim()).filter((h: string) => h.startsWith('#')),
-        mediaUri,
-        mediaType,
-        isPublic,
-        allowComments,
-      };
-      router.back();
-      setTimeout(() => uploadInBackground(draft), 100);
-      return;
-    }
-
-    setUploading(true);
-    try {
-      let mediaUrl = mediaUri;
-      let thumbnailUrl: string | null = null;
-      if (mediaUri && !mediaUri.startsWith('http')) {
-        mediaUrl = await uploadMedia(mediaUri, mediaType);
-        if (mediaType === 'video') thumbnailUrl = mediaUrl;
+      // Show compression preview
+      try {
+        const compressed = await compressMedia(asset.uri, 'image/jpeg');
+        setCompressedSize(compressed.size);
+      } catch (e) {
+        console.warn('Compression preview failed:', e);
       }
-      const hashtagArray = hashtags.split(/\s+/).map((h: string) => h.trim()).filter((h: string) => h.startsWith('#'));
-      const payload: any = {
-        content: content.trim() || null,
-        caption: caption.trim() || null,
-        media_url: mediaUrl || null,
+    }
+  }, []);
+
+  // ─── PICK VIDEO ────────────────────────────────────
+  const pickVideo = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setMediaUri(asset.uri);
+      setMediaType('video');
+      setMediaSize(asset.fileSize || 0);
+
+      try {
+        const compressed = await compressMedia(asset.uri, 'video/mp4');
+        setCompressedSize(compressed.size);
+      } catch (e) {
+        console.warn('Compression preview failed:', e);
+      }
+    }
+  }, []);
+
+  // ─── ADD HASHTAG ───────────────────────────────────
+  const addHashtag = useCallback(() => {
+    const tag = hashtagInput.trim().replace(/^#/, '');
+    if (tag && !hashtags.includes(tag)) {
+      setHashtags(prev => [...prev, tag]);
+      setHashtagInput('');
+    }
+  }, [hashtagInput, hashtags]);
+
+  const removeHashtag = useCallback((tag: string) => {
+    setHashtags(prev => prev.filter(t => t !== tag));
+  }, []);
+
+  // ─── SUBMIT ──────────────────────────────────────────
+  const handleSubmit = useCallback(async () => {
+    if (!content.trim() && !mediaUri) {
+      Alert.alert('Error', 'Please add some content or media');
+      return;
+    }
+
+    setSubmitting(true);
+    setUploadProgress(0);
+
+    try {
+      let mediaUrl: string | null = null;
+      let thumbnailUrl: string | null = null;
+
+      if (mediaUri) {
+        const fileName = mediaUri.split('/').pop() || 'media';
+        const mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
+
+        const result = await uploadMedia(
+          mediaUri,
+          fileName,
+          mimeType,
+          (progress) => setUploadProgress(progress.percentage)
+        );
+
+        mediaUrl = result.mediaUrl;
+        thumbnailUrl = result.thumbnailUrl || null;
+      }
+
+      await createPost({
+        content: content.trim(),
+        caption: caption.trim() || content.trim(),
+        media_url: mediaUrl,
         media_type: mediaType,
-        thumbnail_url: thumbnailUrl,
-        hashtags: hashtagArray.length > 0 ? hashtagArray : null,
+        hashtags,
         is_public: isPublic,
         allow_comments: allowComments,
-        updated_at: new Date().toISOString(),
-      };
-      const { error } = await supabase.from('streets_posts').update(payload).eq('id', editPostId);
-      if (error) throw error;
-      Alert.alert('Updated', 'Your post has been updated.');
+        thumbnail_url: thumbnailUrl,
+      });
+
       router.back();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to update post');
+      const message = e instanceof StreetsError ? e.message : 'Failed to create post';
+      Alert.alert('Error', message);
+      console.error('Create post error:', e);
     } finally {
-      setUploading(false);
+      setSubmitting(false);
     }
-  };
-
-  const uploadInBackground = async (draft: any) => {
-    try {
-      let mediaUrl = draft.mediaUri;
-      let thumbnailUrl: string | null = null;
-      if (draft.mediaUri && !draft.mediaUri.startsWith('http')) {
-        mediaUrl = await uploadMedia(draft.mediaUri, draft.mediaType);
-        if (draft.mediaType === 'video') thumbnailUrl = mediaUrl;
-      }
-      const payload = {
-        creator_id: user!.id,
-        content: draft.content || null,
-        caption: draft.caption || null,
-        media_url: mediaUrl || null,
-        media_type: draft.mediaType,
-        thumbnail_url: thumbnailUrl,
-        hashtags: draft.hashtags.length > 0 ? draft.hashtags : null,
-        is_public: draft.isPublic,
-        allow_comments: draft.allowComments,
-        created_at: new Date().toISOString(),
-        title: draft.content.slice(0, 100) || 'Post',
-      };
-      const { error } = await supabase.from('streets_posts').insert(payload);
-      if (error) console.error('Background upload error:', error);
-    } catch (e: any) {
-      console.error('Background upload failed:', e);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!editPostId) return;
-    Alert.alert('Delete Post?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          setUploading(true);
-          const { error } = await supabase.from('streets_posts').delete().eq('id', editPostId);
-          setUploading(false);
-          if (error) { Alert.alert('Error', error.message); }
-          else { Alert.alert('Deleted', 'Post removed.'); router.back(); }
-        },
-      },
-    ]);
-  };
-
-  const profileName = userProfile?.full_name || userProfile?.display_name || userProfile?.username || 'You';
-
-  if (loading && isEditMode) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#00d4ff" />
-      </View>
-    );
-  }
+  }, [content, caption, mediaUri, mediaType, hashtags, isPublic, allowComments, router]);
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isEditMode ? 'Edit Post' : 'Create Post'}</Text>
-          <TouchableOpacity onPress={handleSubmit} disabled={uploading}>
-            {uploading ? <ActivityIndicator size="small" color="#00d4ff" /> : <Text style={styles.postBtn}>{isEditMode ? 'Save' : 'Post'}</Text>}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.avatarRow}>
-          {userProfile?.avatar_url ? (
-            <Image source={{ uri: userProfile.avatar_url }} style={styles.avatar} />
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="close" size={26} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>New Post</Text>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={submitting}
+          style={[styles.postBtn, submitting && styles.postBtnDisabled]}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person" size={20} color="#fff" />
+            <Text style={styles.postBtnText}>Post</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Media Preview */}
+      {mediaUri ? (
+        <View style={styles.mediaPreview}>
+          <Image source={{ uri: mediaUri }} style={styles.mediaImage} resizeMode="cover" />
+          <TouchableOpacity style={styles.removeMediaBtn} onPress={() => { setMediaUri(null); setMediaType('text'); }}>
+            <Ionicons name="close-circle" size={28} color="#fff" />
+          </TouchableOpacity>
+          {mediaSize > 0 && (
+            <View style={styles.sizeBadge}>
+              <Text style={styles.sizeText}>
+                {formatBytes(mediaSize)} → {formatBytes(compressedSize || mediaSize)}
+              </Text>
             </View>
           )}
-          <View style={styles.avatarInfo}>
-            <Text style={styles.avatarName}>{profileName}</Text>
-            {userProfile?.verified && (
-              <View style={styles.verifiedRow}>
-                <Ionicons name="checkmark-circle" size={14} color="#00d4ff" />
-                <Text style={styles.verifiedText}>Verified</Text>
-              </View>
-            )}
-          </View>
         </View>
-
-        <TextInput style={styles.input} placeholder="What's on your mind?" placeholderTextColor="#666" multiline value={content} onChangeText={setContent} maxLength={2000} />
-        <TextInput style={[styles.input, styles.captionInput]} placeholder="Add a caption..." placeholderTextColor="#666" value={caption} onChangeText={setCaption} maxLength={500} />
-        <TextInput style={[styles.input, styles.hashtagInput]} placeholder="#hashtag #mtaa #streets" placeholderTextColor="#666" value={hashtags} onChangeText={setHashtags} autoCapitalize="none" />
-
-        {mediaUri && (
-          <View style={styles.mediaPreview}>
-            {mediaType === 'video' ? (
-              <View style={[styles.previewImage, styles.videoPreview]}>
-                {Platform.OS === 'web' ? (
-                  <video src={mediaUri} style={{ width: '100%', height: 200, borderRadius: 12, objectFit: 'cover' }} autoPlay muted loop playsInline />
-                ) : (
-                  <><Ionicons name="videocam" size={48} color="#00d4ff" /><Text style={styles.videoText}>Video selected</Text></>
-                )}
-              </View>
-            ) : (
-              <Image source={{ uri: mediaUri }} style={styles.previewImage} resizeMode="cover" />
-            )}
-            <TouchableOpacity style={styles.removeMedia} onPress={() => { setMediaUri(null); setMediaType('text'); }}>
-              <Ionicons name="close-circle" size={28} color="#ff4444" />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {pickerError && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorBoxText}>{pickerError}</Text>
-          </View>
-        )}
-
+      ) : (
         <View style={styles.mediaButtons}>
-          <TouchableOpacity style={styles.mediaBtn} onPress={() => pickMedia('image')}>
-            <Ionicons name="image-outline" size={24} color="#00d4ff" />
+          <TouchableOpacity style={styles.mediaBtn} onPress={pickImage}>
+            <Ionicons name="image-outline" size={32} color="#E91E63" />
             <Text style={styles.mediaBtnText}>Photo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.mediaBtn} onPress={() => pickMedia('video')}>
-            <Ionicons name="videocam-outline" size={24} color="#00d4ff" />
+          <TouchableOpacity style={styles.mediaBtn} onPress={pickVideo}>
+            <Ionicons name="videocam-outline" size={32} color="#E91E63" />
             <Text style={styles.mediaBtnText}>Video</Text>
           </TouchableOpacity>
         </View>
+      )}
 
-        <View style={styles.settingsSection}>
-          <TouchableOpacity style={styles.settingRow} onPress={() => setIsPublic(!isPublic)}>
-            <Ionicons name={isPublic ? "globe-outline" : "lock-closed-outline"} size={20} color="#888" />
-            <Text style={styles.settingText}>{isPublic ? 'Public' : 'Private'}</Text>
-            <Ionicons name={isPublic ? "checkbox" : "square-outline"} size={20} color="#00d4ff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingRow} onPress={() => setAllowComments(!allowComments)}>
-            <Ionicons name="chatbubble-outline" size={20} color="#888" />
-            <Text style={styles.settingText}>{allowComments ? 'Comments On' : 'Comments Off'}</Text>
-            <Ionicons name={allowComments ? "checkbox" : "square-outline"} size={20} color="#00d4ff" />
+      {/* Content Input */}
+      <View style={styles.inputSection}>
+        <TextInput
+          style={styles.contentInput}
+          placeholder="What's on your mind?"
+          placeholderTextColor="#666"
+          multiline
+          value={content}
+          onChangeText={setContent}
+          maxLength={500}
+        />
+        <Text style={styles.charCount}>{content.length}/500</Text>
+      </View>
+
+      {/* Caption (optional) */}
+      <View style={styles.inputSection}>
+        <TextInput
+          style={styles.captionInput}
+          placeholder="Add a caption (optional)"
+          placeholderTextColor="#666"
+          value={caption}
+          onChangeText={setCaption}
+          maxLength={100}
+        />
+      </View>
+
+      {/* Hashtags */}
+      <View style={styles.inputSection}>
+        <View style={styles.hashtagInputRow}>
+          <TextInput
+            style={styles.hashtagInput}
+            placeholder="Add hashtag"
+            placeholderTextColor="#666"
+            value={hashtagInput}
+            onChangeText={setHashtagInput}
+            onSubmitEditing={addHashtag}
+          />
+          <TouchableOpacity onPress={addHashtag} style={styles.addTagBtn}>
+            <Ionicons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
+        <View style={styles.hashtagList}>
+          {hashtags.map(tag => (
+            <TouchableOpacity key={tag} style={styles.hashtagChip} onPress={() => removeHashtag(tag)}>
+              <Text style={styles.hashtagChipText}>#{tag}</Text>
+              <Ionicons name="close" size={12} color="#E91E63" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
-        {isEditMode && (
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} disabled={uploading}>
-            <Ionicons name="trash-outline" size={20} color="#ff4444" />
-            <Text style={styles.deleteText}>Delete Post</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
-    </KeyboardAvoidingView>
+      {/* Options */}
+      <View style={styles.optionsSection}>
+        <TouchableOpacity style={styles.optionRow} onPress={() => setIsPublic(!isPublic)}>
+          <Ionicons name={isPublic ? "globe-outline" : "lock-closed-outline"} size={22} color="#888" />
+          <Text style={styles.optionText}>{isPublic ? 'Public' : 'Private'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.optionRow} onPress={() => setAllowComments(!allowComments)}>
+          <Ionicons name={allowComments ? "chatbubble-outline" : "chatbubble-off-outline"} size={22} color="#888" />
+          <Text style={styles.optionText}>{allowComments ? 'Comments on' : 'Comments off'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Upload Progress */}
+      {submitting && uploadProgress > 0 && (
+        <View style={styles.progressSection}>
+          <Text style={styles.progressText}>Uploading... {Math.round(uploadProgress)}%</Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
+          </View>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  center: { justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingTop: Platform.OS === 'ios' ? 40 : 16 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  postBtn: { color: '#00d4ff', fontSize: 16, fontWeight: '700' },
-  avatarRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  avatar: { width: 48, height: 48, borderRadius: 24, marginRight: 12 },
-  avatarPlaceholder: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-  avatarInfo: { justifyContent: 'center' },
-  avatarName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  verifiedRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  verifiedText: { color: '#00d4ff', fontSize: 12, marginLeft: 4 },
-  input: { color: '#fff', fontSize: 16, minHeight: 80, borderWidth: 1, borderColor: '#222', borderRadius: 12, padding: 12, marginBottom: 12, textAlignVertical: 'top' },
-  captionInput: { minHeight: 50, fontSize: 14 },
-  hashtagInput: { minHeight: 44, fontSize: 14, color: '#00d4ff' },
-  mediaPreview: { position: 'relative', marginBottom: 16, borderRadius: 12, overflow: 'hidden' },
-  previewImage: { width: '100%', height: 200, borderRadius: 12, backgroundColor: '#111' },
-  videoPreview: { justifyContent: 'center', alignItems: 'center' },
-  videoText: { color: '#fff', fontSize: 16, marginTop: 8 },
-  removeMedia: { position: 'absolute', top: 8, right: 8 },
-  errorBox: { backgroundColor: '#1a0000', borderWidth: 1, borderColor: '#ff4444', borderRadius: 8, padding: 12, marginBottom: 12 },
-  errorBoxText: { color: '#ff4444', fontSize: 13 },
-  mediaButtons: { flexDirection: 'row', gap: 16, marginBottom: 20 },
-  mediaBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, borderWidth: 1, borderColor: '#222' },
-  mediaBtnText: { color: '#fff', marginLeft: 8, fontSize: 14 },
-  settingsSection: { marginBottom: 20 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  settingText: { color: '#fff', fontSize: 14, flex: 1, marginLeft: 12 },
-  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a0000', paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#ff4444', marginTop: 8 },
-  deleteText: { color: '#ff4444', fontSize: 16, fontWeight: '600', marginLeft: 8 },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12,
+    borderBottomWidth: 1, borderBottomColor: '#222',
+  },
+  backBtn: { padding: 8 },
+  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  postBtn: { backgroundColor: '#E91E63', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  postBtnDisabled: { opacity: 0.5 },
+  postBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+
+  mediaPreview: { position: 'relative', margin: 16, borderRadius: 12, overflow: 'hidden' },
+  mediaImage: { width: SCREEN_W - 32, height: (SCREEN_W - 32) * 1.25, borderRadius: 12 },
+  removeMediaBtn: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 14 },
+  sizeBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  sizeText: { color: '#fff', fontSize: 11 },
+
+  mediaButtons: { flexDirection: 'row', gap: 16, padding: 16 },
+  mediaBtn: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
+  mediaBtnText: { color: '#fff', marginTop: 8, fontSize: 14 },
+
+  inputSection: { paddingHorizontal: 16, paddingVertical: 8 },
+  contentInput: { color: '#fff', fontSize: 16, minHeight: 100, textAlignVertical: 'top' },
+  captionInput: { color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 8 },
+  charCount: { color: '#666', fontSize: 12, textAlign: 'right', marginTop: 4 },
+
+  hashtagInputRow: { flexDirection: 'row', gap: 8 },
+  hashtagInput: { flex: 1, color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 8 },
+  addTagBtn: { backgroundColor: '#E91E63', width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  hashtagList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  hashtagChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1a1a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: '#E91E63' },
+  hashtagChipText: { color: '#E91E63', fontSize: 13 },
+
+  optionsSection: { paddingHorizontal: 16, paddingVertical: 8 },
+  optionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
+  optionText: { color: '#fff', fontSize: 14 },
+
+  progressSection: { padding: 16 },
+  progressText: { color: '#E91E63', fontSize: 14, marginBottom: 8 },
+  progressBar: { height: 4, backgroundColor: '#1a1a1a', borderRadius: 2 },
+  progressFill: { height: 4, backgroundColor: '#E91E63', borderRadius: 2 },
 });
