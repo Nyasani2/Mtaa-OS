@@ -1,6 +1,6 @@
-// lib/health/services/index.ts
-export { PatientService } from './patient.service';
-export { AppointmentService } from './appointment.service';
-export { HospitalService } from './hospital.service';
-export { EHRService } from './ehr.service';
-export { AmbulanceService } from './ambulance.service';
+export * from './health-profile.service';
+export * from './health-record.service';
+export * from './health-appointment.service';
+export * from './health-medication.service';
+export * from './health-sharing.service';
+export * from './health-emergency.service';
