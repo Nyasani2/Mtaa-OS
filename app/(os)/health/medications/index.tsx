@@ -1,92 +1,115 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useHealthMedications } from '@/lib/health/hooks/useHealthMedications';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function MedicationsScreen() {
-  const router = useRouter();
   const { user } = useAuthStore();
-  const mtaaId = user?.id || '';
-  const { activeMedications, todaysSchedule, loading, log } = useHealthMedications(mtaaId);
-  const [tab, setTab] = useState<'today' | 'all'>('today');
+  const { medications, loading, error, refresh, updateStatus } = useHealthMedications(user?.id);
+  const [tab, setTab] = useState<'all' | 'active' | 'completed' | 'discontinued'>('all');
 
-  async function markTaken(medId: string, scheduledTime: string) {
-    await log({ medicationId: medId, patientId: mtaaId, takenAt: new Date().toISOString(), scheduledTime, status: 'taken' });
-  }
+  useEffect(() => {
+    refresh();
+  }, []);
 
-  async function markSkipped(medId: string, scheduledTime: string) {
-    await log({ medicationId: medId, patientId: mtaaId, takenAt: new Date().toISOString(), scheduledTime, status: 'skipped', notes: 'Skipped by user' });
+  const safeMedications = medications || [];
+  const activeMedications = safeMedications.filter(m => m.status === 'active');
+  const filteredMedications = tab === 'all' ? safeMedications : safeMedications.filter(m => m.status === tab);
+
+  const handleStatusChange = (id: string, status: 'completed' | 'discontinued') => {
+    Alert.alert('Update Status', `Mark this medication as ${status}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: () => updateStatus(id, status) },
+    ]);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Medications</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text>Loading medications...</Text>
+        </View>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>←</Text>
+          <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>Medications</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Text style={styles.add}>+</Text>
+        <Text style={styles.headerTitle}>My Medications</Text>
+        <TouchableOpacity onPress={() => router.push('/(os)/health/medications/add')}>
+          <Ionicons name="add" size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.tabs}>
-        <TouchableOpacity style={[styles.tab, tab === 'today' && styles.tabActive]} onPress={() => setTab('today')}>
-          <Text style={[styles.tabText, tab === 'today' && styles.tabTextActive]}>Today</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={[styles.tab, tab === 'all' && styles.tabActive]} onPress={() => setTab('all')}>
-          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>All Active ({activeMedications.length})</Text>
+          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>All ({safeMedications.length})</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, tab === 'active' && styles.tabActive]} onPress={() => setTab('active')}>
+          <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>Active ({activeMedications.length})</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, tab === 'completed' && styles.tabActive]} onPress={() => setTab('completed')}>
+          <Text style={[styles.tabText, tab === 'completed' && styles.tabTextActive]}>Completed</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, tab === 'discontinued' && styles.tabActive]} onPress={() => setTab('discontinued')}>
+          <Text style={[styles.tabText, tab === 'discontinued' && styles.tabTextActive]}>Discontinued</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {loading ? (
-          <Text style={styles.empty}>Loading...</Text>
-        ) : tab === 'today' ? (
-          todaysSchedule.length === 0 ? (
-            <Text style={styles.empty}>No medications scheduled today</Text>
-          ) : (
-            todaysSchedule.map((s, i) => (
-              <View key={i} style={styles.scheduleCard}>
-                <View style={styles.scheduleHeader}>
-                  <Text style={styles.scheduleMed}>{s.medication.name}</Text>
-                  <Text style={[styles.scheduleStatus, s.status === 'taken' ? styles.taken : s.status === 'pending' ? styles.pending : styles.missed]}>
-                    {s.status === 'taken' ? '✅ Taken' : s.status === 'pending' ? '⏳ Pending' : '❌ Missed'}
-                  </Text>
-                </View>
-                <Text style={styles.scheduleTime}>{s.scheduledTime}</Text>
-                <Text style={styles.scheduleDose}>{s.medication.dosage} — {s.medication.frequency}</Text>
-                {s.status === 'pending' && (
-                  <View style={styles.scheduleActions}>
-                    <TouchableOpacity style={styles.takeBtn} onPress={() => markTaken(s.medication.id, s.scheduledTime)}>
-                      <Text style={styles.takeText}>✓ Take</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.skipBtn} onPress={() => markSkipped(s.medication.id, s.scheduledTime)}>
-                      <Text style={styles.skipText}>Skip</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            ))
-          )
+      <ScrollView style={styles.content}>
+        {filteredMedications.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="medical-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>No {tab === 'all' ? '' : tab} medications</Text>
+            <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/health/medications/add')}>
+              <Text style={styles.emptyBtnText}>Add Medication</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
-          activeMedications.length === 0 ? (
-            <Text style={styles.empty}>No active medications</Text>
-          ) : (
-            activeMedications.map(m => (
-              <View key={m.id} style={styles.medCard}>
-                <Text style={styles.medName}>{m.name}</Text>
-                <Text style={styles.medDetail}>{m.dosage} — {m.frequency}</Text>
-                <Text style={styles.medDetail}>Prescribed by: {m.prescribedBy}</Text>
-                <Text style={styles.medDetail}>Duration: {m.duration}</Text>
-                {m.instructions && <Text style={styles.medInstructions}>{m.instructions}</Text>}
-                {m.refillDate && (
-                  <Text style={styles.refill}>Refill by: {m.refillDate}</Text>
-                )}
+          filteredMedications.map(med => (
+            <View key={med.id} style={styles.medCard}>
+              <View style={styles.medHeader}>
+                <View style={styles.medIcon}>
+                  <Ionicons name="medical" size={20} color="#fff" />
+                </View>
+                <View style={styles.medInfo}>
+                  <Text style={styles.medName}>{med.name}</Text>
+                  <Text style={styles.medGeneric}>{med.genericName}</Text>
+                </View>
+                <View style={[styles.statusBadge, med.status === 'active' && styles.statusActive, med.status === 'completed' && styles.statusCompleted, med.status === 'discontinued' && styles.statusDiscontinued]}>
+                  <Text style={styles.statusText}>{med.status}</Text>
+                </View>
               </View>
-            ))
-          )
+              <View style={styles.medDetails}>
+                <Text style={styles.medDetail}>💊 {med.dosage} · {med.frequency}</Text>
+                <Text style={styles.medDetail}>👨‍⚕️ Prescribed by {med.prescribedBy}</Text>
+                <Text style={styles.medDetail}>📅 {new Date(med.startDate).toLocaleDateString()}{med.endDate ? ` - ${new Date(med.endDate).toLocaleDateString()}` : ''}</Text>
+              </View>
+              {med.status === 'active' && (
+                <View style={styles.medActions}>
+                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleStatusChange(med.id, 'completed')}>
+                    <Text style={styles.actionBtnText}>Mark Complete</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDanger]} onPress={() => handleStatusChange(med.id, 'discontinued')}>
+                    <Text style={styles.actionBtnDangerText}>Discontinue</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))
         )}
       </ScrollView>
     </View>
@@ -94,35 +117,36 @@ export default function MedicationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
-  back: { color: '#fff', fontSize: 22 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  add: { color: '#007AFF', fontSize: 28, fontWeight: '300' },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#007AFF' },
-  tabText: { color: '#888', fontSize: 14 },
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabs: { flexDirection: 'row', padding: 12, backgroundColor: '#fff', gap: 6 },
+  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8, backgroundColor: '#f0f0f0' },
+  tabActive: { backgroundColor: '#007AFF' },
+  tabText: { fontSize: 12, color: '#666' },
   tabTextActive: { color: '#fff', fontWeight: '600' },
-  content: { padding: 16 },
-  empty: { color: '#666', textAlign: 'center', marginTop: 60, fontSize: 14 },
-  scheduleCard: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16, marginBottom: 12 },
-  scheduleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  scheduleMed: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  scheduleStatus: { fontSize: 12, fontWeight: '600' },
-  taken: { color: '#34C759' },
-  pending: { color: '#FF9500' },
-  missed: { color: '#FF3B30' },
-  scheduleTime: { color: '#007AFF', fontSize: 14, fontWeight: '500' },
-  scheduleDose: { color: '#888', fontSize: 12, marginTop: 2 },
-  scheduleActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  takeBtn: { flex: 1, backgroundColor: '#34C759', padding: 10, borderRadius: 8, alignItems: 'center' },
-  takeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  skipBtn: { flex: 1, backgroundColor: '#2a2a2a', padding: 10, borderRadius: 8, alignItems: 'center' },
-  skipText: { color: '#888', fontSize: 13 },
-  medCard: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 16, marginBottom: 12 },
-  medName: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  medDetail: { color: '#888', fontSize: 12, marginBottom: 2 },
-  medInstructions: { color: '#aaa', fontSize: 12, marginTop: 6, fontStyle: 'italic' },
-  refill: { color: '#FF9500', fontSize: 12, marginTop: 6 },
+  content: { flex: 1, padding: 16 },
+  empty: { alignItems: 'center', marginTop: 60 },
+  emptyText: { fontSize: 16, color: '#999', marginTop: 12 },
+  emptyBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#007AFF', borderRadius: 8 },
+  emptyBtnText: { color: '#fff', fontWeight: '600' },
+  medCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  medHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  medIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#007AFF', justifyContent: 'center', alignItems: 'center' },
+  medInfo: { flex: 1 },
+  medName: { fontSize: 16, fontWeight: '600', color: '#333' },
+  medGeneric: { fontSize: 13, color: '#666' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#f0f0f0' },
+  statusActive: { backgroundColor: '#E8F5E9' },
+  statusCompleted: { backgroundColor: '#E3F2FD' },
+  statusDiscontinued: { backgroundColor: '#FFEBEE' },
+  statusText: { fontSize: 12, fontWeight: '600', color: '#666', textTransform: 'capitalize' },
+  medDetails: { gap: 4 },
+  medDetail: { fontSize: 14, color: '#666' },
+  medActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  actionBtn: { flex: 1, paddingVertical: 10, backgroundColor: '#E8F5E9', borderRadius: 8, alignItems: 'center' },
+  actionBtnText: { color: '#2E7D32', fontWeight: '600' },
+  actionBtnDanger: { backgroundColor: '#FFEBEE' },
+  actionBtnDangerText: { color: '#C62828', fontWeight: '600' },
 });

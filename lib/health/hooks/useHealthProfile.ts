@@ -1,125 +1,97 @@
 import { useState, useEffect, useCallback } from 'react';
-import { HealthProfile, ChildHealthProfile, InsurancePolicy, EmergencyContact } from '../types';
-import {
-  getHealthProfile,
-  createHealthProfile,
-  updateHealthProfile,
-  addInsurancePolicy,
-  removeInsurancePolicy,
-  getChildren,
-  addChild,
-  updateChild,
-  transferChildOwnership,
-} from '../services/health-profile.service';
+import { supabase } from '@/lib/supabase/client';
 
-export function useHealthProfile(mtaaId: string) {
+export interface HealthProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  dateOfBirth: string;
+  bloodGroup: string;
+  allergies: string[];
+  chronicConditions: string[];
+  emergencyContacts: { name: string; relationship: string; phone: string }[];
+  organDonor: boolean;
+  heightCm?: number;
+  weightKg?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useHealthProfile(userId?: string) {
   const [profile, setProfile] = useState<HealthProfile | null>(null);
-  const [children, setChildren] = useState<ChildHealthProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (mtaaId) load();
-  }, [mtaaId]);
-
-  async function load() {
+  const load = useCallback(async () => {
+    if (!userId) return;
     setLoading(true);
     try {
-      const [p, c] = await Promise.all([getHealthProfile(mtaaId), getChildren(mtaaId)]);
-      setProfile(p);
-      setChildren(c);
+      const { data, error } = await supabase
+        .from('health_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      if (error) throw error;
+      if (data) setProfile(mapDb(data));
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId]);
 
-  const create = useCallback(async (data: Omit<HealthProfile, 'createdAt' | 'updatedAt'>) => {
-    setLoading(true);
-    try {
-      const p = await createHealthProfile(data);
-      if (p) setProfile(p);
-      return p;
-    } catch (e: any) {
-      setError(e.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => { load(); }, [load]);
 
   const update = useCallback(async (updates: Partial<HealthProfile>) => {
+    if (!userId) return false;
     setLoading(true);
     try {
-      const p = await updateHealthProfile(mtaaId, updates);
-      if (p) setProfile(p);
-      return p;
+      const { error } = await supabase
+        .from('health_profiles')
+        .update(mapToDb(updates))
+        .eq('user_id', userId);
+      if (error) throw error;
+      await load();
+      return true;
     } catch (e: any) {
       setError(e.message);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }
-  }, [mtaaId]);
+  }, [userId, load]);
 
-  const addInsurance = useCallback(async (policy: Omit<InsurancePolicy, 'id'>) => {
-    const p = await addInsurancePolicy(mtaaId, policy);
-    await load();
-    return p;
-  }, [mtaaId]);
+  return { profile, loading, error, refresh: load, update };
+}
 
-  const removeInsurance = useCallback(async (policyId: string) => {
-    const ok = await removeInsurancePolicy(mtaaId, policyId);
-    if (ok) await load();
-    return ok;
-  }, [mtaaId]);
-
-  const addChildProfile = useCallback(async (child: Omit<ChildHealthProfile, 'id' | 'parentMtaaId' | 'createdAt' | 'updatedAt'>) => {
-    const c = await addChild(mtaaId, child);
-    if (c) setChildren(prev => [c, ...prev]);
-    return c;
-  }, [mtaaId]);
-
-  const updateChildProfile = useCallback(async (childId: string, updates: Partial<ChildHealthProfile>) => {
-    const c = await updateChild(childId, updates);
-    if (c) setChildren(prev => prev.map(ch => ch.id === childId ? c : ch));
-    return c;
-  }, []);
-
-  const transferChild = useCallback(async (childId: string, newMtaaId: string) => {
-    const ok = await transferChildOwnership(childId, newMtaaId);
-    if (ok) setChildren(prev => prev.filter(c => c.id !== childId));
-    return ok;
-  }, []);
-
-  const getChildAge = useCallback((child: ChildHealthProfile): number => {
-    const birth = new Date(child.dateOfBirth);
-    const now = new Date();
-    let age = now.getFullYear() - birth.getFullYear();
-    const m = now.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-    return age;
-  }, []);
-
-  const isTransferReady = useCallback((child: ChildHealthProfile): boolean => {
-    return getChildAge(child) >= 16;
-  }, [getChildAge]);
-
+function mapDb(row: any): HealthProfile {
   return {
-    profile,
-    children,
-    loading,
-    error,
-    refresh: load,
-    create,
-    update,
-    addInsurance,
-    removeInsurance,
-    addChildProfile,
-    updateChildProfile,
-    transferChild,
-    getChildAge,
-    isTransferReady,
+    id: row.id,
+    userId: row.user_id,
+    fullName: row.full_name,
+    dateOfBirth: row.date_of_birth,
+    bloodGroup: row.blood_group,
+    allergies: row.allergies || [],
+    chronicConditions: row.chronic_conditions || [],
+    emergencyContacts: row.emergency_contacts || [],
+    organDonor: row.organ_donor,
+    heightCm: row.height_cm,
+    weightKg: row.weight_kg,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
+}
+
+function mapToDb(p: Partial<HealthProfile>): any {
+  const db: any = {};
+  if (p.fullName !== undefined) db.full_name = p.fullName;
+  if (p.dateOfBirth !== undefined) db.date_of_birth = p.dateOfBirth;
+  if (p.bloodGroup !== undefined) db.blood_group = p.bloodGroup;
+  if (p.allergies !== undefined) db.allergies = p.allergies;
+  if (p.chronicConditions !== undefined) db.chronic_conditions = p.chronicConditions;
+  if (p.emergencyContacts !== undefined) db.emergency_contacts = p.emergencyContacts;
+  if (p.organDonor !== undefined) db.organ_donor = p.organDonor;
+  if (p.heightCm !== undefined) db.height_cm = p.heightCm;
+  if (p.weightKg !== undefined) db.weight_kg = p.weightKg;
+  return db;
 }

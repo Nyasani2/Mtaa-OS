@@ -1,97 +1,88 @@
 import { useState, useCallback } from 'react';
-import {
-  generateShareQR,
-  generateEmergencyQR,
-  scanAndProcessQR,
-  approveShareRequest,
-  getActiveShares,
-  revokeShare,
-  cleanupExpiredShares,
-} from '../services/health-sharing.service';
-import { SharePermission } from '../types';
+import { supabase } from '@/lib/supabase/client';
 
-export function useHealthSharing(patientId: string) {
-  const [shares, setShares] = useState<SharePermission[]>([]);
+export interface ShareGrant {
+  id: string;
+  patientId: string;
+  hospitalId: string;
+  hospitalName: string;
+  scope: string[];
+  expiresAt: string;
+  status: 'active' | 'expired' | 'revoked';
+  createdAt: string;
+}
+
+export function useHealthSharing(patientId?: string) {
+  const [grants, setGrants] = useState<ShareGrant[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadShares = useCallback(async () => {
+  const load = useCallback(async () => {
+    if (!patientId) return;
     setLoading(true);
     try {
-      const s = await getActiveShares(patientId);
-      setShares(s);
-      return s;
+      const { data, error } = await supabase
+        .from('health_sharing_grants')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setGrants((data || []).map(mapDb));
     } catch (e: any) {
       setError(e.message);
-      return [];
     } finally {
       setLoading(false);
     }
   }, [patientId]);
 
-  const createShareQR = useCallback(async (
-    hospitalId: string,
-    hospitalName: string,
-    scope: string[],
-    expiryMinutes: number
-  ) => {
+  const grant = useCallback(async (hospitalId: string, hospitalName: string, scope: string[], expiryHours: number = 24) => {
+    if (!patientId) return null;
     setLoading(true);
     try {
-      const qr = await generateShareQR(patientId, hospitalId, scope, expiryMinutes);
-      await approveShareRequest(patientId, hospitalId, hospitalName, scope, expiryMinutes);
-      await loadShares();
-      return qr;
+      const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('health_sharing_grants')
+        .insert({
+          patient_id: patientId,
+          hospital_id: hospitalId,
+          hospital_name: hospitalName,
+          scope,
+          expires_at: expiresAt,
+          status: 'active',
+          created_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      await load();
+      return mapDb(data);
     } catch (e: any) {
       setError(e.message);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
+  }, [patientId, load]);
 
-  const createEmergencyQR = useCallback(async (emergencyData: any) => {
-    return generateEmergencyQR(emergencyData);
-  }, []);
+  const revoke = useCallback(async (grantId: string) => {
+    const { error } = await supabase.from('health_sharing_grants').update({ status: 'revoked' }).eq('id', grantId);
+    if (error) return false;
+    await load();
+    return true;
+  }, [load]);
 
-  const scanQR = useCallback(async (qrData: string) => {
-    setLoading(true);
-    try {
-      return await scanAndProcessQR(qrData);
-    } catch (e: any) {
-      setError(e.message);
-      return { valid: false, error: e.message };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  return { grants, loading, error, refresh: load, grant, revoke };
+}
 
-  const revoke = useCallback(async (shareId: string) => {
-    setLoading(true);
-    try {
-      const ok = await revokeShare(shareId);
-      if (ok) await loadShares();
-      return ok;
-    } catch (e: any) {
-      setError(e.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadShares]);
-
-  const cleanup = useCallback(async () => {
-    return cleanupExpiredShares();
-  }, []);
-
+function mapDb(row: any): ShareGrant {
   return {
-    shares,
-    loading,
-    error,
-    loadShares,
-    createShareQR,
-    createEmergencyQR,
-    scanQR,
-    revoke,
-    cleanup,
+    id: row.id,
+    patientId: row.patient_id,
+    hospitalId: row.hospital_id,
+    hospitalName: row.hospital_name,
+    scope: row.scope,
+    expiresAt: row.expires_at,
+    status: row.status,
+    createdAt: row.created_at,
   };
 }
