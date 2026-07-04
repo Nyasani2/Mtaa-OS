@@ -1,57 +1,42 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useHealthSharing } from '@/lib/health/hooks/useHealthSharing';
-import { useHealthEmergency } from '@/lib/health/hooks/useHealthEmergency';
-import { getEmergencyData } from '@/lib/health/security/emergency-card';
-
-const SCOPE_OPTIONS = [
-  { key: 'visits', label: 'Medical Visits' },
-  { key: 'prescriptions', label: 'Prescriptions' },
-  { key: 'lab_results', label: 'Lab Results' },
-  { key: 'imaging', label: 'Imaging Reports' },
-  { key: 'vaccinations', label: 'Vaccinations' },
-  { key: 'allergies', label: 'Allergies' },
-];
-
-const EXPIRY_OPTIONS = [
-  { label: '15 min', value: 15 },
-  { label: '1 hour', value: 60 },
-  { label: '4 hours', value: 240 },
-  { label: '24 hours', value: 1440 },
-];
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 export default function ShareScreen() {
-  const router = useRouter();
   const { user } = useAuthStore();
-  const mtaaId = user?.id || '';
-  const { shares, loadShares, createShareQR, createEmergencyQR, revoke, loading } = useHealthSharing(mtaaId);
-  const [selectedScope, setSelectedScope] = useState<string[]>(['visits', 'prescriptions']);
-  const [expiry, setExpiry] = useState(60);
-  const [hospitalId, setHospitalId] = useState('');
-  const [hospitalName, setHospitalName] = useState('');
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [emergencyQR, setEmergencyQR] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'share' | 'emergency' | 'active'>('share');
+  const { grants, loading, error, refresh, revoke } = useHealthSharing(user?.id);
+  const [activeTab, setActiveTab] = useState<'active' | 'expired' | 'revoked'>('active');
 
-  async function generateShare() {
-    if (!hospitalId || !hospitalName) return;
-    const qr = await createShareQR(hospitalId, hospitalName, selectedScope, expiry);
-    if (qr) setQrCode(qr);
-  }
+  useEffect(() => {
+    refresh();
+  }, []);
 
-  async function generateEmergency() {
-    const data = await getEmergencyData();
-    if (data) {
-      const qr = await createEmergencyQR(data);
-      setEmergencyQR(qr);
-    }
-  }
+  const filteredGrants = (grants || []).filter(g => g.status === activeTab);
 
-  function toggleScope(key: string) {
-    setSelectedScope(prev =>
-      prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key]
+  const handleRevoke = (grantId: string) => {
+    Alert.alert('Revoke Access', 'Are you sure you want to revoke this sharing grant?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Revoke', style: 'destructive', onPress: () => revoke(grantId) },
+    ]);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Share Records</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text>Loading...</Text>
+        </View>
+      </View>
     );
   }
 
@@ -59,150 +44,75 @@ export default function ShareScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.back}>←</Text>
+          <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.title}>Share Health Data</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Share Records</Text>
+        <TouchableOpacity onPress={() => router.push('/(os)/health/share/grant')}>
+          <Ionicons name="add" size={24} color="#007AFF" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.tabs}>
-        <TouchableOpacity style={[styles.tab, activeTab === 'share' && styles.tabActive]} onPress={() => setActiveTab('share')}>
-          <Text style={[styles.tabText, activeTab === 'share' && styles.tabTextActive]}>Share</Text>
+        <TouchableOpacity style={[styles.tab, activeTab === 'active' && styles.tabActive]} onPress={() => setActiveTab('active')}>
+          <Text style={[styles.tabText, activeTab === 'active' && styles.tabTextActive]}>Active ({(grants || []).filter(g => g.status === 'active').length})</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === 'emergency' && styles.tabActive]} onPress={() => setActiveTab('emergency')}>
-          <Text style={[styles.tabText, activeTab === 'emergency' && styles.tabTextActive]}>Emergency QR</Text>
+        <TouchableOpacity style={[styles.tab, activeTab === 'expired' && styles.tabActive]} onPress={() => setActiveTab('expired')}>
+          <Text style={[styles.tabText, activeTab === 'expired' && styles.tabTextActive]}>Expired ({(grants || []).filter(g => g.status === 'expired').length})</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === 'active' && styles.tabActive]} onPress={() => { setActiveTab('active'); loadShares(); }}>
-          <Text style={[styles.tabText, activeTab === 'active' && styles.tabTextActive]}>Active ({shares.length})</Text>
+        <TouchableOpacity style={[styles.tab, activeTab === 'revoked' && styles.tabActive]} onPress={() => setActiveTab('revoked')}>
+          <Text style={[styles.tabText, activeTab === 'revoked' && styles.tabTextActive]}>Revoked ({(grants || []).filter(g => g.status === 'revoked').length})</Text>
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'share' && (
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>Hospital / Provider</Text>
-          <TextInput style={styles.input} placeholder="Hospital ID" placeholderTextColor="#666" value={hospitalId} onChangeText={setHospitalId} />
-          <TextInput style={styles.input} placeholder="Hospital Name" placeholderTextColor="#666" value={hospitalName} onChangeText={setHospitalName} />
-
-          <Text style={styles.sectionTitle}>What to Share</Text>
-          {SCOPE_OPTIONS.map(opt => (
-            <TouchableOpacity key={opt.key} style={styles.scopeRow} onPress={() => toggleScope(opt.key)}>
-              <View style={[styles.checkbox, selectedScope.includes(opt.key) && styles.checkboxChecked]}>
-                {selectedScope.includes(opt.key) && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.scopeLabel}>{opt.label}</Text>
+      <ScrollView style={styles.content}>
+        {filteredGrants.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="share-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>No {activeTab} sharing grants</Text>
+            <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/health/share/grant')}>
+              <Text style={styles.emptyBtnText}>Grant Access</Text>
             </TouchableOpacity>
-          ))}
-
-          <Text style={styles.sectionTitle}>Access Duration</Text>
-          <View style={styles.expiryRow}>
-            {EXPIRY_OPTIONS.map(opt => (
-              <TouchableOpacity key={opt.value} style={[styles.expiryChip, expiry === opt.value && styles.expiryChipActive]} onPress={() => setExpiry(opt.value)}>
-                <Text style={[styles.expiryText, expiry === opt.value && styles.expiryTextActive]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
           </View>
-
-          <TouchableOpacity style={styles.generateBtn} onPress={generateShare} disabled={loading}>
-            <Text style={styles.generateText}>{loading ? 'Generating...' : 'Generate Share QR'}</Text>
-          </TouchableOpacity>
-
-          {qrCode && (
-            <View style={styles.qrCard}>
-              <Text style={styles.qrLabel}>Scan to request access</Text>
-              <View style={styles.qrBox}>
-                <Text style={styles.qrData}>{qrCode.slice(0, 50)}...</Text>
+        ) : (
+          filteredGrants.map(grant => (
+            <View key={grant.id} style={styles.grantCard}>
+              <View style={styles.grantHeader}>
+                <Ionicons name="medical" size={20} color="#007AFF" />
+                <Text style={styles.grantTitle}>{grant.hospitalName}</Text>
+                {grant.status === 'active' && (
+                  <TouchableOpacity onPress={() => handleRevoke(grant.id)}>
+                    <Ionicons name="close-circle" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
+                )}
               </View>
-              <Text style={styles.qrExpiry}>Expires in {expiry} minutes</Text>
+              <Text style={styles.grantScope}>Access: {grant.scope.join(', ')}</Text>
+              <Text style={styles.grantExpiry}>Expires: {new Date(grant.expiresAt).toLocaleDateString()}</Text>
             </View>
-          )}
-        </ScrollView>
-      )}
-
-      {activeTab === 'emergency' && (
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.infoText}>Emergency QR contains only essential info for first responders:</Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Name</Text>
-            <Text style={styles.bullet}>• Blood group</Text>
-            <Text style={styles.bullet}>• Allergies</Text>
-            <Text style={styles.bullet}>• Critical medications</Text>
-            <Text style={styles.bullet}>• Emergency contact</Text>
-          </View>
-          <TouchableOpacity style={styles.generateBtn} onPress={generateEmergency}>
-            <Text style={styles.generateText}>Generate Emergency QR</Text>
-          </TouchableOpacity>
-          {emergencyQR && (
-            <View style={styles.qrCard}>
-              <Text style={styles.qrLabel}>Emergency QR</Text>
-              <View style={styles.qrBox}>
-                <Text style={styles.qrData}>{emergencyQR.slice(0, 50)}...</Text>
-              </View>
-              <Text style={styles.qrExpiry}>Valid for 24 hours</Text>
-            </View>
-          )}
-        </ScrollView>
-      )}
-
-      {activeTab === 'active' && (
-        <ScrollView contentContainerStyle={styles.content}>
-          {shares.length === 0 ? (
-            <Text style={styles.empty}>No active shares</Text>
-          ) : (
-            shares.map(s => (
-              <View key={s.id} style={styles.shareCard}>
-                <Text style={styles.shareHospital}>{s.hospitalName}</Text>
-                <Text style={styles.shareScope}>Access: {s.scope.join(', ')}</Text>
-                <Text style={styles.shareExpiry}>Expires: {new Date(s.expiresAt).toLocaleString()}</Text>
-                <TouchableOpacity style={styles.revokeBtn} onPress={() => revoke(s.id)}>
-                  <Text style={styles.revokeText}>Revoke Access</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </ScrollView>
-      )}
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
-  back: { color: '#fff', fontSize: 22 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#2a2a2a' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#007AFF' },
-  tabText: { color: '#888', fontSize: 13 },
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tabs: { flexDirection: 'row', padding: 12, backgroundColor: '#fff', gap: 8 },
+  tab: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8, backgroundColor: '#f0f0f0' },
+  tabActive: { backgroundColor: '#007AFF' },
+  tabText: { fontSize: 13, color: '#666' },
   tabTextActive: { color: '#fff', fontWeight: '600' },
-  content: { padding: 16 },
-  sectionTitle: { color: '#fff', fontSize: 14, fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  input: { backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, marginBottom: 8 },
-  scopeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#555', marginRight: 12, justifyContent: 'center', alignItems: 'center' },
-  checkboxChecked: { backgroundColor: '#007AFF', borderColor: '#007AFF' },
-  checkmark: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  scopeLabel: { color: '#ccc', fontSize: 14 },
-  expiryRow: { flexDirection: 'row', gap: 8 },
-  expiryChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#1a1a1a' },
-  expiryChipActive: { backgroundColor: '#007AFF' },
-  expiryText: { color: '#888', fontSize: 13 },
-  expiryTextActive: { color: '#fff', fontWeight: '600' },
-  generateBtn: { backgroundColor: '#007AFF', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20 },
-  generateText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  qrCard: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 20, alignItems: 'center', marginTop: 16 },
-  qrLabel: { color: '#888', fontSize: 12, marginBottom: 8 },
-  qrBox: { backgroundColor: '#fff', padding: 20, borderRadius: 8 },
-  qrData: { color: '#000', fontSize: 10, fontFamily: 'monospace' },
-  qrExpiry: { color: '#FF9500', fontSize: 12, marginTop: 8 },
-  infoText: { color: '#ccc', fontSize: 14, marginBottom: 12 },
-  bulletList: { marginBottom: 16 },
-  bullet: { color: '#888', fontSize: 14, marginBottom: 6 },
-  empty: { color: '#666', textAlign: 'center', marginTop: 40 },
-  shareCard: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, marginBottom: 10 },
-  shareHospital: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  shareScope: { color: '#888', fontSize: 12, marginTop: 4 },
-  shareExpiry: { color: '#FF9500', fontSize: 12, marginTop: 2 },
-  revokeBtn: { marginTop: 10, alignSelf: 'flex-start' },
-  revokeText: { color: '#FF3B30', fontSize: 13, fontWeight: '600' },
+  content: { flex: 1, padding: 16 },
+  empty: { alignItems: 'center', marginTop: 60 },
+  emptyText: { fontSize: 16, color: '#999', marginTop: 12 },
+  emptyBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#007AFF', borderRadius: 8 },
+  emptyBtnText: { color: '#fff', fontWeight: '600' },
+  grantCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  grantHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  grantTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#333' },
+  grantScope: { fontSize: 14, color: '#666', marginBottom: 4 },
+  grantExpiry: { fontSize: 13, color: '#999' },
 });

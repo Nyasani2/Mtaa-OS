@@ -1,101 +1,101 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  getActiveMedications,
-  getAllMedications,
-  addMedication,
-  updateMedication,
-  logMedication,
-  getMedicationLogs,
-  getTodaysMedicationSchedule,
-  Medication,
-  MedicationLog,
-} from '../services/health-medication.service';
+import { supabase } from '@/lib/supabase/client';
 
-export function useHealthMedications(patientId: string) {
+export interface Medication {
+  id: string;
+  patientId: string;
+  name: string;
+  genericName: string;
+  dosage: string;
+  frequency: string;
+  prescribedBy: string;
+  prescribedAt: string;
+  startDate: string;
+  endDate?: string;
+  status: 'active' | 'completed' | 'discontinued';
+  notes?: string;
+}
+
+export function useHealthMedications(patientId?: string) {
   const [medications, setMedications] = useState<Medication[]>([]);
-  const [activeMedications, setActiveMedications] = useState<Medication[]>([]);
-  const [todaysSchedule, setTodaysSchedule] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (patientId) load();
-  }, [patientId]);
-
-  async function load() {
+  const load = useCallback(async () => {
+    if (!patientId) return;
     setLoading(true);
     try {
-      const [all, active, schedule] = await Promise.all([
-        getAllMedications(patientId),
-        getActiveMedications(patientId),
-        getTodaysMedicationSchedule(patientId),
-      ]);
-      setMedications(all);
-      setActiveMedications(active);
-      setTodaysSchedule(schedule);
+      const { data, error } = await supabase
+        .from('health_medications')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('prescribed_at', { ascending: false });
+      if (error) throw error;
+      setMedications((data || []).map(mapDb));
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  const add = useCallback(async (med: Omit<Medication, 'id' | 'createdAt' | 'updatedAt'>) => {
-    setLoading(true);
-    try {
-      const m = await addMedication(med);
-      if (m) await load();
-      return m;
-    } catch (e: any) {
-      setError(e.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
   }, [patientId]);
 
-  const update = useCallback(async (medId: string, updates: Partial<Medication>) => {
+  useEffect(() => { load(); }, [load]);
+
+  const add = useCallback(async (med: Omit<Medication, 'id'>) => {
     setLoading(true);
     try {
-      const ok = await updateMedication(medId, updates);
-      if (ok) await load();
-      return ok;
+      const { error } = await supabase.from('health_medications').insert(mapToDb(med));
+      if (error) throw error;
+      await load();
+      return true;
     } catch (e: any) {
       setError(e.message);
       return false;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [load]);
 
-  const log = useCallback(async (logEntry: Omit<MedicationLog, 'id'>) => {
-    setLoading(true);
-    try {
-      const l = await logMedication(logEntry);
-      if (l) await load();
-      return l;
-    } catch (e: any) {
-      setError(e.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const updateStatus = useCallback(async (id: string, status: Medication['status']) => {
+    const { error } = await supabase.from('health_medications').update({ status }).eq('id', id);
+    if (error) return false;
+    await load();
+    return true;
+  }, [load]);
 
-  const getLogs = useCallback(async (medicationId: string) => {
-    return getMedicationLogs(medicationId);
-  }, []);
+  return { medications, loading, error, refresh: load, add, updateStatus };
+}
 
+function mapDb(row: any): Medication {
   return {
-    medications,
-    activeMedications,
-    todaysSchedule,
-    loading,
-    error,
-    refresh: load,
-    add,
-    update,
-    log,
-    getLogs,
+    id: row.id,
+    patientId: row.patient_id,
+    name: row.name,
+    genericName: row.generic_name,
+    dosage: row.dosage,
+    frequency: row.frequency,
+    prescribedBy: row.prescribed_by,
+    prescribedAt: row.prescribed_at,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    notes: row.notes,
+  };
+}
+
+function mapToDb(m: Partial<Medication>): any {
+  return {
+    id: m.id,
+    patient_id: m.patientId,
+    name: m.name,
+    generic_name: m.genericName,
+    dosage: m.dosage,
+    frequency: m.frequency,
+    prescribed_by: m.prescribedBy,
+    prescribed_at: m.prescribedAt,
+    start_date: m.startDate,
+    end_date: m.endDate,
+    status: m.status,
+    notes: m.notes,
   };
 }

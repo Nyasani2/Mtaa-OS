@@ -1,6 +1,12 @@
-import * as LocalAuthentication from 'expo-local-authentication';
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+
+// Lazy-load SecureStore to prevent web crash on module import
+let SecureStore: any = null;
+try {
+  SecureStore = require('expo-secure-store');
+} catch {
+  // Web or missing module — will fall through to localStorage
+}
 
 export type HealthAuthLevel = 0 | 1 | 2 | 3;
 
@@ -36,29 +42,36 @@ const BIOMETRIC_ENABLED_KEY = 'health_biometric_enabled';
 
 let _state: HealthAuthState | null = null;
 let _config: HealthAuthConfig = DEFAULT_CONFIG;
-let _sessionTimer: NodeJS.Timeout | null = null;
+let _sessionTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Web fallback storage
+// Unified storage: SecureStore on native, localStorage on web
 const webStore = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
       try { return localStorage.getItem(key); } catch { return null; }
     }
-    try { return await SecureStore.getItemAsync(key); } catch { return null; }
+    if (SecureStore?.getItemAsync) {
+      try { return await SecureStore.getItemAsync(key); } catch { return null; }
+    }
+    return null;
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
       try { localStorage.setItem(key, value); } catch {}
       return;
     }
-    try { await SecureStore.setItemAsync(key, value); } catch {}
+    if (SecureStore?.setItemAsync) {
+      try { await SecureStore.setItemAsync(key, value); } catch {}
+    }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
       try { localStorage.removeItem(key); } catch {}
       return;
     }
-    try { await SecureStore.deleteItemAsync(key); } catch {}
+    if (SecureStore?.deleteItemAsync) {
+      try { await SecureStore.deleteItemAsync(key); } catch {}
+    }
   },
 };
 
@@ -99,6 +112,7 @@ export async function initializeHealthAuth(config?: Partial<HealthAuthConfig>): 
   let biometric = false;
   if (Platform.OS !== 'web') {
     try {
+      const LocalAuthentication = require('expo-local-authentication');
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
       biometric = hasHardware && enrolled;
@@ -136,6 +150,7 @@ export async function authenticateBiometric(): Promise<boolean> {
     return false;
   }
   try {
+    const LocalAuthentication = require('expo-local-authentication');
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Unlock MTAA Health',
       fallbackLabel: 'Use Health PIN',

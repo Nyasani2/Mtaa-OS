@@ -1,39 +1,101 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/kernel/supabase";
+import { AppointmentService, HealthAppointment } from "../services/appointment.service";
 
-export function useAppointments(patientId?: string) {
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useAppointments(userId?: string) {
+  const [appointments, setAppointments] = useState<HealthAppointment[]>([]);
+  const [upcoming, setUpcoming] = useState<HealthAppointment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAppointments = useCallback(async () => {
+  const load = useCallback(async () => {
+    if (!userId) {
+      setAppointments([]);
+      setUpcoming([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
-      let query = supabase.from("health_appointments").select("*").order("scheduled_at", { ascending: true });
-      if (patientId) query = query.eq("patient_id", patientId);
-      const { data, error } = await query;
-      if (error) throw error;
-      setAppointments(data || []);
+      const [all, up] = await Promise.all([
+        AppointmentService.getAppointments(userId),
+        AppointmentService.getUpcomingAppointments(userId),
+      ]);
+      setAppointments(all);
+      setUpcoming(up);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
+  }, [userId]);
 
-  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const bookAppointment = async (data: any) => {
-    const { error } = await supabase.from("health_appointments").insert(data);
-    if (error) throw error;
-    await fetchAppointments();
+  const book = useCallback(async (data: Omit<HealthAppointment, 'id' | 'createdAt' | 'updatedAt'>) => {
+    setLoading(true);
+    try {
+      const a = await AppointmentService.book(data);
+      if (a) await load();
+      return a;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [load]);
+
+  const cancel = useCallback(async (appointmentId: string, reason?: string) => {
+    setLoading(true);
+    try {
+      const ok = await AppointmentService.cancel(appointmentId, reason);
+      if (ok) await load();
+      return ok;
+    } catch (e: any) {
+      setError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [load]);
+
+  const reschedule = useCallback(async (appointmentId: string, newDate: string, newTime: string) => {
+    setLoading(true);
+    try {
+      const ok = await AppointmentService.reschedule(appointmentId, newDate, newTime);
+      if (ok) await load();
+      return ok;
+    } catch (e: any) {
+      setError(e.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [load]);
+
+  const complete = useCallback(async (appointmentId: string) => {
+    const ok = await AppointmentService.complete(appointmentId);
+    if (ok) await load();
+    return ok;
+  }, [load]);
+
+  const getAvailability = useCallback(async (doctorId: string, date: string) => {
+    return AppointmentService.getDoctorAvailability(doctorId, date);
+  }, []);
+
+  return {
+    appointments,
+    upcoming,
+    loading,
+    error,
+    refresh: load,
+    book,
+    cancel,
+    reschedule,
+    complete,
+    getAvailability,
   };
-
-  const cancelAppointment = async (id: string) => {
-    const { error } = await supabase.from("health_appointments").update({ status: "cancelled" }).eq("id", id);
-    if (error) throw error;
-    await fetchAppointments();
-  };
-
-  return { appointments, loading, error, bookAppointment, cancelAppointment, refresh: fetchAppointments };
 }

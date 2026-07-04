@@ -1,85 +1,42 @@
 import { useState, useCallback } from 'react';
-import {
-  requestAmbulance,
-  getDispatchStatus,
-  cancelDispatch,
-  getPatientDispatches,
-  getEmergencyDataForMedic,
-  AmbulanceDispatch,
-} from '../services/health-emergency.service';
-import { EmergencyData } from '../security/emergency-card';
+import { supabase } from '@/lib/supabase/client';
 
-export function useHealthEmergency(patientId: string) {
-  const [dispatches, setDispatches] = useState<AmbulanceDispatch[]>([]);
-  const [activeDispatch, setActiveDispatch] = useState<AmbulanceDispatch | null>(null);
+export interface EmergencyRequest {
+  id: string;
+  patientId: string;
+  type: 'ambulance' | 'sos' | 'fire' | 'police';
+  location: { lat: number; lng: number };
+  status: 'pending' | 'dispatched' | 'resolved' | 'cancelled';
+  notes?: string;
+  createdAt: string;
+}
+
+export function useHealthEmergency() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDispatches = useCallback(async () => {
+  const sendEmergency = useCallback(async (req: Omit<EmergencyRequest, 'id' | 'createdAt' | 'status'>) => {
     setLoading(true);
     try {
-      const d = await getPatientDispatches(patientId);
-      setDispatches(d);
-      const active = d.find(x => ['requested', 'dispatched', 'en_route'].includes(x.status));
-      setActiveDispatch(active || null);
-      return d;
-    } catch (e: any) {
-      setError(e.message);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [patientId]);
-
-  const request = useCallback(async (
-    location: { lat: number; lng: number; address: string },
-    condition: string,
-    priority: AmbulanceDispatch['priority']
-  ) => {
-    setLoading(true);
-    try {
-      const d = await requestAmbulance(patientId, location, condition, priority);
-      if (d) await loadDispatches();
-      return d;
+      const { data, error } = await supabase
+        .from('health_emergency_requests')
+        .insert({ ...req, status: 'pending', created_at: new Date().toISOString() })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
     } catch (e: any) {
       setError(e.message);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
-
-  const cancel = useCallback(async (dispatchId: string) => {
-    setLoading(true);
-    try {
-      const ok = await cancelDispatch(dispatchId);
-      if (ok) await loadDispatches();
-      return ok;
-    } catch (e: any) {
-      setError(e.message);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [loadDispatches]);
-
-  const getStatus = useCallback(async (dispatchId: string) => {
-    return getDispatchStatus(dispatchId);
   }, []);
 
-  const getMedicData = useCallback(async (): Promise<EmergencyData | null> => {
-    return getEmergencyDataForMedic();
+  const cancelRequest = useCallback(async (id: string) => {
+    const { error } = await supabase.from('health_emergency_requests').update({ status: 'cancelled' }).eq('id', id);
+    return !error;
   }, []);
 
-  return {
-    dispatches,
-    activeDispatch,
-    loading,
-    error,
-    loadDispatches,
-    request,
-    cancel,
-    getStatus,
-    getMedicData,
-  };
+  return { loading, error, sendEmergency, cancelRequest };
 }

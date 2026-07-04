@@ -1,5 +1,12 @@
-import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+
+// Lazy-load SecureStore to prevent web crash on module import
+let SecureStore: any = null;
+try {
+  SecureStore = require('expo-secure-store');
+} catch {
+  // Web or missing module
+}
 
 export interface EmergencyContact {
   name: string;
@@ -21,26 +28,34 @@ export interface EmergencyData {
 
 const EMERGENCY_DATA_KEY = 'health_emergency_data';
 
+// Unified storage
 const webStore = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
       try { return localStorage.getItem(key); } catch { return null; }
     }
-    try { return await SecureStore.getItemAsync(key); } catch { return null; }
+    if (SecureStore?.getItemAsync) {
+      try { return await SecureStore.getItemAsync(key); } catch { return null; }
+    }
+    return null;
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
       try { localStorage.setItem(key, value); } catch {}
       return;
     }
-    try { await SecureStore.setItemAsync(key, value); } catch {}
+    if (SecureStore?.setItemAsync) {
+      try { await SecureStore.setItemAsync(key, value); } catch {}
+    }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
       try { localStorage.removeItem(key); } catch {}
       return;
     }
-    try { await SecureStore.deleteItemAsync(key); } catch {}
+    if (SecureStore?.deleteItemAsync) {
+      try { await SecureStore.deleteItemAsync(key); } catch {}
+    }
   },
 };
 

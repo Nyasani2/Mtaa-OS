@@ -1,183 +1,400 @@
-import React, { useState, useEffect } from "react";
+import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl
-} from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import {
+  Heart,
+  Calendar,
+  FileText,
+  Search,
+  Pill,
+  FlaskConical,
+  Shield,
+  Wallet,
+  Baby,
+  AlertTriangle,
+  Users,
+  Building2,
+  Settings,
+  BarChart3,
+  Landmark,
+  Stethoscope,
+  Clock,
+  BedDouble,
+  Truck,
+  CreditCard,
+  UserCheck,
+  Calculator,
+  ClipboardList,
+  Phone,
+  LogIn,
+  LogOut,
+} from 'lucide-react-native';
+import { useHealthRole } from '@/lib/health/hooks';
+import { healthRoleService, ROLE_DISPLAY_NAMES, ROLE_COLORS } from '@/lib/health/services';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-const PATIENT_MODULES = [
-  { id: "records", label: "My Records", icon: "document-text", route: "/(os)/health/records", color: "#2563eb" },
-  { id: "appointments", label: "Appointments", icon: "calendar", route: "/(os)/health/appointments", color: "#8b5cf6" },
-  { id: "prescriptions", label: "Prescriptions", icon: "medical", route: "/(os)/health/prescriptions", color: "#10b981" },
-  { id: "lab-results", label: "Lab Results", icon: "flask", route: "/(os)/health/lab-results", color: "#f59e0b" },
-  { id: "find-care", label: "Find Care", icon: "search", route: "/(os)/health/find-care", color: "#ec4899" },
-  { id: "insurance", label: "Insurance", icon: "shield-checkmark", route: "/(os)/health/insurance", color: "#06b6d4" },
-  { id: "wallet", label: "Health Wallet", icon: "wallet", route: "/(os)/health/wallet", color: "#14b8a6" },
-  { id: "children", label: "Child Health", icon: "happy", route: "/(os)/health/children", color: "#f97316" },
+// ===== PATIENT QUICK ACTIONS =====
+const PATIENT_ACTIONS = [
+  { icon: Heart, label: 'My Vitals', route: '/health/vitals', color: '#ef4444' },
+  { icon: Calendar, label: 'Appointments', route: '/health/appointments', color: '#22c55e' },
+  { icon: FileText, label: 'Medical Records', route: '/health/records', color: '#3b82f6' },
+  { icon: Pill, label: 'Prescriptions', route: '/health/prescriptions', color: '#a855f7' },
+  { icon: FlaskConical, label: 'Lab Results', route: '/health/lab-results', color: '#06b6d4' },
+  { icon: Search, label: 'Find Care', route: '/health/find-care', color: '#f97316' },
+  { icon: Shield, label: 'Insurance', route: '/health/insurance', color: '#6366f1' },
+  { icon: Wallet, label: 'Health Wallet', route: '/health/wallet', color: '#10b981' },
+  { icon: Baby, label: 'Child Health', route: '/health/children', color: '#ec4899' },
+  { icon: AlertTriangle, label: 'Emergency SOS', route: '/health/emergency-card', color: '#dc2626' },
 ];
 
-const CLINICAL_MODULES = [
-  { id: "doctor", label: "Doctor", icon: "stethoscope", route: "/(os)/health/doctor", color: "#2563eb" },
-  { id: "lab", label: "Laboratory", icon: "flask", route: "/(os)/health/lab", color: "#f59e0b" },
-  { id: "pharmacy", label: "Pharmacy", icon: "medkit", route: "/(os)/health/pharmacy", color: "#10b981" },
-  { id: "radiology", label: "Radiology", icon: "scan", route: "/(os)/health/radiology", color: "#8b5cf6" },
-  { id: "telemedicine", label: "Telemedicine", icon: "videocam", route: "/(os)/health/telemedicine", color: "#06b6d4" },
+// ===== SYSTEM ADMIN ACTIONS =====
+const ADMIN_ACTIONS = [
+  { icon: Settings, label: 'System', route: '/health/system/settings', color: '#1e3a5f', desc: 'Configure Health OS' },
+  { icon: Building2, label: 'Facilities', route: '/health/find-care', color: '#0066cc', desc: 'Manage hospitals & clinics' },
+  { icon: Users, label: 'User Roles', route: '/health/system/roles', color: '#00a86b', desc: 'Staff & permissions' },
+  { icon: ClipboardList, label: 'Audit', route: '/health/system/audit', color: '#9333ea', desc: 'Activity logs' },
+  { icon: BarChart3, label: 'Analytics', route: '/health/system/analytics', color: '#0891b2', desc: 'Reports & insights' },
+  { icon: Landmark, label: 'Government', route: '/health/government', color: '#ea580c', desc: 'Compliance & regs' },
 ];
 
-const OPERATIONS_MODULES = [
-  { id: "hospital-admin", label: "Hospital", icon: "business", route: "/(os)/health/hospital-admin", color: "#2563eb" },
-  { id: "ambulance", label: "Ambulance", icon: "medical", route: "/(os)/health/ambulance", color: "#ef4444" },
+// ===== DOCTOR ACTIONS =====
+const DOCTOR_ACTIONS = [
+  { icon: Users, label: 'Patient Queue', route: '/health/doctor/queue', color: '#0066cc' },
+  { icon: Calendar, label: 'Schedule', route: '/health/doctor/schedule', color: '#22c55e' },
+  { icon: Pill, label: 'Prescribe', route: '/health/doctor/prescribe', color: '#a855f7' },
+  { icon: FlaskConical, label: 'Lab Orders', route: '/health/doctor/lab-orders', color: '#06b6d4' },
+  { icon: Phone, label: 'Telemedicine', route: '/health/telemedicine', color: '#f97316' },
+  { icon: Wallet, label: 'Earnings', route: '/health/doctor/earnings', color: '#10b981' },
 ];
 
-const GOVERNMENT_MODULES = [
-  { id: "government", label: "Ministry", icon: "shield", route: "/(os)/health/government", color: "#2563eb" },
-  { id: "system", label: "System", icon: "settings", route: "/(os)/health/system/settings", color: "#6b7280" },
+// ===== NURSE ACTIONS =====
+const NURSE_ACTIONS = [
+  { icon: Users, label: 'Patient Queue', route: '/health/nurse/queue', color: '#0066cc' },
+  { icon: Heart, label: 'Vitals Entry', route: '/health/vitals', color: '#ef4444' },
+  { icon: BedDouble, label: 'Bed Mgmt', route: '/health/nurse/beds', color: '#22c55e' },
+  { icon: Pill, label: 'Medication', route: '/health/nurse/medication', color: '#a855f7' },
+  { icon: ClipboardList, label: 'Handover', route: '/health/nurse/handover', color: '#06b6d4' },
 ];
 
-export default function HealthHome() {
+// ===== PHARMACIST ACTIONS =====
+const PHARMACIST_ACTIONS = [
+  { icon: Pill, label: 'Rx Queue', route: '/health/pharmacy/queue', color: '#a855f7' },
+  { icon: Building2, label: 'Inventory', route: '/health/pharmacy/inventory', color: '#22c55e' },
+  { icon: ClipboardList, label: 'Dispense', route: '/health/pharmacy/dispense', color: '#0066cc' },
+  { icon: AlertTriangle, label: 'Interactions', route: '/health/pharmacy/interactions', color: '#dc2626' },
+  { icon: Truck, label: 'Suppliers', route: '/health/pharmacy/suppliers', color: '#f97316' },
+];
+
+// ===== LAB TECH ACTIONS =====
+const LAB_TECH_ACTIONS = [
+  { icon: FlaskConical, label: 'Test Queue', route: '/health/lab/queue', color: '#06b6d4' },
+  { icon: FileText, label: 'Results', route: '/health/lab/results', color: '#22c55e' },
+  { icon: AlertTriangle, label: 'Critical', route: '/health/lab/critical', color: '#dc2626' },
+  { icon: Settings, label: 'Equipment', route: '/health/lab/equipment', color: '#6366f1' },
+];
+
+// ===== HOSPITAL ADMIN ACTIONS =====
+const HOSPITAL_ADMIN_ACTIONS = [
+  { icon: BedDouble, label: 'Bed Occupancy', route: '/health/hospital-admin/beds', color: '#0066cc' },
+  { icon: Users, label: 'Staff Mgmt', route: '/health/system/roles', color: '#00a86b' },
+  { icon: Wallet, label: 'Revenue', route: '/health/hospital-admin/revenue', color: '#10b981' },
+  { icon: Shield, label: 'Insurance', route: '/health/insurance', color: '#6366f1' },
+  { icon: Settings, label: 'Settings', route: '/health/system/settings', color: '#1e3a5f' },
+];
+
+// ===== CASHIER ACTIONS =====
+const CASHIER_ACTIONS = [
+  { icon: CreditCard, label: 'Payments', route: '/health/cashier/payments', color: '#10b981' },
+  { icon: Shield, label: 'Insurance', route: '/health/cashier/insurance', color: '#6366f1' },
+  { icon: FileText, label: 'Invoices', route: '/health/cashier/invoices', color: '#0066cc' },
+  { icon: BarChart3, label: 'Daily Revenue', route: '/health/cashier/revenue', color: '#22c55e' },
+];
+
+// ===== HR MANAGER ACTIONS =====
+const HR_ACTIONS = [
+  { icon: Wallet, label: 'Payroll', route: '/health/hr/payroll', color: '#10b981' },
+  { icon: UserCheck, label: 'Attendance', route: '/health/hr/attendance', color: '#0066cc' },
+  { icon: Clock, label: 'Shifts', route: '/health/hr/shifts', color: '#22c55e' },
+  { icon: Calendar, label: 'Leave', route: '/health/hr/leave', color: '#f97316' },
+  { icon: Users, label: 'Onboarding', route: '/health/system/roles', color: '#00a86b' },
+];
+
+// ===== ACCOUNTANT ACTIONS =====
+const ACCOUNTANT_ACTIONS = [
+  { icon: BarChart3, label: 'Revenue', route: '/health/accountant/revenue', color: '#10b981' },
+  { icon: Calculator, label: 'Budget', route: '/health/accountant/budget', color: '#0066cc' },
+  { icon: Truck, label: 'Procurement', route: '/health/accountant/procurement', color: '#f97316' },
+  { icon: FileText, label: 'Tax', route: '/health/accountant/tax', color: '#22c55e' },
+  { icon: Shield, label: 'Compliance', route: '/health/accountant/compliance', color: '#6366f1' },
+];
+
+// ===== AMBULANCE DRIVER ACTIONS =====
+const AMBULANCE_ACTIONS = [
+  { icon: Truck, label: 'Dispatches', route: '/health/ambulance/dispatches', color: '#dc2626' },
+  { icon: Search, label: 'Location', route: '/health/ambulance/location', color: '#0066cc' },
+  { icon: ClipboardList, label: 'Transport Log', route: '/health/ambulance/log', color: '#22c55e' },
+];
+
+// ===== RECEPTIONIST ACTIONS =====
+const RECEPTIONIST_ACTIONS = [
+  { icon: UserCheck, label: 'Register', route: '/health/receptionist/register', color: '#00a86b' },
+  { icon: Calendar, label: 'Book Appt', route: '/health/appointments', color: '#22c55e' },
+  { icon: LogIn, label: 'Check In', route: '/health/receptionist/checkin', color: '#0066cc' },
+  { icon: Users, label: 'Queue', route: '/health/receptionist/queue', color: '#f97316' },
+];
+
+function getActionsForRole(role: string | null) {
+  switch (role) {
+    case 'system_admin': return ADMIN_ACTIONS;
+    case 'doctor': return DOCTOR_ACTIONS;
+    case 'nurse': return NURSE_ACTIONS;
+    case 'pharmacist': return PHARMACIST_ACTIONS;
+    case 'lab_technician': return LAB_TECH_ACTIONS;
+    case 'hospital_admin': return HOSPITAL_ADMIN_ACTIONS;
+    case 'cashier': return CASHIER_ACTIONS;
+    case 'hr_manager': return HR_ACTIONS;
+    case 'accountant': return ACCOUNTANT_ACTIONS;
+    case 'ambulance_driver': return AMBULANCE_ACTIONS;
+    case 'receptionist': return RECEPTIONIST_ACTIONS;
+    default: return PATIENT_ACTIONS;
+  }
+}
+
+function ActionCard({ icon: Icon, label, route, color, desc }: any) {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
-  const [greeting, setGreeting] = useState("Good day");
-
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting("Good morning");
-    else if (hour < 17) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const renderModule = (mod: any) => (
+  return (
     <TouchableOpacity
-      key={mod.id}
-      style={styles.moduleCard}
-      onPress={() => router.push(mod.route as any)}
+      style={[styles.actionCard, { borderColor: color + '20' }]}
+      onPress={() => router.push(route as any)}
+      activeOpacity={0.7}
     >
-      <View style={[styles.moduleIcon, { backgroundColor: mod.color + "15" }]}>
-        <Ionicons name={mod.icon as any} size={24} color={mod.color} />
+      <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
+        <Icon size={24} color={color} />
       </View>
-      <Text style={styles.moduleLabel}>{mod.label}</Text>
+      <Text style={styles.actionLabel} numberOfLines={1}>{label}</Text>
+      {desc && <Text style={styles.actionDesc} numberOfLines={1}>{desc}</Text>}
     </TouchableOpacity>
   );
+}
 
-  const renderSection = (title: string, modules: any[]) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.moduleGrid}>
-        {modules.map(renderModule)}
+export default function HealthIndex() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const {
+    role,
+    staffRecord,
+    isLoading,
+    isSystemAdmin,
+    isPatient,
+    error,
+  } = useHealthRole();
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [clocking, setClocking] = React.useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
+
+  const handleClockInOut = async () => {
+    if (!staffRecord) return;
+    setClocking(true);
+    try {
+      if (staffRecord.is_on_duty) {
+        await healthRoleService.clockOut(staffRecord.id);
+      } else {
+        await healthRoleService.clockIn(staffRecord.id);
+      }
+      onRefresh();
+    } catch (e) {
+      console.error('Clock error:', e);
+    } finally {
+      setClocking(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#0066cc" />
+        <Text style={styles.loadingText}>Loading your health dashboard...</Text>
       </View>
-    </View>
-  );
+    );
+  }
+
+  const actions = getActionsForRole(role);
+  const roleColor = role ? ROLE_COLORS[role] : '#22c55e';
+  const roleName = role ? ROLE_DISPLAY_NAMES[role] : 'Patient';
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting},</Text>
-          <Text style={styles.name}>Health OS</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerTitle}>Health OS</Text>
+            <View style={[styles.roleBadge, { backgroundColor: roleColor + '20' }]}>
+              <View style={[styles.roleDot, { backgroundColor: roleColor }]} />
+              <Text style={[styles.roleText, { color: roleColor }]}>{roleName}</Text>
+            </View>
+          </View>
+          <TouchableOpacity onPress={() => router.push('/health/system/settings' as any)}>
+            <Settings size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.emergencyBtn} onPress={() => router.push("/(os)/health/emergency")}>
-          <Ionicons name="warning" size={20} color="#fff" />
-          <Text style={styles.emergencyText}>SOS</Text>
-        </TouchableOpacity>
+
+        {/* Clock In Widget (for staff only) */}
+        {role && !isPatient && (
+          <TouchableOpacity
+            style={[styles.clockWidget, { backgroundColor: staffRecord?.is_on_duty ? '#22c55e' : '#1e3a5f' }]}
+            onPress={handleClockInOut}
+            disabled={clocking}
+          >
+            <View style={styles.clockContent}>
+              {staffRecord?.is_on_duty ? (
+                <>
+                  <LogOut size={20} color="#fff" />
+                  <Text style={styles.clockText}>Clock Out</Text>
+                  <Text style={styles.clockSubtext}>On duty since {staffRecord.clock_in_time ? new Date(staffRecord.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</Text>
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} color="#fff" />
+                  <Text style={styles.clockText}>Clock In</Text>
+                  <Text style={styles.clockSubtext}>Tap to start your shift</Text>
+                </>
+              )}
+            </View>
+            {clocking && <ActivityIndicator size="small" color="#fff" style={styles.clockSpinner} />}
+          </TouchableOpacity>
+        )}
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Health Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusRow}>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusValue}>72 BPM</Text>
-              <Text style={styles.statusLabel}>Heart Rate</Text>
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          {isSystemAdmin ? 'System Controls' : isPatient ? 'Quick Actions' : 'My Tools'}
+        </Text>
+        <View style={styles.actionsGrid}>
+          {actions.map((action, i) => (
+            <ActionCard key={i} {...action} />
+          ))}
+        </View>
+      </View>
+
+      {/* Admin-only: Quick Stats */}
+      {isSystemAdmin && staffRecord?.facility && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Facility Overview</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Building2 size={20} color="#0066cc" />
+              <Text style={styles.statValue}>{staffRecord.facility.name}</Text>
+              <Text style={styles.statLabel}>Facility</Text>
             </View>
-            <View style={styles.statusDivider} />
-            <View style={styles.statusItem}>
-              <MaterialCommunityIcons name="thermometer" size={28} color="#f59e0b" />
-              <Text style={styles.statusValue}>36.6°C</Text>
-              <Text style={styles.statusLabel}>Temperature</Text>
-            </View>
-            <View style={styles.statusDivider} />
-            <View style={styles.statusItem}>
-              <MaterialCommunityIcons name="water-percent" size={28} color="#3b82f6" />
-              <Text style={styles.statusValue}>98%</Text>
-              <Text style={styles.statusLabel}>SpO2</Text>
+            <View style={styles.statCard}>
+              <Shield size={20} color="#22c55e" />
+              <Text style={styles.statValue}>{staffRecord.facility.verification_status === 'verified' ? 'Verified' : 'Pending'}</Text>
+              <Text style={styles.statLabel}>Status</Text>
             </View>
           </View>
         </View>
+      )}
 
-        {/* Upcoming Appointment */}
-        <TouchableOpacity style={styles.appointmentCard} onPress={() => router.push("/(os)/health/appointments")}>
-          <View style={styles.appointmentHeader}>
-            <Ionicons name="calendar" size={20} color="#2563eb" />
-            <Text style={styles.appointmentTitle}>Upcoming Appointment</Text>
-          </View>
-          <Text style={styles.appointmentDoctor}>Dr. Sarah Kimani — General Checkup</Text>
-          <Text style={styles.appointmentTime}>Today, 2:30 PM · Nairobi Hospital</Text>
-        </TouchableOpacity>
+      {/* Recent Activity (Patient only) */}
+      {isPatient && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <TouchableOpacity style={styles.activityCard} onPress={() => router.push('/health/appointments' as any)}>
+            <View style={[styles.activityIcon, { backgroundColor: '#0066cc15' }]}>
+              <Calendar size={18} color="#0066cc" />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Dr. Kimani - General Checkup</Text>
+              <Text style={styles.activityMeta}>Tue, 2:00 PM · Nairobi Hospital</Text>
+            </View>
+            <View style={[styles.activityBadge, { backgroundColor: '#f9731615' }]}>
+              <Text style={[styles.activityBadgeText, { color: '#f97316' }]}>Upcoming</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.activityCard} onPress={() => router.push('/health/lab-results' as any)}>
+            <View style={[styles.activityIcon, { backgroundColor: '#06b6d415' }]}>
+              <FlaskConical size={18} color="#06b6d4" />
+            </View>
+            <View style={styles.activityContent}>
+              <Text style={styles.activityTitle}>Blood Test Results</Text>
+              <Text style={styles.activityMeta}>Yesterday · City Lab</Text>
+            </View>
+            <View style={[styles.activityBadge, { backgroundColor: '#22c55e15' }]}>
+              <Text style={[styles.activityBadgeText, { color: '#22c55e' }]}>Ready</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
 
-        {/* Module Sections */}
-        {renderSection("Patient", PATIENT_MODULES)}
-        {renderSection("Clinical", CLINICAL_MODULES)}
-        {renderSection("Operations", OPERATIONS_MODULES)}
-        {renderSection("Government & System", GOVERNMENT_MODULES)}
-      </ScrollView>
-    </SafeAreaView>
+      {/* Error display */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <AlertTriangle size={16} color="#dc2626" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' },
+  loadingText: { marginTop: 12, color: '#6b7280', fontSize: 14 },
+  header: { backgroundColor: '#1e3a5f', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 16 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#fff' },
+  roleBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 6 },
+  roleDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  roleText: { fontSize: 12, fontWeight: '600' },
+  clockWidget: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  clockContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  clockText: { color: '#fff', fontSize: 15, fontWeight: '600', marginLeft: 8 },
+  clockSubtext: { color: '#fff', fontSize: 12, opacity: 0.8, marginLeft: 8 },
+  clockSpinner: { marginLeft: 'auto' },
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginBottom: 12 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  actionCard: {
+    width: '30.5%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 4,
   },
-  greeting: { fontSize: 14, color: "#6b7280" },
-  name: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  emergencyBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: "#ef4444", paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 10,
-  },
-  emergencyText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  content: { padding: 12, paddingBottom: 24 },
-  statusCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 12,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  statusRow: { flexDirection: "row", justifyContent: "space-between" },
-  statusItem: { flex: 1, alignItems: "center" },
-  statusDivider: { width: 1, backgroundColor: "#e5e7eb" },
-  statusValue: { fontSize: 16, fontWeight: "800", color: "#111827", marginTop: 6 },
-  statusLabel: { fontSize: 11, color: "#6b7280", marginTop: 2 },
-  appointmentCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 16,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-    borderLeftWidth: 4, borderLeftColor: "#2563eb",
-  },
-  appointmentHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  appointmentTitle: { fontSize: 14, fontWeight: "700", color: "#2563eb" },
-  appointmentDoctor: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  appointmentTime: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 10, marginLeft: 4 },
-  moduleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  moduleCard: {
-    width: "23%", backgroundColor: "#fff", borderRadius: 14, padding: 12,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  moduleIcon: {
-    width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", marginBottom: 6,
-  },
-  moduleLabel: { fontSize: 10, fontWeight: "600", color: "#374151", textAlign: "center" },
+  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  actionLabel: { fontSize: 11, fontWeight: '600', color: '#374151', textAlign: 'center' },
+  actionDesc: { fontSize: 9, color: '#9ca3af', textAlign: 'center', marginTop: 2 },
+  statsRow: { flexDirection: 'row', gap: 10 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
+  statValue: { fontSize: 13, fontWeight: '700', color: '#1f2937', marginTop: 6, textAlign: 'center' },
+  statLabel: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  activityCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#e5e7eb' },
+  activityIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  activityContent: { flex: 1, marginLeft: 10 },
+  activityTitle: { fontSize: 13, fontWeight: '600', color: '#1f2937' },
+  activityMeta: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  activityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  activityBadgeText: { fontSize: 10, fontWeight: '600' },
+  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef2f2', margin: 16, padding: 12, borderRadius: 8, gap: 8, borderWidth: 1, borderColor: '#fecaca' },
+  errorText: { fontSize: 12, color: '#dc2626', flex: 1 },
 });
