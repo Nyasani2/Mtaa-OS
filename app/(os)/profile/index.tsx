@@ -44,6 +44,8 @@ export default function ProfileIndexScreen() {
     { icon: 'shield-checkmark-outline', label: 'Privacy & Security', color: '#10b981', route: '/profile/privacy' },
     { icon: 'trophy-outline', label: 'Achievements', color: '#f59e0b', route: '/profile/achievements' },
     { icon: 'briefcase-outline', label: 'Professional', color: '#8b5cf6', route: '/profile/professional' },
+    { icon: 'folder-open-outline', label: 'Portfolio', color: '#f97316', route: '/profile/professional/portfolio' },
+    { icon: 'cash-outline', label: 'Earnings', color: '#10b981', route: '/profile/earnings' },
     { icon: 'people-outline', label: 'Family', color: '#ef4444', route: '/profile/family' },
     { icon: 'qr-code-outline', label: 'My QR Code', color: '#06b6d4', route: '/profile/qr' },
   ];

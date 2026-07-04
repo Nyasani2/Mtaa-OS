@@ -34,7 +34,7 @@ const TABS = [
 const QUICK_ACTIONS = [
   { id: "profile", label: "My Profile", icon: Users, route: "/(work)/jobs/profile" },
   { id: "skills", label: "Skills", icon: Award, route: "/(work)/jobs/skills" },
-  { id: "portfolio", label: "Portfolio", icon: Star, route: "/(work)/jobs/portfolio" },
+  { id: "portfolio", label: "Portfolio", icon: Star, route: "/(os)/profile/professional/portfolio" },
   { id: "applications", label: "Applications", icon: FileText, route: "/(work)/jobs/applications" },
   { id: "employer", label: "Employer", icon: Building2, route: "/(work)/jobs/employer" },
   { id: "talent", label: "Find Talent", icon: Search, route: "/(work)/jobs/talent-search" },
