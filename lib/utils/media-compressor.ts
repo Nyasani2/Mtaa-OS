@@ -1,6 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as FileSystem from 'expo-file-system';
-import { getVideoThumbnailAsync } from 'expo-video-thumbnails';
+import { getThumbnailAsync } from 'expo-video-thumbnails';
 
 export interface CompressResult {
   uri: string;
@@ -68,7 +68,7 @@ export async function compressVideo(fileUri: string): Promise<CompressResult> {
   // Generate thumbnail
   let thumbnailUri: string | undefined;
   try {
-    const { uri } = await getVideoThumbnailAsync(fileUri, {
+    const { uri } = await getThumbnailAsync(fileUri, {
       time: 1000, // 1 second in
       quality: 0.5,
     });

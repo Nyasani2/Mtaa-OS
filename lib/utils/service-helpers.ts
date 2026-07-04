@@ -1,12 +1,12 @@
 // lib/utils/service-helpers.ts
-// FIXED: handleServiceError now returns ServiceResult<never> instead of Error
+// FIXED: ServiceResult allows null data for error cases
 
 export interface ServiceResult<T> {
   data: T | null;
   error: Error | null;
 }
 
-export function handleServiceError(err: unknown): ServiceResult<never> {
+export function handleServiceError(err: unknown): ServiceResult<null> {
   return {
     data: null,
     error: err instanceof Error ? err : new Error(String(err)),
