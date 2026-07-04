@@ -1,404 +1,130 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { useState } from 'react';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
-import {
-  Phone,
-  MapPin,
-  AlertTriangle,
-  Heart,
-  Ambulance,
-  Shield,
-  Flame,
-  Car,
-  Siren,
-  ChevronRight,
-} from 'lucide-react-native';
-import { supabase } from '@/lib/supabase';
-
-interface EmergencyContact {
-  id: string;
-  name: string;
-  phone: string;
-  relationship: string;
-}
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useHealthEmergency } from '@/lib/health/hooks/useHealthEmergency';
+import * as Location from 'expo-location';
 
 export default function EmergencyScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [location, setLocation] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const { user } = useAuthStore();
+  const { request, loading } = useHealthEmergency(user?.id || '');
+  const [requesting, setRequesting] = useState(false);
 
-  useEffect(() => {
-    // Pulse animation for the SOS button
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    fetchEmergencyContacts();
-  }, []);
-
-  const fetchEmergencyContacts = async () => {
-    try {
-      const { data } = await supabase
-        .from('health_emergency_contacts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .limit(3);
-
-      if (data) {
-        setContacts(data);
-      }
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    }
-  };
-
-  const getLocation = async () => {
-    // Placeholder for location service
-    setLocation('Location services active');
-  };
-
-  const handleSOS = () => {
+  async function handleSOS() {
     Alert.alert(
       'Emergency SOS',
-      'This will alert emergency services and your contacts. Continue?',
+      'This will dispatch an ambulance to your current location. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Send SOS',
+          text: 'Confirm SOS',
           style: 'destructive',
           onPress: async () => {
-            setLoading(true);
+            setRequesting(true);
             try {
-              // Send emergency alert via edge function
-              await supabase.functions.invoke('emergency-alert', {
-                body: {
-                  user_id: user?.id,
-                  location: location || 'Location unknown',
-                  timestamp: new Date().toISOString(),
-                },
-              });
-              Alert.alert('SOS Sent', 'Emergency services have been notified.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to send SOS. Call emergency services directly.');
+              const { status } = await Location.requestForegroundPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Location Required', 'Please enable location for emergency dispatch');
+                return;
+              }
+              const loc = await Location.getCurrentPositionAsync({});
+              const address = await reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+              const dispatch = await request(
+                { lat: loc.coords.latitude, lng: loc.coords.longitude, address },
+                'Emergency SOS - patient initiated',
+                'critical'
+              );
+              if (dispatch) {
+                Alert.alert('Ambulance Dispatched', `Dispatch ID: ${dispatch.id.slice(0, 8)}`);
+              }
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
             } finally {
-              setLoading(false);
+              setRequesting(false);
             }
           },
         },
       ]
     );
-  };
+  }
 
-  const EmergencyButton = ({
-    icon,
-    label,
-    color,
-    onPress,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    color: string;
-    onPress: () => void;
-  }) => (
-    <TouchableOpacity
-      style={[styles.emergencyBtn, { borderColor: color }]}
-      onPress={onPress}
-    >
-      <View style={[styles.emergencyIcon, { backgroundColor: color + '20' }]}>
-        {icon}
-      </View>
-      <Text style={[styles.emergencyLabel, { color }]}>{label}</Text>
-      <ChevronRight size={16} color={color} />
-    </TouchableOpacity>
-  );
+  async function reverseGeocode(lat: number, lng: number): Promise<string> {
+    try {
+      const results = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (results.length > 0) {
+        const r = results[0];
+        return `${r.street || ''} ${r.city || ''} ${r.region || ''}`.trim() || 'Unknown location';
+      }
+    } catch { /* ignore */ }
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Emergency</Text>
-        <Text style={styles.headerSubtitle}>Quick access to emergency services</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.back}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Emergency</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.content}>
-        {/* SOS Button */}
-        <View style={styles.sosContainer}>
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <TouchableOpacity
-              style={styles.sosButton}
-              onPress={handleSOS}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="large" color="#fff" />
-              ) : (
-                <>
-                  <Siren size={40} color="#fff" />
-                  <Text style={styles.sosText}>SOS</Text>
-                  <Text style={styles.sosSubtext}>Tap for emergency</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-
-        {/* Location */}
-        <TouchableOpacity style={styles.locationCard} onPress={getLocation}>
-          <MapPin size={20} color="#3B82F6" />
-          <Text style={styles.locationText}>
-            {location || 'Tap to share location'}
+      <View style={styles.sosSection}>
+        <TouchableOpacity
+          style={[styles.sosButton, (loading || requesting) && styles.sosButtonDisabled]}
+          onPress={handleSOS}
+          disabled={loading || requesting}
+        >
+          <Text style={styles.sosButtonText}>
+            {requesting ? 'Requesting...' : '🚨 SOS EMERGENCY'}
           </Text>
+          <Text style={styles.sosSub}>Tap to dispatch ambulance</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/health/emergency-access')}>
+          <Text style={styles.actionIcon}>🩸</Text>
+          <Text style={styles.actionTitle}>Emergency Card</Text>
+          <Text style={styles.actionSub}>Show health info without unlock</Text>
         </TouchableOpacity>
 
-        {/* Emergency Services */}
-        <Text style={styles.sectionTitle}>Emergency Services</Text>
-        <View style={styles.servicesGrid}>
-          <EmergencyButton
-            icon={<Phone size={24} color="#EF4444" />}
-            label="Police"
-            color="#EF4444"
-            onPress={() => Alert.alert('Police', 'Dialing emergency police line...')}
-          />
-          <EmergencyButton
-            icon={<Heart size={24} color="#10B981" />}
-            label="Ambulance"
-            color="#10B981"
-            onPress={() => Alert.alert('Ambulance', 'Dialing emergency medical...')}
-          />
-          <EmergencyButton
-            icon={<Flame size={24} color="#F59E0B" />}
-            label="Fire"
-            color="#F59E0B"
-            onPress={() => Alert.alert('Fire', 'Dialing fire department...')}
-          />
-          <EmergencyButton
-            icon={<Shield size={24} color="#8B5CF6" />}
-            label="Security"
-            color="#8B5CF6"
-            onPress={() => Alert.alert('Security', 'Contacting security services...')}
-          />
-        </View>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <Text style={styles.actionIcon}>🏥</Text>
+          <Text style={styles.actionTitle}>Nearby Hospitals</Text>
+          <Text style={styles.actionSub}>Find closest emergency room</Text>
+        </TouchableOpacity>
 
-        {/* Emergency Contacts */}
-        <Text style={styles.sectionTitle}>Your Emergency Contacts</Text>
-        {contacts.length === 0 ? (
-          <View style={styles.emptyContacts}>
-            <AlertTriangle size={32} color="#6B7280" />
-            <Text style={styles.emptyText}>No emergency contacts set</Text>
-            <TouchableOpacity
-              style={styles.addContactBtn}
-              onPress={() => router.push('/health/contacts' as any)}
-            >
-              <Text style={styles.addContactText}>Add Contacts</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          contacts.map((contact) => (
-            <TouchableOpacity
-              key={contact.id}
-              style={styles.contactCard}
-              onPress={() => Alert.alert('Call', `Calling ${contact.name}...`)}
-            >
-              <View style={styles.contactAvatar}>
-                <Text style={styles.contactInitial}>
-                  {contact.name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{contact.name}</Text>
-                <Text style={styles.contactRelationship}>
-                  {contact.relationship}
-                </Text>
-              </View>
-              <Phone size={20} color="#10B981" />
-            </TouchableOpacity>
-          ))
-        )}
+        <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <Text style={styles.actionIcon}>📞</Text>
+          <Text style={styles.actionTitle}>Emergency Contacts</Text>
+          <Text style={styles.actionSub}>Call family or friends</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
+          <Text style={styles.actionIcon}>📋</Text>
+          <Text style={styles.actionTitle}>First Aid Guide</Text>
+          <Text style={styles.actionSub}>Quick reference for common emergencies</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0F0F1A',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sosContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  sosButton: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  sosText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
-    marginTop: 8,
-  },
-  sosSubtext: {
-    fontSize: 12,
-    color: '#fff',
-    opacity: 0.8,
-  },
-  locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    gap: 12,
-  },
-  locationText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#fff',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  servicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 20,
-  },
-  emergencyBtn: {
-    width: '48%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    gap: 10,
-  },
-  emergencyIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emergencyLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyContacts: {
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-    borderRadius: 16,
-    padding: 30,
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-  addContactBtn: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 8,
-  },
-  addContactText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  contactCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    gap: 12,
-  },
-  contactAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactInitial: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  contactInfo: {
-    flex: 1,
-  },
-  contactName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  contactRelationship: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
+  back: { color: '#fff', fontSize: 22 },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  sosSection: { alignItems: 'center', paddingVertical: 30 },
+  sosButton: { backgroundColor: '#FF3B30', width: 200, height: 200, borderRadius: 100, justifyContent: 'center', alignItems: 'center', shadowColor: '#FF3B30', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 20 },
+  sosButtonDisabled: { opacity: 0.6 },
+  sosButtonText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  sosSub: { color: 'rgba(255,255,255,0.8)', fontSize: 11, marginTop: 4 },
+  actions: { padding: 16, gap: 10 },
+  actionBtn: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  actionIcon: { fontSize: 24 },
+  actionTitle: { color: '#fff', fontSize: 15, fontWeight: '600', flex: 1 },
+  actionSub: { color: '#888', fontSize: 12 },
 });
