@@ -35,6 +35,21 @@ interface AppTile {
   ownerOnly: boolean;
 }
 
+// ─── APPS TO HIDE FROM HOME (Civic paused, nested sub-apps) ───
+const HIDDEN_APP_IDS = new Set([
+  // Civic apps — PAUSED until launch
+  'civic', 'courts', 'prisons', 'police', 'immigration', 'land', 'transport',
+  // Health sub-apps — nested inside Health OS
+  'ambulance', 'doctor', 'find-care', 'hospital', 'lab', 'nurse', 'pharmacy',
+  'radiology', 'telemedicine', 'emergency', 'records', 'insurance', 'dispatch',
+  // Wallet sub-apps — nested inside Wallet
+  'savings', 'topup', 'transfer', 'withdraw', 'scan', 'gofund', 'onboarding',
+  // Other nested apps
+  'portfolio', 'qr', 'documents',
+  // Admin-only (already filtered by ownerOnly, but belt-and-suspenders)
+  'central-bank', 'command-centre', 'regulatory', 'revenue', 'developer',
+]);
+
 // ─── ALL APPS — Complete Catalog (~60+ apps) — ALPHABETICAL ───
 
 const ALL_APPS: AppTile[] = [
@@ -211,9 +226,14 @@ export default function HomeScreen() {
     setShowWallpaperPicker(true);
   };
 
-  const visibleApps = isOwner
-    ? ALL_APPS
-    : ALL_APPS.filter((app) => !app.ownerOnly);
+  // ─── FILTER: Hide civic apps and nested sub-apps ───
+  const visibleApps = ALL_APPS.filter((app) => {
+    // Always hide apps in HIDDEN_APP_IDS
+    if (HIDDEN_APP_IDS.has(app.id)) return false;
+    // Hide owner-only apps for non-owners
+    if (app.ownerOnly && !isOwner) return false;
+    return true;
+  });
 
   return (
     <View style={styles.container}>
