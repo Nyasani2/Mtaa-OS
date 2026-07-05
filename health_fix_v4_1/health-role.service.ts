@@ -25,12 +25,9 @@ export interface HealthStaffRecord {
   created_at: string;
   updated_at: string;
   facility?: HealthFacility;
-  // Joined fields from RPCs
-  facility_name?: string;
-  facility_type?: string;
-  facility_county?: string;
   user_email?: string;
   user_full_name?: string;
+  facility_name?: string;
 }
 
 export interface HealthFacility {
@@ -42,6 +39,16 @@ export interface HealthFacility {
 
 export interface StaffInvitation {
   email: string; role: HealthRole; department?: string; facilityId?: string;
+}
+
+export interface AttendanceRecord {
+  staff_id: string; check_in: string; check_out?: string; notes?: string;
+}
+
+export interface PayrollRecord {
+  staff_id: string; month: string; base_salary: number;
+  allowances: number; deductions: number; net_pay: number;
+  status: 'draft' | 'approved' | 'paid';
 }
 
 export const ROLE_PERMISSIONS: Record<HealthRole, string[]> = {
@@ -74,41 +81,12 @@ export const ROLE_COLORS: Record<HealthRole, string> = {
   accountant: '#059669', ambulance_driver: '#b91c1c', receptionist: '#6b7280',
 };
 
-export const ROLE_ICONS: Record<HealthRole, string> = {
-  system_admin: 'Shield', doctor: 'Stethoscope', nurse: 'Heart',
-  pharmacist: 'Pill', lab_technician: 'FlaskConical', radiologist: 'Scan',
-  hospital_admin: 'Building2', cashier: 'CreditCard', hr_manager: 'Users',
-  accountant: 'Calculator', ambulance_driver: 'Truck', receptionist: 'UserCheck',
-};
-
 function isTableMissingError(err: any): boolean {
   const msg = err?.message || err?.error_description || '';
   return (msg.includes('relation') && msg.includes('does not exist')) || msg.includes('42P01');
 }
 
 class HealthRoleService {
-  /**
-   * Get ALL active roles for a user (for role selection screen)
-   */
-  async getAllUserRoles(userId: string): Promise<HealthStaffRecord[]> {
-    try {
-      const { data, error } = await supabase
-        .rpc('health_get_all_user_roles', { p_user_id: userId });
-      if (error) {
-        if (error.code === 'PGRST116') return [];
-        console.error('[HealthRoleService] getAllUserRoles RPC error:', error);
-        throw error;
-      }
-      return (data || []) as HealthStaffRecord[];
-    } catch (err: any) {
-      if (isTableMissingError(err)) { console.warn('[HealthRoleService] health_staff table missing'); return []; }
-      throw err;
-    }
-  }
-
-  /**
-   * Get the user's primary (most recent) active staff record
-   */
   async getCurrentUserRole(userId: string): Promise<HealthStaffRecord | null> {
     try {
       const { data: staffData, error: staffError } = await supabase
@@ -182,11 +160,13 @@ class HealthRoleService {
     if (error) throw error;
   }
 
+  /** Clock in a staff member */
   async clockIn(staffId: string): Promise<void> {
     const { error } = await supabase.from('health_staff').update({ is_on_duty: true }).eq('id', staffId);
     if (error) throw error;
   }
 
+  /** Clock out a staff member */
   async clockOut(staffId: string): Promise<void> {
     const { error } = await supabase.from('health_staff').update({ is_on_duty: false }).eq('id', staffId);
     if (error) throw error;
