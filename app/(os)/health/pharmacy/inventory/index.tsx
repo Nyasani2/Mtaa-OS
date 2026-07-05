@@ -1,183 +1,464 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, FlatList } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  Alert, ActivityIndicator, FlatList, ScrollView, Switch
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Package, AlertTriangle, Search, Filter, Plus, TrendingDown, Calendar } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase/client';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
 
 interface InventoryItem {
-  id: string; medication_name: string; generic_name: string; category: string;
-  stock_quantity: number; reorder_level: number; unit: string;
-  batch_number: string; expiry_date: string; supplier: string;
-  unit_cost: number; location: string;
+  id: string;
+  name: string;
+  generic_name: string | null;
+  category: string;
+  sku: string | null;
+  batch_number: string | null;
+  manufacturer: string | null;
+  expiry_date: string | null;
+  quantity: number;
+  reorder_level: number;
+  cost_price: number;
+  selling_price: number;
+  storage_location: string | null;
+  status: string;
+  qr_code_data: string | null;
 }
 
-export default function PharmacyInventoryScreen() {
+export default function InventoryManagementScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { staffRecord } = useHealthRole();
+  const [loading, setLoading] = useState(true);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [showLowStock, setShowLowStock] = useState(false);
-  const [showExpired, setShowExpired] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  useEffect(() => { loadInventory(); }, []);
-
-  const loadInventory = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('pharmacy_inventory')
-        .select('*')
-        .order('medication_name', { ascending: true });
-      if (error) throw error;
-      setInventory(data || []);
-    } catch (err) { Alert.alert('Error', 'Failed to load inventory'); }
-  };
-
-  const filtered = inventory.filter(item => {
-    if (searchQuery && !item.medication_name.toLowerCase().includes(searchQuery.toLowerCase()) && !item.generic_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (filterCategory && item.category !== filterCategory) return false;
-    if (showLowStock && item.stock_quantity > item.reorder_level) return false;
-    if (showExpired && new Date(item.expiry_date) > new Date()) return false;
-    return true;
+  // Add form state
+  const [newItem, setNewItem] = useState({
+    name: '',
+    generic_name: '',
+    category: 'medication',
+    drug_form: 'tablet',
+    strength: '',
+    batch_number: '',
+    manufacturer: '',
+    manufactured_date: '',
+    expiry_date: '',
+    quantity: '',
+    unit_of_measure: 'pieces',
+    reorder_level: '10',
+    cost_price: '',
+    selling_price: '',
+    storage_location: '',
+    temperature_requirement: 'room_temp',
   });
 
-  const categories = [...new Set(inventory.map(i => i.category))];
-  const lowStockCount = inventory.filter(i => i.stock_quantity <= i.reorder_level).length;
-  const expiredCount = inventory.filter(i => new Date(i.expiry_date) <= new Date()).length;
+  const facilityId = staffRecord?.facility_id;
+
+  const fetchInventory = useCallback(async () => {
+    if (!facilityId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('health_inventory')
+        .select('*')
+        .eq('facility_id', facilityId)
+        .order('name');
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [facilityId]);
+
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
+  const handleAddItem = async () => {
+    if (!newItem.name || !newItem.quantity || !newItem.selling_price) {
+      Alert.alert('Error', 'Name, quantity, and selling price are required');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('health_inventory')
+        .insert({
+          facility_id: facilityId,
+          name: newItem.name,
+          generic_name: newItem.generic_name || null,
+          category: newItem.category,
+          drug_form: newItem.drug_form,
+          strength: newItem.strength || null,
+          batch_number: newItem.batch_number || null,
+          manufacturer: newItem.manufacturer || null,
+          manufactured_date: newItem.manufactured_date || null,
+          expiry_date: newItem.expiry_date || null,
+          quantity: parseInt(newItem.quantity),
+          unit_of_measure: newItem.unit_of_measure,
+          reorder_level: parseInt(newItem.reorder_level) || 10,
+          cost_price: parseFloat(newItem.cost_price) || 0,
+          selling_price: parseFloat(newItem.selling_price),
+          storage_location: newItem.storage_location || null,
+          temperature_requirement: newItem.temperature_requirement,
+          status: 'active',
+          created_by: staffRecord?.user_id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Generate QR code for the item
+      if (data) {
+        await supabase.rpc('generate_inventory_qr', {
+          p_inventory_id: data.id,
+        });
+      }
+
+      Alert.alert('Success', 'Item added to inventory');
+      setShowAddForm(false);
+      setNewItem({
+        name: '', generic_name: '', category: 'medication', drug_form: 'tablet',
+        strength: '', batch_number: '', manufacturer: '', manufactured_date: '',
+        expiry_date: '', quantity: '', unit_of_measure: 'pieces', reorder_level: '10',
+        cost_price: '', selling_price: '', storage_location: '', temperature_requirement: 'room_temp',
+      });
+      fetchInventory();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    }
+  };
+
+  const handleStockAdjustment = async (item: InventoryItem, adjustment: number, reason: string) => {
+    const newQty = Math.max(0, item.quantity + adjustment);
+    try {
+      const { error } = await supabase
+        .from('health_inventory')
+        .update({ quantity: newQty, updated_at: new Date().toISOString() })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      // Log transaction
+      await supabase.from('health_inventory_transactions').insert({
+        facility_id: facilityId,
+        inventory_id: item.id,
+        transaction_type: adjustment > 0 ? 'stock_in' : 'stock_out',
+        quantity_before: item.quantity,
+        quantity_change: adjustment,
+        quantity_after: newQty,
+        reason: reason,
+        performed_by: staffRecord?.user_id,
+      });
+
+      fetchInventory();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    }
+  };
+
+  const filteredInventory = inventory.filter(item => {
+    const matchesFilter = filter === 'all' || 
+      (filter === 'low_stock' && item.quantity <= item.reorder_level) ||
+      (filter === 'expired' && item.expiry_date && new Date(item.expiry_date) < new Date()) ||
+      (filter === 'out_of_stock' && item.quantity === 0) ||
+      item.status === filter;
+
+    const matchesSearch = !searchQuery || 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.batch_number?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesFilter && matchesSearch;
+  });
+
+  const getStatusColor = (item: InventoryItem) => {
+    if (item.quantity === 0) return '#e74c3c';
+    if (item.expiry_date && new Date(item.expiry_date) < new Date()) return '#e74c3c';
+    if (item.quantity <= item.reorder_level) return '#f39c12';
+    return '#27ae60';
+  };
+
+  const getStatusText = (item: InventoryItem) => {
+    if (item.quantity === 0) return 'Out of Stock';
+    if (item.expiry_date && new Date(item.expiry_date) < new Date()) return 'Expired';
+    if (item.quantity <= item.reorder_level) return 'Low Stock';
+    return 'OK';
+  };
+
+  if (!facilityId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>No facility assigned. Please contact admin.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#fff" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Inventory</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerSubtitle}>
+          {inventory.length} items • {inventory.filter(i => i.quantity <= i.reorder_level).length} low stock
+        </Text>
       </View>
 
-      {/* Alerts */}
-      {(lowStockCount > 0 || expiredCount > 0) && (
-        <View style={styles.alertBar}>
-          {lowStockCount > 0 && (
-            <TouchableOpacity style={[styles.alertPill, showLowStock && styles.alertPillActive]} onPress={() => setShowLowStock(!showLowStock)}>
-              <TrendingDown size={14} color={showLowStock ? '#fff' : '#f59e0b'} />
-              <Text style={[styles.alertPillText, showLowStock && styles.alertPillTextActive]}>{lowStockCount} Low Stock</Text>
+      {/* Search & Filter */}
+      <View style={styles.searchSection}>
+        <TextInput
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by name, SKU, or batch..."
+        />
+        <View style={styles.filterRow}>
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'low_stock', label: 'Low Stock' },
+            { key: 'expired', label: 'Expired' },
+            { key: 'out_of_stock', label: 'Out' },
+          ].map(f => (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, filter === f.key && styles.filterChipActive]}
+              onPress={() => setFilter(f.key)}
+            >
+              <Text style={[styles.filterChipText, filter === f.key && styles.filterChipTextActive]}>
+                {f.label}
+              </Text>
             </TouchableOpacity>
-          )}
-          {expiredCount > 0 && (
-            <TouchableOpacity style={[styles.alertPill, showExpired && styles.alertPillActive]} onPress={() => setShowExpired(!showExpired)}>
-              <AlertTriangle size={14} color={showExpired ? '#fff' : '#ef4444'} />
-              <Text style={[styles.alertPillText, showExpired && styles.alertPillTextActive]}>{expiredCount} Expired</Text>
-            </TouchableOpacity>
-          )}
+          ))}
         </View>
-      )}
-
-      {/* Search */}
-      <View style={styles.searchBar}>
-        <Search size={18} color="#64748b" />
-        <TextInput style={styles.searchInput} placeholder="Search medication..." placeholderTextColor="#64748b"
-          value={searchQuery} onChangeText={setSearchQuery} />
       </View>
 
-      {/* Category filter */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={[styles.tab, !filterCategory && styles.tabActive]} onPress={() => setFilterCategory(null)}>
-          <Text style={[styles.tabText, !filterCategory && styles.tabTextActive]}>All</Text>
-        </TouchableOpacity>
-        {categories.slice(0, 4).map(c => (
-          <TouchableOpacity key={c} style={[styles.tab, filterCategory === c && styles.tabActive]} onPress={() => setFilterCategory(filterCategory === c ? null : c)}>
-            <Text style={[styles.tabText, filterCategory === c && styles.tabTextActive]}>{c}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Add Button */}
+      <TouchableOpacity style={styles.addButton} onPress={() => setShowAddForm(true)}>
+        <Text style={styles.addButtonText}>+ Add New Item</Text>
+      </TouchableOpacity>
 
       {/* Inventory List */}
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        renderItem={({ item }) => {
-          const isLow = item.stock_quantity <= item.reorder_level;
-          const isExpired = new Date(item.expiry_date) <= new Date();
-          const nearExpiry = !isExpired && (new Date(item.expiry_date).getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
-
-          return (
-            <View style={[styles.itemCard, isLow && styles.itemCardLow, isExpired && styles.itemCardExpired]}>
+      {loading ? (
+        <ActivityIndicator style={styles.loader} size="large" color="#0A7B5A" />
+      ) : (
+        <FlatList
+          data={filteredInventory}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item }) => (
+            <View style={styles.itemCard}>
               <View style={styles.itemHeader}>
-                <View>
-                  <Text style={styles.itemName}>{item.medication_name}</Text>
-                  <Text style={styles.itemGeneric}>{item.generic_name}</Text>
+                <View style={styles.itemTitleRow}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <View style={[styles.statusDot, { backgroundColor: getStatusColor(item) }]} />
                 </View>
-                <View style={styles.stockBadge}>
-                  <Text style={[styles.stockText, isLow && styles.stockTextLow]}>{item.stock_quantity} {item.unit}</Text>
-                </View>
+                <Text style={styles.itemSubtitle}>
+                  {item.category} • {item.drug_form || 'N/A'} • Batch: {item.batch_number || 'N/A'}
+                </Text>
               </View>
 
-              <View style={styles.itemMeta}>
-                <Text style={styles.metaText}>Batch: {item.batch_number}</Text>
-                <View style={styles.expiryRow}>
-                  <Calendar size={12} color={isExpired ? '#ef4444' : nearExpiry ? '#f59e0b' : '#64748b'} />
-                  <Text style={[styles.metaText, isExpired && { color: '#ef4444' }, nearExpiry && { color: '#f59e0b' }]}>
-                    Exp: {new Date(item.expiry_date).toLocaleDateString()}
+              <View style={styles.itemDetails}>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Stock</Text>
+                  <Text style={[styles.detailValue, item.quantity <= item.reorder_level && styles.detailValueWarning]}>
+                    {item.quantity} {item.unit_of_measure}
                   </Text>
                 </View>
-                <Text style={styles.metaText}>Supplier: {item.supplier}</Text>
-                <Text style={styles.metaText}>Location: {item.location}</Text>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Price</Text>
+                  <Text style={styles.detailValue}>KES {item.selling_price?.toFixed(2)}</Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Expiry</Text>
+                  <Text style={[
+                    styles.detailValue,
+                    item.expiry_date && new Date(item.expiry_date) < new Date() && styles.detailValueDanger
+                  ]}>
+                    {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'N/A'}
+                  </Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Status</Text>
+                  <Text style={[styles.detailValue, { color: getStatusColor(item) }]}>
+                    {getStatusText(item)}
+                  </Text>
+                </View>
               </View>
 
-              {isLow && (
-                <View style={styles.reorderBanner}>
-                  <TrendingDown size={14} color="#f59e0b" />
-                  <Text style={styles.reorderText}>Below reorder level ({item.reorder_level} {item.unit})</Text>
+              {item.qr_code_data && (
+                <View style={styles.qrSection}>
+                  <Text style={styles.qrLabel}>QR Code Generated</Text>
+                  <Text style={styles.qrData} numberOfLines={1}>{item.qr_code_data}</Text>
                 </View>
               )}
+
+              <View style={styles.itemActions}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Stock In',
+                      `Add stock for ${item.name}`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Add', 
+                          onPress: (value) => value && handleStockAdjustment(item, parseInt(value) || 0, 'Stock received')
+                        }
+                      ],
+                      'plain-text',
+                      '',
+                      'numeric'
+                    );
+                  }}
+                >
+                  <Text style={styles.actionBtnText}>+ Stock</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Stock Out',
+                      `Remove stock for ${item.name}`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { 
+                          text: 'Remove', 
+                          onPress: (value) => value && handleStockAdjustment(item, -(parseInt(value) || 0), 'Stock adjustment')
+                        }
+                      ],
+                      'plain-text',
+                      '',
+                      'numeric'
+                    );
+                  }}
+                >
+                  <Text style={styles.actionBtnText}>− Stock</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          );
-        }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Package size={48} color="#334155" />
-            <Text style={styles.emptyTitle}>No items found</Text>
-          </View>
-        }
-      />
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No inventory items found</Text>
+          }
+        />
+      )}
+
+      {/* Add Item Modal (simplified - would be a proper modal in production) */}
+      {showAddForm && (
+        <View style={styles.modalOverlay}>
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Inventory Item</Text>
+
+            <Text style={styles.label}>Product Name *</Text>
+            <TextInput style={styles.input} value={newItem.name} onChangeText={v => setNewItem(p => ({ ...p, name: v }))} />
+
+            <Text style={styles.label}>Generic Name</Text>
+            <TextInput style={styles.input} value={newItem.generic_name} onChangeText={v => setNewItem(p => ({ ...p, generic_name: v }))} />
+
+            <Text style={styles.label}>Category</Text>
+            <View style={styles.optionsRow}>
+              {['medication', 'medical_supply', 'laboratory_reagent', 'equipment', 'vaccine', 'consumable'].map(c => (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.optionChip, newItem.category === c && styles.optionChipActive]}
+                  onPress={() => setNewItem(p => ({ ...p, category: c }))}
+                >
+                  <Text style={[styles.optionChipText, newItem.category === c && styles.optionChipTextActive]}>{c}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Batch Number</Text>
+            <TextInput style={styles.input} value={newItem.batch_number} onChangeText={v => setNewItem(p => ({ ...p, batch_number: v }))} />
+
+            <Text style={styles.label}>Manufacturer</Text>
+            <TextInput style={styles.input} value={newItem.manufacturer} onChangeText={v => setNewItem(p => ({ ...p, manufacturer: v }))} />
+
+            <Text style={styles.label}>Expiry Date</Text>
+            <TextInput style={styles.input} value={newItem.expiry_date} onChangeText={v => setNewItem(p => ({ ...p, expiry_date: v }))} placeholder="YYYY-MM-DD" />
+
+            <Text style={styles.label}>Quantity *</Text>
+            <TextInput style={styles.input} value={newItem.quantity} onChangeText={v => setNewItem(p => ({ ...p, quantity: v }))} keyboardType="numeric" />
+
+            <Text style={styles.label}>Selling Price (KES) *</Text>
+            <TextInput style={styles.input} value={newItem.selling_price} onChangeText={v => setNewItem(p => ({ ...p, selling_price: v }))} keyboardType="numeric" />
+
+            <Text style={styles.label}>Cost Price (KES)</Text>
+            <TextInput style={styles.input} value={newItem.cost_price} onChangeText={v => setNewItem(p => ({ ...p, cost_price: v }))} keyboardType="numeric" />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAddForm(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleAddItem}>
+                <Text style={styles.saveBtnText}>Save Item</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  alertBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
-  alertPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1e293b', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#334155' },
-  alertPillActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  alertPillText: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
-  alertPillTextActive: { color: '#fff' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, marginHorizontal: 16, paddingHorizontal: 12, marginBottom: 8 },
-  searchInput: { flex: 1, color: '#fff', paddingVertical: 10, marginLeft: 8, fontSize: 14 },
-  tabBar: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1e293b', borderRadius: 12, padding: 4 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 8 },
-  tabActive: { backgroundColor: '#6366f1' },
-  tabText: { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  itemCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
-  itemCardLow: { borderLeftWidth: 3, borderLeftColor: '#f59e0b' },
-  itemCardExpired: { borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  itemName: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  itemGeneric: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-  stockBadge: { backgroundColor: '#0f172a', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  stockText: { color: '#22c55e', fontSize: 12, fontWeight: '700' },
-  stockTextLow: { color: '#f59e0b' },
-  itemMeta: { gap: 6 },
-  metaText: { color: '#64748b', fontSize: 12 },
-  expiryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  reorderBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, backgroundColor: '#451a03', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  reorderText: { color: '#f59e0b', fontSize: 12, fontWeight: '600' },
-  emptyState: { alignItems: 'center', marginTop: 80 },
-  emptyTitle: { color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 16 },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  header: { padding: 20, backgroundColor: '#0A7B5A', paddingTop: 60 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  headerSubtitle: { fontSize: 14, color: '#E0F2E9', marginTop: 2 },
+  searchSection: { padding: 12, backgroundColor: '#fff' },
+  searchInput: {
+    backgroundColor: '#f0f0f0', borderRadius: 8, padding: 12, fontSize: 15,
+    borderWidth: 1, borderColor: '#ddd'
+  },
+  filterRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f0f0f0' },
+  filterChipActive: { backgroundColor: '#0A7B5A' },
+  filterChipText: { fontSize: 12, color: '#666' },
+  filterChipTextActive: { color: '#fff', fontWeight: '500' },
+  addButton: { margin: 12, backgroundColor: '#0A7B5A', padding: 14, borderRadius: 8, alignItems: 'center' },
+  addButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  loader: { marginTop: 40 },
+  list: { padding: 12 },
+  itemCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
+  itemHeader: { marginBottom: 12 },
+  itemTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  itemName: { fontSize: 16, fontWeight: '600', color: '#1a1a1a', flex: 1 },
+  statusDot: { width: 10, height: 10, borderRadius: 5, marginLeft: 8 },
+  itemSubtitle: { fontSize: 12, color: '#999', marginTop: 4 },
+  itemDetails: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
+  detailCol: { alignItems: 'center' },
+  detailLabel: { fontSize: 11, color: '#999', marginBottom: 4 },
+  detailValue: { fontSize: 14, fontWeight: '600', color: '#333' },
+  detailValueWarning: { color: '#f39c12' },
+  detailValueDanger: { color: '#e74c3c' },
+  qrSection: { backgroundColor: '#f8f9fa', padding: 10, borderRadius: 8, marginTop: 8 },
+  qrLabel: { fontSize: 11, color: '#666' },
+  qrData: { fontSize: 10, color: '#999', marginTop: 2 },
+  itemActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  actionBtn: { flex: 1, backgroundColor: '#f0f0f0', padding: 10, borderRadius: 8, alignItems: 'center' },
+  actionBtnText: { fontSize: 13, color: '#333', fontWeight: '500' },
+  emptyText: { textAlign: 'center', marginTop: 40, color: '#999', fontSize: 16 },
+  errorText: { textAlign: 'center', marginTop: 100, fontSize: 16, color: '#e74c3c' },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '90%' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '500', marginBottom: 6, marginTop: 12, color: '#333' },
+  input: { backgroundColor: '#f0f0f0', borderRadius: 8, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#ddd' },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  optionChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#ddd' },
+  optionChipActive: { backgroundColor: '#0A7B5A', borderColor: '#0A7B5A' },
+  optionChipText: { fontSize: 12, color: '#333' },
+  optionChipTextActive: { color: '#fff' },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 24, marginBottom: 20 },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 8, backgroundColor: '#f0f0f0', alignItems: 'center' },
+  cancelBtnText: { color: '#333', fontWeight: '600' },
+  saveBtn: { flex: 2, padding: 14, borderRadius: 8, backgroundColor: '#0A7B5A', alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontWeight: '600' },
 });

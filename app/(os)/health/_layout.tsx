@@ -31,6 +31,7 @@ export default function HealthLayout() {
       <Stack.Screen name="system/integrations" />
       <Stack.Screen name="system/notifications" />
       <Stack.Screen name="facility-onboard" />
+      <Stack.Screen name="facility-register" />
     </Stack>
   );
 }

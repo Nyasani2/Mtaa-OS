@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -36,14 +36,10 @@ import {
   Phone,
   LogIn,
   LogOut,
-  ChevronRight,
-  Briefcase,
-  MapPin,
 } from 'lucide-react-native';
 import { useHealthRole } from '@/lib/health/hooks';
 import { healthRoleService, ROLE_DISPLAY_NAMES, ROLE_COLORS } from '@/lib/health/services';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import type { HealthStaffRecord } from '@/lib/health/services';
 
 // ===== PATIENT QUICK ACTIONS =====
 const PATIENT_ACTIONS = [
@@ -172,14 +168,6 @@ function getActionsForRole(role: string | null) {
   }
 }
 
-// Role icon mapping for selection screen
-const ROLE_ICON_MAP: Record<string, any> = {
-  system_admin: Shield, doctor: Stethoscope, nurse: Heart,
-  pharmacist: Pill, lab_technician: FlaskConical, radiologist: AlertTriangle,
-  hospital_admin: Building2, cashier: CreditCard, hr_manager: Users,
-  accountant: Calculator, ambulance_driver: Truck, receptionist: UserCheck,
-};
-
 function ActionCard({ icon: Icon, label, route, color, desc }: any) {
   const router = useRouter();
   return (
@@ -197,75 +185,16 @@ function ActionCard({ icon: Icon, label, route, color, desc }: any) {
   );
 }
 
-/** Role Selection Card */
-function RoleCard({ record, onSelect, isSelected }: { record: HealthStaffRecord; onSelect: () => void; isSelected: boolean }) {
-  const roleColor = ROLE_COLORS[record.role] || '#6b7280';
-  const roleName = ROLE_DISPLAY_NAMES[record.role] || record.role;
-  const IconComp = ROLE_ICON_MAP[record.role] || Briefcase;
-
-  return (
-    <TouchableOpacity
-      style={[styles.roleCard, isSelected && styles.roleCardSelected, { borderColor: isSelected ? roleColor : '#e5e7eb' }]}
-      onPress={onSelect}
-      activeOpacity={0.8}
-    >
-      <View style={styles.roleCardTop}>
-        <View style={[styles.roleCardIcon, { backgroundColor: roleColor + '15' }]}>
-          <IconComp size={28} color={roleColor} />
-        </View>
-        <View style={styles.roleCardBadge}>
-          <View style={[styles.roleDot, { backgroundColor: roleColor }]} />
-          <Text style={[styles.roleCardBadgeText, { color: roleColor }]}>{roleName}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.roleCardTitle}>{roleName}</Text>
-
-      {record.facility_name && (
-        <View style={styles.roleCardMetaRow}>
-          <Building2 size={13} color="#9ca3af" />
-          <Text style={styles.roleCardMeta} numberOfLines={1}>{record.facility_name}</Text>
-        </View>
-      )}
-
-      {record.department && (
-        <View style={styles.roleCardMetaRow}>
-          <Briefcase size={13} color="#9ca3af" />
-          <Text style={styles.roleCardMeta} numberOfLines={1}>{record.department}</Text>
-        </View>
-      )}
-
-      {record.facility_county && (
-        <View style={styles.roleCardMetaRow}>
-          <MapPin size={13} color="#9ca3af" />
-          <Text style={styles.roleCardMeta} numberOfLines={1}>{record.facility_county}</Text>
-        </View>
-      )}
-
-      <View style={styles.roleCardFooter}>
-        <Text style={[styles.roleCardStatus, { color: record.is_on_duty ? '#16a34a' : '#9ca3af' }]}>
-          {record.is_on_duty ? '● On Duty' : '○ Off Duty'}
-        </Text>
-        <ChevronRight size={16} color="#d1d5db" />
-      </View>
-    </TouchableOpacity>
-  );
-}
-
 export default function HealthIndex() {
   const router = useRouter();
   const { user } = useAuthStore();
   const {
-    allRoles,
-    selectedRole,
     role,
     staffRecord,
     isLoading,
     isSystemAdmin,
     isPatient,
     error,
-    selectRole,
-    clearRoleSelection,
   } = useHealthRole();
   const [refreshing, setRefreshing] = React.useState(false);
   const [clocking, setClocking] = React.useState(false);
@@ -301,46 +230,6 @@ export default function HealthIndex() {
     );
   }
 
-  // ===== ROLE SELECTION SCREEN =====
-  // Show if user has multiple roles and hasn't selected one yet
-  if (allRoles.length > 1 && !selectedRole) {
-    return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.roleSelectionContent}>
-        <View style={styles.roleSelectionHeader}>
-          <Stethoscope size={40} color="#0066cc" />
-          <Text style={styles.roleSelectionTitle}>Select Your Role</Text>
-          <Text style={styles.roleSelectionSubtitle}>
-            You have {allRoles.length} active roles. Choose which one to use for this session.
-          </Text>
-        </View>
-
-        <View style={styles.roleGrid}>
-          {allRoles.map((r) => (
-            <RoleCard
-              key={r.id}
-              record={r}
-              onSelect={() => selectRole(r)}
-              isSelected={false}
-            />
-          ))}
-        </View>
-
-        <TouchableOpacity style={styles.patientBtn} onPress={() => selectRole({} as any)}>
-          <Heart size={18} color="#6b7280" />
-          <Text style={styles.patientBtnText}>Continue as Patient</Text>
-        </TouchableOpacity>
-
-        {error && (
-          <View style={styles.errorBanner}>
-            <AlertTriangle size={16} color="#dc2626" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-      </ScrollView>
-    );
-  }
-
-  // ===== DASHBOARD (single role or already selected) =====
   const actions = getActionsForRole(role);
   const roleColor = role ? ROLE_COLORS[role] : '#22c55e';
   const roleName = role ? ROLE_DISPLAY_NAMES[role] : 'Patient';
@@ -355,17 +244,10 @@ export default function HealthIndex() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.headerTitle}>Health OS</Text>
-            <TouchableOpacity
-              style={[styles.roleBadge, { backgroundColor: roleColor + '20' }]}
-              onPress={allRoles.length > 1 ? clearRoleSelection : undefined}
-              activeOpacity={allRoles.length > 1 ? 0.7 : 1}
-            >
+            <View style={[styles.roleBadge, { backgroundColor: roleColor + '20' }]}>
               <View style={[styles.roleDot, { backgroundColor: roleColor }]} />
               <Text style={[styles.roleText, { color: roleColor }]}>{roleName}</Text>
-              {allRoles.length > 1 && (
-                <Text style={[styles.switchRoleText, { color: roleColor }]}> (switch)</Text>
-              )}
-            </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity onPress={() => router.push('/health/system/settings' as any)}>
             <Settings size={24} color="#fff" />
@@ -384,7 +266,7 @@ export default function HealthIndex() {
                 <>
                   <LogOut size={20} color="#fff" />
                   <Text style={styles.clockText}>Clock Out</Text>
-                  <Text style={styles.clockSubtext}>On duty now</Text>
+                  <Text style={styles.clockSubtext}>On duty since {staffRecord.clock_in_time ? new Date(staffRecord.clock_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</Text>
                 </>
               ) : (
                 <>
@@ -423,7 +305,7 @@ export default function HealthIndex() {
             </View>
             <View style={styles.statCard}>
               <Shield size={20} color="#22c55e" />
-              <Text style={styles.statValue}>{(staffRecord.facility as any).verification_status === 'verified' ? 'Verified' : 'Pending'}</Text>
+              <Text style={styles.statValue}>{staffRecord.facility.verification_status === 'verified' ? 'Verified' : 'Pending'}</Text>
               <Text style={styles.statLabel}>Status</Text>
             </View>
           </View>
@@ -476,66 +358,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' },
   loadingText: { marginTop: 12, color: '#6b7280', fontSize: 14 },
-
-  // Role Selection Screen
-  roleSelectionContent: { padding: 20, paddingTop: 40, paddingBottom: 40 },
-  roleSelectionHeader: { alignItems: 'center', marginBottom: 28 },
-  roleSelectionTitle: { fontSize: 24, fontWeight: '800', color: '#1f2937', marginTop: 16 },
-  roleSelectionSubtitle: { fontSize: 14, color: '#9ca3af', marginTop: 6, textAlign: 'center', lineHeight: 20 },
-  roleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  roleCard: {
-    width: '47%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  roleCardSelected: { borderWidth: 2 },
-  roleCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  roleCardIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  roleCardBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
-  roleCardBadgeText: { fontSize: 10, fontWeight: '700', marginLeft: 4 },
-  roleDot: { width: 6, height: 6, borderRadius: 3 },
-  roleCardTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginBottom: 8 },
-  roleCardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 },
-  roleCardMeta: { fontSize: 12, color: '#6b7280' },
-  roleCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
-  roleCardStatus: { fontSize: 11, fontWeight: '600' },
-  patientBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 20,
-    gap: 8,
-  },
-  patientBtnText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
-
-  // Dashboard Header
   header: { backgroundColor: '#1e3a5f', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 16 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: '#fff' },
   roleBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 6 },
   roleDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
   roleText: { fontSize: 12, fontWeight: '600' },
-  switchRoleText: { fontSize: 11, fontWeight: '500', opacity: 0.8 },
   clockWidget: { borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clockContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   clockText: { color: '#fff', fontSize: 15, fontWeight: '600', marginLeft: 8 },
   clockSubtext: { color: '#fff', fontSize: 12, opacity: 0.8, marginLeft: 8 },
   clockSpinner: { marginLeft: 'auto' },
-
-  // Dashboard Content
   section: { padding: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginBottom: 12 },
   actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
