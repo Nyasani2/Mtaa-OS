@@ -1,57 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { insuranceService } from '@/lib/health/services/insurance.service';
+import { usePaginatedQuery } from "./usePaginatedQuery";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPatients, getPolicies, createClaim, getClaims } from "@/lib/health/services/insurance.service";
 
-// ─── Claims Hook ───
 export function useInsuranceClaims() {
-  const { user } = useAuthStore();
-  const [patients, setPatients] = useState<any[]>([]);
-  const [policies, setPolicies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const [p, pol] = await Promise.all([
-      insuranceService.getPatients(),
-      insuranceService.getPolicies(),
-    ]);
-    setPatients(p);
-    setPolicies(pol);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const createClaim = async (data: any) => {
-    setIsCreating(true);
-    const result = await insuranceService.createClaim(data);
-    setIsCreating(false);
-    return result;
-  };
-
-  return { patients, policies, loading, isCreating, createClaim, refetch: fetchData };
+  const patients = usePaginatedQuery(["insurance-patients"], (range) => getPatients(range));
+  const policies = usePaginatedQuery(["insurance-policies"], (range) => getPolicies(range));
+  const qc = useQueryClient();
+  const create = useMutation({
+    mutationFn: createClaim,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["insurance-claims"] }),
+  });
+  return { patients, policies, createClaim: create };
 }
 
-// ─── Remaining Claims Hook ───
-export function useInsuranceRemaining() {
-  const { user } = useAuthStore();
-  const [claims, setClaims] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchClaims = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const data = await insuranceService.getClaims(user.id);
-    setClaims(data);
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { fetchClaims(); }, [fetchClaims]);
-
-  const refresh = async () => {
-    await fetchClaims();
-  };
-
-  return { claims, loading, refresh };
+export function useInsuranceRemaining(filter: string) {
+  return usePaginatedQuery(["insurance-claims", filter], (range) => getClaims(filter, range));
 }

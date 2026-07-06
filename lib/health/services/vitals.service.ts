@@ -1,7 +1,11 @@
 import { supabase } from "@/lib/supabase/client";
 
-export async function getVitalsRecords(filter: string) {
-  const { data, error } = await supabase.from("health_vitals").select("*").order("recorded_at", { ascending: false });
+export async function getVitalsRecords(filter: string, range: { from: number; to: number }) {
+  const { data, error, count } = await supabase
+    .from("health_vitals")
+    .select("*", { count: "exact" })
+    .order("recorded_at", { ascending: false })
+    .range(range.from, range.to);
   if (error) throw error;
   let records = data ?? [];
   if (filter !== "all") {
@@ -11,7 +15,7 @@ export async function getVitalsRecords(filter: string) {
       return filter === "normal";
     });
   }
-  return records;
+  return { data: records, count: count ?? 0 };
 }
 
 export async function createVitalsRecord(payload: any) {

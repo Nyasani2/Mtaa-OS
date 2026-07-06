@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase/client";
 
-export async function getRadiologyReports(filter: string) {
-  let q = supabase.from("health_radiology_reports").select("*").order("reported_at", { ascending: false });
+export async function getRadiologyReports(filter: string, range: { from: number; to: number }) {
+  let q = supabase.from("health_radiology_reports").select("*", { count: "exact" }).order("reported_at", { ascending: false });
   if (filter !== "all") q = q.eq("status", filter);
-  const { data, error } = await q;
+  const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
-  return data ?? [];
+  return { data: data ?? [], count: count ?? 0 };
 }
 
 export async function createRadiologyReport(payload: any) {
@@ -14,12 +14,12 @@ export async function createRadiologyReport(payload: any) {
   return data;
 }
 
-export async function getRadiologyRequests(filter: string) {
-  let q = supabase.from("health_radiology_requests").select("*").order("requested_at", { ascending: false });
+export async function getRadiologyRequests(filter: string, range: { from: number; to: number }) {
+  let q = supabase.from("health_radiology_requests").select("*", { count: "exact" }).order("requested_at", { ascending: false });
   if (filter !== "all") q = q.eq("status", filter);
-  const { data, error } = await q;
+  const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
-  return data ?? [];
+  return { data: data ?? [], count: count ?? 0 };
 }
 
 export async function createRadiologyRequest(payload: any) {
