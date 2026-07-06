@@ -1,90 +1,49 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { cashierService } from '@/lib/health/services/cashier.service';
+import { usePaginatedQuery } from "./usePaginatedQuery";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getInsuranceClaims, approveClaim, rejectClaim,
+  getInvoices, createInvoice, getUnpaidInvoices, processPayment, getPayments,
+} from "@/lib/health/services/cashier.service";
 
-// ─── Insurance Claims Hook ───
-export function useCashierInsurance() {
-  const { user } = useAuthStore();
-  const [claims, setClaims] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchClaims = useCallback(async () => {
-    setLoading(true);
-    const data = await cashierService.getAllClaims();
-    setClaims(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchClaims(); }, [fetchClaims]);
-
-  const approveClaim = async (claimId: string) => {
-    await cashierService.approveClaim(claimId, user?.id);
-  };
-
-  const rejectClaim = async (claimId: string, reason: string) => {
-    await cashierService.rejectClaim(claimId, reason, user?.id);
-  };
-
-  const refresh = async () => {
-    await fetchClaims();
-  };
-
-  return { claims, loading, approveClaim, rejectClaim, refresh };
+export function useCashierInsurance(status: string) {
+  return usePaginatedQuery(["cashier-insurance", status], (range) => getInsuranceClaims(status, range));
 }
 
-// ─── Invoices Hook ───
-export function useCashierInvoices() {
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchInvoices = useCallback(async () => {
-    setLoading(true);
-    const data = await cashierService.getInvoices();
-    setInvoices(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchInvoices(); }, [fetchInvoices]);
-
-  const createInvoice = async (data: any) => {
-    const result = await cashierService.createInvoice(data);
-    return result;
-  };
-
-  const refresh = async () => {
-    await fetchInvoices();
-  };
-
-  return { invoices, loading, createInvoice, refresh };
+export function useCashierInvoices(status: string) {
+  return usePaginatedQuery(["cashier-invoices", status], (range) => getInvoices(status, range));
 }
 
-// ─── Payments Hook ───
-export function useCashierPayments() {
-  const [payments, setPayments] = useState<any[]>([]);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useCashierPayments(method: string) {
+  return usePaginatedQuery(["cashier-payments", method], (range) => getPayments(method, range));
+}
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const [p, i] = await Promise.all([
-      cashierService.getPayments(),
-      cashierService.getUnpaidInvoices(),
-    ]);
-    setPayments(p);
-    setInvoices(i);
-    setLoading(false);
-  }, []);
+export function useApproveClaim() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: approveClaim, onSuccess: () => qc.invalidateQueries({ queryKey: ["cashier-insurance"] }) });
+}
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+export function useRejectClaim() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, reason }: { id: string; reason: string }) => rejectClaim(id, reason), onSuccess: () => qc.invalidateQueries({ queryKey: ["cashier-insurance"] }) });
+}
 
-  const processPayment = async (data: any) => {
-    const result = await cashierService.processPayment(data);
-    return result;
-  };
+export function useCreateInvoice() {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: createInvoice, onSuccess: () => qc.invalidateQueries({ queryKey: ["cashier-invoices"] }) });
+}
 
-  const refresh = async () => {
-    await fetchData();
-  };
+export function useUnpaidInvoices() {
+  return usePaginatedQuery(["cashier-unpaid-invoices"], (range) => getUnpaidInvoices(range));
+}
 
-  return { payments, invoices, loading, processPayment, refresh };
+export function useProcessPayment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: processPayment,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cashier-payments"] });
+      qc.invalidateQueries({ queryKey: ["cashier-invoices"] });
+      qc.invalidateQueries({ queryKey: ["cashier-unpaid-invoices"] });
+    },
+  });
 }

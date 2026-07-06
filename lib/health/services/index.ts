@@ -24,3 +24,4 @@ export * from "./children.service";
 export * from "./emergency.service";
 export * from "./vitals.service";
 export * from "./facility.service";
+export * from "./wallet-health.service";

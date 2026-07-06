@@ -1,16 +1,20 @@
 import { supabase } from "@/lib/supabase/client";
 
-export async function getAmbulanceDispatches(filter: string) {
-  let q = supabase.from("health_ambulance_dispatches").select("*").order("created_at", { ascending: false });
+export async function getAmbulanceDispatches(filter: string, range: { from: number; to: number }) {
+  let q = supabase.from("health_ambulance_dispatches").select("*", { count: "exact" }).order("created_at", { ascending: false });
   if (filter === "active") q = q.in("status", ["dispatched", "en_route", "on_scene", "transporting"]);
   if (filter === "completed") q = q.eq("status", "completed");
-  const { data, error } = await q;
+  const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
-  return data ?? [];
+  return { data: data ?? [], count: count ?? 0 };
 }
 
 export async function getDispatchDetail(dispatchId: string) {
-  const { data, error } = await supabase.from("health_ambulance_dispatches").select("*, patient:patient_id(full_name)").eq("id", dispatchId).single();
+  const { data, error } = await supabase
+    .from("health_ambulance_dispatches")
+    .select("*, patient:patient_id(full_name)")
+    .eq("id", dispatchId)
+    .single();
   if (error) throw error;
   return data;
 }

@@ -1,17 +1,21 @@
 import { supabase } from "@/lib/supabase/client";
 
-export async function getAuditLogs(filter: string) {
-  let q = supabase.from("health_audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
+export async function getAuditLogs(filter: string, range: { from: number; to: number }) {
+  let q = supabase.from("health_audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });
   if (filter !== "all") q = q.eq("action", filter);
-  const { data, error } = await q;
+  const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
-  return data ?? [];
+  return { data: data ?? [], count: count ?? 0 };
 }
 
-export async function getSystemRoles() {
-  const { data, error } = await supabase.from("health_roles").select("*").order("created_at", { ascending: true });
+export async function getSystemRoles(range: { from: number; to: number }) {
+  const { data, error, count } = await supabase
+    .from("health_roles")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: true })
+    .range(range.from, range.to);
   if (error) throw error;
-  return data ?? [];
+  return { data: data ?? [], count: count ?? 0 };
 }
 
 export async function createSystemRole(payload: { name: string; permissions: string[] }) {

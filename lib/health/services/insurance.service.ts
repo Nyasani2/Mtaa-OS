@@ -1,57 +1,35 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase/client";
 
-export const insuranceService = {
-  async getPatients() {
-    const { data, error } = await supabase
-      .from('health_patients')
-      .select('id, full_name, phone')
-      .eq('status', 'active')
-      .order('full_name');
-    if (error) throw error;
-    return data || [];
-  },
+export async function getPatients(range: { from: number; to: number }) {
+  const { data, error, count } = await supabase
+    .from("health_patients")
+    .select("*", { count: "exact" })
+    .order("full_name", { ascending: true })
+    .range(range.from, range.to);
+  if (error) throw error;
+  return { data: data ?? [], count: count ?? 0 };
+}
 
-  async getPolicies() {
-    const { data, error } = await supabase
-      .from('health_insurance_policies')
-      .select('id, patient_id, provider, policy_number, coverage_type, coverage_limit, deductible')
-      .eq('status', 'active')
-      .order('provider');
-    if (error) throw error;
-    return data || [];
-  },
+export async function getPolicies(range: { from: number; to: number }) {
+  const { data, error, count } = await supabase
+    .from("health_policies")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(range.from, range.to);
+  if (error) throw error;
+  return { data: data ?? [], count: count ?? 0 };
+}
 
-  async createClaim(data: any) {
-    const { data: result, error } = await supabase
-      .from('health_insurance_claims')
-      .insert({
-        patient_id: data.patient_id,
-        policy_id: data.policy_id,
-        claim_type: data.claim_type,
-        amount: data.amount,
-        description: data.description,
-        diagnosis: data.diagnosis,
-        provider_name: data.provider_name,
-        provider_phone: data.provider_phone,
-        status: 'pending',
-        submitted_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    if (error) throw error;
-    return result;
-  },
+export async function createClaim(payload: any) {
+  const { data, error } = await supabase.from("health_insurance_claims").insert([payload]).select().single();
+  if (error) throw error;
+  return data;
+}
 
-  async getClaims(userId: string) {
-    const { data, error } = await supabase
-      .from('health_insurance_claims')
-      .select(`
-        id, claim_type, amount, description, status, created_at,
-        patient:patient_id (full_name),
-        policy:policy_id (provider, policy_number)
-      `)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
-  },
-};
+export async function getClaims(filter: string, range: { from: number; to: number }) {
+  let q = supabase.from("health_insurance_claims").select("*", { count: "exact" }).order("created_at", { ascending: false });
+  if (filter !== "all") q = q.eq("status", filter);
+  const { data, error, count } = await q.range(range.from, range.to);
+  if (error) throw error;
+  return { data: data ?? [], count: count ?? 0 };
+}
