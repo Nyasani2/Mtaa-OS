@@ -18,3 +18,9 @@ export * from './government-service';
 export * from './business-service';
 export * from './creator-service';
 export * from './voting-service';
+
+// Transport Fare Engine & Services
+export * from './fare-engine';
+export * from './boda-service';
+export * from './mtaxi-service';
+export * from './mtruck-service';
