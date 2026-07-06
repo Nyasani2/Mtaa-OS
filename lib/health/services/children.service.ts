@@ -1,0 +1,21 @@
+import { supabase } from "@/lib/supabase/client";
+
+export async function getChildrenRecords(filter: string) {
+  let q = supabase.from("health_children").select("*").order("created_at", { ascending: false });
+  if (filter !== "all") {
+    const now = new Date();
+    if (filter === "infant") q = q.gte("date_of_birth", new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString());
+    if (filter === "toddler") q = q.gte("date_of_birth", new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()).toISOString()).lt("date_of_birth", new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString());
+    if (filter === "child") q = q.gte("date_of_birth", new Date(now.getFullYear() - 12, now.getMonth(), now.getDate()).toISOString()).lt("date_of_birth", new Date(now.getFullYear() - 3, now.getMonth(), now.getDate()).toISOString());
+    if (filter === "adolescent") q = q.lt("date_of_birth", new Date(now.getFullYear() - 12, now.getMonth(), now.getDate()).toISOString());
+  }
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createChildRecord(payload: any) {
+  const { data, error } = await supabase.from("health_children").insert([payload]).select().single();
+  if (error) throw error;
+  return data;
+}

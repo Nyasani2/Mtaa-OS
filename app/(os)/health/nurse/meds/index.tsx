@@ -1,211 +1,217 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, FlatList } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { supabase } from '@/lib/supabase';
-import {
-  ChevronLeft, Pill, Clock, CheckCircle2, XCircle, AlertTriangle,
-  User, Search
-} from 'lucide-react-native';
 
-interface MedAdmin {
-  id: string;
-  prescription_id: string;
-  medication_name: string;
-  dosage: string;
-  route: string;
-  frequency: string;
-  scheduled_time: string;
-  given: boolean;
-  given_at: string | null;
-  given_by: string | null;
-  patient_name: string;
-  patient_id: string;
-  prn: boolean;
-  notes: string | null;
-}
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert, Switch } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useNurse } from '@/lib/health/hooks/useNurse';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Pill, Plus, Search, X, Clock, CheckCircle, AlertTriangle, User, Calendar } from 'lucide-react-native';
 
-const TIME_SLOTS = ['06:00', '08:00', '12:00', '14:00', '18:00', '20:00', '22:00'];
+const COLORS = {
+  primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',
+  danger: '#EF4444', text: '#1F2937', textLight: '#6B7280', border: '#E5E7EB',
+  background: '#F3F4F6', white: '#FFFFFF'
+};
 
-export default function MedAdminScreen() {
-  const { patientId } = useLocalSearchParams<{ patientId?: string }>();
+export default function NurseMedsScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const [meds, setMeds] = useState<MedAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const { selectedFacilityId } = useHealthRole();
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showPRN, setShowPRN] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newMed, setNewMed] = useState({ patient_id: '', medication_name: '', dosage: '', frequency: '', route: 'oral', scheduled_time: '', notes: '', is_prn: false });
+  const { medications, patients, loading, error, refresh, administerMed, addMedication } = useNurse(selectedFacilityId);
 
-  useEffect(() => { loadMeds(); }, [patientId]);
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
-  const loadMeds = async () => {
-    try {
-      let query = supabase
-        .from('medication_administrations')
-        .select('*, prescriptions(name, dosage, route, frequency, prn), patients(full_name)')
-        .eq('date', new Date().toISOString().split('T')[0])
-        .order('scheduled_time', { ascending: true });
-      if (patientId) query = query.eq('patient_id', patientId);
-      const { data, error } = await query;
-      if (error) throw error;
-      const formatted = (data || []).map((m: any) => ({
-        id: m.id, prescription_id: m.prescription_id,
-        medication_name: m.prescriptions?.name || 'Unknown',
-        dosage: m.prescriptions?.dosage || '', route: m.prescriptions?.route || 'PO',
-        frequency: m.prescriptions?.frequency || '', scheduled_time: m.scheduled_time,
-        given: m.given, given_at: m.given_at, given_by: m.given_by,
-        patient_name: m.patients?.full_name || 'Unknown', patient_id: m.patient_id,
-        prn: m.prescriptions?.prn || false, notes: m.notes,
-      }));
-      setMeds(formatted);
-    } catch (err) { Alert.alert('Error', 'Failed to load medications'); }
-    finally { setLoading(false); }
-  };
-
-  const administer = async (medId: string, notes?: string) => {
-    try {
-      const { error } = await supabase.from('medication_administrations').update({
-        given: true, given_at: new Date().toISOString(), given_by: user?.id, notes: notes || null,
-      }).eq('id', medId);
-      if (error) throw error;
-      loadMeds();
-    } catch (err) { Alert.alert('Error', 'Failed to record administration'); }
-  };
-
-  const skipDose = async (medId: string, reason: string) => {
-    try {
-      const { error } = await supabase.from('medication_administrations').update({
-        given: false, skipped: true, skip_reason: reason, notes: reason,
-      }).eq('id', medId);
-      if (error) throw error;
-      loadMeds();
-    } catch (err) { Alert.alert('Error', 'Failed to skip dose'); }
-  };
-
-  const filteredMeds = meds.filter(m => {
-    if (selectedTime && m.scheduled_time !== selectedTime) return false;
-    if (showPRN && !m.prn) return false;
-    if (!showPRN && m.prn) return false;
-    if (searchQuery && !m.medication_name.toLowerCase().includes(searchQuery.toLowerCase()) && !m.patient_name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
+  const filteredMeds = medications?.filter((med: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return med.medication_name?.toLowerCase().includes(q) || med.patient_name?.toLowerCase().includes(q) || med.dosage?.toLowerCase().includes(q);
   });
 
-  const pendingCount = meds.filter(m => !m.given && !m.prn).length;
-  const givenCount = meds.filter(m => m.given).length;
+  const handleAdminister = useCallback(async (medId: string, patientId: string) => {
+    Alert.alert('Administer Medication', 'Confirm this medication was given?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm', onPress: async () => {
+        try { await administerMed(medId, patientId); Alert.alert('Success', 'Medication recorded'); }
+        catch (err: any) { Alert.alert('Error', err.message || 'Failed to record'); }
+      }}
+    ]);
+  }, [administerMed]);
+
+  const handleAddMed = useCallback(async () => {
+    if (!newMed.patient_id || !newMed.medication_name.trim() || !newMed.dosage.trim()) {
+      Alert.alert('Error', 'Patient, medication name, and dosage are required'); return;
+    }
+    try {
+      await addMedication({ ...newMed, facility_id: selectedFacilityId });
+      setShowAddModal(false);
+      setNewMed({ patient_id: '', medication_name: '', dosage: '', frequency: '', route: 'oral', scheduled_time: '', notes: '', is_prn: false });
+      Alert.alert('Success', 'Medication added');
+    } catch (err: any) { Alert.alert('Error', err.message || 'Failed to add medication'); }
+  }, [newMed, selectedFacilityId, addMedication]);
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading medications...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>Medication Round</Text>
-          <Text style={styles.headerSubtitle}>{pendingCount} pending · {givenCount} given</Text>
-        </View>
-        <TouchableOpacity onPress={() => setShowPRN(!showPRN)} style={[styles.prnToggle, showPRN && styles.prnToggleActive]}>
-          <Text style={[styles.prnText, showPRN && styles.prnTextActive]}>PRN</Text>
+        <Text style={styles.headerTitle}>Medications</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+          <Plus size={20} color={COLORS.white} />
+          <Text style={styles.addButtonText}>Add Med</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
-        <Search size={18} color="#64748b" />
-        <TextInput style={styles.searchInput} placeholder="Search medication or patient..." placeholderTextColor="#64748b" value={searchQuery} onChangeText={setSearchQuery} />
+        <Search size={18} color={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search medications or patients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
       </View>
 
-      <FlatList
-        data={filteredMeds}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <View style={[styles.medCard, item.given && styles.medCardGiven]}>
-            <View style={styles.medHeader}>
-              <View style={styles.medIdentity}>
-                <Pill size={18} color={item.given ? '#22c55e' : '#6366f1'} />
-                <View>
-                  <Text style={styles.medName}>{item.medication_name}</Text>
-                  <Text style={styles.medDose}>{item.dosage} · {item.route} · {item.frequency}</Text>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {filteredMeds?.length === 0 ? (
+          <View style={styles.emptyState}><Pill size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No medications match' : 'No medications scheduled'}</Text></View>
+        ) : (
+          filteredMeds?.map((med: any) => (
+            <View key={med.id} style={styles.medCard}>
+              <View style={styles.medHeader}>
+                <View style={styles.patientInfo}>
+                  <View style={[styles.avatar, { backgroundColor: COLORS.primaryLight }]}>
+                    <Text style={styles.avatarText}>{med.patient_name?.charAt(0) || '?'}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.patientName}>{med.patient_name}</Text>
+                    <Text style={styles.medName}>{med.medication_name} {med.dosage}</Text>
+                  </View>
                 </View>
+                {med.is_prn && <View style={styles.prnBadge}><Text style={styles.prnText}>PRN</Text></View>}
               </View>
-              {item.prn && <View style={styles.prnBadge}><Text style={styles.prnBadgeText}>PRN</Text></View>}
-            </View>
-            <View style={styles.patientRow}>
-              <User size={14} color="#94a3b8" />
-              <Text style={styles.patientText}>{item.patient_name}</Text>
-              <Clock size={14} color="#64748b" />
-              <Text style={styles.timeLabel}>{item.scheduled_time}</Text>
-            </View>
-            {!item.given ? (
-              <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.giveBtn} onPress={() => {
-                  if (item.prn) { Alert.alert('PRN Dose', 'Enter reason:', [{ text: 'Cancel', style: 'cancel' }, { text: 'Give', onPress: () => administer(item.id, 'PRN - as needed') }]); }
-                  else { administer(item.id); }
-                }}>
-                  <CheckCircle2 size={16} color="#fff" /><Text style={styles.giveBtnText}>Give</Text>
+              <View style={styles.medDetails}>
+                <View style={styles.detailRow}><Clock size={14} color={COLORS.textLight} /><Text style={styles.detailText}>{med.frequency} {med.scheduled_time && `at ${med.scheduled_time}`}</Text></View>
+                <View style={styles.detailRow}><Pill size={14} color={COLORS.textLight} /><Text style={styles.detailText}>Route: {med.route}</Text></View>
+                {med.notes && <View style={styles.detailRow}><Text style={styles.notesText}>{med.notes}</Text></View>}
+              </View>
+              <View style={styles.medActions}>
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.success }]} onPress={() => handleAdminister(med.id, med.patient_id)}>
+                  <CheckCircle size={16} color={COLORS.white} />
+                  <Text style={styles.actionBtnText}>Given</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.skipBtn} onPress={() => {
-                  Alert.alert('Skip Dose', 'Reason:', [
-                    { text: 'Patient refused', onPress: () => skipDose(item.id, 'Patient refused') },
-                    { text: 'NPO', onPress: () => skipDose(item.id, 'NPO') },
-                    { text: 'Other', onPress: () => skipDose(item.id, 'Other') },
-                    { text: 'Cancel', style: 'cancel' },
-                  ]);
-                }}>
-                  <XCircle size={16} color="#ef4444" /><Text style={styles.skipBtnText}>Skip</Text>
+                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: COLORS.warning }]} onPress={() => { Alert.alert('Skip', 'Reason for skipping?', [{ text: 'Cancel' }, { text: 'Skip', onPress: () => {} }]); }}>
+                  <AlertTriangle size={16} color={COLORS.white} />
+                  <Text style={styles.actionBtnText}>Skip</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
-              <View style={styles.givenRow}>
-                <CheckCircle2 size={14} color="#22c55e" />
-                <Text style={styles.givenText}>Given {item.given_at ? new Date(item.given_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</Text>
-              </View>
-            )}
-          </View>
+            </View>
+          ))
         )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Pill size={48} color="#334155" />
-            <Text style={styles.emptyTitle}>No medications</Text>
-            <Text style={styles.emptySubtitle}>All doses for this round are complete</Text>
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Medication</Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}><X size={24} color={COLORS.text} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Patient *</Text>
+              <View style={styles.patientRow}>
+                {patients?.map((p: any) => (
+                  <TouchableOpacity key={p.id} style={[styles.patientChip, newMed.patient_id === p.id && styles.patientChipActive]} onPress={() => setNewMed({ ...newMed, patient_id: p.id })}>
+                    <Text style={[styles.patientChipText, newMed.patient_id === p.id && styles.patientChipTextActive]}>{p.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Medication Name *</Text>
+              <TextInput style={styles.input} placeholder="e.g. Paracetamol" value={newMed.medication_name} onChangeText={(t) => setNewMed({ ...newMed, medication_name: t })} />
+              <Text style={styles.inputLabel}>Dosage *</Text>
+              <TextInput style={styles.input} placeholder="e.g. 500mg" value={newMed.dosage} onChangeText={(t) => setNewMed({ ...newMed, dosage: t })} />
+              <Text style={styles.inputLabel}>Frequency</Text>
+              <TextInput style={styles.input} placeholder="e.g. Every 6 hours" value={newMed.frequency} onChangeText={(t) => setNewMed({ ...newMed, frequency: t })} />
+              <Text style={styles.inputLabel}>Route</Text>
+              <View style={styles.routeRow}>
+                {['oral', 'iv', 'im', 'sc', 'topical'].map((r) => (
+                  <TouchableOpacity key={r} style={[styles.routeChip, newMed.route === r && styles.routeChipActive]} onPress={() => setNewMed({ ...newMed, route: r })}>
+                    <Text style={[styles.routeText, newMed.route === r && styles.routeTextActive]}>{r.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Scheduled Time</Text>
+              <TextInput style={styles.input} placeholder="08:00, 14:00, 20:00" value={newMed.scheduled_time} onChangeText={(t) => setNewMed({ ...newMed, scheduled_time: t })} />
+              <View style={styles.switchRow}>
+                <Text style={styles.inputLabel}>PRN (as needed)</Text>
+                <Switch value={newMed.is_prn} onValueChange={(v) => setNewMed({ ...newMed, is_prn: v })} />
+              </View>
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput style={[styles.input, styles.textArea]} placeholder="Special instructions..." value={newMed.notes} onChangeText={(t) => setNewMed({ ...newMed, notes: t })} multiline numberOfLines={3} />
+              <TouchableOpacity style={styles.modalSubmit} onPress={handleAddMed}>
+                <Text style={styles.modalSubmitText}>Add Medication</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
-        }
-      />
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  headerSubtitle: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-  prnToggle: { backgroundColor: '#1e293b', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#334155' },
-  prnToggleActive: { backgroundColor: '#f59e0b20', borderColor: '#f59e0b' },
-  prnText: { color: '#94a3b8', fontSize: 12, fontWeight: '700' },
-  prnTextActive: { color: '#f59e0b' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, marginHorizontal: 16, paddingHorizontal: 12, marginBottom: 8 },
-  searchInput: { flex: 1, color: '#fff', paddingVertical: 10, marginLeft: 8, fontSize: 14 },
-  medCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
-  medCardGiven: { opacity: 0.7 },
-  medHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  medIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  medName: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  medDose: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-  prnBadge: { backgroundColor: '#f59e0b20', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
-  prnBadgeText: { color: '#f59e0b', fontSize: 10, fontWeight: '700' },
-  patientRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  patientText: { color: '#cbd5e1', fontSize: 13 },
-  timeLabel: { color: '#64748b', fontSize: 12 },
-  actionRow: { flexDirection: 'row', gap: 10 },
-  giveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#22c55e', borderRadius: 10, paddingVertical: 12 },
-  giveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  skipBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#1e293b', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: '#334155' },
-  skipBtnText: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
-  givenRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  givenText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
-  emptyState: { alignItems: 'center', marginTop: 80 },
-  emptyTitle: { color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 16 },
-  emptySubtitle: { color: '#64748b', fontSize: 14, marginTop: 8 },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: COLORS.textLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  addButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  addButtonText: { color: COLORS.white, fontWeight: '600', marginLeft: 6 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: COLORS.text },
+  medCard: { backgroundColor: COLORS.white, marginHorizontal: 12, marginBottom: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  medHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  patientInfo: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  patientName: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  medName: { fontSize: 13, color: COLORS.textLight, marginTop: 1 },
+  prnBadge: { backgroundColor: COLORS.warning + '20', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  prnText: { fontSize: 11, color: COLORS.warning, fontWeight: '600' },
+  medDetails: { marginLeft: 52, marginBottom: 10 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 3 },
+  detailText: { marginLeft: 6, fontSize: 12, color: COLORS.textLight },
+  notesText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
+  medActions: { flexDirection: 'row', gap: 8, marginLeft: 52 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, gap: 4 },
+  actionBtnText: { color: COLORS.white, fontWeight: '600', fontSize: 12 },
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { marginTop: 12, color: COLORS.textLight, fontSize: 14 },
+  bottomPadding: { height: 40 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalBody: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 6, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  patientRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  patientChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border },
+  patientChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  patientChipText: { fontSize: 12, color: COLORS.textLight },
+  patientChipTextActive: { color: COLORS.primary, fontWeight: '600' },
+  routeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  routeChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+  routeChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  routeText: { fontSize: 11, color: COLORS.textLight },
+  routeTextActive: { color: COLORS.primary, fontWeight: '600' },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  modalSubmit: { backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 12 },
+  modalSubmitText: { color: COLORS.white, fontWeight: '700', fontSize: 16 }
 });

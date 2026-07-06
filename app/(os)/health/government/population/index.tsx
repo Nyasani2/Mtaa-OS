@@ -1,143 +1,70 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  RefreshControl, ActivityIndicator, TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useGovernment } from "@/lib/health/hooks/useGovernment";
 
-interface Citizen {
-  id: string;
-  national_id: string;
-  name: string;
-  dob: string;
-  gender: string;
-  county: string;
-  sub_county: string;
-  ward: string;
-  phone: string;
-  blood_type: string;
-  registered_at: string;
-}
-
-export default function PopulationRegistry() {
+export default function PopulationScreen() {
   const router = useRouter();
-  const { fetchPopulationRegistry } = useHealthStore();
+  const user = useAuthStore((s) => s.user);
+  const { population, loading, error, refreshing, refresh, searchPopulation } = useGovernment(user?.id);
+  const [query, setQuery] = useState("");
 
-  const [citizens, setCitizens] = useState<Citizen[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const loadData = async () => {
-    const data = await fetchPopulationRegistry();
-    setCitizens(data || []);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
-
-  const filtered = citizens.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.national_id.includes(searchQuery)
-  );
-
-  const stats = {
-    total: citizens.length,
-    male: citizens.filter((c) => c.gender === "male").length,
-    female: citizens.filter((c) => c.gender === "female").length,
-    children: citizens.filter((c) => {
-      const age = new Date().getFullYear() - new Date(c.dob).getFullYear();
-      return age < 18;
-    }).length,
-  };
+  const handleSearch = useCallback((text: string) => {
+    setQuery(text);
+    if (text.trim().length > 2) {
+      searchPopulation(text);
+    }
+  }, [searchPopulation]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Population Registry</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="add-circle" size={26} color="#2563eb" />
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+        <Text style={s.headerTitle}>Population Health</Text>
+        <TouchableOpacity onPress={() => router.push("/(os)/health/government/population/add" as any)} style={s.headerAction}>
+          <Ionicons name="add" size={22} color="#fff"/>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#3b82f6" }]}>{stats.male.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Male</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#ec4899" }]}>{stats.female.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Female</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#10b981" }]}>{stats.children.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Under 18</Text>
-          </View>
-        </View>
+      <View style={s.searchWrap}>
+        <Ionicons name="search" size={18} color="#94a3b8" style={s.searchIcon} />
+        <TextInput style={s.searchInput} placeholder="Search citizens..." placeholderTextColor="#94a3b8" value={query} onChangeText={handleSearch} />
+        {query.length > 0 && <TouchableOpacity onPress={() => { setQuery(""); searchPopulation(""); }}><Ionicons name="close-circle" size={18} color="#94a3b8"/></TouchableOpacity>}
+      </View>
 
-        {/* Search */}
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={18} color="#9ca3af" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or ID number..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        {/* Citizens List */}
-        {filtered.map((citizen) => (
-          <TouchableOpacity
-            key={citizen.id}
-            style={styles.citizenCard}
-            onPress={() => router.push(`/(os)/health/government/population/${citizen.id}`)}
-          >
-            <View style={styles.citizenHeader}>
-              <View style={styles.citizenAvatar}>
-                <Text style={styles.citizenInitials}>{citizen.name.split(" ").map((n) => n[0]).join("")}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.citizenName}>{citizen.name}</Text>
-                <Text style={styles.citizenId}>ID: {citizen.national_id}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
-            </View>
-            <View style={styles.citizenDetails}>
-              <View style={styles.detailItem}>
-                <Ionicons name="calendar" size={12} color="#9ca3af" />
-                <Text style={styles.detailText}>{new Date(citizen.dob).toLocaleDateString()}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="location" size={12} color="#9ca3af" />
-                <Text style={styles.detailText}>{citizen.county}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons name="water" size={12} color="#9ca3af" />
-                <Text style={styles.detailText}>{citizen.blood_type}</Text>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh}/>} contentContainerStyle={s.scrollContent}>
+        {loading && !refreshing ? (
+          <View style={s.center}><ActivityIndicator size="large" color="#2563eb"/><Text style={s.loadingText}>Loading...</Text></View>
+        ) : error ? (
+          <View style={s.center}><Ionicons name="alert-circle" size={48} color="#ef4444"/><Text style={s.errorText}>{error}</Text><TouchableOpacity style={s.retryBtn} onPress={refresh}><Text style={s.retryText}>Retry</Text></TouchableOpacity></View>
+        ) : population.length === 0 ? (
+          <View style={s.emptyState}>
+            <Ionicons name="people-outline" size={64} color="#cbd5e1"/>
+            <Text style={s.emptyTitle}>No Records</Text>
+            <Text style={s.emptySub}>Population health data will appear here.</Text>
+          </View>
+        ) : population.map((p) => (
+          <TouchableOpacity key={p.id} style={s.card} onPress={() => router.push({ pathname: "/(os)/health/government/population/detail", params: { id: p.id } } as any)}>
+            <View style={s.cardAvatar}><Text style={s.cardAvatarText}>{(p.name || "?").charAt(0)}</Text></View>
+            <View style={s.cardInfo}>
+              <Text style={s.cardName}>{p.name || "Unknown"}</Text>
+              <Text style={s.cardMeta}>{p.age} yrs · {p.gender} · {p.city || "Unknown"}</Text>
+              <View style={s.cardTags}>
+                <View style={[s.tag, { backgroundColor: p.vaccination_status === "up_to_date" ? "#ecfdf5" : "#fef2f2" }]}>
+                  <Text style={[s.tagText, { color: p.vaccination_status === "up_to_date" ? "#059669" : "#ef4444" }]}>{p.vaccination_status || "Unknown"}</Text>
+                </View>
+                {p.chronic_conditions?.length > 0 && (
+                  <View style={[s.tag, { backgroundColor: "#fff7ed" }]}><Text style={[s.tagText, { color: "#ea580c" }]}>{p.chronic_conditions.length} conditions</Text></View>
+                )}
               </View>
             </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8"/>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -145,40 +72,31 @@ export default function PopulationRegistry() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 12, paddingBottom: 24 },
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  statCard: {
-    flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 10,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  statValue: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  statLabel: { fontSize: 10, color: "#6b7280", marginTop: 2 },
-  searchBox: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: "#111827" },
-  citizenCard: {
-    backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 8,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  citizenHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  citizenAvatar: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#2563eb",
-    justifyContent: "center", alignItems: "center", marginRight: 12,
-  },
-  citizenInitials: { color: "#fff", fontSize: 14, fontWeight: "700" },
-  citizenName: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  citizenId: { fontSize: 12, color: "#6b7280", marginTop: 1 },
-  citizenDetails: { flexDirection: "row", gap: 16, paddingLeft: 52 },
-  detailItem: { flexDirection: "row", alignItems: "center", gap: 4 },
-  detailText: { fontSize: 11, color: "#6b7280" },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  header: { backgroundColor: "#0f3d5e", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "center" },
+  backBtn: { padding: 4, marginRight: 12 },
+  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff", flex: 1 },
+  headerAction: { width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", justifyContent: "center", alignItems: "center" },
+  searchWrap: { flexDirection: "row", alignItems: "center", margin: 16, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#e2e8f0" },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 15, color: "#1e293b" },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 15, color: "#64748b" },
+  errorText: { marginTop: 12, fontSize: 15, color: "#ef4444", textAlign: "center" },
+  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: "#0f3d5e", borderRadius: 10 },
+  retryText: { color: "#fff", fontWeight: "600" },
+  emptyState: { alignItems: "center", paddingVertical: 48 },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#1e293b", marginTop: 16 },
+  emptySub: { fontSize: 14, color: "#94a3b8", marginTop: 4, textAlign: "center" },
+  card: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0" },
+  cardAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#0f3d5e", justifyContent: "center", alignItems: "center", marginRight: 12 },
+  cardAvatarText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  cardInfo: { flex: 1 },
+  cardName: { fontSize: 15, fontWeight: "700", color: "#1e293b" },
+  cardMeta: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  cardTags: { flexDirection: "row", gap: 6, marginTop: 6 },
+  tag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  tagText: { fontSize: 10, fontWeight: "600" },
 });

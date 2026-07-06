@@ -1,153 +1,141 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import React, { useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useChildrenRecords, useCreateChildRecord } from "@/lib/health/hooks/useChildren";
 
-interface ChildProfile {
-  id: string;
-  parent_id: string;
-  full_name: string;
-  date_of_birth: string;
-  gender: string;
-  blood_group: string;
-  allergies: string[];
-  created_at: string;
-}
+const GENDERS = ["male", "female", "other"];
+const FILTERS = ["all", "infant", "toddler", "child", "adolescent"];
 
 export default function ChildrenScreen() {
-  const { user } = useAuthStore();
-  const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showAdd, setShowAdd] = useState(false);
+  const router = useRouter();
+  const [filter, setFilter] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("male");
+  const [guardianId, setGuardianId] = useState("");
+  const [allergies, setAllergies] = useState("");
 
-  useEffect(() => {
-    loadChildren();
-  }, [user?.id]);
+  const { data: records, isLoading, refetch } = useChildrenRecords(filter);
+  const createRecord = useCreateChildRecord();
 
-  async function loadChildren() {
-    if (!user?.id) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('health_children')
-        .select('*')
-        .eq('parent_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      setChildren(data || []);
-    } catch (e) {
-      console.error('Failed to load children:', e);
-    } finally {
-      setLoading(false);
+  const onCreate = () => {
+    if (!fullName.trim() || !dateOfBirth.trim() || !guardianId.trim()) {
+      Alert.alert("Validation", "Full name, date of birth, and guardian ID are required.");
+      return;
     }
-  }
-
-  const handleDelete = (childId: string) => {
-    Alert.alert('Remove Child', 'Are you sure you want to remove this child profile?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: async () => {
-        await supabase.from('health_children').delete().eq('id', childId);
-        loadChildren();
-      }},
-    ]);
+    createRecord.mutate({
+      full_name: fullName.trim(),
+      date_of_birth: dateOfBirth.trim(),
+      gender,
+      guardian_id: guardianId.trim(),
+      allergies: allergies.trim() || undefined,
+    }, {
+      onSuccess: () => { setModalOpen(false); setFullName(""); setDateOfBirth(""); setGender("male"); setGuardianId(""); setAllergies(""); refetch(); },
+    });
   };
 
-  const getAge = (dob: string) => {
-    const birth = new Date(dob);
-    const now = new Date();
-    const years = now.getFullYear() - birth.getFullYear();
-    const months = now.getMonth() - birth.getMonth();
-    if (months < 0) return `${years - 1} years`;
-    if (years === 0) return `${months} months`;
-    return `${years} years`;
+  const getAgeGroup = (dob: string) => {
+    const age = new Date().getFullYear() - new Date(dob).getFullYear();
+    if (age < 1) return "infant";
+    if (age < 3) return "toddler";
+    if (age < 12) return "child";
+    return "adolescent";
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Family Health</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text>Loading...</Text>
-        </View>
+  const renderItem = ({ item }: { item: any }) => (
+    <View style={styles.card}>
+      <View style={styles.rowBetween}>
+        <Text style={styles.cardTitle}>{item.full_name}</Text>
+        <View style={styles.badge}><Text style={styles.badgeText}>{getAgeGroup(item.date_of_birth)}</Text></View>
       </View>
-    );
-  }
-
-  const safeChildren = children || [];
+      <Text style={styles.meta}>DOB: {new Date(item.date_of_birth).toLocaleDateString()}</Text>
+      <Text style={styles.meta}>Gender: {item.gender}</Text>
+      <Text style={styles.meta}>Guardian: {item.guardian_id?.slice(0, 8)}…</Text>
+      {item.allergies && <Text style={styles.alert}>⚠ Allergies: {item.allergies}</Text>}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Family Health</Text>
-        <TouchableOpacity onPress={() => setShowAdd(true)}>
-          <Ionicons name="add" size={24} color="#007AFF" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+        <Text style={styles.headerTitle}>Pediatric Records</Text>
+        <TouchableOpacity onPress={() => setModalOpen(true)}><Ionicons name="add" size={24} color="#fff"/></TouchableOpacity>
       </View>
-
-      <ScrollView style={styles.content}>
-        {safeChildren.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="people-outline" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No children added yet</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={() => setShowAdd(true)}>
-              <Text style={styles.emptyBtnText}>Add Child</Text>
+      <View style={styles.chipRow}>
+        {FILTERS.map((f) => (
+          <TouchableOpacity key={f} style={[styles.chip, filter === f && styles.chipActive]} onPress={() => setFilter(f)}>
+            <Text style={[styles.chipText, filter === f && styles.chipTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <FlatList data={records} keyExtractor={(i) => i.id} renderItem={renderItem}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      />
+      <Modal visible={modalOpen} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>New Pediatric Record</Text>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="Child's full name" />
+            <Text style={styles.label}>Date of Birth (YYYY-MM-DD)</Text>
+            <TextInput style={styles.input} value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="2000-01-01" />
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.typeRow}>
+              {GENDERS.map((g) => (
+                <TouchableOpacity key={g} style={[styles.typeChip, gender === g && styles.typeChipActive]} onPress={() => setGender(g)}>
+                  <Text style={[styles.typeChipText, gender === g && styles.typeChipTextActive]}>{g}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.label}>Guardian ID</Text>
+            <TextInput style={styles.input} value={guardianId} onChangeText={setGuardianId} placeholder="Guardian UUID" />
+            <Text style={styles.label}>Allergies (optional)</Text>
+            <TextInput style={styles.input} value={allergies} onChangeText={setAllergies} placeholder="Known allergies…" />
+            <TouchableOpacity style={styles.submitBtn} onPress={onCreate}>
+              <Text style={styles.submitBtnText}>{createRecord.isPending ? "Saving…" : "Save Record"}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalOpen(false)}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          safeChildren.map(child => (
-            <TouchableOpacity key={child.id} style={styles.childCard} onPress={() => router.push(`/(os)/health/children/${child.id}`)}>
-              <View style={styles.childHeader}>
-                <View style={[styles.childAvatar, { backgroundColor: child.gender === 'male' ? '#4FC3F7' : '#F48FB1' }]}>
-                  <Text style={styles.childAvatarText}>{child.full_name.charAt(0)}</Text>
-                </View>
-                <View style={styles.childInfo}>
-                  <Text style={styles.childName}>{child.full_name}</Text>
-                  <Text style={styles.childAge}>{getAge(child.date_of_birth)} · {child.gender}</Text>
-                </View>
-                <TouchableOpacity onPress={() => handleDelete(child.id)}>
-                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.childDetails}>
-                <Text style={styles.childDetail}>🩸 Blood: {child.blood_group || 'Unknown'}</Text>
-                <Text style={styles.childDetail}>⚠️ Allergies: {child.allergies?.length ? child.allergies.join(', ') : 'None known'}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { flex: 1, padding: 16 },
-  empty: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 16, color: '#999', marginTop: 12 },
-  emptyBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#007AFF', borderRadius: 8 },
-  emptyBtnText: { color: '#fff', fontWeight: '600' },
-  childCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
-  childHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  childAvatar: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
-  childAvatarText: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  childInfo: { flex: 1 },
-  childName: { fontSize: 16, fontWeight: '600', color: '#333' },
-  childAge: { fontSize: 13, color: '#666' },
-  childDetails: { gap: 4 },
-  childDetail: { fontSize: 14, color: '#666' },
+  container: { flex: 1, backgroundColor: "#0B0F19" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: "#111827" },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  chipRow: { flexDirection: "row", paddingHorizontal: 12, marginBottom: 8, flexWrap: "wrap", gap: 6 },
+  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: "#1F2937", marginBottom: 6 },
+  chipActive: { backgroundColor: "#00D09C" },
+  chipText: { color: "#9CA3AF", fontSize: 11 },
+  chipTextActive: { color: "#000", fontWeight: "600" },
+  card: { backgroundColor: "#1F2937", marginHorizontal: 12, marginBottom: 10, borderRadius: 12, padding: 14 },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  cardTitle: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12, backgroundColor: "#1E3A8A" },
+  badgeText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+  meta: { color: "#D1D5DB", fontSize: 13, marginTop: 4 },
+  alert: { color: "#F59E0B", fontSize: 12, marginTop: 6, fontWeight: "600" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", padding: 20 },
+  modalBox: { backgroundColor: "#1F2937", borderRadius: 16, padding: 20 },
+  modalTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 12 },
+  label: { color: "#9CA3AF", fontSize: 12, marginTop: 10, marginBottom: 4 },
+  input: { backgroundColor: "#111827", color: "#fff", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
+  typeChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: "#111827" },
+  typeChipActive: { backgroundColor: "#00D09C" },
+  typeChipText: { color: "#9CA3AF", fontSize: 11 },
+  typeChipTextActive: { color: "#000", fontWeight: "600" },
+  submitBtn: { backgroundColor: "#00D09C", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 16 },
+  submitBtnText: { color: "#000", fontWeight: "700", fontSize: 15 },
+  cancelBtn: { backgroundColor: "#374151", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 10 },
+  cancelBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
 });

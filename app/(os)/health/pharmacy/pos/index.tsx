@@ -1,370 +1,275 @@
+
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Alert, ActivityIndicator, FlatList, ScrollView
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { usePharmacy } from '@/lib/health/hooks/usePharmacy';
 import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { ShoppingCart, Plus, Search, X, Minus, Trash2, CreditCard, Wallet, DollarSign, CheckCircle, Printer } from 'lucide-react-native';
+
+const COLORS = {
+  primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',
+  danger: '#EF4444', text: '#1F2937', textLight: '#6B7280', border: '#E5E7EB',
+  background: '#F3F4F6', white: '#FFFFFF'
+};
 
 interface CartItem {
-  inventory_id: string;
+  id: string;
   name: string;
+  price: number;
   quantity: number;
-  unit_price: number;
-  total_price: number;
-  batch_number: string;
-  qr_scanned: boolean;
+  stock: number;
 }
 
-export default function POSScreen() {
+export default function PharmacyPOSScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { staffRecord } = useHealthRole();
-  const [loading, setLoading] = useState(false);
-  const [scanning, setScanning] = useState(false);
-  const [qrInput, setQrInput] = useState('');
+  const { selectedFacilityId } = useHealthRole();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [patientPhone, setPatientPhone] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('mtaa_wallet');
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'wallet' | 'insurance'>('cash');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const { inventory, loading, error, refresh, processSale } = usePharmacy(selectedFacilityId);
 
-  const facilityId = staffRecord?.facility_id;
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
-  // Simulate QR scan (in production, this would use camera + barcode scanner)
-  const handleQrScan = useCallback(async (qrData: string) => {
-    setScanning(true);
+  const filteredInventory = inventory?.filter((item: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return item.name?.toLowerCase().includes(q) || item.generic_name?.toLowerCase().includes(q);
+  });
+
+  const addToCart = useCallback((item: any) => {
+    setCart(prev => {
+      const existing = prev.find(c => c.id === item.id);
+      if (existing) {
+        if (existing.quantity >= item.quantity) { Alert.alert('Out of Stock', 'Cannot add more of this item'); return prev; }
+        return prev.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c);
+      }
+      return [...prev, { id: item.id, name: item.name, price: parseFloat(item.price) || 0, quantity: 1, stock: item.quantity }];
+    });
+  }, []);
+
+  const updateCartQty = useCallback((itemId: string, delta: number) => {
+    setCart(prev => prev.map(c => {
+      if (c.id !== itemId) return c;
+      const newQty = c.quantity + delta;
+      if (newQty <= 0) return c;
+      if (newQty > c.stock) { Alert.alert('Stock Limit', 'Cannot exceed available stock'); return c; }
+      return { ...c, quantity: newQty };
+    }).filter(c => c.quantity > 0));
+  }, []);
+
+  const removeFromCart = useCallback((itemId: string) => {
+    setCart(prev => prev.filter(c => c.id !== itemId));
+  }, []);
+
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const handleCheckout = useCallback(async () => {
+    if (cart.length === 0) { Alert.alert('Empty Cart', 'Add items to the cart first'); return; }
     try {
-      // Parse QR data
-      let qrJson;
-      try {
-        qrJson = JSON.parse(qrData);
-      } catch {
-        Alert.alert('Invalid QR', 'The scanned QR code is not valid');
-        return;
-      }
+      await processSale({
+        items: cart,
+        total: cartTotal,
+        payment_method: paymentMethod,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        facility_id: selectedFacilityId,
+        cashier_id: user?.id,
+      });
+      setCart([]);
+      setShowCheckout(false);
+      setCustomerName('');
+      setCustomerPhone('');
+      Alert.alert('Success', `Sale completed. Total: $${cartTotal.toFixed(2)}`);
+    } catch (err: any) { Alert.alert('Error', err.message || 'Payment failed'); }
+  }, [cart, cartTotal, paymentMethod, customerName, customerPhone, selectedFacilityId, user?.id, processSale]);
 
-      // Check if already in cart
-      if (cart.find(item => item.inventory_id === qrJson.i)) {
-        // Increment quantity
-        setCart(prev => prev.map(item =>
-          item.inventory_id === qrJson.i
-            ? { ...item, quantity: item.quantity + 1, total_price: (item.quantity + 1) * item.unit_price }
-            : item
-        ));
-        Alert.alert('Added', `${qrJson.n} quantity increased`);
-        return;
-      }
-
-      // Add to cart
-      const newItem: CartItem = {
-        inventory_id: qrJson.i,
-        name: qrJson.n,
-        quantity: 1,
-        unit_price: parseFloat(qrJson.p) || 0,
-        total_price: parseFloat(qrJson.p) || 0,
-        batch_number: qrJson.b || '',
-        qr_scanned: true,
-      };
-
-      setCart(prev => [...prev, newItem]);
-      Alert.alert('Scanned', `${qrJson.n} added to cart`);
-    } finally {
-      setScanning(false);
-      setQrInput('');
-    }
-  }, [cart]);
-
-  const removeFromCart = (inventoryId: string) => {
-    setCart(prev => prev.filter(item => item.inventory_id !== inventoryId));
-  };
-
-  const updateQuantity = (inventoryId: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.inventory_id !== inventoryId) return item;
-      const newQty = Math.max(1, item.quantity + delta);
-      return { ...item, quantity: newQty, total_price: newQty * item.unit_price };
-    }));
-  };
-
-  const subtotal = cart.reduce((sum, item) => sum + item.total_price, 0);
-  const tax = subtotal * 0.16; // 16% VAT
-  const total = subtotal + tax;
-
-  const handlePayment = async () => {
-    if (cart.length === 0) {
-      Alert.alert('Empty Cart', 'Please scan at least one item');
-      return;
-    }
-
-    if (!patientPhone) {
-      Alert.alert('Patient Required', 'Please enter patient phone number');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Process each item
-      for (const item of cart) {
-        const { data, error } = await supabase.rpc('process_pos_payment', {
-          p_qr_data: JSON.stringify({
-            v: '1', t: 'health_pos', f: facilityId, i: item.inventory_id,
-            n: item.name, p: item.unit_price, b: item.batch_number
-          }),
-          p_patient_id: user?.id,
-          p_quantity: item.quantity,
-          p_payment_method: paymentMethod,
-        });
-
-        if (error) throw error;
-        if (!data?.success) {
-          Alert.alert('Payment Failed', data?.error || 'Unknown error');
-          return;
-        }
-      }
-
-      Alert.alert(
-        'Payment Successful',
-        `Total: KES ${total.toFixed(2)}\n\nItems dispensed: ${cart.length}\nPayment method: ${paymentMethod}`,
-        [{ text: 'New Sale', onPress: () => setCart([]) }]
-      );
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!facilityId) {
+  if (loading && !refreshing) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>No facility assigned. Please contact admin.</Text>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading POS...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Pharmacy POS</Text>
-        <Text style={styles.headerSubtitle}>
-          {staffRecord?.facility?.name || 'Facility'}
-        </Text>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* QR Scanner Section */}
-        <View style={styles.scanSection}>
-          <Text style={styles.sectionTitle}>Scan Product QR</Text>
-          <View style={styles.scanInputRow}>
-            <TextInput
-              style={styles.scanInput}
-              value={qrInput}
-              onChangeText={setQrInput}
-              placeholder="Paste QR data or scan..."
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.scanButton}
-              onPress={() => qrInput && handleQrScan(qrInput)}
-              disabled={scanning || !qrInput}
-            >
-              {scanning ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.scanButtonText}>Add</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.scanHint}>
-            In production: Camera opens here to scan product QR codes
-          </Text>
-        </View>
-
-        {/* Patient Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Patient</Text>
-          <TextInput
-            style={styles.input}
-            value={patientPhone}
-            onChangeText={setPatientPhone}
-            placeholder="Patient phone number"
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        {/* Cart */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cart ({cart.length} items)</Text>
-          {cart.length === 0 ? (
-            <Text style={styles.emptyText}>Scan products to add to cart</Text>
-          ) : (
-            cart.map(item => (
-              <View key={item.inventory_id} style={styles.cartItem}>
-                <View style={styles.cartItemInfo}>
-                  <Text style={styles.cartItemName}>{item.name}</Text>
-                  <Text style={styles.cartItemBatch}>Batch: {item.batch_number}</Text>
-                  <Text style={styles.cartItemPrice}>KES {item.unit_price.toFixed(2)} each</Text>
-                </View>
-                <View style={styles.cartItemActions}>
-                  <TouchableOpacity
-                    style={styles.qtyButton}
-                    onPress={() => updateQuantity(item.inventory_id, -1)}
-                  >
-                    <Text style={styles.qtyButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.qtyText}>{item.quantity}</Text>
-                  <TouchableOpacity
-                    style={styles.qtyButton}
-                    onPress={() => updateQuantity(item.inventory_id, 1)}
-                  >
-                    <Text style={styles.qtyButtonText}>+</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeFromCart(item.inventory_id)}
-                  >
-                    <Text style={styles.removeButtonText}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.cartItemTotal}>KES {item.total_price.toFixed(2)}</Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Payment Method */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-          <View style={styles.paymentMethods}>
-            {[
-              { value: 'mtaa_wallet', label: 'MTAA Wallet', icon: '💳' },
-              { value: 'cash', label: 'Cash', icon: '💵' },
-              { value: 'mpesa', label: 'M-Pesa', icon: '📱' },
-              { value: 'insurance', label: 'Insurance', icon: '🏥' },
-            ].map(method => (
-              <TouchableOpacity
-                key={method.value}
-                style={[
-                  styles.paymentMethod,
-                  paymentMethod === method.value && styles.paymentMethodActive
-                ]}
-                onPress={() => setPaymentMethod(method.value)}
-              >
-                <Text style={styles.paymentMethodIcon}>{method.icon}</Text>
-                <Text style={[
-                  styles.paymentMethodText,
-                  paymentMethod === method.value && styles.paymentMethodTextActive
-                ]}>{method.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Totals */}
-        <View style={styles.totalsSection}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>KES {subtotal.toFixed(2)}</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Tax (16%)</Text>
-            <Text style={styles.totalValue}>KES {tax.toFixed(2)}</Text>
-          </View>
-          <View style={[styles.totalRow, styles.grandTotalRow]}>
-            <Text style={styles.grandTotalLabel}>Total</Text>
-            <Text style={styles.grandTotalValue}>KES {total.toFixed(2)}</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Pay Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.payButton, (loading || cart.length === 0) && styles.payButtonDisabled]}
-          onPress={handlePayment}
-          disabled={loading || cart.length === 0}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.payButtonText}>
-              Pay KES {total.toFixed(2)}
-            </Text>
+        <TouchableOpacity style={styles.cartButton} onPress={() => cart.length > 0 && setShowCheckout(true)}>
+          <ShoppingCart size={22} color={COLORS.primary} />
+          {cartCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>
+
+      <View style={styles.searchBar}>
+        <Search size={18} color={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search medicines..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
+      </View>
+
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {filteredInventory?.length === 0 ? (
+          <View style={styles.emptyState}><ShoppingCart size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No items match' : 'No inventory items'}</Text></View>
+        ) : (
+          filteredInventory?.map((item: any) => (
+            <View key={item.id} style={styles.productCard}>
+              <View style={styles.productInfo}>
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productGeneric}>{item.generic_name} {item.strength}</Text>
+                <View style={styles.productMeta}>
+                  <Text style={styles.productPrice}>${(parseFloat(item.price) || 0).toFixed(2)}</Text>
+                  <Text style={[styles.productStock, item.quantity <= (item.reorder_level || 0) && { color: COLORS.danger }]}>
+                    Stock: {item.quantity} {item.unit}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.addBtn} onPress={() => addToCart(item)}>
+                <Plus size={18} color={COLORS.white} />
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      {cart.length > 0 && (
+        <View style={styles.cartBar}>
+          <View style={styles.cartInfo}>
+            <Text style={styles.cartCount}>{cartCount} item{cartCount !== 1 ? 's' : ''}</Text>
+            <Text style={styles.cartTotal}>${cartTotal.toFixed(2)}</Text>
+          </View>
+          <TouchableOpacity style={styles.checkoutBtn} onPress={() => setShowCheckout(true)}>
+            <Text style={styles.checkoutText}>Checkout</Text>
+            <DollarSign size={18} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Modal visible={showCheckout} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Checkout</Text>
+              <TouchableOpacity onPress={() => setShowCheckout(false)}><X size={24} color={COLORS.text} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.sectionLabel}>Cart Items</Text>
+              {cart.map((item) => (
+                <View key={item.id} style={styles.cartItem}>
+                  <View style={styles.cartItemInfo}>
+                    <Text style={styles.cartItemName}>{item.name}</Text>
+                    <Text style={styles.cartItemPrice}>${item.price.toFixed(2)} each</Text>
+                  </View>
+                  <View style={styles.qtyControls}>
+                    <TouchableOpacity style={styles.qtyBtn} onPress={() => updateCartQty(item.id, -1)}>
+                      <Minus size={14} color={COLORS.text} />
+                    </TouchableOpacity>
+                    <Text style={styles.qtyText}>{item.quantity}</Text>
+                    <TouchableOpacity style={styles.qtyBtn} onPress={() => updateCartQty(item.id, 1)}>
+                      <Plus size={14} color={COLORS.text} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.removeBtn} onPress={() => removeFromCart(item.id)}>
+                      <Trash2 size={14} color={COLORS.danger} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalValue}>${cartTotal.toFixed(2)}</Text>
+              </View>
+
+              <Text style={styles.sectionLabel}>Customer</Text>
+              <TextInput style={styles.input} placeholder="Customer name (optional)" value={customerName} onChangeText={setCustomerName} />
+              <TextInput style={styles.input} placeholder="Phone (optional)" value={customerPhone} onChangeText={setCustomerPhone} keyboardType="phone-pad" />
+
+              <Text style={styles.sectionLabel}>Payment Method</Text>
+              <View style={styles.paymentRow}>
+                {(['cash', 'card', 'wallet', 'insurance'] as const).map((method) => (
+                  <TouchableOpacity key={method} style={[styles.paymentBtn, paymentMethod === method && styles.paymentBtnActive]} onPress={() => setPaymentMethod(method)}>
+                    {method === 'cash' && <DollarSign size={18} color={paymentMethod === method ? COLORS.white : COLORS.textLight} />}
+                    {method === 'card' && <CreditCard size={18} color={paymentMethod === method ? COLORS.white : COLORS.textLight} />}
+                    {method === 'wallet' && <Wallet size={18} color={paymentMethod === method ? COLORS.white : COLORS.textLight} />}
+                    {method === 'insurance' && <CheckCircle size={18} color={paymentMethod === method ? COLORS.white : COLORS.textLight} />}
+                    <Text style={[styles.paymentText, paymentMethod === method && styles.paymentTextActive]}>{method}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity style={styles.payButton} onPress={handleCheckout}>
+                <Text style={styles.payButtonText}>Complete Sale - ${cartTotal.toFixed(2)}</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { padding: 20, backgroundColor: '#0A7B5A', paddingTop: 60 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#E0F2E9', marginTop: 2 },
-  content: { flex: 1 },
-  scanSection: { padding: 16, backgroundColor: '#fff', margin: 12, borderRadius: 12 },
-  section: { padding: 16, backgroundColor: '#fff', margin: 12, marginTop: 0, borderRadius: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12, color: '#1a1a1a' },
-  scanInputRow: { flexDirection: 'row', gap: 8 },
-  scanInput: {
-    flex: 1, backgroundColor: '#f0f0f0', borderRadius: 8, padding: 12,
-    fontSize: 13, borderWidth: 1, borderColor: '#ddd', minHeight: 50
-  },
-  scanButton: {
-    backgroundColor: '#0A7B5A', paddingHorizontal: 20, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center'
-  },
-  scanButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  scanHint: { fontSize: 11, color: '#999', marginTop: 8, fontStyle: 'italic' },
-  input: {
-    backgroundColor: '#f0f0f0', borderRadius: 8, padding: 12,
-    fontSize: 15, borderWidth: 1, borderColor: '#ddd'
-  },
-  emptyText: { color: '#999', fontStyle: 'italic', textAlign: 'center', padding: 20 },
-  cartItem: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#f0f0f0'
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: COLORS.textLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  cartButton: { padding: 8, position: 'relative' },
+  cartBadge: { position: 'absolute', top: 2, right: 2, backgroundColor: COLORS.danger, borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center' },
+  cartBadgeText: { color: COLORS.white, fontSize: 10, fontWeight: '700' },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: COLORS.text },
+  productCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.white, marginHorizontal: 12, marginBottom: 8, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  productInfo: { flex: 1 },
+  productName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  productGeneric: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  productMeta: { flexDirection: 'row', gap: 12, marginTop: 6 },
+  productPrice: { fontSize: 14, fontWeight: '700', color: COLORS.primary },
+  productStock: { fontSize: 12, color: COLORS.textLight },
+  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { marginTop: 12, color: COLORS.textLight, fontSize: 14 },
+  bottomPadding: { height: 100 },
+  cartBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.white, padding: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
+  cartInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cartCount: { fontSize: 14, color: COLORS.textLight },
+  cartTotal: { fontSize: 18, fontWeight: '700', color: COLORS.primary },
+  checkoutBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.success, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10, gap: 6 },
+  checkoutText: { color: COLORS.white, fontWeight: '700', fontSize: 14 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalBody: { marginBottom: 16 },
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginTop: 16, marginBottom: 8 },
+  cartItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   cartItemInfo: { flex: 1 },
-  cartItemName: { fontSize: 15, fontWeight: '500', color: '#1a1a1a' },
-  cartItemBatch: { fontSize: 11, color: '#999', marginTop: 2 },
-  cartItemPrice: { fontSize: 13, color: '#666', marginTop: 2 },
-  cartItemActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  qtyButton: {
-    width: 28, height: 28, backgroundColor: '#f0f0f0', borderRadius: 14,
-    justifyContent: 'center', alignItems: 'center'
-  },
-  qtyButtonText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  qtyText: { fontSize: 15, fontWeight: '600', minWidth: 24, textAlign: 'center' },
-  removeButton: { marginLeft: 8 },
-  removeButtonText: { fontSize: 16, color: '#e74c3c' },
-  cartItemTotal: { fontSize: 15, fontWeight: '600', color: '#0A7B5A', marginLeft: 12, minWidth: 80, textAlign: 'right' },
-  paymentMethods: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  paymentMethod: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8,
-    backgroundColor: '#f0f0f0', borderWidth: 1, borderColor: '#ddd'
-  },
-  paymentMethodActive: { backgroundColor: '#0A7B5A', borderColor: '#0A7B5A' },
-  paymentMethodIcon: { fontSize: 18 },
-  paymentMethodText: { fontSize: 13, color: '#333' },
-  paymentMethodTextActive: { color: '#fff', fontWeight: '500' },
-  totalsSection: { padding: 16, backgroundColor: '#fff', margin: 12, marginTop: 0, borderRadius: 12 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  totalLabel: { fontSize: 14, color: '#666' },
-  totalValue: { fontSize: 14, color: '#333' },
-  grandTotalRow: { borderTopWidth: 1, borderTopColor: '#eee', marginTop: 8, paddingTop: 12 },
-  grandTotalLabel: { fontSize: 18, fontWeight: 'bold', color: '#1a1a1a' },
-  grandTotalValue: { fontSize: 18, fontWeight: 'bold', color: '#0A7B5A' },
-  footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
-  payButton: {
-    backgroundColor: '#0A7B5A', padding: 16, borderRadius: 12,
-    alignItems: 'center'
-  },
-  payButtonDisabled: { opacity: 0.5 },
-  payButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  errorText: { textAlign: 'center', marginTop: 100, fontSize: 16, color: '#e74c3c' },
+  cartItemName: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  cartItemPrice: { fontSize: 12, color: COLORS.textLight },
+  qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  qtyBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
+  qtyText: { fontSize: 14, fontWeight: '700', color: COLORS.text, minWidth: 24, textAlign: 'center' },
+  removeBtn: { marginLeft: 8 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderTopWidth: 2, borderTopColor: COLORS.border, marginTop: 8 },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  totalValue: { fontSize: 20, fontWeight: '700', color: COLORS.primary },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text, marginBottom: 8 },
+  paymentRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  paymentBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, gap: 6 },
+  paymentBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  paymentText: { fontSize: 12, color: COLORS.textLight, textTransform: 'capitalize' },
+  paymentTextActive: { color: COLORS.white, fontWeight: '600' },
+  payButton: { backgroundColor: COLORS.success, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+  payButtonText: { color: COLORS.white, fontWeight: '700', fontSize: 16 }
 });

@@ -1,387 +1,268 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, FlatList } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { supabase } from '@/lib/supabase';
+import React, { useState } from 'react';
 import {
-  ChevronLeft, Save, Lock, Unlock, FileText, Clock, User,
-  Stethoscope, ClipboardList, Search, Plus
-} from 'lucide-react-native';
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  TextInput, Modal, Alert, ScrollView
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { useDoctorNotes } from '@/lib/health/hooks/useDoctor';
+import { Feather } from '@expo/vector-icons';
 
-interface ClinicalNote {
-  id: string;
-  patient_id: string;
-  encounter_id: string | null;
-  subjective: string;
-  objective: string;
-  assessment: string;
-  plan: string;
-  diagnosis_codes: string[];
-  author_id: string;
-  author_name: string;
-  signed_at: string | null;
-  locked: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-const TEMPLATES = [
-  { name: 'General Consult', subjective: 'Patient presents with...', objective: 'Vitals stable. Physical exam...', assessment: 'Assessment pending...', plan: 'Plan pending...' },
-  { name: 'Follow-up', subjective: 'Follow-up for...', objective: 'Condition stable/improving...', assessment: 'Ongoing management...', plan: 'Continue current treatment...' },
-  { name: 'Acute Visit', subjective: 'Acute onset of...', objective: 'Patient appears...', assessment: 'Acute...', plan: 'Treat symptomatically...' },
-];
-
-export default function ClinicalNotesScreen() {
-  const { patientId } = useLocalSearchParams<{ patientId?: string }>();
+export default function DoctorNotesScreen() {
   const router = useRouter();
-  const { user, profile } = useAuthStore();
-  const [notes, setNotes] = useState<ClinicalNote[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showEditor, setShowEditor] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<ClinicalNote | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { notes, patients, loading, createNote, signNote, isCreating, isSigning } = useDoctorNotes();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [signModalVisible, setSignModalVisible] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<any>(null);
+  const [filter, setFilter] = useState<'all' | 'signed' | 'unsigned'>('all');
+  const [form, setForm] = useState({
+    patient_id: '',
+    title: '',
+    content: '',
+    type: 'progress',
+  });
 
-  const [subjective, setSubjective] = useState('');
-  const [objective, setObjective] = useState('');
-  const [assessment, setAssessment] = useState('');
-  const [plan, setPlan] = useState('');
-  const [diagnosisCodes, setDiagnosisCodes] = useState('');
+  const filteredNotes = notes.filter((n: any) => {
+    if (filter === 'signed') return n.is_signed;
+    if (filter === 'unsigned') return !n.is_signed;
+    return true;
+  });
 
-  useEffect(() => {
-    loadNotes();
-  }, [patientId]);
-
-  const loadNotes = async () => {
-    try {
-      let query = supabase
-        .from('clinical_notes')
-        .select('*, profiles(full_name)')
-        .order('created_at', { ascending: false });
-
-      if (patientId) query = query.eq('patient_id', patientId);
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      const formatted = (data || []).map((n: any) => ({
-        ...n,
-        author_name: n.profiles?.full_name || 'Unknown',
-      }));
-      setNotes(formatted);
-    } catch (err) {
-      Alert.alert('Error', 'Failed to load notes');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const applyTemplate = (template: typeof TEMPLATES[0]) => {
-    setSubjective(template.subjective);
-    setObjective(template.objective);
-    setAssessment(template.assessment);
-    setPlan(template.plan);
-  };
-
-  const saveNote = async () => {
-    if (!subjective.trim() && !objective.trim() && !assessment.trim() && !plan.trim()) {
-      Alert.alert('Error', 'Note cannot be empty');
+  const handleCreate = async () => {
+    if (!form.patient_id || !form.title || !form.content) {
+      Alert.alert('Error', 'Patient, title, and content are required');
       return;
     }
-
-    try {
-      const payload = {
-        patient_id: patientId || null,
-        subjective,
-        objective,
-        assessment,
-        plan,
-        diagnosis_codes: diagnosisCodes.split(',').map((c: string) => c.trim()).filter(Boolean),
-        author_id: user?.id,
-        locked: false,
-      };
-
-      if (selectedNote) {
-        if (selectedNote.locked) {
-          Alert.alert('Locked', 'This note is signed and cannot be edited');
-          return;
-        }
-        const { error } = await supabase.from('clinical_notes').update(payload).eq('id', selectedNote.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('clinical_notes').insert(payload);
-        if (error) throw error;
-      }
-
-      setShowEditor(false);
-      setSelectedNote(null);
-      resetEditor();
-      loadNotes();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to save note');
-    }
+    await createNote(form);
+    setModalVisible(false);
+    setForm({ patient_id: '', title: '', content: '', type: 'progress' });
   };
 
-  const signNote = async (noteId: string) => {
-    Alert.alert('Sign Note', 'Once signed, this note cannot be edited. Proceed?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign',
-        style: 'default',
-        onPress: async () => {
-          try {
-            const { error } = await supabase
-              .from('clinical_notes')
-              .update({ signed_at: new Date().toISOString(), locked: true })
-              .eq('id', noteId);
-            if (error) throw error;
-            loadNotes();
-          } catch (err) {
-            Alert.alert('Error', 'Failed to sign note');
-          }
-        },
-      },
-    ]);
+  const handleSign = async () => {
+    if (!selectedNote) return;
+    await signNote(selectedNote.id);
+    setSignModalVisible(false);
+    setSelectedNote(null);
   };
 
-  const resetEditor = () => {
-    setSubjective('');
-    setObjective('');
-    setAssessment('');
-    setPlan('');
-    setDiagnosisCodes('');
-  };
-
-  const openEditor = (note?: ClinicalNote) => {
-    if (note) {
-      if (note.locked) {
-        Alert.alert('Locked', 'This note is signed and cannot be edited');
-        return;
-      }
-      setSelectedNote(note);
-      setSubjective(note.subjective);
-      setObjective(note.objective);
-      setAssessment(note.assessment);
-      setPlan(note.plan);
-      setDiagnosisCodes(note.diagnosis_codes?.join(', ') || '');
-    } else {
-      setSelectedNote(null);
-      resetEditor();
-    }
-    setShowEditor(true);
-  };
-
-  const filteredNotes = notes.filter(n =>
-    searchQuery === '' ||
-    n.subjective.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    n.assessment.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    n.author_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const renderNote = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.noteCard}
+      onPress={() => { setSelectedNote(item); setSignModalVisible(true); }}
+    >
+      <View style={styles.noteHeader}>
+        <Text style={styles.noteTitle}>{item.title}</Text>
+        {item.is_signed ? (
+          <View style={styles.signedBadge}>
+            <Feather name="check-circle" size={12} color="#10b981" />
+            <Text style={styles.signedText}>Signed</Text>
+          </View>
+        ) : (
+          <View style={styles.unsignedBadge}>
+            <Feather name="alert-circle" size={12} color="#f59e0b" />
+            <Text style={styles.unsignedText}>Unsigned</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.notePatient}>{item.patient_name}</Text>
+      <Text style={styles.noteType}>{item.type}</Text>
+      <Text style={styles.noteContent} numberOfLines={3}>{item.content}</Text>
+      <Text style={styles.noteDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
+      {!item.is_signed && (
+        <TouchableOpacity
+          style={styles.signBtn}
+          onPress={() => { setSelectedNote(item); setSignModalVisible(true); }}
+        >
+          <Text style={styles.signBtnText}>Sign Note</Text>
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
   );
 
-  if (showEditor) {
-    return (
-      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => { setShowEditor(false); resetEditor(); }} style={styles.backBtn}>
-            <ChevronLeft size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{selectedNote ? 'Edit Note' : 'New Note'}</Text>
-          <TouchableOpacity onPress={saveNote} style={styles.saveBtn}>
-            <Save size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {!selectedNote && (
-          <View style={styles.templatesRow}>
-            <Text style={styles.templatesLabel}>Templates:</Text>
-            {TEMPLATES.map(t => (
-              <TouchableOpacity key={t.name} style={styles.templateChip} onPress={() => applyTemplate(t)}>
-                <Text style={styles.templateChipText}>{t.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        <View style={styles.editorSection}>
-          <View style={styles.sectionHeader}>
-            <Stethoscope size={16} color="#6366f1" />
-            <Text style={styles.sectionTitle}>Subjective</Text>
-          </View>
-          <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder="Patient's reported symptoms and history..."
-            placeholderTextColor="#64748b"
-            value={subjective}
-            onChangeText={setSubjective}
-          />
-        </View>
-
-        <View style={styles.editorSection}>
-          <View style={styles.sectionHeader}>
-            <ClipboardList size={16} color="#22c55e" />
-            <Text style={styles.sectionTitle}>Objective</Text>
-          </View>
-          <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder="Physical exam findings, vitals, test results..."
-            placeholderTextColor="#64748b"
-            value={objective}
-            onChangeText={setObjective}
-          />
-        </View>
-
-        <View style={styles.editorSection}>
-          <View style={styles.sectionHeader}>
-            <FileText size={16} color="#f59e0b" />
-            <Text style={styles.sectionTitle}>Assessment</Text>
-          </View>
-          <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder="Diagnosis and clinical reasoning..."
-            placeholderTextColor="#64748b"
-            value={assessment}
-            onChangeText={setAssessment}
-          />
-        </View>
-
-        <View style={styles.editorSection}>
-          <View style={styles.sectionHeader}>
-            <ClipboardList size={16} color="#8b5cf6" />
-            <Text style={styles.sectionTitle}>Plan</Text>
-          </View>
-          <TextInput
-            style={styles.textArea}
-            multiline
-            placeholder="Treatment plan, medications, follow-up..."
-            placeholderTextColor="#64748b"
-            value={plan}
-            onChangeText={setPlan}
-          />
-        </View>
-
-        <View style={styles.editorSection}>
-          <Text style={styles.sectionTitle}>Diagnosis Codes (ICD-10)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="J44.1, E11.9, I10..."
-            placeholderTextColor="#64748b"
-            value={diagnosisCodes}
-            onChangeText={setDiagnosisCodes}
-          />
-        </View>
-      </ScrollView>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Clinical Notes</Text>
-        <TouchableOpacity onPress={() => openEditor()} style={styles.addBtn}>
-          <Plus size={20} color="#fff" />
+        <Text style={styles.title}>Doctor Notes</Text>
+        <TouchableOpacity onPress={() => setModalVisible(true)}>
+          <Feather name="plus" size={24} color="#2563eb" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
-        <Search size={18} color="#64748b" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search notes..."
-          placeholderTextColor="#64748b"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
-
-      <FlatList
-        data={filteredNotes}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.noteCard} onPress={() => openEditor(item)}>
-            <View style={styles.noteHeader}>
-              <View style={styles.noteMeta}>
-                <User size={14} color="#94a3b8" />
-                <Text style={styles.noteAuthor}>{item.author_name}</Text>
-                <Clock size={14} color="#64748b" />
-                <Text style={styles.noteDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
-              </View>
-              {item.locked ? (
-                <View style={styles.lockedBadge}>
-                  <Lock size={12} color="#22c55e" />
-                  <Text style={styles.lockedText}>Signed</Text>
-                </View>
-              ) : (
-                <View style={styles.draftBadge}>
-                  <Unlock size={12} color="#f59e0b" />
-                  <Text style={styles.draftText}>Draft</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.notePreview} numberOfLines={3}>
-              {item.subjective.substring(0, 120)}...
+      <View style={styles.filterRow}>
+        {(['all', 'signed', 'unsigned'] as const).map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterChip, filter === f && styles.filterChipActive]}
+            onPress={() => setFilter(f)}
+          >
+            <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </Text>
-            <View style={styles.noteFooter}>
-              <Text style={styles.noteAssessment}>{item.assessment.substring(0, 60)}...</Text>
-              {!item.locked && (
-                <TouchableOpacity onPress={() => signNote(item.id)} style={styles.signBtn}>
-                  <Lock size={14} color="#22c55e" />
-                  <Text style={styles.signText}>Sign</Text>
-                </TouchableOpacity>
-              )}
-            </View>
           </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <FileText size={48} color="#334155" />
-            <Text style={styles.emptyTitle}>No notes yet</Text>
-            <Text style={styles.emptySubtitle}>Tap + to create your first clinical note</Text>
+        ))}
+      </View>
+
+      {loading ? (
+        <Text style={styles.loading}>Loading notes...</Text>
+      ) : (
+        <FlatList
+          data={filteredNotes}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNote}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={<Text style={styles.empty}>No notes found.</Text>}
+        />
+      )}
+
+      {/* Create Note Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>New Clinical Note</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.label}>Patient</Text>
+              <View style={styles.pickerRow}>
+                {patients.map((p: any) => (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.patientChip, form.patient_id === p.id && styles.patientChipActive]}
+                    onPress={() => setForm({ ...form, patient_id: p.id })}
+                  >
+                    <Text style={[styles.patientChipText, form.patient_id === p.id && styles.patientChipTextActive]}>
+                      {p.full_name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                style={styles.input}
+                value={form.title}
+                onChangeText={(t) => setForm({ ...form, title: t })}
+                placeholder="Note title"
+              />
+
+              <Text style={styles.label}>Type</Text>
+              <View style={styles.pickerRow}>
+                {['progress', 'admission', 'discharge', 'consultation', 'procedure'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.typeChip, form.type === type && styles.typeChipActive]}
+                    onPress={() => setForm({ ...form, type })}
+                  >
+                    <Text style={[styles.typeChipText, form.type === type && styles.typeChipTextActive]}>
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Content</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={form.content}
+                onChangeText={(t) => setForm({ ...form, content: t })}
+                placeholder="Clinical note content..."
+                multiline
+                numberOfLines={6}
+              />
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleCreate} disabled={isCreating}>
+                <Text style={styles.saveBtnText}>{isCreating ? 'Saving...' : 'Save Note'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        }
-      />
-    </View>
+        </View>
+      </Modal>
+
+      {/* Sign Modal */}
+      <Modal visible={signModalVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.signModalContent}>
+            <Feather name="file-text" size={40} color="#2563eb" />
+            <Text style={styles.signModalTitle}>Sign Clinical Note</Text>
+            <Text style={styles.signModalSub}>
+              {selectedNote?.title} — {selectedNote?.patient_name}
+            </Text>
+            <Text style={styles.signModalWarn}>
+              Once signed, this note cannot be edited. This action is permanent and auditable.
+            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setSignModalVisible(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSign} disabled={isSigning}>
+                <Text style={styles.saveBtnText}>{isSigning ? 'Signing...' : 'Confirm Sign'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  saveBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#22c55e', alignItems: 'center', justifyContent: 'center' },
-  addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, marginHorizontal: 16, paddingHorizontal: 12, marginBottom: 12 },
-  searchInput: { flex: 1, color: '#fff', paddingVertical: 12, marginLeft: 8, fontSize: 14 },
-  templatesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12, flexWrap: 'wrap', gap: 8 },
-  templatesLabel: { color: '#94a3b8', fontSize: 13, marginRight: 4 },
-  templateChip: { backgroundColor: '#1e293b', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#334155' },
-  templateChipText: { color: '#cbd5e1', fontSize: 12, fontWeight: '600' },
-  editorSection: { backgroundColor: '#1e293b', borderRadius: 16, marginHorizontal: 16, marginBottom: 12, padding: 16 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
-  sectionTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  textArea: { color: '#fff', fontSize: 14, lineHeight: 22, minHeight: 100, textAlignVertical: 'top', backgroundColor: '#0f172a', borderRadius: 10, padding: 12 },
-  input: { color: '#fff', fontSize: 14, backgroundColor: '#0f172a', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#334155' },
-  noteCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
-  noteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  noteMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  noteAuthor: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
-  noteDate: { color: '#64748b', fontSize: 12 },
-  lockedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#064e3b', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  lockedText: { color: '#22c55e', fontSize: 11, fontWeight: '700' },
-  draftBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#451a03', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  draftText: { color: '#f59e0b', fontSize: 11, fontWeight: '700' },
-  notePreview: { color: '#94a3b8', fontSize: 13, lineHeight: 20, marginBottom: 10 },
-  noteFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  noteAssessment: { color: '#cbd5e1', fontSize: 12, flex: 1 },
-  signBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#064e3b', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  signText: { color: '#22c55e', fontSize: 12, fontWeight: '700' },
-  emptyState: { alignItems: 'center', marginTop: 80 },
-  emptyTitle: { color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 16 },
-  emptySubtitle: { color: '#64748b', fontSize: 14, marginTop: 8 },
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff',
+    borderBottomWidth: 1, borderBottomColor: '#e5e7eb'
+  },
+  title: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  filterRow: { flexDirection: 'row', padding: 12, gap: 8, backgroundColor: '#fff' },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#f3f4f6' },
+  filterChipActive: { backgroundColor: '#2563eb' },
+  filterChipText: { fontSize: 13, color: '#6b7280' },
+  filterChipTextActive: { color: '#fff', fontWeight: '600' },
+  loading: { textAlign: 'center', marginTop: 40, color: '#6b7280' },
+  empty: { textAlign: 'center', marginTop: 40, color: '#9ca3af' },
+  noteCard: {
+    backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2
+  },
+  noteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  noteTitle: { fontSize: 16, fontWeight: '700', color: '#111827', flex: 1 },
+  signedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  signedText: { fontSize: 11, color: '#059669', fontWeight: '600' },
+  unsignedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fef3c7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  unsignedText: { fontSize: 11, color: '#d97706', fontWeight: '600' },
+  notePatient: { fontSize: 14, color: '#4b5563', marginBottom: 4 },
+  noteType: { fontSize: 12, color: '#2563eb', fontWeight: '600', textTransform: 'uppercase', marginBottom: 6 },
+  noteContent: { fontSize: 14, color: '#374151', lineHeight: 20, marginBottom: 8 },
+  noteDate: { fontSize: 12, color: '#9ca3af' },
+  signBtn: { marginTop: 10, backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  signBtnText: { color: '#fff', fontWeight: '600' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '85%' },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginTop: 12, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 12, fontSize: 15, backgroundColor: '#f9fafb' },
+  textArea: { height: 120, textAlignVertical: 'top' },
+  pickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  patientChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
+  patientChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  patientChipText: { fontSize: 13, color: '#4b5563' },
+  patientChipTextActive: { color: '#fff', fontWeight: '600' },
+  typeChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
+  typeChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  typeChipText: { fontSize: 12, color: '#4b5563' },
+  typeChipTextActive: { color: '#fff', fontWeight: '600' },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 20 },
+  cancelBtn: { paddingHorizontal: 16, paddingVertical: 10 },
+  cancelBtnText: { color: '#6b7280', fontWeight: '600' },
+  saveBtn: { backgroundColor: '#2563eb', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  saveBtnText: { color: '#fff', fontWeight: '600' },
+  signModalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 28, alignItems: 'center' },
+  signModalTitle: { fontSize: 18, fontWeight: '700', marginTop: 12 },
+  signModalSub: { fontSize: 14, color: '#6b7280', marginTop: 4 },
+  signModalWarn: { fontSize: 13, color: '#dc2626', textAlign: 'center', marginTop: 12, lineHeight: 18 },
 });

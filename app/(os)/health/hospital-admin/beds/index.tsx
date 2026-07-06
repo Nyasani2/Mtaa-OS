@@ -1,206 +1,230 @@
-import React, { useState, useEffect } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl
-} from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
 
-interface Bed {
-  id: string;
-  ward: string;
-  number: string;
-  type: "standard" | "icu" | "maternity" | "pediatric" | "isolation";
-  status: "available" | "occupied" | "maintenance" | "reserved";
-  patient_name?: string;
-  patient_id?: string;
-  admission_date?: string;
-}
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useHospitalAdmin } from '@/lib/health/hooks/useHospitalAdmin';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { BedDouble, Plus, Search, X, AlertCircle } from 'lucide-react-native';
 
-const WARDS = ["All", "General", "ICU", "Maternity", "Pediatric", "Isolation", "Surgery"];
-
-const STATUS_COLORS: Record<string, string> = {
-  available: "#10b981",
-  occupied: "#ef4444",
-  maintenance: "#f59e0b",
-  reserved: "#3b82f6",
+const COLORS = {
+  primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',
+  danger: '#EF4444', text: '#1F2937', textLight: '#6B7280', border: '#E5E7EB',
+  background: '#F3F4F6', white: '#FFFFFF'
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  standard: "Standard",
-  icu: "ICU",
-  maternity: "Maternity",
-  pediatric: "Pediatric",
-  isolation: "Isolation",
-};
+type BedStatus = 'available' | 'occupied' | 'maintenance';
 
-export default function BedManagement() {
+export default function BedsManagementScreen() {
   const router = useRouter();
-  const { fetchBeds, updateBedStatus } = useHealthStore();
-
-  const [beds, setBeds] = useState<Bed[]>([]);
-  const [selectedWard, setSelectedWard] = useState("All");
+  const { selectedFacilityId } = useHealthRole();
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | BedStatus>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newBed, setNewBed] = useState({ bed_number: '', ward: '', room_type: 'general', floor: '1' });
+  const { beds, loading, error, refresh, addBed, updateBedStatus, dischargePatient } = useHospitalAdmin(selectedFacilityId);
 
-  const loadBeds = async () => {
-    const data = await fetchBeds();
-    setBeds(data || []);
-  };
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
-  useEffect(() => {
-    loadBeds();
-  }, []);
+  const filteredBeds = beds?.filter((bed: any) => {
+    const matchesSearch = !searchQuery ||
+      bed.bed_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bed.ward?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bed.patient_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || bed.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadBeds();
-    setRefreshing(false);
-  };
-
-  const filteredBeds = selectedWard === "All" ? beds : beds.filter((b) => b.ward === selectedWard);
-
-  const handleBedAction = (bed: Bed) => {
-    if (bed.status === "available") {
-      Alert.alert("Admit Patient", `Assign patient to Bed ${bed.number}?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Admit", onPress: () => router.push(`/(os)/health/hospital-admin/admissions?bedId=${bed.id}`) },
-      ]);
-    } else if (bed.status === "occupied") {
-      Alert.alert("Bed Actions", `Bed ${bed.number} - ${bed.patient_name}`, [
-        { text: "Transfer", onPress: () => {} },
-        { text: "Discharge", onPress: () => router.push(`/(os)/health/hospital-admin/discharges?bedId=${bed.id}`) },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    } else if (bed.status === "maintenance") {
-      Alert.alert("Maintenance", `Mark Bed ${bed.number} as available?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Make Available", onPress: () => updateBedStatus(bed.id, "available") },
-      ]);
+  const handleAddBed = useCallback(async () => {
+    if (!newBed.bed_number.trim() || !newBed.ward.trim()) {
+      Alert.alert('Error', 'Bed number and ward are required'); return;
     }
+    try {
+      await addBed({ bed_number: newBed.bed_number, ward: newBed.ward, room_type: newBed.room_type, floor: parseInt(newBed.floor), facility_id: selectedFacilityId, status: 'available' });
+      setShowAddModal(false);
+      setNewBed({ bed_number: '', ward: '', room_type: 'general', floor: '1' });
+      Alert.alert('Success', 'Bed added successfully');
+    } catch (err: any) { Alert.alert('Error', err.message || 'Failed to add bed'); }
+  }, [newBed, selectedFacilityId, addBed]);
+
+  const handleDischarge = useCallback((bed: any) => {
+    Alert.alert('Discharge Patient', `Discharge ${bed.patient_name} from bed ${bed.bed_number}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Discharge', style: 'destructive', onPress: async () => {
+        try { await dischargePatient(bed.id, bed.patient_id); Alert.alert('Success', 'Patient discharged');
+        } catch (err: any) { Alert.alert('Error', err.message || 'Failed to discharge'); }
+      }}
+    ]);
+  }, [dischargePatient]);
+
+  const getStatusColor = (status: BedStatus) => {
+    switch (status) { case 'available': return COLORS.success; case 'occupied': return COLORS.danger; case 'maintenance': return COLORS.warning; default: return COLORS.textLight; }
   };
 
-  const wardStats = WARDS.filter((w) => w !== "All").map((ward) => ({
-    ward,
-    total: beds.filter((b) => b.ward === ward).length,
-    occupied: beds.filter((b) => b.ward === ward && b.status === "occupied").length,
-    available: beds.filter((b) => b.ward === ward && b.status === "available").length,
-  }));
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading beds...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Bed Management</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="filter" size={24} color="#111827" />
+        <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+          <Plus size={20} color={COLORS.white} />
+          <Text style={styles.addButtonText}>Add Bed</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Ward Filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.wardScroll}>
-          {WARDS.map((ward) => (
-            <TouchableOpacity
-              key={ward}
-              style={[styles.wardChip, selectedWard === ward && styles.wardChipActive]}
-              onPress={() => setSelectedWard(ward)}
-            >
-              <Text style={[styles.wardChipText, selectedWard === ward && styles.wardChipTextActive]}>{ward}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      <View style={styles.searchBar}>
+        <Search size={18} color={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search beds, wards, patients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
+      </View>
 
-        {/* Ward Overview */}
-        {selectedWard === "All" && (
-          <View style={styles.wardGrid}>
-            {wardStats.map((w) => (
-              <View key={w.ward} style={styles.wardCard}>
-                <Text style={styles.wardName}>{w.ward}</Text>
-                <View style={styles.wardBar}>
-                  <View style={[styles.wardBarFill, { width: `${w.total > 0 ? (w.occupied / w.total) * 100 : 0}%`, backgroundColor: "#ef4444" }]} />
+      <View style={styles.statusRow}>
+        {(['all', 'available', 'occupied', 'maintenance'] as const).map((status) => (
+          <TouchableOpacity key={status} style={[styles.statusChip, filterStatus === status && styles.statusChipActive]} onPress={() => setFilterStatus(status)}>
+            <View style={[styles.statusDot, { backgroundColor: status === 'all' ? COLORS.primary : getStatusColor(status as BedStatus) }]} />
+            <Text style={[styles.statusChipText, filterStatus === status && styles.statusChipTextActive]}>
+              {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {filteredBeds?.length === 0 ? (
+          <View style={styles.emptyState}><BedDouble size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No beds match your search' : 'No beds found'}</Text></View>
+        ) : (
+          filteredBeds?.map((bed: any) => (
+            <View key={bed.id} style={styles.bedCard}>
+              <View style={styles.bedHeader}>
+                <View style={styles.bedInfo}>
+                  <BedDouble size={20} color={getStatusColor(bed.status)} />
+                  <Text style={styles.bedNumber}>Bed {bed.bed_number}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bed.status) + '20' }]}>
+                    <Text style={[styles.statusBadgeText, { color: getStatusColor(bed.status) }]}>{bed.status}</Text>
+                  </View>
                 </View>
-                <View style={styles.wardNumbers}>
-                  <Text style={styles.wardOccupied}>{w.occupied}/{w.total}</Text>
-                  <Text style={styles.wardAvailable}>{w.available} free</Text>
-                </View>
+                {bed.status === 'occupied' && bed.patient_id ? (
+                  <TouchableOpacity onPress={() => handleDischarge(bed)}>
+                    <Text style={styles.dischargeLink}>Discharge</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={() => updateBedStatus(bed.id, bed.status === 'maintenance' ? 'available' : 'maintenance')}>
+                    <Text style={{ color: bed.status === 'maintenance' ? COLORS.success : COLORS.warning, fontWeight: '600', fontSize: 13 }}>
+                      {bed.status === 'maintenance' ? 'Make Available' : 'Maintenance'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            ))}
-          </View>
+              <View style={styles.bedDetails}>
+                <Text style={styles.bedDetailText}>Ward: {bed.ward}</Text>
+                <Text style={styles.bedDetailText}>Room: {bed.room_type}</Text>
+                <Text style={styles.bedDetailText}>Floor: {bed.floor}</Text>
+                {bed.patient_name && (
+                  <View style={styles.patientRow}>
+                    <Text style={styles.patientName}>Patient: {bed.patient_name}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          ))
         )}
-
-        {/* Bed Grid */}
-        <Text style={styles.sectionTitle}>
-          {selectedWard === "All" ? "All Beds" : `${selectedWard} Ward`}
-        </Text>
-        <View style={styles.bedGrid}>
-          {filteredBeds.map((bed) => (
-            <TouchableOpacity
-              key={bed.id}
-              style={[styles.bedCard, { borderColor: STATUS_COLORS[bed.status] }]}
-              onPress={() => handleBedAction(bed)}
-            >
-              <View style={[styles.bedIndicator, { backgroundColor: STATUS_COLORS[bed.status] }]} />
-              <Text style={styles.bedNumber}>{bed.number}</Text>
-              <Text style={styles.bedType}>{TYPE_LABELS[bed.type]}</Text>
-              {bed.patient_name && (
-                <Text style={styles.bedPatient} numberOfLines={1}>{bed.patient_name}</Text>
-              )}
-              <Text style={[styles.bedStatus, { color: STATUS_COLORS[bed.status] }]}>
-                {bed.status.toUpperCase()}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <View style={styles.bottomPadding} />
       </ScrollView>
-    </SafeAreaView>
+
+      <Modal visible={showAddModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Bed</Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}><X size={24} color={COLORS.text} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Bed Number *</Text>
+              <TextInput style={styles.input} placeholder="e.g. A-101" value={newBed.bed_number} onChangeText={(t) => setNewBed({ ...newBed, bed_number: t })} />
+              <Text style={styles.inputLabel}>Ward *</Text>
+              <TextInput style={styles.input} placeholder="e.g. General Ward" value={newBed.ward} onChangeText={(t) => setNewBed({ ...newBed, ward: t })} />
+              <Text style={styles.inputLabel}>Room Type</Text>
+              <View style={styles.radioGroup}>
+                {['general', 'private', 'icu', 'maternity'].map((type) => (
+                  <TouchableOpacity key={type} style={[styles.radioButton, newBed.room_type === type && styles.radioButtonActive]} onPress={() => setNewBed({ ...newBed, room_type: type })}>
+                    <Text style={[styles.radioText, newBed.room_type === type && styles.radioTextActive]}>{type.charAt(0).toUpperCase() + type.slice(1)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Floor</Text>
+              <View style={styles.floorRow}>
+                {['1', '2', '3', '4', '5'].map((f) => (
+                  <TouchableOpacity key={f} style={[styles.floorButton, newBed.floor === f && styles.floorButtonActive]} onPress={() => setNewBed({ ...newBed, floor: f })}>
+                    <Text style={[styles.floorText, newBed.floor === f && styles.floorTextActive]}>{f}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={styles.modalSubmit} onPress={handleAddBed}>
+                <Text style={styles.modalSubmitText}>Add Bed</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 12, paddingBottom: 24 },
-  wardScroll: { marginBottom: 12 },
-  wardChip: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: "#fff", marginRight: 8, borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  wardChipActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  wardChipText: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-  wardChipTextActive: { color: "#fff" },
-  wardGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  wardCard: {
-    width: "48%", backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  wardName: { fontSize: 14, fontWeight: "700", color: "#111827", marginBottom: 8 },
-  wardBar: { height: 6, backgroundColor: "#e5e7eb", borderRadius: 3, marginBottom: 8 },
-  wardBarFill: { height: "100%", borderRadius: 3 },
-  wardNumbers: { flexDirection: "row", justifyContent: "space-between" },
-  wardOccupied: { fontSize: 12, fontWeight: "700", color: "#ef4444" },
-  wardAvailable: { fontSize: 12, color: "#10b981", fontWeight: "600" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 10 },
-  bedGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  bedCard: {
-    width: "31%", backgroundColor: "#fff", borderRadius: 12, padding: 10,
-    borderLeftWidth: 4, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-    alignItems: "center",
-  },
-  bedIndicator: { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
-  bedNumber: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  bedType: { fontSize: 10, color: "#9ca3af", marginTop: 2 },
-  bedPatient: { fontSize: 10, color: "#374151", marginTop: 4, maxWidth: "100%" },
-  bedStatus: { fontSize: 9, fontWeight: "800", marginTop: 4 },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: COLORS.textLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  addButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  addButtonText: { color: COLORS.white, fontWeight: '600', marginLeft: 6 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: COLORS.text },
+  statusRow: { flexDirection: 'row', paddingHorizontal: 12, marginBottom: 8, flexWrap: 'wrap', gap: 6 },
+  statusChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border },
+  statusChipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  statusChipText: { fontSize: 12, color: COLORS.textLight },
+  statusChipTextActive: { color: COLORS.primary, fontWeight: '600' },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
+  bedCard: { backgroundColor: COLORS.white, marginHorizontal: 12, marginBottom: 8, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  bedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  bedInfo: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  bedNumber: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  statusBadgeText: { fontSize: 11, fontWeight: '600' },
+  dischargeLink: { color: COLORS.danger, fontWeight: '600', fontSize: 13 },
+  bedDetails: { marginLeft: 28 },
+  bedDetailText: { fontSize: 13, color: COLORS.textLight, marginBottom: 2 },
+  patientRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  patientName: { marginLeft: 4, fontSize: 13, color: COLORS.primary, fontWeight: '600' },
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { marginTop: 12, color: COLORS.textLight, fontSize: 14 },
+  bottomPadding: { height: 40 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalBody: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 6, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text },
+  radioGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  radioButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+  radioButtonActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  radioText: { fontSize: 13, color: COLORS.textLight },
+  radioTextActive: { color: COLORS.primary, fontWeight: '600' },
+  floorRow: { flexDirection: 'row', gap: 8 },
+  floorButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
+  floorButtonActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  floorText: { fontSize: 14, color: COLORS.textLight },
+  floorTextActive: { color: COLORS.primary, fontWeight: '700' },
+  modalSubmit: { backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  modalSubmitText: { color: COLORS.white, fontWeight: '700', fontSize: 16 }
 });
