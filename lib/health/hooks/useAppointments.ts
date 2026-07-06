@@ -1,79 +1,113 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { AppointmentService, HealthAppointment } from "../services/appointment.service";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 
-const FETCH_TIMEOUT_MS = 10000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-    ),
-  ]);
+export interface Appointment {
+  id: string;
+  patient_id: string;
+  doctor_id: string;
+  doctor_name: string | null;
+  hospital_id: string | null;
+  hospital_name: string | null;
+  department: string | null;
+  appointment_date: string;
+  status: "scheduled" | "completed" | "cancelled" | "no_show" | "in_progress";
+  notes: string | null;
+  created_at: string;
 }
 
-export function useAppointments(userId?: string) {
-  const [appointments, setAppointments] = useState<HealthAppointment[]>([]);
-  const [upcoming, setUpcoming] = useState<HealthAppointment[]>([]);
-  const [loading, setLoading] = useState(false);
+export function useAppointments(userId: string | undefined) {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const mountedRef = useRef(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!userId) {
-      if (mountedRef.current) { setAppointments([]); setUpcoming([]); setLoading(false); setError(null); }
-      return;
-    }
-    if (mountedRef.current) { setLoading(true); setError(null); }
+  const fetchAppointments = useCallback(async () => {
+    if (!userId) { setLoading(false); return; }
+    setError(null);
     try {
-      const [all, up] = await Promise.all([
-        withTimeout(AppointmentService.getAppointments(userId), FETCH_TIMEOUT_MS, 'getAppointments'),
-        withTimeout(AppointmentService.getUpcomingAppointments(userId), FETCH_TIMEOUT_MS, 'getUpcomingAppointments'),
-      ]);
-      if (mountedRef.current) { setAppointments(all || []); setUpcoming(up || []); setError(null); }
-    } catch (e: any) {
-      if (mountedRef.current) { setError(e.message || 'Failed to load appointments'); setAppointments([]); setUpcoming([]); }
+      const { data, error: err } = await supabase
+        .from("health_appointments")
+        .select(`
+          id, patient_id, doctor_id, hospital_id, department, appointment_date, status, notes, created_at,
+          health_staff!health_appointments_doctor_id_fkey(name),
+          health_facilities!health_appointments_hospital_id_fkey(name)
+        `)
+        .eq("patient_id", userId)
+        .order("appointment_date", { ascending: false });
+
+      if (err) throw err;
+
+      const mapped = (data || []).map((row: any) => ({
+        id: row.id,
+        patient_id: row.patient_id,
+        doctor_id: row.doctor_id,
+        doctor_name: row.health_staff?.name || null,
+        hospital_id: row.hospital_id,
+        hospital_name: row.health_facilities?.name || null,
+        department: row.department,
+        appointment_date: row.appointment_date,
+        status: row.status,
+        notes: row.notes,
+        created_at: row.created_at,
+      }));
+
+      setAppointments(mapped);
+    } catch (err: any) {
+      console.error("[useAppointments] fetch error:", err);
+      setError(err.message || "Failed to load appointments");
     } finally {
-      if (mountedRef.current) setLoading(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   }, [userId]);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    load();
-    return () => { mountedRef.current = false; };
-  }, [load]);
+  useEffect(() => { fetchAppointments(); }, [fetchAppointments]);
 
-  const book = useCallback(async (data: Omit<HealthAppointment, 'id' | 'createdAt' | 'updatedAt'>) => {
-    setLoading(true);
-    try { const a = await AppointmentService.book(data); if (a) await load(); return a; }
-    catch (e: any) { setError(e.message); return null; }
-    finally { setLoading(false); }
-  }, [load]);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAppointments();
+  }, [fetchAppointments]);
 
-  const cancel = useCallback(async (appointmentId: string, reason?: string) => {
-    setLoading(true);
-    try { const ok = await AppointmentService.cancel(appointmentId, reason); if (ok) await load(); return ok; }
-    catch (e: any) { setError(e.message); return false; }
-    finally { setLoading(false); }
-  }, [load]);
+  const cancelAppointment = useCallback(async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error: err } = await supabase
+        .from("health_appointments")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", id);
+      if (err) throw err;
+      await fetchAppointments();
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }, [fetchAppointments]);
 
-  const reschedule = useCallback(async (appointmentId: string, newDate: string, newTime: string) => {
-    setLoading(true);
-    try { const ok = await AppointmentService.reschedule(appointmentId, newDate, newTime); if (ok) await load(); return ok; }
-    catch (e: any) { setError(e.message); return false; }
-    finally { setLoading(false); }
-  }, [load]);
+  const bookAppointment = useCallback(async (payload: {
+    doctor_id: string; hospital_id: string; department: string;
+    appointment_date: string; notes?: string;
+  }): Promise<{ success: boolean; error?: string; id?: string }> => {
+    if (!userId) return { success: false, error: "Not authenticated" };
+    try {
+      const { data, error: err } = await supabase
+        .from("health_appointments")
+        .insert({
+          patient_id: userId,
+          doctor_id: payload.doctor_id,
+          hospital_id: payload.hospital_id,
+          department: payload.department,
+          appointment_date: payload.appointment_date,
+          status: "scheduled",
+          notes: payload.notes || null,
+        })
+        .select("id")
+        .single();
+      if (err) throw err;
+      await fetchAppointments();
+      return { success: true, id: data.id };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }, [userId, fetchAppointments]);
 
-  const complete = useCallback(async (appointmentId: string) => {
-    try { const ok = await AppointmentService.complete(appointmentId); if (ok) await load(); return ok; }
-    catch (e: any) { setError(e.message); return false; }
-  }, [load]);
-
-  const getAvailability = useCallback(async (doctorId: string, date: string) => {
-    try { return await AppointmentService.getDoctorAvailability(doctorId, date); }
-    catch (e: any) { setError(e.message); return []; }
-  }, []);
-
-  return { appointments, upcoming, loading, error, refresh: load, book, cancel, reschedule, complete, getAvailability };
+  return { appointments, loading, error, refreshing, refresh, cancelAppointment, bookAppointment };
 }

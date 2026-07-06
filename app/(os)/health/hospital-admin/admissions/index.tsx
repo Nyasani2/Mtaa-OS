@@ -1,202 +1,200 @@
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
 
-const ADMISSION_TYPES = ["Elective", "Emergency", "Day Case", "Maternity", "Pediatric"];
-const WARDS = ["General", "ICU", "Maternity", "Pediatric", "Isolation", "Surgery"];
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useHospitalAdmin } from '@/lib/health/hooks/useHospitalAdmin';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { UserPlus, Search, X, Calendar, BedDouble, Stethoscope, FileText, AlertCircle } from 'lucide-react-native';
 
-export default function Admissions() {
+const COLORS = {
+  primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',
+  danger: '#EF4444', text: '#1F2937', textLight: '#6B7280', border: '#E5E7EB',
+  background: '#F3F4F6', white: '#FFFFFF'
+};
+
+export default function AdmissionsScreen() {
   const router = useRouter();
-  const { bedId } = useLocalSearchParams<{ bedId?: string }>();
-  const { admitPatient } = useHealthStore();
+  const { selectedFacilityId } = useHealthRole();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAdmitModal, setShowAdmitModal] = useState(false);
+  const [admitForm, setAdmitForm] = useState({ patient_name: '', patient_phone: '', patient_id: '', ward: '', bed_id: '', diagnosis: '', doctor_id: '', admission_type: 'emergency', notes: '' });
+  const { admissions, availableBeds, loading, error, refresh, admitPatient } = useHospitalAdmin(selectedFacilityId);
 
-  const [patientName, setPatientName] = useState("");
-  const [patientId, setPatientId] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState<"male" | "female" | "other">("male");
-  const [admissionType, setAdmissionType] = useState("Emergency");
-  const [ward, setWard] = useState("General");
-  const [bedNumber, setBedNumber] = useState(bedId || "");
-  const [referringDoctor, setReferringDoctor] = useState("");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [insuranceProvider, setInsuranceProvider] = useState("");
-  const [insuranceNumber, setInsuranceNumber] = useState("");
-  const [emergencyContact, setEmergencyContact] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
-  const handleAdmit = async () => {
-    if (!patientName || !patientId || !diagnosis) {
-      Alert.alert("Missing Fields", "Please fill in patient name, ID, and diagnosis.");
-      return;
+  const filteredAdmissions = admissions?.filter((a: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return a.patient_name?.toLowerCase().includes(q) || a.diagnosis?.toLowerCase().includes(q) || a.ward?.toLowerCase().includes(q);
+  });
+
+  const handleAdmit = useCallback(async () => {
+    if (!admitForm.patient_name.trim() || !admitForm.ward.trim() || !admitForm.bed_id) {
+      Alert.alert('Error', 'Patient name, ward, and bed are required'); return;
     }
-    setSubmitting(true);
     try {
-      await admitPatient({
-        patient_name: patientName,
-        patient_id: patientId,
-        dob,
-        gender,
-        admission_type: admissionType,
-        ward,
-        bed_number: bedNumber,
-        referring_doctor: referringDoctor,
-        diagnosis,
-        insurance_provider: insuranceProvider,
-        insurance_number: insuranceNumber,
-        emergency_contact: emergencyContact,
-      });
-      Alert.alert("Success", "Patient admitted successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (e) {
-      Alert.alert("Error", "Failed to admit patient.");
-    } finally {
-      setSubmitting(false);
-    }
+      await admitPatient({ ...admitForm, facility_id: selectedFacilityId });
+      setShowAdmitModal(false);
+      setAdmitForm({ patient_name: '', patient_phone: '', patient_id: '', ward: '', bed_id: '', diagnosis: '', doctor_id: '', admission_type: 'emergency', notes: '' });
+      Alert.alert('Success', 'Patient admitted successfully');
+    } catch (err: any) { Alert.alert('Error', err.message || 'Failed to admit patient'); }
+  }, [admitForm, selectedFacilityId, admitPatient]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) { case 'active': return COLORS.success; case 'pending': return COLORS.warning; case 'discharged': return COLORS.textLight; case 'transferred': return COLORS.primary; default: return COLORS.textLight; }
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading admissions...</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+        <Text style={styles.headerTitle}>Admissions</Text>
+        <TouchableOpacity style={styles.newButton} onPress={() => setShowAdmitModal(true)}>
+          <UserPlus size={18} color={COLORS.white} />
+          <Text style={styles.newButtonText}>Admit Patient</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Admission</Text>
-        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Patient Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Patient Information</Text>
-          <TextInput style={styles.input} placeholder="Full Name *" value={patientName} onChangeText={setPatientName} />
-          <TextInput style={styles.input} placeholder="Patient ID / MRN *" value={patientId} onChangeText={setPatientId} autoCapitalize="characters" />
-          <TextInput style={styles.input} placeholder="Date of Birth (DD/MM/YYYY)" value={dob} onChangeText={setDob} />
-          <View style={styles.genderRow}>
-            {(["male", "female", "other"] as const).map((g) => (
-              <TouchableOpacity
-                key={g}
-                style={[styles.genderChip, gender === g && styles.genderChipActive]}
-                onPress={() => setGender(g)}
-              >
-                <Text style={[styles.genderChipText, gender === g && styles.genderChipTextActive]}>
-                  {g.charAt(0).toUpperCase() + g.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+      <View style={styles.searchBar}>
+        <Search size={18} color={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search admissions..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
+      </View>
 
-        {/* Admission Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Admission Details</Text>
-          <Text style={styles.label}>Admission Type</Text>
-          <View style={styles.chipWrap}>
-            {ADMISSION_TYPES.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.chip, admissionType === t && styles.chipActive]}
-                onPress={() => setAdmissionType(t)}
-              >
-                <Text style={[styles.chipText, admissionType === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={[styles.label, { marginTop: 12 }]}>Ward</Text>
-          <View style={styles.chipWrap}>
-            {WARDS.map((w) => (
-              <TouchableOpacity
-                key={w}
-                style={[styles.chip, ward === w && styles.chipActive]}
-                onPress={() => setWard(w)}
-              >
-                <Text style={[styles.chipText, ward === w && styles.chipTextActive]}>{w}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TextInput style={[styles.input, { marginTop: 12 }]} placeholder="Bed Number" value={bedNumber} onChangeText={setBedNumber} />
-          <TextInput style={styles.input} placeholder="Referring Doctor" value={referringDoctor} onChangeText={setReferringDoctor} />
-        </View>
-
-        {/* Clinical */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Clinical Information</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Primary Diagnosis / Reason for Admission *"
-            value={diagnosis}
-            onChangeText={setDiagnosis}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        {/* Insurance */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insurance</Text>
-          <TextInput style={styles.input} placeholder="Insurance Provider" value={insuranceProvider} onChangeText={setInsuranceProvider} />
-          <TextInput style={styles.input} placeholder="Policy / Card Number" value={insuranceNumber} onChangeText={setInsuranceNumber} />
-        </View>
-
-        {/* Emergency Contact */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Emergency Contact</Text>
-          <TextInput style={styles.input} placeholder="Name & Phone Number" value={emergencyContact} onChangeText={setEmergencyContact} />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
-          onPress={handleAdmit}
-          disabled={submitting}
-        >
-          <Text style={styles.submitBtnText}>{submitting ? "Admitting..." : "Admit Patient"}</Text>
-        </TouchableOpacity>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {filteredAdmissions?.length === 0 ? (
+          <View style={styles.emptyState}><UserPlus size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No admissions match your search' : 'No admissions yet'}</Text></View>
+        ) : (
+          filteredAdmissions?.map((admission: any) => (
+            <TouchableOpacity key={admission.id} style={styles.admissionCard} onPress={() => router.push(`/(os)/health/hospital-admin/admissions?id=${admission.id}`)}>
+              <View style={styles.admissionHeader}>
+                <View style={styles.patientInfo}>
+                  <View style={[styles.avatar, { backgroundColor: COLORS.primaryLight }]}>
+                    <Text style={styles.avatarText}>{admission.patient_name?.charAt(0) || '?'}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.patientName}>{admission.patient_name}</Text>
+                    <Text style={styles.patientDetail}>Bed {admission.bed_number} - {admission.ward}</Text>
+                  </View>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(admission.status) + '20' }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(admission.status) }]}>{admission.status}</Text>
+                </View>
+              </View>
+              <View style={styles.admissionDetails}>
+                <View style={styles.detailRow}><Calendar size={14} color={COLORS.textLight} /><Text style={styles.detailText}>{new Date(admission.admission_date).toLocaleDateString()}</Text></View>
+                <View style={styles.detailRow}><Stethoscope size={14} color={COLORS.textLight} /><Text style={styles.detailText}>{admission.diagnosis || 'No diagnosis'}</Text></View>
+                {admission.doctor_name && <View style={styles.detailRow}><FileText size={14} color={COLORS.textLight} /><Text style={styles.detailText}>Dr. {admission.doctor_name}</Text></View>}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+        <View style={styles.bottomPadding} />
       </ScrollView>
-    </SafeAreaView>
+
+      <Modal visible={showAdmitModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Admit New Patient</Text>
+              <TouchableOpacity onPress={() => setShowAdmitModal(false)}><X size={24} color={COLORS.text} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Patient Name *</Text>
+              <TextInput style={styles.input} placeholder="Patient full name" value={admitForm.patient_name} onChangeText={(t) => setAdmitForm({ ...admitForm, patient_name: t })} />
+              <Text style={styles.inputLabel}>Phone</Text>
+              <TextInput style={styles.input} placeholder="+255..." value={admitForm.patient_phone} onChangeText={(t) => setAdmitForm({ ...admitForm, patient_phone: t })} keyboardType="phone-pad" />
+              <Text style={styles.inputLabel}>Ward *</Text>
+              <TextInput style={styles.input} placeholder="e.g. General Ward" value={admitForm.ward} onChangeText={(t) => setAdmitForm({ ...admitForm, ward: t })} />
+              <Text style={styles.inputLabel}>Bed *</Text>
+              <View style={styles.bedRow}>
+                {availableBeds?.length === 0 ? (
+                  <Text style={styles.noBedsText}>No available beds. Add beds first.</Text>
+                ) : (
+                  availableBeds?.map((bed: any) => (
+                    <TouchableOpacity key={bed.id} style={[styles.bedButton, admitForm.bed_id === bed.id && styles.bedButtonActive]} onPress={() => setAdmitForm({ ...admitForm, bed_id: bed.id })}>
+                      <BedDouble size={16} color={admitForm.bed_id === bed.id ? COLORS.primary : COLORS.textLight} />
+                      <Text style={[styles.bedText, admitForm.bed_id === bed.id && styles.bedTextActive]}>{bed.bed_number}</Text>
+                    </TouchableOpacity>
+                  ))
+                )}
+              </View>
+              <Text style={styles.inputLabel}>Diagnosis</Text>
+              <TextInput style={styles.input} placeholder="Initial diagnosis" value={admitForm.diagnosis} onChangeText={(t) => setAdmitForm({ ...admitForm, diagnosis: t })} />
+              <Text style={styles.inputLabel}>Admission Type</Text>
+              <View style={styles.typeRow}>
+                {(['emergency', 'planned', 'referral'] as const).map((type) => (
+                  <TouchableOpacity key={type} style={[styles.typeButton, admitForm.admission_type === type && styles.typeButtonActive]} onPress={() => setAdmitForm({ ...admitForm, admission_type: type })}>
+                    <Text style={[styles.typeButtonText, admitForm.admission_type === type && styles.typeButtonTextActive]}>{type}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput style={[styles.input, styles.textArea]} placeholder="Additional notes..." value={admitForm.notes} onChangeText={(t) => setAdmitForm({ ...admitForm, notes: t })} multiline numberOfLines={3} />
+              <TouchableOpacity style={styles.modalSubmit} onPress={handleAdmit}>
+                <Text style={styles.modalSubmitText}>Admit Patient</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 16, paddingBottom: 40 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151", marginBottom: 10 },
-  label: { fontSize: 12, fontWeight: "600", color: "#6b7280", marginBottom: 8 },
-  input: {
-    backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: "#111827", borderWidth: 1, borderColor: "#e5e7eb", marginBottom: 10,
-  },
-  textArea: { height: 80, textAlignVertical: "top", paddingTop: 12 },
-  genderRow: { flexDirection: "row", gap: 10 },
-  genderChip: {
-    flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: "#fff",
-    alignItems: "center", borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  genderChipActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  genderChipText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
-  genderChipTextActive: { color: "#fff" },
-  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  chipActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  chipText: { fontSize: 12, color: "#6b7280", fontWeight: "500" },
-  chipTextActive: { color: "#fff", fontWeight: "700" },
-  submitBtn: {
-    backgroundColor: "#10b981", borderRadius: 14, paddingVertical: 16,
-    alignItems: "center", marginTop: 8,
-  },
-  submitBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: COLORS.textLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  newButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  newButtonText: { color: COLORS.white, fontWeight: '600', marginLeft: 6 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: COLORS.text },
+  admissionCard: { backgroundColor: COLORS.white, marginHorizontal: 12, marginBottom: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  admissionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  patientInfo: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  patientName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  patientDetail: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  admissionDetails: { marginLeft: 52 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  detailText: { marginLeft: 6, fontSize: 13, color: COLORS.textLight },
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { marginTop: 12, color: COLORS.textLight, fontSize: 14 },
+  bottomPadding: { height: 40 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalBody: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 6, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  bedRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  bedButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border, gap: 4 },
+  bedButtonActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  bedText: { fontSize: 13, color: COLORS.textLight },
+  bedTextActive: { color: COLORS.primary, fontWeight: '600' },
+  noBedsText: { color: COLORS.danger, fontSize: 13 },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+  typeButtonActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  typeButtonText: { fontSize: 12, color: COLORS.textLight, textTransform: 'capitalize' },
+  typeButtonTextActive: { color: COLORS.primary, fontWeight: '600' },
+  modalSubmit: { backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  modalSubmitText: { color: COLORS.white, fontWeight: '700', fontSize: 16 }
 });

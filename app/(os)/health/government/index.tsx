@@ -1,181 +1,171 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  RefreshControl, ActivityIndicator, Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useHealthRole } from "@/lib/health/hooks/useHealthRole";
+import { useGovernment } from "@/lib/health/hooks/useGovernment";
 
-interface HealthMetric {
-  label: string;
-  value: string;
-  change: string;
-  trend: "up" | "down" | "neutral";
-  icon: string;
-  color: string;
-}
-
-export default function GovernmentHealthDashboard() {
+export default function GovernmentScreen() {
   const router = useRouter();
-  const { fetchGovernmentHealthMetrics } = useHealthStore();
+  const user = useAuthStore((s) => s.user);
+  const { isAdmin } = useHealthRole();
+  const { stats, alerts, loading, error, refreshing, refresh, dismissAlert } = useGovernment(user?.id);
 
-  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const handleVerifyFacilities = useCallback(() => {
+    router.push("/(os)/health/government/verify-facilities" as any);
+  }, [router]);
 
-  const loadMetrics = async () => {
-    const data = await fetchGovernmentHealthMetrics();
-    setMetrics(data || [
-      { label: "Population Covered", value: "4.2M", change: "+2.1%", trend: "up", icon: "account-group", color: "#2563eb" },
-      { label: "Facilities", value: "1,847", change: "+12", trend: "up", icon: "hospital-building", color: "#8b5cf6" },
-      { label: "Vaccinations", value: "2.1M", change: "+5.3%", trend: "up", icon: "needle", color: "#10b981" },
-      { label: "Births Registered", value: "89,432", change: "+1.2%", trend: "up", icon: "baby-face", color: "#f59e0b" },
-      { label: "Deaths Registered", value: "12,104", change: "-0.8%", trend: "down", icon: "grave-stone", color: "#ef4444" },
-      { label: "Disease Outbreaks", value: "3", change: "-2", trend: "down", icon: "virus", color: "#ef4444" },
+  const handlePopulation = useCallback(() => {
+    router.push("/(os)/health/government/population" as any);
+  }, [router]);
+
+  const handleSurveillance = useCallback(() => {
+    router.push("/(os)/health/government/surveillance" as any);
+  }, [router]);
+
+  const handleAlertPress = useCallback((alert: any) => {
+    Alert.alert(alert.title, alert.description, [
+      { text: "Dismiss", onPress: () => dismissAlert(alert.id) },
+      { text: "View Details", onPress: () => router.push({ pathname: "/(os)/health/government/surveillance", params: { alertId: alert.id } } as any) },
     ]);
-  };
+  }, [router, dismissAlert]);
 
-  useEffect(() => {
-    loadMetrics();
-  }, []);
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+          <Text style={s.headerTitle}>Government Health</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={s.center}><ActivityIndicator size="large" color="#2563eb"/><Text style={s.loadingText}>Loading...</Text></View>
+      </SafeAreaView>
+    );
+  }
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadMetrics();
-    setRefreshing(false);
-  };
-
-  const modules = [
-    { label: "Population Registry", icon: "people", route: "/(os)/health/government/population", color: "#2563eb" },
-    { label: "Vital Statistics", icon: "stats-chart", route: "/(os)/health/government/vitals", color: "#8b5cf6" },
-    { label: "Disease Surveillance", icon: "warning", route: "/(os)/health/government/surveillance", color: "#ef4444" },
-    { label: "Health Facilities", icon: "business", route: "/(os)/health/government/facilities", color: "#10b981" },
-    { label: "Immunization", icon: "shield-checkmark", route: "/(os)/health/government/immunization", color: "#f59e0b" },
-    { label: "Regulations", icon: "document-text", route: "/(os)/health/government/regulations", color: "#6b7280" },
-  ];
+  if (error && !refreshing) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+          <Text style={s.headerTitle}>Government Health</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={s.center}>
+          <Ionicons name="alert-circle" size={48} color="#ef4444"/>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={refresh}><Text style={s.retryText}>Retry</Text></TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ministry of Health</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="notifications-outline" size={24} color="#111827" />
-        </TouchableOpacity>
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+        <Text style={s.headerTitle}>Government Health</Text>
+        <TouchableOpacity onPress={refresh} style={s.headerAction}><Ionicons name="refresh" size={22} color="#fff"/></TouchableOpacity>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Metrics Grid */}
-        <View style={styles.metricsGrid}>
-          {metrics.map((m, i) => (
-            <View key={i} style={styles.metricCard}>
-              <View style={[styles.metricIcon, { backgroundColor: m.color + "15" }]}>
-                <MaterialCommunityIcons name={m.icon as any} size={22} color={m.color} />
-              </View>
-              <Text style={styles.metricValue}>{m.value}</Text>
-              <Text style={styles.metricLabel}>{m.label}</Text>
-              <View style={styles.metricTrend}>
-                <Ionicons
-                  name={m.trend === "up" ? "trending-up" : m.trend === "down" ? "trending-down" : "remove"}
-                  size={12}
-                  color={m.trend === "up" ? "#10b981" : m.trend === "down" && m.label.includes("Deaths") ? "#10b981" : m.trend === "down" ? "#ef4444" : "#6b7280"}
-                />
-                <Text style={[styles.metricChange, { color: m.trend === "up" ? "#10b981" : m.trend === "down" && m.label.includes("Deaths") ? "#10b981" : m.trend === "down" ? "#ef4444" : "#6b7280" }]}>
-                  {m.change}
-                </Text>
-              </View>
-            </View>
-          ))}
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh}/>} contentContainerStyle={s.scrollContent}>
+        {/* Stats Cards */}
+        <View style={s.statsRow}>
+          <View style={s.statCard}><Text style={s.statValue}>{stats?.facilities || 0}</Text><Text style={s.statLabel}>Facilities</Text></View>
+          <View style={s.statCard}><Text style={s.statValue}>{stats?.verified || 0}</Text><Text style={s.statLabel}>Verified</Text></View>
+          <View style={s.statCard}><Text style={s.statValue}>{stats?.alerts || 0}</Text><Text style={s.statLabel}>Alerts</Text></View>
         </View>
 
-        {/* Modules */}
-        <Text style={styles.sectionTitle}>Government Modules</Text>
-        <View style={styles.modulesGrid}>
-          {modules.map((mod) => (
-            <TouchableOpacity
-              key={mod.label}
-              style={styles.moduleCard}
-              onPress={() => router.push(mod.route as any)}
-            >
-              <View style={[styles.moduleIcon, { backgroundColor: mod.color + "15" }]}>
-                <Ionicons name={mod.icon as any} size={24} color={mod.color} />
-              </View>
-              <Text style={styles.moduleLabel}>{mod.label}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Quick Actions */}
+        <Text style={s.sectionTitle}>Actions</Text>
+        <View style={s.actionsGrid}>
+          <TouchableOpacity style={s.actionCard} onPress={handleVerifyFacilities}>
+            <View style={[s.actionIcon, { backgroundColor: "#eff6ff" }]}><FontAwesome5 name="hospital" size={22} color="#2563eb"/></View>
+            <Text style={s.actionLabel}>Verify Facilities</Text>
+            <Text style={s.actionDesc}>Approve hospitals & clinics</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionCard} onPress={handlePopulation}>
+            <View style={[s.actionIcon, { backgroundColor: "#ecfdf5" }]}><Ionicons name="people" size={22} color="#059669"/></View>
+            <Text style={s.actionLabel}>Population</Text>
+            <Text style={s.actionDesc}>Health demographics</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.actionCard} onPress={handleSurveillance}>
+            <View style={[s.actionIcon, { backgroundColor: "#fef2f2" }]}><Ionicons name="warning" size={22} color="#ef4444"/></View>
+            <Text style={s.actionLabel}>Surveillance</Text>
+            <Text style={s.actionDesc}>Disease monitoring</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Alerts */}
-        <View style={styles.alertCard}>
-          <View style={styles.alertHeader}>
-            <Ionicons name="warning" size={20} color="#ef4444" />
-            <Text style={styles.alertTitle}>Active Alerts</Text>
+        {/* Active Alerts */}
+        <Text style={s.sectionTitle}>Active Alerts</Text>
+        {alerts.length === 0 ? (
+          <View style={s.emptyCard}>
+            <Ionicons name="shield-checkmark" size={40} color="#059669"/>
+            <Text style={s.emptyText}>No active health alerts</Text>
           </View>
-          <View style={styles.alertItem}>
-            <View style={[styles.alertDot, { backgroundColor: "#ef4444" }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.alertText}>Cholera outbreak detected in 3 counties</Text>
-              <Text style={styles.alertMeta}>Updated 2 hours ago</Text>
+        ) : alerts.map((alert) => (
+          <TouchableOpacity key={alert.id} style={s.alertCard} onPress={() => handleAlertPress(alert)}>
+            <View style={[s.alertSeverity, { backgroundColor: getSeverityColor(alert.severity) }]} />
+            <View style={s.alertContent}>
+              <Text style={s.alertTitle}>{alert.title}</Text>
+              <Text style={s.alertDesc} numberOfLines={2}>{alert.description}</Text>
+              <Text style={s.alertMeta}>{alert.location} · {formatDate(alert.created_at)}</Text>
             </View>
-          </View>
-          <View style={styles.alertItem}>
-            <View style={[styles.alertDot, { backgroundColor: "#f59e0b" }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.alertText}>Vaccine stock low in 12 facilities</Text>
-              <Text style={styles.alertMeta}>Updated 5 hours ago</Text>
-            </View>
-          </View>
-        </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8"/>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  content: { padding: 12, paddingBottom: 24 },
-  metricsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  metricCard: {
-    width: "48%", backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  metricIcon: {
-    width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 10,
-  },
-  metricValue: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  metricLabel: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  metricTrend: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
-  metricChange: { fontSize: 11, fontWeight: "700" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 10, marginTop: 4 },
-  modulesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
-  moduleCard: {
-    width: "31%", backgroundColor: "#fff", borderRadius: 14, padding: 14,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  moduleIcon: {
-    width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", marginBottom: 8,
-  },
-  moduleLabel: { fontSize: 11, fontWeight: "600", color: "#374151", textAlign: "center" },
-  alertCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  alertHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-  alertTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  alertItem: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 10 },
-  alertDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
-  alertText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  alertMeta: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
+function getSeverityColor(severity: string): string {
+  switch (severity) {
+    case "critical": return "#dc2626";
+    case "high": return "#ea580c";
+    case "medium": return "#f59e0b";
+    default: return "#2563eb";
+  }
+}
+
+function formatDate(date: string): string {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  header: { backgroundColor: "#0f3d5e", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "center" },
+  backBtn: { padding: 4, marginRight: 12 },
+  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff", flex: 1 },
+  headerAction: { width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", justifyContent: "center", alignItems: "center" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 15, color: "#64748b" },
+  errorText: { marginTop: 12, fontSize: 15, color: "#ef4444", textAlign: "center" },
+  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: "#0f3d5e", borderRadius: 10 },
+  retryText: { color: "#fff", fontWeight: "600" },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  statsRow: { flexDirection: "row", gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 14, alignItems: "center", borderWidth: 1, borderColor: "#e2e8f0" },
+  statValue: { fontSize: 22, fontWeight: "700", color: "#1e293b" },
+  statLabel: { fontSize: 11, color: "#64748b", marginTop: 4 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b", marginBottom: 12, marginTop: 8 },
+  actionsGrid: { flexDirection: "row", gap: 10, marginBottom: 20 },
+  actionCard: { flex: 1, backgroundColor: "#fff", borderRadius: 14, padding: 14, alignItems: "center", borderWidth: 1, borderColor: "#e2e8f0" },
+  actionIcon: { width: 48, height: 48, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 8 },
+  actionLabel: { fontSize: 13, fontWeight: "600", color: "#1e293b", textAlign: "center" },
+  actionDesc: { fontSize: 10, color: "#94a3b8", textAlign: "center", marginTop: 2 },
+  emptyCard: { backgroundColor: "#fff", borderRadius: 14, padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#e2e8f0" },
+  emptyText: { fontSize: 14, color: "#94a3b8", marginTop: 8 },
+  alertCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0" },
+  alertSeverity: { width: 4, height: 40, borderRadius: 2, marginRight: 12 },
+  alertContent: { flex: 1 },
+  alertTitle: { fontSize: 14, fontWeight: "700", color: "#1e293b" },
+  alertDesc: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  alertMeta: { fontSize: 11, color: "#94a3b8", marginTop: 4 },
 });

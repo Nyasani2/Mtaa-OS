@@ -1,45 +1,28 @@
-MTAA TRIBES MODULE v1.0
-=========================
+BATCH 02: Government Module (5 files)
+======================================
 
-FILE COUNT: 17 files
-STRUCTURE:
-  sql/tribes_schema.sql
-  lib/tribes/manifest.ts
-  lib/tribes/types.ts
-  lib/tribes/services/tribeService.ts
-  lib/tribes/hooks/useTribes.ts
-  lib/tribes/components/TribeCard.tsx
-  lib/tribes/components/TribeFeed.tsx
-  lib/tribes/components/TribeChat.tsx
-  lib/tribes/components/TribeEventCard.tsx
-  lib/tribes/components/TribeMemberList.tsx
-  app/(os)/tribes/_layout.tsx
-  app/(os)/tribes/index.tsx
-  app/(os)/tribes/[slug].tsx
-  app/(os)/tribes/create.tsx
-  app/(os)/tribes/events/[id].tsx
-  app/(os)/tribes/settings/[slug].tsx
+Files:
+1. app/(os)/health/government/index.tsx — Dashboard with stats, alerts, actions
+2. app/(os)/health/government/population/index.tsx — Citizen health records, search, add
+3. app/(os)/health/government/surveillance/index.tsx — Outbreak reporting, alerts, disease monitoring
+4. app/(os)/health/government/verify-facilities/index.tsx — Approve/reject pending hospitals
+5. lib/health/hooks/useGovernment.ts — Real Supabase queries, CRUD, search
 
-EXTRACTION:
-  cd ~/MTAA_OS_V10
-  unzip ~/Downloads/mtaa-tribes-v1.zip -d .
+INSTALL:
+========
+cd ~/MTAA_OS_V10
+# Backup old files
+mv "app/(os)/health/government/index.tsx" "app/(os)/health/government/index.tsx.bak"
+mv "app/(os)/health/government/population/index.tsx" "app/(os)/health/government/population/index.tsx.bak"
+mv "app/(os)/health/government/surveillance/index.tsx" "app/(os)/health/government/surveillance/index.tsx.bak"
+mv "app/(os)/health/government/verify-facilities/index.tsx" "app/(os)/health/government/verify-facilities/index.tsx.bak"
+mv "lib/health/hooks/useGovernment.ts" "lib/health/hooks/useGovernment.ts.bak" 2>/dev/null || true
 
-SQL:
-  Paste sql/tribes_schema.sql into Supabase SQL Editor and run.
+# Extract
+unzip ~/Downloads/Batch02_Government.zip -d .
 
-REGISTRY:
-  In lib/appstore/registry.ts, add:
-    import { tribesManifest } from '@/lib/tribes/manifest';
-    export const appRegistry = [ ..., tribesManifest ];
+# Add to lib/health/hooks/index.ts:
+#   export * from "./useGovernment";
 
-ASIS INTEGRATION:
-  Tribes AI is wired to report to ASIS via manifest.asisIntegration.
-  ASIS handles: content validation, AI generation, moderation, recommendations, search.
-  Tribes never calls AI directly — always delegates to ASIS.
-
-SCREENS:
-  /tribes           - Directory (search, categories, create FAB)
-  /tribes/[slug]    - Detail (feed, chat, events, heritage, members tabs)
-  /tribes/create    - Create new tribe
-  /tribes/events/[id] - Event detail + RSVP
-  /tribes/settings/[slug] - Settings + admin controls + leave
+DEPENDENCIES:
+- Supabase tables: health_facilities, health_alerts, health_outbreaks, health_population

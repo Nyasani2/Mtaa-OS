@@ -1,123 +1,172 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  RefreshControl, ActivityIndicator, Alert,
+} from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAppointments } from "@/lib/health/hooks/useAppointments";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useAppointments } from "@/lib/health/hooks/useAppointments";
+import { format } from "date-fns";
 
 type TabType = "upcoming" | "past";
 
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "scheduled": return "#2563eb";
+    case "completed": return "#059669";
+    case "cancelled": return "#ef4444";
+    case "no_show": return "#f59e0b";
+    case "in_progress": return "#7c3aed";
+    default: return "#64748b";
+  }
+}
+
 export default function AppointmentsScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const { appointments, loading, error, refreshing, refresh, cancelAppointment } = useAppointments(user?.id);
   const [activeTab, setActiveTab] = useState<TabType>("upcoming");
-  const { appointments, upcoming, loading, error, refresh } = useAppointments(user?.id);
-  const displayList = activeTab === "upcoming" ? upcoming : appointments;
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={48} color="#d1d5db" />
-      <Text style={styles.emptyTitle}>{error ? "Unable to Load" : `No ${activeTab} appointments`}</Text>
-      <Text style={styles.emptySubtitle}>
-        {error ? error : activeTab === "upcoming" ? "You don't have any upcoming appointments." : "Your appointment history will appear here."}
-      </Text>
-      {error && (
-        <TouchableOpacity style={styles.retryButton} onPress={refresh}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const filtered = appointments.filter((a) => {
+    const isPast = new Date(a.appointment_date) < new Date();
+    return activeTab === "upcoming" ? !isPast : isPast;
+  });
 
-  const renderAppointment = (item: any, index: number) => (
-    <TouchableOpacity key={index} style={styles.card} onPress={() => {}}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + "20" }]}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+  const handleBook = useCallback(() => router.push("/(os)/health/find-care" as any), [router]);
+
+  const handleCancel = useCallback(async (id: string) => {
+    Alert.alert("Cancel Appointment", "Are you sure?", [
+      { text: "Keep", style: "cancel" },
+      { text: "Cancel", style: "destructive", onPress: async () => {
+        setCancellingId(id);
+        const result = await cancelAppointment(id);
+        setCancellingId(null);
+        if (!result.success) Alert.alert("Error", result.error || "Failed to cancel");
+      }},
+    ]);
+  }, [cancelAppointment]);
+
+  const handleCardPress = useCallback((apt: any) => {
+    router.push({ pathname: "/(os)/health/appointments/detail", params: { id: apt.id } } as any);
+  }, [router]);
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+          <Text style={s.headerTitle}>Appointments</Text>
+          <TouchableOpacity onPress={handleBook} style={s.headerAction}><Ionicons name="add" size={24} color="#fff"/></TouchableOpacity>
         </View>
-        <Text style={styles.dateText}>{item.date || item.appointment_date}</Text>
-      </View>
-      <Text style={styles.doctorText}>{item.doctor_name || item.provider_name || "Doctor"}</Text>
-      <Text style={styles.typeText}>{item.type || item.appointment_type || "Consultation"}</Text>
-      <View style={styles.cardFooter}>
-        <Ionicons name="time-outline" size={14} color="#9ca3af" />
-        <Text style={styles.timeText}>{item.time || item.appointment_time || "TBD"}</Text>
-        <Ionicons name="location-outline" size={14} color="#9ca3af" style={{ marginLeft: 12 }} />
-        <Text style={styles.locationText}>{item.facility_name || item.location || "TBD"}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={s.center}><ActivityIndicator size="large" color="#2563eb"/><Text style={s.loadingText}>Loading...</Text></View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && !refreshing) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+          <Text style={s.headerTitle}>Appointments</Text>
+          <TouchableOpacity onPress={handleBook} style={s.headerAction}><Ionicons name="add" size={24} color="#fff"/></TouchableOpacity>
+        </View>
+        <View style={s.center}>
+          <Ionicons name="alert-circle" size={48} color="#ef4444"/>
+          <Text style={s.errorText}>{error}</Text>
+          <TouchableOpacity style={s.retryBtn} onPress={refresh}><Text style={s.retryText}>Retry</Text></TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+        <Text style={s.headerTitle}>Appointments</Text>
+        <TouchableOpacity onPress={handleBook} style={s.headerAction}><Ionicons name="add" size={24} color="#fff"/></TouchableOpacity>
+      </View>
+      <View style={s.tabRow}>
+        <TouchableOpacity style={[s.tab, activeTab === "upcoming" && s.tabActive]} onPress={() => setActiveTab("upcoming")}>
+          <Text style={[s.tabText, activeTab === "upcoming" && s.tabTextActive]}>Upcoming</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Appointments</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="add" size={24} color="#2563eb" />
+        <TouchableOpacity style={[s.tab, activeTab === "past" && s.tabActive]} onPress={() => setActiveTab("past")}>
+          <Text style={[s.tabText, activeTab === "past" && s.tabTextActive]}>Past</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity style={[styles.tab, activeTab === "upcoming" && styles.tabActive]} onPress={() => setActiveTab("upcoming")}>
-          <Text style={[styles.tabText, activeTab === "upcoming" && styles.tabTextActive]}>Upcoming ({upcoming.length})</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, activeTab === "past" && styles.tabActive]} onPress={() => setActiveTab("past")}>
-          <Text style={[styles.tabText, activeTab === "past" && styles.tabTextActive]}>Past</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}>
-        {loading && displayList.length === 0 ? (
-          <View style={styles.spinnerContainer}>
-            <ActivityIndicator size="large" color="#2563eb" />
-            <Text style={styles.spinnerText}>Loading appointments...</Text>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh}/>} contentContainerStyle={s.scrollContent}>
+        {filtered.length === 0 ? (
+          <View style={s.emptyState}>
+            <Ionicons name="calendar-outline" size={64} color="#cbd5e1"/>
+            <Text style={s.emptyTitle}>{activeTab === "upcoming" ? "No Upcoming" : "No Past"}</Text>
+            <Text style={s.emptySub}>{activeTab === "upcoming" ? "Book your first appointment." : "History appears here."}</Text>
+            {activeTab === "upcoming" && (
+              <TouchableOpacity style={s.bookBtn} onPress={handleBook}>
+                <Ionicons name="add" size={18} color="#fff"/><Text style={s.bookBtnText}>Book</Text>
+              </TouchableOpacity>
+            )}
           </View>
-        ) : displayList.length === 0 ? renderEmpty() : displayList.map(renderAppointment)}
+        ) : filtered.map((apt) => (
+          <TouchableOpacity key={apt.id} style={s.card} onPress={() => handleCardPress(apt)} disabled={cancellingId === apt.id}>
+            <View style={s.cardHeader}>
+              <View style={[s.statusBadge, { backgroundColor: getStatusColor(apt.status) + "20" }]}>
+                <View style={[s.statusDot, { backgroundColor: getStatusColor(apt.status) }]}/>
+                <Text style={[s.statusText, { color: getStatusColor(apt.status) }]}>{apt.status}</Text>
+              </View>
+              {apt.status === "scheduled" && (
+                <TouchableOpacity onPress={() => handleCancel(apt.id)} disabled={cancellingId === apt.id}>
+                  {cancellingId === apt.id ? <ActivityIndicator size="small" color="#ef4444"/> : <Ionicons name="close-circle" size={22} color="#ef4444"/>}
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={s.doctorName}>{apt.doctor_name || "Doctor"}</Text>
+            <Text style={s.hospitalName}>{apt.hospital_name || "Hospital"}</Text>
+            <View style={s.cardFooter}>
+              <View style={s.footerItem}><Ionicons name="calendar" size={14} color="#64748b"/><Text style={s.footerText}>{format(new Date(apt.appointment_date), "MMM d")}</Text></View>
+              <View style={s.footerItem}><Ionicons name="time" size={14} color="#64748b"/><Text style={s.footerText}>{format(new Date(apt.appointment_date), "h:mm a")}</Text></View>
+              <View style={s.footerItem}><Ionicons name="location" size={14} color="#64748b"/><Text style={s.footerText}>{apt.department || "General"}</Text></View>
+            </View>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function getStatusColor(status: string): string {
-  switch (status?.toLowerCase()) {
-    case "confirmed": case "approved": return "#22c55e";
-    case "pending": return "#f59e0b";
-    case "cancelled": case "canceled": return "#ef4444";
-    case "completed": return "#3b82f6";
-    default: return "#6b7280";
-  }
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  tabContainer: { flexDirection: "row", backgroundColor: "#fff", paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
-  tab: { flex: 1, alignItems: "center", paddingVertical: 10, borderBottomWidth: 2, borderBottomColor: "transparent" },
-  tabActive: { borderBottomColor: "#2563eb" },
-  tabText: { fontSize: 14, fontWeight: "500", color: "#9ca3af" },
-  tabTextActive: { color: "#2563eb", fontWeight: "600" },
-  content: { padding: 12, paddingBottom: 24 },
-  spinnerContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  spinnerText: { marginTop: 12, fontSize: 14, color: "#9ca3af" },
-  emptyContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: "600", color: "#374151", marginTop: 12 },
-  emptySubtitle: { fontSize: 13, color: "#9ca3af", marginTop: 4, textAlign: "center", paddingHorizontal: 32 },
-  retryButton: { marginTop: 16, backgroundColor: "#2563eb", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  retryText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 14, marginBottom: 8, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2 },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-  statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
-  statusText: { fontSize: 11, fontWeight: "600" },
-  dateText: { fontSize: 12, color: "#9ca3af" },
-  doctorText: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  typeText: { fontSize: 13, color: "#6b7280", marginTop: 2 },
-  cardFooter: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  timeText: { fontSize: 12, color: "#9ca3af", marginLeft: 4 },
-  locationText: { fontSize: 12, color: "#9ca3af", marginLeft: 4 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  header: { backgroundColor: "#0f3d5e", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "center" },
+  backBtn: { padding: 4, marginRight: 12 },
+  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff", flex: 1 },
+  headerAction: { width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", justifyContent: "center", alignItems: "center" },
+  tabRow: { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e2e8f0", gap: 8 },
+  tab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center", backgroundColor: "#f1f5f9" },
+  tabActive: { backgroundColor: "#0f3d5e" },
+  tabText: { fontSize: 14, fontWeight: "600", color: "#64748b" },
+  tabTextActive: { color: "#fff" },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 15, color: "#64748b" },
+  errorText: { marginTop: 12, fontSize: 15, color: "#ef4444", textAlign: "center" },
+  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: "#0f3d5e", borderRadius: 10 },
+  retryText: { color: "#fff", fontWeight: "600" },
+  emptyState: { alignItems: "center", paddingVertical: 48 },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#1e293b", marginTop: 16 },
+  emptySub: { fontSize: 14, color: "#94a3b8", marginTop: 4, textAlign: "center" },
+  bookBtn: { flexDirection: "row", alignItems: "center", marginTop: 20, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: "#0f3d5e", borderRadius: 12, gap: 8 },
+  bookBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#e2e8f0" },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  statusBadge: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, gap: 6 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { fontSize: 12, fontWeight: "600" },
+  doctorName: { fontSize: 16, fontWeight: "700", color: "#1e293b" },
+  hospitalName: { fontSize: 13, color: "#64748b", marginTop: 2 },
+  cardFooter: { flexDirection: "row", marginTop: 12, gap: 16 },
+  footerItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  footerText: { fontSize: 12, color: "#64748b" },
 });

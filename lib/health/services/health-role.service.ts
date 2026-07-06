@@ -1,195 +1,256 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from "@/lib/supabase";
+import { HealthRole, StaffRecord } from "@/lib/health/types";
 
-export type HealthRole =
-  | 'system_admin' | 'doctor' | 'nurse' | 'pharmacist' | 'lab_technician'
-  | 'radiologist' | 'hospital_admin' | 'cashier' | 'hr_manager'
-  | 'accountant' | 'ambulance_driver' | 'receptionist';
+export const ROLE_DISPLAY_NAMES: Record<string, string> = {
+  system_admin: "System Admin",
+  facility_admin: "Facility Admin",
+  hospital_admin: "Hospital Admin",
+  doctor: "Doctor",
+  nurse: "Nurse",
+  pharmacist: "Pharmacist",
+  lab_technician: "Lab Technician",
+  radiologist: "Radiologist",
+  receptionist: "Receptionist",
+  cashier: "Cashier",
+  accountant: "Accountant",
+  hr_manager: "HR Manager",
+  ambulance_dispatcher: "Ambulance Dispatcher",
+  emergency_responder: "Emergency Responder",
+  insurance_officer: "Insurance Officer",
+  pharmacy_manager: "Pharmacy Manager",
+  data_analyst: "Data Analyst",
+  government_admin: "Government Admin",
+  patient: "Patient",
+};
 
-export type StaffStatus = 'active' | 'pending' | 'suspended' | 'inactive';
-export type OnboardingStatus = 'not_started' | 'in_progress' | 'completed';
+export const ROLE_ICONS: Record<string, string> = {
+  system_admin: "shield-checkmark",
+  facility_admin: "business",
+  hospital_admin: "medical",
+  doctor: "stethoscope",
+  nurse: "heart",
+  pharmacist: "medkit",
+  lab_technician: "flask",
+  radiologist: "scan",
+  receptionist: "people",
+  cashier: "cash",
+  accountant: "calculator",
+  hr_manager: "person",
+  ambulance_dispatcher: "car",
+  emergency_responder: "alert",
+  insurance_officer: "document-text",
+  pharmacy_manager: "medical",
+  data_analyst: "bar-chart",
+  government_admin: "globe",
+  patient: "person",
+};
 
-export interface HealthStaffRecord {
+export const ROLE_COLORS: Record<string, string> = {
+  system_admin: "#dc2626",
+  facility_admin: "#ea580c",
+  hospital_admin: "#2563eb",
+  doctor: "#059669",
+  nurse: "#0891b2",
+  pharmacist: "#7c3aed",
+  lab_technician: "#db2777",
+  radiologist: "#9333ea",
+  receptionist: "#ca8a04",
+  cashier: "#16a34a",
+  accountant: "#2563eb",
+  hr_manager: "#4f46e5",
+  ambulance_dispatcher: "#dc2626",
+  emergency_responder: "#ea580c",
+  insurance_officer: "#0891b2",
+  pharmacy_manager: "#7c3aed",
+  data_analyst: "#059669",
+  government_admin: "#1f2937",
+  patient: "#6b7280",
+};
+
+export const ROLE_DASHBOARD_ROUTES: Record<string, string[]> = {
+  system_admin: ["/(os)/health/system/analytics", "/(os)/health/system/roles", "/(os)/health/system/integrations", "/(os)/health/government/verify-facilities"],
+  facility_admin: ["/(os)/health/hospital-admin/revenue", "/(os)/health/hr/payroll", "/(os)/health/hr/attendance", "/(os)/health/hr/shifts", "/(os)/health/hr/leave"],
+  hospital_admin: ["/(os)/health/hospital-admin/revenue", "/(os)/health/system/analytics", "/(os)/health/hr/payroll"],
+  doctor: ["/(os)/health/doctor/queue", "/(os)/health/doctor/schedule", "/(os)/health/doctor/prescribe", "/(os)/health/doctor/lab-orders", "/(os)/health/doctor/earnings"],
+  nurse: ["/(os)/health/nurse/beds", "/(os)/health/nurse/medication", "/(os)/health/nurse/handover"],
+  pharmacist: ["/(os)/health/pharmacy/pos", "/(os)/health/pharmacy/inventory", "/(os)/health/pharmacy/dispense", "/(os)/health/pharmacy/interactions", "/(os)/health/pharmacy/suppliers"],
+  lab_technician: ["/(os)/health/lab/queue", "/(os)/health/lab/critical", "/(os)/health/lab/equipment"],
+  radiologist: ["/(os)/health/lab/queue", "/(os)/health/lab/equipment"],
+  receptionist: ["/(os)/health/receptionist/register", "/(os)/health/receptionist/checkin", "/(os)/health/receptionist/queue"],
+  cashier: ["/(os)/health/cashier/payments", "/(os)/health/cashier/insurance", "/(os)/health/cashier/invoices", "/(os)/health/cashier/revenue"],
+  accountant: ["/(os)/health/accountant/revenue", "/(os)/health/accountant/budget", "/(os)/health/accountant/procurement", "/(os)/health/accountant/tax", "/(os)/health/accountant/compliance"],
+  hr_manager: ["/(os)/health/hr/payroll", "/(os)/health/hr/attendance", "/(os)/health/hr/shifts", "/(os)/health/hr/leave"],
+  ambulance_dispatcher: ["/(os)/health/ambulance/dispatches", "/(os)/health/ambulance/location", "/(os)/health/ambulance/log"],
+  emergency_responder: ["/(os)/health/ambulance/dispatches", "/(os)/health/emergency"],
+  insurance_officer: ["/(os)/health/cashier/insurance"],
+  pharmacy_manager: ["/(os)/health/pharmacy/pos", "/(os)/health/pharmacy/inventory", "/(os)/health/pharmacy/suppliers"],
+  data_analyst: ["/(os)/health/system/analytics"],
+  government_admin: ["/(os)/health/government/verify-facilities"],
+  patient: ["/(os)/health/appointments", "/(os)/health/find-care", "/(os)/health/records"],
+};
+
+export interface AllRoleRecord {
   id: string;
-  user_id: string;
   facility_id: string | null;
   role: HealthRole;
   department: string | null;
-  specialization: string | null;
-  status: StaffStatus;
-  onboarding_status: OnboardingStatus;
-  is_on_duty: boolean;
-  years_of_experience: number | null;
-  consultation_fee: number | null;
-  license_number: string | null;
-  license_body: string | null;
-  created_at: string;
-  updated_at: string;
-  facility?: HealthFacility;
-  // Joined fields from RPCs
-  facility_name?: string;
-  facility_type?: string;
-  facility_county?: string;
-  user_email?: string;
-  user_full_name?: string;
+  facility_name: string | null;
+  verified: boolean;
 }
 
-export interface HealthFacility {
-  id: string; name: string; type: string; level: number;
-  county: string | null; phone: string | null; email: string | null;
-  status: string; bed_capacity: number; icu_beds: number;
-  has_emergency: boolean; has_ambulance: boolean; created_at: string;
+export interface ClockInResult {
+  success: boolean;
+  record_id?: string;
+  clock_in?: string;
+  staff_id?: string;
+  error?: string;
 }
 
-export interface StaffInvitation {
-  email: string; role: HealthRole; department?: string; facilityId?: string;
-}
-
-export const ROLE_PERMISSIONS: Record<HealthRole, string[]> = {
-  system_admin: ['*'],
-  doctor: ['view_patients', 'prescribe', 'view_records', 'telemedicine'],
-  nurse: ['view_patients', 'vitals', 'medication', 'bed_management'],
-  pharmacist: ['dispense', 'inventory', 'view_prescriptions'],
-  lab_technician: ['lab_orders', 'results', 'inventory'],
-  radiologist: ['imaging', 'reports', 'view_patients'],
-  hospital_admin: ['manage_staff', 'manage_beds', 'view_reports', 'manage_facility'],
-  cashier: ['process_payments', 'view_billing', 'refunds'],
-  hr_manager: ['manage_staff', 'payroll', 'attendance', 'recruitment'],
-  accountant: ['financial_reports', 'payroll', 'budgeting'],
-  ambulance_driver: ['dispatch', 'patient_transport'],
-  receptionist: ['register_patients', 'appointments', 'queue_management'],
-};
-
-export const ROLE_DISPLAY_NAMES: Record<HealthRole, string> = {
-  system_admin: 'System Admin', doctor: 'Doctor', nurse: 'Nurse',
-  pharmacist: 'Pharmacist', lab_technician: 'Lab Technician',
-  radiologist: 'Radiologist', hospital_admin: 'Hospital Admin',
-  cashier: 'Cashier', hr_manager: 'HR Manager', accountant: 'Accountant',
-  ambulance_driver: 'Ambulance Driver', receptionist: 'Receptionist',
-};
-
-export const ROLE_COLORS: Record<HealthRole, string> = {
-  system_admin: '#dc2626', doctor: '#2563eb', nurse: '#16a34a',
-  pharmacist: '#9333ea', lab_technician: '#0891b2', radiologist: '#ea580c',
-  hospital_admin: '#ca8a04', cashier: '#db2777', hr_manager: '#4f46e5',
-  accountant: '#059669', ambulance_driver: '#b91c1c', receptionist: '#6b7280',
-};
-
-export const ROLE_ICONS: Record<HealthRole, string> = {
-  system_admin: 'Shield', doctor: 'Stethoscope', nurse: 'Heart',
-  pharmacist: 'Pill', lab_technician: 'FlaskConical', radiologist: 'Scan',
-  hospital_admin: 'Building2', cashier: 'CreditCard', hr_manager: 'Users',
-  accountant: 'Calculator', ambulance_driver: 'Truck', receptionist: 'UserCheck',
-};
-
-function isTableMissingError(err: any): boolean {
-  const msg = err?.message || err?.error_description || '';
-  return (msg.includes('relation') && msg.includes('does not exist')) || msg.includes('42P01');
+export interface ClockOutResult {
+  success: boolean;
+  record_id?: string;
+  clock_out?: string;
+  hours_worked?: number;
+  staff_id?: string;
+  error?: string;
 }
 
 class HealthRoleService {
-  /**
-   * Get ALL active roles for a user (for role selection screen)
-   */
-  async getAllUserRoles(userId: string): Promise<HealthStaffRecord[]> {
+  async getPrimaryStaffRecord(userId: string): Promise<StaffRecord | null> {
     try {
-      const { data, error } = await supabase
-        .rpc('health_get_all_user_roles', { p_user_id: userId });
+      const { data, error } = await supabase.rpc("health_get_primary_staff_record", {
+        p_user_id: userId,
+      });
+
       if (error) {
-        if (error.code === 'PGRST116') return [];
-        console.error('[HealthRoleService] getAllUserRoles RPC error:', error);
-        throw error;
+        if (error.code === "PGRST116") {
+          return null;
+        }
+        console.error("[HealthRoleService] RPC error:", error);
+        return null;
       }
-      return (data || []) as HealthStaffRecord[];
-    } catch (err: any) {
-      if (isTableMissingError(err)) { console.warn('[HealthRoleService] health_staff table missing'); return []; }
-      throw err;
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      const row = data[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        facilityId: row.facility_id,
+        role: row.role as HealthRole,
+        department: row.department,
+        licenseNumber: row.license_number,
+        verified: row.verified,
+        specialization: row.specialization,
+        shiftPattern: row.shift_pattern,
+        biometricEnrolled: row.biometric_enrolled,
+        lastClockIn: row.last_clock_in,
+        lastClockOut: row.last_clock_out,
+        isOnDuty: row.is_on_duty,
+        status: row.status,
+        onboardingStatus: row.onboarding_status,
+      };
+    } catch (err) {
+      console.error("[HealthRoleService] getPrimaryStaffRecord error:", err);
+      return null;
     }
   }
 
-  /**
-   * Get the user's primary (most recent) active staff record
-   */
-  async getCurrentUserRole(userId: string): Promise<HealthStaffRecord | null> {
+  async getAllUserRoles(userId: string): Promise<AllRoleRecord[]> {
     try {
-      const { data: staffData, error: staffError } = await supabase
-        .rpc('health_get_primary_staff_record', { p_user_id: userId });
-      if (staffError) {
-        if (staffError.code === 'PGRST116') return null;
-        console.error('[HealthRoleService] getCurrentUserRole RPC error:', staffError);
-        throw staffError;
+      const { data, error } = await supabase.rpc("health_get_all_user_roles", {
+        p_user_id: userId,
+      });
+
+      if (error) {
+        console.error("[HealthRoleService] getAllUserRoles RPC error:", error);
+        return [];
       }
-      if (!staffData || staffData.length === 0) return null;
-      const staff = staffData[0];
-      let facility: HealthFacility | undefined;
-      if (staff.facility_id) {
-        const { data: facData, error: facError } = await supabase
-          .from('health_facilities').select('*').eq('id', staff.facility_id).single();
-        if (!facError && facData) facility = facData as HealthFacility;
-        else if (facError) console.warn('[HealthRoleService] Facility fetch error:', facError.message);
-      }
-      return { ...staff, facility } as HealthStaffRecord;
-    } catch (err: any) {
-      if (isTableMissingError(err)) { console.warn('[HealthRoleService] health_staff table missing'); return null; }
-      throw err;
+
+      if (!data) return [];
+
+      return data.map((row: any) => ({
+        id: row.id,
+        facility_id: row.facility_id,
+        role: row.role as HealthRole,
+        department: row.department,
+        facility_name: row.facility_name,
+        verified: row.verified,
+      }));
+    } catch (err) {
+      console.error("[HealthRoleService] getAllUserRoles error:", err);
+      return [];
     }
   }
 
-  async getStaffStats(facilityId?: string | null): Promise<{ active: number; pending: number; total: number }> {
+  async clockIn(userId: string, facilityId: string, method: string = "manual"): Promise<ClockInResult> {
     try {
-      const { data, error } = await supabase.rpc('health_get_staff_stats', { p_facility_id: facilityId || null });
-      if (error) { console.error('[HealthRoleService] getStaffStats error:', error); return { active: 0, pending: 0, total: 0 }; }
-      if (!data || data.length === 0) return { active: 0, pending: 0, total: 0 };
-      return { active: Number(data[0].active_count) || 0, pending: Number(data[0].pending_count) || 0, total: Number(data[0].total_count) || 0 };
-    } catch (err: any) { console.error('[HealthRoleService] getStaffStats exception:', err); return { active: 0, pending: 0, total: 0 }; }
-  }
-
-  async getAllStaffForSystemAdmin(filters?: { status?: string; role?: string; search?: string }): Promise<HealthStaffRecord[]> {
-    try {
-      const { data, error } = await supabase.rpc('health_get_all_staff_for_admin', {
-        p_status_filter: filters?.status || null, p_role_filter: filters?.role || null, p_search_query: filters?.search || null,
+      const { data, error } = await supabase.rpc("health_clock_in", {
+        p_user_id: userId,
+        p_facility_id: facilityId,
+        p_method: method,
       });
-      if (error) { console.error('[HealthRoleService] getAllStaffForSystemAdmin error:', error); throw error; }
-      return (data || []) as HealthStaffRecord[];
-    } catch (err: any) { if (isTableMissingError(err)) return []; throw err; }
+
+      if (error) {
+        console.error("[HealthRoleService] clockIn RPC error:", error);
+        return { success: false, error: error.message };
+      }
+
+      return data as ClockInResult;
+    } catch (err: any) {
+      console.error("[HealthRoleService] clockIn error:", err);
+      return { success: false, error: err.message || "Clock-in failed" };
+    }
   }
 
-  async getStaffByFacility(facilityId: string, filters?: { status?: string; role?: string; search?: string }): Promise<HealthStaffRecord[]> {
+  async clockOut(userId: string, facilityId: string, method: string = "manual"): Promise<ClockOutResult> {
     try {
-      const { data, error } = await supabase.rpc('health_get_staff_by_facility', {
-        p_facility_id: facilityId, p_status_filter: filters?.status || null,
-        p_role_filter: filters?.role || null, p_search_query: filters?.search || null,
+      const { data, error } = await supabase.rpc("health_clock_out", {
+        p_user_id: userId,
+        p_facility_id: facilityId,
+        p_method: method,
       });
-      if (error) { console.error('[HealthRoleService] getStaffByFacility error:', error); throw error; }
-      return (data || []) as HealthStaffRecord[];
-    } catch (err: any) { if (isTableMissingError(err)) return []; throw err; }
+
+      if (error) {
+        console.error("[HealthRoleService] clockOut RPC error:", error);
+        return { success: false, error: error.message };
+      }
+
+      return data as ClockOutResult;
+    } catch (err: any) {
+      console.error("[HealthRoleService] clockOut error:", err);
+      return { success: false, error: err.message || "Clock-out failed" };
+    }
   }
 
-  async inviteStaff(invitation: StaffInvitation): Promise<void> {
-    const { error } = await supabase.from('health_staff_invitations').insert({
-      email: invitation.email, role: invitation.role, department: invitation.department,
-      facility_id: invitation.facilityId, status: 'pending',
-    });
-    if (error) throw error;
+  getDisplayName(role: HealthRole | string): string {
+    return ROLE_DISPLAY_NAMES[role] || "Unknown";
   }
 
-  async approveStaff(staffId: string): Promise<void> {
-    const { error } = await supabase.from('health_staff').update({ status: 'active', onboarding_status: 'in_progress' }).eq('id', staffId);
-    if (error) throw error;
+  getIcon(role: HealthRole | string): string {
+    return ROLE_ICONS[role] || "person";
   }
 
-  async suspendStaff(staffId: string): Promise<void> {
-    const { error } = await supabase.from('health_staff').update({ status: 'suspended' }).eq('id', staffId);
-    if (error) throw error;
+  getColor(role: HealthRole | string): string {
+    return ROLE_COLORS[role] || "#6b7280";
   }
 
-  async clockIn(staffId: string): Promise<void> {
-    const { error } = await supabase.from('health_staff').update({ is_on_duty: true }).eq('id', staffId);
-    if (error) throw error;
+  getDashboardRoutes(role: HealthRole | string): string[] {
+    return ROLE_DASHBOARD_ROUTES[role] || ROLE_DASHBOARD_ROUTES["patient"];
   }
 
-  async clockOut(staffId: string): Promise<void> {
-    const { error } = await supabase.from('health_staff').update({ is_on_duty: false }).eq('id', staffId);
-    if (error) throw error;
+  isAdmin(role: HealthRole | string): boolean {
+    return ["system_admin", "facility_admin", "hospital_admin", "government_admin"].includes(role as string);
+  }
+
+  isClinical(role: HealthRole | string): boolean {
+    return ["doctor", "nurse", "pharmacist", "lab_technician", "radiologist"].includes(role as string);
+  }
+
+  isOperational(role: HealthRole | string): boolean {
+    return ["receptionist", "cashier", "accountant", "hr_manager", "ambulance_dispatcher", "emergency_responder", "insurance_officer", "pharmacy_manager", "data_analyst"].includes(role as string);
   }
 }
 

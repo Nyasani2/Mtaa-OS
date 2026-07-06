@@ -1,144 +1,175 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { healthRoleService, type HealthRole, type HealthStaffRecord } from '@/lib/health/services';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { healthRoleService } from "@/lib/health/services/health-role.service";
+import { HealthRole, StaffRecord } from "@/lib/health/types";
 
-export interface HealthRoleState {
-  // Role selection
-  allRoles: HealthStaffRecord[];
-  selectedRole: HealthStaffRecord | null;
+export interface UseHealthRoleReturn {
   role: HealthRole | null;
-  staffRecord: HealthStaffRecord | null;
-  facilityId: string | null;
-  isLoading: boolean;
-  isSystemAdmin: boolean;
-  isDoctor: boolean;
-  isNurse: boolean;
-  isPharmacist: boolean;
-  isLabTech: boolean;
-  isHospitalAdmin: boolean;
-  isCashier: boolean;
-  isHRManager: boolean;
-  isAccountant: boolean;
-  isAmbulanceDriver: boolean;
-  isReceptionist: boolean;
+  displayName: string;
   isPatient: boolean;
-  canManageStaff: boolean;
-  canManageFacilities: boolean;
-  canPrescribe: boolean;
-  canViewRecords: boolean;
-  canManageInventory: boolean;
-  canProcessPayments: boolean;
+  isAdmin: boolean;
+  isClinical: boolean;
+  isOperational: boolean;
+  staffRecord: StaffRecord | null;
+  allRoles: { id: string; facility_id: string | null; role: HealthRole; department: string | null; facility_name: string | null; verified: boolean }[];
+  loading: boolean;
   error: string | null;
-  // Actions
-  selectRole: (record: HealthStaffRecord) => void;
+  selectedRole: HealthRole | null;
+  selectedFacilityId: string | null;
+  refresh: () => Promise<void>;
+  selectRole: (role: HealthRole, facilityId: string) => void;
   clearRoleSelection: () => void;
+  clockIn: (method?: string) => Promise<{ success: boolean; error?: string }>;
+  clockOut: (method?: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-const TIMEOUT_MS = 8000;
-
-export function useHealthRole(): HealthRoleState {
-  const { user } = useAuthStore();
-  const [allRoles, setAllRoles] = useState<HealthStaffRecord[]>([]);
-  const [selectedRole, setSelectedRole] = useState<HealthStaffRecord | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function useHealthRole(): UseHealthRoleReturn {
+  const user = useAuthStore((s) => s.user);
+  const [role, setRole] = useState<HealthRole | null>(null);
+  const [staffRecord, setStaffRecord] = useState<StaffRecord | null>(null);
+  const [allRoles, setAllRoles] = useState<UseHealthRoleReturn["allRoles"]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const mountedRef = useRef(true);
+  const [selectedRole, setSelectedRole] = useState<HealthRole | null>(null);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
 
-  const fetchRoles = useCallback(async () => {
-    if (!user?.id) {
-      if (mountedRef.current) { setIsLoading(false); setError(null); setAllRoles([]); }
-      return;
-    }
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) { setIsLoading(false); setError('Role detection timed out. Please check your connection.'); }
-    }, TIMEOUT_MS);
-
-    try {
-      if (mountedRef.current) { setIsLoading(true); setError(null); }
-
-      // Get ALL roles for this user
-      const roles = await healthRoleService.getAllUserRoles(user.id);
-
-      if (mountedRef.current) {
-        setAllRoles(roles);
-        // If only one role, auto-select it
-        if (roles.length === 1 && !selectedRole) {
-          setSelectedRole(roles[0]);
-        }
-        // If no roles, try the primary record (backward compat)
-        if (roles.length === 0) {
-          const primary = await healthRoleService.getCurrentUserRole(user.id);
-          if (primary) {
-            setAllRoles([primary]);
-            setSelectedRole(primary);
-          }
-        }
-        setError(null);
-      }
-    } catch (err: any) {
-      if (mountedRef.current) {
-        setAllRoles([]);
-        if (err.code === 'PGRST116' || err.message?.includes('no rows')) setError(null);
-        else setError(err.message || 'Failed to load role information');
-      }
-    } finally {
-      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
-      if (mountedRef.current) setIsLoading(false);
-    }
-  }, [user?.id]);
+  // ============================================================
+  // FIX: Use refs for selection state to break the re-render loop
+  // ============================================================
+  const selectedRoleRef = useRef(selectedRole);
+  const selectedFacilityIdRef = useRef(selectedFacilityId);
 
   useEffect(() => {
-    mountedRef.current = true;
-    fetchRoles();
-    return () => {
-      mountedRef.current = false;
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [fetchRoles]);
+    selectedRoleRef.current = selectedRole;
+  }, [selectedRole]);
 
-  const selectRole = useCallback((record: HealthStaffRecord) => {
-    setSelectedRole(record);
+  useEffect(() => {
+    selectedFacilityIdRef.current = selectedFacilityId;
+  }, [selectedFacilityId]);
+
+  // ============================================================
+  // FIX: fetchRole NO LONGER depends on selectedRole/selectedFacilityId
+  // It reads from refs instead, preventing the infinite loop
+  // ============================================================
+  const fetchRole = useCallback(async () => {
+    if (!user?.id) {
+      setRole(null);
+      setStaffRecord(null);
+      setAllRoles([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const primary = await healthRoleService.getPrimaryStaffRecord(user.id);
+      const all = await healthRoleService.getAllUserRoles(user.id);
+
+      setStaffRecord(primary);
+      setAllRoles(all);
+
+      if (primary) {
+        // Read selection from refs, NOT from state (breaks the loop)
+        const currentSelectedRole = selectedRoleRef.current;
+        const currentSelectedFacilityId = selectedFacilityIdRef.current;
+
+        if (currentSelectedRole && all.some((r) => r.role === currentSelectedRole && r.facility_id === currentSelectedFacilityId)) {
+          setRole(currentSelectedRole);
+        } else {
+          setRole(primary.role);
+          setSelectedRole(primary.role);
+          setSelectedFacilityId(primary.facilityId || null);
+        }
+      } else {
+        setRole("patient");
+        setSelectedRole(null);
+        setSelectedFacilityId(null);
+      }
+    } catch (err: any) {
+      console.error("[useHealthRole] fetch error:", err);
+      setError(err.message || "Failed to load role");
+      setRole("patient");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]); // ← ONLY depends on user.id, NOT selectedRole/selectedFacilityId
+
+  // ============================================================
+  // FIX: Only run fetchRole when user.id changes, not on every render
+  // ============================================================
+  useEffect(() => {
+    fetchRole();
+  }, [user?.id]); // ← Direct dependency on user.id, NOT fetchRole reference
+
+  const selectRole = useCallback((newRole: HealthRole, facilityId: string) => {
+    setSelectedRole(newRole);
+    setSelectedFacilityId(facilityId);
+    setRole(newRole);
   }, []);
 
   const clearRoleSelection = useCallback(() => {
     setSelectedRole(null);
-  }, []);
+    setSelectedFacilityId(null);
+    if (staffRecord) {
+      setRole(staffRecord.role);
+    } else {
+      setRole("patient");
+    }
+  }, [staffRecord]);
 
-  const role = selectedRole?.role || null;
-  const staffRecord = selectedRole;
-  const facilityId = selectedRole?.facility_id || null;
-  const isSystemAdmin = role === 'system_admin';
-  const hasAnyRole = allRoles.length > 0;
+  const clockIn = useCallback(
+    async (method: string = "manual") => {
+      if (!user?.id || !selectedFacilityId) {
+        return { success: false, error: "No facility selected" };
+      }
+      const result = await healthRoleService.clockIn(user.id, selectedFacilityId, method);
+      if (result.success) {
+        await fetchRole();
+      }
+      return result;
+    },
+    [user?.id, selectedFacilityId, fetchRole]
+  );
+
+  const clockOut = useCallback(
+    async (method: string = "manual") => {
+      if (!user?.id || !selectedFacilityId) {
+        return { success: false, error: "No facility selected" };
+      }
+      const result = await healthRoleService.clockOut(user.id, selectedFacilityId, method);
+      if (result.success) {
+        await fetchRole();
+      }
+      return result;
+    },
+    [user?.id, selectedFacilityId, fetchRole]
+  );
+
+  const displayName = healthRoleService.getDisplayName(role || "patient");
+  const isPatient = role === "patient" || role === null;
+  const isAdmin = healthRoleService.isAdmin(role || "patient");
+  const isClinical = healthRoleService.isClinical(role || "patient");
+  const isOperational = healthRoleService.isOperational(role || "patient");
 
   return {
-    allRoles,
-    selectedRole,
     role,
+    displayName,
+    isPatient,
+    isAdmin,
+    isClinical,
+    isOperational,
     staffRecord,
-    facilityId,
-    isLoading,
-    isSystemAdmin,
-    isDoctor: role === 'doctor',
-    isNurse: role === 'nurse',
-    isPharmacist: role === 'pharmacist',
-    isLabTech: role === 'lab_technician',
-    isHospitalAdmin: role === 'hospital_admin',
-    isCashier: role === 'cashier',
-    isHRManager: role === 'hr_manager',
-    isAccountant: role === 'accountant',
-    isAmbulanceDriver: role === 'ambulance_driver',
-    isReceptionist: role === 'receptionist',
-    isPatient: !hasAnyRole,
-    canManageStaff: isSystemAdmin || role === 'hospital_admin' || role === 'hr_manager',
-    canManageFacilities: isSystemAdmin,
-    canPrescribe: role === 'doctor',
-    canViewRecords: !!role && role !== 'receptionist',
-    canManageInventory: role === 'pharmacist' || role === 'lab_technician' || role === 'hospital_admin',
-    canProcessPayments: role === 'cashier' || role === 'hospital_admin',
+    allRoles,
+    loading,
     error,
+    selectedRole,
+    selectedFacilityId,
+    refresh: fetchRole,
     selectRole,
     clearRoleSelection,
+    clockIn,
+    clockOut,
   };
 }

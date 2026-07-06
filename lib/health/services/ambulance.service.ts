@@ -1,40 +1,34 @@
-import { supabase } from '@/lib/supabase';
-import { HealthAmbulanceRequest } from '../types';
+import { supabase } from "@/lib/supabase/client";
 
-export class AmbulanceService {
-  static async getRequests(filters?: { status?: HealthAmbulanceRequest['status']; requesterId?: string }) {
-    let query = supabase.from('health_ambulance_requests').select('*');
-    if (filters?.status) query = query.eq('status', filters.status);
-    if (filters?.requesterId) query = query.eq('requester_id', filters.requesterId);
-    const { data, error } = await query.order('created_at', { ascending: false });
-    if (error) throw error;
-    return data as HealthAmbulanceRequest[];
-  }
-
-  static async getRequestById(id: string) {
-    const { data, error } = await supabase.from('health_ambulance_requests').select('*').eq('id', id).single();
-    if (error) throw error;
-    return data as HealthAmbulanceRequest;
-  }
-
-  static async createRequest(request: Omit<HealthAmbulanceRequest, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase.from('health_ambulance_requests').insert(request).select().single();
-    if (error) throw error;
-    return data as HealthAmbulanceRequest;
-  }
-
-  static async updateRequest(id: string, updates: Partial<HealthAmbulanceRequest>) {
-    const { data, error } = await supabase.from('health_ambulance_requests').update(updates).eq('id', id).select().single();
-    if (error) throw error;
-    return data as HealthAmbulanceRequest;
-  }
-
-  static async updateStatus(id: string, status: HealthAmbulanceRequest['status']) {
-    const { data, error } = await supabase.from('health_ambulance_requests')
-      .update({ status, updated_at: new Date().toISOString() }).eq('id', id).select().single();
-    if (error) throw error;
-    return data as HealthAmbulanceRequest;
-  }
+export async function getAmbulanceDispatches(filter: string) {
+  let q = supabase.from("health_ambulance_dispatches").select("*").order("created_at", { ascending: false });
+  if (filter === "active") q = q.in("status", ["dispatched", "en_route", "on_scene", "transporting"]);
+  if (filter === "completed") q = q.eq("status", "completed");
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
 }
 
-export const ambulanceService = new AmbulanceService();
+export async function getDispatchDetail(dispatchId: string) {
+  const { data, error } = await supabase.from("health_ambulance_dispatches").select("*, patient:patient_id(full_name)").eq("id", dispatchId).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createDispatch(payload: any) {
+  const { data, error } = await supabase.from("health_ambulance_dispatches").insert([payload]).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function handoverDispatch(payload: any) {
+  const { data, error } = await supabase.from("health_ambulance_dispatches").update({
+    status: payload.status,
+    receiving_nurse: payload.receiving_nurse,
+    condition_notes: payload.condition_notes,
+    vitals_snapshot: payload.vitals_snapshot,
+    handed_over_at: payload.handed_over_at,
+  }).eq("id", payload.dispatch_id).select().single();
+  if (error) throw error;
+  return data;
+}

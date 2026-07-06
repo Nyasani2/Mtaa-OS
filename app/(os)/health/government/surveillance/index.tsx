@@ -1,210 +1,144 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  RefreshControl, ActivityIndicator, TextInput, Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useGovernment } from "@/lib/health/hooks/useGovernment";
 
-interface Outbreak {
-  id: string;
-  disease: string;
-  severity: "low" | "moderate" | "high" | "critical";
-  affected_counties: string[];
-  cases: number;
-  deaths: number;
-  started_at: string;
-  status: "active" | "contained" | "resolved";
-  response_level: string;
-}
-
-const SEVERITY_COLORS: Record<string, string> = {
-  low: "#10b981",
-  moderate: "#f59e0b",
-  high: "#ef4444",
-  critical: "#7c3aed",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  active: "#ef4444",
-  contained: "#f59e0b",
-  resolved: "#10b981",
-};
-
-export default function DiseaseSurveillance() {
+export default function SurveillanceScreen() {
   const router = useRouter();
-  const { fetchDiseaseSurveillance } = useHealthStore();
+  const { alertId } = useLocalSearchParams();
+  const user = useAuthStore((s) => s.user);
+  const { alerts, outbreaks, loading, error, refreshing, refresh, createOutbreak, dismissAlert } = useGovernment(user?.id);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", severity: "medium", location: "" });
 
-  const [outbreaks, setOutbreaks] = useState<Outbreak[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "active" | "contained" | "resolved">("all");
-
-  const loadData = async () => {
-    const data = await fetchDiseaseSurveillance();
-    setOutbreaks(data || []);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  };
-
-  const filtered = filter === "all" ? outbreaks : outbreaks.filter((o) => o.status === filter);
-
-  const stats = {
-    active: outbreaks.filter((o) => o.status === "active").length,
-    totalCases: outbreaks.reduce((sum, o) => sum + o.cases, 0),
-    totalDeaths: outbreaks.reduce((sum, o) => sum + o.deaths, 0),
-    countiesAffected: new Set(outbreaks.flatMap((o) => o.affected_counties)).size,
-  };
+  const handleSubmit = useCallback(async () => {
+    if (!form.title || !form.description) { Alert.alert("Error", "Title and description required"); return; }
+    const result = await createOutbreak(form);
+    if (result.success) { setShowForm(false); setForm({ title: "", description: "", severity: "medium", location: "" }); }
+    else { Alert.alert("Error", result.error || "Failed"); }
+  }, [form, createOutbreak]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Disease Surveillance</Text>
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="add-circle" size={26} color="#ef4444" />
+    <SafeAreaView style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
+        <Text style={s.headerTitle}>Surveillance</Text>
+        <TouchableOpacity onPress={() => setShowForm(!showForm)} style={s.headerAction}>
+          <Ionicons name={showForm ? "close" : "add"} size={22} color="#fff"/>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#ef4444" }]}>{stats.active}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+      {showForm && (
+        <View style={s.form}>
+          <TextInput style={s.input} placeholder="Outbreak title" placeholderTextColor="#94a3b8" value={form.title} onChangeText={(t) => setForm({ ...form, title: t })} />
+          <TextInput style={[s.input, s.textArea]} placeholder="Description" placeholderTextColor="#94a3b8" multiline numberOfLines={3} value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} />
+          <TextInput style={s.input} placeholder="Location" placeholderTextColor="#94a3b8" value={form.location} onChangeText={(t) => setForm({ ...form, location: t })} />
+          <View style={s.severityRow}>
+            {(["low", "medium", "high", "critical"] as const).map((sev) => (
+              <TouchableOpacity key={sev} style={[s.severityBtn, form.severity === sev && s.severityBtnActive]} onPress={() => setForm({ ...form, severity: sev })}>
+                <Text style={[s.severityText, form.severity === sev && s.severityTextActive]}>{sev}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.totalCases.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Total Cases</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#6b7280" }]}>{stats.totalDeaths.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Deaths</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.countiesAffected}</Text>
-            <Text style={styles.statLabel}>Counties</Text>
-          </View>
+          <TouchableOpacity style={s.submitBtn} onPress={handleSubmit}><Text style={s.submitText}>Report Outbreak</Text></TouchableOpacity>
         </View>
+      )}
 
-        {/* Filters */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-          {(["all", "active", "contained", "resolved"] as const).map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterChip, filter === f && styles.filterChipActive]}
-              onPress={() => setFilter(f)}
-            >
-              <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Outbreaks */}
-        {filtered.map((outbreak) => (
-          <View key={outbreak.id} style={styles.outbreakCard}>
-            <View style={styles.outbreakHeader}>
-              <View style={styles.outbreakTitleRow}>
-                <MaterialCommunityIcons name="virus" size={20} color={SEVERITY_COLORS[outbreak.severity]} />
-                <Text style={styles.outbreakName}>{outbreak.disease}</Text>
-              </View>
-              <View style={styles.outbreakBadges}>
-                <View style={[styles.severityBadge, { backgroundColor: SEVERITY_COLORS[outbreak.severity] + "20" }]}>
-                  <Text style={[styles.severityText, { color: SEVERITY_COLORS[outbreak.severity] }]}>
-                    {outbreak.severity.toUpperCase()}
-                  </Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[outbreak.status] + "20" }]}>
-                  <Text style={[styles.statusText, { color: STATUS_COLORS[outbreak.status] }]}>
-                    {outbreak.status.toUpperCase()}
-                  </Text>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh}/>} contentContainerStyle={s.scrollContent}>
+        {loading && !refreshing ? (
+          <View style={s.center}><ActivityIndicator size="large" color="#2563eb"/><Text style={s.loadingText}>Loading...</Text></View>
+        ) : error ? (
+          <View style={s.center}><Ionicons name="alert-circle" size={48} color="#ef4444"/><Text style={s.errorText}>{error}</Text><TouchableOpacity style={s.retryBtn} onPress={refresh}><Text style={s.retryText}>Retry</Text></TouchableOpacity></View>
+        ) : (
+          <>
+            <Text style={s.sectionTitle}>Active Outbreaks</Text>
+            {outbreaks.length === 0 ? (
+              <View style={s.emptyCard}><Ionicons name="shield-checkmark" size={40} color="#059669"/><Text style={s.emptyText}>No active outbreaks</Text></View>
+            ) : outbreaks.map((o) => (
+              <View key={o.id} style={s.outbreakCard}>
+                <View style={[s.outbreakSeverity, { backgroundColor: getSeverityColor(o.severity) }]} />
+                <View style={s.outbreakContent}>
+                  <Text style={s.outbreakTitle}>{o.title}</Text>
+                  <Text style={s.outbreakDesc}>{o.description}</Text>
+                  <Text style={s.outbreakMeta}>{o.location} · {o.cases || 0} cases · {formatDate(o.created_at)}</Text>
                 </View>
               </View>
-            </View>
-            <View style={styles.outbreakStats}>
-              <View style={styles.outbreakStat}>
-                <Text style={styles.outbreakStatValue}>{outbreak.cases.toLocaleString()}</Text>
-                <Text style={styles.outbreakStatLabel}>Cases</Text>
-              </View>
-              <View style={styles.outbreakStat}>
-                <Text style={[styles.outbreakStatValue, { color: "#6b7280" }]}>{outbreak.deaths.toLocaleString()}</Text>
-                <Text style={styles.outbreakStatLabel}>Deaths</Text>
-              </View>
-              <View style={styles.outbreakStat}>
-                <Text style={styles.outbreakStatValue}>{outbreak.affected_counties.length}</Text>
-                <Text style={styles.outbreakStatLabel}>Counties</Text>
-              </View>
-              <View style={styles.outbreakStat}>
-                <Text style={styles.outbreakStatValue}>{outbreak.response_level}</Text>
-                <Text style={styles.outbreakStatLabel}>Response</Text>
-              </View>
-            </View>
-            <Text style={styles.outbreakDate}>Started: {new Date(outbreak.started_at).toLocaleDateString()}</Text>
-            <Text style={styles.outbreakCounties}>Affected: {outbreak.affected_counties.join(", ")}</Text>
-          </View>
-        ))}
+            ))}
+
+            <Text style={s.sectionTitle}>Alerts</Text>
+            {alerts.length === 0 ? (
+              <View style={s.emptyCard}><Ionicons name="notifications-off" size={40} color="#94a3b8"/><Text style={s.emptyText}>No alerts</Text></View>
+            ) : alerts.map((a) => (
+              <TouchableOpacity key={a.id} style={s.alertCard} onPress={() => Alert.alert(a.title, a.description, [{ text: "Dismiss", onPress: () => dismissAlert(a.id) }, { text: "OK" }])}>
+                <View style={[s.alertSeverity, { backgroundColor: getSeverityColor(a.severity) }]} />
+                <View style={s.alertContent}>
+                  <Text style={s.alertTitle}>{a.title}</Text>
+                  <Text style={s.alertDesc} numberOfLines={2}>{a.description}</Text>
+                  <Text style={s.alertMeta}>{a.location} · {formatDate(a.created_at)}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 12, paddingBottom: 24 },
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  statCard: {
-    flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 10,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  statValue: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  statLabel: { fontSize: 10, color: "#6b7280", marginTop: 2 },
-  filterScroll: { marginBottom: 12 },
-  filterChip: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: "#fff", marginRight: 8, borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  filterChipActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  filterChipText: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-  filterChipTextActive: { color: "#fff" },
-  outbreakCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 10,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-    borderLeftWidth: 4, borderLeftColor: "#ef4444",
-  },
-  outbreakHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
-  outbreakTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  outbreakName: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  outbreakBadges: { flexDirection: "row", gap: 6 },
-  severityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  severityText: { fontSize: 9, fontWeight: "800" },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { fontSize: 9, fontWeight: "800" },
-  outbreakStats: { flexDirection: "row", gap: 16, marginBottom: 10 },
-  outbreakStat: { flex: 1, alignItems: "center" },
-  outbreakStatValue: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  outbreakStatLabel: { fontSize: 10, color: "#6b7280", marginTop: 2 },
-  outbreakDate: { fontSize: 11, color: "#9ca3af" },
-  outbreakCounties: { fontSize: 11, color: "#6b7280", marginTop: 4 },
+function getSeverityColor(severity: string): string {
+  switch (severity) {
+    case "critical": return "#dc2626";
+    case "high": return "#ea580c";
+    case "medium": return "#f59e0b";
+    default: return "#2563eb";
+  }
+}
+
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  header: { backgroundColor: "#0f3d5e", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, flexDirection: "row", alignItems: "center" },
+  backBtn: { padding: 4, marginRight: 12 },
+  headerTitle: { fontSize: 20, fontWeight: "700", color: "#fff", flex: 1 },
+  headerAction: { width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.15)", justifyContent: "center", alignItems: "center" },
+  form: { backgroundColor: "#fff", margin: 16, padding: 16, borderRadius: 14, borderWidth: 1, borderColor: "#e2e8f0" },
+  input: { borderWidth: 1, borderColor: "#e2e8f0", borderRadius: 10, padding: 12, fontSize: 14, color: "#1e293b", marginBottom: 10, backgroundColor: "#f8fafc" },
+  textArea: { height: 80, textAlignVertical: "top" },
+  severityRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  severityBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center", backgroundColor: "#f1f5f9" },
+  severityBtnActive: { backgroundColor: "#0f3d5e" },
+  severityText: { fontSize: 12, fontWeight: "600", color: "#64748b" },
+  severityTextActive: { color: "#fff" },
+  submitBtn: { backgroundColor: "#0f3d5e", paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  submitText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 15, color: "#64748b" },
+  errorText: { marginTop: 12, fontSize: 15, color: "#ef4444", textAlign: "center" },
+  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: "#0f3d5e", borderRadius: 10 },
+  retryText: { color: "#fff", fontWeight: "600" },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#1e293b", marginBottom: 12, marginTop: 8 },
+  emptyCard: { backgroundColor: "#fff", borderRadius: 14, padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#e2e8f0", marginBottom: 16 },
+  emptyText: { fontSize: 14, color: "#94a3b8", marginTop: 8 },
+  outbreakCard: { flexDirection: "row", backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0" },
+  outbreakSeverity: { width: 4, height: 60, borderRadius: 2, marginRight: 12 },
+  outbreakContent: { flex: 1 },
+  outbreakTitle: { fontSize: 15, fontWeight: "700", color: "#1e293b" },
+  outbreakDesc: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  outbreakMeta: { fontSize: 11, color: "#94a3b8", marginTop: 4 },
+  alertCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0" },
+  alertSeverity: { width: 4, height: 40, borderRadius: 2, marginRight: 12 },
+  alertContent: { flex: 1 },
+  alertTitle: { fontSize: 14, fontWeight: "700", color: "#1e293b" },
+  alertDesc: { fontSize: 12, color: "#64748b", marginTop: 2 },
+  alertMeta: { fontSize: 11, color: "#94a3b8", marginTop: 4 },
 });

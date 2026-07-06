@@ -1,174 +1,194 @@
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
 
-const DISCHARGE_TYPES = ["Home", "Transfer", "AMA", "Deceased", "Rehabilitation"];
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useHospitalAdmin } from '@/lib/health/hooks/useHospitalAdmin';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { LogOut, Search, X, Calendar, FileText, User, BedDouble, Check } from 'lucide-react-native';
 
-export default function Discharges() {
+const COLORS = {
+  primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',
+  danger: '#EF4444', text: '#1F2937', textLight: '#6B7280', border: '#E5E7EB',
+  background: '#F3F4F6', white: '#FFFFFF'
+};
+
+export default function DischargesScreen() {
   const router = useRouter();
-  const { bedId } = useLocalSearchParams<{ bedId?: string }>();
-  const { dischargePatient } = useHealthStore();
+  const { selectedFacilityId } = useHealthRole();
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showDischargeModal, setShowDischargeModal] = useState(false);
+  const [selectedAdmission, setSelectedAdmission] = useState<any>(null);
+  const [dischargeForm, setDischargeForm] = useState({ discharge_type: 'regular', diagnosis: '', medications: '', follow_up_date: '', notes: '' });
+  const { discharges, activeAdmissions, loading, error, refresh, dischargePatient } = useHospitalAdmin(selectedFacilityId);
 
-  const [patientId, setPatientId] = useState("");
-  const [patientName, setPatientName] = useState("");
-  const [admissionDate, setAdmissionDate] = useState("");
-  const [dischargeType, setDischargeType] = useState("Home");
-  const [dischargeDiagnosis, setDischargeDiagnosis] = useState("");
-  const [medications, setMedications] = useState("");
-  const [followUpDate, setFollowUpDate] = useState("");
-  const [followUpDepartment, setFollowUpDepartment] = useState("");
-  const [dischargeNotes, setDischargeNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
-  const handleDischarge = async () => {
-    if (!patientId || !patientName || !dischargeDiagnosis) {
-      Alert.alert("Missing Fields", "Please fill in all required fields.");
-      return;
-    }
-    setSubmitting(true);
+  const filteredDischarges = discharges?.filter((d: any) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return d.patient_name?.toLowerCase().includes(q) || d.diagnosis?.toLowerCase().includes(q) || d.ward?.toLowerCase().includes(q);
+  });
+
+  const handleInitiateDischarge = useCallback((admission: any) => { setSelectedAdmission(admission); setShowDischargeModal(true); }, []);
+
+  const handleDischarge = useCallback(async () => {
+    if (!dischargeForm.diagnosis.trim()) { Alert.alert('Error', 'Final diagnosis is required'); return; }
     try {
-      await dischargePatient({
-        patient_id: patientId,
-        patient_name: patientName,
-        admission_date: admissionDate,
-        discharge_type: dischargeType,
-        discharge_diagnosis: dischargeDiagnosis,
-        medications_on_discharge: medications,
-        follow_up_date: followUpDate,
-        follow_up_department: followUpDepartment,
-        discharge_notes: dischargeNotes,
-        bed_id: bedId,
+      await dischargePatient(selectedAdmission.id, selectedAdmission.patient_id, {
+        discharge_type: dischargeForm.discharge_type,
+        diagnosis: dischargeForm.diagnosis,
+        medications: dischargeForm.medications.split(',').map((m: string) => m.trim()).filter(Boolean),
+        follow_up_date: dischargeForm.follow_up_date || null,
+        notes: dischargeForm.notes
       });
-      Alert.alert("Success", "Patient discharged successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (e) {
-      Alert.alert("Error", "Failed to discharge patient.");
-    } finally {
-      setSubmitting(false);
-    }
+      setShowDischargeModal(false);
+      setDischargeForm({ discharge_type: 'regular', diagnosis: '', medications: '', follow_up_date: '', notes: '' });
+      Alert.alert('Success', 'Patient discharged successfully');
+    } catch (err: any) { Alert.alert('Error', err.message || 'Failed to discharge patient'); }
+  }, [dischargeForm, selectedAdmission, dischargePatient]);
+
+  const getDischargeTypeColor = (type: string) => {
+    switch (type) { case 'regular': return COLORS.success; case 'transferred': return COLORS.primary; case 'against_advice': return COLORS.warning; case 'deceased': return COLORS.danger; default: return COLORS.textLight; }
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading discharges...</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+        <Text style={styles.headerTitle}>Discharges</Text>
+        <TouchableOpacity style={styles.newButton} onPress={() => {
+          if (activeAdmissions?.length === 0) { Alert.alert('No Admissions', 'There are no active admissions to discharge.'); return; }
+          Alert.alert('Select Patient', 'Choose a patient to discharge:', activeAdmissions?.map((a: any) => ({
+            text: `${a.patient_name} (Bed ${a.bed_number})`, onPress: () => handleInitiateDischarge(a)
+          })) || []);
+        }}>
+          <LogOut size={18} color={COLORS.white} />
+          <Text style={styles.newButtonText}>New Discharge</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Discharge Patient</Text>
-        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Patient Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Patient Information</Text>
-          <TextInput style={styles.input} placeholder="Patient ID / MRN *" value={patientId} onChangeText={setPatientId} />
-          <TextInput style={styles.input} placeholder="Patient Name *" value={patientName} onChangeText={setPatientName} />
-          <TextInput style={styles.input} placeholder="Admission Date (DD/MM/YYYY)" value={admissionDate} onChangeText={setAdmissionDate} />
-        </View>
+      <View style={styles.searchBar}>
+        <Search size={18} color={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search discharges..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
+      </View>
 
-        {/* Discharge Type */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Discharge Type</Text>
-          <View style={styles.chipWrap}>
-            {DISCHARGE_TYPES.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.chip, dischargeType === t && styles.chipActive]}
-                onPress={() => setDischargeType(t)}
-              >
-                <Text style={[styles.chipText, dischargeType === t && styles.chipTextActive]}>{t}</Text>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {filteredDischarges?.length === 0 ? (
+          <View style={styles.emptyState}><LogOut size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No discharges match your search' : 'No discharge records yet'}</Text></View>
+        ) : (
+          filteredDischarges?.map((discharge: any) => (
+            <TouchableOpacity key={discharge.id} style={styles.dischargeCard} onPress={() => router.push(`/(os)/health/hospital-admin/discharges?id=${discharge.id}`)}>
+              <View style={styles.dischargeHeader}>
+                <View style={styles.patientInfo}>
+                  <View style={[styles.avatar, { backgroundColor: COLORS.primaryLight }]}>
+                    <Text style={styles.avatarText}>{discharge.patient_name?.charAt(0) || '?'}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.patientName}>{discharge.patient_name}</Text>
+                    <Text style={styles.patientDetail}>Bed {discharge.bed_number} - {discharge.ward}</Text>
+                  </View>
+                </View>
+                <View style={[styles.typeBadge, { backgroundColor: getDischargeTypeColor(discharge.discharge_type) + '20' }]}>
+                  <Text style={[styles.typeText, { color: getDischargeTypeColor(discharge.discharge_type) }]}>{discharge.discharge_type}</Text>
+                </View>
+              </View>
+              <View style={styles.dischargeDetails}>
+                <View style={styles.detailRow}><Calendar size={14} color={COLORS.textLight} /><Text style={styles.detailText}>{new Date(discharge.discharge_date).toLocaleDateString()}</Text></View>
+                <View style={styles.detailRow}><FileText size={14} color={COLORS.textLight} /><Text style={styles.detailText}>{discharge.diagnosis}</Text></View>
+                {discharge.medications?.length > 0 && (
+                  <View style={styles.detailRow}><Text style={styles.medsLabel}>Meds:</Text><Text style={styles.detailText}>{discharge.medications.join(', ')}</Text></View>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      <Modal visible={showDischargeModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Discharge {selectedAdmission?.patient_name}</Text>
+              <TouchableOpacity onPress={() => setShowDischargeModal(false)}><X size={24} color={COLORS.text} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Discharge Type</Text>
+              <View style={styles.typeRow}>
+                {(['regular', 'against_advice', 'transferred', 'deceased'] as const).map((type) => (
+                  <TouchableOpacity key={type} style={[styles.typeButton, dischargeForm.discharge_type === type && styles.typeButtonActive]} onPress={() => setDischargeForm({ ...dischargeForm, discharge_type: type })}>
+                    <Text style={[styles.typeButtonText, dischargeForm.discharge_type === type && styles.typeButtonTextActive]}>{type.replace('_', ' ')}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.inputLabel}>Final Diagnosis *</Text>
+              <TextInput style={styles.input} placeholder="Final diagnosis" value={dischargeForm.diagnosis} onChangeText={(t) => setDischargeForm({ ...dischargeForm, diagnosis: t })} />
+              <Text style={styles.inputLabel}>Medications (comma separated)</Text>
+              <TextInput style={styles.input} placeholder="Paracetamol, Amoxicillin..." value={dischargeForm.medications} onChangeText={(t) => setDischargeForm({ ...dischargeForm, medications: t })} />
+              <Text style={styles.inputLabel}>Follow-up Date</Text>
+              <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={dischargeForm.follow_up_date} onChangeText={(t) => setDischargeForm({ ...dischargeForm, follow_up_date: t })} />
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput style={[styles.input, styles.textArea]} placeholder="Additional notes..." value={dischargeForm.notes} onChangeText={(t) => setDischargeForm({ ...dischargeForm, notes: t })} multiline numberOfLines={3} />
+              <TouchableOpacity style={styles.modalSubmit} onPress={handleDischarge}>
+                <Text style={styles.modalSubmitText}>Complete Discharge</Text>
               </TouchableOpacity>
-            ))}
+            </ScrollView>
           </View>
         </View>
-
-        {/* Clinical */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Clinical Summary</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Discharge Diagnosis / Final Diagnosis *"
-            value={dischargeDiagnosis}
-            onChangeText={setDischargeDiagnosis}
-            multiline
-            numberOfLines={3}
-          />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Medications on Discharge (one per line)"
-            value={medications}
-            onChangeText={setMedications}
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-
-        {/* Follow-up */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Follow-up Plan</Text>
-          <TextInput style={styles.input} placeholder="Follow-up Date (DD/MM/YYYY)" value={followUpDate} onChangeText={setFollowUpDate} />
-          <TextInput style={styles.input} placeholder="Follow-up Department / Clinic" value={followUpDepartment} onChangeText={setFollowUpDepartment} />
-        </View>
-
-        {/* Notes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Discharge Notes</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Any additional instructions or notes..."
-            value={dischargeNotes}
-            onChangeText={setDischargeNotes}
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
-          onPress={handleDischarge}
-          disabled={submitting}
-        >
-          <Text style={styles.submitBtnText}>{submitting ? "Processing..." : "Complete Discharge"}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 16, paddingBottom: 40 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151", marginBottom: 10 },
-  input: {
-    backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: "#111827", borderWidth: 1, borderColor: "#e5e7eb", marginBottom: 10,
-  },
-  textArea: { height: 90, textAlignVertical: "top", paddingTop: 12 },
-  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  chipActive: { backgroundColor: "#f59e0b", borderColor: "#f59e0b" },
-  chipText: { fontSize: 12, color: "#6b7280", fontWeight: "500" },
-  chipTextActive: { color: "#fff", fontWeight: "700" },
-  submitBtn: {
-    backgroundColor: "#f59e0b", borderRadius: 14, paddingVertical: 16,
-    alignItems: "center", marginTop: 8,
-  },
-  submitBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, color: COLORS.textLight },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+  newButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.success, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  newButtonText: { color: COLORS.white, fontWeight: '600', marginLeft: 6 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.white, margin: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: COLORS.text },
+  dischargeCard: { backgroundColor: COLORS.white, marginHorizontal: 12, marginBottom: 10, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border },
+  dischargeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  patientInfo: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  avatarText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
+  patientName: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  patientDetail: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+  typeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  typeText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  dischargeDetails: { marginLeft: 52 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  detailText: { marginLeft: 6, fontSize: 13, color: COLORS.textLight },
+  medsLabel: { fontSize: 12, fontWeight: '600', color: COLORS.text, marginRight: 4 },
+  emptyState: { alignItems: 'center', padding: 40 },
+  emptyText: { marginTop: 12, color: COLORS.textLight, fontSize: 14 },
+  bottomPadding: { height: 40 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  modalBody: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 6, marginTop: 12 },
+  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.text },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  typeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  typeButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: COLORS.border },
+  typeButtonActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
+  typeButtonText: { fontSize: 12, color: COLORS.textLight, textTransform: 'capitalize' },
+  typeButtonTextActive: { color: COLORS.primary, fontWeight: '600' },
+  modalSubmit: { backgroundColor: COLORS.success, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  modalSubmitText: { color: COLORS.white, fontWeight: '700', fontSize: 16 }
 });
