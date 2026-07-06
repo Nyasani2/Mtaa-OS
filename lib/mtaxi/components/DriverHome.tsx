@@ -2,7 +2,7 @@
 import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { Power, DollarSign, List, TrendingUp, MapPin, Star, Car, ChevronRight } from "lucide-react-native";
+import { Power, DollarSign, List, TrendingUp, Star, Car, ChevronRight, UserPlus } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";
 import { useAuth } from "@/lib/auth/useAuthStore";
 
@@ -11,20 +11,19 @@ export default function DriverHome() {
   const { user } = useAuth();
   const { driver, earnings, loading, error, goOnline, goOffline, fetchEarnings } = useDriver(user?.id || "");
 
-  useEffect(() => {
-    if (driver) fetchEarnings();
-  }, [driver]);
+  useEffect(() => { if (driver) fetchEarnings(); }, [driver]);
 
   const toggleOnline = () => {
-    if (driver?.is_online) {
-      goOffline();
-    } else {
-      goOnline(-1.2921, 36.8219);
-    }
+    if (driver?.is_online) { goOffline(); } else { goOnline(-1.2921, 36.8219); }
   };
 
   if (loading && !driver) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#f59e0b" /><Text style={{ marginTop: 12, color: "#94a3b8" }}>Loading driver profile...</Text></View>;
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#f59e0b" />
+        <Text style={{ marginTop: 12, color: "#94a3b8" }}>Loading driver profile...</Text>
+      </View>
+    );
   }
 
   if (!driver) {
@@ -32,7 +31,16 @@ export default function DriverHome() {
       <View style={styles.center}>
         <Car size={48} color="#64748b" />
         <Text style={{ fontSize: 18, color: "#94a3b8", marginTop: 12 }}>Not registered as a driver</Text>
-        <Text style={{ fontSize: 14, color: "#64748b", marginTop: 4 }}>Apply to become an MTaxi driver</Text>
+        <Text style={{ fontSize: 14, color: "#64748b", marginTop: 4, textAlign: "center", paddingHorizontal: 40 }}>
+          Earn money by driving with MTaxi. Complete your application in minutes.
+        </Text>
+        <TouchableOpacity style={styles.applyBtn} onPress={() => router.push("/(mtaxi)/driver/onboarding")}>
+          <UserPlus size={20} color="#fff" />
+          <Text style={styles.applyBtnText}>Apply to Drive</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.learnMoreBtn} onPress={() => router.push("/(mtaxi)/driver-earnings")}>
+          <Text style={styles.learnMoreText}>Learn about driver earnings →</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -48,7 +56,7 @@ export default function DriverHome() {
       </View>
 
       <View style={styles.earningsCard}>
-        <Text style={styles.earningsTitle}>Today's Earnings</Text>
+        <Text style={styles.earningsTitle}>Today&apos;s Earnings</Text>
         <Text style={styles.earningsAmount}>${earnings.today.toFixed(2)}</Text>
         <Text style={styles.earningsDetail}>{earnings.tripsToday} trips completed</Text>
         <View style={styles.earningsRow}>
@@ -73,7 +81,6 @@ export default function DriverHome() {
           </View>
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-ride")}>
           <Car size={20} color="#3b82f6" />
           <View style={{ flex: 1, marginLeft: 12 }}>
@@ -82,7 +89,6 @@ export default function DriverHome() {
           </View>
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-earnings")}>
           <TrendingUp size={20} color="#10b981" />
           <View style={{ flex: 1, marginLeft: 12 }}>
@@ -116,7 +122,7 @@ export default function DriverHome() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0f172a" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f172a" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0f172a", padding: 24 },
   header: { padding: 20, paddingTop: 60, backgroundColor: "#1e293b" },
   greeting: { fontSize: 24, fontWeight: "700", color: "#fff" },
   onlineRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
@@ -137,5 +143,8 @@ const styles = StyleSheet.create({
   profileCard: { backgroundColor: "#1e293b", borderRadius: 10, padding: 16 },
   profileRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6 },
   profileText: { marginLeft: 10, fontSize: 14, color: "#e2e8f0" },
+  applyBtn: { flexDirection: "row", alignItems: "center", backgroundColor: "#f59e0b", paddingHorizontal: 28, paddingVertical: 14, borderRadius: 12, marginTop: 24, gap: 10 },
+  applyBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  learnMoreBtn: { marginTop: 16, padding: 10 },
+  learnMoreText: { color: "#3b82f6", fontSize: 14, fontWeight: "600" },
 });
-

@@ -65,6 +65,17 @@ export default function BodaRequest() {
     }
   };
 
+  const handleVehicleSelect = (type: VehicleType) => {
+    setSelectedVehicle(type);
+    setFare(null);
+  };
+
+  const getButtonText = () => {
+    if (loading) return "Requesting...";
+    if (!fare) return `Request ${selectedVehicle}`;
+    return `Request ${selectedVehicle} — $${fare.total.toFixed(2)}`;
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.header}>
@@ -99,11 +110,9 @@ export default function BodaRequest() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select Boda Type</Text>
         {BODA_TYPES.map((v) => (
-          <TouchableOpacity
-            key={v.type}
+          <TouchableOpacity key={v.type}
             style={[styles.vehicleCard, selectedVehicle === v.type && { borderColor: v.color, borderWidth: 2 }]}
-            onPress={() => { setSelectedVehicle(v.type); setFare(null); }}
-          >
+            onPress={() => handleVehicleSelect(v.type)}>
             <v.icon size={24} color={v.color} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.vehicleLabel}>{v.label}</Text>
@@ -118,11 +127,9 @@ export default function BodaRequest() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment Method</Text>
         {PAYMENT_METHODS.map((p) => (
-          <TouchableOpacity
-            key={p.key}
+          <TouchableOpacity key={p.key}
             style={[styles.paymentCard, paymentMethod === p.key && { borderColor: "#f59e0b", borderWidth: 2 }]}
-            onPress={() => setPaymentMethod(p.key)}
-          >
+            onPress={() => setPaymentMethod(p.key)}>
             <p.icon size={20} color="#f59e0b" />
             <Text style={styles.paymentLabel}>{p.label}</Text>
             {paymentMethod === p.key && <View style={[styles.check, { backgroundColor: "#f59e0b" }]}><Text style={{ color: "#fff", fontSize: 12 }}>✓</Text></View>}
@@ -131,7 +138,7 @@ export default function BodaRequest() {
       </View>
 
       <TouchableOpacity style={[styles.requestBtn, (!fare || loading) && { opacity: 0.5 }]} onPress={handleRequest} disabled={!fare || loading}>
-        <Text style={styles.requestBtnText}>{loading ? "Requesting..." : `Request ${selectedVehicle} — $${fare?.total.toFixed(2) || "--"}`}</Text>
+        <Text style={styles.requestBtnText}>{getButtonText()}</Text>
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -166,4 +173,3 @@ const styles = StyleSheet.create({
   requestBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
   errorText: { color: "#ef4444", textAlign: "center", marginTop: 8 },
 });
-
