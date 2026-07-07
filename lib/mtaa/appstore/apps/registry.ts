@@ -1,5 +1,4 @@
-export const appRegistry: any[] = [];
-
-// Garage OS
+import { AppManifest } from '@/types/module.types';
 import { garageManifest } from './garage/manifest';
-appRegistry.push(garageManifest);
+
+export const appRegistry: AppManifest[] = [garageManifest];
