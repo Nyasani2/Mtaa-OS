@@ -26,3 +26,7 @@ export function registerAppStoreApp(manifest: AppManifest): void {
 export function unregisterAppStoreApp(id: string): boolean {
   return appRegistry.delete(id);
 }
+
+// Garage OS registration
+import { garageManifest } from './apps/garage/manifest';
+registerAppStoreApp(garageManifest);

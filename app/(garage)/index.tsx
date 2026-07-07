@@ -1,250 +1,464 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import {
+  Car,
+  Video,
+  AlertTriangle,
+  Activity,
+  Plus,
+  Camera,
+  Wrench,
+  ClipboardList,
+  Truck,
+  Package,
+  User,
+  TrendingUp,
+  Settings,
+  ChevronRight,
+  QrCode,
+  BarChart3,
+  Shield,
+  Clock,
+} from 'lucide-react-native';
 import { useDeviceManager } from '@/lib/hooks/useDeviceManager';
 import { useRecording } from '@/lib/hooks/useRecording';
 import { useIncident } from '@/lib/hooks/useIncident';
-import CameraCard from '@/lib/components/device/CameraCard';
-import RecordingCard from '@/lib/components/device/RecordingCard';
+import { useGarage } from '@/lib/hooks/useGarage';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-export default function GarageScreen() {
+/* ─────────────────────────── Types ─────────────────────────── */
+
+type TabKey = 'vehicles' | 'recordings' | 'incidents' | 'diagnostics';
+
+/* ─────────────────────────── Main Screen ─────────────────────────── */
+
+export default function GarageHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { devices, vehicleDevices, loadDevices, loadVehicleDevices, isLoading: deviceLoading, error: deviceError } = useDeviceManager();
-  const { recordings, loadRecordings, isLoading: recLoading, error: recError } = useRecording();
-  const { incidents, loadIncidents, getIncidentStats, isLoading: incidentLoading, error: incidentError } = useIncident();
+  const { garage, loading: garageLoading, loadGarage } = useGarage();
 
+  const [activeTab, setActiveTab] = useState<TabKey>('vehicles');
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'vehicles' | 'recordings' | 'incidents' | 'diagnostics'>('vehicles');
-  const [stats, setStats] = useState({ open: 0, critical: 0, today: 0 });
 
-  useEffect(() => {
-    loadDevices({ status: 'online' });
-    loadRecordings({ limit: 10 });
-    loadIncidents({ limit: 10 });
-    getIncidentStats().then(setStats).catch(() => setStats({ open: 0, critical: 0, today: 0 }));
-  }, []);
+  /* ── Device / Recording / Incident hooks ── */
+  const {
+    devices,
+    isLoading: deviceLoading,
+    error: deviceError,
+    loadDevices,
+  } = useDeviceManager();
 
-  const onRefresh = async () => {
+  const {
+    recordings,
+    isLoading: recordingLoading,
+    error: recordingError,
+    loadRecordings,
+  } = useRecording();
+
+  const {
+    incidents,
+    stats: incidentStats,
+    isLoading: incidentLoading,
+    error: incidentError,
+    loadIncidents,
+    getIncidentStats,
+  } = useIncident();
+
+  /* ── Load data ── */
+  const refreshAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.allSettled([
+    await Promise.all([
+      loadGarage(),
       loadDevices({ status: 'online' }),
       loadRecordings({ limit: 10 }),
       loadIncidents({ limit: 10 }),
-      getIncidentStats().then(setStats).catch(() => setStats({ open: 0, critical: 0, today: 0 })),
+      getIncidentStats(),
     ]);
     setRefreshing(false);
-  };
+  }, [loadGarage, loadDevices, loadRecordings, loadIncidents, getIncidentStats]);
 
-  const handleViewDiagnostics = (vehicleId: string) => {
-    router.push(`/garage/diagnostics/${vehicleId}`);
-  };
+  useEffect(() => {
+    refreshAll();
+  }, []);
 
-  const handleViewRecording = (recordingId: string) => {
-    router.push(`/device/recording/${recordingId}`);
-  };
+  /* ── Stats ── */
+  const stats = [
+    { label: 'Devices', value: devices.length, icon: Car, color: '#3b82f6' },
+    { label: 'Recordings', value: recordings.length, icon: Video, color: '#8b5cf6' },
+    { label: 'Incidents', value: incidents.length, icon: AlertTriangle, color: '#ef4444' },
+    { label: 'Open Cases', value: incidentStats?.open || 0, icon: Activity, color: '#f59e0b' },
+  ];
 
-  const handleReportIncident = () => {
-    router.push('/garage/report-incident');
-  };
+  /* ── Quick Actions ── */
+  const quickActions = [
+    {
+      label: 'New Work Order',
+      icon: ClipboardList,
+      color: '#3b82f6',
+      route: '/(garage)/appointments',
+      badge: null,
+    },
+    {
+      label: 'Diagnostics',
+      icon: Wrench,
+      color: '#8b5cf6',
+      route: '/(garage)/diagnostics',
+      badge: null,
+    },
+    {
+      label: 'Inventory',
+      icon: Package,
+      color: '#22c55e',
+      route: '/(garage)/inventory',
+      badge: null,
+    },
+    {
+      label: 'Fleet',
+      icon: Truck,
+      color: '#f59e0b',
+      route: '/(garage)/fleet',
+      badge: null,
+    },
+    {
+      label: 'Dashboard',
+      icon: BarChart3,
+      color: '#06b6d4',
+      route: '/(garage)/dashboard',
+      badge: null,
+    },
+    {
+      label: 'My Portal',
+      icon: User,
+      color: '#ec4899',
+      route: '/(garage)/customer',
+      badge: null,
+    },
+  ];
 
-  return (
-    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🔧 Garage</Text>
-        <Text style={styles.headerSubtitle}>Vehicle diagnostics & camera management</Text>
+  /* ── Tab Content ── */
+  const renderVehiclesTab = () => {
+    if (deviceLoading && devices.length === 0) {
+      return <ActivityIndicator style={styles.tabSpinner} color="#3b82f6" />;
+    }
+    if (deviceError) {
+      return (
+        <View style={styles.errorBox}>
+          <AlertTriangle size={20} color="#ef4444" />
+          <Text style={styles.errorText}>{deviceError}</Text>
+        </View>
+      );
+    }
+    if (devices.length === 0) {
+      return (
+        <View style={styles.emptyTab}>
+          <Car size={40} color="#d1d5db" />
+          <Text style={styles.emptyTitle}>No vehicle cameras registered</Text>
+          <Text style={styles.emptySubtitle}>Add a dashcam or security camera to monitor your vehicle.</Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => router.push('/(garage)/onboarding')}
+          >
+            <Plus size={16} color="#fff" />
+            <Text style={styles.emptyButtonText}>Register Device</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.listContainer}>
+        {devices.map((device) => (
+          <View key={device.id} style={styles.deviceCard}>
+            <View style={styles.deviceHeader}>
+              <Car size={18} color="#3b82f6" />
+              <Text style={styles.deviceName}>{device.name || 'Unnamed Device'}</Text>
+              <View style={[styles.deviceStatus, { backgroundColor: device.status === 'online' ? '#dcfce7' : '#fee2e2' }]}>
+                <View style={[styles.statusDot, { backgroundColor: device.status === 'online' ? '#22c55e' : '#ef4444' }]} />
+                <Text style={[styles.statusLabel, { color: device.status === 'online' ? '#16a34a' : '#dc2626' }]}>
+                  {device.status || 'offline'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.deviceMeta}>{device.model || 'Unknown model'} · {device.location || 'No location'}</Text>
+          </View>
+        ))}
       </View>
+    );
+  };
 
-      <View style={styles.statsRow}>
-        <StatBox label="Vehicles" value={devices.length} color="#3b82f6" icon="🚗" />
-        <StatBox label="Recordings" value={recordings.length} color="#8b5cf6" icon="📹" />
-        <StatBox label="Incidents" value={stats.open} color="#ef4444" icon="⚠️" />
-        <StatBox label="Critical" value={stats.critical} color="#dc2626" icon="🚨" />
-      </View>
-
-      <View style={styles.tabRow}>
-        {(['vehicles', 'recordings', 'incidents', 'diagnostics'] as const).map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-              {tab === 'vehicles' ? '🚗 Vehicles' : tab === 'recordings' ? '📹 Recordings' : tab === 'incidents' ? '⚠️ Incidents' : '🔍 Diagnostics'}
-            </Text>
+  const renderRecordingsTab = () => {
+    if (recordingLoading && recordings.length === 0) {
+      return <ActivityIndicator style={styles.tabSpinner} color="#3b82f6" />;
+    }
+    if (recordingError) {
+      return (
+        <View style={styles.errorBox}>
+          <AlertTriangle size={20} color="#ef4444" />
+          <Text style={styles.errorText}>{recordingError}</Text>
+        </View>
+      );
+    }
+    if (recordings.length === 0) {
+      return (
+        <View style={styles.emptyTab}>
+          <Video size={40} color="#d1d5db" />
+          <Text style={styles.emptyTitle}>No recordings yet</Text>
+          <Text style={styles.emptySubtitle}>Recordings from your cameras will appear here.</Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.listContainer}>
+        {recordings.map((rec) => (
+          <TouchableOpacity key={rec.id} style={styles.recordingCard}>
+            <Video size={18} color="#8b5cf6" />
+            <View style={styles.recordingInfo}>
+              <Text style={styles.recordingTitle}>{rec.title || 'Recording'}</Text>
+              <Text style={styles.recordingMeta}>{rec.duration || '—'} · {rec.file_size || '—'}</Text>
+            </View>
+            <ChevronRight size={16} color="#9ca3af" />
           </TouchableOpacity>
         ))}
       </View>
+    );
+  };
 
-      {activeTab === 'vehicles' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vehicle Cameras</Text>
-          {deviceError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️ {deviceError}</Text>
-            </View>
-          )}
-          {deviceLoading && devices.length === 0 ? (
-            <ActivityIndicator color="#3b82f6" />
-          ) : devices.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No vehicle cameras registered</Text>
-              <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/device/register')}>
-                <Text style={styles.actionBtnText}>+ Register Device</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            devices.map(device => (
-              <CameraCard
-                key={device.id}
-                device={device}
-                onPress={() => handleViewDiagnostics(device.id)}
-                onSettings={() => router.push(`/device/${device.id}`)}
-              />
-            ))
-          )}
+  const renderIncidentsTab = () => {
+    if (incidentLoading && incidents.length === 0) {
+      return <ActivityIndicator style={styles.tabSpinner} color="#3b82f6" />;
+    }
+    if (incidentError) {
+      return (
+        <View style={styles.errorBox}>
+          <AlertTriangle size={20} color="#ef4444" />
+          <Text style={styles.errorText}>{incidentError}</Text>
         </View>
-      )}
-
-      {activeTab === 'recordings' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Recordings</Text>
-          {recError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️ {recError}</Text>
-            </View>
-          )}
-          {recLoading && recordings.length === 0 ? (
-            <ActivityIndicator color="#3b82f6" />
-          ) : recordings.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No recordings found</Text>
-              <Text style={styles.emptySubtext}>Recordings appear automatically when trips start</Text>
-            </View>
-          ) : (
-            recordings.map(rec => (
-              <RecordingCard
-                key={rec.id}
-                recording={rec}
-                onPress={() => handleViewRecording(rec.id)}
-                onDownload={() => Alert.alert('Download', 'Downloading recording...')}
-                onShare={() => Alert.alert('Share', 'Generating share link...')}
-                onDelete={() => Alert.alert('Delete', 'Are you sure?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: () => {} },
-                ])}
-              />
-            ))
-          )}
-        </View>
-      )}
-
-      {activeTab === 'incidents' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Incidents</Text>
-          {incidentError && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠️ {incidentError}</Text>
-            </View>
-          )}
-          {incidents.length === 0 ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No incidents reported</Text>
-            </View>
-          ) : (
-            incidents.map(incident => (
-              <TouchableOpacity key={incident.id} style={styles.incidentCard} onPress={() => router.push(`/incident/${incident.id}`)}>
-                <View style={styles.incidentHeader}>
-                  <Text style={styles.incidentIcon}>💥</Text>
-                  <View style={styles.incidentInfo}>
-                    <Text style={styles.incidentTitle} numberOfLines={1}>{incident.title}</Text>
-                    <Text style={styles.incidentType}>{incident.incident_type} · {incident.severity}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: incident.status === 'open' ? '#ef4444' : '#22c55e' }]}>
-                    <Text style={styles.statusText}>{incident.status}</Text>
-                  </View>
-                </View>
-                <Text style={styles.incidentTime}>{new Date(incident.created_at).toLocaleString()}</Text>
-              </TouchableOpacity>
-            ))
-          )}
-          <TouchableOpacity style={styles.reportBtn} onPress={handleReportIncident}>
-            <Text style={styles.reportText}>+ Report Incident</Text>
+      );
+    }
+    if (incidents.length === 0) {
+      return (
+        <View style={styles.emptyTab}>
+          <Shield size={40} color="#d1d5db" />
+          <Text style={styles.emptyTitle}>No incidents reported</Text>
+          <Text style={styles.emptySubtitle}>Your vehicles are safe. Incidents will appear here if detected.</Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => router.push('/(garage)/appointments')}
+          >
+            <Plus size={16} color="#fff" />
+            <Text style={styles.emptyButtonText}>Report Incident</Text>
           </TouchableOpacity>
         </View>
-      )}
+      );
+    }
+    return (
+      <View style={styles.listContainer}>
+        {incidents.map((inc) => (
+          <View key={inc.id} style={styles.incidentCard}>
+            <AlertTriangle size={18} color="#ef4444" />
+            <View style={styles.incidentInfo}>
+              <Text style={styles.incidentTitle}>{inc.type || 'Incident'}</Text>
+              <Text style={styles.incidentMeta}>{inc.severity || 'unknown severity'} · {inc.status || 'open'}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
-      {activeTab === 'diagnostics' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>OBD-II Diagnostics</Text>
-          <View style={styles.diagCard}>
-            <Text style={styles.diagIcon}>🔌</Text>
-            <Text style={styles.diagTitle}>Connect OBD-II Scanner</Text>
-            <Text style={styles.diagText}>Plug in your OBD-II device to read fault codes, monitor engine health, and view real-time vehicle data.</Text>
-            <TouchableOpacity style={styles.diagBtn} onPress={() => Alert.alert('OBD-II', 'Scanning for OBD-II devices...')}>
-              <Text style={styles.diagBtnText}>Scan for Devices</Text>
-            </TouchableOpacity>
+  const renderDiagnosticsTab = () => (
+    <View style={styles.emptyTab}>
+      <Wrench size={40} color="#d1d5db" />
+      <Text style={styles.emptyTitle}>OBD-II Diagnostics</Text>
+      <Text style={styles.emptySubtitle}>Connect to your vehicle and run full diagnostics.</Text>
+      <TouchableOpacity
+        style={styles.emptyButton}
+        onPress={() => router.push('/(garage)/diagnostics')}
+      >
+        <Activity size={16} color="#fff" />
+        <Text style={styles.emptyButtonText}>Launch Diagnostics</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  /* ── Main Render ── */
+  return (
+    <ScrollView
+      style={styles.container}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshAll} tintColor="#3b82f6" />}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerTitle}>Garage OS</Text>
+            <Text style={styles.headerSubtitle}>
+              {garage?.name || (garageLoading ? 'Loading...' : 'Not registered')}
+            </Text>
           </View>
-          <View style={styles.diagCard}>
-            <Text style={styles.diagIcon}>📊</Text>
-            <Text style={styles.diagTitle}>Diagnostic History</Text>
-            <Text style={styles.diagText}>View past diagnostic reports, fault codes, and maintenance recommendations.</Text>
-            <TouchableOpacity style={styles.diagBtn} onPress={() => router.push('/garage/diagnostics-history')}>
-              <Text style={styles.diagBtnText}>View History</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            onPress={() => router.push('/(garage)/onboarding')}
+          >
+            <Settings size={20} color="#6b7280" />
+          </TouchableOpacity>
         </View>
-      )}
+
+        {/* Stats Cards */}
+        <View style={styles.statsGrid}>
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <View key={stat.label} style={styles.statCard}>
+                <Icon size={20} color={stat.color} />
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <TouchableOpacity
+                key={action.label}
+                style={styles.actionCard}
+                onPress={() => router.push(action.route as any)}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: action.color + '15' }]}>
+                  <Icon size={22} color={action.color} />
+                </View>
+                <Text style={styles.actionLabel}>{action.label}</Text>
+                {action.badge && (
+                  <View style={styles.actionBadge}>
+                    <Text style={styles.actionBadgeText}>{action.badge}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabBar}>
+        {([
+          { key: 'vehicles' as TabKey, label: 'Vehicles', icon: Car },
+          { key: 'recordings' as TabKey, label: 'Recordings', icon: Video },
+          { key: 'incidents' as TabKey, label: 'Incidents', icon: AlertTriangle },
+          { key: 'diagnostics' as TabKey, label: 'Diagnostics', icon: Wrench },
+        ]).map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.key;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tabItem, isActive && styles.tabItemActive]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <Icon size={16} color={isActive ? '#3b82f6' : '#9ca3af'} />
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Tab Content */}
+      <View style={styles.tabContent}>
+        {activeTab === 'vehicles' && renderVehiclesTab()}
+        {activeTab === 'recordings' && renderRecordingsTab()}
+        {activeTab === 'incidents' && renderIncidentsTab()}
+        {activeTab === 'diagnostics' && renderDiagnosticsTab()}
+      </View>
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-function StatBox({ label, value, color, icon }: { label: string; value: number; color: string; icon: string }) {
-  return (
-    <View style={styles.statBox}>
-      <Text style={styles.statIcon}>{icon}</Text>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
+/* ─────────────────────────── Styles ─────────────────────────── */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { padding: 20, paddingTop: 60 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
-  statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
-  statBox: { flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 12, alignItems: 'center' },
-  statIcon: { fontSize: 20, marginBottom: 4 },
-  statValue: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 10, color: '#94a3b8', marginTop: 2 },
-  tabRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 16 },
-  tab: { flex: 1, backgroundColor: '#1e293b', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
-  tabActive: { backgroundColor: '#1e3a5f', borderColor: '#3b82f6' },
-  tabText: { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
-  tabTextActive: { color: '#3b82f6' },
-  section: { paddingHorizontal: 16, paddingBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#e2e8f0', marginBottom: 12 },
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#64748b', fontSize: 14 },
-  emptySubtext: { color: '#475569', fontSize: 12, marginTop: 4 },
-  errorBox: { backgroundColor: 'rgba(239,68,68,0.15)', borderRadius: 10, padding: 12, marginBottom: 12, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  errorText: { color: '#fca5a5', fontSize: 13 },
-  actionBtn: { backgroundColor: '#3b82f6', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20, marginTop: 12 },
-  actionBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  incidentCard: { backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  incidentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  incidentIcon: { fontSize: 20, marginRight: 10 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+
+  /* Header */
+  header: { backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#1f2937' },
+  headerSubtitle: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  settingsBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' },
+
+  /* Stats */
+  statsGrid: { flexDirection: 'row', gap: 8 },
+  statCard: { flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
+  statValue: { fontSize: 20, fontWeight: '800', color: '#1f2937', marginTop: 6 },
+  statLabel: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+
+  /* Section */
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1f2937', marginBottom: 12 },
+
+  /* Quick Actions */
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  actionCard: { width: '31%', backgroundColor: '#fff', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb', position: 'relative' },
+  actionIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  actionLabel: { fontSize: 11, fontWeight: '600', color: '#374151', textAlign: 'center' },
+  actionBadge: { position: 'absolute', top: 8, right: 8, backgroundColor: '#ef4444', borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center' },
+  actionBadgeText: { fontSize: 10, fontWeight: '700', color: '#fff' },
+
+  /* Tabs */
+  tabBar: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 16, gap: 8, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', backgroundColor: '#fff' },
+  tabItem: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, marginBottom: 8 },
+  tabItemActive: { backgroundColor: '#eff6ff' },
+  tabLabel: { fontSize: 13, fontWeight: '600', color: '#9ca3af' },
+  tabLabelActive: { color: '#3b82f6' },
+  tabContent: { minHeight: 200 },
+
+  /* Tab Content */
+  tabSpinner: { marginTop: 40 },
+  listContainer: { padding: 16, gap: 10 },
+  emptyTab: { alignItems: 'center', paddingVertical: 50, paddingHorizontal: 30 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#6b7280', marginTop: 12 },
+  emptySubtitle: { fontSize: 13, color: '#9ca3af', marginTop: 6, textAlign: 'center' },
+  emptyButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3b82f6', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, marginTop: 16 },
+  emptyButtonText: { color: '#fff', fontWeight: '700', marginLeft: 8 },
+
+  errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef2f2', margin: 16, padding: 12, borderRadius: 10, gap: 8 },
+  errorText: { fontSize: 13, color: '#ef4444', flex: 1 },
+
+  /* Device Card */
+  deviceCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e5e7eb' },
+  deviceHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  deviceName: { fontSize: 14, fontWeight: '700', color: '#1f2937', flex: 1 },
+  deviceStatus: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusLabel: { fontSize: 11, fontWeight: '600' },
+  deviceMeta: { fontSize: 12, color: '#9ca3af', marginTop: 4, marginLeft: 26 },
+
+  /* Recording Card */
+  recordingCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', gap: 12 },
+  recordingInfo: { flex: 1 },
+  recordingTitle: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
+  recordingMeta: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+
+  /* Incident Card */
+  incidentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', gap: 12 },
   incidentInfo: { flex: 1 },
-  incidentTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  incidentType: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  incidentTime: { fontSize: 11, color: '#64748b' },
-  reportBtn: { backgroundColor: '#ef4444', borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 12 },
-  reportText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  diagCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 20, marginBottom: 12, alignItems: 'center' },
-  diagIcon: { fontSize: 40, marginBottom: 10 },
-  diagTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 6 },
-  diagText: { fontSize: 13, color: '#94a3b8', textAlign: 'center', marginBottom: 14, lineHeight: 20 },
-  diagBtn: { backgroundColor: '#3b82f6', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24 },
-  diagBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  incidentTitle: { fontSize: 14, fontWeight: '600', color: '#1f2937' },
+  incidentMeta: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
 });
