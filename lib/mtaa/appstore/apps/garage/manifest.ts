@@ -3,7 +3,6 @@ import { AppManifest } from '@/types/module.types';
 export const garageManifest: AppManifest = {
   id: 'garage',
   name: 'Garage OS',
-  domain: 'garage',
   version: '2.0.0',
   entry_point: '/(garage)',
   icon: '🔧',
@@ -11,7 +10,7 @@ export const garageManifest: AppManifest = {
   system_app: false,
   installable: true,
   enabled: true,
-  permissions: ['location', 'camera', 'notifications', 'bluetooth'],
+  permissions: ['location', 'camera', 'notifications', ],
   routes: ['/onboarding', '/dashboard', '/diagnostics', '/appointments', '/inventory', '/fleet', '/customer'],
   dependencies: ['wallet', 'health'],
   description: 'Full garage management: OBD-II diagnostics, work orders, inventory, fleet, and customer portal.',
