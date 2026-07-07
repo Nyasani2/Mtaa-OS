@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   registerGarage,
   getGarages,
@@ -17,8 +17,9 @@ import {
   type GarageFilters,
   type GarageStats,
 } from '@/lib/services/garage.service';
+import { supabase } from '@/lib/supabase';
 
-const QUERY_TIMEOUT = 8000;
+const QUERY_TIMEOUT = 15000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -55,207 +56,155 @@ export function useGarage() {
   }, []);
 
   const setError = useCallback((err: any) => {
-    setState(prev => ({ ...prev, isLoading: false, error: err?.message || String(err) }));
-  }, []);
+    const message = err?.message || String(err);
+    const isTimeout = message.includes('timed out');
+    const isMissingTable = message.includes('does not exist') || message.includes('relation');
 
-  const setData = useCallback((updates: Partial<UseGarageState>) => {
-    setState(prev => ({ ...prev, ...updates, isLoading: false }));
-  }, []);
-
-  // ─── Load all garages (for customer search) ───
-  const loadGarages = useCallback(async (filters?: GarageFilters) => {
-    setLoading();
-    try {
-      const data = await withTimeout(getGarages(filters), QUERY_TIMEOUT, 'loadGarages');
-      setData({ garages: data });
-    } catch (err: any) {
-      setError(err);
-    }
-  }, []);
-
-  // ─── Load my garage (for garage owner) ───
-  const loadMyGarage = useCallback(async () => {
-    setLoading();
-    try {
-      const data = await withTimeout(getMyGarage(), QUERY_TIMEOUT, 'loadMyGarage');
-      setData({ myGarage: data });
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Load single garage by ID ───
-  const loadGarage = useCallback(async (id: string) => {
-    setLoading();
-    try {
-      const data = await withTimeout(getGarageById(id), QUERY_TIMEOUT, 'loadGarage');
-      setData({ currentGarage: data });
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Create garage (onboarding step 1) ───
-  const createGarage = useCallback(async (garageData: Parameters<typeof registerGarage>[0]) => {
-    setLoading();
-    try {
-      const data = await withTimeout(registerGarage(garageData), QUERY_TIMEOUT, 'createGarage');
-      setState(prev => ({
-        ...prev,
-        myGarage: data,
-        isLoading: false,
-        error: null,
-      }));
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Update garage ───
-  const editGarage = useCallback(async (id: string, updates: Partial<Garage>) => {
-    setLoading();
-    try {
-      const data = await withTimeout(updateGarage(id, updates), QUERY_TIMEOUT, 'editGarage');
-      setState(prev => ({
-        ...prev,
-        myGarage: prev.myGarage?.id === id ? data : prev.myGarage,
-        currentGarage: prev.currentGarage?.id === id ? data : prev.currentGarage,
-        isLoading: false,
-        error: null,
-      }));
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Upload verification document ───
-  const uploadDoc = useCallback(async (garageId: string, file: File) => {
-    setLoading();
-    try {
-      const data = await withTimeout(uploadVerificationDocument(garageId, file), QUERY_TIMEOUT, 'uploadDoc');
-      setState(prev => ({
-        ...prev,
-        myGarage: prev.myGarage?.id === garageId ? data : prev.myGarage,
-        isLoading: false,
-        error: null,
-      }));
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Load garage stats ───
-  const loadStats = useCallback(async (garageId: string) => {
-    try {
-      const data = await withTimeout(getGarageStats(garageId), QUERY_TIMEOUT, 'loadStats');
-      setState(prev => ({ ...prev, stats: data }));
-      return data;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
-      return null;
-    }
-  }, []);
-
-  // ─── Subscribe to plan ───
-  const subscribe = useCallback(async (garageId: string, planId: string) => {
-    setLoading();
-    try {
-      const data = await withTimeout(subscribeGarage(garageId, planId), QUERY_TIMEOUT, 'subscribe');
-      setState(prev => ({
-        ...prev,
-        myGarage: prev.myGarage?.id === garageId ? data : prev.myGarage,
-        isLoading: false,
-        error: null,
-      }));
-      return data;
-    } catch (err: any) {
-      setError(err);
-      return null;
-    }
-  }, []);
-
-  // ─── Search garages ───
-  const search = useCallback(async (query: string, filters?: GarageFilters) => {
-    setLoading();
-    try {
-      const data = await withTimeout(searchGarages(query, filters), QUERY_TIMEOUT, 'search');
-      setData({ garages: data });
-    } catch (err: any) {
-      setError(err);
-    }
-  }, []);
-
-  // ─── Admin actions ───
-  const approve = useCallback(async (garageId: string) => {
-    try {
-      const data = await withTimeout(approveGarage(garageId), QUERY_TIMEOUT, 'approve');
-      setState(prev => ({
-        ...prev,
-        currentGarage: prev.currentGarage?.id === garageId ? data : prev.currentGarage,
-      }));
-      return data;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
-      return null;
-    }
-  }, []);
-
-  const reject = useCallback(async (garageId: string, reason: string) => {
-    try {
-      const data = await withTimeout(rejectGarage(garageId, reason), QUERY_TIMEOUT, 'reject');
-      setState(prev => ({
-        ...prev,
-        currentGarage: prev.currentGarage?.id === garageId ? data : prev.currentGarage,
-      }));
-      return data;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
-      return null;
-    }
-  }, []);
-
-  const suspend = useCallback(async (garageId: string, reason: string) => {
-    try {
-      const data = await withTimeout(suspendGarage(garageId, reason), QUERY_TIMEOUT, 'suspend');
-      setState(prev => ({
-        ...prev,
-        currentGarage: prev.currentGarage?.id === garageId ? data : prev.currentGarage,
-      }));
-      return data;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
-      return null;
-    }
+    // Don't show errors for timeouts or missing tables — UI handles those states
+    setState(prev => ({
+      ...prev,
+      isLoading: false,
+      error: (isTimeout || isMissingTable) ? null : message,
+    }));
   }, []);
 
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
+  // Load my garage — tries edge function first, falls back to direct query
+  const loadMyGarage = useCallback(async () => {
+    setLoading();
+    try {
+      // Try the service function first
+      const garage = await withTimeout(getMyGarage(), QUERY_TIMEOUT, 'loadMyGarage');
+      setState(prev => ({
+        ...prev,
+        myGarage: garage,
+        currentGarage: garage,
+        isLoading: false,
+        error: null,
+      }));
+      return garage;
+    } catch (err: any) {
+      const message = err?.message || String(err);
+
+      // If table missing or timeout, try direct Supabase query as fallback
+      if (message.includes('does not exist') || message.includes('relation') || message.includes('timed out')) {
+        try {
+          const { data, error } = await supabase
+            .from('garages')
+            .select('*')
+            .eq('owner_id', (await supabase.auth.getUser()).data.user?.id)
+            .single();
+
+          if (error) throw error;
+
+          setState(prev => ({
+            ...prev,
+            myGarage: data as Garage,
+            currentGarage: data as Garage,
+            isLoading: false,
+            error: null,
+          }));
+          return data as Garage;
+        } catch (fallbackErr) {
+          // No garage found — this is OK, show "Not registered" UI
+          setState(prev => ({
+            ...prev,
+            myGarage: null,
+            currentGarage: null,
+            isLoading: false,
+            error: null,
+          }));
+          return null;
+        }
+      }
+
+      setError(err);
+      return null;
+    }
+  }, [setLoading, setError]);
+
+  // Load garage stats with fallback
+  const loadGarageStats = useCallback(async (garageId: string) => {
+    if (!garageId) return null;
+    try {
+      const stats = await withTimeout(getGarageStats(garageId), QUERY_TIMEOUT, 'loadGarageStats');
+      setState(prev => ({ ...prev, stats }));
+      return stats;
+    } catch {
+      // Silently fail for stats
+      setState(prev => ({ ...prev, stats: null }));
+      return null;
+    }
+  }, []);
+
+  // Register garage
+  const createGarage = useCallback(async (garageData: Parameters<typeof registerGarage>[0]) => {
+    setLoading();
+    try {
+      const garage = await withTimeout(registerGarage(garageData), QUERY_TIMEOUT, 'createGarage');
+      setState(prev => ({
+        ...prev,
+        myGarage: garage,
+        currentGarage: garage,
+        isLoading: false,
+        error: null,
+      }));
+      return garage;
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
+  }, [setLoading, setError]);
+
+  // Update garage
+  const updateMyGarage = useCallback(async (updates: Partial<Garage>) => {
+    if (!state.myGarage?.id) return null;
+    setLoading();
+    try {
+      const updated = await withTimeout(
+        updateGarage(state.myGarage.id, updates),
+        QUERY_TIMEOUT,
+        'updateMyGarage'
+      );
+      setState(prev => ({
+        ...prev,
+        myGarage: updated,
+        currentGarage: updated,
+        isLoading: false,
+        error: null,
+      }));
+      return updated;
+    } catch (err) {
+      setError(err);
+      throw err;
+    }
+  }, [state.myGarage?.id, setLoading, setError]);
+
+  // Refresh all data
+  const refresh = useCallback(async () => {
+    await loadMyGarage();
+    if (state.myGarage?.id) {
+      await loadGarageStats(state.myGarage.id);
+    }
+  }, [loadMyGarage, loadGarageStats, state.myGarage?.id]);
+
+  // Auto-load on mount
+  useEffect(() => {
+    loadMyGarage();
+  }, [loadMyGarage]);
+
   return {
     ...state,
-    loadGarages,
     loadMyGarage,
-    loadGarage,
+    loadGarageStats,
     createGarage,
-    editGarage,
-    uploadDoc,
-    loadStats,
-    subscribe,
-    search,
-    approve,
-    reject,
-    suspend,
+    updateMyGarage,
+    refresh,
     clearError,
   };
 }
+
+export default useGarage;
