@@ -1,420 +1,291 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  ActivityIndicator,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, RefreshControl, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useGarage } from '@/lib/hooks/useGarage';
 import { useAppointments } from '@/lib/hooks/useAppointments';
+import {
+  Wrench, Calendar, Search, TrendingUp, AlertTriangle,
+  ChevronRight, DollarSign, Clock, Car, Shield, FileText
+} from 'lucide-react-native';
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#f59e0b',
-  confirmed: '#3b82f6',
-  vehicle_received: '#8b5cf6',
-  diagnosing: '#ec4899',
-  awaiting_approval: '#f97316',
-  in_progress: '#3b82f6',
-  waiting_parts: '#f59e0b',
-  quality_check: '#06b6d4',
-  ready_for_pickup: '#22c55e',
-  completed: '#22c55e',
-  cancelled: '#ef4444',
-  no_show: '#64748b',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending',
-  confirmed: 'Confirmed',
-  vehicle_received: 'Received',
-  diagnosing: 'Diagnosing',
-  awaiting_approval: 'Awaiting Approval',
-  in_progress: 'In Progress',
-  waiting_parts: 'Waiting Parts',
-  quality_check: 'Quality Check',
-  ready_for_pickup: 'Ready',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-  no_show: 'No Show',
-};
-
-export default function GarageDashboardScreen() {
+export default function GarageDashboard() {
   const router = useRouter();
-  const { myGarage, loadMyGarage, stats, loadStats, isLoading: garageLoading, error: garageError } = useGarage();
-  const { appointments, loadGarageAppointments, isLoading: apptLoading } = useAppointments();
-
+  const { garage, loading: garageLoading } = useGarage();
+  const { appointments, stats, loading: apptLoading, refreshAppointments } = useAppointments();
   const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<string>('all');
 
-  useEffect(() => {
-    loadMyGarage().then(g => {
-      if (g) {
-        loadStats(g.id);
-        loadGarageAppointments(g.id);
-      }
-    });
-  }, []);
-
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    const g = await loadMyGarage();
-    if (g) {
-      await Promise.all([
-        loadStats(g.id),
-        loadGarageAppointments(g.id),
-      ]);
-    }
+    await refreshAppointments();
     setRefreshing(false);
-  }, [loadMyGarage, loadStats, loadGarageAppointments]);
+  };
 
-  const filteredAppointments = appointments.filter(a => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'today') {
-      const today = new Date().toISOString().split('T')[0];
-      return a.scheduled_date === today;
-    }
-    if (activeFilter === 'active') {
-      return ['confirmed', 'vehicle_received', 'diagnosing', 'awaiting_approval', 'in_progress', 'waiting_parts', 'quality_check'].includes(a.status);
-    }
-    if (activeFilter === 'completed') return a.status === 'completed';
-    if (activeFilter === 'pending') return a.status === 'pending';
-    return true;
-  });
+  const loading = garageLoading || apptLoading;
 
-  const todayAppointments = appointments.filter(a => {
-    const today = new Date().toISOString().split('T')[0];
-    return a.scheduled_date === today;
-  });
+  const quickActions = [
+    { icon: '\u{1F4C5}', label: 'New Appointment', color: '#3b82f6', route: '/(garage)/appointments' },
+    { icon: '\u{1F50D}', label: 'Scan Vehicle', color: '#8b5cf6', route: '/(garage)/diagnostics' },
+    { icon: '\u{1F468}\u{200D}\u{1F527}', label: 'Add Mechanic', color: '#06b6d4', alert: 'Mechanic management coming in v2.1' },
+    { icon: '\u{1F4E6}', label: 'Order Parts', color: '#f59e0b', route: '/(garage)/inventory' },
+    { icon: '\u{1F4CB}', label: 'Roadworthy', color: '#22c55e', alert: 'Compliance module coming in v2.1' },
+    { icon: '\u{1F4CA}', label: 'Reports', color: '#ec4899', alert: 'Reports module coming in v2.1' },
+  ];
 
-  if (garageLoading && !myGarage) {
+  const handleAction = (action: typeof quickActions[0]) => {
+    if (action.alert) { Alert.alert('Coming Soon', action.alert); return; }
+    if (action.route) router.push(action.route as any);
+  };
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading your garage...</Text>
+        <Text style={styles.loadingText}>Loading dashboard...</Text>
       </View>
     );
   }
 
-  if (!myGarage) {
+  if (!garage) {
     return (
       <View style={styles.center}>
-        <Text style={styles.emptyIcon}>🔧</Text>
-        <Text style={styles.emptyTitle}>No Garage Found</Text>
-        <Text style={styles.emptyText}>You haven't registered a garage yet.</Text>
-        <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/garage/onboarding')}>
-          <Text style={styles.ctaText}>Register Your Garage →</Text>
+        <Wrench size={48} color="#9ca3af" />
+        <Text style={styles.emptyTitle}>No Garage Registered</Text>
+        <Text style={styles.emptyText}>Register your garage to access the dashboard.</Text>
+        <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/(garage)/onboarding')}>
+          <Text style={styles.ctaText}>Register Garage</Text>
+          <ChevronRight size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     );
   }
 
-  if (myGarage.status === 'pending') {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.emptyIcon}>⏳</Text>
-        <Text style={styles.emptyTitle}>Under Review</Text>
-        <Text style={styles.emptyText}>Your garage application is being reviewed by MTAA. You'll be notified once approved.</Text>
-        <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/garage')}>
-          <Text style={styles.ctaText}>Back to Garage →</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const pendingCount = appointments.filter(a => a.status === 'pending').length;
+  const inProgressCount = appointments.filter(a => a.status === 'in_progress').length;
+  const readyCount = appointments.filter(a => a.status === 'ready_for_pickup').length;
+  const todayCount = appointments.filter(a => {
+    const today = new Date().toISOString().split('T')[0];
+    return a.scheduled_date === today;
+  }).length;
 
-  if (myGarage.status === 'rejected') {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.emptyIcon}>❌</Text>
-        <Text style={styles.emptyTitle}>Application Rejected</Text>
-        <Text style={styles.emptyText}>{myGarage.rejection_reason || 'Your application was rejected. Please contact MTAA support.'}</Text>
-        <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/garage/onboarding')}>
-          <Text style={styles.ctaText}>Reapply →</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const recentAppointments = appointments
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}
-    >
-      {/* Header */}
+    <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.headerTitle}>{myGarage.business_name}</Text>
-            <Text style={styles.headerSubtitle}>{myGarage.city}, {myGarage.county}</Text>
+            <Text style={styles.greeting}>Garage Dashboard</Text>
+            <Text style={styles.garageName}>{garage.name}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: myGarage.status === 'approved' ? '#14532d' : '#1e3a5f' }]}>
-            <Text style={styles.statusText}>{myGarage.status}</Text>
-          </View>
-        </View>
-        <View style={styles.ratingRow}>
-          <Text style={styles.ratingStars}>{'⭐'.repeat(Math.round(myGarage.rating || 0))}</Text>
-          <Text style={styles.ratingText}>{myGarage.rating?.toFixed(1) || '0.0'} ({myGarage.review_count || 0} reviews)</Text>
-          <Text style={styles.tierBadge}>{myGarage.subscription_tier}</Text>
-        </View>
-      </View>
-
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        <StatCard label="Today's Revenue" value={`KES ${(stats?.revenueToday || 0).toLocaleString()}`} color="#22c55e" icon="💰" />
-        <StatCard label="Active Jobs" value={String(stats?.activeJobs || 0)} color="#3b82f6" icon="🔧" />
-        <StatCard label="Pending" value={String(stats?.pendingJobs || 0)} color="#f59e0b" icon="⏳" />
-        <StatCard label="Completed" value={String(stats?.completedJobs || 0)} color="#8b5cf6" icon="✅" />
-        <StatCard label="Mechanics" value={String(stats?.mechanicsCount || 0)} color="#06b6d4" icon="👨‍🔧" />
-        <StatCard label="Fleet Contracts" value={String(stats?.fleetContracts || 0)} color="#ec4899" icon="🚛" />
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
-        <View style={styles.actionGrid}>
-          <ActionButton icon="📅" label="New Appointment" color="#3b82f6" onPress={() => router.push('/garage/appointments/new')} />
-          <ActionButton icon="🔍" label="Scan Vehicle" color="#8b5cf6" onPress={() => router.push('/garage/diagnostics/scan')} />
-          <ActionButton icon="👨‍🔧" label="Add Mechanic" color="#06b6d4" onPress={() => router.push('/garage/mechanics/new')} />
-          <ActionButton icon="📦" label="Order Parts" color="#f59e0b" onPress={() => router.push('/garage/inventory')} />
-          <ActionButton icon="📋" label="Roadworthy" color="#22c55e" onPress={() => router.push('/garage/compliance/roadworthy')} />
-          <ActionButton icon="📊" label="Reports" color="#ec4899" onPress={() => router.push('/garage/reports')} />
-        </View>
-      </View>
-
-      {/* Alerts */}
-      {(stats?.lowStockItems || 0) > 0 && (
-        <TouchableOpacity style={[styles.alertCard, { borderLeftColor: '#f59e0b' }]} onPress={() => router.push('/garage/inventory')}>
-          <Text style={styles.alertIcon}>⚠️</Text>
-          <View style={styles.alertContent}>
-            <Text style={styles.alertTitle}>Low Stock Alert</Text>
-            <Text style={styles.alertText}>{stats?.lowStockItems} items below reorder point</Text>
-          </View>
-          <Text style={styles.alertAction}>View →</Text>
-        </TouchableOpacity>
-      )}
-
-      {(stats?.outOfStockItems || 0) > 0 && (
-        <TouchableOpacity style={[styles.alertCard, { borderLeftColor: '#ef4444' }]} onPress={() => router.push('/garage/inventory')}>
-          <Text style={styles.alertIcon}>🚨</Text>
-          <View style={styles.alertContent}>
-            <Text style={styles.alertTitle}>Out of Stock</Text>
-            <Text style={styles.alertText}>{stats?.outOfStockItems} items need immediate restocking</Text>
-          </View>
-          <Text style={styles.alertAction}>View →</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Today's Schedule */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>📅 Today's Schedule ({todayAppointments.length})</Text>
-          <TouchableOpacity onPress={() => router.push('/garage/appointments')}>
-            <Text style={styles.seeAll}>See All →</Text>
+          <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/(garage)/appointments')}>
+            <Search size={20} color="#6b7280" />
           </TouchableOpacity>
         </View>
-
-        {todayAppointments.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No appointments scheduled for today</Text>
-          </View>
-        ) : (
-          todayAppointments.slice(0, 5).map(appt => (
-            <TouchableOpacity
-              key={appt.id}
-              style={styles.appointmentCard}
-              onPress={() => router.push(`/garage/appointments/${appt.id}`)}
-            >
-              <View style={styles.appointmentTime}>
-                <Text style={styles.appointmentTimeText}>{appt.scheduled_time?.slice(0, 5)}</Text>
-              </View>
-              <View style={styles.appointmentBody}>
-                <Text style={styles.appointmentVehicle}>
-                  {appt.vehicle?.make} {appt.vehicle?.model} · {appt.vehicle?.plate_number}
-                </Text>
-                <Text style={styles.appointmentService} numberOfLines={1}>
-                  {appt.service_notes || 'General service'}
-                </Text>
-                <View style={styles.appointmentMeta}>
-                  <Text style={styles.appointmentCustomer}>{appt.customer?.full_name}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: STATUS_COLORS[appt.status] || '#64748b' }]}>
-                    <Text style={styles.statusPillText}>{STATUS_LABELS[appt.status] || appt.status}</Text>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
+        <View style={styles.statsGrid}>
+          <StatCard icon={<Clock size={20} color="#f59e0b" />} label="Pending" value={pendingCount} color="#f59e0b" />
+          <StatCard icon={<Wrench size={20} color="#3b82f6" />} label="In Progress" value={inProgressCount} color="#3b82f6" />
+          <StatCard icon={<Car size={20} color="#22c55e" />} label="Ready" value={readyCount} color="#22c55e" />
+          <StatCard icon={<Calendar size={20} color="#8b5cf6" />} label="Today" value={todayCount} color="#8b5cf6" />
+        </View>
       </View>
 
-      {/* All Appointments Filter */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔧 All Jobs</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          {['all', 'today', 'active', 'completed', 'pending'].map(filter => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
-              onPress={() => setActiveFilter(filter)}
-            >
-              <Text style={[styles.filterChipText, activeFilter === filter && styles.filterChipTextActive]}>
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </Text>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionsGrid}>
+          {quickActions.map((action, i) => (
+            <TouchableOpacity key={i} style={[styles.actionBtn, { backgroundColor: action.color + '15', borderColor: action.color + '30' }]} onPress={() => handleAction(action)}>
+              <Text style={styles.actionIcon}>{action.icon}</Text>
+              <Text style={[styles.actionLabel, { color: action.color }]}>{action.label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+      </View>
 
-        {filteredAppointments.length === 0 ? (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Alerts</Text>
+        {pendingCount > 0 ? (
+          <TouchableOpacity style={[styles.alertCard, { borderLeftColor: '#f59e0b' }]} onPress={() => router.push('/(garage)/appointments')}>
+            <AlertTriangle size={20} color="#f59e0b" />
+            <View style={styles.alertContent}>
+              <Text style={styles.alertTitle}>{pendingCount} Pending Approval</Text>
+              <Text style={styles.alertText}>Work orders awaiting customer approval</Text>
+            </View>
+            <ChevronRight size={18} color="#9ca3af" />
+          </TouchableOpacity>
+        ) : null}
+        {readyCount > 0 ? (
+          <TouchableOpacity style={[styles.alertCard, { borderLeftColor: '#ef4444' }]} onPress={() => router.push('/(garage)/appointments')}>
+            <Car size={20} color="#ef4444" />
+            <View style={styles.alertContent}>
+              <Text style={styles.alertTitle}>{readyCount} Ready for Pickup</Text>
+              <Text style={styles.alertText}>Vehicles completed, awaiting customer</Text>
+            </View>
+            <ChevronRight size={18} color="#9ca3af" />
+          </TouchableOpacity>
+        ) : null}
+        {pendingCount === 0 && readyCount === 0 && (
+          <View style={styles.emptyAlert}>
+            <Shield size={24} color="#22c55e" />
+            <Text style={styles.emptyAlertText}>All clear - no alerts</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Work Orders</Text>
+          <TouchableOpacity onPress={() => router.push('/(garage)/appointments')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+        {recentAppointments.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No appointments match this filter</Text>
+            <FileText size={32} color="#d1d5db" />
+            <Text style={styles.emptyStateText}>No work orders yet</Text>
+            <TouchableOpacity style={styles.emptyCta} onPress={() => router.push('/(garage)/appointments')}>
+              <Text style={styles.emptyCtaText}>Create First Work Order</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          filteredAppointments.slice(0, 10).map(appt => (
-            <TouchableOpacity
-              key={appt.id}
-              style={styles.appointmentCard}
-              onPress={() => router.push(`/garage/appointments/${appt.id}`)}
-            >
-              <View style={styles.appointmentTime}>
-                <Text style={styles.appointmentTimeText}>{appt.scheduled_date?.slice(5)}</Text>
-                <Text style={styles.appointmentTimeSub}>{appt.scheduled_time?.slice(0, 5)}</Text>
-              </View>
-              <View style={styles.appointmentBody}>
-                <Text style={styles.appointmentVehicle}>
-                  {appt.vehicle?.make} {appt.vehicle?.model} · {appt.vehicle?.plate_number}
-                </Text>
-                <View style={styles.appointmentMeta}>
-                  <Text style={styles.appointmentCustomer}>{appt.customer?.full_name}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: STATUS_COLORS[appt.status] || '#64748b' }]}>
-                    <Text style={styles.statusPillText}>{STATUS_LABELS[appt.status] || appt.status}</Text>
-                  </View>
+          recentAppointments.map((appt) => (
+            <TouchableOpacity key={appt.id} style={styles.apptCard} onPress={() => router.push(`/(garage)/appointments/${appt.id}` as any)}>
+              <View style={styles.apptLeft}>
+                <View style={[styles.apptIcon, { backgroundColor: getStatusColor(appt.status) + '15' }]}>
+                  <Car size={18} color={getStatusColor(appt.status)} />
                 </View>
-                {appt.final_cost && (
-                  <Text style={styles.appointmentCost}>KES {appt.final_cost.toLocaleString()}</Text>
-                )}
+                <View>
+                  <Text style={styles.apptPlate}>{appt.vehicle_plate || 'Unknown'}</Text>
+                  <Text style={styles.apptService}>{appt.service_type}</Text>
+                  <Text style={styles.apptDate}>{formatDate(appt.scheduled_date)}</Text>
+                </View>
+              </View>
+              <View style={styles.apptRight}>
+                <StatusBadge status={appt.status} />
+                <ChevronRight size={16} color="#d1d5db" />
               </View>
             </TouchableOpacity>
           ))
         )}
       </View>
 
-      {/* Monthly Revenue */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📊 This Month</Text>
+        <Text style={styles.sectionTitle}>Revenue Summary</Text>
         <View style={styles.revenueCard}>
-          <View style={styles.revenueItem}>
-            <Text style={styles.revenueLabel}>Revenue</Text>
-            <Text style={styles.revenueValue}>KES {(stats?.revenueThisMonth || 0).toLocaleString()}</Text>
-          </View>
-          <View style={styles.revenueDivider} />
-          <View style={styles.revenueItem}>
-            <Text style={styles.revenueLabel}>This Week</Text>
-            <Text style={styles.revenueValue}>KES {(stats?.revenueThisWeek || 0).toLocaleString()}</Text>
-          </View>
-          <View style={styles.revenueDivider} />
-          <View style={styles.revenueItem}>
-            <Text style={styles.revenueLabel}>Total Jobs</Text>
-            <Text style={styles.revenueValue}>{stats?.totalAppointments || 0}</Text>
+          <View style={styles.revenueRow}>
+            <View style={styles.revenueItem}>
+              <DollarSign size={18} color="#22c55e" />
+              <Text style={styles.revenueLabel}>This Month</Text>
+              <Text style={styles.revenueValue}>KES {stats?.monthlyRevenue?.toLocaleString() || '0'}</Text>
+            </View>
+            <View style={styles.revenueDivider} />
+            <View style={styles.revenueItem}>
+              <TrendingUp size={18} color="#3b82f6" />
+              <Text style={styles.revenueLabel}>Total Jobs</Text>
+              <Text style={styles.revenueValue}>{stats?.totalJobs || '0'}</Text>
+            </View>
           </View>
         </View>
       </View>
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-function StatCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: string }) {
+function StatCard({ icon, label, value, color }: any) {
   return (
-    <View style={styles.statCard}>
-      <Text style={styles.statIcon}>{icon}</Text>
+    <View style={[styles.statCard, { borderTopColor: color }]}>
+      {icon}
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function ActionButton({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress: () => void }) {
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    pending: '#f59e0b', in_progress: '#3b82f6', ready_for_pickup: '#22c55e',
+    completed: '#6b7280', cancelled: '#ef4444',
+  };
+  const labels: Record<string, string> = {
+    pending: 'Pending', in_progress: 'In Progress', ready_for_pickup: 'Ready',
+    completed: 'Done', cancelled: 'Cancelled',
+  };
   return (
-    <TouchableOpacity style={styles.actionButton} onPress={onPress}>
-      <View style={[styles.actionIconBg, { backgroundColor: color + '20' }]}>
-        <Text style={[styles.actionIcon, { color }]}>{icon}</Text>
-      </View>
-      <Text style={styles.actionLabel}>{label}</Text>
-    </TouchableOpacity>
+    <View style={[styles.badge, { backgroundColor: colors[status] + '15' }]}>
+      <Text style={[styles.badgeText, { color: colors[status] }]}>{labels[status] || status}</Text>
+    </View>
   );
 }
 
+function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    pending: '#f59e0b', in_progress: '#3b82f6', ready_for_pickup: '#22c55e',
+    completed: '#6b7280', cancelled: '#ef4444',
+  };
+  return colors[status] || '#6b7280';
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#0f172a' },
-  loadingText: { color: '#94a3b8', marginTop: 12, fontSize: 14 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 6 },
-  emptyText: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
-  ctaButton: { backgroundColor: '#3b82f6', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 28 },
-  ctaText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-
-  header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b', borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 16 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  headerSubtitle: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusText: { color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  ratingStars: { fontSize: 14 },
-  ratingText: { fontSize: 13, color: '#94a3b8' },
-  tierBadge: { backgroundColor: '#334155', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, fontSize: 11, color: '#cbd5e1', fontWeight: '700' },
-
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 16, gap: 10, marginBottom: 16 },
-  statCard: { width: '31%', backgroundColor: '#1e293b', borderRadius: 14, padding: 14, alignItems: 'center' },
-  statIcon: { fontSize: 22, marginBottom: 4 },
-  statValue: { fontSize: 16, fontWeight: '800' },
-  statLabel: { fontSize: 9, color: '#64748b', marginTop: 2, textAlign: 'center' },
-
-  section: { paddingHorizontal: 16, marginBottom: 20 },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { marginTop: 12, color: '#6b7280', fontSize: 14 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#111827', marginTop: 16 },
+  emptyText: { fontSize: 14, color: '#6b7280', marginTop: 8, textAlign: 'center' },
+  header: { backgroundColor: '#fff', padding: 20, paddingTop: 60, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  greeting: { fontSize: 14, color: '#6b7280' },
+  garageName: { fontSize: 22, fontWeight: '800', color: '#111827', marginTop: 2 },
+  searchBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' },
+  statsGrid: { flexDirection: 'row', gap: 10 },
+  statCard: { flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 14, alignItems: 'center', borderTopWidth: 3 },
+  statValue: { fontSize: 22, fontWeight: '800', marginTop: 6 },
+  statLabel: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  section: { padding: 20 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#e2e8f0', marginBottom: 12 },
-  seeAll: { color: '#3b82f6', fontSize: 13, fontWeight: '600' },
-
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionButton: { width: '31%', backgroundColor: '#1e293b', borderRadius: 14, padding: 14, alignItems: 'center' },
-  actionIconBg: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  actionIcon: { fontSize: 22 },
-  actionLabel: { fontSize: 11, color: '#94a3b8', textAlign: 'center', fontWeight: '600' },
-
-  alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginHorizontal: 16, marginBottom: 12, borderLeftWidth: 3 },
-  alertIcon: { fontSize: 22, marginRight: 12 },
-  alertContent: { flex: 1 },
-  alertTitle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  alertText: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  alertAction: { color: '#3b82f6', fontSize: 13, fontWeight: '600' },
-
-  emptyState: { backgroundColor: '#1e293b', borderRadius: 12, padding: 20, alignItems: 'center' },
-  emptyStateText: { color: '#64748b', fontSize: 13 },
-
-  appointmentCard: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 12, padding: 12, marginBottom: 10, alignItems: 'flex-start' },
-  appointmentTime: { width: 50, alignItems: 'center', marginRight: 12 },
-  appointmentTimeText: { fontSize: 13, fontWeight: '700', color: '#3b82f6' },
-  appointmentTimeSub: { fontSize: 10, color: '#64748b', marginTop: 2 },
-  appointmentBody: { flex: 1 },
-  appointmentVehicle: { fontSize: 14, fontWeight: '700', color: '#fff' },
-  appointmentService: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  appointmentMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
-  appointmentCustomer: { fontSize: 11, color: '#64748b' },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusPillText: { color: '#fff', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
-  appointmentCost: { fontSize: 12, color: '#22c55e', fontWeight: '700', marginTop: 4 },
-
-  filterRow: { flexDirection: 'row', marginBottom: 12 },
-  filterChip: { backgroundColor: '#1e293b', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: '#334155' },
-  filterChipActive: { backgroundColor: '#1e3a5f', borderColor: '#3b82f6' },
-  filterChipText: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
-  filterChipTextActive: { color: '#3b82f6' },
-
-  revenueCard: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 16, padding: 18 },
+  seeAll: { fontSize: 13, color: '#3b82f6', fontWeight: '600' },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  actionBtn: { width: '30%', aspectRatio: 1, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
+  actionIcon: { fontSize: 24 },
+  actionLabel: { fontSize: 11, fontWeight: '600', marginTop: 6, textAlign: 'center' },
+  alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  alertContent: { flex: 1, marginLeft: 12 },
+  alertTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  alertText: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  emptyAlert: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#f0fdf4', borderRadius: 12 },
+  emptyAlertText: { fontSize: 14, color: '#22c55e', marginLeft: 8, fontWeight: '600' },
+  apptCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  apptLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  apptIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  apptPlate: { fontSize: 14, fontWeight: '700', color: '#111827' },
+  apptService: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  apptDate: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  apptRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  badgeText: { fontSize: 11, fontWeight: '600' },
+  emptyState: { alignItems: 'center', padding: 30, backgroundColor: '#fff', borderRadius: 16 },
+  emptyStateText: { fontSize: 14, color: '#9ca3af', marginTop: 12 },
+  emptyCta: { marginTop: 16, backgroundColor: '#3b82f6', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  emptyCtaText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  revenueCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  revenueRow: { flexDirection: 'row', alignItems: 'center' },
   revenueItem: { flex: 1, alignItems: 'center' },
-  revenueDivider: { width: 1, backgroundColor: '#334155', marginHorizontal: 8 },
-  revenueLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 4 },
-  revenueValue: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  revenueDivider: { width: 1, height: 40, backgroundColor: '#e5e7eb' },
+  revenueLabel: { fontSize: 12, color: '#6b7280', marginTop: 6 },
+  revenueValue: { fontSize: 18, fontWeight: '800', color: '#111827', marginTop: 2 },
+  ctaButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3b82f6', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, marginTop: 20 },
+  ctaText: { color: '#fff', fontWeight: '700', fontSize: 15, marginRight: 8 },
 });
