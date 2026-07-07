@@ -66,17 +66,39 @@ export interface Appointment {
   updated_at: string;
 }
 
+export interface AppointmentStats {
+  total: number;
+  active: number;
+  completed: number;
+  pending: number;
+  cancelled: number;
+  revenue: number;
+}
+
 export interface UseAppointmentsState {
   appointments: Appointment[];
   currentAppointment: Appointment | null;
+  stats: AppointmentStats;
   isLoading: boolean;
   error: string | null;
+}
+
+function calculateStats(appointments: Appointment[]): AppointmentStats {
+  return {
+    total: appointments.length,
+    active: appointments.filter(a => ['pending', 'vehicle_received', 'diagnosis', 'quote_sent', 'approved', 'in_progress', 'quality_check', 'ready_for_pickup'].includes(a.status)).length,
+    completed: appointments.filter(a => a.status === 'completed').length,
+    pending: appointments.filter(a => a.status === 'pending').length,
+    cancelled: appointments.filter(a => a.status === 'cancelled').length,
+    revenue: appointments.reduce((sum, a) => sum + (a.final_cost || a.estimated_cost || 0), 0),
+  };
 }
 
 export function useAppointments() {
   const [state, setState] = useState<UseAppointmentsState>({
     appointments: [],
     currentAppointment: null,
+    stats: { total: 0, active: 0, completed: 0, pending: 0, cancelled: 0, revenue: 0 },
     isLoading: false,
     error: null,
   });
@@ -90,342 +112,309 @@ export function useAppointments() {
   }, []);
 
   const setData = useCallback((updates: Partial<UseAppointmentsState>) => {
-    setState(prev => ({ ...prev, ...updates, isLoading: false }));
-  }, []);
+    const newAppointments = updates.appointments !== undefined ? updates.appointments : state.appointments;
+    setState(prev => ({
+      ...prev,
+      ...updates,
+      stats: calculateStats(newAppointments),
+      isLoading: false,
+    }));
+  }, [state.appointments]);
 
-  // ─── Load appointments for garage ───
-  const loadGarageAppointments = useCallback(async (garageId: string, status?: string) => {
+  // ── Load garage appointments ──
+  const loadGarageAppointments = useCallback(async (garageId: string, statusFilter?: string) => {
     setLoading();
     try {
       let query = supabase
         .from('garage_appointments')
-        .select(`
-          *,
-          vehicle:vehicle_id(id, make, model, year, plate_number, color),
-          mechanic:mechanic_id(id, full_name, avatar_url),
-          customer:customer_id(id, full_name, phone, avatar_url)
-        `)
+        .select(`*, customer:customer_id(full_name, phone, email), vehicle:vehicle_id(make, model, year, license_plate, color)`)
         .eq('garage_id', garageId)
         .order('scheduled_date', { ascending: true });
 
-      if (status) query = query.eq('status', status);
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
 
       const { data, error } = await withTimeout(query, QUERY_TIMEOUT, 'loadGarageAppointments');
       if (error) throw error;
-      setData({ appointments: (data || []) as Appointment[] });
-    } catch (err: any) {
+      setData({ appointments: data || [] });
+    } catch (err) {
       setError(err);
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Load appointments for customer ───
+  // ── Load customer appointments ──
   const loadCustomerAppointments = useCallback(async (customerId: string) => {
     setLoading();
     try {
       const { data, error } = await withTimeout(
         supabase
           .from('garage_appointments')
-          .select(`
-            *,
-            garage:garage_id(id, business_name, logo_url, rating, city),
-            vehicle:vehicle_id(id, make, model, year, plate_number),
-            mechanic:mechanic_id(id, full_name, avatar_url)
-          `)
+          .select(`*, garage:garage_id(name, address, phone), vehicle:vehicle_id(make, model, year, license_plate)`)
           .eq('customer_id', customerId)
           .order('scheduled_date', { ascending: false }),
         QUERY_TIMEOUT,
         'loadCustomerAppointments'
       );
       if (error) throw error;
-      setData({ appointments: (data || []) as Appointment[] });
-    } catch (err: any) {
+      setData({ appointments: data || [] });
+    } catch (err) {
       setError(err);
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Load single appointment ───
-  const loadAppointment = useCallback(async (id: string) => {
+  // ── Load single appointment ──
+  const loadAppointment = useCallback(async (appointmentId: string) => {
     setLoading();
     try {
       const { data, error } = await withTimeout(
         supabase
           .from('garage_appointments')
-          .select(`
-            *,
-            vehicle:vehicle_id(*),
-            mechanic:mechanic_id(*),
-            customer:customer_id(*),
-            garage:garage_id(*)
-          `)
-          .eq('id', id)
+          .select(`*, customer:customer_id(*), vehicle:vehicle_id(*), garage:garage_id(*)`)
+          .eq('id', appointmentId)
           .single(),
         QUERY_TIMEOUT,
         'loadAppointment'
       );
       if (error) throw error;
-      setData({ currentAppointment: data as Appointment });
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+    } catch (err) {
       setError(err);
-      return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Create appointment (customer booking) ───
-  const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'status' | 'created_at' | 'updated_at' | 'payment_status' | 'warranty_days' | 'reminder_sent' | 'status_update_sent' | 'diagnosis_photos' | 'recommended_services' | 'customer_approved_services' | 'customer_declined_services' | 'parts_used' | 'before_photos' | 'after_photos'>) => {
+  // ── Create appointment ──
+  const createAppointment = useCallback(async (appointmentData: Partial<Appointment>) => {
     setLoading();
     try {
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
-          .insert({
-            ...appointmentData,
-            status: 'pending',
-            payment_status: 'pending',
-            warranty_days: 0,
-            reminder_sent: false,
-            status_update_sent: false,
-            diagnosis_photos: [],
-            recommended_services: [],
-            customer_approved_services: [],
-            customer_declined_services: [],
-            parts_used: [],
-            before_photos: [],
-            after_photos: [],
-          })
-          .select()
-          .single(),
+        supabase.from('garage_appointments').insert(appointmentData).select().single(),
         QUERY_TIMEOUT,
         'createAppointment'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: [data as Appointment, ...prev.appointments],
-        currentAppointment: data as Appointment,
-        isLoading: false,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
       setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Update appointment status ───
-  const updateStatus = useCallback(async (id: string, status: string, updates?: Partial<Appointment>) => {
+  // ── Update status ──
+  const updateStatus = useCallback(async (appointmentId: string, status: string, extraData?: any) => {
     setLoading();
     try {
-      const statusTimestamps: Record<string, string> = {
-        vehicle_received: 'vehicle_received_at',
-        diagnosis_completed: 'diagnosis_completed_at',
-        awaiting_approval: 'diagnosis_completed_at',
-        in_progress: 'work_started_at',
-        completed: 'work_completed_at',
-        ready_for_pickup: 'work_completed_at',
-      };
-
-      const updateData: any = { status, ...updates };
-      const timestampField = statusTimestamps[status];
-      if (timestampField) {
-        updateData[timestampField] = new Date().toISOString();
-      }
+      const updatePayload: any = { status, updated_at: new Date().toISOString() };
+      if (status === 'vehicle_received') updatePayload.vehicle_received_at = new Date().toISOString();
+      if (status === 'diagnosis') updatePayload.diagnosis_completed_at = new Date().toISOString();
+      if (status === 'approved') updatePayload.customer_approved_at = new Date().toISOString();
+      if (status === 'in_progress') updatePayload.work_started_at = new Date().toISOString();
+      if (status === 'completed') updatePayload.work_completed_at = new Date().toISOString();
+      if (status === 'picked_up') updatePayload.customer_picked_up_at = new Date().toISOString();
+      if (extraData) Object.assign(updatePayload, extraData);
 
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
-          .update(updateData)
-          .eq('id', id)
-          .select()
-          .single(),
+        supabase.from('garage_appointments').update(updatePayload).eq('id', appointmentId).select().single(),
         QUERY_TIMEOUT,
         'updateStatus'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        isLoading: false,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
       setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Add diagnosis ───
-  const addDiagnosis = useCallback(async (id: string, diagnosis: { notes: string; photos?: string[]; recommended_services?: string[] }) => {
+  // ── Add diagnosis ──
+  const addDiagnosis = useCallback(async (appointmentId: string, diagnosis: string, photos: string[], services: string[]) => {
     setLoading();
     try {
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
+        supabase.from('garage_appointments')
           .update({
-            diagnosis_notes: diagnosis.notes,
-            diagnosis_photos: diagnosis.photos || [],
-            recommended_services: diagnosis.recommended_services || [],
+            diagnosis_notes: diagnosis,
+            diagnosis_photos: photos,
+            recommended_services: services,
+            status: 'diagnosis',
             diagnosis_completed_at: new Date().toISOString(),
-            status: 'awaiting_approval',
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', id)
+          .eq('id', appointmentId)
           .select()
           .single(),
         QUERY_TIMEOUT,
         'addDiagnosis'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        isLoading: false,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
       setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Customer approves services ───
-  const approveServices = useCallback(async (id: string, approvedServiceIds: string[]) => {
+  // ── Approve services ──
+  const approveServices = useCallback(async (appointmentId: string, approved: string[], declined: string[]) => {
     setLoading();
     try {
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
+        supabase.from('garage_appointments')
           .update({
-            customer_approved_services: approvedServiceIds,
+            customer_approved_services: approved,
+            customer_declined_services: declined,
+            status: 'approved',
             customer_approved_at: new Date().toISOString(),
-            status: 'in_progress',
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', id)
+          .eq('id', appointmentId)
           .select()
           .single(),
         QUERY_TIMEOUT,
         'approveServices'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        isLoading: false,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
       setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Add parts used ───
-  const addParts = useCallback(async (id: string, parts: any[]) => {
+  // ── Add parts ──
+  const addParts = useCallback(async (appointmentId: string, parts: any[]) => {
+    setLoading();
     try {
+      const { data: current } = await withTimeout(
+        supabase.from('garage_appointments').select('parts_used').eq('id', appointmentId).single(),
+        QUERY_TIMEOUT,
+        'addParts-fetch'
+      );
+      const existing = current?.parts_used || [];
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
-          .update({ parts_used: parts })
-          .eq('id', id)
+        supabase.from('garage_appointments')
+          .update({ parts_used: [...existing, ...parts], updated_at: new Date().toISOString() })
+          .eq('id', appointmentId)
           .select()
           .single(),
         QUERY_TIMEOUT,
-        'addParts'
+        'addParts-update'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
+      setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Complete job ───
-  const completeJob = useCallback(async (id: string, completionData: { final_cost: number; after_photos?: string[]; mileage_out?: number; fuel_level_out?: string; warranty_days?: number }) => {
+  // ── Complete job ──
+  const completeJob = useCallback(async (appointmentId: string, finalCost: number, afterPhotos: string[], mileageOut?: number) => {
     setLoading();
     try {
-      const warrantyExpires = completionData.warranty_days
-        ? new Date(Date.now() + completionData.warranty_days * 24 * 60 * 60 * 1000).toISOString()
-        : null;
-
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
+        supabase.from('garage_appointments')
           .update({
-            ...completionData,
+            final_cost: finalCost,
+            after_photos: afterPhotos,
+            mileage_out: mileageOut,
             status: 'completed',
             work_completed_at: new Date().toISOString(),
-            warranty_expires_at: warrantyExpires,
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', id)
+          .eq('id', appointmentId)
           .select()
           .single(),
         QUERY_TIMEOUT,
         'completeJob'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        isLoading: false,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
       setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
-  // ─── Add customer review ───
-  const addReview = useCallback(async (id: string, review: { rating: number; review?: string }) => {
+  // ── Add review ──
+  const addReview = useCallback(async (appointmentId: string, rating: number, review: string) => {
+    setLoading();
     try {
       const { data, error } = await withTimeout(
-        supabase
-          .from('garage_appointments')
+        supabase.from('garage_appointments')
           .update({
-            customer_rating: review.rating,
-            customer_review: review.review,
+            customer_rating: rating,
+            customer_review: review,
+            updated_at: new Date().toISOString(),
           })
-          .eq('id', id)
+          .eq('id', appointmentId)
           .select()
           .single(),
         QUERY_TIMEOUT,
         'addReview'
       );
       if (error) throw error;
-      setState(prev => ({
-        ...prev,
-        appointments: prev.appointments.map(a => a.id === id ? (data as Appointment) : a),
-        currentAppointment: prev.currentAppointment?.id === id ? (data as Appointment) : prev.currentAppointment,
-        error: null,
-      }));
-      return data as Appointment;
-    } catch (err: any) {
-      setState(prev => ({ ...prev, error: err?.message }));
+      setData({ currentAppointment: data });
+      return data;
+    } catch (err) {
+      setError(err);
       return null;
     }
-  }, []);
+  }, [setLoading, setError, setData]);
 
+  // ── Clear error ──
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
+  // ═══════════════════════════════════════════════════════════════
+  // ALIASES — what the screens expect vs what we have
+  // ═══════════════════════════════════════════════════════════════
+
+  // Screen expects: refreshAppointments → we map to loadGarageAppointments
+  const refreshAppointments = useCallback(async (garageId?: string, statusFilter?: string) => {
+    if (!garageId) {
+      // Try to get from current appointments
+      const firstAppt = state.appointments[0];
+      if (firstAppt) {
+        await loadGarageAppointments(firstAppt.garage_id, statusFilter);
+      }
+      return;
+    }
+    await loadGarageAppointments(garageId, statusFilter);
+  }, [loadGarageAppointments, state.appointments]);
+
+  // Screen expects: updateAppointment → we map to updateStatus
+  const updateAppointment = updateStatus;
+
+  // Screen expects: addService → we map to addDiagnosis (service recommendations)
+  const addService = addDiagnosis;
+
+  // Screen expects: addPart → we map to addParts
+  const addPart = addParts;
+
+  // Screen expects: stats → we provide from state
+  const stats = state.stats;
+
+  // Screen expects: loading → we map to isLoading
+  const loading = state.isLoading;
+
   return {
-    ...state,
+    // Core state
+    appointments: state.appointments,
+    currentAppointment: state.currentAppointment,
+    stats,
+    isLoading: state.isLoading,
+    loading,
+    error: state.error,
+
+    // Core methods
     loadGarageAppointments,
     loadCustomerAppointments,
     loadAppointment,
@@ -437,5 +426,11 @@ export function useAppointments() {
     completeJob,
     addReview,
     clearError,
+
+    // Aliases for screen compatibility
+    refreshAppointments,
+    updateAppointment,
+    addService,
+    addPart,
   };
 }

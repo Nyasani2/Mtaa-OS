@@ -11,6 +11,7 @@ import { useAppointments } from '@/lib/hooks/useAppointments';
 import { supabase } from '@/lib/supabase';
 import {
   Wrench, Calendar, Clock, ChevronRight, Plus, X, Camera,
+  Car,
   CheckCircle, AlertCircle, DollarSign, FileText, Star,
   Phone, Mail, MapPin, User, Gauge, Fuel, Image as ImageIcon,
   ChevronLeft, ChevronRight as ChevronRightIcon, Printer, Share2
@@ -56,11 +57,11 @@ export default function AppointmentsScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refreshAppointments();
+    await refreshAppointments?.();
     setRefreshing(false);
   }, [refreshAppointments]);
 
-  useEffect(() => { refreshAppointments(); }, []);
+  useEffect(() => { refreshAppointments?.(); }, []);
 
   const filtered = appointments.filter(a => {
     const matchesFilter = filter === 'all' ? true :
@@ -82,7 +83,7 @@ export default function AppointmentsScreen() {
       await createAppointment({ ...newForm, garage_id: garage.id });
       setShowNewModal(false);
       setNewForm({ vehicle_plate: '', customer_name: '', customer_phone: '', service_type: '', description: '', mileage: '', fuel_level: '50', scheduled_date: new Date().toISOString().split('T')[0] });
-      refreshAppointments();
+      refreshAppointments?.();
     } catch (err: any) { Alert.alert('Error', err.message || 'Failed to create appointment'); }
   };
 
@@ -96,7 +97,7 @@ export default function AppointmentsScreen() {
       if (nextStatus === 'ready_for_pickup') {
         Alert.alert('Ready for Pickup', 'Customer has been notified.');
       }
-      refreshAppointments();
+      refreshAppointments?.();
       if (selectedAppt?.id === appt.id) setSelectedAppt({ ...appt, status: nextStatus });
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
@@ -106,7 +107,7 @@ export default function AppointmentsScreen() {
     try {
       await addService(selectedAppt.id, { name: serviceForm.name, cost: parseFloat(serviceForm.cost) });
       setServiceForm({ name: '', cost: '' });
-      refreshAppointments();
+      refreshAppointments?.();
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
 
@@ -119,7 +120,7 @@ export default function AppointmentsScreen() {
         unit_cost: parseFloat(partForm.unit_cost)
       });
       setPartForm({ name: '', quantity: '1', unit_cost: '' });
-      refreshAppointments();
+      refreshAppointments?.();
     } catch (err: any) { Alert.alert('Error', err.message); }
   };
 
@@ -180,7 +181,7 @@ export default function AppointmentsScreen() {
         .update({ invoice_id: savedInvoice.id })
         .eq('id', appt.id);
 
-      refreshAppointments();
+      refreshAppointments?.();
     } catch (err: any) {
       Alert.alert('Invoice Error', err.message || 'Failed to generate invoice');
     }
