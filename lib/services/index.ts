@@ -19,8 +19,23 @@ export * from './business-service';
 export * from './creator-service';
 export * from './voting-service';
 
-// Transport Fare Engine & Services
+// Transport (fare estimation + request flows)
 export * from './fare-engine';
 export * from './boda-service';
 export * from './mtaxi-service';
 export * from './mtruck-service';
+
+// Device Platform
+export * from './device.service';
+export * from './recording.service';
+export * from './evidence.service';
+export * from './camera.service';
+export * from './storage.service';
+export * from './bodycam.service';
+export * from './driver-score.service';
+export * from './incident.service';
+export * from './obd-diagnostic.service';
+export * from './fleet-camera.service';
+export * from './asis-integration.service';
+export * from './garage.service';
+export * from './diagnostics.service';

@@ -77,6 +77,7 @@ const ALL_APPS: AppTile[] = [
   { id: 'emergency', name: 'Emergency', icon: 'warning', iconSet: 'Ionicons', route: '/(os)/health/emergency', color: '#fff', bgColor: '#dc2626', ownerOnly: false },
   { id: 'find-care', name: 'Find Care', icon: 'search', iconSet: 'Ionicons', route: '/(os)/health/find-care', color: '#fff', bgColor: '#0891b2', ownerOnly: false },
   { id: 'gallery', name: 'Gallery', icon: 'images', iconSet: 'Ionicons', route: '/(media)/gallery', color: '#fff', bgColor: '#ec4899', ownerOnly: false },
+  { id: 'garage', name: 'Garage', icon: 'car-wrench', iconSet: 'MaterialCommunityIcons', route: '/(garage)', color: '#fff', bgColor: '#6b7280', ownerOnly: false },
   { id: 'gofund', name: 'GoFund', icon: 'heart-circle', iconSet: 'Ionicons', route: '/(os)/wallet/gofund', color: '#fff', bgColor: '#f43f5e', ownerOnly: false },
   { id: 'government', name: 'Government', icon: 'business', iconSet: 'Ionicons', route: '/(os)/health/government', color: '#fff', bgColor: '#1e40af', ownerOnly: false },
   { id: 'health', name: 'Health', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health', color: '#fff', bgColor: '#06b6d4', ownerOnly: false },
