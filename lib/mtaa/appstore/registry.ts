@@ -7,6 +7,10 @@ export function getAppStoreRegistry(): Map<string, AppManifest> {
   return appRegistry;
 }
 
+export function getAppById(id: string): AppManifest | undefined {
+  return appRegistry.get(id);
+}
+
 export function registerAppStoreApp(manifest: AppManifest): void {
   appRegistry.set(manifest.id, manifest);
 }
