@@ -1,234 +1,204 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase/client';
 
-export default function PublishFlowScreen() {
+interface StudioVideo {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
+  status: string;
+  visibility: string;
+  duration_seconds: number | null;
+  tags: string[] | null;
+}
+
+export default function PublishScreen() {
+  const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
-  const [visibility, setVisibility] = useState<'public' | 'unlisted' | 'private'>('public');
-  const [monetization, setMonetization] = useState(true);
-  const [schedule, setSchedule] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState('');
-  const [isPublishing, setIsPublishing] = useState(false);
+  const { user } = useAuthStore();
+  const [video, setVideo] = useState<StudioVideo | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handlePublish = () => {
-    if (!title.trim()) {
-      Alert.alert('Title Required', 'Enter a title for your video.');
-      return;
+  useEffect(() => {
+    if (!videoId) { router.back(); return; }
+    fetchVideo();
+  }, [videoId]);
+
+  const fetchVideo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('studio_videos')
+        .select('*')
+        .eq('id', videoId)
+        .single();
+      if (error) throw error;
+      setVideo(data);
+    } catch (e) {
+      Alert.alert('Error', 'Could not load video');
+    } finally {
+      setLoading(false);
     }
-    setIsPublishing(true);
-    setTimeout(() => {
-      setIsPublishing(false);
-      Alert.alert(
-        '✅ Published!',
-        'Your video is now live on MTAA Studio.',
-        [{ text: 'View', onPress: () => router.push('/(os)/studio') }]
-      );
-    }, 2000);
   };
 
-  const handleSchedule = () => {
-    if (!scheduleDate.trim()) {
-      Alert.alert('Date Required', 'Enter a schedule date (YYYY-MM-DD HH:MM).');
-      return;
+  const publishVideo = async () => {
+    if (!videoId) return;
+    setPublishing(true);
+    try {
+      const { error } = await supabase
+        .from('studio_videos')
+        .update({
+          status: 'published',
+          published_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', videoId);
+      if (error) throw error;
+      Alert.alert('Published!', 'Your video is now live.', [
+        { text: 'View', onPress: () => router.replace('/(os)/studio/dashboard') },
+        { text: 'Done', onPress: () => router.replace('/(os)/studio/dashboard') },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', 'Could not publish video');
+    } finally {
+      setPublishing(false);
     }
-    Alert.alert('✅ Scheduled', `Video will publish on ${scheduleDate}`);
   };
+
+  const scheduleVideo = () => {
+    Alert.alert('Coming Soon', 'Scheduled publishing will be available in the next update.');
+  };
+
+  const formatDuration = (s: number | null) => {
+    if (!s) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator color="#6366f1" size="large" style={{ marginTop: 40 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🚀 Publish</Text>
+        <Text style={styles.headerTitle}>Publish</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Title */}
-        <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Give your video a catchy title..."
-          placeholderTextColor="#475569"
-        />
-
-        {/* Description */}
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Tell viewers what your video is about..."
-          placeholderTextColor="#475569"
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-
-        {/* Tags */}
-        <Text style={styles.label}>Tags (comma separated)</Text>
-        <TextInput
-          style={styles.input}
-          value={tags}
-          onChangeText={setTags}
-          placeholder="nairobi, vlog, food, travel..."
-          placeholderTextColor="#475569"
-        />
-
-        {/* Visibility */}
-        <Text style={styles.label}>Visibility</Text>
-        <View style={styles.visibilityRow}>
-          {(['public', 'unlisted', 'private'] as const).map((v) => (
-            <TouchableOpacity
-              key={v}
-              style={[styles.visibilityBtn, visibility === v && styles.visibilityBtnActive]}
-              onPress={() => setVisibility(v)}
-            >
-              <Ionicons
-                name={v === 'public' ? 'globe' : v === 'unlisted' ? 'link' : 'lock-closed'}
-                size={16}
-                color={visibility === v ? '#3B82F6' : '#64748B'}
-              />
-              <Text style={[styles.visibilityText, visibility === v && styles.visibilityTextActive]}>
-                {v.charAt(0).toUpperCase() + v.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Monetization */}
-        <View style={styles.switchRow}>
-          <View>
-            <Text style={styles.switchLabel}>Enable Monetization</Text>
-            <Text style={styles.switchSubtext}>Ads, memberships, and tips</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Preview Card */}
+        <View style={styles.previewCard}>
+          <View style={styles.thumbBox}>
+            {video?.thumbnail_url ? (
+              <Text style={styles.thumbText}>🎬</Text>
+            ) : (
+              <Feather name="film" size={32} color="#666" />
+            )}
           </View>
-          <Switch value={monetization} onValueChange={setMonetization} trackColor={{ false: '#334155', true: '#22C55E' }} />
-        </View>
-
-        {/* Schedule */}
-        <View style={styles.switchRow}>
-          <View>
-            <Text style={styles.switchLabel}>Schedule Publication</Text>
-            <Text style={styles.switchSubtext}>Publish at a specific time</Text>
+          <View style={styles.previewInfo}>
+            <Text style={styles.previewTitle} numberOfLines={2}>{video?.title || 'Untitled'}</Text>
+            <Text style={styles.previewMeta}>{formatDuration(video?.duration_seconds || null)} • {video?.visibility}</Text>
+            {video?.tags && video.tags.length > 0 && (
+              <Text style={styles.previewTags}>{video.tags.slice(0, 3).join(' • ')}</Text>
+            )}
           </View>
-          <Switch value={schedule} onValueChange={setSchedule} trackColor={{ false: '#334155', true: '#3B82F6' }} />
         </View>
 
-        {schedule && (
-          <>
-            <Text style={styles.label}>Schedule Date & Time</Text>
-            <TextInput
-              style={styles.input}
-              value={scheduleDate}
-              onChangeText={setScheduleDate}
-              placeholder="2026-06-20 14:00"
-              placeholderTextColor="#475569"
-            />
-            <TouchableOpacity style={styles.scheduleBtn} onPress={handleSchedule}>
-              <Ionicons name="calendar" size={18} color="#3B82F6" />
-              <Text style={styles.scheduleBtnText}>Confirm Schedule</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* ASIS Suggestions */}
-        <View style={styles.asisCard}>
-          <View style={styles.asisHeader}>
-            <Ionicons name="sparkles" size={18} color="#A855F7" />
-            <Text style={styles.asisTitle}>ASIS Suggestions</Text>
+        {/* Checklist */}
+        <View style={styles.checklist}>
+          <Text style={styles.checkTitle}>Before you publish</Text>
+          <View style={styles.checkItem}>
+            <Feather name={video?.title && video.title !== 'Untitled' ? 'check-circle' : 'circle'} size={18} color={video?.title && video.title !== 'Untitled' ? '#22c55e' : '#666'} />
+            <Text style={styles.checkText}>Title added</Text>
           </View>
-          <Text style={styles.asisItem}>• Add "Nairobi" to tags for better discovery</Text>
-          <Text style={styles.asisItem}>• Your title is 40 chars — ideal length!</Text>
-          <Text style={styles.asisItem}>• Schedule for 7 PM for max engagement</Text>
+          <View style={styles.checkItem}>
+            <Feather name={video?.description ? 'check-circle' : 'circle'} size={18} color={video?.description ? '#22c55e' : '#666'} />
+            <Text style={styles.checkText}>Description added</Text>
+          </View>
+          <View style={styles.checkItem}>
+            <Feather name={video?.thumbnail_url ? 'check-circle' : 'circle'} size={18} color={video?.thumbnail_url ? '#22c55e' : '#666'} />
+            <Text style={styles.checkText}>Thumbnail set</Text>
+          </View>
         </View>
 
-        {/* Publish Button */}
-        <TouchableOpacity
-          style={[styles.publishBtn, isPublishing && styles.publishBtnDisabled]}
-          onPress={handlePublish}
-          disabled={isPublishing}
-        >
-          {isPublishing ? (
-            <>
-              <Ionicons name="sync" size={20} color="#FFF" />
-              <Text style={styles.publishBtnText}>Publishing...</Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="rocket" size={20} color="#FFF" />
-              <Text style={styles.publishBtnText}>Publish Now</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {/* Visibility Summary */}
+        <View style={styles.visCard}>
+          <Feather name={video?.visibility === 'public' ? 'globe' : video?.visibility === 'unlisted' ? 'link' : 'lock'} size={20} color="#6366f1" />
+          <View style={{ marginLeft: 12, flex: 1 }}>
+            <Text style={styles.visLabel}>Visibility</Text>
+            <Text style={styles.visValue}>{video?.visibility?.charAt(0).toUpperCase()}{video?.visibility?.slice(1)}</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.push(`/(os)/studio/editor?videoId=${videoId}`)}>
+            <Text style={styles.visEdit}>Edit</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.draftBtn} onPress={() => router.push('/(os)/studio/drafts')}>
-          <Text style={styles.draftBtnText}>Save to Drafts Instead</Text>
-        </TouchableOpacity>
+        {/* Actions */}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.publishBtn} onPress={publishVideo} disabled={publishing}>
+            {publishing ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Feather name="upload" size={18} color="#fff" />
+                <Text style={styles.publishText}>Publish Now</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.scheduleBtn} onPress={scheduleVideo}>
+            <Feather name="clock" size={18} color="#fff" />
+            <Text style={styles.scheduleText}>Schedule</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.draftBtn} onPress={() => router.replace('/(os)/studio/dashboard')}>
+            <Text style={styles.draftText}>Save as Draft & Exit</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { padding: 8, alignSelf: 'flex-start' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#F8FAFC', marginTop: 4 },
-  label: { fontSize: 14, fontWeight: '600', color: '#F1F5F9', marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  input: {
-    backgroundColor: '#1E293B', borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 14,
-    color: '#F1F5F9', fontSize: 14,
-    borderWidth: 1, borderColor: '#334155',
-    marginHorizontal: 16,
-  },
-  textArea: { height: 100, paddingTop: 14 },
-  visibilityRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8 },
-  visibilityBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155',
-  },
-  visibilityBtnActive: { borderColor: '#3B82F6', backgroundColor: '#3B82F610' },
-  visibilityText: { fontSize: 13, color: '#94A3B8', fontWeight: '600' },
-  visibilityTextActive: { color: '#3B82F6' },
-  switchRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginHorizontal: 16, marginTop: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#1E293B',
-  },
-  switchLabel: { fontSize: 15, fontWeight: '600', color: '#F1F5F9' },
-  switchSubtext: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  scheduleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, marginHorizontal: 16, marginTop: 8,
-    paddingVertical: 12, backgroundColor: '#1E293B', borderRadius: 12,
-    borderWidth: 1, borderColor: '#3B82F640',
-  },
-  scheduleBtnText: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
-  asisCard: {
-    backgroundColor: '#1E293B', borderRadius: 14,
-    marginHorizontal: 16, marginTop: 20, padding: 16,
-    borderWidth: 1, borderColor: '#A855F730',
-  },
-  asisHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  asisTitle: { fontSize: 14, fontWeight: '700', color: '#A855F7' },
-  asisItem: { fontSize: 13, color: '#94A3B8', marginBottom: 6, lineHeight: 18 },
-  publishBtn: {
-    backgroundColor: '#22C55E', borderRadius: 14,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 16, gap: 8, marginHorizontal: 16, marginTop: 24,
-  },
-  publishBtnDisabled: { backgroundColor: '#14532D' },
-  publishBtnText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
-  draftBtn: { alignItems: 'center', paddingVertical: 14, marginTop: 8 },
-  draftBtnText: { fontSize: 14, color: '#64748B', fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  scroll: { flex: 1 },
+  previewCard: { flexDirection: 'row', margin: 16, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 12, gap: 12 },
+  thumbBox: { width: 80, height: 80, borderRadius: 8, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  thumbText: { fontSize: 32 },
+  previewInfo: { flex: 1, justifyContent: 'center' },
+  previewTitle: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  previewMeta: { color: '#9ca3af', fontSize: 13, marginTop: 4 },
+  previewTags: { color: '#6366f1', fontSize: 12, marginTop: 4 },
+  checklist: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16 },
+  checkTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  checkItem: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  checkText: { color: '#9ca3af', fontSize: 14 },
+  visCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16 },
+  visLabel: { color: '#9ca3af', fontSize: 12 },
+  visValue: { color: '#fff', fontSize: 14, fontWeight: '600', marginTop: 2 },
+  visEdit: { color: '#6366f1', fontSize: 14, fontWeight: '600' },
+  actions: { marginHorizontal: 16, gap: 12 },
+  publishBtn: { backgroundColor: '#6366f1', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  publishText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  scheduleBtn: { backgroundColor: '#1f1f1f', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#2a2a2a' },
+  scheduleText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  draftBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  draftText: { color: '#9ca3af', fontSize: 14, fontWeight: '600' },
 });

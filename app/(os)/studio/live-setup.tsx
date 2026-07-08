@@ -1,215 +1,201 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase/client';
 
-export default function LiveStreamSetupScreen() {
+export default function LiveSetupScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [chatEnabled, setChatEnabled] = useState(true);
-  const [donationsEnabled, setDonationsEnabled] = useState(true);
-  const [cameraMode, setCameraMode] = useState<'single' | 'multi'>('single');
-  const [isGoingLive, setIsGoingLive] = useState(false);
+  const [category, setCategory] = useState('general');
+  const [enableChat, setEnableChat] = useState(true);
+  const [enableRecording, setEnableRecording] = useState(true);
+  const [starting, setStarting] = useState(false);
 
-  const categories = ['Vlog', 'Gaming', 'Music', 'Talk', 'News', 'Education', 'Sports', 'Other'];
+  const categories = [
+    { key: 'general', label: 'General', icon: 'hash' },
+    { key: 'music', label: 'Music', icon: 'music' },
+    { key: 'gaming', label: 'Gaming', icon: 'cpu' },
+    { key: 'education', label: 'Education', icon: 'book-open' },
+    { key: 'news', label: 'News', icon: 'radio' },
+    { key: 'sports', label: 'Sports', icon: 'activity' },
+  ];
 
-  const handleGoLive = () => {
+  const startStream = async () => {
     if (!title.trim()) {
-      Alert.alert('Title Required', 'Enter a title for your live stream.');
+      Alert.alert('Title Required', 'Please enter a stream title');
       return;
     }
-    setIsGoingLive(true);
-    setTimeout(() => {
-      setIsGoingLive(false);
-      router.push({
-        pathname: '/(os)/studio/live-active',
-        params: { title, chatEnabled: chatEnabled ? '1' : '0', donationsEnabled: donationsEnabled ? '1' : '0' },
-      });
-    }, 2000);
+    if (!user?.id) {
+      Alert.alert('Error', 'You must be logged in to stream');
+      return;
+    }
+
+    setStarting(true);
+    try {
+      const { data, error } = await supabase
+        .from('studio_live_streams')
+        .insert({
+          creator_id: user.id,
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          status: 'live',
+          enable_chat: enableChat,
+          enable_recording: enableRecording,
+          viewer_count: 0,
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Navigate to live active screen
+      router.replace(`/(os)/studio/live-active?id=${data.id}`);
+    } catch (e) {
+      console.error('Start stream error:', e);
+      Alert.alert('Error', 'Could not start stream. Please try again.');
+      setStarting(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="x" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🔴 Go Live</Text>
+        <Text style={styles.headerTitle}>Go Live</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Live Badge */}
+        <View style={styles.liveBanner}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveBannerText}>You are about to go live</Text>
+        </View>
+
         {/* Title */}
-        <Text style={styles.label}>Stream Title *</Text>
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="What's happening today?"
-          placeholderTextColor="#475569"
-        />
+        <View style={styles.field}>
+          <Text style={styles.label}>Stream Title *</Text>
+          <TextInput
+            style={styles.input}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="What's your stream about?"
+            placeholderTextColor="#666"
+            maxLength={100}
+          />
+          <Text style={styles.charCount}>{title.length}/100</Text>
+        </View>
 
         {/* Description */}
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Tell viewers what to expect..."
-          placeholderTextColor="#475569"
-          multiline
-          numberOfLines={3}
-          textAlignVertical="top"
-        />
+        <View style={styles.field}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Tell viewers what to expect..."
+            placeholderTextColor="#666"
+            multiline
+            numberOfLines={3}
+            maxLength={500}
+          />
+          <Text style={styles.charCount}>{description.length}/500</Text>
+        </View>
 
         {/* Category */}
-        <Text style={styles.label}>Category</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryBtn, category === cat && styles.categoryBtnActive]}
-              onPress={() => setCategory(cat)}
-            >
-              <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Camera Mode */}
-        <Text style={styles.label}>Camera Setup</Text>
-        <View style={styles.cameraModeRow}>
-          <TouchableOpacity
-            style={[styles.cameraModeBtn, cameraMode === 'single' && styles.cameraModeBtnActive]}
-            onPress={() => setCameraMode('single')}
-          >
-            <Ionicons name="videocam" size={22} color={cameraMode === 'single' ? '#3B82F6' : '#64748B'} />
-            <Text style={[styles.cameraModeText, cameraMode === 'single' && styles.cameraModeTextActive]}>Single Camera</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.cameraModeBtn, cameraMode === 'multi' && styles.cameraModeBtnActive]}
-            onPress={() => setCameraMode('multi')}
-          >
-            <Ionicons name="grid" size={22} color={cameraMode === 'multi' ? '#3B82F6' : '#64748B'} />
-            <Text style={[styles.cameraModeText, cameraMode === 'multi' && styles.cameraModeTextActive]}>Multi-Camera</Text>
-          </TouchableOpacity>
+        <View style={styles.field}>
+          <Text style={styles.label}>Category</Text>
+          <View style={styles.categoryGrid}>
+            {categories.map(cat => (
+              <TouchableOpacity
+                key={cat.key}
+                style={[styles.catBtn, category === cat.key && styles.catBtnActive]}
+                onPress={() => setCategory(cat.key)}
+              >
+                <Feather name={cat.icon as any} size={18} color={category === cat.key ? '#fff' : '#9ca3af'} />
+                <Text style={[styles.catText, category === cat.key && styles.catTextActive]}>{cat.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        {/* Toggles */}
-        <View style={styles.toggleCard}>
-          <View style={styles.toggleRow}>
+        {/* Settings */}
+        <View style={styles.settingsCard}>
+          <Text style={styles.settingsTitle}>Stream Settings</Text>
+          <View style={styles.settingRow}>
             <View>
-              <Text style={styles.toggleLabel}>Live Chat</Text>
-              <Text style={styles.toggleSubtext}>Viewers can send messages</Text>
+              <Text style={styles.settingLabel}>Live Chat</Text>
+              <Text style={styles.settingDesc}>Allow viewers to send messages</Text>
             </View>
-            <Switch value={chatEnabled} onValueChange={setChatEnabled} trackColor={{ false: '#334155', true: '#3B82F6' }} />
+            <Switch value={enableChat} onValueChange={setEnableChat} trackColor={{ false: '#333', true: '#6366f1' }} />
           </View>
-          <View style={[styles.toggleRow, { borderTopWidth: 1, borderTopColor: '#334155', marginTop: 12, paddingTop: 12 }]}>
+          <View style={styles.divider} />
+          <View style={styles.settingRow}>
             <View>
-              <Text style={styles.toggleLabel}>Donations & Tips</Text>
-              <Text style={styles.toggleSubtext}>Viewers can send money during stream</Text>
+              <Text style={styles.settingLabel}>Auto Record</Text>
+              <Text style={styles.settingDesc}>Save stream as video after ending</Text>
             </View>
-            <Switch value={donationsEnabled} onValueChange={setDonationsEnabled} trackColor={{ false: '#334155', true: '#22C55E' }} />
+            <Switch value={enableRecording} onValueChange={setEnableRecording} trackColor={{ false: '#333', true: '#6366f1' }} />
           </View>
         </View>
 
-        {/* Thumbnail */}
-        <View style={styles.thumbCard}>
-          <Ionicons name="image" size={24} color="#64748B" />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.thumbTitle}>Stream Thumbnail</Text>
-            <Text style={styles.thumbDesc}>Add a thumbnail to attract viewers</Text>
-          </View>
-          <TouchableOpacity style={styles.thumbBtn}>
-            <Text style={styles.thumbBtnText}>Upload</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Go Live Button */}
+        {/* Start Button */}
         <TouchableOpacity
-          style={[styles.goLiveBtn, isGoingLive && styles.goLiveBtnDisabled]}
-          onPress={handleGoLive}
-          disabled={isGoingLive}
+          style={[styles.startBtn, (!title.trim() || starting) && styles.startBtnDisabled]}
+          onPress={startStream}
+          disabled={!title.trim() || starting}
         >
-          {isGoingLive ? (
-            <>
-              <Ionicons name="radio" size={20} color="#FFF" />
-              <Text style={styles.goLiveText}>Starting Broadcast...</Text>
-            </>
-          ) : (
-            <>
-              <View style={styles.liveDot} />
-              <Text style={styles.goLiveText}>GO LIVE NOW</Text>
-            </>
-          )}
+          <View style={styles.liveIndicator}>
+            <View style={styles.pulseDot} />
+            <Text style={styles.startText}>{starting ? 'Starting...' : 'Go Live Now'}</Text>
+          </View>
         </TouchableOpacity>
+
+        <Text style={styles.terms}>
+          By going live, you agree to our Community Guidelines. Inappropriate content may result in account suspension.
+        </Text>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { padding: 8, alignSelf: 'flex-start' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#F8FAFC', marginTop: 4 },
-  label: { fontSize: 14, fontWeight: '600', color: '#F1F5F9', marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
-  input: {
-    backgroundColor: '#1E293B', borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 14,
-    color: '#F1F5F9', fontSize: 14,
-    borderWidth: 1, borderColor: '#334155',
-    marginHorizontal: 16,
-  },
-  textArea: { height: 80, paddingTop: 14 },
-  categoryScroll: { marginTop: 4 },
-  categoryBtn: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155',
-  },
-  categoryBtnActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
-  categoryText: { fontSize: 13, color: '#94A3B8', fontWeight: '600' },
-  categoryTextActive: { color: '#FFF' },
-  cameraModeRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 10 },
-  cameraModeBtn: {
-    flex: 1, alignItems: 'center', gap: 6,
-    paddingVertical: 14, backgroundColor: '#1E293B',
-    borderRadius: 14, borderWidth: 1, borderColor: '#334155',
-  },
-  cameraModeBtnActive: { borderColor: '#3B82F6', backgroundColor: '#3B82F610' },
-  cameraModeText: { fontSize: 13, color: '#94A3B8', fontWeight: '600' },
-  cameraModeTextActive: { color: '#3B82F6' },
-  toggleCard: {
-    backgroundColor: '#1E293B', borderRadius: 14,
-    marginHorizontal: 16, marginTop: 16, padding: 16,
-    borderWidth: 1, borderColor: '#334155',
-  },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleLabel: { fontSize: 15, fontWeight: '600', color: '#F1F5F9' },
-  toggleSubtext: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  thumbCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E293B', marginHorizontal: 16, marginTop: 16,
-    padding: 14, borderRadius: 14, borderWidth: 1, borderColor: '#334155',
-  },
-  thumbTitle: { fontSize: 14, fontWeight: '600', color: '#F1F5F9' },
-  thumbDesc: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  thumbBtn: {
-    backgroundColor: '#3B82F620', paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 8,
-  },
-  thumbBtnText: { fontSize: 12, color: '#3B82F6', fontWeight: '700' },
-  goLiveBtn: {
-    backgroundColor: '#EF4444', borderRadius: 16,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 18, gap: 10, marginHorizontal: 16, marginTop: 24,
-    shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
-  },
-  goLiveBtnDisabled: { backgroundColor: '#7F1D1D' },
-  liveDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#FFF' },
-  goLiveText: { color: '#FFF', fontSize: 18, fontWeight: '800', letterSpacing: 1 },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  scroll: { flex: 1 },
+  liveBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, margin: 16, paddingVertical: 12, backgroundColor: '#2a0a0a', borderRadius: 10, borderWidth: 1, borderColor: '#ef444422' },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444' },
+  liveBannerText: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  field: { marginHorizontal: 16, marginBottom: 20 },
+  label: { color: '#9ca3af', fontSize: 13, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { backgroundColor: '#1f1f1f', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: '#fff', fontSize: 15, borderWidth: 1, borderColor: '#2a2a2a' },
+  textArea: { height: 80, textAlignVertical: 'top', paddingTop: 12 },
+  charCount: { color: '#666', fontSize: 12, textAlign: 'right', marginTop: 4 },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  catBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#1f1f1f', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#2a2a2a' },
+  catBtnActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
+  catText: { color: '#9ca3af', fontSize: 13, fontWeight: '500' },
+  catTextActive: { color: '#fff' },
+  settingsCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16 },
+  settingsTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  settingDesc: { color: '#666', fontSize: 12, marginTop: 2 },
+  divider: { height: 1, backgroundColor: '#2a2a2a', marginVertical: 12 },
+  startBtn: { marginHorizontal: 16, backgroundColor: '#ef4444', paddingVertical: 18, borderRadius: 12, alignItems: 'center' },
+  startBtnDisabled: { backgroundColor: '#5a1a1a' },
+  liveIndicator: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  pulseDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
+  startText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  terms: { color: '#666', fontSize: 12, textAlign: 'center', marginHorizontal: 24, marginTop: 16, lineHeight: 18 },
 });

@@ -1,161 +1,131 @@
-import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase/client';
 
-interface Draft {
+interface DraftVideo {
   id: string;
   title: string;
-  type: 'video' | 'audio' | 'thumbnail';
-  lastEdited: string;
-  progress: number;
-  autoSaved: boolean;
+  status: string;
+  created_at: string;
+  duration_seconds: number | null;
 }
 
-export default function DraftsManagerScreen() {
+export default function DraftsScreen() {
   const router = useRouter();
-  const [drafts, setDrafts] = useState<Draft[]>([
-    { id: '1', title: 'Mombasa Sunset Vlog', type: 'video', lastEdited: '2 hours ago', progress: 75, autoSaved: true },
-    { id: '2', title: 'Afrobeat Instrumental', type: 'audio', lastEdited: '1 day ago', progress: 40, autoSaved: true },
-    { id: '3', title: 'Street Food Thumbnail', type: 'thumbnail', lastEdited: '3 days ago', progress: 90, autoSaved: false },
-    { id: '4', title: 'Kibera Documentary', type: 'video', lastEdited: '1 week ago', progress: 20, autoSaved: true },
-  ]);
+  const { user } = useAuthStore();
+  const [drafts, setDrafts] = useState<DraftVideo[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleResume = (draft: Draft) => {
-    if (draft.type === 'video') router.push('/(os)/studio/editor');
-    else if (draft.type === 'audio') router.push('/(os)/studio/music');
-    else if (draft.type === 'thumbnail') router.push('/(os)/studio/thumbnail');
-  };
-
-  const handleDelete = (draftId: string) => {
-    Alert.alert('Delete Draft?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => setDrafts((prev) => prev.filter((d) => d.id !== draftId)) },
-    ]);
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video': return 'videocam';
-      case 'audio': return 'musical-note';
-      case 'thumbnail': return 'image';
-      default: return 'document';
+  const fetchDrafts = async () => {
+    if (!user?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('studio_videos')
+        .select('id, title, status, created_at, duration_seconds')
+        .eq('creator_id', user.id)
+        .eq('status', 'draft')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setDrafts(data || []);
+    } catch (e) {
+      console.error('Fetch drafts error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'video': return '#3B82F6';
-      case 'audio': return '#A855F7';
-      case 'thumbnail': return '#22C55E';
-      default: return '#64748B';
+  useEffect(() => { fetchDrafts(); }, [user?.id]);
+
+  const deleteDraft = async (id: string) => {
+    try {
+      await supabase.from('studio_videos').delete().eq('id', id);
+      setDrafts(prev => prev.filter(d => d.id !== id));
+    } catch (e) {
+      console.error('Delete draft error:', e);
     }
   };
+
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatDuration = (s: number | null) => {
+    if (!s) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const renderItem = ({ item }: { item: DraftVideo }) => (
+    <TouchableOpacity
+      style={styles.draftCard}
+      onPress={() => router.push(`/(os)/studio/editor?videoId=${item.id}`)}
+    >
+      <View style={styles.thumb}>
+        <Feather name="film" size={24} color="#666" />
+      </View>
+      <View style={styles.info}>
+        <Text style={styles.title} numberOfLines={1}>{item.title || 'Untitled'}</Text>
+        <Text style={styles.meta}>{formatDuration(item.duration_seconds)} • {formatDate(item.created_at)}</Text>
+      </View>
+      <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteDraft(item.id)}>
+        <Feather name="trash-2" size={18} color="#ef4444" />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📝 Drafts</Text>
-        <Text style={styles.headerSubtitle}>{drafts.length} drafts</Text>
+        <Text style={styles.headerTitle}>Drafts</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        {drafts.map((draft) => (
-          <View key={draft.id} style={styles.draftCard}>
-            <View style={[styles.draftIcon, { backgroundColor: getTypeColor(draft.type) + '20' }]}>
-              <Ionicons name={getTypeIcon(draft.type)} size={22} color={getTypeColor(draft.type)} />
-            </View>
-            <View style={styles.draftInfo}>
-              <Text style={styles.draftTitle}>{draft.title}</Text>
-              <View style={styles.draftMeta}>
-                <Text style={styles.draftType}>{draft.type.toUpperCase()}</Text>
-                <Text style={styles.draftDot}>•</Text>
-                <Text style={styles.draftTime}>{draft.lastEdited}</Text>
-                {draft.autoSaved && (
-                  <>
-                    <Text style={styles.draftDot}>•</Text>
-                    <Text style={styles.draftAutoSaved}>Auto-saved</Text>
-                  </>
-                )}
-              </View>
-              {/* Progress Bar */}
-              <View style={styles.progressWrap}>
-                <View style={styles.progressBg}>
-                  <View style={[styles.progressFill, { width: `${draft.progress}%` }]} />
-                </View>
-                <Text style={styles.progressText}>{draft.progress}%</Text>
-              </View>
-            </View>
-            <View style={styles.draftActions}>
-              <TouchableOpacity style={styles.resumeBtn} onPress={() => handleResume(draft)}>
-                <Text style={styles.resumeText}>Resume</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(draft.id)}>
-                <Ionicons name="trash-outline" size={18} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-
-        {drafts.length === 0 && (
-          <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color="#475569" />
-            <Text style={styles.emptyText}>No drafts yet</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/studio/camera')}>
-              <Text style={styles.emptyBtnText}>Start Creating</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
-    </View>
+      {drafts.length === 0 && !loading ? (
+        <View style={styles.empty}>
+          <Feather name="file-minus" size={48} color="#666" />
+          <Text style={styles.emptyText}>No drafts yet</Text>
+          <Text style={styles.emptySub}>Record a video to get started</Text>
+          <TouchableOpacity style={styles.emptyBtn} onPress={() => router.push('/(os)/studio/camera')}>
+            <Text style={styles.emptyBtnText}>Record Video</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={drafts}
+          keyExtractor={d => d.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchDrafts(); }} tintColor="#6366f1" />}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { padding: 8, alignSelf: 'flex-start' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#F8FAFC', marginTop: 4 },
-  headerSubtitle: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
-  draftCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#1E293B', marginHorizontal: 16, marginBottom: 10,
-    padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#334155',
-  },
-  draftIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', marginRight: 12,
-  },
-  draftInfo: { flex: 1 },
-  draftTitle: { fontSize: 15, fontWeight: '600', color: '#F1F5F9' },
-  draftMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  draftType: { fontSize: 10, fontWeight: '700', color: '#64748B' },
-  draftDot: { fontSize: 10, color: '#475569' },
-  draftTime: { fontSize: 11, color: '#94A3B8' },
-  draftAutoSaved: { fontSize: 11, color: '#22C55E', fontWeight: '600' },
-  progressWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  progressBg: {
-    flex: 1, height: 6, backgroundColor: '#0F172A',
-    borderRadius: 3, overflow: 'hidden',
-  },
-  progressFill: { height: '100%', backgroundColor: '#3B82F6', borderRadius: 3 },
-  progressText: { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  draftActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  resumeBtn: {
-    backgroundColor: '#3B82F620', paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 8, borderWidth: 1, borderColor: '#3B82F640',
-  },
-  resumeText: { fontSize: 12, color: '#3B82F6', fontWeight: '600' },
-  empty: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 15, color: '#64748B', marginTop: 12 },
-  emptyBtn: {
-    marginTop: 16, backgroundColor: '#3B82F6', paddingHorizontal: 20, paddingVertical: 12,
-    borderRadius: 12,
-  },
-  emptyBtnText: { color: '#FFF', fontSize: 14, fontWeight: '700' },
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 40 },
+  emptyText: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  emptySub: { color: '#666', fontSize: 14 },
+  emptyBtn: { marginTop: 8, backgroundColor: '#6366f1', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  emptyBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  draftCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1f1f1f', borderRadius: 12, padding: 12, marginBottom: 10 },
+  thumb: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  info: { flex: 1, marginLeft: 12 },
+  title: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  meta: { color: '#9ca3af', fontSize: 13, marginTop: 2 },
+  deleteBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 });
