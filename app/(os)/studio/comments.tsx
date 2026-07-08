@@ -1,183 +1,106 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import React, { useEffect } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useMComments } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase/client';
 
-interface VideoComment {
-  id: string;
-  video_id: string;
-  user_name: string;
-  body: string;
-  created_at: string;
-  is_flagged: boolean;
-  video_title: string;
-}
-
-export default function CommentsScreen() {
-  const router = useRouter();
+export default function StudioCommentsScreen() {
+  const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const { user } = useAuthStore();
-  const [comments, setComments] = useState<VideoComment[]>([]);
-  const [filter, setFilter] = useState<'all' | 'flagged'>('all');
-  const [loading, setLoading] = useState(true);
+  const { comments, load, create, remove, loading } = useMComments(videoId);
+  const [newComment, setNewComment] = React.useState('');
+  const [replyTo, setReplyTo] = React.useState<string | null>(null);
 
-  const fetchComments = async () => {
-    if (!user?.id) return;
-    try {
-      const query = supabase
-        .from('studio_video_comments')
-        .select(`
-          id, video_id, user_name, body, created_at, is_flagged,
-          studio_videos!inner(title)
-        `)
-        .eq('studio_videos.creator_id', user.id)
-        .order('created_at', { ascending: false });
+  useEffect(() => {
+    if (videoId) load(videoId);
+  }, [videoId]);
 
-      if (filter === 'flagged') {
-        query.eq('is_flagged', true);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      const formatted = (data || []).map((c: any) => ({
-        ...c,
-        video_title: c.studio_videos?.title || 'Untitled',
-      }));
-      setComments(formatted);
-    } catch (e) {
-      console.error('Comments error:', e);
-    } finally {
-      setLoading(false);
-    }
+  const handleSend = async () => {
+    if (!newComment.trim() || !user?.id || !videoId) return;
+    await create({
+      video_id: videoId,
+      user_id: user.id,
+      content: newComment.trim(),
+      parent_id: replyTo,
+    });
+    setNewComment('');
+    setReplyTo(null);
+    load(videoId);
   };
 
-  useEffect(() => { fetchComments(); }, [user?.id, filter]);
-
-  const deleteComment = async (id: string) => {
-    Alert.alert('Delete Comment', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await supabase.from('studio_video_comments').delete().eq('id', id);
-            setComments(prev => prev.filter(c => c.id !== id));
-          } catch (e) {
-            Alert.alert('Error', 'Could not delete comment');
-          }
-        },
-      },
-    ]);
+  const handleDelete = async (id: string) => {
+    await remove(id);
+    load(videoId);
   };
-
-  const toggleFlag = async (id: string, current: boolean) => {
-    try {
-      await supabase.from('studio_video_comments').update({ is_flagged: !current }).eq('id', id);
-      setComments(prev => prev.map(c => c.id === id ? { ...c, is_flagged: !current } : c));
-    } catch (e) {
-      console.error('Flag error:', e);
-    }
-  };
-
-  const formatDate = (date: string) => {
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
-
-  const renderItem = ({ item }: { item: VideoComment }) => (
-    <View style={[styles.commentCard, item.is_flagged && styles.flaggedCard]}>
-      <View style={styles.commentHeader}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{item.user_name.charAt(0).toUpperCase()}</Text>
-          </View>
-          <View>
-            <Text style={styles.userName}>{item.user_name}</Text>
-            <Text style={styles.videoName} numberOfLines={1}>{item.video_title}</Text>
-          </View>
-        </View>
-        <Text style={styles.date}>{formatDate(item.created_at)}</Text>
-      </View>
-      <Text style={styles.commentBody}>{item.body}</Text>
-      <View style={styles.commentActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFlag(item.id, item.is_flagged)}>
-          <Feather name={item.is_flagged ? 'flag' : 'minus-circle'} size={14} color={item.is_flagged ? '#ef4444' : '#9ca3af'} />
-          <Text style={[styles.actionText, item.is_flagged && styles.flaggedText]}>
-            {item.is_flagged ? 'Flagged' : 'Flag'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => deleteComment(item.id)}>
-          <Feather name="trash-2" size={14} color="#ef4444" />
-          <Text style={[styles.actionText, { color: '#ef4444' }]}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Comments</Text>
-        <View style={{ width: 24 }} />
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0a0a0a' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={{ padding: 16, paddingTop: 48, borderBottomWidth: 1, borderBottomColor: '#222' }}>
+        <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>Comments</Text>
+        <Text style={{ color: '#888', fontSize: 13, marginTop: 4 }}>{comments.length} comment(s)</Text>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity style={[styles.filterBtn, filter === 'all' && styles.filterBtnActive]} onPress={() => setFilter('all')}>
-          <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterBtn, filter === 'flagged' && styles.filterBtnActive]} onPress={() => setFilter('flagged')}>
-          <Text style={[styles.filterText, filter === 'flagged' && styles.filterTextActive]}>Flagged</Text>
-        </TouchableOpacity>
-      </View>
+      <FlatList
+        data={comments}
+        keyExtractor={item => item.id}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 12 }}
+        renderItem={({ item }) => (
+          <View style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#ff0000', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>{item.full_name?.[0]?.toUpperCase() || '?'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>{item.full_name || 'Anonymous'}</Text>
+                <Text style={{ color: '#666', fontSize: 11 }}>{new Date(item.created_at).toLocaleDateString()}</Text>
+              </View>
+              {item.is_pinned && (
+                <View style={{ backgroundColor: '#ff000022', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
+                  <Text style={{ color: '#ff6b6b', fontSize: 10 }}>PINNED</Text>
+                </View>
+              )}
+            </View>
+            <Text style={{ color: '#ddd', fontSize: 14, lineHeight: 20 }}>{item.content}</Text>
+            <View style={{ flexDirection: 'row', marginTop: 10, gap: 16 }}>
+              <TouchableOpacity onPress={() => setReplyTo(item.id)}>
+                <Text style={{ color: '#888', fontSize: 12 }}>Reply</Text>
+              </TouchableOpacity>
+              {item.user_id === user?.id && (
+                <TouchableOpacity onPress={() => handleDelete(item.id)}>
+                  <Text style={{ color: '#ff6b6b', fontSize: 12 }}>Delete</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        )}
+        ListEmptyComponent={<Text style={{ color: '#666', textAlign: 'center', padding: 32 }}>No comments yet. Be the first!</Text>}
+      />
 
-      {comments.length === 0 && !loading ? (
-        <View style={styles.empty}>
-          <Feather name="message-circle" size={48} color="#666" />
-          <Text style={styles.emptyText}>No comments yet</Text>
+      {/* Input */}
+      <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: '#222', backgroundColor: '#111' }}>
+        {replyTo && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ color: '#888', fontSize: 12 }}>Replying to comment</Text>
+            <TouchableOpacity onPress={() => setReplyTo(null)} style={{ marginLeft: 8 }}>
+              <Text style={{ color: '#ff6b6b', fontSize: 12 }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TextInput
+            value={newComment}
+            onChangeText={setNewComment}
+            placeholder="Add a comment..."
+            placeholderTextColor="#555"
+            multiline
+            style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, maxHeight: 100 }}
+          />
+          <TouchableOpacity onPress={handleSend} style={{ backgroundColor: '#ff0000', borderRadius: 10, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Post</Text>
+          </TouchableOpacity>
         </View>
-      ) : (
-        <FlatList
-          data={comments}
-          keyExtractor={c => c.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ padding: 16 }}
-        />
-      )}
-    </SafeAreaView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  filterBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16, backgroundColor: '#1f1f1f', borderWidth: 1, borderColor: '#2a2a2a' },
-  filterBtnActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  filterText: { color: '#9ca3af', fontSize: 13, fontWeight: '500' },
-  filterTextActive: { color: '#fff' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyText: { color: '#666', fontSize: 16 },
-  commentCard: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 14, marginBottom: 10 },
-  flaggedCard: { borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  commentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  userInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  userName: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  videoName: { color: '#666', fontSize: 12, marginTop: 1, maxWidth: 180 },
-  date: { color: '#666', fontSize: 11 },
-  commentBody: { color: '#e5e5e5', fontSize: 14, lineHeight: 20, marginBottom: 10 },
-  commentActions: { flexDirection: 'row', gap: 16 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionText: { color: '#9ca3af', fontSize: 12 },
-  flaggedText: { color: '#ef4444' },
-});
