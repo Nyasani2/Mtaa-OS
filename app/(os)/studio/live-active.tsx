@@ -32,7 +32,7 @@ export default function LiveActiveScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0a0a0a' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {/* Stream Info */}
       <View style={{ padding: 16, paddingTop: 48, borderBottomWidth: 1, borderBottomColor: '#222' }}>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }} numberOfLines={1">{stream?.title || 'Live Stream'}</Text>
+        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }} numberOfLines={1}>{stream?.title || 'Live Stream'}</Text>
         <Text style={{ color: '#888', fontSize: 13, marginTop: 4 }}>{stream?.current_viewers || 0} viewers • {stream?.studio_name || ''}</Text>
       </View>
 
