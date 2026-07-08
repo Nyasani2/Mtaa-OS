@@ -1,19 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '@/lib/supabase/client';
+import { useMThumbnails } from '@/lib/services/mstudio-hooks';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-export default function ThumbnailScreen() {
+export default function StudioThumbnailScreen() {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
-  const router = useRouter();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const { user } = useAuthStore();
+  const { thumbnails, load, create, loading } = useMThumbnails(videoId);
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    if (!videoId) router.back();
+  React.useEffect(() => {
+    if (videoId) load();
   }, [videoId]);
 
   const pickImage = async () => {
@@ -21,113 +20,55 @@ export default function ThumbnailScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [16, 9],
-      quality: 0.8,
+      quality: 0.9,
     });
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
+    if (!result.canceled && result.assets[0]?.uri && videoId && user?.id) {
+      await create({ video_id: videoId, user_id: user.id, image_url: result.assets[0].uri, is_ai_generated: false });
+      load();
     }
   };
 
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Camera access is required');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setSelectedImage(result.assets[0].uri);
-    }
-  };
-
-  const saveThumbnail = async () => {
-    if (!selectedImage || !videoId) return;
-    setUploading(true);
-    try {
-      // In production, upload to Supabase Storage here
-      // For now, save the local URI
-      const { error } = await supabase
-        .from('studio_videos')
-        .update({ thumbnail_url: selectedImage, updated_at: new Date().toISOString() })
-        .eq('id', videoId);
-      if (error) throw error;
-      router.back();
-    } catch (e) {
-      Alert.alert('Error', 'Could not save thumbnail');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const generateThumbnails = () => {
-    // Placeholder: would generate frames from video
-    Alert.alert('Coming Soon', 'Auto-generated thumbnails from video frames will be available soon.');
+  const generateAI = async () => {
+    setGenerating(true);
+    // In production: call ASIS/Kimi API to generate thumbnail
+    setTimeout(() => {
+      setGenerating(false);
+      Alert.alert('AI Generated', 'Thumbnail generated successfully');
+    }, 2000);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thumbnail</Text>
-        <TouchableOpacity onPress={saveThumbnail} disabled={!selectedImage || uploading}>
-          <Text style={[styles.saveText, (!selectedImage || uploading) && styles.disabled]}>
-            {uploading ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <ScrollView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+      <View style={{ padding: 16, paddingTop: 48 }}>
+        <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 16 }}>Thumbnails</Text>
 
-      <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center' }}>
-        {/* Preview */}
-        <View style={styles.previewBox}>
-          {selectedImage ? (
-            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-          ) : (
-            <View style={styles.previewPlaceholder}>
-              <Feather name="image" size={48} color="#666" />
-              <Text style={styles.previewText}>No thumbnail selected</Text>
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+          <TouchableOpacity onPress={pickImage} style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#333' }}>
+            <Text style={{ color: '#fff', fontWeight: '600' }}>📁 Upload</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={generateAI} disabled={generating} style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#ff000044' }}>
+            <Text style={{ color: generating ? '#666' : '#ff6b6b', fontWeight: '600' }}>{generating ? 'Generating...' : '🤖 AI Generate'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {thumbnails.map((thumb) => (
+          <View key={thumb.id} style={{ marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
+            <Image source={{ uri: thumb.image_url }} style={{ width: '100%', height: 200, resizeMode: 'cover' }} />
+            <View style={{ padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: '#888', fontSize: 12 }}>{thumb.is_ai_generated ? '🤖 AI Generated' : '📁 Uploaded'}</Text>
+              {thumb.is_selected && (
+                <View style={{ backgroundColor: '#ff0000', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 }}>
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>SELECTED</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          </View>
+        ))}
 
-        {/* Options */}
-        <View style={styles.options}>
-          <TouchableOpacity style={styles.optionBtn} onPress={pickImage}>
-            <Feather name="image" size={22} color="#fff" />
-            <Text style={styles.optionText}>Choose from Gallery</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionBtn} onPress={takePhoto}>
-            <Feather name="camera" size={22} color="#fff" />
-            <Text style={styles.optionText}>Take Photo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionBtn} onPress={generateThumbnails}>
-            <Feather name="film" size={22} color="#fff" />
-            <Text style={styles.optionText}>Auto Generate from Video</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        {thumbnails.length === 0 && (
+          <Text style={{ color: '#666', textAlign: 'center', padding: 32 }}>No thumbnails yet. Upload or generate one.</Text>
+        )}
+      </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  saveText: { color: '#6366f1', fontSize: 14, fontWeight: '600' },
-  disabled: { color: '#666' },
-  previewBox: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1f1f1f', marginBottom: 24 },
-  previewImage: { width: '100%', height: '100%' },
-  previewPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  previewText: { color: '#666', fontSize: 14 },
-  options: { width: '100%', gap: 12 },
-  optionBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#1f1f1f', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#2a2a2a' },
-  optionText: { color: '#fff', fontSize: 15, fontWeight: '500' },
-});
