@@ -1,129 +1,274 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View, Text, FlatList, Image, TouchableOpacity, RefreshControl,
+  ActivityIndicator, TextInput, ScrollView, Dimensions
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
-interface FeedVideo {
+const { width } = Dimensions.get('window');
+const THUMB_WIDTH = width / 2 - 18;
+const THUMB_HEIGHT = THUMB_WIDTH * 0.56;
+
+interface Video {
   id: string;
   title: string;
-  thumbnail_url: string | null;
-  video_url: string | null;
+  thumbnail_url: string;
+  duration_seconds: number;
+  view_count: number;
   creator_id: string;
-  views_count: number;
-  duration_seconds: number | null;
-  created_at: string;
-  creator?: { full_name: string | null; avatar_url: string | null };
+  creator_name: string;
+  creator_avatar: string;
+  category: string;
+  published_at: string;
+  is_live: boolean;
 }
+
+const CATEGORIES = ['All', 'Music', 'Gaming', 'News', 'Education', 'Sports', 'Comedy', 'Tech', 'Afrobeat', 'Live'];
 
 export default function FeedScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [videos, setVideos] = useState<FeedVideo[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchVideos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('studio_videos')
-        .select('*, user_profiles(full_name, avatar_url)')
-        .eq('status', 'published')
-        .eq('visibility', 'public')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      setVideos(data || []);
-    } catch (e) {
-      console.error('Feed error:', e);
-    } finally {
+  const fetchVideos = useCallback(async (isRefresh = false, category = selectedCategory) => {
+    if (isRefresh) setRefreshing(true);
+    else if (page === 0) setLoading(true);
+
+    const pageNum = isRefresh ? 0 : page;
+    const from = pageNum * 20;
+    const to = from + 19;
+
+    let query = supabase
+      .from('mstudio_videos')
+      .select('id, title, thumbnail_url, duration_seconds, view_count, creator_id, category, published_at, is_live, creator:creator_id (full_name, avatar_url)')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .range(from, to);
+
+    if (category !== 'All') {
+      query = query.eq('category', category.toLowerCase());
+    }
+
+    if (searchQuery.trim()) {
+      query = query.ilike('title', `%${searchQuery.trim()}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Feed fetch error:', error);
       setLoading(false);
       setRefreshing(false);
+      return;
     }
+
+    const mapped: Video[] = (data || []).map((v: any) => ({
+      id: v.id,
+      title: v.title,
+      thumbnail_url: v.thumbnail_url,
+      duration_seconds: v.duration_seconds,
+      view_count: v.view_count || 0,
+      creator_id: v.creator_id,
+      creator_name: v.creator?.full_name || 'Unknown',
+      creator_avatar: v.creator?.avatar_url || '',
+      category: v.category,
+      published_at: v.published_at,
+      is_live: v.is_live || false,
+    }));
+
+    if (isRefresh) {
+      setVideos(mapped);
+      setPage(1);
+    } else {
+      setVideos(prev => pageNum === 0 ? mapped : [...prev, ...mapped]);
+      setPage(pageNum + 1);
+    }
+
+    setHasMore((data || []).length === 20);
+    setLoading(false);
+    setRefreshing(false);
+  }, [page, selectedCategory, searchQuery]);
+
+  useEffect(() => {
+    fetchVideos(true);
+  }, []);
+
+  useEffect(() => {
+    fetchVideos(true);
+  }, [selectedCategory]);
+
+  const formatDuration = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => { fetchVideos(); }, []);
-
-  const formatDuration = (s: number | null) => {
-    if (!s) return '0:00';
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, '0')}`;
+  const formatViews = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return `${count}`;
   };
 
-  const formatViews = (n: number) => {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-    return n.toString();
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+    if (days < 365) return `${Math.floor(days / 30)} months ago`;
+    return `${Math.floor(days / 365)} years ago`;
   };
 
-  const renderItem = ({ item }: { item: FeedVideo }) => (
+  const renderVideo = ({ item }: { item: Video }) => (
     <TouchableOpacity
-      style={styles.videoCard}
-      onPress={() => router.push(`/(os)/studio/video-player?videoId=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+      style={{ width: THUMB_WIDTH, marginBottom: 16 }}
     >
-      <View style={styles.thumbnailBox}>
+      <View style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT, borderRadius: 8, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
         {item.thumbnail_url ? (
-          <Image source={{ uri: item.thumbnail_url }} style={styles.thumbnail} />
+          <Image source={{ uri: item.thumbnail_url }} style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT }} resizeMode="cover" />
         ) : (
-          <View style={styles.thumbPlaceholder}>
-            <Feather name="film" size={32} color="#666" />
+          <View style={{ flex: 1, backgroundColor: '#222', justifyContent: 'center', alignItems: 'center' }}>
+            <Feather name="play-circle" size={32} color="#555" />
           </View>
         )}
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{formatDuration(item.duration_seconds)}</Text>
-        </View>
+        {!item.is_live && (
+          <View style={{ position: 'absolute', bottom: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.8)', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>{formatDuration(item.duration_seconds)}</Text>
+          </View>
+        )}
+        {item.is_live && (
+          <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: '#ff0000', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#fff', marginRight: 4 }} />
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>LIVE</Text>
+          </View>
+        )}
       </View>
-      <View style={styles.infoRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{item.creator?.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
+
+      <View style={{ flexDirection: 'row', marginTop: 8 }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#333' }} />
+        <View style={{ flex: 1, marginLeft: 8 }}>
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600', lineHeight: 18 }} numberOfLines={2}>{item.title}</Text>
+          <Text style={{ color: '#888', fontSize: 11, marginTop: 2 }}>{item.creator_name}</Text>
+          <Text style={{ color: '#666', fontSize: 11 }}>{formatViews(item.view_count)} views • {timeAgo(item.published_at)}</Text>
         </View>
-        <View style={styles.textInfo}>
-          <Text style={styles.videoTitle} numberOfLines={2}>{item.title || 'Untitled'}</Text>
-          <Text style={styles.videoMeta}>
-            {item.creator?.full_name || 'Creator'} • {formatViews(item.views_count || 0)} views
-          </Text>
-        </View>
+        <TouchableOpacity style={{ padding: 4 }}>
+          <Feather name="more-vertical" size={16} color="#888" />
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/studio/dashboard')}>
-          <Feather name="tv" size={22} color="#fff" />
+  const renderHeader = () => (
+    <View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, paddingTop: 48, backgroundColor: '#0a0a0a' }}>
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Feather name="search" size={18} color="#888" />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={() => fetchVideos(true)}
+            placeholder="Search MStudio"
+            placeholderTextColor="#555"
+            style={{ flex: 1, color: '#fff', fontSize: 14, marginLeft: 10 }}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => { setSearchQuery(''); fetchVideos(true); }}>
+              <Feather name="x" size={16} color="#888" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity style={{ marginLeft: 12, padding: 8 }} onPress={() => router.push('/(os)/studio/camera')}>
+          <Feather name="video" size={22} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ marginLeft: 8, padding: 8 }} onPress={() => router.push('/(os)/profile')}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#333' }} />
         </TouchableOpacity>
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, paddingBottom: 8, backgroundColor: '#0a0a0a' }}>
+        {CATEGORIES.map(cat => (
+          <TouchableOpacity
+            key={cat}
+            onPress={() => setSelectedCategory(cat)}
+            style={{
+              paddingHorizontal: 14,
+              paddingVertical: 6,
+              borderRadius: 16,
+              marginRight: 8,
+              backgroundColor: selectedCategory === cat ? '#fff' : '#1a1a1a',
+              borderWidth: 1,
+              borderColor: selectedCategory === cat ? '#fff' : '#333',
+            }}
+          >
+            <Text style={{ color: selectedCategory === cat ? '#000' : '#fff', fontSize: 12, fontWeight: '500' }}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderFooter = () => {
+    if (!hasMore) return null;
+    return (
+      <View style={{ padding: 20, alignItems: 'center' }}>
+        <ActivityIndicator size="small" color="#ff0000" />
+      </View>
+    );
+  };
+
+  const renderEmpty = () => (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 }}>
+      <Feather name="film" size={48} color="#333" />
+      <Text style={{ color: '#666', fontSize: 16, marginTop: 16 }}>No videos yet</Text>
+      <Text style={{ color: '#444', fontSize: 13, marginTop: 4 }}>Be the first to create content</Text>
+      <TouchableOpacity
+        onPress={() => router.push('/(os)/studio/camera')}
+        style={{ marginTop: 20, backgroundColor: '#ff0000', borderRadius: 20, paddingHorizontal: 24, paddingVertical: 10 }}
+      >
+        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>Create Video</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading && videos.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+        {renderHeader()}
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#ff0000" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
       <FlatList
         data={videos}
-        keyExtractor={v => v.id}
-        renderItem={renderItem}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchVideos(); }} tintColor="#6366f1" />}
-        contentContainerStyle={{ padding: 16 }}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 12 }}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={renderEmpty}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchVideos(true)} tintColor="#ff0000" />}
+        onEndReached={() => { if (hasMore && !loading) fetchVideos(); }}
+        onEndReachedThreshold={0.5}
+        renderItem={renderVideo}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  videoCard: { marginBottom: 20 },
-  thumbnailBox: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1f1f1f' },
-  thumbnail: { width: '100%', height: '100%' },
-  thumbPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  durationBadge: { position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  durationText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  infoRow: { flexDirection: 'row', marginTop: 10, gap: 10 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  textInfo: { flex: 1 },
-  videoTitle: { color: '#fff', fontSize: 14, fontWeight: '600', lineHeight: 20 },
-  videoMeta: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
-});
