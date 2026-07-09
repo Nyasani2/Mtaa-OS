@@ -1,0 +1,35 @@
+import { AppManifest } from '@/lib/kernel/registry';
+
+export const hookupManifest: AppManifest = {
+  id: 'hookup',
+  name: 'Hookup',
+  description: 'Discover meaningful connections — dating, friendship, and professional networking built on respect, safety, and African values.',
+  version: '1.0.0',
+  category: 'social',
+  icon: 'heart',
+  color: '#ff3366',
+  route: '/(os)/hookup/discovery',
+  isOSNative: false,
+  installFromStore: true,
+  permissions: ['profile:read', 'messaging:read', 'wallet:read'],
+  requiresAuth: true,
+  minOSVersion: '1.0.0',
+  features: [
+    'Discovery feed with intelligent matching',
+    'Relationship intent filtering (monogamy, polygamy where legal, friendship, marriage)',
+    'Profile verification (Phone, ID, Face, Professional)',
+    'Mutual matching with real-time notifications',
+    'Safety center with block, report, and emergency tools',
+    'Privacy controls (invisible mode, message requests)',
+    'MTAA Wallet integration for premium features',
+    'ASIS AI-powered scam detection and compatibility scoring',
+    'Integration with MTAA Messenger for secure chat',
+    'Community events and singles meetups',
+  ],
+  metadata: {
+    author: 'MTAA OS',
+    size: '2.1 MB',
+    rating: 4.8,
+    downloads: 0,
+  },
+};
