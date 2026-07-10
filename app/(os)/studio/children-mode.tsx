@@ -49,7 +49,7 @@ export default function ChildrenModeScreen() {
 
   const loadSettings = async () => {
     if (!user?.id) return;
-    const { data } = await supabase.from('mstudio_kids_settings').select('*').eq('profile_id', user.id).single();
+    const { data } = await supabase.from('studio_kids_settings').select('*').eq('profile_id', user.id).single();
     if (data) {
       setSettings({
         pin: data.pin || '',
@@ -81,7 +81,7 @@ export default function ChildrenModeScreen() {
       return;
     }
 
-    const { error } = await supabase.from('mstudio_kids_settings').upsert({
+    const { error } = await supabase.from('studio_kids_settings').upsert({
       profile_id: user.id,
       pin: settings.enabled ? pin : null,
       enabled: settings.enabled,

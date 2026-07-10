@@ -49,7 +49,7 @@ export default function FeedScreen() {
     const to = from + 19;
 
     let query = supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, duration_seconds, view_count, creator_id, category, published_at, is_live, creator:creator_id (full_name, avatar_url)')
       .eq('status', 'published')
       .order('published_at', { ascending: false })

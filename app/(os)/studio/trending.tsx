@@ -34,7 +34,7 @@ export default function TrendingScreen() {
     else startDate.setDate(now.getDate() - 30);
 
     const { data, error } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, view_count, creator:creator_id (full_name), type, created_at')
       .gte('created_at', startDate.toISOString())
       .eq('status', 'published')

@@ -42,7 +42,7 @@ export default function CameraScreen() {
 
   const checkProAccess = async () => {
     if (!user?.id) return;
-    const { data } = await supabase.from('mstudio_camera_subscriptions').select('*').eq('creator_id', user.id).eq('tier', 4).gte('expires_at', new Date().toISOString()).single();
+    const { data } = await supabase.from('studio_camera_subscriptions').select('*').eq('creator_id', user.id).eq('tier', 4).gte('expires_at', new Date().toISOString()).single();
     setHasProAccess(!!data);
   };
 

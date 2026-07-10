@@ -95,7 +95,7 @@ export default function EducationUploadScreen() {
         setProgress(10 + Math.round((i + 1) / content.files.length * 30));
       }
 
-      const { error } = await supabase.from('mstudio_education_content').insert({
+      const { error } = await supabase.from('studio_education_content').insert({
         creator_id: user.id,
         title: content.title,
         type: content.type,

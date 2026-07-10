@@ -30,7 +30,7 @@ export default function LiveScreen() {
   const fetchLive = async () => {
     setLoading(true);
     let query = supabase
-      .from('mstudio_live_streams')
+      .from('studio_live_streams')
       .select('id, title, thumbnail_url, current_viewers, category, started_at, creator:creator_id (full_name, avatar_url)')
       .eq('is_live', true)
       .order('current_viewers', { ascending: false });

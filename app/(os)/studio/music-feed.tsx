@@ -38,7 +38,7 @@ export default function MusicFeedScreen() {
   const fetchMusic = async () => {
     setLoading(true);
     let query = supabase
-      .from('mstudio_music_releases')
+      .from('studio_music_releases')
       .select('id, title, cover_art_url, type, genre, track_count, creator:creator_id (full_name)')
       .eq('status', 'published')
       .order('created_at', { ascending: false })

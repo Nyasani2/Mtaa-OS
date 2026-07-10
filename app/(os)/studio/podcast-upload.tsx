@@ -109,7 +109,7 @@ export default function PodcastUploadScreen() {
       }
       setProgress(25);
 
-      const { data: podcastData, error } = await supabase.from('mstudio_podcasts').insert({
+      const { data: podcastData, error } = await supabase.from('studio_podcasts').insert({
         creator_id: user.id,
         title: podcast.title,
         description: podcast.description,
@@ -132,7 +132,7 @@ export default function PodcastUploadScreen() {
         await supabase.storage.from('mstudio-podcasts').upload(path, blob);
         const { data: urlData } = supabase.storage.from('mstudio-podcasts').getPublicUrl(path);
 
-        await supabase.from('mstudio_podcast_episodes').insert({
+        await supabase.from('studio_podcast_episodes').insert({
           podcast_id: podcastData.id,
           creator_id: user.id,
           title: ep.title,

@@ -38,16 +38,16 @@ export const pharmacyService = {
     if (error) throw error;
   },
   async processSale(saleData: any, items: any[]) {
-    const { data: sale, error: saleError } = await supabase.from('health_pharmacy_sales').insert({ ...saleData, status: 'completed', created_at: new Date().toISOString() }).select().single();
+    const { data: sale, error: saleError } = await supabase.from('health_pos_transactions').insert({ ...saleData, status: 'completed', created_at: new Date().toISOString() }).select().single();
     if (saleError) throw saleError;
     for (const item of items) {
-      await supabase.from('health_pharmacy_sale_items').insert({ sale_id: sale.id, inventory_id: item.id, name: item.name, quantity: item.quantity, unit_price: item.price, total: item.price * item.quantity });
+      await supabase.from('health_pos_transactions').insert({ sale_id: sale.id, inventory_id: item.id, name: item.name, quantity: item.quantity, unit_price: item.price, total: item.price * item.quantity });
       await supabase.rpc('decrement_inventory', { item_id: item.id, qty: item.quantity });
     }
     return sale;
   },
   async checkInteraction(drugA: string, drugB: string) {
-    const { data } = await supabase.from('health_drug_interactions').select('*').or(`and(drug_a.ilike.${drugA},drug_b.ilike.${drugB}),and(drug_a.ilike.${drugB},drug_b.ilike.${drugA})`).single();
+    const { data } = await supabase.from('health_pharmacy_inventory').select('*').or(`and(drug_a.ilike.${drugA},drug_b.ilike.${drugB}),and(drug_a.ilike.${drugB},drug_b.ilike.${drugA})`).single();
     if (data) return data;
     return { severity: 'none', description: `No known interaction.`, recommendation: 'Monitor patient.' };
   },

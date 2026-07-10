@@ -66,7 +66,7 @@ export default function LiveSetupScreen() {
 
     const key = streamKey || generateStreamKey();
 
-    const { data, error } = await supabase.from('mstudio_live_streams').insert({
+    const { data, error } = await supabase.from('studio_live_streams').insert({
       creator_id: user.id,
       title: settings.title,
       description: settings.description,
@@ -102,7 +102,7 @@ export default function LiveSetupScreen() {
 
   const endStream = async () => {
     if (!streamId) return;
-    await supabase.from('mstudio_live_streams').update({
+    await supabase.from('studio_live_streams').update({
       status: 'ended',
       is_live: false,
       ended_at: new Date().toISOString(),

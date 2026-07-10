@@ -118,7 +118,7 @@ export default function UploadCenterScreen() {
       updateFile(file.id, { progress: 80 });
 
       // Insert into database
-      const { error: dbError } = await supabase.from('mstudio_videos').insert({
+      const { error: dbError } = await supabase.from('studio_videos').insert({
         creator_id: user.id,
         title: file.title,
         description: file.description,

@@ -1,9 +1,49 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { ShipperRequest, HaulQuote, MtruckJob, TonnageCategory } from '@/lib/mtruck/types';
 
 const TABLE_REQUESTS = 'mtruck_shipper_requests';
 const TABLE_QUOTES = 'mtruck_haul_quotes';
 const TABLE_JOBS = 'mtruck_jobs';
+
+function mapRequest(row: any): ShipperRequest {
+  return {
+    id: row.id,
+    shipperId: row.shipper_id,
+    cargoType: row.cargo_type,
+    tonnageCategory: row.tonnage_category,
+    weightKg: row.weight_kg,
+    originAddress: row.origin_address,
+    originLat: row.origin_lat,
+    originLng: row.origin_lng,
+    destAddress: row.dest_address,
+    destLat: row.dest_lat,
+    destLng: row.dest_lng,
+    pickupDate: row.pickup_date,
+    deliveryDeadline: row.delivery_deadline,
+    urgency: row.urgency,
+    specialRequirements: row.special_requirements ?? [],
+    status: row.status,
+    quotes: (row.mtruck_haul_quotes ?? row.quotes ?? []).map(mapQuote),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapQuote(row: any): HaulQuote {
+  return {
+    id: row.id,
+    requestId: row.request_id,
+    carrierId: row.carrier_id,
+    carrierName: row.carrier_name,
+    carrierRating: row.carrier_rating,
+    estimatedCost: row.estimated_cost,
+    currency: row.currency,
+    estimatedDays: row.estimated_days,
+    notes: row.notes,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+}
 
 export const shipperService = {
   async createRequest(data: {
@@ -51,7 +91,7 @@ export const shipperService = {
   async getMyRequests(shipperId: string): Promise<ShipperRequest[]> {
     const { data, error } = await supabase
       .from(TABLE_REQUESTS)
-      .select(`*, ${TABLE_QUOTES}(*)`)
+      .select(`*, mtruck_haul_quotes(*)`)
       .eq('shipper_id', shipperId)
       .order('created_at', { ascending: false });
 
@@ -62,7 +102,7 @@ export const shipperService = {
   async getRequestWithQuotes(requestId: string): Promise<ShipperRequest> {
     const { data, error } = await supabase
       .from(TABLE_REQUESTS)
-      .select(`*, ${TABLE_QUOTES}(*)`)
+      .select(`*, mtruck_haul_quotes(*)`)
       .eq('id', requestId)
       .single();
 
@@ -91,7 +131,7 @@ export const shipperService = {
 
     const { data: req } = await supabase
       .from(TABLE_REQUESTS)
-      .select(`*, ${TABLE_QUOTES}!inner(*)`)
+      .select(`*, mtruck_haul_quotes!inner(*)`)
       .eq('id', requestId)
       .single();
 
@@ -101,140 +141,85 @@ export const shipperService = {
       .from(TABLE_JOBS)
       .insert({
         shipper_id: req.shipper_id,
+        shipper_name: req.shipper_name ?? 'Shipper',
+        shipper_phone: req.shipper_phone ?? '',
         cargo_type: req.cargo_type,
         tonnage_category: req.tonnage_category,
         weight_kg: req.weight_kg,
-        origin: { lat: req.origin_lat, lng: req.origin_lng, address: req.origin_address, name: req.origin_address },
-        destination: { lat: req.dest_lat, lng: req.dest_lng, address: req.dest_address, name: req.dest_address },
+        origin: { lat: req.origin_lat, lng: req.origin_lng, address: req.origin_address },
+        destination: { lat: req.dest_lat, lng: req.dest_lng, address: req.dest_address },
         pickup_date: req.pickup_date,
         delivery_deadline: req.delivery_deadline,
         urgency: req.urgency,
-        quoted_rate: acceptedQuote.rate,
-        final_rate: acceptedQuote.rate,
-        currency: acceptedQuote.currency,
-        assigned_truck_id: null,
-        assigned_driver_id: null,
+        quoted_rate: acceptedQuote?.estimated_cost ?? 0,
+        final_rate: acceptedQuote?.estimated_cost ?? 0,
+        currency: acceptedQuote?.currency ?? 'KES',
+        assigned_driver_id: acceptedQuote?.carrier_id ?? null,
         status: 'accepted',
       })
       .select()
       .single();
 
     if (je) throw new Error(`Create job failed: ${je.message}`);
-    return mapJob(job);
+    return job;
   },
 
-  async getMyJobs(shipperId: string): Promise<MtruckJob[]> {
-    const { data, error } = await supabase
-      .from(TABLE_JOBS)
-      .select('*')
-      .eq('shipper_id', shipperId)
-      .order('created_at', { ascending: false });
+  async rejectQuote(quoteId: string): Promise<void> {
+    const { error } = await supabase
+      .from(TABLE_QUOTES)
+      .update({ status: 'rejected' })
+      .eq('id', quoteId);
 
-    if (error) throw new Error(`Fetch jobs failed: ${error.message}`);
-    return (data ?? []).map(mapJob);
-  },
-
-  async trackJob(jobId: string): Promise<MtruckJob> {
-    const { data, error } = await supabase
-      .from(TABLE_JOBS)
-      .select('*')
-      .eq('id', jobId)
-      .single();
-
-    if (error) throw new Error(`Track job failed: ${error.message}`);
-    return mapJob(data);
+    if (error) throw new Error(`Reject quote failed: ${error.message}`);
   },
 
   async cancelRequest(requestId: string): Promise<void> {
     const { error } = await supabase
       .from(TABLE_REQUESTS)
-      .update({ status: 'rejected' })
-      .eq('id', requestId)
-      .eq('status', 'pending');
+      .update({ status: 'cancelled' })
+      .eq('id', requestId);
 
     if (error) throw new Error(`Cancel request failed: ${error.message}`);
   },
+
+  async getQuotesForRequest(requestId: string): Promise<HaulQuote[]> {
+    const { data, error } = await supabase
+      .from(TABLE_QUOTES)
+      .select('*')
+      .eq('request_id', requestId)
+      .order('estimated_cost', { ascending: true });
+
+    if (error) throw new Error(`Fetch quotes failed: ${error.message}`);
+    return (data ?? []).map(mapQuote);
+  },
+
+  async submitQuote(data: {
+    requestId: string;
+    carrierId: string;
+    carrierName: string;
+    carrierRating: number;
+    estimatedCost: number;
+    currency: string;
+    estimatedDays: number;
+    notes?: string;
+  }): Promise<HaulQuote> {
+    const { data: quote, error } = await supabase
+      .from(TABLE_QUOTES)
+      .insert({
+        request_id: data.requestId,
+        carrier_id: data.carrierId,
+        carrier_name: data.carrierName,
+        carrier_rating: data.carrierRating,
+        estimated_cost: data.estimatedCost,
+        currency: data.currency,
+        estimated_days: data.estimatedDays,
+        notes: data.notes ?? '',
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Submit quote failed: ${error.message}`);
+    return mapQuote(quote);
+  },
 };
-
-function mapRequest(row: any): ShipperRequest {
-  return {
-    id: row.id,
-    shipperId: row.shipper_id,
-    cargoType: row.cargo_type,
-    tonnageCategory: row.tonnage_category,
-    weightKg: row.weight_kg,
-    originAddress: row.origin_address,
-    originLat: row.origin_lat,
-    originLng: row.origin_lng,
-    destAddress: row.dest_address,
-    destLat: row.dest_lat,
-    destLng: row.dest_lng,
-    pickupDate: row.pickup_date,
-    deliveryDeadline: row.delivery_deadline,
-    urgency: row.urgency,
-    specialRequirements: row.special_requirements ?? [],
-    status: row.status,
-    quotes: (row.mtruck_haul_quotes ?? []).map(mapQuote),
-    createdAt: row.created_at,
-  };
-}
-
-function mapQuote(row: any): HaulQuote {
-  return {
-    id: row.id,
-    requestId: row.request_id,
-    fleetId: row.fleet_id,
-    fleetName: row.fleet_name,
-    rate: row.rate,
-    currency: row.currency,
-    estimatedHours: row.estimated_hours,
-    truckType: row.truck_type,
-    equipmentIncluded: row.equipment_included ?? [],
-    insuranceIncluded: row.insurance_included,
-    expiryTime: row.expiry_time,
-    status: row.status,
-    createdAt: row.created_at,
-  };
-}
-
-function mapJob(row: any): MtruckJob {
-  return {
-    id: row.id,
-    shipperId: row.shipper_id,
-    shipperName: row.shipper_name ?? '',
-    shipperPhone: row.shipper_phone ?? '',
-    cargoType: row.cargo_type,
-    tonnageCategory: row.tonnage_category,
-    weightKg: row.weight_kg,
-    dimensions: row.dimensions,
-    hazardous: row.hazardous ?? false,
-    fragile: row.fragile ?? false,
-    temperatureControlled: row.temperature_controlled ?? false,
-    origin: row.origin,
-    destination: row.destination,
-    distanceKm: row.distance_km ?? 0,
-    pickupDate: row.pickup_date,
-    deliveryDeadline: row.delivery_deadline,
-    urgency: row.urgency,
-    quotedRate: row.quoted_rate,
-    finalRate: row.final_rate,
-    currency: row.currency ?? 'ZAR',
-    assignedTruckId: row.assigned_truck_id,
-    assignedDriverId: row.assigned_driver_id,
-    assignedEquipmentIds: row.assigned_equipment_ids ?? [],
-    status: row.status,
-    currentLocation: row.current_location,
-    etaMinutes: row.eta_minutes,
-    createdAt: row.created_at,
-    quotedAt: row.quoted_at,
-    acceptedAt: row.accepted_at,
-    pickupAt: row.pickup_at,
-    deliveredAt: row.delivered_at,
-    completedAt: row.completed_at,
-    shipperRating: row.shipper_rating,
-    driverRating: row.driver_rating,
-    shipperReview: row.shipper_review,
-    driverReview: row.driver_review,
-    documents: row.documents ?? [],
-  };
-}

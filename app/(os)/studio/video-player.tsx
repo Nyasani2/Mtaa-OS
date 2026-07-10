@@ -63,7 +63,7 @@ export default function VideoPlayerScreen() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, description, video_url, view_count, like_count, creator_id, creator:creator_id (full_name, avatar_url), published_at')
       .eq('id', id)
       .single();
@@ -71,7 +71,7 @@ export default function VideoPlayerScreen() {
     if (!error && data) {
       // Check subscription
       const { data: sub } = await supabase
-        .from('mstudio_subscriptions')
+        .from('studio_subscriptions')
         .select('id')
         .eq('creator_id', data.creator_id)
         .eq('subscriber_id', user?.id)
@@ -79,7 +79,7 @@ export default function VideoPlayerScreen() {
 
       // Check like
       const { data: like } = await supabase
-        .from('mstudio_likes')
+        .from('studio_likes')
         .select('id')
         .eq('video_id', id)
         .eq('user_id', user?.id)
@@ -101,13 +101,13 @@ export default function VideoPlayerScreen() {
       setIsLiked(!!like);
 
       // Increment view
-      await supabase.from('mstudio_videos').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id);
-      await supabase.from('mstudio_views').insert({ video_id: id, creator_id: data.creator_id, user_id: user?.id });
+      await supabase.from('studio_videos').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id);
+      await supabase.from('studio_views').insert({ video_id: id, creator_id: data.creator_id, user_id: user?.id });
     }
 
     // Fetch comments
     const { data: commentsData } = await supabase
-      .from('mstudio_comments')
+      .from('studio_comments')
       .select('id, text, created_at, like_count, user:user_id (full_name, avatar_url)')
       .eq('video_id', id)
       .order('created_at', { ascending: false })
@@ -124,7 +124,7 @@ export default function VideoPlayerScreen() {
 
     // Fetch related
     const { data: relatedData } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, view_count, duration_seconds, creator:creator_id (full_name)')
       .neq('id', id)
       .eq('status', 'published')
@@ -147,10 +147,10 @@ export default function VideoPlayerScreen() {
   const handleLike = async () => {
     if (!user?.id || !video) return;
     if (isLiked) {
-      await supabase.from('mstudio_likes').delete().eq('video_id', id).eq('user_id', user.id);
+      await supabase.from('studio_likes').delete().eq('video_id', id).eq('user_id', user.id);
       setVideo(prev => prev ? { ...prev, like_count: prev.like_count - 1 } : prev);
     } else {
-      await supabase.from('mstudio_likes').insert({ video_id: id, user_id: user.id });
+      await supabase.from('studio_likes').insert({ video_id: id, user_id: user.id });
       setVideo(prev => prev ? { ...prev, like_count: prev.like_count + 1 } : prev);
     }
     setIsLiked(!isLiked);
@@ -159,17 +159,17 @@ export default function VideoPlayerScreen() {
   const handleSubscribe = async () => {
     if (!user?.id || !video) return;
     if (video.is_subscribed) {
-      await supabase.from('mstudio_subscriptions').delete().eq('creator_id', video.creator_id).eq('subscriber_id', user.id);
+      await supabase.from('studio_subscriptions').delete().eq('creator_id', video.creator_id).eq('subscriber_id', user.id);
       setVideo(prev => prev ? { ...prev, is_subscribed: false } : prev);
     } else {
-      await supabase.from('mstudio_subscriptions').insert({ creator_id: video.creator_id, subscriber_id: user.id });
+      await supabase.from('studio_subscriptions').insert({ creator_id: video.creator_id, subscriber_id: user.id });
       setVideo(prev => prev ? { ...prev, is_subscribed: true } : prev);
     }
   };
 
   const postComment = async () => {
     if (!user?.id || !commentText.trim() || !id) return;
-    const { error } = await supabase.from('mstudio_comments').insert({
+    const { error } = await supabase.from('studio_comments').insert({
       video_id: id,
       user_id: user.id,
       text: commentText.trim(),
