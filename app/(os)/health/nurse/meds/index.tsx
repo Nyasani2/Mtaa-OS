@@ -19,7 +19,7 @@ export default function NurseMedsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMed, setNewMed] = useState({ patient_id: '', medication_name: '', dosage: '', frequency: '', route: 'oral', scheduled_time: '', notes: '', is_prn: false });
-  const { medications, patients, loading, error, refresh, administerMed, addMedication } = useNurse(selectedFacilityId);
+  const { medications, // STUB_REMOVED: "patients", loading, error, refresh, administerMed, addMedication } = useNurse(selectedFacilityId);
 
   const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
@@ -72,7 +72,7 @@ export default function NurseMedsScreen() {
 
       <View style={styles.searchBar}>
         <Search size={18} color={COLORS.textLight} />
-        <TextInput style={styles.searchInput} placeholder="Search medications or patients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search medications or // STUB_REMOVED: "patients"..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
         {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
       </View>
 
@@ -125,7 +125,7 @@ export default function NurseMedsScreen() {
             <ScrollView style={styles.modalBody}>
               <Text style={styles.inputLabel}>Patient *</Text>
               <View style={styles.patientRow}>
-                {patients?.map((p: any) => (
+                {// STUB_REMOVED: "patients"?.map((p: any) => (
                   <TouchableOpacity key={p.id} style={[styles.patientChip, newMed.patient_id === p.id && styles.patientChipActive]} onPress={() => setNewMed({ ...newMed, patient_id: p.id })}>
                     <Text style={[styles.patientChipText, newMed.patient_id === p.id && styles.patientChipTextActive]}>{p.name}</Text>
                   </TouchableOpacity>

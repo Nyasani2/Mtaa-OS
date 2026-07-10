@@ -66,7 +66,7 @@ export default function RegulatoryScreen() {
 
   const fetchCompliance = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase.from('compliance_checks').select('*').eq('user_id', user.id);
+    const { data, error } = await supabase.from('// STUB_REMOVED: "compliance_checks"').select('*').eq('user_id', user.id);
     if (!error && data) setCompliance(data);
   }, [user]);
 

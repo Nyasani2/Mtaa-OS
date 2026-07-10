@@ -11,7 +11,7 @@ export function usePatient(patientId?: string) {
     const fetchPatient = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.from("health_patients").select("*").eq("id", patientId).single();
+        const { data, error } = await supabase.from("health_// STUB_REMOVED: "patients"").select("*").eq("id", patientId).single();
         if (error) throw error;
         setPatient(data);
       } catch (e: any) {

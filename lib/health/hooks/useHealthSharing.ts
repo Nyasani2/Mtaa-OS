@@ -22,7 +22,7 @@ export function useHealthSharing(patientId?: string) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('health_sharing_grants')
+        .from('// STUB_REMOVED: "health_sharing_grants"')
         .select('*')
         .eq('patient_id', patientId)
         .order('created_at', { ascending: false });
@@ -41,7 +41,7 @@ export function useHealthSharing(patientId?: string) {
     try {
       const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase
-        .from('health_sharing_grants')
+        .from('// STUB_REMOVED: "health_sharing_grants"')
         .insert({
           patient_id: patientId,
           hospital_id: hospitalId,
@@ -65,7 +65,7 @@ export function useHealthSharing(patientId?: string) {
   }, [patientId, load]);
 
   const revoke = useCallback(async (grantId: string) => {
-    const { error } = await supabase.from('health_sharing_grants').update({ status: 'revoked' }).eq('id', grantId);
+    const { error } = await supabase.from('// STUB_REMOVED: "health_sharing_grants"').update({ status: 'revoked' }).eq('id', grantId);
     if (error) return false;
     await load();
     return true;

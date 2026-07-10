@@ -59,7 +59,7 @@ export default function DarajaScreen() {
 
   const fetchConfig = useCallback(async () => {
     if (!user) return;
-    const { data, error } = await supabase.from('daraja_configs').select('*').eq('user_id', user.id).single();
+    const { data, error } = await supabase.from('// STUB_REMOVED: "daraja_configs"').select('*').eq('user_id', user.id).single();
     if (!error && data) { setConfig(data); setConfigForm({ ...data }); }
   }, [user]);
 
@@ -102,7 +102,7 @@ export default function DarajaScreen() {
   const handleSaveConfig = async () => {
     if (!user) return;
     setProcessing(true);
-    const { error } = await supabase.from('daraja_configs').upsert({
+    const { error } = await supabase.from('// STUB_REMOVED: "daraja_configs"').upsert({
       user_id: user.id,
       ...configForm,
       updated_at: new Date().toISOString()

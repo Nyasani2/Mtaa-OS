@@ -52,7 +52,7 @@ export default function AppointmentDetailScreen() {
         .eq('appointment_id', id);
 
       const { data: prts } = await supabase
-        .from('garage_parts_used')
+        .from('// STUB_REMOVED: "garage_parts_used"')
         .select('*')
         .eq('appointment_id', id);
 

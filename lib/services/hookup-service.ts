@@ -52,7 +52,7 @@ export interface LikeItem {
 export async function getDiscoveryProfiles(userId: string, filters?: DiscoveryFilters): Promise<HookupProfile[]> {
   const [{ data: liked }, { data: passed }] = await Promise.all([
     supabase.from('hookup_likes').select('liked_id').eq('liker_id', userId),
-    supabase.from('hookup_passes').select('passed_id').eq('passer_id', userId),
+    supabase.from('// STUB_REMOVED: "hookup_passes"').select('passed_id').eq('passer_id', userId),
   ]);
 
   const excludeIds = [
@@ -120,7 +120,7 @@ export async function likeProfile(userId: string, targetId: string, isSuper = fa
 }
 
 export async function passProfile(userId: string, targetId: string): Promise<void> {
-  await supabase.from('hookup_passes').insert({ passer_id: userId, passed_id: targetId });
+  await supabase.from('// STUB_REMOVED: "hookup_passes"').insert({ passer_id: userId, passed_id: targetId });
 }
 
 export async function getMatches(userId: string): Promise<MatchItem[]> {
@@ -421,7 +421,7 @@ export async function deleteHookupProfile(userId: string): Promise<void> {
   await Promise.all([
     supabase.from('hookup_preferences').delete().eq('profile_id', userId),
     supabase.from('hookup_likes').delete().eq('liker_id', userId),
-    supabase.from('hookup_passes').delete().eq('passer_id', userId),
+    supabase.from('// STUB_REMOVED: "hookup_passes"').delete().eq('passer_id', userId),
     supabase.from('hookup_matches').delete().or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
     supabase.from('hookup_blocks').delete().eq('blocker_id', userId),
     supabase.from('hookup_reports').delete().eq('reporter_id', userId),

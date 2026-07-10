@@ -53,7 +53,7 @@ export default function PatientDetailScreen() {
   const loadPatient = async () => {
     try {
       const { data, error } = await supabase
-        .from('patients')
+        .from('// STUB_REMOVED: "patients"')
         .select(`
           id, full_name, phone, email, date_of_birth, gender, blood_type,
           allergies, chronic_conditions, emergency_contact, address,

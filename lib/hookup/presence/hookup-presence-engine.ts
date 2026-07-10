@@ -9,7 +9,7 @@ export async function updatePresence(
 
   const { data, error } =
     await supabase
-      .from("hookup_live_presence")
+      .from("// STUB_REMOVED: "hookup_live_presence"")
       .upsert({
         user_id,
         latitude: lat,

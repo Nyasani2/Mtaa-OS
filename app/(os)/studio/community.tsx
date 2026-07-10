@@ -128,7 +128,7 @@ export default function CommunityScreen() {
   const joinGroup = async (groupId: string) => {
     if (!user?.id) return;
     try {
-      await supabase.from('studio_group_members').insert({ group_id: groupId, user_id: user.id });
+      await supabase.from('// STUB_REMOVED: "studio_group_members"').insert({ group_id: groupId, user_id: user.id });
       fetchGroups();
     } catch (e) { console.error(e); }
   };

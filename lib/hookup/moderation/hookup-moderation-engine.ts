@@ -31,7 +31,7 @@ export async function applyModerationAction(
 
   const { data, error } =
     await supabase
-      .from("hookup_moderation_actions")
+      .from("// STUB_REMOVED: "hookup_moderation_actions"")
       .insert({
         moderator_id,
         target_user_id,

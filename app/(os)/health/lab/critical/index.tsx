@@ -30,7 +30,7 @@ export default function LabCriticalScreen() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('health_lab_results')
+        .from('health_// STUB_REMOVED: "lab_results"')
         .select('id, patient_name, test_name, result_value, reference_range, flagged_at, doctor_name, acknowledged')
         .eq('is_critical', true)
         .eq('acknowledged', false)
@@ -47,7 +47,7 @@ export default function LabCriticalScreen() {
 
   const acknowledge = async (id: string) => {
     try {
-      const { error } = await supabase.from('health_lab_results').update({ acknowledged: true, acknowledged_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.from('health_// STUB_REMOVED: "lab_results"').update({ acknowledged: true, acknowledged_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
       fetchCritical();
     } catch (err: any) {

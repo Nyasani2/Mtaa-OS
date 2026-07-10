@@ -7,7 +7,7 @@ export async function checkInUser(
 
   const { data, error } =
     await supabase
-      .from("hookup_event_participants")
+      .from("// STUB_REMOVED: "hookup_event_participants"")
       .update({
         status: "CHECKED_IN",
         checkin_time: new Date(),

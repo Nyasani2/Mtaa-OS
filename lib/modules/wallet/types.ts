@@ -10,7 +10,7 @@ export interface WalletAccount {
 
 export interface WalletTransaction {
   id: string;
-  type: "send" | "receive" | "deposit" | "withdraw" | "escrow" | "go_fund" | "fee" | "refund" | "qr_pay" | "go_fund_draw" | "go_fund_repay" | "escrow_hold" | "escrow_release" | "escrow_dispute";
+  type: "send" | "receive" | "deposit" | "withdraw" | "escrow" | "// STUB_REMOVED: "go_fund"" | "fee" | "refund" | "qr_pay" | "// STUB_REMOVED: "go_fund"_draw" | "// STUB_REMOVED: "go_fund"_repay" | "escrow_hold" | "escrow_release" | "escrow_dispute";
   amount: number;
   currency: string;
   status: "pending" | "completed" | "failed" | "cancelled";
@@ -94,7 +94,7 @@ export interface EscrowTransaction {
 
 export interface WalletNotification {
   id: string;
-  type: "transaction" | "escrow" | "go_fund" | "security" | "system" | "payment_received" | "payment_sent" | "escrow_update" | "go_fund_draw" | "go_fund_repay_due" | "go_fund_repayed" | "go_fund_limit_change" | "system_alert" | "security_alert";
+  type: "transaction" | "escrow" | "// STUB_REMOVED: "go_fund"" | "security" | "system" | "payment_received" | "payment_sent" | "escrow_update" | "// STUB_REMOVED: "go_fund"_draw" | "// STUB_REMOVED: "go_fund"_repay_due" | "// STUB_REMOVED: "go_fund"_repayed" | "// STUB_REMOVED: "go_fund"_limit_change" | "system_alert" | "security_alert";
   title: string;
   message: string;
   amount?: number;

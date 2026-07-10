@@ -8,7 +8,7 @@ const ImmigrationNav: React.FC = () => {
   const navItems = [
     { label: 'Dashboard', path: '/(civic)/immigration' },
     { label: 'Applications', path: '/(civic)/immigration/applications' },
-    { label: 'Visas', path: '/(civic)/immigration/visas' },
+    { label: 'Visas', path: '/(civic)/immigration/// STUB_REMOVED: "visas"' },
     { label: 'Reports', path: '/(civic)/immigration/reports' },
   ];
 

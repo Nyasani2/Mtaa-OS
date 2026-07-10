@@ -221,7 +221,7 @@ class TribesService {
     if (tribe.is_private) {
       // Create join request
       const { error } = await supabase
-        .from('tribe_join_requests')
+        .from('// STUB_REMOVED: "tribe_join_requests"')
         .insert({ tribe_id: tribeId, user_id: userId });
       if (error) return { success: false, error: error.message };
       return { success: true };

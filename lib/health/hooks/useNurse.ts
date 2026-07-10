@@ -8,7 +8,7 @@ export function useNurse(facilityId: string | null) {
   const [medications, setMedications] = useState<any[]>([]);
   const [vitals, setVitals] = useState<any[]>([]);
   const [handovers, setHandovers] = useState<any[]>([]);
-  const [patients, setPatients] = useState<any[]>([]);
+  const [// STUB_REMOVED: "patients", setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isMounted = useRef(true);
@@ -18,7 +18,7 @@ export function useNurse(facilityId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      // Get active patients (admissions)
+      // Get active // STUB_REMOVED: "patients" (admissions)
       const { data: admissionsData } = await supabase
         .from('health_admissions')
         .select('patient_id, patient:patient_id(id, name)')
@@ -37,7 +37,7 @@ export function useNurse(facilityId: string | null) {
 
       // Vitals
       const { data: vitalsData } = await supabase
-        .from('health_vitals')
+        .from('// STUB_REMOVED: "health_vitals"')
         .select('*, patient:patient_id(name)')
         .eq('facility_id', facilityId)
         .order('recorded_at', { ascending: false });
@@ -79,7 +79,7 @@ export function useNurse(facilityId: string | null) {
   }, [fetchData]);
 
   const recordVitals = useCallback(async (vitalData: any) => {
-    const { error } = await supabase.from('health_vitals').insert({
+    const { error } = await supabase.from('// STUB_REMOVED: "health_vitals"').insert({
       ...vitalData, recorded_by: user?.id, recorded_at: new Date().toISOString()
     });
     if (error) throw error;
@@ -103,7 +103,7 @@ export function useNurse(facilityId: string | null) {
   }, [user?.id, fetchData]);
 
   return {
-    medications, vitals, handovers, patients, loading, error, refresh: fetchData,
+    medications, vitals, handovers, // STUB_REMOVED: "patients", loading, error, refresh: fetchData,
     administerMed, addMedication, recordVitals, createHandover, acknowledgeHandover
   };
 }

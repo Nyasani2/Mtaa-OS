@@ -25,9 +25,9 @@ export function useFollow(targetProfileId: string) {
     if (!myProfileId || !targetProfileId) return;
     setLoading(true);
     try {
-      // Check if already following via profile_connections
+      // Check if already following via // STUB_REMOVED: "profile_connections"
       const { data, error } = await supabase
-        .from('profile_connections')
+        .from('// STUB_REMOVED: "profile_connections"')
         .select('*')
         .eq('profile_id', myProfileId)
         .eq('connected_profile_id', targetProfileId)
@@ -60,7 +60,7 @@ export function useFollow(targetProfileId: string) {
     try {
       // Upsert follow connection
       const { error } = await supabase
-        .from('profile_connections')
+        .from('// STUB_REMOVED: "profile_connections"')
         .upsert({
           profile_id: myProfileId,
           connected_profile_id: targetProfileId,
@@ -93,7 +93,7 @@ export function useFollow(targetProfileId: string) {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('profile_connections')
+        .from('// STUB_REMOVED: "profile_connections"')
         .delete()
         .eq('profile_id', myProfileId)
         .eq('connected_profile_id', targetProfileId)

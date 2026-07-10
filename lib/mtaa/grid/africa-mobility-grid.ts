@@ -30,7 +30,7 @@ export async function computeCrossBorderRoute(route: CrossBorderRoute) {
     border_penalty;
 
   await supabase
-    .from("mtaa_cross_border_routes")
+    .from("// STUB_REMOVED: "mtaa_cross_border_routes"")
     .insert({
       ...route,
       estimated_cost: cost,

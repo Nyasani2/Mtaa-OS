@@ -9,7 +9,7 @@ export async function logCrossAppAction(
 
   const { data, error } =
     await supabase
-      .from("hookup_cross_app_activity")
+      .from("// STUB_REMOVED: "hookup_cross_app_activity"")
       .insert({
         passport_id,
         app_source: app,

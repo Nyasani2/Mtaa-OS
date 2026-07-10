@@ -31,7 +31,7 @@ interface PatientQueueItem {
 export default function DoctorWorkspaceScreen() {
   const router = useRouter();
   const { profile } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'queue' | 'schedule' | 'patients'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'schedule' | '// STUB_REMOVED: "patients"'>('queue');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [queue, setQueue] = useState<PatientQueueItem[]>([]);
@@ -142,7 +142,7 @@ export default function DoctorWorkspaceScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        {(['queue', 'schedule', 'patients'] as const).map(tab => (
+        {(['queue', 'schedule', '// STUB_REMOVED: "patients"'] as const).map(tab => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -159,7 +159,7 @@ export default function DoctorWorkspaceScreen() {
         <Search size={18} color="#999" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search patients..."
+          placeholder="Search // STUB_REMOVED: "patients"..."
           placeholderTextColor="#999"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -180,7 +180,7 @@ export default function DoctorWorkspaceScreen() {
             ) : filteredQueue.length === 0 ? (
               <View style={styles.emptyState}>
                 <Users size={40} color="#ccc" />
-                <Text style={styles.emptyText}>No patients in queue</Text>
+                <Text style={styles.emptyText}>No // STUB_REMOVED: "patients" in queue</Text>
               </View>
             ) : (
               filteredQueue.map((item) => (
@@ -270,7 +270,7 @@ export default function DoctorWorkspaceScreen() {
           </View>
         )}
 
-        {activeTab === 'patients' && (
+        {activeTab === '// STUB_REMOVED: "patients"' && (
           <View style={styles.emptyState}>
             <Users size={40} color="#ccc" />
             <Text style={styles.emptyText}>Patient search coming soon</Text>

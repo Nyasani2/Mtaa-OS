@@ -8,7 +8,7 @@ export async function logInteraction(
 
   const { error } =
     await supabase
-      .from("hookup_interaction_graph")
+      .from("// STUB_REMOVED: "hookup_interaction_graph"")
       .insert({
         user_a,
         user_b,

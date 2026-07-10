@@ -63,11 +63,11 @@ export default function CopyrightScreen() {
   const fetchCopyrightData = async () => {
     if (!user?.id) return;
     try {
-      const { data: own } = await supabase.from('studio_copyright_ownership').select('*').eq('owner_id', user.id);
+      const { data: own } = await supabase.from('// STUB_REMOVED: "studio_copyright_ownership"').select('*').eq('owner_id', user.id);
       setOwnerships(own || []);
-      const { data: clm } = await supabase.from('studio_copyright_claims').select('*').eq('owner_id', user.id);
+      const { data: clm } = await supabase.from('// STUB_REMOVED: "studio_copyright_claims"').select('*').eq('owner_id', user.id);
       setClaims(clm || []);
-      const { data: lic } = await supabase.from('studio_copyright_licenses').select('*').eq('owner_id', user.id);
+      const { data: lic } = await supabase.from('// STUB_REMOVED: "studio_copyright_licenses"').select('*').eq('owner_id', user.id);
       setLicenses(lic || []);
     } catch (e) { console.error(e); }
   };
@@ -76,7 +76,7 @@ export default function CopyrightScreen() {
     if (!newTitle.trim() || !user?.id) return;
     try {
       const fingerprint = `FP-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      await supabase.from('studio_copyright_ownership').insert({
+      await supabase.from('// STUB_REMOVED: "studio_copyright_ownership"').insert({
         owner_id: user.id,
         content_title: newTitle,
         content_type: newType,
@@ -91,7 +91,7 @@ export default function CopyrightScreen() {
   const createLicense = async () => {
     if (!licenseTitle.trim() || !licensee.trim() || !user?.id) return;
     try {
-      await supabase.from('studio_copyright_licenses').insert({
+      await supabase.from('// STUB_REMOVED: "studio_copyright_licenses"').insert({
         owner_id: user.id,
         content_title: licenseTitle,
         licensee,
@@ -109,7 +109,7 @@ export default function CopyrightScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Dispute', onPress: async () => {
         try {
-          await supabase.from('studio_copyright_claims').update({ status: 'reviewing', disputed_at: new Date().toISOString() }).eq('id', claimId);
+          await supabase.from('// STUB_REMOVED: "studio_copyright_claims"').update({ status: 'reviewing', disputed_at: new Date().toISOString() }).eq('id', claimId);
           fetchCopyrightData();
         } catch (e) { console.error(e); }
       }},

@@ -123,7 +123,7 @@ export class CreatorEarningsService {
     const netAmount = amount - fee;
 
     const { data, error } = await supabase
-      .from('creator_withdrawals')
+      .from('// STUB_REMOVED: "creator_withdrawals"')
       .insert({
         user_id: userId,
         profile_id: profileId,
@@ -154,7 +154,7 @@ export class CreatorEarningsService {
   // ── Get withdrawals ──────────────────────────────────────────────────────
   static async getWithdrawals(userId: string): Promise<CreatorWithdrawal[]> {
     const { data, error } = await supabase
-      .from('creator_withdrawals')
+      .from('// STUB_REMOVED: "creator_withdrawals"')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });

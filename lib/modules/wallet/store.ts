@@ -98,7 +98,7 @@ const DEFAULT_GO_FUND: GoFundState = {
 const DEFAULT_SETTINGS: WalletSettings = {
   dailyLimit: 50000,
   transactionLimit: 20000,
-  requirePinFor: ["send", "withdraw", "go_fund"],
+  requirePinFor: ["send", "withdraw", "// STUB_REMOVED: "go_fund""],
   biometricEnabled: false,
   notificationsEnabled: true,
   autoRepayGoFund: true,
@@ -203,7 +203,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
 
         get().addNotification({
           id: generateId(),
-          type: "go_fund_draw",
+          type: "// STUB_REMOVED: "go_fund"_draw",
           title: "Go Fund Used",
           message: `You used KSh ${amount.toLocaleString()} from Go Fund`,
           amount,
@@ -260,7 +260,7 @@ export const useWalletStore = create<WalletState & WalletActions>()(
 
         get().addNotification({
           id: generateId(),
-          type: "go_fund_repayed",
+          type: "// STUB_REMOVED: "go_fund"_repayed",
           title: "Go Fund Repaid",
           message: `KSh ${repayAmount.toLocaleString()} repaid successfully`,
           amount: repayAmount,

@@ -19,25 +19,25 @@ export const nurseService = {
     if (error) throw error;
   },
   async getVitals(facilityId: string) {
-    const { data, error } = await supabase.from('health_vitals').select('*, patient:patient_id(name)').eq('facility_id', facilityId).order('recorded_at', { ascending: false });
+    const { data, error } = await supabase.from('// STUB_REMOVED: "health_vitals"').select('*, patient:patient_id(name)').eq('facility_id', facilityId).order('recorded_at', { ascending: false });
     if (error) throw error;
     return (data || []).map((v: any) => ({ ...v, patient_name: v.patient?.name }));
   },
   async recordVitals(vitalData: any, userId: string) {
-    const { error } = await supabase.from('health_vitals').insert({ ...vitalData, recorded_by: userId, recorded_at: new Date().toISOString() });
+    const { error } = await supabase.from('// STUB_REMOVED: "health_vitals"').insert({ ...vitalData, recorded_by: userId, recorded_at: new Date().toISOString() });
     if (error) throw error;
   },
   async getHandovers(facilityId: string) {
-    const { data, error } = await supabase.from('health_handovers').select('*, patient:patient_id(name), created_by:created_by(name)').eq('facility_id', facilityId).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('// STUB_REMOVED: "health_handovers"').select('*, patient:patient_id(name), created_by:created_by(name)').eq('facility_id', facilityId).order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []).map((h: any) => ({ ...h, patient_name: h.patient?.name, created_by_name: h.created_by?.name }));
   },
   async createHandover(handoverData: any, userId: string) {
-    const { error } = await supabase.from('health_handovers').insert({ ...handoverData, created_by: userId, created_at: new Date().toISOString(), acknowledged: false });
+    const { error } = await supabase.from('// STUB_REMOVED: "health_handovers"').insert({ ...handoverData, created_by: userId, created_at: new Date().toISOString(), acknowledged: false });
     if (error) throw error;
   },
   async acknowledgeHandover(handoverId: string, userId: string) {
-    const { error } = await supabase.from('health_handovers').update({ acknowledged: true, acknowledged_by: userId, acknowledged_at: new Date().toISOString() }).eq('id', handoverId);
+    const { error } = await supabase.from('// STUB_REMOVED: "health_handovers"').update({ acknowledged: true, acknowledged_by: userId, acknowledged_at: new Date().toISOString() }).eq('id', handoverId);
     if (error) throw error;
   },
   async getActivePatients(facilityId: string) {

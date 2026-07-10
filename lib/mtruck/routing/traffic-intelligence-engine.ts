@@ -2,7 +2,7 @@ import { supabase } from "../../supabase";
 
 export async function getTrafficZones() {
   const { data } = await supabase
-    .from("traffic_zones")
+    .from("// STUB_REMOVED: "traffic_zones"")
     .select("*");
 
   return data || [];

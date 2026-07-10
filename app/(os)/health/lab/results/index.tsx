@@ -30,15 +30,15 @@ export default function LabResultsScreen() {
     try {
       const { data, error } = await supabase
         .from('lab_tests')
-        .select('*, patients(full_name), lab_results(*)')
+        .select('*, // STUB_REMOVED: "patients"(full_name), // STUB_REMOVED: "lab_results"(*)')
         .eq('id', testId).single();
       if (error) throw error;
-      const existing = (data.lab_results || []).map((r: any) => ({
+      const existing = (data.// STUB_REMOVED: "lab_results" || []).map((r: any) => ({
         id: r.id, parameter: r.parameter, value: r.value?.toString() || '',
         unit: r.unit, reference_low: r.reference_low, reference_high: r.reference_high, flag: r.flag,
       }));
       const resultList = existing.length > 0 ? existing : getTestTemplate(data.test_name);
-      setTest({ id: data.id, test_name: data.test_name, patient_name: data.patients?.full_name || 'Unknown',
+      setTest({ id: data.id, test_name: data.test_name, patient_name: data.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
         sample_id: data.sample_id, status: data.status, results: resultList });
       setResults(resultList);
     } catch (err) { Alert.alert('Error', 'Failed to load test'); }
@@ -89,14 +89,14 @@ export default function LabResultsScreen() {
   const saveResults = async () => {
     if (!testId) return;
     try {
-      await supabase.from('lab_results').delete().eq('test_id', testId);
+      await supabase.from('// STUB_REMOVED: "lab_results"').delete().eq('test_id', testId);
       const inserts = results.filter(r => r.value.trim() !== '').map(r => ({
         test_id: testId, parameter: r.parameter, value: parseFloat(r.value) || r.value,
         unit: r.unit, reference_low: r.reference_low, reference_high: r.reference_high,
         flag: r.flag, recorded_by: user?.id,
       }));
       if (inserts.length > 0) {
-        const { error } = await supabase.from('lab_results').insert(inserts);
+        const { error } = await supabase.from('// STUB_REMOVED: "lab_results"').insert(inserts);
         if (error) throw error;
       }
       await supabase.from('lab_tests').update({

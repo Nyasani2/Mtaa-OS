@@ -18,7 +18,7 @@ interface QueuePatient {
 export default function DoctorQueueScreen() {
   const router = useRouter();
   const { staffRecord } = useHealthRole();
-  const [patients, setPatients] = useState<QueuePatient[]>([]);
+  const [// STUB_REMOVED: "patients", setPatients] = useState<QueuePatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'waiting' | 'in_progress'>('all');
@@ -59,7 +59,7 @@ export default function DoctorQueueScreen() {
     }
   };
 
-  const filtered = filter === 'all' ? patients : patients.filter((p) => p.status === filter);
+  const filtered = filter === 'all' ? // STUB_REMOVED: "patients" : // STUB_REMOVED: "patients".filter((p) => p.status === filter);
 
   const getPriorityColor = (p: string) => p === 'emergency' ? '#dc2626' : p === 'urgent' ? '#f97316' : '#22c55e';
 
@@ -68,7 +68,7 @@ export default function DoctorQueueScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}><ArrowLeft size={24} color="#1f2937" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Patient Queue</Text>
-        <View style={styles.countBadge}><Text style={styles.countText}>{patients.length}</Text></View>
+        <View style={styles.countBadge}><Text style={styles.countText}>{// STUB_REMOVED: "patients".length}</Text></View>
       </View>
 
       <View style={styles.filterRow}>
@@ -84,7 +84,7 @@ export default function DoctorQueueScreen() {
       ) : filtered.length === 0 ? (
         <View style={styles.empty}>
           <Users size={48} color="#d1d5db" />
-          <Text style={styles.emptyTitle}>No patients in queue</Text>
+          <Text style={styles.emptyTitle}>No // STUB_REMOVED: "patients" in queue</Text>
           <Text style={styles.emptySub}>Your queue is clear for now.</Text>
         </View>
       ) : (

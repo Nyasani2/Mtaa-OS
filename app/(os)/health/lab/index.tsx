@@ -30,16 +30,16 @@ export default function LabDashboardScreen() {
     try {
       const { data, error } = await supabase
         .from('lab_tests')
-        .select('*, patients(full_name), lab_results(id)')
+        .select('*, // STUB_REMOVED: "patients"(full_name), // STUB_REMOVED: "lab_results"(id)')
         .order('ordered_at', { ascending: false }).limit(100);
       if (error) throw error;
       const formatted = (data || []).map((t: any) => ({
         id: t.id, sample_id: t.sample_id, patient_id: t.patient_id,
-        patient_name: t.patients?.full_name || 'Unknown',
+        patient_name: t.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
         test_name: t.test_name, category: t.category, status: t.status,
         priority: t.priority, ordered_at: t.ordered_at, collected_at: t.collected_at,
         completed_at: t.completed_at, turnaround_minutes: t.turnaround_minutes,
-        result_count: t.lab_results?.length || 0,
+        result_count: t.// STUB_REMOVED: "lab_results"?.length || 0,
       }));
       setTests(formatted);
       setStats({
