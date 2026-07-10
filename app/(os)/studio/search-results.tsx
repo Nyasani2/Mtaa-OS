@@ -33,7 +33,7 @@ export default function SearchResultsScreen() {
     setLoading(true);
 
     let dbQuery = supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, view_count, creator:creator_id (full_name), type')
       .ilike('title', `%${searchQuery.trim()}%`)
       .eq('status', 'published')

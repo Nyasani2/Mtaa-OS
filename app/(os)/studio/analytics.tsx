@@ -49,25 +49,25 @@ export default function AnalyticsScreen() {
     else startDate = new Date('2020-01-01');
 
     const { data: videos } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('view_count, duration_seconds, created_at')
       .eq('creator_id', user.id)
       .gte('created_at', startDate.toISOString());
 
     const { data: views } = await supabase
-      .from('mstudio_views')
+      .from('studio_views')
       .select('watch_time_seconds, country, device_type, traffic_source, viewer_age_group, created_at')
       .eq('creator_id', user.id)
       .gte('created_at', startDate.toISOString());
 
     const { data: subs } = await supabase
-      .from('mstudio_subscriptions')
+      .from('studio_subscriptions')
       .select('created_at')
       .eq('creator_id', user.id)
       .gte('created_at', startDate.toISOString());
 
     const { data: rev } = await supabase
-      .from('mstudio_revenue')
+      .from('studio_revenue')
       .select('amount, created_at')
       .eq('creator_id', user.id)
       .gte('created_at', startDate.toISOString());

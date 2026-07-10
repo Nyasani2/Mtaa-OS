@@ -15,12 +15,12 @@ export const doctorService = {
       .eq('primary_doctor_id', doctorId);
 
     const { data: orders } = await supabase
-      .from('health_doctor_orders')
+      .from('health_prescriptions')
       .select('id, status')
       .eq('doctor_id', doctorId);
 
     const { data: notes } = await supabase
-      .from('health_doctor_notes')
+      .from('health_records')
       .select('id, is_signed')
       .eq('doctor_id', doctorId);
 
@@ -50,7 +50,7 @@ export const doctorService = {
 
   async getPendingOrders(doctorId: string) {
     const { data, error } = await supabase
-      .from('health_doctor_orders')
+      .from('health_prescriptions')
       .select(`
         id, type, status, created_at, details,
         patient:patient_id (full_name)
@@ -117,7 +117,7 @@ export const doctorService = {
   // ─── Orders ───
   async getOrders(doctorId: string) {
     const { data, error } = await supabase
-      .from('health_doctor_orders')
+      .from('health_prescriptions')
       .select(`
         id, type, status, details, created_at, completed_at,
         patient:patient_id (full_name)
@@ -130,7 +130,7 @@ export const doctorService = {
 
   async createOrder(data: any) {
     const { data: result, error } = await supabase
-      .from('health_doctor_orders')
+      .from('health_prescriptions')
       .insert({
         doctor_id: data.doctor_id,
         patient_id: data.patient_id,
@@ -146,7 +146,7 @@ export const doctorService = {
 
   async cancelOrder(orderId: string) {
     const { error } = await supabase
-      .from('health_doctor_orders')
+      .from('health_prescriptions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('id', orderId);
     if (error) throw error;
@@ -155,7 +155,7 @@ export const doctorService = {
   // ─── Follow-ups ───
   async getFollowUps(doctorId: string) {
     const { data, error } = await supabase
-      .from('health_follow_ups')
+      .from('health_appointments')
       .select(`
         id, scheduled_date, type, notes, status, completed_at,
         patient:patient_id (full_name, phone)
@@ -168,7 +168,7 @@ export const doctorService = {
 
   async createFollowUp(data: any) {
     const { data: result, error } = await supabase
-      .from('health_follow_ups')
+      .from('health_appointments')
       .insert({
         doctor_id: data.doctor_id,
         patient_id: data.patient_id,
@@ -185,7 +185,7 @@ export const doctorService = {
 
   async completeFollowUp(id: string) {
     const { error } = await supabase
-      .from('health_follow_ups')
+      .from('health_appointments')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
@@ -235,7 +235,7 @@ export const doctorService = {
   // ─── Notes ───
   async getNotes(doctorId: string) {
     const { data, error } = await supabase
-      .from('health_doctor_notes')
+      .from('health_records')
       .select(`
         id, title, content, type, is_signed, signed_at, created_at,
         patient:patient_id (full_name)
@@ -251,7 +251,7 @@ export const doctorService = {
 
   async createNote(data: any) {
     const { data: result, error } = await supabase
-      .from('health_doctor_notes')
+      .from('health_records')
       .insert({
         doctor_id: data.doctor_id,
         patient_id: data.patient_id,
@@ -268,7 +268,7 @@ export const doctorService = {
 
   async signNote(noteId: string, doctorId: string) {
     const { error } = await supabase
-      .from('health_doctor_notes')
+      .from('health_records')
       .update({
         is_signed: true,
         signed_at: new Date().toISOString(),

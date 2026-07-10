@@ -42,7 +42,7 @@ export default function NearbyScreen() {
 
     // Fetch nearby content (simplified - in production use PostGIS or similar)
     const { data, error } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, type, location_name, creator:creator_id (full_name)')
       .eq('status', 'published')
       .not('location_name', 'is', null)

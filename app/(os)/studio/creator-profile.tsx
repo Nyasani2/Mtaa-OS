@@ -45,9 +45,9 @@ export default function CreatorProfileScreen() {
 
   const fetchStats = async () => {
     if (!user?.id) return;
-    const { data: videos } = await supabase.from('mstudio_videos').select('view_count').eq('creator_id', user.id);
-    const { data: subs } = await supabase.from('mstudio_subscriptions').select('id').eq('creator_id', user.id);
-    const { data: rev } = await supabase.from('mstudio_revenue').select('amount').eq('creator_id', user.id);
+    const { data: videos } = await supabase.from('studio_videos').select('view_count').eq('creator_id', user.id);
+    const { data: subs } = await supabase.from('studio_subscriptions').select('id').eq('creator_id', user.id);
+    const { data: rev } = await supabase.from('studio_revenue').select('amount').eq('creator_id', user.id);
     const { data: followers } = await supabase.from('profile_followers').select('id').eq('following_id', user.id);
     const { data: following } = await supabase.from('profile_followers').select('id').eq('follower_id', user.id);
 
@@ -65,7 +65,7 @@ export default function CreatorProfileScreen() {
     if (!user?.id) return;
     setLoading(true);
 
-    let query = supabase.from('mstudio_videos').select('id, title, thumbnail_url, status, view_count, created_at').eq('creator_id', user.id);
+    let query = supabase.from('studio_videos').select('id, title, thumbnail_url, status, view_count, created_at').eq('creator_id', user.id);
 
     if (activeTab === 'Drafts') query = query.eq('status', 'draft');
     else if (activeTab === 'Videos') query = query.eq('status', 'published');

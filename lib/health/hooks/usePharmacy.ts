@@ -22,7 +22,7 @@ export function usePharmacy(facilityId: string | null) {
         supabase.from('health_pharmacy_inventory').select('*').eq('facility_id', facilityId).order('name'),
         supabase.from('health_pharmacy_suppliers').select('*').eq('facility_id', facilityId).order('name'),
         supabase.from('health_prescriptions').select('*, patient:patient_id(name), doctor:doctor_id(name), items:health_prescription_items(*)').eq('facility_id', facilityId).eq('status', 'pending').order('created_at', { ascending: false }),
-        supabase.from('health_pharmacy_sales').select('*').eq('facility_id', facilityId).order('created_at', { ascending: false }).limit(50),
+        supabase.from('health_pos_transactions').select('*').eq('facility_id', facilityId).order('created_at', { ascending: false }).limit(50),
       ]);
       if (isMounted.current) {
         setInventory(invData || []);
@@ -68,7 +68,7 @@ export function usePharmacy(facilityId: string | null) {
   }, [fetchData]);
 
   const processSale = useCallback(async (saleData: any) => {
-    const { data: sale, error: saleError } = await supabase.from('health_pharmacy_sales').insert({
+    const { data: sale, error: saleError } = await supabase.from('health_pos_transactions').insert({
       facility_id: saleData.facility_id,
       cashier_id: saleData.cashier_id,
       customer_name: saleData.customer_name,
@@ -82,7 +82,7 @@ export function usePharmacy(facilityId: string | null) {
 
     // Insert sale items and update inventory
     for (const item of saleData.items) {
-      await supabase.from('health_pharmacy_sale_items').insert({
+      await supabase.from('health_pos_transactions').insert({
         sale_id: sale.id, inventory_id: item.id, name: item.name,
         quantity: item.quantity, unit_price: item.price, total: item.price * item.quantity,
       });
@@ -111,7 +111,7 @@ export function usePharmacy(facilityId: string | null) {
   const checkInteraction = useCallback(async (drugA: string, drugB: string) => {
     // Query the interactions table
     const { data } = await supabase
-      .from('health_drug_interactions')
+      .from('health_pharmacy_inventory')
       .select('*')
       .or(`and(drug_a.ilike.${drugA},drug_b.ilike.${drugB}),and(drug_a.ilike.${drugB},drug_b.ilike.${drugA})`)
       .single();

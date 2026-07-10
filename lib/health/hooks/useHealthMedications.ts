@@ -26,7 +26,7 @@ export function useHealthMedications(patientId?: string) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('health_medications')
+        .from('health_pharmacy_inventory')
         .select('*')
         .eq('patient_id', patientId)
         .order('prescribed_at', { ascending: false });
@@ -44,7 +44,7 @@ export function useHealthMedications(patientId?: string) {
   const add = useCallback(async (med: Omit<Medication, 'id'>) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from('health_medications').insert(mapToDb(med));
+      const { error } = await supabase.from('health_pharmacy_inventory').insert(mapToDb(med));
       if (error) throw error;
       await load();
       return true;
@@ -57,7 +57,7 @@ export function useHealthMedications(patientId?: string) {
   }, [load]);
 
   const updateStatus = useCallback(async (id: string, status: Medication['status']) => {
-    const { error } = await supabase.from('health_medications').update({ status }).eq('id', id);
+    const { error } = await supabase.from('health_pharmacy_inventory').update({ status }).eq('id', id);
     if (error) return false;
     await load();
     return true;

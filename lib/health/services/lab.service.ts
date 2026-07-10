@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase/client";
 
 export async function getLabSamples(filter: string, range: { from: number; to: number }) {
-  let q = supabase.from("health_lab_samples").select("*", { count: "exact" }).order("collected_at", { ascending: false });
+  let q = supabase.from("health_lab_tests").select("*", { count: "exact" }).order("collected_at", { ascending: false });
   if (filter !== "all") q = q.eq("status", filter);
   const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
@@ -9,13 +9,13 @@ export async function getLabSamples(filter: string, range: { from: number; to: n
 }
 
 export async function createLabSample(payload: any) {
-  const { data, error } = await supabase.from("health_lab_samples").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_lab_tests").insert([payload]).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function getLabEquipment(filter: string, range: { from: number; to: number }) {
-  let q = supabase.from("health_lab_equipment").select("*", { count: "exact" }).order("name", { ascending: true });
+  let q = supabase.from("health_inventory").select("*", { count: "exact" }).order("name", { ascending: true });
   if (filter !== "all") q = q.eq("status", filter);
   const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
@@ -23,13 +23,13 @@ export async function getLabEquipment(filter: string, range: { from: number; to:
 }
 
 export async function createLabEquipment(payload: any) {
-  const { data, error } = await supabase.from("health_lab_equipment").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_inventory").insert([payload]).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function updateEquipmentStatus({ id, status }: { id: string; status: string }) {
-  const { data, error } = await supabase.from("health_lab_equipment").update({
+  const { data, error } = await supabase.from("health_inventory").update({
     status,
     last_calibrated_at: status === "calibrating" ? new Date().toISOString() : undefined,
   }).eq("id", id).select().single();

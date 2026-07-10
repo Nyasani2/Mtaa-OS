@@ -19,7 +19,7 @@ export function useHealthEmergency() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('health_emergency_requests')
+        .from('health_ambulance_requests')
         .insert({ ...req, status: 'pending', created_at: new Date().toISOString() })
         .select()
         .single();
@@ -34,7 +34,7 @@ export function useHealthEmergency() {
   }, []);
 
   const cancelRequest = useCallback(async (id: string) => {
-    const { error } = await supabase.from('health_emergency_requests').update({ status: 'cancelled' }).eq('id', id);
+    const { error } = await supabase.from('health_ambulance_requests').update({ status: 'cancelled' }).eq('id', id);
     return !error;
   }, []);
 

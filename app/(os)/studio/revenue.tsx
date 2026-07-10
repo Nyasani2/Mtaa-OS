@@ -47,13 +47,13 @@ export default function RevenueScreen() {
     setLoading(true);
 
     const { data: rev } = await supabase
-      .from('mstudio_revenue')
+      .from('studio_revenue')
       .select('*')
       .eq('creator_id', user.id)
       .order('created_at', { ascending: false });
 
     const { data: payouts } = await supabase
-      .from('mstudio_payouts')
+      .from('studio_payouts')
       .select('*')
       .eq('creator_id', user.id)
       .order('created_at', { ascending: false })

@@ -33,7 +33,7 @@ class HealthService {
 
   async getLabResults(userId: string) {
     const { data, error } = await supabase
-      .from('health_lab_results')
+      .from('health_lab_tests')
       .select('*')
       .eq('patient_id', userId)
       .order('test_date', { ascending: false });

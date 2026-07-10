@@ -120,7 +120,7 @@ export default function MusicUploadScreen() {
       setUploadProgress(30);
 
       // Insert release
-      const { data: releaseData, error: releaseError } = await supabase.from('mstudio_music_releases').insert({
+      const { data: releaseData, error: releaseError } = await supabase.from('studio_music_releases').insert({
         creator_id: user.id,
         title: release.title,
         type: release.type,
@@ -148,7 +148,7 @@ export default function MusicUploadScreen() {
         await supabase.storage.from('mstudio-music').upload(path, blob);
         const { data: urlData } = supabase.storage.from('mstudio-music').getPublicUrl(path);
 
-        await supabase.from('mstudio_music_tracks').insert({
+        await supabase.from('studio_music_tracks').insert({
           release_id: releaseData.id,
           creator_id: user.id,
           title: track.title,

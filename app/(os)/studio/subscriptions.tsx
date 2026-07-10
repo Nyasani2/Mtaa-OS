@@ -32,7 +32,7 @@ export default function SubscriptionsScreen() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from('mstudio_subscriptions')
+      .from('studio_subscriptions')
       .select('id, creator_id, notification_enabled, creator:creator_id (full_name, avatar_url)')
       .eq('subscriber_id', user.id)
       .order('created_at', { ascending: false });
@@ -41,7 +41,7 @@ export default function SubscriptionsScreen() {
       // For each subscription, fetch latest video and live status
       const enriched = await Promise.all((data || []).map(async (sub: any) => {
         const { data: latest } = await supabase
-          .from('mstudio_videos')
+          .from('studio_videos')
           .select('title, thumbnail_url')
           .eq('creator_id', sub.creator_id)
           .eq('status', 'published')
@@ -50,7 +50,7 @@ export default function SubscriptionsScreen() {
           .single();
 
         const { data: live } = await supabase
-          .from('mstudio_live_streams')
+          .from('studio_live_streams')
           .select('id')
           .eq('creator_id', sub.creator_id)
           .eq('is_live', true)
@@ -58,7 +58,7 @@ export default function SubscriptionsScreen() {
           .single();
 
         const { count } = await supabase
-          .from('mstudio_subscriptions')
+          .from('studio_subscriptions')
           .select('id', { count: 'exact', head: true })
           .eq('creator_id', sub.creator_id);
 
@@ -83,7 +83,7 @@ export default function SubscriptionsScreen() {
   useEffect(() => { fetchSubscriptions(); }, [user?.id]);
 
   const toggleNotification = async (subId: string, current: boolean) => {
-    await supabase.from('mstudio_subscriptions').update({ notification_enabled: !current }).eq('id', subId);
+    await supabase.from('studio_subscriptions').update({ notification_enabled: !current }).eq('id', subId);
     setSubs(prev => prev.map(s => s.id === subId ? { ...s, notification_enabled: !current } : s));
   };
 
@@ -94,7 +94,7 @@ export default function SubscriptionsScreen() {
         text: 'Unsubscribe',
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('mstudio_subscriptions').delete().eq('creator_id', creatorId).eq('subscriber_id', user?.id);
+          await supabase.from('studio_subscriptions').delete().eq('creator_id', creatorId).eq('subscriber_id', user?.id);
           setSubs(prev => prev.filter(s => s.creator_id !== creatorId));
         },
       },

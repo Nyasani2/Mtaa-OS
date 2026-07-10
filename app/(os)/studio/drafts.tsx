@@ -32,7 +32,7 @@ export default function DraftsScreen() {
     if (!user?.id) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from('mstudio_videos')
+      .from('studio_videos')
       .select('id, title, thumbnail_url, status, scheduled_for, updated_at, type')
       .eq('creator_id', user.id)
       .in('status', ['draft', 'scheduled'])
@@ -78,7 +78,7 @@ export default function DraftsScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('mstudio_videos').delete().in('id', ids);
+          await supabase.from('studio_videos').delete().in('id', ids);
           setSelectedDrafts(new Set());
           setSelectionMode(false);
           fetchDrafts();
@@ -88,16 +88,16 @@ export default function DraftsScreen() {
   };
 
   const duplicateDraft = async (draft: Draft) => {
-    const { data: original } = await supabase.from('mstudio_videos').select('*').eq('id', draft.id).single();
+    const { data: original } = await supabase.from('studio_videos').select('*').eq('id', draft.id).single();
     if (original) {
       const { id, created_at, updated_at, ...rest } = original;
-      await supabase.from('mstudio_videos').insert({ ...rest, title: `${rest.title} (Copy)`, status: 'draft' });
+      await supabase.from('studio_videos').insert({ ...rest, title: `${rest.title} (Copy)`, status: 'draft' });
       fetchDrafts();
     }
   };
 
   const publishDraft = async (id: string) => {
-    await supabase.from('mstudio_videos').update({ status: 'published', published_at: new Date().toISOString() }).eq('id', id);
+    await supabase.from('studio_videos').update({ status: 'published', published_at: new Date().toISOString() }).eq('id', id);
     fetchDrafts();
   };
 

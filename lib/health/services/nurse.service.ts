@@ -12,7 +12,7 @@ export const nurseService = {
     if (error) throw error;
   },
   async administerMed(medId: string, patientId: string, userId: string, facilityId: string) {
-    const { error } = await supabase.from('health_medication_logs').insert({
+    const { error } = await supabase.from('health_dispensing_logs').insert({
       medication_id: medId, patient_id: patientId, administered_by: userId,
       facility_id: facilityId, administered_at: new Date().toISOString(), status: 'given'
     });

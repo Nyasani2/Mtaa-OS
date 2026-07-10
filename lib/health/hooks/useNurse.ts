@@ -45,7 +45,7 @@ export function useNurse(facilityId: string | null) {
 
       // Handovers
       const { data: handoverData } = await supabase
-        .from('health_handovers')
+        .from('health_staff_assignments')
         .select('*, patient:patient_id(name), created_by:created_by(name)')
         .eq('facility_id', facilityId)
         .order('created_at', { ascending: false });
@@ -64,7 +64,7 @@ export function useNurse(facilityId: string | null) {
   }, [fetchData]);
 
   const administerMed = useCallback(async (medId: string, patientId: string) => {
-    const { error } = await supabase.from('health_medication_logs').insert({
+    const { error } = await supabase.from('health_dispensing_logs').insert({
       medication_id: medId, patient_id: patientId, administered_by: user?.id,
       facility_id: facilityId, administered_at: new Date().toISOString(), status: 'given'
     });
@@ -87,7 +87,7 @@ export function useNurse(facilityId: string | null) {
   }, [user?.id, fetchData]);
 
   const createHandover = useCallback(async (handoverData: any) => {
-    const { error } = await supabase.from('health_handovers').insert({
+    const { error } = await supabase.from('health_staff_assignments').insert({
       ...handoverData, created_by: user?.id, created_at: new Date().toISOString(), acknowledged: false
     });
     if (error) throw error;
@@ -95,7 +95,7 @@ export function useNurse(facilityId: string | null) {
   }, [user?.id, fetchData]);
 
   const acknowledgeHandover = useCallback(async (handoverId: string) => {
-    const { error } = await supabase.from('health_handovers').update({
+    const { error } = await supabase.from('health_staff_assignments').update({
       acknowledged: true, acknowledged_by: user?.id, acknowledged_at: new Date().toISOString()
     }).eq('id', handoverId);
     if (error) throw error;
