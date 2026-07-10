@@ -269,7 +269,7 @@ export default function PreferencesScreen() {
                     if (!user?.id) return;
                     await supabase.from('hookup_preferences').delete().eq('profile_id', user.id);
                     await supabase.from('hookup_likes').delete().eq('liker_id', user.id);
-                    await supabase.from('// STUB_REMOVED: "hookup_passes"').delete().eq('passer_id', user.id);
+                    await supabase.from('hookup_passes').delete().eq('passer_id', user.id);
                     await supabase.from('hookup_matches').delete().or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
                     Alert.alert('Deleted', 'Your Hookup profile has been removed.');
                     router.push('/(os)/hookup/discovery');

@@ -31,7 +31,7 @@ export default function NurseMedicationScreen() {
     try {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
-        .from('health_// STUB_REMOVED: "medication_administrations"')
+        .from('health_medication_administrations')
         .select('id, patient_name, bed_number, medication, dosage, scheduled_time, status, instructions')
         .eq('facility_id', staffRecord.facility_id)
         .eq('administered_date', today)
@@ -48,7 +48,7 @@ export default function NurseMedicationScreen() {
 
   const administer = async (id: string) => {
     try {
-      const { error } = await supabase.from('health_// STUB_REMOVED: "medication_administrations"').update({
+      const { error } = await supabase.from('health_medication_administrations').update({
         status: 'administered',
         administered_by: staffRecord?.id,
         administered_at: new Date().toISOString(),

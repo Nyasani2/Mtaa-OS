@@ -17,10 +17,10 @@ export default function NotificationsScreen() {
       case "payment_received": return <ArrowDownLeft size={20} color="#10B981" />;
       case "payment_sent": return <ArrowUpRight size={20} color="#EF4444" />;
       case "escrow_update": return <Clock size={20} color="#8B5CF6" />;
-      case "// STUB_REMOVED: "go_fund"_draw": return <ArrowLeftRight size={20} color="#F97316" />;
-      case "// STUB_REMOVED: "go_fund"_repay_due": return <AlertTriangle size={20} color="#F59E0B" />;
-      case "// STUB_REMOVED: "go_fund"_repayed": return <CheckCircle size={20} color="#10B981" />;
-      case "// STUB_REMOVED: "go_fund"_limit_change": return <ArrowLeftRight size={20} color="#3B82F6" />;
+      case "go_fund_draw": return <ArrowLeftRight size={20} color="#F97316" />;
+      case "go_fund_repay_due": return <AlertTriangle size={20} color="#F59E0B" />;
+      case "go_fund_repayed": return <CheckCircle size={20} color="#10B981" />;
+      case "go_fund_limit_change": return <ArrowLeftRight size={20} color="#3B82F6" />;
       case "security_alert": return <ShieldAlert size={20} color="#EF4444" />;
       case "system_alert": return <Bell size={20} color="#6B7280" />;
       default: return <Bell size={20} color="#6B7280" />;
@@ -50,7 +50,7 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <Text style={styles.header}>Notifications</Text>
       <View style={styles.filterRow}>
-        {(["all", "payment_received", "payment_sent", "escrow_update", "// STUB_REMOVED: "go_fund"_draw", "security_alert", "system_alert"] as const).map((f) => (
+        {(["all", "payment_received", "payment_sent", "escrow_update", "go_fund_draw", "security_alert", "system_alert"] as const).map((f) => (
           <TouchableOpacity key={f} style={[styles.filterBtn, filter === f && styles.filterBtnActive]} onPress={() => setFilter(f)}>
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f.replace(/_/g, " ")}</Text>
           </TouchableOpacity>

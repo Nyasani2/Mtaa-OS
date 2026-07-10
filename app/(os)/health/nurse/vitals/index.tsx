@@ -19,7 +19,7 @@ export default function NurseVitalsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newVital, setNewVital] = useState({ patient_id: '', temperature: '', blood_pressure: '', heart_rate: '', respiratory_rate: '', oxygen_saturation: '', weight: '', height: '', notes: '' });
-  const { vitals, // STUB_REMOVED: "patients", loading, error, refresh, recordVitals } = useNurse(selectedFacilityId);
+  const { vitals, patients, loading, error, refresh, recordVitals } = useNurse(selectedFacilityId);
 
   const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
@@ -69,7 +69,7 @@ export default function NurseVitalsScreen() {
 
       <View style={styles.searchBar}>
         <Search size={18} color={COLORS.textLight} />
-        <TextInput style={styles.searchInput} placeholder="Search // STUB_REMOVED: "patients"..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search patients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
         {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
       </View>
 
@@ -150,7 +150,7 @@ export default function NurseVitalsScreen() {
             <ScrollView style={styles.modalBody}>
               <Text style={styles.inputLabel}>Patient *</Text>
               <View style={styles.patientRow}>
-                {// STUB_REMOVED: "patients"?.map((p: any) => (
+                {patients?.map((p: any) => (
                   <TouchableOpacity key={p.id} style={[styles.patientChip, newVital.patient_id === p.id && styles.patientChipActive]} onPress={() => setNewVital({ ...newVital, patient_id: p.id })}>
                     <Text style={[styles.patientChipText, newVital.patient_id === p.id && styles.patientChipTextActive]}>{p.name}</Text>
                   </TouchableOpacity>

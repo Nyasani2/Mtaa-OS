@@ -23,14 +23,14 @@ export default function SampleCollectionScreen() {
   const loadSamples = async () => {
     try {
       const { data, error } = await supabase
-        .from('// STUB_REMOVED: "lab_samples"')
-        .select('*, // STUB_REMOVED: "patients"(full_name), lab_tests(test_name)')
+        .from('lab_samples')
+        .select('*, patients(full_name), lab_tests(test_name)')
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
       if (error) throw error;
       const formatted = (data || []).map((s: any) => ({
         id: s.id, barcode: s.barcode, patient_id: s.patient_id,
-        patient_name: s.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
+        patient_name: s.patients?.full_name || 'Unknown',
         test_name: s.lab_tests?.test_name || 'Unknown',
         sample_type: s.sample_type, collected_at: s.collected_at,
         collector_id: s.collector_id, status: s.status,
@@ -42,7 +42,7 @@ export default function SampleCollectionScreen() {
 
   const collectSample = async (sampleId: string) => {
     try {
-      const { error } = await supabase.from('// STUB_REMOVED: "lab_samples"').update({
+      const { error } = await supabase.from('lab_samples').update({
         status: 'collected', collected_at: new Date().toISOString(), collector_id: user?.id,
       }).eq('id', sampleId);
       if (error) throw error;
@@ -53,7 +53,7 @@ export default function SampleCollectionScreen() {
 
   const rejectSample = async (sampleId: string, reason: string) => {
     try {
-      const { error } = await supabase.from('// STUB_REMOVED: "lab_samples"').update({
+      const { error } = await supabase.from('lab_samples').update({
         status: 'rejected', rejection_reason: reason,
       }).eq('id', sampleId);
       if (error) throw error;

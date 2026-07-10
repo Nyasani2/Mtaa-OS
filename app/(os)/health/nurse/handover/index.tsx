@@ -19,7 +19,7 @@ export default function NurseHandoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newHandover, setNewHandover] = useState({ patient_id: '', shift: 'morning', notes: '', critical: false, tasks: '' });
-  const { handovers, // STUB_REMOVED: "patients", loading, error, refresh, createHandover, acknowledgeHandover } = useNurse(selectedFacilityId);
+  const { handovers, patients, loading, error, refresh, createHandover, acknowledgeHandover } = useNurse(selectedFacilityId);
 
   const onRefresh = useCallback(async () => { setRefreshing(true); await refresh(); setRefreshing(false); }, [refresh]);
 
@@ -141,7 +141,7 @@ export default function NurseHandoverScreen() {
             <ScrollView style={styles.modalBody}>
               <Text style={styles.inputLabel}>Patient *</Text>
               <View style={styles.patientRow}>
-                {// STUB_REMOVED: "patients"?.map((p: any) => (
+                {patients?.map((p: any) => (
                   <TouchableOpacity key={p.id} style={[styles.patientChip, newHandover.patient_id === p.id && styles.patientChipActive]} onPress={() => setNewHandover({ ...newHandover, patient_id: p.id })}>
                     <Text style={[styles.patientChipText, newHandover.patient_id === p.id && styles.patientChipTextActive]}>{p.name}</Text>
                   </TouchableOpacity>

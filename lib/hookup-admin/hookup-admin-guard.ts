@@ -6,7 +6,7 @@ export async function isHookupAdmin(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_moderators"")
+      .from("hookup_moderators")
       .select("role")
       .eq("user_id", user_id)
       .single();

@@ -78,7 +78,7 @@ export class CaseService {
   }
 
   async addCaseUpdate(caseId: string, update: CaseUpdate) {
-    const { data, error } = await supabase.from('// STUB_REMOVED: "case_updates"').insert({
+    const { data, error } = await supabase.from('case_updates').insert({
       case_id: caseId, notes: update.notes, updated_by: update.updated_by, status: update.status,
     }).select().single();
     if (error) throw error;
@@ -150,7 +150,7 @@ export class CaseService {
 
   subscribeToCaseUpdates(caseId: string, callback: (payload: any) => void) {
     return supabase.channel(`case-${caseId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: '// STUB_REMOVED: "case_updates"', filter: `case_id=eq.${caseId}` }, callback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'case_updates', filter: `case_id=eq.${caseId}` }, callback)
       .subscribe();
   }
 

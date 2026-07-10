@@ -10,7 +10,7 @@ export async function activateBoost(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_boost_purchases"")
+      .from("hookup_boost_purchases")
       .insert({
         user_id,
         boost_type,

@@ -21,7 +21,7 @@ export const businessService = {
     if (!profile) return [];
 
     const { data, error } = await supabase
-      .from('// STUB_REMOVED: "profile_businesses"')
+      .from('profile_businesses')
       .select('business_id')
       .eq('profile_id', profile.id)
       .eq('is_active', true);
@@ -73,7 +73,7 @@ export const businessService = {
 
     // Link business to profile
     const { error: linkError } = await supabase
-      .from('// STUB_REMOVED: "profile_businesses"')
+      .from('profile_businesses')
       .insert({
         profile_id: profile.id,
         business_id: newBusiness.id,
@@ -314,7 +314,7 @@ export const profileBusinessService = {
   /** Get all businesses a profile is associated with */
   async getProfileBusinesses(profileId: string): Promise<ProfileBusiness[]> {
     const { data, error } = await supabase
-      .from('// STUB_REMOVED: "profile_businesses"')
+      .from('profile_businesses')
       .select('*')
       .eq('profile_id', profileId)
       .eq('is_active', true);
@@ -326,7 +326,7 @@ export const profileBusinessService = {
   /** Check if profile owns a business */
   async isBusinessOwner(profileId: string, businessId: string): Promise<boolean> {
     const { data, error } = await supabase
-      .from('// STUB_REMOVED: "profile_businesses"')
+      .from('profile_businesses')
       .select('id')
       .eq('profile_id', profileId)
       .eq('business_id', businessId)

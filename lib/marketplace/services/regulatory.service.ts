@@ -250,7 +250,7 @@ class RegulatoryService {
 
   async runSanctionsCheck(userId: string, fullName: string, idNumber?: string): Promise<SanctionsCheck> {
     const { data: denied } = await supabase
-      .from('// STUB_REMOVED: "sanctions_list"')
+      .from('sanctions_list')
       .select('id')
       .ilike('name', `%${fullName}%`)
       .limit(1);
@@ -266,7 +266,7 @@ class RegulatoryService {
       provider: 'mtaa-internal',
     };
 
-    await supabase.from('// STUB_REMOVED: "sanctions_checks"').insert(result);
+    await supabase.from('sanctions_checks').insert(result);
 
     if (!passed) {
       await this.logAudit({

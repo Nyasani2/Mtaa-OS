@@ -35,7 +35,7 @@ export async function settleCrossBorderPayment(
   };
 
   await supabase
-    .from("// STUB_REMOVED: "mtaa_cross_border_settlements"")
+    .from("mtaa_cross_border_settlements")
     .insert(settlement);
 
   return settlement;

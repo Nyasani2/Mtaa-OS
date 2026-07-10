@@ -132,7 +132,7 @@ export default function AccountingScreen() {
 
       // Fetch expenses
       const { data: expenses, error: expErr } = await supabase
-        .from('// STUB_REMOVED: "shop_expenses"')
+        .from('shop_expenses')
         .select('amount, category, created_at')
         .eq('shop_id', shopId)
         .gte('created_at', startIso);

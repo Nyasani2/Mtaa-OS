@@ -12,7 +12,7 @@ export async function updateHeatmap(
 
   const { data } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_activity_heatmap"")
+      .from("hookup_activity_heatmap")
       .upsert({
         grid_lat,
         grid_lng,

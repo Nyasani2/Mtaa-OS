@@ -29,7 +29,7 @@ export default function HealthAnalyticsScreen() {
         { data: revenueData },
         { data: topFacilities },
       ] = await Promise.all([
-        supabase.from('health_// STUB_REMOVED: "patients"').select('*', { count: 'exact', head: true }).gte('created_at', since),
+        supabase.from('health_patients').select('*', { count: 'exact', head: true }).gte('created_at', since),
         supabase.from('health_appointments').select('*', { count: 'exact', head: true }).gte('created_at', since),
         supabase.from('health_staff').select('*', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('health_billing').select('amount').eq('status', 'paid').gte('created_at', since),
@@ -39,7 +39,7 @@ export default function HealthAnalyticsScreen() {
       const totalRevenue = revenueData?.reduce((sum: number, r: any) => sum + (r.amount || 0), 0) || 0;
 
       setStats({
-        // STUB_REMOVED: "patients": patientCount || 0,
+        patients: patientCount || 0,
         appointments: appointmentCount || 0,
         staff: staffCount || 0,
         revenue: totalRevenue,
@@ -87,7 +87,7 @@ export default function HealthAnalyticsScreen() {
       <View style={styles.statsGrid}>
         <View style={[styles.statCard, { backgroundColor: '#eff6ff' }]}>
           <Users size={24} color="#2563eb" />
-          <Text style={styles.statValue}>{stats?.// STUB_REMOVED: "patients" || 0}</Text>
+          <Text style={styles.statValue}>{stats?.patients || 0}</Text>
           <Text style={styles.statLabel}>New Patients</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#f0fdf4' }]}>

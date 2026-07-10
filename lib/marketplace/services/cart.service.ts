@@ -115,7 +115,7 @@ class CartService {
 
   async getShippingAddresses(userId: string): Promise<ShippingAddress[]> {
     const { data, error } = await supabase
-      .from('// STUB_REMOVED: "shipping_addresses"')
+      .from('shipping_addresses')
       .select('*')
       .eq('user_id', userId)
       .order('is_default', { ascending: false });
@@ -129,7 +129,7 @@ class CartService {
 
   async addShippingAddress(userId: string, address: Omit<ShippingAddress, 'id' | 'user_id' | 'created_at'>): Promise<{ success: boolean; error?: string }> {
     const { error } = await supabase
-      .from('// STUB_REMOVED: "shipping_addresses"')
+      .from('shipping_addresses')
       .insert({ ...address, user_id: userId });
 
     if (error) {

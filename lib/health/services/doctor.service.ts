@@ -9,8 +9,8 @@ export const doctorService = {
       .eq('doctor_id', doctorId)
       .gte('scheduled_at', new Date().toISOString().split('T')[0]);
 
-    const { data: // STUB_REMOVED: "patients" } = await supabase
-      .from('health_// STUB_REMOVED: "patients"')
+    const { data: patients } = await supabase
+      .from('health_patients')
       .select('id')
       .eq('primary_doctor_id', doctorId);
 
@@ -25,7 +25,7 @@ export const doctorService = {
       .eq('doctor_id', doctorId);
 
     return {
-      totalPatients: // STUB_REMOVED: "patients"?.length || 0,
+      totalPatients: patients?.length || 0,
       todayAppointments: appointments?.filter((a: any) => a.status === 'scheduled').length || 0,
       pendingOrders: orders?.filter((o: any) => o.status === 'pending').length || 0,
       unsignedNotes: notes?.filter((n: any) => !n.is_signed).length || 0,
@@ -65,7 +65,7 @@ export const doctorService = {
   // ─── Prescribe ───
   async getActivePatients() {
     const { data, error } = await supabase
-      .from('health_// STUB_REMOVED: "patients"')
+      .from('health_patients')
       .select('id, full_name, phone, date_of_birth, gender')
       .eq('status', 'active')
       .order('full_name');

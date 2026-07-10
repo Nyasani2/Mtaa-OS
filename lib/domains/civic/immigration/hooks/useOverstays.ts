@@ -18,9 +18,9 @@ export interface Overstay {
 
 export function useOverstays() {
   return useQuery({
-    queryKey: ['immigration', '// STUB_REMOVED: "overstays"'],
+    queryKey: ['immigration', 'overstays'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('// STUB_REMOVED: "overstays"').select('*').is('resolved_at', null).order('overstay_days', { ascending: false });
+      const { data, error } = await supabase.from('overstays').select('*').is('resolved_at', null).order('overstay_days', { ascending: false });
       if (error) throw error;
       return data as Overstay[];
     },

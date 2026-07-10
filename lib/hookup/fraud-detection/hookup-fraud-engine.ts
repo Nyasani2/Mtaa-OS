@@ -7,7 +7,7 @@ export async function updateFraudScore(
 
   const { data } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_fraud_scores"")
+      .from("hookup_fraud_scores")
       .select("*")
       .eq("user_id", user_id)
       .single();
@@ -23,7 +23,7 @@ export async function updateFraudScore(
 
   const { error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_fraud_scores"")
+      .from("hookup_fraud_scores")
       .upsert({
         user_id,
         fraud_risk_score: newScore,

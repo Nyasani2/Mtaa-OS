@@ -32,7 +32,7 @@ export default function DoctorEarningsScreen() {
         .gte('created_at', startDate.toISOString());
 
       const { data: telemedicine, error: tErr } = await supabase
-        .from('// STUB_REMOVED: "health_telemedicine"_sessions')
+        .from('health_telemedicine_sessions')
         .select('fee, created_at')
         .eq('doctor_id', staffRecord.id)
         .eq('status', 'completed')
@@ -53,7 +53,7 @@ export default function DoctorEarningsScreen() {
         total,
         consultations: consultTotal,
         telemedicine: teleTotal,
-        // STUB_REMOVED: "patients": patientCount || 0,
+        patients: patientCount || 0,
         consultationCount: consultations?.length || 0,
         telemedicineCount: telemedicine?.length || 0,
       });
@@ -107,7 +107,7 @@ export default function DoctorEarningsScreen() {
         </View>
         <View style={[styles.statCard, { backgroundColor: '#f0fdf4' }]}>
           <Users size={20} color="#16a34a" />
-          <Text style={styles.statValue}>{earnings?.// STUB_REMOVED: "patients" || 0}</Text>
+          <Text style={styles.statValue}>{earnings?.patients || 0}</Text>
           <Text style={styles.statLabel}>Patients Seen</Text>
         </View>
       </View>

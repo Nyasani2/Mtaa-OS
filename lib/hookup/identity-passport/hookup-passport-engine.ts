@@ -9,7 +9,7 @@ export async function createPassport(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_identity_// STUB_REMOVED: "passports""")
+      .from("hookup_identity_passports")
       .insert({
         user_id,
         passport_id,
@@ -31,7 +31,7 @@ export async function updateReputation(
 
   const { data } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_identity_// STUB_REMOVED: "passports""")
+      .from("hookup_identity_passports")
       .select("*")
       .eq("passport_id", passport_id)
       .single();
@@ -48,7 +48,7 @@ export async function updateReputation(
 
   const { error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_identity_// STUB_REMOVED: "passports""")
+      .from("hookup_identity_passports")
       .update({
         global_reputation_score: newScore,
       })

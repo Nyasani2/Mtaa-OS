@@ -82,7 +82,7 @@ export default function BedsManagementScreen() {
 
       <View style={styles.searchBar}>
         <Search size={18} color={COLORS.textLight} />
-        <TextInput style={styles.searchInput} placeholder="Search beds, wards, // STUB_REMOVED: "patients"..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
+        <TextInput style={styles.searchInput} placeholder="Search beds, wards, patients..." value={searchQuery} onChangeText={setSearchQuery} placeholderTextColor={COLORS.textLight} />
         {searchQuery.length > 0 && <TouchableOpacity onPress={() => setSearchQuery('')}><X size={18} color={COLORS.textLight} /></TouchableOpacity>}
       </View>
 
