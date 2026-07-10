@@ -101,7 +101,7 @@ export default function DrugInteractionsScreen() {
           <Text style={styles.tipText}>• Always check interactions before dispensing</Text>
           <Text style={styles.tipText}>• Consult a pharmacist for severe interactions</Text>
           <Text style={styles.tipText}>• Document all warnings in patient records</Text>
-          <Text style={styles.tipText}>• Monitor // STUB_REMOVED: "patients" on multiple medications</Text>
+          <Text style={styles.tipText}>• Monitor patients on multiple medications</Text>
         </View>
         <View style={styles.bottomPadding} />
       </ScrollView>

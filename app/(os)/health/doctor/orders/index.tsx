@@ -57,7 +57,7 @@ export default function OrdersScreen() {
     try {
       let query = supabase
         .from('medical_orders')
-        .select('*, // STUB_REMOVED: "patients"(full_name)')
+        .select('*, patients(full_name)')
         .order('ordered_at', { ascending: false });
 
       if (patientId) query = query.eq('patient_id', patientId);
@@ -67,7 +67,7 @@ export default function OrdersScreen() {
 
       const formatted = (data || []).map((o: any) => ({
         ...o,
-        patient_name: o.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
+        patient_name: o.patients?.full_name || 'Unknown',
       }));
       setOrders(formatted);
     } catch (err) {

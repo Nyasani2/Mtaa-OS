@@ -27,7 +27,7 @@ export async function runRepositionAI() {
 
     if (!target) continue;
 
-    await supabase.from("// STUB_REMOVED: "truck_repositioning"").insert({
+    await supabase.from("truck_repositioning").insert({
       truck_id: truck.truck_id,
       target_zone: target.cell_id,
       reason: "PREDICTIVE_DEMAND"

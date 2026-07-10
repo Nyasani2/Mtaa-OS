@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase/client";
 
 export async function getPatients(range: { from: number; to: number }) {
   const { data, error, count } = await supabase
-    .from("health_// STUB_REMOVED: "patients"")
+    .from("health_patients")
     .select("*", { count: "exact" })
     .order("full_name", { ascending: true })
     .range(range.from, range.to);

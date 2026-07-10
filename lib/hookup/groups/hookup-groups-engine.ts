@@ -31,7 +31,7 @@ export async function joinGroup(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_group_members"")
+      .from("hookup_group_members")
       .insert({
         group_id,
         user_id,

@@ -38,7 +38,7 @@ export async function uploadProfileImage(
     .getPublicUrl(fileName);
 
   await supabase
-    .from("// STUB_REMOVED: "hookup_profile_media"")
+    .from("hookup_profile_media")
     .insert({
       user_id,
       media_url: data.publicUrl,

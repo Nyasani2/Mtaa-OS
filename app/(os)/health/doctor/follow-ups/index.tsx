@@ -54,8 +54,8 @@ export default function FollowUpsScreen() {
   const loadFollowUps = async () => {
     try {
       let query = supabase
-        .from('// STUB_REMOVED: "follow_ups"')
-        .select('*, // STUB_REMOVED: "patients"(full_name)')
+        .from('follow_ups')
+        .select('*, patients(full_name)')
         .order('scheduled_date', { ascending: true });
 
       if (patientId) query = query.eq('patient_id', patientId);
@@ -66,7 +66,7 @@ export default function FollowUpsScreen() {
 
       const formatted = (data || []).map((f: any) => ({
         ...f,
-        patient_name: f.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
+        patient_name: f.patients?.full_name || 'Unknown',
       }));
       setFollowUps(formatted);
     } catch (err) {
@@ -83,7 +83,7 @@ export default function FollowUpsScreen() {
     }
 
     try {
-      const { error } = await supabase.from('// STUB_REMOVED: "follow_ups"').insert({
+      const { error } = await supabase.from('follow_ups').insert({
         patient_id: patientId || null,
         doctor_id: user?.id,
         scheduled_date: newDate,
@@ -108,7 +108,7 @@ export default function FollowUpsScreen() {
 
   const updateStatus = async (id: string, status: FollowUp['status']) => {
     try {
-      const { error } = await supabase.from('// STUB_REMOVED: "follow_ups"').update({ status }).eq('id', id);
+      const { error } = await supabase.from('follow_ups').update({ status }).eq('id', id);
       if (error) throw error;
       loadFollowUps();
     } catch (err) {
@@ -126,7 +126,7 @@ export default function FollowUpsScreen() {
         type: 'health_reminder',
       });
 
-      await supabase.from('// STUB_REMOVED: "follow_ups"').update({ reminder_sent: true }).eq('id', followUp.id);
+      await supabase.from('follow_ups').update({ reminder_sent: true }).eq('id', followUp.id);
       Alert.alert('Sent', 'Reminder sent to patient');
       loadFollowUps();
     } catch (err) {

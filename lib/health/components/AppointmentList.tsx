@@ -10,7 +10,7 @@ export function AppointmentList({ userId, role }: Props) {
       <Text style={styles.type}>{item.appointment_type || item.type}</Text>
       <Text style={styles.date}>{item.scheduled_date || item.scheduled_at}</Text>
       <Text style={styles.provider}>{item.health_providers?.full_name || "Unknown"}</Text>
-      <Text style={styles.patient}>{item.health_// STUB_REMOVED: "patients"?.first_name} {item.health_// STUB_REMOVED: "patients"?.last_name}</Text>
+      <Text style={styles.patient}>{item.health_patients?.first_name} {item.health_patients?.last_name}</Text>
       {item.symptoms && <Text style={styles.symptoms}>Symptoms: {item.symptoms.join(", ")}</Text>}
     </View>
   );

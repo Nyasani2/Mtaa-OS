@@ -292,7 +292,7 @@ export async function getGoFundState(): Promise<{
   }
 
   const { data, error } = await supabase
-    .from('// STUB_REMOVED: "go_fund"')
+    .from('go_fund')
     .select('credit_limit, credit_used, is_active, is_eligible')
     .eq('user_id', user.id)
     .single();

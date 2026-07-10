@@ -32,7 +32,7 @@ export class ProfileService {
 
   static async getAchievements(userId: string) {
     const { data, error } = await supabase
-      .from('// STUB_REMOVED: "profile_achievements"')
+      .from('profile_achievements')
       .select('*')
       .eq('profile_id', userId)
       .order('earned_at', { ascending: false });

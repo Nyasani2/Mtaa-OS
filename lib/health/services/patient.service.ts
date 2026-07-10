@@ -2,11 +2,11 @@ import { supabase } from "@/lib/supabase/client";
 import type { HealthPatient } from "../types";
 export class PatientService {
   static async getPatientByUserId(userId: string): Promise<HealthPatient | null> {
-    const { data, error } = await supabase.from("health_// STUB_REMOVED: "patients"").select("*").eq("user_id", userId).single();
+    const { data, error } = await supabase.from("health_patients").select("*").eq("user_id", userId).single();
     if (error) return null; return data;
   }
   static async createPatient(patientData: Partial<HealthPatient>): Promise<HealthPatient> {
-    const { data, error } = await supabase.from("health_// STUB_REMOVED: "patients"").insert(patientData).select().single();
+    const { data, error } = await supabase.from("health_patients").insert(patientData).select().single();
     if (error) throw error; return data;
   }
   static async getPatientRecords(patientId: string): Promise<any[]> {
@@ -25,7 +25,7 @@ export class PatientService {
     return this.getPatientByUserId(userId);
   }
   static async updateProfile(userId: string, data: Partial<HealthPatient>): Promise<HealthPatient> {
-    const { data: result, error } = await supabase.from("health_// STUB_REMOVED: "patients"").update(data).eq("user_id", userId).select().single();
+    const { data: result, error } = await supabase.from("health_patients").update(data).eq("user_id", userId).select().single();
     if (error) throw error; return result;
   }
 }

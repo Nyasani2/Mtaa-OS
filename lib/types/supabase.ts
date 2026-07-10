@@ -4162,7 +4162,7 @@ export type Database = {
             foreignKeyName: "business_branches_manager_id_fkey"
             columns: ["manager_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -4254,7 +4254,7 @@ export type Database = {
             foreignKeyName: "business_staff_invited_by_fkey"
             columns: ["invited_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -4268,7 +4268,7 @@ export type Database = {
             foreignKeyName: "business_staff_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -8981,7 +8981,7 @@ export type Database = {
             foreignKeyName: "county_assemblies_clerk_id_fkey"
             columns: ["clerk_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9002,7 +9002,7 @@ export type Database = {
             foreignKeyName: "county_assemblies_deputy_speaker_id_fkey"
             columns: ["deputy_speaker_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9016,7 +9016,7 @@ export type Database = {
             foreignKeyName: "county_assemblies_majority_leader_id_fkey"
             columns: ["majority_leader_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9030,7 +9030,7 @@ export type Database = {
             foreignKeyName: "county_assemblies_minority_leader_id_fkey"
             columns: ["minority_leader_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9044,7 +9044,7 @@ export type Database = {
             foreignKeyName: "county_assemblies_speaker_id_fkey"
             columns: ["speaker_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9402,7 +9402,7 @@ export type Database = {
             foreignKeyName: "county_committees_chair_id_fkey"
             columns: ["chair_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9423,7 +9423,7 @@ export type Database = {
             foreignKeyName: "county_committees_vice_chair_id_fkey"
             columns: ["vice_chair_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9608,7 +9608,7 @@ export type Database = {
             foreignKeyName: "county_finance_bills_voting_session_id_fkey"
             columns: ["voting_session_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "voting_results_summary""
+            referencedRelation: "voting_results_summary"
             referencedColumns: ["voting_session_id"]
           },
           {
@@ -9932,7 +9932,7 @@ export type Database = {
             foreignKeyName: "county_public_forums_chair_id_fkey"
             columns: ["chair_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -9953,7 +9953,7 @@ export type Database = {
             foreignKeyName: "county_public_forums_moderator_id_fkey"
             columns: ["moderator_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -15861,7 +15861,7 @@ export type Database = {
             foreignKeyName: "forum_poll_votes_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -15993,7 +15993,7 @@ export type Database = {
             foreignKeyName: "forum_questions_answered_by_fkey"
             columns: ["answered_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16007,7 +16007,7 @@ export type Database = {
             foreignKeyName: "forum_questions_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16312,7 +16312,7 @@ export type Database = {
             foreignKeyName: "governance_audit_log_performed_by_fkey"
             columns: ["performed_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16406,7 +16406,7 @@ export type Database = {
             foreignKeyName: "governance_onboarding_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16487,7 +16487,7 @@ export type Database = {
             foreignKeyName: "governance_role_assignments_assigned_by_fkey"
             columns: ["assigned_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16522,7 +16522,7 @@ export type Database = {
             foreignKeyName: "governance_role_assignments_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -16965,7 +16965,7 @@ export type Database = {
             foreignKeyName: "health_appointments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -17127,7 +17127,7 @@ export type Database = {
             foreignKeyName: "health_beds_current_patient_id_fkey"
             columns: ["current_patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -17576,7 +17576,7 @@ export type Database = {
           hospital_id: string | null
           id: string
           is_confidential: boolean | null
-          // STUB_REMOVED: "lab_results": Json | null
+          lab_results: Json | null
           patient_id: string
           practitioner_id: string | null
           prescriptions: Json | null
@@ -17596,7 +17596,7 @@ export type Database = {
           hospital_id?: string | null
           id?: string
           is_confidential?: boolean | null
-          // STUB_REMOVED: "lab_results"?: Json | null
+          lab_results?: Json | null
           patient_id: string
           practitioner_id?: string | null
           prescriptions?: Json | null
@@ -17616,7 +17616,7 @@ export type Database = {
           hospital_id?: string | null
           id?: string
           is_confidential?: boolean | null
-          // STUB_REMOVED: "lab_results"?: Json | null
+          lab_results?: Json | null
           patient_id?: string
           practitioner_id?: string | null
           prescriptions?: Json | null
@@ -18357,7 +18357,7 @@ export type Database = {
           },
         ]
       }
-      health_// STUB_REMOVED: "patients": {
+      health_patients: {
         Row: {
           allergies: string[] | null
           blood_type: string | null
@@ -18888,7 +18888,7 @@ export type Database = {
             foreignKeyName: "health_queues_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -18910,7 +18910,7 @@ export type Database = {
           findings: string | null
           id: string
           is_confidential: boolean | null
-          // STUB_REMOVED: "lab_results": Json | null
+          lab_results: Json | null
           metadata: Json | null
           patient_id: string
           provider_id: string
@@ -18929,7 +18929,7 @@ export type Database = {
           findings?: string | null
           id?: string
           is_confidential?: boolean | null
-          // STUB_REMOVED: "lab_results"?: Json | null
+          lab_results?: Json | null
           metadata?: Json | null
           patient_id: string
           provider_id: string
@@ -18948,7 +18948,7 @@ export type Database = {
           findings?: string | null
           id?: string
           is_confidential?: boolean | null
-          // STUB_REMOVED: "lab_results"?: Json | null
+          lab_results?: Json | null
           metadata?: Json | null
           patient_id?: string
           provider_id?: string
@@ -18977,7 +18977,7 @@ export type Database = {
             foreignKeyName: "health_records_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -19195,7 +19195,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_recurring: boolean
-          max_// STUB_REMOVED: "patients"_per_shift: number | null
+          max_patients_per_shift: number | null
           metadata: Json
           notes: string | null
           practitioner_id: string
@@ -19215,7 +19215,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_recurring?: boolean
-          max_// STUB_REMOVED: "patients"_per_shift?: number | null
+          max_patients_per_shift?: number | null
           metadata?: Json
           notes?: string | null
           practitioner_id: string
@@ -19235,7 +19235,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_recurring?: boolean
-          max_// STUB_REMOVED: "patients"_per_shift?: number | null
+          max_patients_per_shift?: number | null
           metadata?: Json
           notes?: string | null
           practitioner_id?: string
@@ -19811,7 +19811,7 @@ export type Database = {
             foreignKeyName: "hotel_reservations_checked_in_by_fkey"
             columns: ["checked_in_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -19825,7 +19825,7 @@ export type Database = {
             foreignKeyName: "hotel_reservations_checked_out_by_fkey"
             columns: ["checked_out_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -22110,7 +22110,7 @@ export type Database = {
             foreignKeyName: "landlords_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -22292,7 +22292,7 @@ export type Database = {
             foreignKeyName: "leases_landlord_id_fkey"
             columns: ["landlord_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -22334,7 +22334,7 @@ export type Database = {
             foreignKeyName: "leases_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -23132,7 +23132,7 @@ export type Database = {
             foreignKeyName: "maintenance_contractors_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -23216,7 +23216,7 @@ export type Database = {
             foreignKeyName: "maintenance_tickets_contractor_id_fkey"
             columns: ["contractor_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -23230,7 +23230,7 @@ export type Database = {
             foreignKeyName: "maintenance_tickets_landlord_id_fkey"
             columns: ["landlord_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -23265,7 +23265,7 @@ export type Database = {
             foreignKeyName: "maintenance_tickets_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -26924,7 +26924,7 @@ export type Database = {
             foreignKeyName: "national_public_participation_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -26952,7 +26952,7 @@ export type Database = {
             foreignKeyName: "national_public_participation_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -26966,7 +26966,7 @@ export type Database = {
             foreignKeyName: "national_public_participation_voting_session_id_fkey"
             columns: ["voting_session_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "voting_results_summary""
+            referencedRelation: "voting_results_summary"
             referencedColumns: ["voting_session_id"]
           },
           {
@@ -27711,7 +27711,7 @@ export type Database = {
             foreignKeyName: "parliament_sessions_deputy_speaker_id_fkey"
             columns: ["deputy_speaker_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -27725,7 +27725,7 @@ export type Database = {
             foreignKeyName: "parliament_sessions_majority_leader_id_fkey"
             columns: ["majority_leader_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -27739,7 +27739,7 @@ export type Database = {
             foreignKeyName: "parliament_sessions_minority_leader_id_fkey"
             columns: ["minority_leader_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -27753,7 +27753,7 @@ export type Database = {
             foreignKeyName: "parliament_sessions_speaker_id_fkey"
             columns: ["speaker_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -28733,7 +28733,7 @@ export type Database = {
             foreignKeyName: "petition_signatures_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -28840,7 +28840,7 @@ export type Database = {
             foreignKeyName: "petitions_petitioner_id_fkey"
             columns: ["petitioner_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -28854,7 +28854,7 @@ export type Database = {
             foreignKeyName: "petitions_responded_by_fkey"
             columns: ["responded_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -30229,7 +30229,7 @@ export type Database = {
             foreignKeyName: "police_officers_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -31911,7 +31911,7 @@ export type Database = {
             foreignKeyName: "prescriptions_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -32944,7 +32944,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "profile_achievements": {
+      profile_achievements: {
         Row: {
           achievement_type: Database["public"]["Enums"]["achievement_type"]
           badge_image_url: string | null
@@ -33007,28 +33007,28 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_achievements"_profile_id_fkey"
+            foreignKeyName: "profile_achievements_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_achievements"_profile_id_fkey"
+            foreignKeyName: "profile_achievements_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_achievements"_verified_by_fkey"
+            foreignKeyName: "profile_achievements_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_achievements"_verified_by_fkey"
+            foreignKeyName: "profile_achievements_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -33078,7 +33078,7 @@ export type Database = {
             foreignKeyName: "profile_activity_log_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33153,7 +33153,7 @@ export type Database = {
             foreignKeyName: "profile_analytics_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33192,7 +33192,7 @@ export type Database = {
             foreignKeyName: "profile_blocks_blocked_profile_id_fkey"
             columns: ["blocked_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33206,7 +33206,7 @@ export type Database = {
             foreignKeyName: "profile_blocks_blocker_profile_id_fkey"
             columns: ["blocker_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33218,7 +33218,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "profile_businesses": {
+      profile_businesses: {
         Row: {
           business_id: string
           created_at: string
@@ -33263,21 +33263,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_businesses"_business_id_fkey"
+            foreignKeyName: "profile_businesses_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_businesses"_profile_id_fkey"
+            foreignKeyName: "profile_businesses_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_businesses"_profile_id_fkey"
+            foreignKeyName: "profile_businesses_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -33345,7 +33345,7 @@ export type Database = {
             foreignKeyName: "profile_certifications_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33359,7 +33359,7 @@ export type Database = {
             foreignKeyName: "profile_certifications_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33371,7 +33371,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "profile_connections": {
+      profile_connections: {
         Row: {
           connected_profile_id: string
           connection_type: Database["public"]["Enums"]["connection_type"]
@@ -33410,42 +33410,42 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_connected_profile_id_fkey"
+            foreignKeyName: "profile_connections_connected_profile_id_fkey"
             columns: ["connected_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_connected_profile_id_fkey"
+            foreignKeyName: "profile_connections_connected_profile_id_fkey"
             columns: ["connected_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_initiated_by_fkey"
+            foreignKeyName: "profile_connections_initiated_by_fkey"
             columns: ["initiated_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_initiated_by_fkey"
+            foreignKeyName: "profile_connections_initiated_by_fkey"
             columns: ["initiated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_profile_id_fkey"
+            foreignKeyName: "profile_connections_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_connections"_profile_id_fkey"
+            foreignKeyName: "profile_connections_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -33495,7 +33495,7 @@ export type Database = {
             foreignKeyName: "profile_links_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33611,7 +33611,7 @@ export type Database = {
             foreignKeyName: "profile_portfolios_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33693,7 +33693,7 @@ export type Database = {
             foreignKeyName: "profile_projects_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33705,7 +33705,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "profile_qr_codes": {
+      profile_qr_codes: {
         Row: {
           created_at: string
           expires_at: string | null
@@ -33747,14 +33747,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_qr_codes"_profile_id_fkey"
+            foreignKeyName: "profile_qr_codes_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "profile_qr_codes"_profile_id_fkey"
+            foreignKeyName: "profile_qr_codes_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -33807,7 +33807,7 @@ export type Database = {
             foreignKeyName: "profile_references_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33821,7 +33821,7 @@ export type Database = {
             foreignKeyName: "profile_references_referrer_profile_id_fkey"
             columns: ["referrer_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33869,7 +33869,7 @@ export type Database = {
             foreignKeyName: "profile_reports_reported_profile_id_fkey"
             columns: ["reported_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33883,7 +33883,7 @@ export type Database = {
             foreignKeyName: "profile_reports_reporter_profile_id_fkey"
             columns: ["reporter_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -33970,7 +33970,7 @@ export type Database = {
             foreignKeyName: "profile_reputation_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34030,7 +34030,7 @@ export type Database = {
             foreignKeyName: "profile_roles_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34044,7 +34044,7 @@ export type Database = {
             foreignKeyName: "profile_roles_verified_by_fkey"
             columns: ["verified_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34131,7 +34131,7 @@ export type Database = {
             foreignKeyName: "profile_settings_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34191,7 +34191,7 @@ export type Database = {
             foreignKeyName: "profile_skills_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34242,7 +34242,7 @@ export type Database = {
             foreignKeyName: "profile_subscriptions_creator_profile_id_fkey"
             columns: ["creator_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34256,7 +34256,7 @@ export type Database = {
             foreignKeyName: "profile_subscriptions_subscriber_profile_id_fkey"
             columns: ["subscriber_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34307,7 +34307,7 @@ export type Database = {
             foreignKeyName: "profile_tips_recipient_profile_id_fkey"
             columns: ["recipient_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34321,7 +34321,7 @@ export type Database = {
             foreignKeyName: "profile_tips_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34387,7 +34387,7 @@ export type Database = {
             foreignKeyName: "profile_verifications_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34401,7 +34401,7 @@ export type Database = {
             foreignKeyName: "profile_verifications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34443,7 +34443,7 @@ export type Database = {
             foreignKeyName: "profile_views_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -34457,7 +34457,7 @@ export type Database = {
             foreignKeyName: "profile_views_viewer_profile_id_fkey"
             columns: ["viewer_profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35003,7 +35003,7 @@ export type Database = {
             foreignKeyName: "properties_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35272,7 +35272,7 @@ export type Database = {
             foreignKeyName: "property_bookings_guest_id_fkey"
             columns: ["guest_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35286,7 +35286,7 @@ export type Database = {
             foreignKeyName: "property_bookings_host_id_fkey"
             columns: ["host_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35373,7 +35373,7 @@ export type Database = {
             foreignKeyName: "property_documents_landlord_id_fkey"
             columns: ["landlord_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35415,7 +35415,7 @@ export type Database = {
             foreignKeyName: "property_documents_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35429,7 +35429,7 @@ export type Database = {
             foreignKeyName: "property_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35507,7 +35507,7 @@ export type Database = {
             foreignKeyName: "property_host_profiles_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35609,7 +35609,7 @@ export type Database = {
             foreignKeyName: "property_messages_sender_id_fkey"
             columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35723,7 +35723,7 @@ export type Database = {
             foreignKeyName: "property_notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35825,7 +35825,7 @@ export type Database = {
             foreignKeyName: "property_payments_payee_id_fkey"
             columns: ["payee_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -35839,7 +35839,7 @@ export type Database = {
             foreignKeyName: "property_payments_payer_id_fkey"
             columns: ["payer_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36014,7 +36014,7 @@ export type Database = {
             foreignKeyName: "property_reviews_reviewer_id_fkey"
             columns: ["reviewer_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36074,7 +36074,7 @@ export type Database = {
             foreignKeyName: "property_search_history_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36155,7 +36155,7 @@ export type Database = {
             foreignKeyName: "public_participation_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36183,7 +36183,7 @@ export type Database = {
             foreignKeyName: "public_participation_voting_session_id_fkey"
             columns: ["voting_session_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "voting_results_summary""
+            referencedRelation: "voting_results_summary"
             referencedColumns: ["voting_session_id"]
           },
           {
@@ -36232,7 +36232,7 @@ export type Database = {
             foreignKeyName: "public_participation_reactions_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36457,7 +36457,7 @@ export type Database = {
             foreignKeyName: "pulse_comments_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36512,7 +36512,7 @@ export type Database = {
             foreignKeyName: "pulse_creator_earnings_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36798,7 +36798,7 @@ export type Database = {
             foreignKeyName: "pulse_likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -36939,7 +36939,7 @@ export type Database = {
             foreignKeyName: "pulse_posts_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -37202,7 +37202,7 @@ export type Database = {
             foreignKeyName: "pulse_shares_sharer_id_fkey"
             columns: ["sharer_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -37409,7 +37409,7 @@ export type Database = {
             foreignKeyName: "pulse_video_progress_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -37451,7 +37451,7 @@ export type Database = {
             foreignKeyName: "pulse_video_views_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -37472,7 +37472,7 @@ export type Database = {
             foreignKeyName: "pulse_video_views_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -40761,7 +40761,7 @@ export type Database = {
             foreignKeyName: "saved_properties_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -41345,7 +41345,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "shipping_addresses": {
+      shipping_addresses: {
         Row: {
           address_line1: string
           address_line2: string | null
@@ -41393,7 +41393,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "shipping_addresses"_user_id_fkey"
+            foreignKeyName: "shipping_addresses_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -45194,7 +45194,7 @@ export type Database = {
             foreignKeyName: "tenants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -47812,7 +47812,7 @@ export type Database = {
             foreignKeyName: "treasury_officers_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -50850,7 +50850,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "user_interests": {
+      user_interests: {
         Row: {
           interest_id: string
           user_id: string
@@ -50865,14 +50865,14 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "// STUB_REMOVED: "user_interests"_interest_id_fkey"
+            foreignKeyName: "user_interests_interest_id_fkey"
             columns: ["interest_id"]
             isOneToOne: false
             referencedRelation: "interests"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "// STUB_REMOVED: "user_interests"_user_id_fkey"
+            foreignKeyName: "user_interests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -52043,7 +52043,7 @@ export type Database = {
             foreignKeyName: "votes_voter_id_fkey"
             columns: ["voter_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -52057,7 +52057,7 @@ export type Database = {
             foreignKeyName: "votes_voting_session_id_fkey"
             columns: ["voting_session_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "voting_results_summary""
+            referencedRelation: "voting_results_summary"
             referencedColumns: ["voting_session_id"]
           },
           {
@@ -52191,7 +52191,7 @@ export type Database = {
             foreignKeyName: "voting_sessions_sponsor_id_fkey"
             columns: ["sponsor_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -53999,7 +53999,7 @@ export type Database = {
             foreignKeyName: "ward_project_votes_citizen_id_fkey"
             columns: ["citizen_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -54013,7 +54013,7 @@ export type Database = {
             foreignKeyName: "ward_project_votes_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "ward_project_rankings""
+            referencedRelation: "ward_project_rankings"
             referencedColumns: ["project_id"]
           },
           {
@@ -55104,7 +55104,7 @@ export type Database = {
       }
     }
     Views: {
-      // STUB_REMOVED: "active_governance_members": {
+      active_governance_members: {
         Row: {
           attendance_rate: number | null
           avatar_url: string | null
@@ -55223,11 +55223,11 @@ export type Database = {
       facility_dashboard: {
         Row: {
           active_dispatches: number | null
-          active_// STUB_REMOVED: "patients": number | null
+          active_patients: number | null
           ambulance_count: number | null
           bed_capacity: number | null
           county_name: string | null
-          critical_// STUB_REMOVED: "patients": number | null
+          critical_patients: number | null
           department_count: number | null
           doctor_count: number | null
           emergency_services: boolean | null
@@ -55246,11 +55246,11 @@ export type Database = {
         }
         Insert: {
           active_dispatches?: never
-          active_// STUB_REMOVED: "patients"?: never
+          active_patients?: never
           ambulance_count?: number | null
           bed_capacity?: number | null
           county_name?: string | null
-          critical_// STUB_REMOVED: "patients"?: never
+          critical_patients?: never
           department_count?: never
           doctor_count?: never
           emergency_services?: boolean | null
@@ -55269,11 +55269,11 @@ export type Database = {
         }
         Update: {
           active_dispatches?: never
-          active_// STUB_REMOVED: "patients"?: never
+          active_patients?: never
           ambulance_count?: number | null
           bed_capacity?: number | null
           county_name?: string | null
-          critical_// STUB_REMOVED: "patients"?: never
+          critical_patients?: never
           department_count?: never
           doctor_count?: never
           emergency_services?: boolean | null
@@ -55876,7 +55876,7 @@ export type Database = {
             foreignKeyName: "properties_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -56230,7 +56230,7 @@ export type Database = {
             foreignKeyName: "landlords_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -56412,7 +56412,7 @@ export type Database = {
             foreignKeyName: "tenants_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
-            referencedRelation: "// STUB_REMOVED: "active_governance_members""
+            referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
@@ -56603,7 +56603,7 @@ export type Database = {
         }
         Relationships: []
       }
-      // STUB_REMOVED: "voting_results_summary": {
+      voting_results_summary: {
         Row: {
           absent_votes: number | null
           abstain_votes: number | null
@@ -56779,7 +56779,7 @@ export type Database = {
             foreignKeyName: "health_appointments_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
-            referencedRelation: "health_// STUB_REMOVED: "patients""
+            referencedRelation: "health_patients"
             referencedColumns: ["id"]
           },
           {
@@ -56949,7 +56949,7 @@ export type Database = {
           },
         ]
       }
-      // STUB_REMOVED: "ward_project_rankings": {
+      ward_project_rankings: {
         Row: {
           avg_priority_rank: number | null
           county_id: string | null

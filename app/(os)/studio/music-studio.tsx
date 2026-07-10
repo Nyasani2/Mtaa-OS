@@ -115,7 +115,7 @@ export default function MusicStudioScreen() {
   const fetchBeats = async () => {
     try {
       const { data } = await supabase
-        .from('// STUB_REMOVED: "studio_beats"')
+        .from('studio_beats')
         .select('*')
         .order('created_at', { ascending: false });
       setBeats(data || []);
@@ -158,7 +158,7 @@ export default function MusicStudioScreen() {
   const uploadBeat = async () => {
     if (!beatTitle.trim() || !beatPrice || !user?.id) return;
     try {
-      await supabase.from('// STUB_REMOVED: "studio_beats"').insert({
+      await supabase.from('studio_beats').insert({
         producer_id: user.id,
         title: beatTitle,
         price: parseFloat(beatPrice),

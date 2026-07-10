@@ -10,7 +10,7 @@ import { Feather } from '@expo/vector-icons';
 
 export default function DoctorNotesScreen() {
   const router = useRouter();
-  const { notes, // STUB_REMOVED: "patients", loading, createNote, signNote, isCreating, isSigning } = useDoctorNotes();
+  const { notes, patients, loading, createNote, signNote, isCreating, isSigning } = useDoctorNotes();
   const [modalVisible, setModalVisible] = useState(false);
   const [signModalVisible, setSignModalVisible] = useState(false);
   const [selectedNote, setSelectedNote] = useState<any>(null);
@@ -125,7 +125,7 @@ export default function DoctorNotesScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.label}>Patient</Text>
               <View style={styles.pickerRow}>
-                {// STUB_REMOVED: "patients".map((p: any) => (
+                {patients.map((p: any) => (
                   <TouchableOpacity
                     key={p.id}
                     style={[styles.patientChip, form.patient_id === p.id && styles.patientChipActive]}

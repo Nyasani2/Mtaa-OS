@@ -19,7 +19,7 @@ export async function runMTruckBrain() {
       loading_time_min: 20,
     });
 
-    await supabase.from("// STUB_REMOVED: "trip_intelligence"").upsert({
+    await supabase.from("trip_intelligence").upsert({
       trip_id: trip.id,
       eta_minutes: eta.eta_minutes,
       confidence: eta.confidence,

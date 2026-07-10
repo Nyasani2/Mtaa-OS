@@ -22,7 +22,7 @@ export async function runLogisticsBrain() {
     });
 
     await supabase
-      .from("// STUB_REMOVED: "logistics_ai_decisions"")
+      .from("logistics_ai_decisions")
       .insert({
         trip_id: trip.id,
         truck_id: trip.truck_id,

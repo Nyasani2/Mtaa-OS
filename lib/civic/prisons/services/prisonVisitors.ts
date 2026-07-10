@@ -18,7 +18,7 @@ export interface PrisonVisitor {
 
 export class PrisonVisitorsService {
   static async getVisitors(inmateId?: string): Promise<PrisonVisitor[]> {
-    let query = supabase.from("// STUB_REMOVED: "prison_visitors"").select("*");
+    let query = supabase.from("prison_visitors").select("*");
     if (inmateId) query = query.eq("inmate_id", inmateId);
     const { data, error } = await query.order("visit_date", { ascending: false });
     if (error) throw error;
@@ -27,7 +27,7 @@ export class PrisonVisitorsService {
 
   static async getVisitorById(id: string): Promise<PrisonVisitor | null> {
     const { data, error } = await supabase
-      .from("// STUB_REMOVED: "prison_visitors"")
+      .from("prison_visitors")
       .select("*")
       .eq("id", id)
       .single();
@@ -37,7 +37,7 @@ export class PrisonVisitorsService {
 
   static async createVisitor(data: Partial<PrisonVisitor>): Promise<PrisonVisitor> {
     const { data: result, error } = await supabase
-      .from("// STUB_REMOVED: "prison_visitors"")
+      .from("prison_visitors")
       .insert({
         prison_id: data.prisonId,
         inmate_id: data.inmateId,
@@ -57,7 +57,7 @@ export class PrisonVisitorsService {
 
   static async updateVisitor(id: string, data: Partial<PrisonVisitor>): Promise<PrisonVisitor> {
     const { data: result, error } = await supabase
-      .from("// STUB_REMOVED: "prison_visitors"")
+      .from("prison_visitors")
       .update({
         visitor_name: data.visitorName,
         visitor_id_number: data.visitorIdNumber,
@@ -77,7 +77,7 @@ export class PrisonVisitorsService {
   static async getTodayVisitors(prisonId?: string): Promise<PrisonVisitor[]> {
     const today = new Date().toISOString().split("T")[0];
     let query = supabase
-      .from("// STUB_REMOVED: "prison_visitors"")
+      .from("prison_visitors")
       .select("*")
       .gte("visit_date", `${today}T00:00:00`)
       .lt("visit_date", `${today}T23:59:59`);
@@ -88,7 +88,7 @@ export class PrisonVisitorsService {
   }
 
   static async getVisitorStats(prisonId?: string): Promise<{ total: number; today: number; byStatus: Record<string, number> }> {
-    let query = supabase.from("// STUB_REMOVED: "prison_visitors"").select("*");
+    let query = supabase.from("prison_visitors").select("*");
     if (prisonId) query = query.eq("prison_id", prisonId);
     const { data, error } = await query;
     if (error) throw error;

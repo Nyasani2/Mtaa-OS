@@ -145,9 +145,9 @@ export default function GroupSavingsScreen() {
   };
 
   const fetchGroupDetails = async (groupId: string) => {
-    const { data: mData } = await supabase.from('// STUB_REMOVED: "savings_group_members"').select('*').eq('group_id', groupId).order('payout_position', { ascending: true });
+    const { data: mData } = await supabase.from('savings_group_members').select('*').eq('group_id', groupId).order('payout_position', { ascending: true });
     if (mData) setMembers(mData);
-    const { data: cData } = await supabase.from('// STUB_REMOVED: "savings_group_contributions"').select('*').eq('group_id', groupId).order('created_at', { ascending: false }).limit(20);
+    const { data: cData } = await supabase.from('savings_group_contributions').select('*').eq('group_id', groupId).order('created_at', { ascending: false }).limit(20);
     if (cData) setContributions(cData);
   };
 

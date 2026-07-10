@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'expo-router';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/health' },
-  { label: 'Patients', path: '/health/// STUB_REMOVED: "patients"' },
+  { label: 'Patients', path: '/health/patients' },
   { label: 'Appointments', path: '/health/appointments' },
   { label: 'Records', path: '/health/records' },
 ];

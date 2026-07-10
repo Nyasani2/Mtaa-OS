@@ -7,7 +7,7 @@ export async function proposeMarriageMode(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_marriage_proposals"")
+      .from("hookup_marriage_proposals")
       .insert({
         proposer_id: user_id,
         receiver_id: target_user_id,
@@ -25,7 +25,7 @@ export async function acceptMarriageMode(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_marriage_proposals"")
+      .from("hookup_marriage_proposals")
       .update({
         status: "ACCEPTED",
         accepted_at: new Date(),

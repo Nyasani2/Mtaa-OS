@@ -180,7 +180,7 @@ export class ASISWalletIntelligence {
 
   private async buildKamosNetworkGraph(profileId: string): Promise<KamosNetworkNode[]> {
     const { data: connections } = await this.supabase
-      .from('// STUB_REMOVED: "profile_connections"')
+      .from('profile_connections')
       .select('connected_profile_id, connection_type')
       .eq('profile_id', profileId).eq('status', 'active');
 
@@ -220,7 +220,7 @@ export class ASISWalletIntelligence {
 
   private async determineUserType(profileId: string, profile: any): Promise<UserType> {
     const { data: business } = await this.supabase
-      .from('// STUB_REMOVED: "profile_businesses"').select('id').eq('profile_id', profileId).single();
+      .from('profile_businesses').select('id').eq('profile_id', profileId).single();
     if (business) return 'business';
 
     const { data: roles } = await this.supabase
@@ -538,7 +538,7 @@ export class ASISWalletIntelligence {
   }
 
   private async buildFinancialField(profileId: string): Promise<KamosField> {
-    const { data: connections } = await this.supabase.from('// STUB_REMOVED: "profile_connections"').select('connected_profile_id').eq('profile_id', profileId).eq('status', 'active');
+    const { data: connections } = await this.supabase.from('profile_connections').select('connected_profile_id').eq('profile_id', profileId).eq('status', 'active');
     const entities = new Map<string, KamosEntity>();
     const userIntel = await this.analyzeUser(profileId);
     entities.set(profileId, userIntel.entity);
@@ -1029,7 +1029,7 @@ export class ASISWalletIntelligence {
     if (recipientIntel.recipientType === 'government') flags.push('government_payment');
     if (request.currency !== 'USD' && request.amount > 5000) flags.push('foreign_currency_reporting');
     const sanctioned = await this.checkSanctionsList(request.recipientIdentifier);
-    if (sanctioned) flags.push('// STUB_REMOVED: "sanctions_list"_match');
+    if (sanctioned) flags.push('sanctions_list_match');
     return flags;
   }
 

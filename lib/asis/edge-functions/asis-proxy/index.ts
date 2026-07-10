@@ -324,9 +324,9 @@ function buildFullPrompt(
  * Select AI provider with fallback logic
  */
 async function selectProvider(supabase: any): Promise<string> {
-  // Check provider health from // STUB_REMOVED: "asis_provider_status" table
+  // Check provider health from asis_provider_status table
   const { data: providers } = await supabase
-    .from('// STUB_REMOVED: "asis_provider_status"')
+    .from('asis_provider_status')
     .select('provider, status, latency_ms')
     .eq('status', 'healthy')
     .order('latency_ms', { ascending: true });

@@ -14,7 +14,7 @@ export async function createLivestream(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_livestreams"")
+      .from("hookup_livestreams")
       .insert({
         host_id,
         title,
@@ -39,7 +39,7 @@ export async function endLivestream(
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_livestreams"")
+      .from("hookup_livestreams")
       .update({
         status: "ENDED",
         ended_at: new Date(),
@@ -57,7 +57,7 @@ export async function getLiveStreams() {
 
   const { data, error } =
     await supabase
-      .from("// STUB_REMOVED: "hookup_livestreams"")
+      .from("hookup_livestreams")
       .select("*")
       .eq("status", "LIVE");
 
