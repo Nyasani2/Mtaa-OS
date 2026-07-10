@@ -89,10 +89,10 @@ coverage/
 
 # Leo working docs (plans, reviews, audits)
 leo/
-.tokensave
+#.tokensave
 
 # Claude Code local
-.claude/
+#.claude/
 
 # Agent skills (local tooling)
-.agents/
+#.agents/
