@@ -59,7 +59,7 @@ export class NTSAService {
   }
 
   async getSaccos(filters?: { status?: Sacco['status'] }) {
-    let query = supabase.from('ntsa_saccos').select('*');
+    let query = supabase.from('// STUB_REMOVED: "ntsa_saccos"').select('*');
     if (filters?.status) query = query.eq('status', filters.status);
     const { data, error } = await query.order('name', { ascending: true });
     if (error) throw error;

@@ -59,7 +59,7 @@ export default function BroadcastConsoleScreen() {
     setLoading(true);
     const { data } = await supabase
       .from("studio_camera_nodes")
-      .select("broadcaster:studio_broadcasters(*)")
+      .select("broadcaster:// STUB_REMOVED: "studio_broadcasters"(*)")
       .eq("user_id", user.id);
     const networks = (data || []).map((r: any) => r.broadcaster).filter(Boolean);
     setMyNetworks(networks);
@@ -70,7 +70,7 @@ export default function BroadcastConsoleScreen() {
   async function loadDiscover() {
     setLoading(true);
     const { data } = await supabase
-      .from("studio_broadcasters")
+      .from("// STUB_REMOVED: "studio_broadcasters"")
       .select("*")
       .eq("verified", true)
       .order("member_count", { ascending: false })
@@ -96,7 +96,7 @@ export default function BroadcastConsoleScreen() {
   async function createNetwork() {
     if (!createForm.name.trim() || !user) return;
     const { data, error } = await supabase
-      .from("studio_broadcasters")
+      .from("// STUB_REMOVED: "studio_broadcasters"")
       .insert({ name: createForm.name, type: createForm.type, description: createForm.description, creator_id: user.id })
       .select().single();
     if (error) { Alert.alert("Error", error.message); return; }

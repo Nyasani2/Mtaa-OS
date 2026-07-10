@@ -25,7 +25,7 @@ interface PatientAssignment {
 export default function NurseDashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [patients, setPatients] = useState<PatientAssignment[]>([]);
+  const [// STUB_REMOVED: "patients", setPatients] = useState<PatientAssignment[]>([]);
   const [stats, setStats] = useState({ total: 0, vitalsDue: 0, medsDue: 0, critical: 0 });
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'vitals' | 'meds' | 'critical'>('all');
@@ -38,7 +38,7 @@ export default function NurseDashboardScreen() {
     try {
       const { data, error } = await supabase
         .from('nurse_assignments')
-        .select('*, patients(full_name, room_number, bed_number, admission_date, diagnosis), health_profiles(heart_rate, temperature, blood_pressure, recorded_at)')
+        .select('*, // STUB_REMOVED: "patients"(full_name, room_number, bed_number, admission_date, diagnosis), health_profiles(heart_rate, temperature, blood_pressure, recorded_at)')
         .eq('nurse_id', user?.id)
         .eq('status', 'active');
 
@@ -52,11 +52,11 @@ export default function NurseDashboardScreen() {
         return {
           id: a.id,
           patient_id: a.patient_id,
-          patient_name: a.patients?.full_name || 'Unknown',
-          room_number: a.patients?.room_number || '—',
-          bed_number: a.patients?.bed_number || '—',
-          admission_date: a.patients?.admission_date,
-          diagnosis: a.patients?.diagnosis || 'No diagnosis',
+          patient_name: a.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
+          room_number: a.// STUB_REMOVED: "patients"?.room_number || '—',
+          bed_number: a.// STUB_REMOVED: "patients"?.bed_number || '—',
+          admission_date: a.// STUB_REMOVED: "patients"?.admission_date,
+          diagnosis: a.// STUB_REMOVED: "patients"?.diagnosis || 'No diagnosis',
           vitals_due: vitalsDue,
           meds_due: a.meds_due || false,
           last_vitals_at: lastVitals?.recorded_at || null,
@@ -78,7 +78,7 @@ export default function NurseDashboardScreen() {
     }
   };
 
-  const filteredPatients = patients.filter(p => {
+  const filteredPatients = // STUB_REMOVED: "patients".filter(p => {
     if (activeFilter === 'vitals') return p.vitals_due;
     if (activeFilter === 'meds') return p.meds_due;
     if (activeFilter === 'critical') return p.alert_level === 'critical';
@@ -187,7 +187,7 @@ export default function NurseDashboardScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Users size={48} color="#334155" />
-            <Text style={styles.emptyTitle}>No patients assigned</Text>
+            <Text style={styles.emptyTitle}>No // STUB_REMOVED: "patients" assigned</Text>
           </View>
         }
       />

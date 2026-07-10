@@ -29,12 +29,12 @@ export default function PharmacyDashboardScreen() {
     try {
       const { data, error } = await supabase
         .from('pharmacy_queue')
-        .select('*, prescriptions(name, dosage, quantity), patients(full_name)')
+        .select('*, prescriptions(name, dosage, quantity), // STUB_REMOVED: "patients"(full_name)')
         .order('ordered_at', { ascending: true }).limit(100);
       if (error) throw error;
       const formatted = (data || []).map((q: any) => ({
         id: q.id, prescription_id: q.prescription_id,
-        patient_name: q.patients?.full_name || 'Unknown',
+        patient_name: q.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
         medication_name: q.prescriptions?.name || 'Unknown',
         dosage: q.prescriptions?.dosage || '', quantity: q.prescriptions?.quantity || 0,
         status: q.status, priority: q.priority, ordered_at: q.ordered_at,

@@ -61,8 +61,8 @@ export function useGovernment(userId: string | undefined) {
       const [{ data: fData, error: fErr }, { data: aData, error: aErr }, { data: oData, error: oErr }, { data: pData, error: pErr }] = await Promise.all([
         supabase.from("health_facilities").select("id, status"),
         supabase.from("health_alerts").select("id, title, description, severity, location, status, created_at").eq("status", "active").order("created_at", { ascending: false }),
-        supabase.from("health_outbreaks").select("id, title, description, severity, location, cases, status, created_at").eq("status", "active").order("created_at", { ascending: false }),
-        supabase.from("health_population").select("id, name, age, gender, city, vaccination_status, chronic_conditions").limit(50),
+        supabase.from("// STUB_REMOVED: "health_outbreaks"").select("id, title, description, severity, location, cases, status, created_at").eq("status", "active").order("created_at", { ascending: false }),
+        supabase.from("// STUB_REMOVED: "health_population"").select("id, name, age, gender, city, vaccination_status, chronic_conditions").limit(50),
       ]);
       if (fErr) throw fErr; if (aErr) throw aErr; if (oErr) throw oErr; if (pErr) throw pErr;
 
@@ -97,7 +97,7 @@ export function useGovernment(userId: string | undefined) {
 
   const createOutbreak = useCallback(async (payload: { title: string; description: string; severity: string; location: string }) => {
     try {
-      const { data, error: err } = await supabase.from("health_outbreaks").insert({
+      const { data, error: err } = await supabase.from("// STUB_REMOVED: "health_outbreaks"").insert({
         title: payload.title, description: payload.description, severity: payload.severity,
         location: payload.location, cases: 0, status: "active", created_by: userId,
       }).select("id").single();
@@ -128,7 +128,7 @@ export function useGovernment(userId: string | undefined) {
   const searchPopulation = useCallback(async (query: string) => {
     try {
       const { data, error: err } = await supabase
-        .from("health_population")
+        .from("// STUB_REMOVED: "health_population"")
         .select("id, name, age, gender, city, vaccination_status, chronic_conditions")
         .or(`name.ilike.%${query}%,city.ilike.%${query}%`)
         .limit(50);

@@ -10,7 +10,7 @@ export async function registerTradeFlow(flow: any) {
   };
 
   await supabase
-    .from("mtaa_digital_trade_flows")
+    .from("// STUB_REMOVED: "mtaa_digital_trade_flows"")
     .insert(processed);
 
   return processed;
@@ -19,7 +19,7 @@ export async function registerTradeFlow(flow: any) {
 export async function analyzeTradeVolume() {
 
   const { data } = await supabase
-    .from("mtaa_digital_trade_flows")
+    .from("// STUB_REMOVED: "mtaa_digital_trade_flows"")
     .select("*");
 
   return {

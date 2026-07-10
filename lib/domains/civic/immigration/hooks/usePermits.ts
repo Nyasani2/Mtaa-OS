@@ -18,7 +18,7 @@ export function usePermits() {
   return useQuery({
     queryKey: ['immigration', 'permits'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('work_permits').select('*').order('issued_at', { ascending: false });
+      const { data, error } = await supabase.from('// STUB_REMOVED: "work_permits"').select('*').order('issued_at', { ascending: false });
       if (error) throw error;
       return data as Permit[];
     },

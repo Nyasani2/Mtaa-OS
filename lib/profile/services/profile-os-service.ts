@@ -180,7 +180,7 @@ export async function generateProfileQR(): Promise<string> {
   if (!user) throw new Error('Not authenticated');
 
   const qrData = `mtaa://profile/${user.id}`;
-  await supabase.from('profile_qr_codes').upsert({
+  await supabase.from('// STUB_REMOVED: "profile_qr_codes"').upsert({
     user_id: user.id,
     qr_data: qrData,
     expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

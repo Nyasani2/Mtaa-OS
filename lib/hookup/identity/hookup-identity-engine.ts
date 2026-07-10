@@ -8,7 +8,7 @@ export async function logIdentitySignal(
 
   const { data, error } =
     await supabase
-      .from("hookup_identity_signals")
+      .from("// STUB_REMOVED: "hookup_identity_signals"")
       .insert({
         user_id,
         signal_type,

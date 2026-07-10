@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase/client";
 
 export async function getVitalsRecords(filter: string, range: { from: number; to: number }) {
   const { data, error, count } = await supabase
-    .from("health_vitals")
+    .from("// STUB_REMOVED: "health_vitals"")
     .select("*", { count: "exact" })
     .order("recorded_at", { ascending: false })
     .range(range.from, range.to);
@@ -19,7 +19,7 @@ export async function getVitalsRecords(filter: string, range: { from: number; to
 }
 
 export async function createVitalsRecord(payload: any) {
-  const { data, error } = await supabase.from("health_vitals").insert([payload]).select().single();
+  const { data, error } = await supabase.from("// STUB_REMOVED: "health_vitals"").insert([payload]).select().single();
   if (error) throw error;
   return data;
 }

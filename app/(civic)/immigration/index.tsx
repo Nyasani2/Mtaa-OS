@@ -20,17 +20,17 @@ export default function ImmigrationScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Stats */}
         <View style={styles.statsRow}>
-          <StatsCard label="Active Visas" value={stats?.active_visas || 0} icon="card-outline" color="#3B82F6" />
-          <StatsCard label="Overstays" value={stats?.overstays || 0} icon="time-outline" color="#EF4444" />
+          <StatsCard label="Active Visas" value={stats?.active_// STUB_REMOVED: "visas" || 0} icon="card-outline" color="#3B82F6" />
+          <StatsCard label="Overstays" value={stats?.// STUB_REMOVED: "overstays" || 0} icon="time-outline" color="#EF4444" />
         </View>
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/visas')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/// STUB_REMOVED: "visas"')}>
             <Ionicons name="card-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Visas</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/passports')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/// STUB_REMOVED: "passports"')}>
             <Ionicons name="book-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Passports</Text>
           </TouchableOpacity>

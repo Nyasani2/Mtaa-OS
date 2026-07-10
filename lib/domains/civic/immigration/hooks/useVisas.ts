@@ -16,9 +16,9 @@ export interface Visa {
 
 export function useVisas() {
   return useQuery({
-    queryKey: ['immigration', 'visas'],
+    queryKey: ['immigration', '// STUB_REMOVED: "visas"'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('visas').select('*').order('issued_at', { ascending: false });
+      const { data, error } = await supabase.from('// STUB_REMOVED: "visas"').select('*').order('issued_at', { ascending: false });
       if (error) throw error;
       return data as Visa[];
     },

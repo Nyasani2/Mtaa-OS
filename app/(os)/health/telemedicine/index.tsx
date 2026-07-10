@@ -39,7 +39,7 @@ export default function TelemedicineScreen() {
     try {
       let query = supabase
         .from('telemedicine_sessions')
-        .select('*, patients(full_name), profiles:doctor_id(full_name)')
+        .select('*, // STUB_REMOVED: "patients"(full_name), profiles:doctor_id(full_name)')
         .order('scheduled_at', { ascending: true });
 
       if (patientId) query = query.eq('patient_id', patientId);
@@ -50,7 +50,7 @@ export default function TelemedicineScreen() {
 
       const formatted = (data || []).map((s: any) => ({
         ...s,
-        patient_name: s.patients?.full_name || 'Unknown',
+        patient_name: s.// STUB_REMOVED: "patients"?.full_name || 'Unknown',
         doctor_name: s.profiles?.full_name || 'Unknown',
       }));
       setSessions(formatted);

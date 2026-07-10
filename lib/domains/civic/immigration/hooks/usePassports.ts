@@ -15,9 +15,9 @@ export interface Passport {
 
 export function usePassports() {
   return useQuery({
-    queryKey: ['immigration', 'passports'],
+    queryKey: ['immigration', '// STUB_REMOVED: "passports"'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('passports').select('*').order('issued_at', { ascending: false });
+      const { data, error } = await supabase.from('// STUB_REMOVED: "passports"').select('*').order('issued_at', { ascending: false });
       if (error) throw error;
       return data as Passport[];
     },

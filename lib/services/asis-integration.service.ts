@@ -37,7 +37,7 @@ export async function requestASISAnalysis(request: ASISAnalysisRequest) {
 
 export async function getASISAnalysisForRecording(recordingId: string) {
   const { data, error } = await supabase
-    .from('asis_analysis_results')
+    .from('// STUB_REMOVED: "asis_analysis_results"')
     .select('*')
     .eq('recording_id', recordingId)
     .order('processed_at', { ascending: false });
@@ -47,7 +47,7 @@ export async function getASISAnalysisForRecording(recordingId: string) {
 
 export async function getASISFindings(analysisId: string) {
   const { data, error } = await supabase
-    .from('asis_findings')
+    .from('// STUB_REMOVED: "asis_findings"')
     .select('*')
     .eq('analysis_id', analysisId)
     .order('timestamp_seconds', { ascending: true });
@@ -60,7 +60,7 @@ export async function getDriverRiskProfile(driverId: string, periodDays: number 
   startDate.setDate(startDate.getDate() - periodDays);
 
   const { data: analyses } = await supabase
-    .from('asis_analysis_results')
+    .from('// STUB_REMOVED: "asis_analysis_results"')
     .select('*, recording:recording_id(driver_id)')
     .gte('processed_at', startDate.toISOString());
 
@@ -82,7 +82,7 @@ export async function getDriverRiskProfile(driverId: string, periodDays: number 
 
   // Count findings by severity
   const { data: findings } = await supabase
-    .from('asis_findings')
+    .from('// STUB_REMOVED: "asis_findings"')
     .select('severity')
     .in('analysis_id', driverAnalyses.map((a: any) => a.id));
 
@@ -121,7 +121,7 @@ export async function getFleetRiskSummary(periodDays: number = 30) {
   startDate.setDate(startDate.getDate() - periodDays);
 
   const { data: analyses } = await supabase
-    .from('asis_analysis_results')
+    .from('// STUB_REMOVED: "asis_analysis_results"')
     .select('risk_score, recording:recording_id(driver_id)')
     .gte('processed_at', startDate.toISOString());
 

@@ -8,7 +8,7 @@ export function useCivicAPI() {
         queryKey: ['civic', 'identity'],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from('user_identities')
+            .from('// STUB_REMOVED: "user_identities"')
             .select('*')
             .single();
           if (error) throw error;
@@ -21,7 +21,7 @@ export function useCivicAPI() {
         queryKey: ['civic', 'tax'],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from('tax_statements')
+            .from('// STUB_REMOVED: "tax_statements"')
             .select('*')
             .order('period', { ascending: false });
           if (error) throw error;
@@ -34,11 +34,11 @@ export function useCivicAPI() {
         queryKey: ['civic', 'payroll'],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from('payslips')
+            .from('// STUB_REMOVED: "payslips"')
             .select('*')
             .order('period', { ascending: false });
           if (error) throw error;
-          return { payslips: data, gross_pay: 0, net_pay: 0, deductions: 0 };
+          return { // STUB_REMOVED: "payslips": data, gross_pay: 0, net_pay: 0, deductions: 0 };
         },
       }),
 

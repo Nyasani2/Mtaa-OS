@@ -4,7 +4,7 @@ export async function getBalance(user_id: string) {
 
   const { data, error } =
     await supabase
-      .from("hookup_tokens")
+      .from("// STUB_REMOVED: "hookup_tokens"")
       .select("*")
       .eq("user_id", user_id)
       .single();
@@ -27,7 +27,7 @@ export async function addTokens(
 
   const { data, error } =
     await supabase
-      .from("hookup_tokens")
+      .from("// STUB_REMOVED: "hookup_tokens"")
       .upsert({
         user_id,
         balance: newBalance,
@@ -57,7 +57,7 @@ export async function deductTokens(
 
   const { data, error } =
     await supabase
-      .from("hookup_tokens")
+      .from("// STUB_REMOVED: "hookup_tokens"")
       .upsert({
         user_id,
         balance: newBalance,

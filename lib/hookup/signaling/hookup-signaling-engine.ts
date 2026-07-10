@@ -30,7 +30,7 @@ export class HookupSignalingEngine {
 
   async createOffer(payload: any = {}) {
     const { error } = await supabase
-      .from("hookup_room_signals")
+      .from("// STUB_REMOVED: "hookup_room_signals"")
       .insert({
         room_id: this.roomId,
         user_id: this.userId,
@@ -51,7 +51,7 @@ export class HookupSignalingEngine {
         {
           event: "INSERT",
           schema: "public",
-          table: "hookup_room_signals",
+          table: "// STUB_REMOVED: "hookup_room_signals"",
           filter: `room_id=eq.${this.roomId}`,
         },
         (payload) => {
