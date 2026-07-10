@@ -32,7 +32,7 @@ export default function RevenueSharingScreen() {
 
   async function loadShares() {
     if (!user) return;
-    const { data } = await supabase.from("studio_revenue_shares").select("*").eq("creator_id", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("studio_revenue").select("*").eq("creator_id", user.id).order("created_at", { ascending: false });
     setShares(data || []);
   }
 

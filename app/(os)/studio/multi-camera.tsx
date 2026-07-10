@@ -29,7 +29,7 @@ export default function MultiCameraScreen() {
 
   async function checkPremium() {
     if (!user) return;
-    const { data } = await supabase.from("studio_creator_subscriptions").select("tier").eq("user_id", user.id).eq("status", "active").single();
+    const { data } = await supabase.from("studio_subscriptions").select("tier").eq("user_id", user.id).eq("status", "active").single();
     setIsPremium(data?.tier === "premium" || data?.tier === "pro");
   }
 

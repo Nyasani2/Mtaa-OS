@@ -38,7 +38,7 @@ export async function updateEquipmentStatus({ id, status }: { id: string; status
 }
 
 export async function getLabResults(filter: string, range: { from: number; to: number }) {
-  let q = supabase.from("health_lab_results").select("*", { count: "exact" }).order("recorded_at", { ascending: false });
+  let q = supabase.from("health_leave_requests").select("*", { count: "exact" }).order("recorded_at", { ascending: false });
   if (filter !== "all") q = q.eq("flag", filter);
   const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
@@ -46,7 +46,7 @@ export async function getLabResults(filter: string, range: { from: number; to: n
 }
 
 export async function createLabResult(payload: any) {
-  const { data, error } = await supabase.from("health_lab_results").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_leave_requests").insert([payload]).select().single();
   if (error) throw error;
   return data;
 }

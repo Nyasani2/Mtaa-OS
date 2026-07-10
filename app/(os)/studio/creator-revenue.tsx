@@ -30,7 +30,7 @@ export default function CreatorRevenueScreen() {
 
   async function loadRevenue() {
     if (!user) return;
-    const { data } = await supabase.from("studio_creator_revenue").select("*").eq("creator_id", user.id).single();
+    const { data } = await supabase.from("studio_revenue").select("*").eq("creator_id", user.id).single();
     if (data) {
       setLedger({
         gross_revenue: data.gross_revenue || 0,

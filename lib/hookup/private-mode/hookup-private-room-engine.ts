@@ -15,7 +15,7 @@ export async function sendPrivateMessage(
 
   const { data, error } =
     await supabase
-      .from("hookup_private_messages")
+      .from("hookup_messages")
       .insert({
         room_id,
         sender_id,

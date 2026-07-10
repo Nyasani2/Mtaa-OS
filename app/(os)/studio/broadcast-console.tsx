@@ -58,7 +58,7 @@ export default function BroadcastConsoleScreen() {
     if (!user) return;
     setLoading(true);
     const { data } = await supabase
-      .from("studio_broadcast_members")
+      .from("studio_camera_nodes")
       .select("broadcaster:studio_broadcasters(*)")
       .eq("user_id", user.id);
     const networks = (data || []).map((r: any) => r.broadcaster).filter(Boolean);
@@ -81,7 +81,7 @@ export default function BroadcastConsoleScreen() {
 
   async function loadMembers(networkId: string) {
     const { data } = await supabase
-      .from("studio_broadcast_members")
+      .from("studio_camera_nodes")
       .select("id, user_id, role, joined_at, user_profiles(full_name, avatar_url)")
       .eq("broadcaster_id", networkId)
       .order("joined_at", { ascending: false });
@@ -100,7 +100,7 @@ export default function BroadcastConsoleScreen() {
       .insert({ name: createForm.name, type: createForm.type, description: createForm.description, creator_id: user.id })
       .select().single();
     if (error) { Alert.alert("Error", error.message); return; }
-    await supabase.from("studio_broadcast_members").insert({ broadcaster_id: data.id, user_id: user.id, role: "owner" });
+    await supabase.from("studio_camera_nodes").insert({ broadcaster_id: data.id, user_id: user.id, role: "owner" });
     Alert.alert("Success", `${createForm.name} created!`);
     setCreateForm({ name: "", type: "tv", description: "" });
     setActiveTab("my-networks"); loadMyNetworks();
@@ -108,7 +108,7 @@ export default function BroadcastConsoleScreen() {
 
   async function joinNetwork(networkId: string) {
     if (!user) return;
-    const { error } = await supabase.from("studio_broadcast_members").insert({
+    const { error } = await supabase.from("studio_camera_nodes").insert({
       broadcaster_id: networkId, user_id: user.id, role: "moderator"
     });
     if (error) { Alert.alert("Error", error.message); return; }
