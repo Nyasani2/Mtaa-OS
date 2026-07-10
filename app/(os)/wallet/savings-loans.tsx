@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { useIdentity } from "@/lib/auth/useAuthStore";
 import { supabase } from "@/lib/supabase/client";
+import { createSavingsAccount, applyForLoan, depositToSavingsAccount } from "@/lib/services/wallet-service";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft, PiggyBank, TrendingUp, Plus, Minus, Clock,
@@ -83,15 +84,12 @@ export default function SavingsLoansScreen() {
     if (!user?.id || !savingsName.trim()) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("savings_accounts").insert({
-        user_id: user.id,
-        name: savingsName.trim(),
-        balance: 0,
-        target_amount: savingsTarget ? parseFloat(savingsTarget) : null,
-        interest_rate: 5.0,
-        status: "active",
-      });
-      if (error) throw error;
+      const { success, error } = await createSavingsAccount(
+        user.id,
+        savingsName.trim(),
+        savingsTarget ? parseFloat(savingsTarget) : null
+      );
+      if (!success) throw new Error(error || 'Failed to create account');
       Alert.alert("Created", "Savings account created");
       setShowCreateSavings(false);
       setSavingsName(""); setSavingsTarget("");
@@ -107,16 +105,12 @@ export default function SavingsLoansScreen() {
     if (!user?.id || !loanAmount.trim() || !loanPurpose.trim()) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("loans").insert({
-        user_id: user.id,
-        amount: parseFloat(loanAmount),
-        currency: "KES",
-        interest_rate: 12.0,
-        status: "pending",
-        purpose: loanPurpose.trim(),
-        repaid_amount: 0,
-      });
-      if (error) throw error;
+      const { success, error } = await applyForLoan(
+        user.id,
+        parseFloat(loanAmount),
+        loanPurpose.trim()
+      );
+      if (!success) throw new Error(error || 'Failed to apply for loan');
       Alert.alert("Applied", "Loan application submitted for review");
       setShowApplyLoan(false);
       setLoanAmount(""); setLoanPurpose("");
@@ -132,17 +126,12 @@ export default function SavingsLoansScreen() {
     if (!user?.id || !amount.trim()) return;
     try {
       const num = parseFloat(amount);
-      await supabase.from("savings_accounts").update({ balance: account.balance + num }).eq("id", account.id);
-      await supabase.from("wallet_transactions").insert({
-        user_id: user.id,
-        type: "debit",
-        amount: num,
-        currency: "KES",
-        status: "completed",
-        description: `Savings deposit to ${account.name}`,
-        reference_id: account.id,
-        reference_type: "savings",
-      });
+      const { success, error } = await depositToSavingsAccount(
+        user.id,
+        account.id,
+        num
+      );
+      if (!success) throw new Error(error || 'Deposit failed');
       fetchData();
     } catch (err: any) {
       Alert.alert("Error", err.message);

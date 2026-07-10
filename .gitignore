@@ -86,3 +86,13 @@ coverage/
 .env
 .env.local
 .env.*.local
+
+# Leo working docs (plans, reviews, audits)
+leo/
+.tokensave
+
+# Claude Code local
+.claude/
+
+# Agent skills (local tooling)
+.agents/

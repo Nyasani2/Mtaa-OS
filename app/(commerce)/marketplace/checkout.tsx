@@ -15,7 +15,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cartService, ShippingAddress } from '@/lib/marketplace/services/cart.service';
-import { withdrawService } from '@/lib/wallet/services/withdraw.service';
+import { checkKycLevel } from '@/lib/services/wallet-service';
 
 const PAYMENT_METHODS = [
   { key: 'wallet', label: 'Wallet Balance', icon: '💰' },
@@ -56,7 +56,7 @@ export default function CheckoutScreen() {
     // Check KYC if total > 10,000
     const numTotal = parseFloat(total as string) || 0;
     if (numTotal > 10000) {
-      const kyc = await withdrawService.checkKycLevel();
+      const kyc = await checkKycLevel();
       setKycWarning(!kyc.eligible);
     }
 

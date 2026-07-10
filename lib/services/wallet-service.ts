@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 
 export type WalletAction = 
   | 'deposit' | 'transfer' | 'withdraw' | 'execute' | 'balance' | 'history'
-  | 'send' | 'receive' | 'ensure_wallet';
+  | 'send' | 'receive' | 'ensure_wallet' | 'savings_deposit' | 'create_savings' | 'apply_loan';
 
 export interface WalletDepositParams {
   action: 'deposit';
@@ -82,6 +82,27 @@ export interface WalletEnsureParams {
   currency: string;
 }
 
+export interface WalletSavingsDepositParams {
+  action: 'savings_deposit';
+  userId: string;
+  accountId: string;
+  amount: number;
+}
+
+export interface WalletCreateSavingsParams {
+  action: 'create_savings';
+  userId: string;
+  name: string;
+  target_amount?: number | null;
+}
+
+export interface WalletApplyLoanParams {
+  action: 'apply_loan';
+  userId: string;
+  amount: number;
+  purpose: string;
+}
+
 export type WalletParams = 
   | WalletDepositParams 
   | WalletTransferParams 
@@ -91,7 +112,10 @@ export type WalletParams =
   | WalletHistoryParams
   | WalletSendParams
   | WalletReceiveParams
-  | WalletEnsureParams;
+  | WalletEnsureParams
+  | WalletSavingsDepositParams
+  | WalletCreateSavingsParams
+  | WalletApplyLoanParams;
 
 export async function walletOperation(params: WalletParams) {
   const { data, error } = await supabase.functions.invoke('wallet-operations', {
@@ -241,4 +265,81 @@ export async function getTransactions(
     type: options.type ?? 'all',
   });
   return result?.transactions ?? result ?? [];
+}
+
+/** Check KYC level (ported from legacy withdraw service) */
+export async function checkKycLevel(): Promise<{ eligible: boolean; level: number; verified: boolean }> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return { eligible: false, level: 0, verified: false };
+    
+    const { data } = await supabase.from('profiles').select('kyc_level, is_verified').eq('id', session.user.id).single();
+    const level = data?.kyc_level || 0;
+    const verified = !!data?.is_verified;
+    
+    return {
+      eligible: level >= 2 || verified,
+      level,
+      verified
+    };
+  } catch (err: any) {
+    return { eligible: false, level: 0, verified: false };
+  }
+}
+
+/** Deposit to savings account */
+export async function depositToSavingsAccount(
+  userId: string,
+  accountId: string,
+  amount: number
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await walletOperation({
+      action: 'savings_deposit',
+      userId,
+      accountId,
+      amount,
+    } as WalletSavingsDepositParams);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Savings deposit failed' };
+  }
+}
+
+/** Create savings account */
+export async function createSavingsAccount(
+  userId: string,
+  name: string,
+  targetAmount?: number | null
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await walletOperation({
+      action: 'create_savings',
+      userId,
+      name,
+      target_amount: targetAmount,
+    } as WalletCreateSavingsParams);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to create savings account' };
+  }
+}
+
+/** Apply for a loan */
+export async function applyForLoan(
+  userId: string,
+  amount: number,
+  purpose: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await walletOperation({
+      action: 'apply_loan',
+      userId,
+      amount,
+      purpose,
+    } as WalletApplyLoanParams);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Loan application failed' };
+  }
 }
