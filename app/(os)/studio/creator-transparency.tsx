@@ -21,7 +21,7 @@ export default function CreatorTransparencyScreen() {
 
   async function loadData() {
     if (!user) return;
-    const { data: rev } = await supabase.from("studio_creator_revenue").select("*").eq("creator_id", user.id).single();
+    const { data: rev } = await supabase.from("studio_revenue").select("*").eq("creator_id", user.id).single();
     const { data: wallet } = await supabase.from("wallets").select("balance").eq("user_id", user.id).single();
     const { data: pending } = await supabase.from("studio_payout_requests").select("amount").eq("creator_id", user.id).eq("status", "pending");
 
