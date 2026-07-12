@@ -5,6 +5,8 @@ export default function WalletLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="deposit" />
+      <Stack.Screen name="withdraw" />
+      <Stack.Screen name="qr-pay" />
       <Stack.Screen name="send" />
       <Stack.Screen name="receive" />
       <Stack.Screen name="history" />
@@ -33,10 +35,6 @@ export default function WalletLayout() {
       <Stack.Screen name="daraja" />
       <Stack.Screen name="email-verify" />
       <Stack.Screen name="tax" />
-      <Stack.Screen name="cashpoint-map" />
-      <Stack.Screen name="become-cashpoint" />
-      <Stack.Screen name="cashpoint-scan" />
-      <Stack.Screen name="cashpoint" />
     </Stack>
   );
 }
