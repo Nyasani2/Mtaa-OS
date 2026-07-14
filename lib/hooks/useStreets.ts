@@ -75,7 +75,7 @@ export function useStreets(): UseStreetsReturn {
       setHasMore(data.length === PAGE_SIZE);
     } catch (err: any) {
       if (abortRef.current?.signal.aborted) return;
-      const message = err instanceof StreetsError ? err.message : 'Failed to load feed';
+      const message = err && typeof err === 'object' && err.name === 'StreetsError' ? err.message : 'Failed to load feed';
       setError(message);
       console.error('[useStreets] fetchFeed error:', err);
     } finally {

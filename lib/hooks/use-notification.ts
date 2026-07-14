@@ -33,7 +33,7 @@ export function useNotification() {
       setNotifications(data || []);
       setUnreadCount((data || []).filter((n: Notification) => !n.is_read).length);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch notifications");
+      setError(err && typeof () === 'function' && err instanceof  ? err.message : "Failed to fetch notifications");
     } finally {
       setLoading(false);
     }
