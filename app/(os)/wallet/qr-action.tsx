@@ -21,7 +21,7 @@ export default function QRActionScreen() {
         <Ionicons name="qr-code-outline" size={64} color="#22C55E" />
         <Text style={styles.label}>Scanned Data:</Text>
         <Text style={styles.dataText}>{data}</Text>
-        <TouchableOpacity style={styles.copyBtn} onPress={()=>{}}>
+        <TouchableOpacity style={styles.copyBtn} onPress={() => Clipboard.setString(qrData)}>
           <Text style={styles.copyBtnText}>Copy to Clipboard</Text>
         </TouchableOpacity>
       </View>

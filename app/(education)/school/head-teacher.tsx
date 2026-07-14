@@ -92,9 +92,9 @@ export default function HeadTeacherScreen() {
           <ActionCard icon="cash-outline" label="Fee Structure" color="#f59e0b" onPress={() => router.push('/(education)/school/fees')} />
           <ActionCard icon="wallet-outline" label="Approve Payroll" color="#8b5cf6" onPress={() => router.push('/(education)/payroll')} />
           <ActionCard icon="calendar-outline" label="Calendar" color="#0ea5e9" onPress={() => router.push('/(education)/timetable')} />
-          <ActionCard icon="document-text-outline" label="Policies" color="#64748b" onPress={() => {}} />
+          <ActionCard icon="document-text-outline" label="Policies" color="#64748b" onPress={() => Alert.alert("School Policies", "Policies management coming soon.")} />
           <ActionCard icon="shield-checkmark-outline" label="Permissions" color="#059669" onPress={() => router.push('/(education)/school/assign-role')} />
-          <ActionCard icon="arrow-redo-outline" label="Transfer Ownership" color="#ef4444" onPress={() => {}} />
+          <ActionCard icon="arrow-redo-outline" label="Transfer Ownership" color="#ef4444" onPress={() => Alert.alert("Transfer Ownership", "Ownership transfer requires admin approval.")} />
         </View>
         <Text style={styles.sectionTitle}>Reports & Analytics</Text>
         <View style={styles.reportRow}>

@@ -129,7 +129,7 @@ export default function EducationLanding() {
                 <Text style={styles.emptyTitle}>No upcoming events</Text>
               </View>
             ) : events.map((event: any) => (
-              <TouchableOpacity key={event.id} style={styles.eventCard} onPress={() => {}}>
+              <TouchableOpacity key={event.id} style={styles.eventCard} onPress={() => router.push(`/(education)/events/${event.id}`)}>
                 <View style={styles.eventDate}>
                   <Text style={styles.eventMonth}>{new Date(event.date).toLocaleString('default', { month: 'short' })}</Text>
                   <Text style={styles.eventDay}>{new Date(event.date).getDate()}</Text>

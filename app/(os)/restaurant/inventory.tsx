@@ -109,7 +109,7 @@ export default function RestaurantInventory() {
 
       {/* Low Stock Alert Banner */}
       {lowStock.length > 0 && (
-        <TouchableOpacity style={styles.alertBanner} onPress={() => {}}>
+        <TouchableOpacity style={styles.alertBanner} onPress={() => router.push("/(os)/restaurant/inventory/low-stock")}>
           <Text style={styles.alertBannerText}>
             ⚠️ {lowStock.length} item{lowStock.length > 1 ? 's' : ''} below reorder level
           </Text>

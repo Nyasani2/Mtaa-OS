@@ -73,7 +73,7 @@ export default function AssetsScreen() {
           {ASSET_TYPES.map((at) => {
             const count = assetsList.filter((a) => a.type === at.type).length;
             return (
-              <TouchableOpacity key={at.type} style={styles.typeCard} onPress={() => {}}>
+              <TouchableOpacity key={at.type} style={styles.typeCard} onPress={() => router.push(`/(os)/profile/assets/${at.type}`)}>
                 <View style={[styles.typeIcon, { backgroundColor: '#84cc16' + '15' }]}>
                   <Ionicons name={at.icon as any} size={24} color="#84cc16" />
                 </View>

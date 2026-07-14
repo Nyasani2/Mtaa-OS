@@ -74,10 +74,10 @@ export default function MessagesScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => Alert.alert("Search", "Message search coming soon.")}>
             <Search size={22} color="#f8fafc" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => router.push("/(os)/messages/new")}>
             <Plus size={22} color="#f8fafc" />
           </TouchableOpacity>
         </View>
@@ -90,7 +90,7 @@ export default function MessagesScreen() {
           <MessageCircle size={48} color="#475569" />
           <Text style={styles.emptyText}>No messages yet</Text>
           <Text style={styles.emptySub}>Start a conversation with someone</Text>
-          <TouchableOpacity style={styles.newChatBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.newChatBtn} onPress={() => router.push("/(os)/messages/new")}>
             <Text style={styles.newChatText}>New Message</Text>
           </TouchableOpacity>
         </View>

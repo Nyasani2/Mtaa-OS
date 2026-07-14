@@ -76,7 +76,7 @@ export default function AuditLog() {
           <Ionicons name="arrow-back" size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Audit Log</Text>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => Alert.alert("Export Audit", "Audit log export coming soon.")}>
           <Ionicons name="download-outline" size={24} color="#2563eb" />
         </TouchableOpacity>
       </View>
