@@ -80,7 +80,7 @@ export default function StudioDashboardScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { loadStudios(10); loadVideos({ limit: 10 }); loadStreams('live'); if (studios[0]?.id) loadStats(); }} tintColor="#fff" />}
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => router.push(`/(os)/studio/editor?videoId=${item.id}`)}
+              onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
               style={{ flexDirection: 'row', marginBottom: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
             >
               <Image source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/120x68' }} style={{ width: 120, height: 68 }} />

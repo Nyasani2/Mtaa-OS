@@ -89,7 +89,6 @@ export default function EditProfileScreen() {
         match: au?.id === user?.id && user?.id === profile?.user_id,
       });
     });
-  }, [profile, user]);
 
   // ─── Avatar Upload ───────────────────────────────────────────────────────
 
