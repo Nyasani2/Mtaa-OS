@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useColorScheme } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, useColorScheme, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
+import { Video, ResizeMode } from 'expo-av';
+
+const { width } = Dimensions.get('window');
 
 interface Post {
   id: string;
   content: string;
   creator_id: string;
   created_at: string;
-  likes: number;
-  comments: number;
+  likes_count: number;
+  comments_count: number;
+  media_url: string | null;
+  media_type: string | null;
+  thumbnail_url: string | null;
 }
 
 export default function StreetsFeed() {
@@ -51,11 +57,51 @@ export default function StreetsFeed() {
     fetchPosts();
   };
 
+  const renderMedia = (item: Post) => {
+    if (!item.media_url) return null;
+
+    if (item.media_type === 'video') {
+      return (
+        <TouchableOpacity 
+          onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+          style={styles.mediaContainer}
+        >
+          <Image 
+            source={{ uri: item.thumbnail_url || item.media_url }} 
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+          <View style={styles.playOverlay}>
+            <Ionicons name="play-circle" size={48} color="#fff" />
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (item.media_type === 'image') {
+      return (
+        <TouchableOpacity 
+          onPress={() => {/* Open image viewer */}}
+          style={styles.mediaContainer}
+        >
+          <Image 
+            source={{ uri: item.media_url }} 
+            style={styles.mediaImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
+
   const renderPost = ({ item }: { item: Post }) => (
     <TouchableOpacity
       style={[styles.postCard, { backgroundColor: isDark ? '#1a1a2e' : '#fff' }]}
       onPress={() => router.push(`/os/streets/post/${item.id}`)}
     >
+      {renderMedia(item)}
       <Text style={[styles.postContent, { color: isDark ? '#fff' : '#1a1a2e' }]} numberOfLines={3}>
         {item.content}
       </Text>
@@ -65,9 +111,9 @@ export default function StreetsFeed() {
         </Text>
         <View style={styles.stats}>
           <Ionicons name="heart-outline" size={14} color={isDark ? '#9ca3af' : '#6b7280'} />
-          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginLeft: 4 }}>{item.likes || 0}</Text>
+          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginLeft: 4 }}>{item.likes_count || 0}</Text>
           <Ionicons name="chatbubble-outline" size={14} color={isDark ? '#9ca3af' : '#6b7280'} style={{ marginLeft: 12 }} />
-          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginLeft: 4 }}>{item.comments || 0}</Text>
+          <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 12, marginLeft: 4 }}>{item.comments_count || 0}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -122,6 +168,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  mediaContainer: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  mediaImage: {
+    width: '100%',
+    height: '100%',
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   postContent: { fontSize: 14, lineHeight: 20, marginBottom: 12 },
   postMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
