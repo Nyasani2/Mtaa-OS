@@ -42,6 +42,8 @@
     "lib/admin/**/*.tsx",
     "lib/kernel/**/*.ts",
     "lib/kernel/**/*.tsx",
+    "lib/asis-v4/**/*.ts",
+    "lib/asis-v4/**/*.tsx",
     "lib/shell/**/*.ts",
     "lib/shell/**/*.tsx",
     "lib/supabase/**/*.ts",

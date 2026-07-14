@@ -1,8 +1,7 @@
-// app/auth/register.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useIdentity } from '@/lib/auth/identity';
+import { supabase } from '@/lib/supabase';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
@@ -25,7 +24,6 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { signUp } = useIdentity();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -33,74 +31,66 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: '', color: '#ddd' });
 
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    setPasswordStrength(getPasswordStrength(text));
-  };
-
-  const handleRegister = async () => {
-    if (!name.trim()) { Alert.alert('Error', 'Full name is required'); return; }
-    if (!email.trim()) { Alert.alert('Error', 'Email is required'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Alert.alert('Error', 'Please enter a valid email address'); return; }
-    if (!phone.trim()) { Alert.alert('Error', 'Phone number is required'); return; }
-    if (!/^\+?[0-9\s-]{10,}$/.test(phone)) { Alert.alert('Error', 'Please enter a valid phone number'); return; }
-    if (password.length < 8) { Alert.alert('Error', 'Password must be at least 8 characters'); return; }
-    if (passwordStrength.score < 2) { Alert.alert('Error', 'Password is too weak. Add uppercase, numbers, or symbols.'); return; }
-
-    setLoading(true);
-    const result = await signUp(email.trim(), password, { phone: phone.trim(), full_name: name.trim() });
-    setLoading(false);
-
-    if (result.error) {
-      Alert.alert('Error', result.error.message || 'Registration failed');
+  async function handleSignUp() {
+    if (!email || !password || !name) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-
-    // signUp returns { user } on success, not { success }
-    if (result.user) {
-      Alert.alert(
-        'Verify Your Email',
-        'Account created. Please check your email and verify before signing in.',
-        [{ text: 'OK', onPress: () => router.replace('/auth') }]
-      );
-    } else {
-      Alert.alert('Success', 'Account created. Please set your PIN.', [
-        { text: 'Set PIN', onPress: () => router.replace('/auth/set-pin') },
-      ]);
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
+      return;
     }
-  };
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name, phone } }
+      });
+      if (error) throw error;
+      Alert.alert('Success', 'Check your email for verification!');
+      router.replace('/auth/first-boot');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Create Account</Text>
+      <Text style={styles.title}>Create Account</Text>
       <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="Password" value={password} onChangeText={handlePasswordChange} secureTextEntry />
+      <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" autoCapitalize="none" value={email} onChangeText={setEmail} />
+      <TextInput style={styles.input} placeholder="Phone" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          setPasswordStrength(getPasswordStrength(text));
+        }}
+      />
       {password.length > 0 && (
-        <View style={styles.strengthContainer}>
-          <View style={[styles.strengthBar, { width: `${(passwordStrength.score / 5) * 100}%`, backgroundColor: passwordStrength.color }]} />
-          <Text style={[styles.strengthText, { color: passwordStrength.color }]}>{passwordStrength.label}</Text>
+        <View style={[styles.strengthBar, { backgroundColor: passwordStrength.color }]}>
+          <Text style={styles.strengthText}>{passwordStrength.label}</Text>
         </View>
       )}
-      <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Create Account'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/auth')}>
-        <Text style={styles.link}>Already have an account? Sign in</Text>
+      <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'Creating...' : 'Sign Up'}</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  container: { flex: 1, padding: 24, backgroundColor: '#fff', justifyContent: 'center' },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 12, padding: 16, marginBottom: 12 },
+  button: { backgroundColor: '#6366f1', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#2563eb', textAlign: 'center', marginTop: 16, fontSize: 14 },
-  strengthContainer: { marginBottom: 12 },
-  strengthBar: { height: 4, borderRadius: 2, marginBottom: 4 },
-  strengthText: { fontSize: 12, fontWeight: '500' },
+  strengthBar: { padding: 8, borderRadius: 8, marginBottom: 12 },
+  strengthText: { color: '#fff', textAlign: 'center', fontWeight: '600' }
 });
