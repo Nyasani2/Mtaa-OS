@@ -17,14 +17,14 @@ export default function PrivacySettingsScreen() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from('profile_settings').select('*').eq('profile_id', user.id).single().then(({ data }) => {
+    supabase.from('user_profiles').select('*').eq('user_id', user.id).single().then(({ data }) => {
       if (data) setSettings(data);
       else setSettings({ is_profile_public: true, is_portfolio_public: true, is_achievements_public: true, is_skills_public: true, allow_messages_from: 'all', allow_calls_from: 'none', show_email: false, show_phone: false, show_location: true });
       setLoading(false);
     });
   }, [user?.id]);
 
-  const save = async () => { if (!user?.id) return; setSaving(true); await supabase.from('profile_settings').upsert({ ...settings, profile_id: user.id, updated_at: new Date().toISOString() }); setSaving(false); };
+  const save = async () => { if (!user?.id) return; setSaving(true); await supabase.from('user_profiles').upsert({ ...settings, user_id: user.id, updated_at: new Date().toISOString() }); setSaving(false); };
   if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#00d4ff" /></View>;
 
   const toggle = (key: string) => setSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));

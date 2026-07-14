@@ -33,7 +33,7 @@ export interface FleetAlert {
 
 export async function getFleetCameraStatus(): Promise<FleetCameraStatus[]> {
   const { data: vehicles } = await supabase
-    .from('trucks')
+    .from('mtruck_trucks')
     .select('id, plate_number, make, model');
 
   const { data: assignments } = await supabase

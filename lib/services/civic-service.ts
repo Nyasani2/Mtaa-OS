@@ -154,23 +154,23 @@ function handleError(err: any, fallback: any = null) {
 
 // ─── CIVIC CASES ───
 export async function getCivicCases(): Promise<CivicCase[]> {
-  const { data, error } = await supabase.from('civic_cases').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('court_cases').select('*').order('created_at', { ascending: false });
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCivicCaseById(id: string): Promise<CivicCase | null> {
-  const { data, error } = await supabase.from('civic_cases').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_cases').select('*').eq('id', id).single();
   if (error) return handleError(error, null); return data;
 }
 export async function createCivicCase(data: Partial<CivicCase>): Promise<CivicCase | null> {
-  const { data: result, error } = await supabase.from('civic_cases').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_cases').insert(data).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCivicCase(id: string, data: Partial<CivicCase>): Promise<CivicCase | null> {
-  const { data: result, error } = await supabase.from('civic_cases').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCivicCase(id: string): Promise<boolean> {
-  const { error } = await supabase.from('civic_cases').delete().eq('id', id);
+  const { error } = await supabase.from('court_cases').delete().eq('id', id);
   if (error) return handleError(error, false); return true;
 }
 

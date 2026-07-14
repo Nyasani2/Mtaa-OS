@@ -48,8 +48,8 @@ export default function CreatorProfileScreen() {
     const { data: videos } = await supabase.from('studio_videos').select('view_count').eq('creator_id', user.id);
     const { data: subs } = await supabase.from('studio_subscriptions').select('id').eq('creator_id', user.id);
     const { data: rev } = await supabase.from('studio_revenue').select('amount').eq('creator_id', user.id);
-    const { data: followers } = await supabase.from('profile_followers').select('id').eq('following_id', user.id);
-    const { data: following } = await supabase.from('profile_followers').select('id').eq('follower_id', user.id);
+    const { data: followers } = await supabase.from('follows').select('id').eq('following_id', user.id);
+    const { data: following } = await supabase.from('follows').select('id').eq('follower_id', user.id);
 
     setStats({
       totalVideos: videos?.length || 0,

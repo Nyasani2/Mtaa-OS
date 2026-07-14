@@ -39,7 +39,7 @@ export default function FollowingScreen() {
 
     // Get followed creators
     const { data: follows } = await supabase
-      .from('profile_followers')
+      .from('follows')
       .select('following_id')
       .eq('follower_id', user.id);
 
