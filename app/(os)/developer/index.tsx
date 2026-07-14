@@ -63,7 +63,7 @@ export default function DeveloperScreen() {
         </View>
 
         {/* Submit New App */}
-        <TouchableOpacity style={styles.submitBtn} onPress={() => {}}>
+        <TouchableOpacity style={styles.submitBtn} onPress={() => Alert.alert("Submit App", "Developer portal submission coming soon.")}>
           <Ionicons name="cloud-upload-outline" size={20} color="#fff" />
           <Text style={styles.submitBtnText}>Submit New App ($15)</Text>
         </TouchableOpacity>

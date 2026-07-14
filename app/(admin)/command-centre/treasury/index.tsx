@@ -147,7 +147,7 @@ export default function TreasuryDashboard() {
           <QuickAction icon="business-outline" label="Central Bank" onPress={() => router.push('/command-centre/treasury/central-bank')} />
           <QuickAction icon="shield-checkmark-outline" label="Credit & Reg" onPress={() => router.push('/command-centre/treasury/credit-regulatory')} />
           <QuickAction icon="cash-outline" label="Revenue" onPress={() => router.push('/command-centre/revenue')} />
-          <QuickAction icon="document-text-outline" label="Reports" onPress={() => {}} />
+          <QuickAction icon="document-text-outline" label="Reports" onPress={() => router.push("/command-centre/reports")} />
         </View>
       </View>
 

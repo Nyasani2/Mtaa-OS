@@ -135,7 +135,7 @@ export default function EducationLibraryScreen() {
             </View>
           ) : (
             resources.map(res => (
-              <TouchableOpacity key={res.id} style={styles.resourceCard} onPress={() => {}}>
+              <TouchableOpacity key={res.id} style={styles.resourceCard} onPress={() => router.push(`/(education)/library/${res.id}`)}>
                 <View style={[styles.typeIcon, { backgroundColor: getTypeColor(res.resource_type) + '15' }]}>
                   <Ionicons name={getTypeIcon(res.resource_type)} size={22} color={getTypeColor(res.resource_type)} />
                 </View>

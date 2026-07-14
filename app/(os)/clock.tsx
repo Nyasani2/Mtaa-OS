@@ -26,7 +26,7 @@ export default function ClockScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Clock</Text>
-        <TouchableOpacity onPress={() => {}}>
+        <TouchableOpacity onPress={() => Alert.alert("Add Alarm", "Alarm creation coming soon.")}>
           <Ionicons name="add" size={28} color="#E91E63" />
         </TouchableOpacity>
       </View>
