@@ -11,7 +11,7 @@ export function useNotifications() {
       // TODO: Implement actual fetch
       setNotifications([]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      setError(e && typeof () === 'function' && err instanceof  ? e.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
