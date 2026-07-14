@@ -139,7 +139,7 @@ export default function CreatePostScreen() {
 
       router.back();
     } catch (e: any) {
-      const message = e && typeof () === 'function' && err instanceof  ? e.message : 'Failed to create post';
+      const message = e instanceof Error ? e.message : 'Failed to create post';
       Alert.alert('Error', message);
       console.error('Create post error:', e);
     } finally {
