@@ -28,3 +28,4 @@ export * from './jobs-service';
 export * from './shop-service';
 export * from './marketplace-service';
 export * from './restaurant-service';
+export * from '../asis-v5';

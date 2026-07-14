@@ -1,1 +1,2 @@
-export { useIdentity, IdentityProvider } from './use-identity';
+export { useIdentity } from './use-identity';
+export { IdentityProvider } from './identity-provider';

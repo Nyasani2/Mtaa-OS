@@ -4,7 +4,7 @@
  * Deploy: supabase functions deploy scheduler-run-now
  */
 
-import { createClient } from '@supabase/supabase-js.39.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

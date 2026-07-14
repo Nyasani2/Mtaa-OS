@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { verifyPin } from '@/lib/security/pin-engine';
 import { useOSShell } from '@/lib/shell/use-os-shell';
+
+interface PinVerificationResult {
+  valid: boolean;
+  state: {
+    attemptsRemaining: number;
+    isLocked: boolean;
+  };
+}
 
 export default function LockScreen() {
   const router = useRouter();
@@ -30,19 +37,19 @@ export default function LockScreen() {
     setError('');
 
     try {
-      const { valid, state } = await verifyPin(pin);
-      if (valid) {
+      const result = await verifyPin(pin) as unknown as PinVerificationResult;
+      if (result.valid) {
         await refreshPinState();
         unlock();
         router.replace('/(os)');
       } else {
-        setError(`Invalid PIN. ${state.attemptsRemaining} attempts remaining.`);
-        if (state.isLocked) {
-          Alert.alert('Locked', 'Too many failed attempts. Please wait 30 minutes.');
+        setError(`Invalid PIN. ${result.state.attemptsRemaining} attempts remaining.`);
+        if (result.state.isLocked) {
+          Alert.alert('Locked', 'Too many failed attempts. Please wait.');
         }
       }
-    } catch (e) {
-      setError('Verification failed');
+    } catch (e: any) {
+      setError(e?.message || 'Verification failed');
     } finally {
       setLoading(false);
       setPin('');
@@ -51,62 +58,29 @@ export default function LockScreen() {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="lock-closed" size={48} color="#6366F1" />
       <Text style={styles.title}>Enter PIN</Text>
-      <Text style={styles.subtitle}>Unlock MTAA OS</Text>
-
-      <View style={styles.pinContainer}>
-        {pin.split('').map((_, i) => (
-          <View key={i} style={styles.pinDot}>
-            <View style={styles.pinDotInner} />
-          </View>
-        ))}
-        {Array.from({ length: 6 - pin.length }).map((_, i) => (
-          <View key={`empty-${i}`} style={styles.pinDotEmpty} />
-        ))}
-      </View>
-
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
       <TextInput
-        style={styles.hiddenInput}
-        value={pin}
-        onChangeText={setPin}
-        keyboardType="number-pad"
+        style={styles.input}
+        keyboardType="numeric"
         secureTextEntry
         maxLength={6}
-        autoFocus
-        caretHidden
+        value={pin}
+        onChangeText={setPin}
         onSubmitEditing={handleUnlock}
       />
-
-      <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
-        onPress={handleUnlock}
-        disabled={loading || pin.length < 4}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Unlock</Text>
-        )}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <TouchableOpacity style={styles.button} onPress={handleUnlock} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Unlock</Text>}
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f0f0f', padding: 24 },
-  title: { fontSize: 24, fontWeight: '700', color: '#fff', marginTop: 16 },
-  subtitle: { fontSize: 14, color: '#999', marginTop: 8, marginBottom: 40 },
-  pinContainer: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 24 },
-  pinDot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
-  pinDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#6366F1' },
-  pinDotEmpty: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#333' },
-  error: { color: '#ef4444', textAlign: 'center', marginBottom: 16, fontSize: 14 },
-  hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
-  button: { backgroundColor: '#6366F1', borderRadius: 12, padding: 16, alignItems: 'center', width: '100%', maxWidth: 280 },
-  buttonDisabled: { opacity: 0.5 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 24, textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 12, padding: 16, marginBottom: 16, fontSize: 20, textAlign: 'center', letterSpacing: 8 },
+  button: { backgroundColor: '#6366f1', padding: 16, borderRadius: 12, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  error: { color: '#ef4444', textAlign: 'center', marginBottom: 12 }
 });
-

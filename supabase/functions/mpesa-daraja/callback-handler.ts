@@ -1,19 +1,8 @@
-// Edge Function: mpesa-callback
-// Handles M-Pesa Daraja callbacks (idempotent)
+// M-Pesa Daraja Callback Handler
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+export async function handleCallback(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
   try {
     const callbackData = await req.json()
     const supabaseClient = createClient(
@@ -21,7 +10,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Extract result
     const body = callbackData.Body?.stkCallback || callbackData.Body?.callback
     if (!body) {
       return new Response(JSON.stringify({ error: 'Invalid callback format' }), {
@@ -34,7 +22,6 @@ serve(async (req) => {
     const resultCode = body.ResultCode
     const resultDesc = body.ResultDesc
 
-    // Idempotency check
     const { data: existing } = await supabaseClient
       .from('provider_transactions')
       .select('*')
@@ -48,7 +35,6 @@ serve(async (req) => {
       })
     }
 
-    // Update provider transaction
     await supabaseClient
       .from('provider_transactions')
       .update({
@@ -61,14 +47,11 @@ serve(async (req) => {
       .eq('provider_transaction_id', checkoutRequestId)
 
     if (resultCode === 0) {
-      // Extract payment details
       const callbackItems = body.CallbackMetadata?.Item || []
       const amount = callbackItems.find((i: any) => i.Name === 'Amount')?.Value
       const mpesaReceipt = callbackItems.find((i: any) => i.Name === 'MpesaReceiptNumber')?.Value
       const phone = callbackItems.find((i: any) => i.Name === 'PhoneNumber')?.Value
-      const transactionDate = callbackItems.find((i: any) => i.Name === 'TransactionDate')?.Value
 
-      // Find pending wallet transaction
       const { data: providerTx } = await supabaseClient
         .from('provider_transactions')
         .select('*')
@@ -76,7 +59,6 @@ serve(async (req) => {
         .single()
 
       if (providerTx?.wallet_transaction_id) {
-        // Update wallet transaction
         await supabaseClient
           .from('wallet_transactions')
           .update({
@@ -86,7 +68,6 @@ serve(async (req) => {
           })
           .eq('id', providerTx.wallet_transaction_id)
 
-        // Get transaction details to credit wallet
         const { data: walletTx } = await supabaseClient
           .from('wallet_transactions')
           .select('*')
@@ -109,7 +90,6 @@ serve(async (req) => {
               })
               .eq('id', wallet.id)
 
-            // Notify user
             await supabaseClient.from('wallet_notifications').insert({
               user_id: wallet.user_id,
               wallet_id: wallet.id,
@@ -134,4 +114,4 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
-})
+}
