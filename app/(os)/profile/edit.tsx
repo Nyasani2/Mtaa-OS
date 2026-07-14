@@ -83,7 +83,7 @@ export default function EditProfileScreen() {
       setAvatarUrl(profile.avatar_url || null);
     }
     // Auth debug
-    supabase.auth.getUser().then(({ data: { user: au } }) => {
+    const au = useAuthStore.getState().user;
       console.log('[ProfileEdit] Auth:', {
         authId: au?.id, storeId: user?.id, profileId: profile?.user_id,
         match: au?.id === user?.id && user?.id === profile?.user_id,

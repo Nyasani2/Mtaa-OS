@@ -111,7 +111,7 @@ export default function ProfileIndexScreen() {
           ))}
         </View>
 
-        <TouchableOpacity onPress={async () => { await supabase.auth.signOut(); router.replace('/'); }} style={{ marginHorizontal: 16, marginTop: 24, marginBottom: 32, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
+        <TouchableOpacity onPress={async () => { await signOut(); router.replace('/'); }} style={{ marginHorizontal: 16, marginTop: 24, marginBottom: 32, backgroundColor: '#1a1a1a', paddingVertical: 14, borderRadius: 12, alignItems: 'center' }}>
           <Text style={{ color: '#ef4444', fontSize: 15, fontWeight: '600' }}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
