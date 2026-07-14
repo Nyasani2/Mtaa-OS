@@ -273,7 +273,7 @@ export default function FleetScreen() {
     try {
       // Look up vehicle by plate
       const { data: vehicleData } = await supabase
-        .from('vehicles')
+        .from('garage_fleet_vehicles')
         .select('id, owner_id')
         .eq('plate_number', vehicleForm.plate_number.trim().toUpperCase())
         .single();

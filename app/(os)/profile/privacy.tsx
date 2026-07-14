@@ -31,7 +31,7 @@ export default function PrivacySecurity() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from('profile_settings').select('*').eq('user_id', user.id).single()
+    supabase.from('user_profiles').select('*').eq('user_id', user.id).single()
       .then(({ data }) => {
         if (data) setSettings(prev => ({ ...prev, ...data }));
         setLoading(false);
@@ -43,7 +43,7 @@ export default function PrivacySecurity() {
     const updated = { ...settings, [key]: !settings[key] };
     setSettings(updated);
     if (user?.id) {
-      await supabase.from('profile_settings').upsert({ user_id: user.id, ...updated, updated_at: new Date().toISOString() });
+      await supabase.from('user_profiles').upsert({ user_id: user.id, ...updated, updated_at: new Date().toISOString() });
     }
   };
 

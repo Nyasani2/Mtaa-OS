@@ -78,17 +78,17 @@ export async function toggleFollow(targetUserId: string): Promise<boolean> {
   if (user.id === targetUserId) throw new Error('Cannot follow yourself');
 
   const { data: existing } = await supabase
-    .from('profile_followers')
+    .from('follows')
     .select('id')
     .eq('follower_id', user.id)
     .eq('following_id', targetUserId)
     .maybeSingle();
 
   if (existing) {
-    await supabase.from('profile_followers').delete().eq('id', existing.id);
+    await supabase.from('follows').delete().eq('id', existing.id);
     return false;
   } else {
-    await supabase.from('profile_followers').insert({
+    await supabase.from('follows').insert({
       follower_id: user.id,
       following_id: targetUserId,
     });
@@ -102,7 +102,7 @@ export async function isFollowing(targetUserId: string): Promise<boolean> {
   if (!user) return false;
 
   const { data } = await supabase
-    .from('profile_followers')
+    .from('follows')
     .select('id')
     .eq('follower_id', user.id)
     .eq('following_id', targetUserId)
@@ -114,7 +114,7 @@ export async function isFollowing(targetUserId: string): Promise<boolean> {
 // ─── Fetch Followers List ───
 export async function fetchFollowers(userId: string): Promise<any[]> {
   const { data, error } = await supabase
-    .from('profile_followers')
+    .from('follows')
     .select('follower_id, created_at, follower:profiles!follower_id(id, full_name, avatar_url, username)')
     .eq('following_id', userId)
     .order('created_at', { ascending: false });
@@ -126,7 +126,7 @@ export async function fetchFollowers(userId: string): Promise<any[]> {
 // ─── Fetch Following List ───
 export async function fetchFollowing(userId: string): Promise<any[]> {
   const { data, error } = await supabase
-    .from('profile_followers')
+    .from('follows')
     .select('following_id, created_at, following:profiles!following_id(id, full_name, avatar_url, username)')
     .eq('follower_id', userId)
     .order('created_at', { ascending: false });
