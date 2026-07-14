@@ -18,6 +18,7 @@ import {
   StreetsError,
 } from '@/lib/services/streets-service';
 import type { StreetPost, CreatePostInput, StreetComment } from '@/lib/services/streets-service';
+class StreetsError extends Error {  constructor(message: string) {    super(message);    this.name = 'StreetsError';  }}
 
 const PAGE_SIZE = 20;
 
