@@ -93,7 +93,6 @@ const ALL_APPS: AppTile[] = [
   { id: 'mtaxi', name: 'MTaxi', icon: 'car', iconSet: 'Ionicons', route: '/(mtaxi)', color: '#fff', bgColor: '#10b981', ownerOnly: false },
   { id: 'mtruck', name: 'MTruck', icon: 'truck-delivery', iconSet: 'MaterialCommunityIcons', route: '/(mtruck)', color: '#fff', bgColor: '#a855f7', ownerOnly: false },
   { id: 'network', name: 'Network', icon: 'wifi', iconSet: 'Ionicons', route: '/(os)/network', color: '#fff', bgColor: '#3b82f6', ownerOnly: false },
-  { id: 'nurse', name: 'Nurse', icon: 'pulse', iconSet: 'Ionicons', route: '/(os)/health/nurse', color: '#fff', bgColor: '#ec4899', ownerOnly: false },
   { id: 'onboarding', name: 'Onboarding', icon: 'person-add', iconSet: 'Ionicons', route: '/(os)/wallet/onboarding', color: '#fff', bgColor: '#6366f1', ownerOnly: false },
   { id: 'phone', name: 'Phone', icon: 'call', iconSet: 'Ionicons', route: '/(os)/phone', color: '#fff', bgColor: '#22c55e', ownerOnly: false },
   { id: 'pharmacy', name: 'Pharmacy', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health/pharmacy', color: '#fff', bgColor: '#14b8a6', ownerOnly: false },

@@ -1,6 +1,6 @@
 // app/(os)/wallet/hooks/useWalletTaxes.ts
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface TaxReport {
   id: string;

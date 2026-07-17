@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>agents-mt-output</BucketName><RequestId>WDRQCD8W3X9S9YPQ</RequestId><HostId>yVguTQC+kS234Bz/HP7WkpIFtoHs5GvhqDXRvfljHgTUnFkXYso6STr4Kjso6ml6o0RkWa8b5WZ/CHz/dOPqOsXP2h/TxAnP</HostId></Error>
