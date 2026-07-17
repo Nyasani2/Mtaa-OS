@@ -77,7 +77,7 @@ export default function WalletScreen() {
         <Ionicons name="wallet-outline" size={64} color="#ccc" />
         <Text style={styles.emptyTitle}>Wallet Locked</Text>
         <Text style={styles.emptyText}>Sign in to access your wallet</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/(os)/auth/sign-in')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/login')}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </SafeAreaView>
