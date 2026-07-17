@@ -1,5 +1,5 @@
-// app/(os)/wallet/deposit.tsx — Real Deposit Screen
-// M-Pesa STK Push, Card, Bank, Crypto
+// app/(os)/wallet/deposit.tsx — Clean Deposit Screen
+// Uses expo-clipboard (installed), NOT react-native Clipboard (deprecated)
 
 import React, { useState, useCallback } from 'react';
 import {
@@ -11,13 +11,13 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Clipboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { useWallet } from '@/lib/wallet/hooks';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 const DEPOSIT_METHODS = [
@@ -47,7 +47,6 @@ export default function DepositScreen() {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
-
     const amt = parseFloat(amount);
     if (amt < 10) {
       Alert.alert('Error', 'Minimum deposit is KES 10');
@@ -59,12 +58,10 @@ export default function DepositScreen() {
 
     try {
       const result = await deposit(amt, method, phoneNumber);
-
       if (!result.success) {
         Alert.alert('Deposit Failed', result.error || 'Unknown error');
         return;
       }
-
       setDepositResult(result);
 
       if (method === 'mpesa') {
@@ -74,17 +71,9 @@ export default function DepositScreen() {
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else if (method === 'bank') {
-        Alert.alert(
-          'Bank Transfer Instructions',
-          'Please complete the bank transfer using the provided details. Funds will reflect within 1-24 hours.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Bank Transfer Instructions', 'Please complete the bank transfer using the provided details. Funds will reflect within 1-24 hours.', [{ text: 'OK' }]);
       } else if (method === 'crypto') {
-        Alert.alert(
-          'Crypto Deposit',
-          'Send the specified amount to the provided address. Funds will reflect after confirmations.',
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Crypto Deposit', 'Send the specified amount to the provided address. Funds will reflect after confirmations.', [{ text: 'OK' }]);
       } else {
         Alert.alert('Deposit Initiated', 'Your deposit is being processed.');
       }
@@ -95,15 +84,14 @@ export default function DepositScreen() {
     }
   }, [amount, method, phoneNumber, deposit, clearError, router]);
 
-  const copyToClipboard = (text: string) => {
-    Clipboard.setString(text);
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
@@ -113,13 +101,11 @@ export default function DepositScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Balance */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available Balance</Text>
           <Text style={styles.balanceValue}>{getFormattedBalance()}</Text>
         </View>
 
-        {/* Method Selector */}
         <Text style={styles.sectionLabel}>Deposit Method</Text>
         <View style={styles.methodGrid}>
           {DEPOSIT_METHODS.map((m) => (
@@ -137,7 +123,6 @@ export default function DepositScreen() {
           ))}
         </View>
 
-        {/* Amount Input */}
         <Text style={styles.sectionLabel}>Amount (KES)</Text>
         <View style={styles.amountRow}>
           <Text style={styles.currency}>KES</Text>
@@ -152,7 +137,6 @@ export default function DepositScreen() {
           />
         </View>
 
-        {/* Quick Amounts */}
         <View style={styles.quickRow}>
           {quickAmounts.map((amt) => (
             <TouchableOpacity
@@ -167,7 +151,6 @@ export default function DepositScreen() {
           ))}
         </View>
 
-        {/* M-Pesa Phone Number */}
         {method === 'mpesa' && (
           <View style={styles.section}>
             <Text style={styles.label}>M-Pesa Phone Number</Text>
@@ -187,7 +170,6 @@ export default function DepositScreen() {
           </View>
         )}
 
-        {/* Bank Instructions */}
         {method === 'bank' && depositResult?.instructions && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Bank Transfer Details</Text>
@@ -221,7 +203,6 @@ export default function DepositScreen() {
           </View>
         )}
 
-        {/* Crypto Instructions */}
         {method === 'crypto' && depositResult?.instructions && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Crypto Deposit</Text>
@@ -242,17 +223,15 @@ export default function DepositScreen() {
           </View>
         )}
 
-        {/* Card Placeholder */}
         {method === 'card' && (
           <View style={styles.instructionCard}>
             <Text style={styles.instructionTitle}>Card Payment</Text>
             <Text style={styles.instructionNote}>
-              {'Card payment integration is coming soon.\nFor now, please use M-Pesa or Bank Transfer to deposit funds.'}
+              Card payment integration is coming soon. For now, please use M-Pesa or Bank Transfer to deposit funds.
             </Text>
           </View>
         )}
 
-        {/* Error */}
         {error && (
           <View style={styles.errorCard}>
             <Ionicons name="alert-circle" size={20} color="#EF4444" />
@@ -260,7 +239,6 @@ export default function DepositScreen() {
           </View>
         )}
 
-        {/* Deposit Button */}
         <TouchableOpacity
           style={[styles.depositBtn, (!amount || loading || isProcessing) && styles.depositBtnDisabled]}
           onPress={handleDeposit}

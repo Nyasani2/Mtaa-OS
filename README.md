@@ -1,88 +1,112 @@
-# Health OS: Facility Onboarding + POS + Inventory System
+# MTAA_OS_V10 Cleanup & TypeScript Fix Package
 
-## What's Included
+## WHAT THIS PACKAGE CONTAINS
 
-### 1. SQL Schema (run in Supabase SQL Editor)
-- `01_onboarding_pos_schema.sql` — All new tables
-- `02_edge_functions.sql` — All edge functions
+### 1. mtaa_cleanup_script.sh
+Deletes 261+ dead/orphan/duplicate files from your project.
 
-### 2. Frontend Screens
-- `facility-register/index.tsx` — Self-service facility registration
-- `government/verify-facilities/index.tsx` — Government verification dashboard
-- `pharmacy/pos/index.tsx` — Pharmacy POS with QR scanning
-- `pharmacy/inventory/index.tsx` — Inventory management
+### 2. tsconfig.json
+Updated TypeScript config with proper excludes for:
+- supabase/functions (Deno runtime — not frontend TS)
+- android, ios (native build dirs)
+- docs, infra, tools, stubs (non-code)
+- backend, schema, sql, migrations (SQL files)
+- modules_disabled (dead code)
+- public, assets (static files)
 
-### 3. New Tables
-| Table | Purpose |
-|-------|---------|
-| health_facility_registrations | Onboarding queue for new facilities |
-| health_facility_admins | Multi-admin per facility with permissions |
-| health_inventory | Stock tracking for pharmacy/lab |
-| health_inventory_transactions | Audit trail for all stock movements |
-| health_pos_transactions | QR scan payment records |
-| health_drug_tracking | Batch-level drug traceability |
-| health_government_inspectors | MoH oversight roles |
-| health_facility_successions | Death/delegation handling |
+## WHY SUPABASE FUNCTIONS HAVE "ERRORS"
 
-### 4. Edge Functions
-| Function | Purpose |
+The `supabase/functions/` directory contains **Deno edge functions** — they run on Supabase's server, NOT in your React Native app. They use:
+- `Deno.serve()` — Deno runtime API
+- `https://esm.sh/...` imports — URL imports
+- `https://deno.land/std/...` — Deno standard library
+
+Your frontend TypeScript compiler (`tsc`) doesn't understand Deno. These are **false positives** — not real errors. They should be excluded from frontend compilation.
+
+## WHY DELETE FILES INSTEAD OF EXCLUDE?
+
+| Approach | Problem |
 |----------|---------|
-| register_health_facility | Self-service facility registration |
-| verify_health_facility | Government approve/reject/suspend |
-| generate_inventory_qr | Create QR codes for products |
-| process_pos_payment | Handle QR scan + wallet payment |
-| handle_facility_succession | Founder death/delegation |
-| get_facility_dashboard_stats | Dashboard analytics |
+| Exclude in tsconfig | Files still clutter project, slow git, confuse developers |
+| Delete dead files | Clean project, faster builds, no confusion |
 
-## Installation
+The 261 files being deleted are ALL dead code — backups, old ZIPS, audit scripts, duplicate flat files, orphan SQL/TXT. None are needed for production.
 
-1. Run `01_onboarding_pos_schema.sql` in Supabase SQL Editor
-2. Run `02_edge_functions.sql` in Supabase SQL Editor
-3. Copy frontend files to `app/(os)/health/`
-4. Add routes to `_layout.tsx`
-5. Restart Metro
+## FILES BEING DELETED (by category)
 
-## User Flows
+### Backup Files (14)
+All `.backup.*` and `.bak.*` files in lib/services/, lib/stores/, lib/wallet/
 
-### Pharmacy Owner Registers Clinic
-1. Opens Health OS → taps "Register Facility"
-2. Fills: name, type (clinic), ownership (private), location, services
-3. Submits → gets registration ID
-4. Waits 3-5 days for MoH verification
-5. Receives notification: "Your facility is verified"
-6. Can now add staff, inventory, use POS
+### ZIP Files (64)
+All old fix packages: mtaa-*-fix.zip, streets-*-fix.zip, profile-*-fix.zip, ZIP_R_*.zip
 
-### Patient Buys Medicine at Pharmacy
-1. Pharmacist scans product QR code
-2. Product auto-fills: name, price, batch
-3. Patient provides phone number
-4. Selects payment: MTAA Wallet / M-Pesa / Cash
-5. Payment processed → stock deducted
-6. Patient gets receipt in app
-7. Inventory transaction logged for audit
+### Audit Scripts (14)
+All Python/TS audit scripts and their JSON outputs: audit_*.py, audit-*.ts, audit-*.json
 
-### Government Inspector Verifies Facility
-1. Logs in as inspector
-2. Views "Verify Facilities" dashboard
-3. Sees all pending registrations
-4. Reviews: license, documents, founder info
-5. Clicks "Verify & Activate" or "Reject"
-6. Facility becomes active in system
+### Fix/Install/Dump Scripts (41)
+All shell scripts used for previous fixes: fix_*.sh, install*.sh, cleanup*.sh, dump*.sh
 
-### Founder Dies — Succession
-1. Successor submits succession request
-2. Uploads: death certificate, court order, succession document
-3. Government inspector reviews
-4. Approves → new admin gets founder permissions
-5. Facility continues operating
+### Orphan SQL at Root (40)
+All .sql files sitting at project root — these belong in backend/sql/ or supabase/migrations/
 
-## Scale: Clinic to 5000-Bed Hospital
+### Orphan TXT (16)
+All .txt files at root — notes, dumps, logs
 
-| Feature | Pharmacy (Level 1) | Clinic (Level 2) | Hospital (Level 5-6) |
-|---------|-------------------|------------------|---------------------|
-| Bed capacity | 0 | 1-10 | 100-5000 |
-| Inventory | Medications only | Basic supplies | Full pharmacy + equipment |
-| Staff | 1-2 | 2-5 | 50-2000 |
-| Services | Dispensing | Outpatient | Emergency, ICU, Surgery |
-| POS | Simple QR scan | Basic billing | Full billing + insurance |
-| Government oversight | County level | County level | National + County |
+### Duplicate Flat Files (27)
+Files like `lib_auth_identity.ts`, `hooks_useAuth.ts` — these are copies of real files in lib/ and hooks/ directories. They were created during batch fixes and are now duplicates.
+
+### Orphan TS Files (7)
+`constants_theme.ts`, `streets-service.ts`, `types_appstore.ts`, etc. — copies of real files.
+
+### Garbage Files (17)
+`0`, `0.1,`, `build.log`, `metro.log`, `tsconfig.tsbuildinfo`, etc.
+
+### Orphan MD Files (21)
+All README_*.md, *_GUIDE.md, *_README.md — documentation artifacts from previous sessions.
+
+## ROOT-LEVEL SCREENS (NOT DELETED — NEED REORGANIZATION)
+
+These 32 .tsx files at root are REAL CODE but misplaced:
+- achievements.tsx, analytics.tsx, business.tsx, business_profile.tsx, etc.
+- They should be moved into `app/(os)/` or `domains/` structure
+- DO NOT DELETE — they contain active screen code
+
+## HOW TO APPLY
+
+### Step 1: Run Cleanup Script
+```bash
+cd ~/MTAA_OS_V10
+bash ~/Downloads/mtaa_cleanup_script.sh
+```
+
+### Step 2: Replace tsconfig.json
+```bash
+cp ~/Downloads/tsconfig.json ~/MTAA_OS_V10/tsconfig.json
+```
+
+### Step 3: Clear TypeScript Cache
+```bash
+cd ~/MTAA_OS_V10
+rm -rf node_modules/.expo
+rm -f tsconfig.tsbuildinfo
+```
+
+### Step 4: Check Remaining Errors
+```bash
+npx tsc --noEmit
+```
+
+## EXPECTED RESULT
+
+| Before | After Cleanup + tsconfig |
+|--------|---------------------------|
+| ~2,048 errors | ~100-200 errors (real frontend issues) |
+| 4,025 files | ~3,700 files |
+| Cluttered root | Clean root |
+
+## NEXT STEPS AFTER CLEANUP
+
+1. Fix remaining TypeScript errors in actual frontend code
+2. Move root-level screens into proper app/ structure
+3. Fix direct supabase calls in screen files (architecture violation)
+4. Add proper service layer for all data operations

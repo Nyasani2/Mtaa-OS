@@ -60,7 +60,6 @@ const TAB_ITEMS = [
   { key: 'saved', label: 'Saved', icon: 'bookmark-outline' },
   { key: 'likes', label: 'Likes', icon: 'heart-outline' },
   { key: 'achievements', label: 'Awards', icon: 'trophy-outline' },
-  { key: 'activity', label: 'Activity', icon: 'pulse-outline' },
 ] as const;
 
 type TabKey = typeof TAB_ITEMS[number]['key'];
@@ -563,7 +562,6 @@ function ActivityTab({ userId }: { userId?: string }) {
   }, [userId]);
 
   if (loading) return <View style={styles.center}><ActivityIndicator color="#2563EB" /></View>;
-  if (activities.length === 0) return <EmptyState icon="pulse-outline" title="No recent activity" subtitle="Your activity will appear here" />;
 
   return (
     <View style={{ paddingVertical: 8 }}>
