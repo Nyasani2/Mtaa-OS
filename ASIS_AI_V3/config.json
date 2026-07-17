@@ -1,0 +1,10 @@
+{
+  "learning_rate": 0.15,
+  "decay_rate": 0.001,
+  "max_history": 1000,
+  "show_reasoning": true,
+  "show_sources": true,
+  "memory_path": "knowledge_base/memory.json",
+  "max_workers": 3,
+  "absolute_max_workers": 6
+}
