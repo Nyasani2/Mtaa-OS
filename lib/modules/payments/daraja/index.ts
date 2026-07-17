@@ -1,16 +1,30 @@
 
 // ============================================================
-// ⚠️  KNOWN ISSUE — edge function names below do not match reality
-// Verified 2026-07-17 against supabase/functions/: this module calls
-// 'daraja-stk-push', 'daraja-stk-query', 'daraja-callback-handler',
-// 'daraja-refresh-token' — NONE of these edge functions exist.
-// The real, deployed functions are: mpesa-stk-push, mpesa-callback,
-// mpesa-operations, daraja-paybill-callback, daraja-till-callback,
-// mpesa-daraja. The database layer here (business_owners, daraja_configs,
-// daraja_transactions tables) IS verified correct against the live schema
-// — only the 4 functions.invoke() calls below need their names (and
-// possibly request/response shape — not yet verified) corrected to match
-// the real edge functions before this module can be wired into any screen.
+// ⚠️  KNOWN ISSUE — this is NOT a simple renaming fix. Business M-Pesa
+// collection (paybill/till payments) is not actually implemented
+// end-to-end anywhere in this codebase. Verified 2026-07-17:
+//
+// 1. This module calls 'daraja-stk-push', 'daraja-stk-query',
+//    'daraja-callback-handler', 'daraja-refresh-token' — none exist.
+// 2. The closest real match is supabase/functions/mpesa-operations
+//    (action: 'stk_push_business'), BUT that handler's own comment
+//    admits it doesn't call the real Safaricom Daraja API — it inserts
+//    a fake "pending" record and returns success without ever placing
+//    a real STK push. No actual Daraja OAuth/signing implementation
+//    (using the consumer_key/secret/passkey this module's DarajaConfig
+//    type stores) exists anywhere in the repo.
+// 3. It also writes to a different table (mpesa_transactions) than
+//    this frontend module reads from (daraja_transactions) — need to
+//    confirm both exist and decide which is authoritative.
+//
+// The database layer here (business_owners, daraja_configs,
+// daraja_transactions tables) IS verified to exist and match this
+// module's types. What's missing is real backend work: an actual
+// Safaricom Daraja API integration (OAuth token exchange + signed STK
+// push + callback verification), not a wiring fix. Do not rename the
+// function calls below to point at mpesa-operations without first
+// building that real integration — doing so would make this feature
+// look functional while still not actually charging anyone.
 // ============================================================
 
 // ============================================================
