@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useWallet } from '@/lib/wallet/hooks';
+import { useWallet } from '@/domains/wallet/hooks';
 import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');

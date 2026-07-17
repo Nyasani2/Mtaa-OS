@@ -15,7 +15,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { cartService, ShippingAddress } from '@/lib/marketplace/services/cart.service';
-import { withdrawService } from '@/lib/wallet/services/withdraw.service';
+import { withdrawService } from '@/domains/wallet/services/withdrawService';
 
 const PAYMENT_METHODS = [
   { key: 'wallet', label: 'Wallet Balance', icon: '💰' },
