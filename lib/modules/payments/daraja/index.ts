@@ -1,5 +1,19 @@
 
 // ============================================================
+// ⚠️  KNOWN ISSUE — edge function names below do not match reality
+// Verified 2026-07-17 against supabase/functions/: this module calls
+// 'daraja-stk-push', 'daraja-stk-query', 'daraja-callback-handler',
+// 'daraja-refresh-token' — NONE of these edge functions exist.
+// The real, deployed functions are: mpesa-stk-push, mpesa-callback,
+// mpesa-operations, daraja-paybill-callback, daraja-till-callback,
+// mpesa-daraja. The database layer here (business_owners, daraja_configs,
+// daraja_transactions tables) IS verified correct against the live schema
+// — only the 4 functions.invoke() calls below need their names (and
+// possibly request/response shape — not yet verified) corrected to match
+// the real edge functions before this module can be wired into any screen.
+// ============================================================
+
+// ============================================================
 // MTAA M-PESA / DARAJA FRONTEND (v3)
 // Added: business_owners types, service, hooks
 // Model: user ↔ business_owners ↔ businesses ↔ daraja_configs
