@@ -36251,7 +36251,6 @@ export type Database = {
           },
         ]
       }
-      pulse_alert_deliveries: {
         Row: {
           acknowledged_at: string | null
           alert_id: string
@@ -36284,14 +36283,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_alert_deliveries_alert_id_fkey"
             columns: ["alert_id"]
             isOneToOne: false
-            referencedRelation: "pulse_alerts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_alert_deliveries_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -36299,7 +36295,6 @@ export type Database = {
           },
         ]
       }
-      pulse_alerts: {
         Row: {
           action_label: string | null
           action_url: string | null
@@ -36377,7 +36372,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_alerts_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -36385,7 +36379,6 @@ export type Database = {
           },
         ]
       }
-      pulse_analytics: {
         Row: {
           county: string | null
           created_at: string
@@ -36427,7 +36420,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pulse_comments: {
         Row: {
           author_id: string
           content: string
@@ -36454,29 +36446,24 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_comments_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_comments_author_id_fkey"
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_comments_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
         ]
       }
-      pulse_creator_earnings: {
         Row: {
           amount: number
           creator_id: string
@@ -36509,29 +36496,24 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_creator_earnings_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_creator_earnings_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_creator_earnings_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
         ]
       }
-      pulse_creator_scores: {
         Row: {
           calculated_at: string
           community_score: number
@@ -36594,7 +36576,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_creator_scores_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: true
             referencedRelation: "vw_student_dashboard"
@@ -36602,7 +36583,6 @@ export type Database = {
           },
         ]
       }
-      pulse_entity_rankings: {
         Row: {
           calculated_at: string
           category: string | null
@@ -36653,7 +36633,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pulse_event_interactions: {
         Row: {
           created_at: string
           event_id: string
@@ -36680,21 +36659,16 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_event_interactions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "pulse_events"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_event_interactions_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
-            referencedRelation: "v_pulse_feed_posts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_event_interactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -36702,7 +36676,6 @@ export type Database = {
           },
         ]
       }
-      pulse_events: {
         Row: {
           county: string | null
           created_at: string
@@ -36759,7 +36732,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_events_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -36767,7 +36739,6 @@ export type Database = {
           },
         ]
       }
-      pulse_likes: {
         Row: {
           created_at: string
           id: string
@@ -36788,21 +36759,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_likes_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -36810,7 +36777,6 @@ export type Database = {
           },
         ]
       }
-      pulse_moderation_queue: {
         Row: {
           action_taken: string | null
           ai_reason: string | null
@@ -36873,14 +36839,12 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_moderation_queue_moderator_id_fkey"
             columns: ["moderator_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
             referencedColumns: ["student_id"]
           },
           {
-            foreignKeyName: "pulse_moderation_queue_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -36888,7 +36852,6 @@ export type Database = {
           },
         ]
       }
-      pulse_posts: {
         Row: {
           comments_count: number
           content: string
@@ -36936,14 +36899,12 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_posts_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_posts_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -36951,7 +36912,6 @@ export type Database = {
           },
         ]
       }
-      pulse_recommendations: {
         Row: {
           clicked_at: string | null
           context: Json
@@ -37002,7 +36962,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_recommendations_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -37010,7 +36969,6 @@ export type Database = {
           },
         ]
       }
-      pulse_reports: {
         Row: {
           assigned_to: string | null
           created_at: string
@@ -37058,14 +37016,12 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_reports_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
             referencedColumns: ["student_id"]
           },
           {
-            foreignKeyName: "pulse_reports_reporter_id_fkey"
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -37073,7 +37029,6 @@ export type Database = {
           },
         ]
       }
-      pulse_saved_items: {
         Row: {
           created_at: string
           id: string
@@ -37115,7 +37070,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_saved_items_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -37123,7 +37077,6 @@ export type Database = {
           },
         ]
       }
-      pulse_search_index: {
         Row: {
           content_vector: unknown
           county: string | null
@@ -37171,7 +37124,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pulse_shares: {
         Row: {
           id: string
           post_id: string
@@ -37192,21 +37144,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_shares_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_shares_sharer_id_fkey"
             columns: ["sharer_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_shares_sharer_id_fkey"
             columns: ["sharer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -37214,7 +37162,6 @@ export type Database = {
           },
         ]
       }
-      pulse_topic_followers: {
         Row: {
           created_at: string
           id: string
@@ -37238,14 +37185,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_topic_followers_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: "pulse_topics"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_topic_followers_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -37253,7 +37197,6 @@ export type Database = {
           },
         ]
       }
-      pulse_topics: {
         Row: {
           category: string
           created_at: string
@@ -37307,7 +37250,6 @@ export type Database = {
         }
         Relationships: []
       }
-      pulse_trends: {
         Row: {
           county: string | null
           created_at: string
@@ -37367,15 +37309,12 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_trends_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: "pulse_topics"
             referencedColumns: ["id"]
           },
         ]
       }
-      pulse_video_progress: {
         Row: {
           id: string
           post_id: string
@@ -37399,21 +37338,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_video_progress_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_progress_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_progress_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -37421,7 +37356,6 @@ export type Database = {
           },
         ]
       }
-      pulse_video_views: {
         Row: {
           creator_id: string
           id: string
@@ -37448,35 +37382,29 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_video_views_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_views_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_views_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
-            referencedRelation: "pulse_posts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_views_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
             referencedRelation: "active_governance_members"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pulse_video_views_viewer_id_fkey"
             columns: ["viewer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -56324,7 +56252,6 @@ export type Database = {
         }
         Relationships: []
       }
-      v_pulse_feed_posts: {
         Row: {
           created_at: string | null
           entity_id: string | null
@@ -56363,7 +56290,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "pulse_events_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "vw_student_dashboard"
@@ -58957,7 +58883,6 @@ export type Database = {
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
       process_referral: { Args: { new_user: string }; Returns: undefined }
-      pulse_soft_delete: {
         Args: { record_id: string; table_name: string }
         Returns: undefined
       }
