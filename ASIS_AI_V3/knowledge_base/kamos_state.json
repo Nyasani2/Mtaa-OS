@@ -1,0 +1,93 @@
+{
+  "graph": {},
+  "history": [],
+  "config": {
+    "learning_rate": 0.15,
+    "decay_rate": 0.001,
+    "max_history": 1000,
+    "show_reasoning": true,
+    "show_sources": true,
+    "memory_path": "knowledge_base/memory.json",
+    "max_workers": 3,
+    "absolute_max_workers": 6
+  },
+  "learning_rate": 0.15,
+  "agent_weights": {},
+  "agent_success_history": {},
+  "intent_patterns": {
+    "explanation": [
+      "how",
+      "why",
+      "explain",
+      "what is",
+      "describe",
+      "clarify",
+      "elaborate"
+    ],
+    "comparison": [
+      "compare",
+      "difference",
+      "vs",
+      "versus",
+      "better",
+      "worse",
+      "similarities"
+    ],
+    "problem_solving": [
+      "solve",
+      "calculate",
+      "compute",
+      "find",
+      "fix",
+      "debug",
+      "resolve",
+      "troubleshoot"
+    ],
+    "creation": [
+      "create",
+      "build",
+      "make",
+      "design",
+      "generate",
+      "write code",
+      "implement",
+      "develop"
+    ],
+    "recommendation": [
+      "should",
+      "recommend",
+      "advice",
+      "best",
+      "choose",
+      "pick",
+      "suggest"
+    ],
+    "improvement": [
+      "improve",
+      "enhance",
+      "optimize",
+      "upgrade",
+      "better",
+      "refine",
+      "polish"
+    ],
+    "analysis": [
+      "analyze",
+      "review",
+      "check",
+      "evaluate",
+      "assess",
+      "examine",
+      "inspect"
+    ],
+    "research": [
+      "search",
+      "find information",
+      "look up",
+      "research",
+      "investigate",
+      "study"
+    ],
+    "information": []
+  }
+}
