@@ -1,5 +1,9 @@
 // lib/kernel/identity.ts
 // Kernel Identity Engine — user identity, verification, trust score
+//
+// NOTE: not the same thing as lib/kernel/auth/identity.ts (renamed to
+// `currentUserSession` on 2026-07-17 to avoid a naming collision — that
+// file is a lightweight current-user cache, unrelated to KYC/verification).
 
 import { supabase } from '@/lib/supabase';
 

@@ -1,3 +1,16 @@
+/**
+ * lib/kernel/auth/identity.ts — Current-User Session Cache
+ *
+ * NOT the same thing as lib/kernel/identity.ts (the KYC/trust-score/
+ * verification-workflow engine). Both previously exported a singleton
+ * named `identityEngine`, which is a naming collision risk — importing
+ * the wrong one and calling e.g. `.getUser()` on the KYC engine (which
+ * has no such method) would be a runtime crash. Renamed to
+ * `currentUserSession` on 2026-07-17 to disambiguate. This file has
+ * zero importers as of that date — kept because it's a real, working,
+ * distinct utility (cached current-user/profile lookup), not dead code,
+ * just not yet adopted anywhere.
+ */
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -20,7 +33,7 @@ export interface IdentityUser {
   [key: string]: any;
 }
 
-class IdentityEngine {
+class CurrentUserSession {
   private cache: IdentityUser | null = null;
   private cacheTime: number = 0;
   private CACHE_TTL = 30000; // 30 seconds
@@ -63,7 +76,7 @@ class IdentityEngine {
       this.cacheTime = Date.now();
       return user;
     } catch (err) {
-      console.error("[identityEngine] getUser error:", err);
+      console.error("[currentUserSession] getUser error:", err);
       return null;
     }
   }
@@ -105,4 +118,4 @@ class IdentityEngine {
 /**
  * SINGLETON (KERNEL CORE SERVICE)
  */
-export const identityEngine = new IdentityEngine();
+export const currentUserSession = new CurrentUserSession();
