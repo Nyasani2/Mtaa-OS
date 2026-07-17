@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/lib/wallet/state/wallet.store';
+import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 
 interface Card {
   id: string;

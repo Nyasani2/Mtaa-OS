@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { useWallet } from '@/lib/wallet/hooks';
+import { useWallet } from '@/domains/wallet/hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
