@@ -41,7 +41,7 @@ export default function WalletPinScreen() {
 
   const checkExistingPin = async () => {
     if (!user?.id) {
-      router.replace('/(os)/login');
+      router.replace('/auth/login');
       return;
     }
 
