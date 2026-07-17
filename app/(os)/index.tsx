@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   RefreshControl,
-  Platform,
+  ImageBackground,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,28 +17,15 @@ import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
-// ─── IMPORT FROM SHARED CATALOG ───
 import {
   ALL_APPS,
   PUBLIC_APPS,
   OWNER_APPS,
   AppTile,
   getAppsByCategory,
-  FINANCE_APPS,
-  HEALTH_APPS,
-  CIVIC_APPS,
-  COMMERCE_APPS,
-  OS_APPS,
-  TRANSPORT_APPS,
-  SOCIAL_APPS,
-  MEDIA_APPS,
-  WORK_APPS,
-  EDUCATION_APPS,
-  ADMIN_APPS,
-  UTILITY_APPS,
 } from '@/lib/catalog/app-catalog';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const TILE_SIZE = (width - 48) / 4;
 
 export default function HomeScreen() {
@@ -61,10 +48,7 @@ export default function HomeScreen() {
     [router]
   );
 
-  // Filter apps based on owner status
   const visibleApps = isOwner ? ALL_APPS : PUBLIC_APPS;
-
-  // Filter by active category if selected
   const displayedApps = activeCategory
     ? getAppsByCategory(activeCategory).filter((a) =>
         isOwner ? true : !a.ownerOnly
@@ -72,14 +56,7 @@ export default function HomeScreen() {
     : visibleApps;
 
   const renderIcon = (app: AppTile, size: number = 24) => {
-    const IconComponent = Ionicons;
-    return (
-      <IconComponent
-        name={app.icon as any}
-        size={size}
-        color={app.color}
-      />
-    );
+    return <Ionicons name={app.icon as any} size={size} color={app.color} />;
   };
 
   const renderAppTile = (app: AppTile, index: number) => (
@@ -98,11 +75,6 @@ export default function HomeScreen() {
           {app.badge ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{app.badge}</Text>
-            </View>
-          ) : null}
-          {app.isNew ? (
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>NEW</Text>
             </View>
           ) : null}
         </View>
@@ -129,143 +101,145 @@ export default function HomeScreen() {
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
-        <LinearGradient
-          colors={['#0f172a', '#1e293b']}
-          style={styles.headerGradient}
-        >
-          <BlurView intensity={80} style={styles.blurHeader}>
-            <View style={styles.headerContent}>
-              <View>
-                <Text style={styles.greeting}>Good Day</Text>
-                <Text style={styles.userName}>
-                  {user?.full_name || user?.email || 'User'}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => router.push('/(os)/settings' as any)}
-                style={styles.settingsBtn}
-              >
-                <Ionicons name="settings-outline" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </BlurView>
-        </LinearGradient>
-      </Animated.View>
-
-      {/* Category Filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-        style={styles.categoryBar}
+    <ImageBackground
+      source={require('@/assets/images/mtaa_home.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <LinearGradient
+        colors={['rgba(15,23,42,0.3)', 'rgba(15,23,42,0.85)', 'rgba(15,23,42,0.95)']}
+        style={styles.gradientOverlay}
       >
-        <TouchableOpacity
-          onPress={() => setActiveCategory(null)}
-          style={[
-            styles.categoryChip,
-            activeCategory === null && styles.categoryChipActive,
-          ]}
-        >
-          <Text
-            style={[
-              styles.categoryChipText,
-              activeCategory === null && styles.categoryChipTextActive,
-            ]}
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+          {/* Header */}
+          <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
+            <BlurView intensity={60} style={styles.blurHeader}>
+              <View style={styles.headerContent}>
+                <View>
+                  <Text style={styles.greeting}>Good Day</Text>
+                  <Text style={styles.userName}>
+                    {user?.full_name || user?.email || 'User'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => router.push('/(os)/settings' as any)}
+                  style={styles.settingsBtn}
+                >
+                  <Ionicons name="settings-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </Animated.View>
+
+          {/* Category Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+            style={styles.categoryBar}
           >
-            All
-          </Text>
-        </TouchableOpacity>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.key}
-            onPress={() =>
-              setActiveCategory(activeCategory === cat.key ? null : cat.key)
-            }
-            style={[
-              styles.categoryChip,
-              activeCategory === cat.key && {
-                ...styles.categoryChipActive,
-                borderColor: cat.color,
-                backgroundColor: cat.color + '20',
-              },
-            ]}
-          >
-            <Text
+            <TouchableOpacity
+              onPress={() => setActiveCategory(null)}
               style={[
-                styles.categoryChipText,
-                activeCategory === cat.key && {
-                  ...styles.categoryChipTextActive,
-                  color: cat.color,
-                },
+                styles.categoryChip,
+                activeCategory === null && styles.categoryChipActive,
               ]}
             >
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text style={[styles.categoryChipText, activeCategory === null && styles.categoryChipTextActive]}>
+                All
+              </Text>
+            </TouchableOpacity>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.key}
+                onPress={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
+                style={[
+                  styles.categoryChip,
+                  activeCategory === cat.key && {
+                    ...styles.categoryChipActive,
+                    borderColor: cat.color,
+                    backgroundColor: cat.color + '20',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    activeCategory === cat.key && {
+                      ...styles.categoryChipTextActive,
+                      color: cat.color,
+                    },
+                  ]}
+                >
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-      {/* App Grid */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.grid}>
-          {displayedApps.map((app, index) => renderAppTile(app, index))}
-        </View>
-
-        {/* Owner Section */}
-        {isOwner && OWNER_APPS.length > 0 && activeCategory === null && (
-          <View style={styles.ownerSection}>
-            <Text style={styles.ownerTitle}>Owner Tools</Text>
+          {/* App Grid */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+            }
+          >
             <View style={styles.grid}>
-              {OWNER_APPS.map((app, index) =>
-                renderAppTile(app, displayedApps.length + index)
-              )}
+              {displayedApps.map((app, index) => renderAppTile(app, index))}
             </View>
-          </View>
-        )}
 
-        <View style={styles.footer} />
-      </ScrollView>
-    </View>
+            {isOwner && OWNER_APPS.length > 0 && activeCategory === null && (
+              <View style={styles.ownerSection}>
+                <Text style={styles.ownerTitle}>Owner Tools</Text>
+                <View style={styles.grid}>
+                  {OWNER_APPS.map((app, index) =>
+                    renderAppTile(app, displayedApps.length + index)
+                  )}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.footer} />
+          </ScrollView>
+        </View>
+      </LinearGradient>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
   },
   header: {
     width: '100%',
-  },
-  headerGradient: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    paddingTop: 8,
   },
   blurHeader: {
     borderRadius: 16,
     overflow: 'hidden',
+    backgroundColor: 'rgba(30,41,59,0.6)',
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   greeting: {
-    fontSize: 14,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#cbd5e1',
     fontWeight: '500',
   },
   userName: {
@@ -277,11 +251,11 @@ const styles = StyleSheet.create({
   settingsBtn: {
     padding: 8,
     borderRadius: 12,
-    backgroundColor: '#ffffff15',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   categoryBar: {
-    maxHeight: 56,
-    marginTop: 8,
+    maxHeight: 52,
+    marginTop: 12,
   },
   categoryScroll: {
     paddingHorizontal: 12,
@@ -289,21 +263,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: '#1e293b',
+    backgroundColor: 'rgba(30,41,59,0.7)',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255,255,255,0.1)',
     marginRight: 8,
   },
   categoryChipActive: {
-    backgroundColor: '#3b82f620',
+    backgroundColor: 'rgba(59,130,246,0.2)',
     borderColor: '#3b82f6',
   },
   categoryChipText: {
     color: '#94a3b8',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   categoryChipTextActive: {
@@ -334,13 +308,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tileLabel: {
-    color: '#e2e8f0',
+    color: '#fff',
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
     width: TILE_SIZE - 8,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   badge: {
     position: 'absolute',
@@ -360,30 +342,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
   },
-  newBadge: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    backgroundColor: '#22c55e',
-    borderRadius: 6,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderWidth: 1,
-    borderColor: '#0f172a',
-  },
-  newBadgeText: {
-    color: '#fff',
-    fontSize: 8,
-    fontWeight: '700',
-  },
   ownerSection: {
     marginTop: 24,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
+    borderTopColor: 'rgba(255,255,255,0.1)',
   },
   ownerTitle: {
-    color: '#f59e0b',
+    color: '#fbbf24',
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 12,
