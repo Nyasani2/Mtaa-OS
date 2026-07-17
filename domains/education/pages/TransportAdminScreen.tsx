@@ -373,14 +373,14 @@ export default function TransportAdminScreen({ schoolId }: TransportAdminScreenP
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Create New Route</Text>
             <ScrollView>
-              <FormInput label="Route Name" value={routeForm.route_name} onChange={v => setRouteForm(p => ({ ...p, route_name: v })} placeholder="e.g., Karen-Langata Morning" />
-              <FormInput label="Route Code" value={routeForm.route_code} onChange={v => setRouteForm(p => ({ ...p, route_code: v })} placeholder="e.g., KLA-M-01" />
-              <FormInput label="Description" value={routeForm.description} onChange={v => setRouteForm(p => ({ ...p, description: v })} placeholder="Optional description" />
-              <FormInput label="Max Students" value={routeForm.max_students} onChange={v => setRouteForm(p => ({ ...p, max_students: v })} keyboardType="numeric" />
-              <FormInput label="Registration Fee (KES)" value={routeForm.registration_fee} onChange={v => setRouteForm(p => ({ ...p, registration_fee: v })} keyboardType="numeric" />
-              <FormInput label="Monthly Fee (KES)" value={routeForm.monthly_fee} onChange={v => setRouteForm(p => ({ ...p, monthly_fee: v })} keyboardType="numeric" />
-              <FormInput label="Morning Pickup" value={routeForm.morning_pickup_time} onChange={v => setRouteForm(p => ({ ...p, morning_pickup_time: v })} placeholder="07:00" />
-              <FormInput label="Afternoon Dropoff" value={routeForm.afternoon_dropoff_time} onChange={v => setRouteForm(p => ({ ...p, afternoon_dropoff_time: v })} placeholder="16:00" />
+              <FormInput label="Route Name" value={routeForm.route_name} onChange={v => setRouteForm(p => ({ ...p, route_name: v }))} placeholder="e.g., Karen-Langata Morning" />
+              <FormInput label="Route Code" value={routeForm.route_code} onChange={v => setRouteForm(p => ({ ...p, route_code: v }))} placeholder="e.g., KLA-M-01" />
+              <FormInput label="Description" value={routeForm.description} onChange={v => setRouteForm(p => ({ ...p, description: v }))} placeholder="Optional description" />
+              <FormInput label="Max Students" value={routeForm.max_students} onChange={v => setRouteForm(p => ({ ...p, max_students: v }))} keyboardType="numeric" />
+              <FormInput label="Registration Fee (KES)" value={routeForm.registration_fee} onChange={v => setRouteForm(p => ({ ...p, registration_fee: v }))} keyboardType="numeric" />
+              <FormInput label="Monthly Fee (KES)" value={routeForm.monthly_fee} onChange={v => setRouteForm(p => ({ ...p, monthly_fee: v }))} keyboardType="numeric" />
+              <FormInput label="Morning Pickup" value={routeForm.morning_pickup_time} onChange={v => setRouteForm(p => ({ ...p, morning_pickup_time: v }))} placeholder="07:00" />
+              <FormInput label="Afternoon Dropoff" value={routeForm.afternoon_dropoff_time} onChange={v => setRouteForm(p => ({ ...p, afternoon_dropoff_time: v }))} placeholder="16:00" />
             </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreateRoute(false)}>
@@ -400,16 +400,16 @@ export default function TransportAdminScreen({ schoolId }: TransportAdminScreenP
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Register PSV Driver</Text>
             <ScrollView>
-              <FormInput label="Driver Full Name" value={psvForm.full_name} onChange={v => setPsvForm(p => ({ ...p, full_name: v })} />
-              <FormInput label="Phone Number" value={psvForm.phone} onChange={v => setPsvForm(p => ({ ...p, phone: v })} keyboardType="phone-pad" />
-              <FormInput label="License Number" value={psvForm.license_number} onChange={v => setPsvForm(p => ({ ...p, license_number: v })} />
-              <FormInput label="License Expiry" value={psvForm.license_expiry} onChange={v => setPsvForm(p => ({ ...p, license_expiry: v })} placeholder="YYYY-MM-DD" />
-              <FormInput label="Vehicle Plate" value={psvForm.vehicle_plate} onChange={v => setPsvForm(p => ({ ...p, vehicle_plate: v })} />
-              <FormInput label="Vehicle Model" value={psvForm.vehicle_model} onChange={v => setPsvForm(p => ({ ...p, vehicle_model: v })} />
-              <FormInput label="Vehicle Color" value={psvForm.vehicle_color} onChange={v => setPsvForm(p => ({ ...p, vehicle_color: v })} />
-              <FormInput label="Capacity" value={psvForm.vehicle_capacity} onChange={v => setPsvForm(p => ({ ...p, vehicle_capacity: v })} keyboardType="numeric" />
-              <FormInput label="Insurance Number" value={psvForm.insurance_number} onChange={v => setPsvForm(p => ({ ...p, insurance_number: v })} />
-              <FormInput label="Insurance Expiry" value={psvForm.insurance_expiry} onChange={v => setPsvForm(p => ({ ...p, insurance_expiry: v })} placeholder="YYYY-MM-DD" />
+              <FormInput label="Driver Full Name" value={psvForm.full_name} onChange={v => setPsvForm(p => ({ ...p, full_name: v }))} />
+              <FormInput label="Phone Number" value={psvForm.phone} onChange={v => setPsvForm(p => ({ ...p, phone: v }))} keyboardType="phone-pad" />
+              <FormInput label="License Number" value={psvForm.license_number} onChange={v => setPsvForm(p => ({ ...p, license_number: v }))} />
+              <FormInput label="License Expiry" value={psvForm.license_expiry} onChange={v => setPsvForm(p => ({ ...p, license_expiry: v }))} placeholder="YYYY-MM-DD" />
+              <FormInput label="Vehicle Plate" value={psvForm.vehicle_plate} onChange={v => setPsvForm(p => ({ ...p, vehicle_plate: v }))} />
+              <FormInput label="Vehicle Model" value={psvForm.vehicle_model} onChange={v => setPsvForm(p => ({ ...p, vehicle_model: v }))} />
+              <FormInput label="Vehicle Color" value={psvForm.vehicle_color} onChange={v => setPsvForm(p => ({ ...p, vehicle_color: v }))} />
+              <FormInput label="Capacity" value={psvForm.vehicle_capacity} onChange={v => setPsvForm(p => ({ ...p, vehicle_capacity: v }))} keyboardType="numeric" />
+              <FormInput label="Insurance Number" value={psvForm.insurance_number} onChange={v => setPsvForm(p => ({ ...p, insurance_number: v }))} />
+              <FormInput label="Insurance Expiry" value={psvForm.insurance_expiry} onChange={v => setPsvForm(p => ({ ...p, insurance_expiry: v }))} placeholder="YYYY-MM-DD" />
             </ScrollView>
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowRegisterPsv(false)}>

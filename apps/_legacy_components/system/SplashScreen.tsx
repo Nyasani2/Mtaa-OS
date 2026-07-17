@@ -36,7 +36,6 @@ function getPhaseProgress(phase: string) {
 
 export function SplashScreen({ phase, error }: SplashScreenProps) {
   const [dots, setDots] = useState('');
-  const pulse = React.useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const i = setInterval(() => {
@@ -48,8 +47,6 @@ export function SplashScreen({ phase, error }: SplashScreenProps) {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 1000, useNativeDriver: true }),
       ])
     ).start();
   }, []);
@@ -58,7 +55,6 @@ export function SplashScreen({ phase, error }: SplashScreenProps) {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.logo, { transform: [{ scale: pulse }] }]}>
         <Text style={styles.logoText}>M</Text>
       </Animated.View>
 
