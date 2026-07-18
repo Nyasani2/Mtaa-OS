@@ -79,9 +79,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Job has no valid rate to settle" }), { status: 400 });
     }
 
-    const feePercent = typeof platform_fee_percent === "number" ? platform_fee_percent : 15;
+    const feePercent = typeof platform_fee_percent === "number" ? platform_fee_percent : 2;
+    const taxPercent = 5; // KE withholding_income_tax per treasury_country_config — TODO: look up per-country dynamically once driver country is tracked
     const platformFee = Math.round(rate * (feePercent / 100) * 100) / 100;
-    const driverAmount = Math.round((rate - platformFee) * 100) / 100;
+    const taxWithheld = Math.round(rate * (taxPercent / 100) * 100) / 100;
+    const driverAmount = Math.round((rate - platformFee - taxWithheld) * 100) / 100;
     const currency = job.currency || "KES";
 
     // Credit the driver's real wallet.
@@ -132,6 +134,39 @@ serve(async (req) => {
       // It would show up in reconciliation instead.
     }
 
+    // Withhold and route government tax — required by Kenyan law per
+    // Kevin's instruction. Uses the KE Government Tax Collection Wallet
+    // (same pattern as the MTAA platform wallet). TODO: this is currently
+    // hardcoded to Kenya's 5% withholding_income_tax rate from
+    // treasury_country_config — needs to look up the driver's actual
+    // country once that's tracked on the driver/job record, for the
+    // other 6 countries treasury_country_config already has rates for.
+    let taxTxId: string | null = null;
+    if (taxWithheld > 0) {
+      const { data: taxWallet } = await supabase
+        .from("wallets")
+        .select("id, user_id")
+        .eq("wallet_type", "main")
+        .ilike("wallet_name", "%Government Tax%")
+        .maybeSingle();
+
+      if (taxWallet?.user_id) {
+        const { data: txId, error: taxErr } = await supabase.rpc("mtaa_add_wallet_transaction", {
+          p_user_id: taxWallet.user_id,
+          p_amount: taxWithheld,
+          p_transaction_type: "government_tax_withholding",
+          p_status: "completed",
+          p_currency: currency,
+          p_description: `Withholding tax for mtruck job ${job_id}`,
+          p_reference_type: "mtruck_job",
+          p_reference_id: job_id,
+          p_provider: "mtruck",
+          p_metadata: { rate, tax_percent: taxPercent, country: "KE" },
+        });
+        if (!taxErr) taxTxId = txId;
+      }
+    }
+
     const { error: updateErr } = await supabase
       .from("mtruck_jobs")
       .update({ status: "completed", completed_at: new Date().toISOString(), final_rate: rate })
@@ -150,8 +185,10 @@ serve(async (req) => {
       job_id,
       driver_amount: driverAmount,
       platform_fee: platformFee,
+      tax_withheld: taxWithheld,
       driver_transaction_id: driverTxId,
       platform_transaction_id: platformTxId,
+      tax_transaction_id: taxTxId,
     }), { status: 200, headers: { "Content-Type": "application/json" } });
 
   } catch (err) {
