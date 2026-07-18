@@ -22,7 +22,11 @@ export default function HaulHistory() {
     <Pressable
       key={job.id}
       style={styles.card}
-      onPress={() => router.push({ pathname: '/haul-tracking', params: { jobId: job.id } })}
+      onPress={() =>
+        job.status === 'delivered'
+          ? router.push({ pathname: '/settlement', params: { jobId: job.id } })
+          : router.push({ pathname: '/haul-tracking', params: { jobId: job.id } })
+      }
     >
       <View style={styles.cardHeader}>
         <Text style={styles.cargoType}>{job.cargoType}</Text>
