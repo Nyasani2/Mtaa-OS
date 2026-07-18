@@ -1,352 +1,433 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  RefreshControl, Alert, ActivityIndicator, Modal
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/lib/auth/useAuth';
+import { useWalletStore } from '@/lib/modules/wallet/store';
+import { getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
-import { BlurView } from 'expo-blur';
 
-interface CryptoAsset {
-  id: string;
-  symbol: string;
-  name: string;
-  balance: number;
-  price_usd: number;
-  price_kes: number;
-  change_24h: number;
-  icon_url: string | null;
-}
-
-interface CryptoTransaction {
-  id: string;
-  type: 'buy' | 'sell' | 'send' | 'receive' | 'swap';
-  asset_symbol: string;
-  amount: number;
-  price_at_tx: number;
-  total_value_kes: number;
-  status: string;
-  created_at: string;
-  to_address: string | null;
-  from_address: string | null;
-  tx_hash: string | null;
-}
-
-const SUPPORTED_ASSETS = [
-  { symbol: 'BTC', name: 'Bitcoin', color: '#F7931A' },
-  { symbol: 'ETH', name: 'Ethereum', color: '#627EEA' },
-  { symbol: 'USDT', name: 'Tether', color: '#26A17B' },
-  { symbol: 'USDC', name: 'USD Coin', color: '#2775CA' },
-  { symbol: 'SOL', name: 'Solana', color: '#14F195' },
+const CRYPTO_ASSETS = [
+  { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', color: '#f59e0b' },
+  { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', color: '#6366f1' },
+  { id: 'usdt', symbol: 'USDT', name: 'Tether', color: '#22c55e' },
+  { id: 'solana', symbol: 'SOL', name: 'Solana', color: '#14b8a6' },
 ];
+
+const QUICK_AMOUNTS = [0.001, 0.01, 0.1, 1, 10];
+
+// Mock rates in KES
+const rates: Record<string, number> = {
+  bitcoin: 6500000,
+  ethereum: 350000,
+  usdt: 130,
+  solana: 14500,
+};
 
 export default function CryptoScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const { balance } = useWalletStore();
-  const [assets, setAssets] = useState<CryptoAsset[]>([]);
-  const [transactions, setTransactions] = useState<CryptoTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'market' | 'history'>('portfolio');
-  const [tradeModalVisible, setTradeModalVisible] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<CryptoAsset | null>(null);
-  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [tradeAmount, setTradeAmount] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const { user } = useAuth();
+  const { accounts, activeAccountId, addTransaction, syncBalance } = useWalletStore();
 
-  const fetchAssets = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('crypto_balances').select('*, asset:crypto_assets(*)').eq('user_id', user.id);
-    if (!error && data) {
-      setAssets(data.map((d: any) => ({
-        id: d.id,
-        symbol: d.asset?.symbol || d.asset_symbol,
-        name: d.asset?.name || d.asset_symbol,
-        balance: d.balance,
-        price_usd: d.asset?.price_usd || 0,
-        price_kes: d.asset?.price_kes || 0,
-        change_24h: d.asset?.change_24h || 0,
-        icon_url: d.asset?.icon_url
-      })));
+  const activeAccount = accounts.find(a => a.id === activeAccountId) || accounts[0];
+
+  const [activeTab, setActiveTab] = useState<'send' | 'receive' | 'swap'>('send');
+  const [selectedAsset, setSelectedAsset] = useState('bitcoin');
+  const [amount, setAmount] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
+  const [memo, setMemo] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cryptoBalances, setCryptoBalances] = useState<Record<string, number>>({});
+  const [txHistory, setTxHistory] = useState<any[]>([]);
+  const [swapFrom, setSwapFrom] = useState('bitcoin');
+  const [swapTo, setSwapTo] = useState('ethereum');
+  const [swapAmount, setSwapAmount] = useState('');
+  const [estimatedReceive, setEstimatedReceive] = useState('');
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadCryptoData();
+  }, [user?.id]);
+
+  const loadCryptoData = useCallback(async () => {
+    try {
+      const { data: accounts } = await supabase
+        .from('wallet_accounts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .in('currency', ['BTC', 'ETH', 'USDT', 'SOL']);
+
+      const balances: Record<string, number> = {};
+      accounts?.forEach((acc) => {
+        const key = CRYPTO_ASSETS.find(a => a.symbol === acc.currency)?.id || acc.currency.toLowerCase();
+        balances[key] = acc.balance || 0;
+      });
+      setCryptoBalances(balances);
+
+      const txs = await getWalletTransactions(user?.id);
+      const cryptoTxs = txs.filter((tx: any) => ['BTC', 'ETH', 'USDT', 'SOL'].includes(tx.currency));
+      setTxHistory(cryptoTxs);
+    } catch (err) {
+      console.error('Crypto load error:', err);
     }
-  }, [user]);
+  }, [user?.id]);
 
-  const fetchTransactions = useCallback(async () => {
-    if (!user) return;
-    const { data, error } = await supabase.from('crypto_transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50);
-    if (!error && data) setTransactions(data);
-  }, [user]);
+  const handleSendCrypto = useCallback(async () => {
+    const numAmount = parseFloat(amount);
+    if (!numAmount || numAmount <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+      return;
+    }
+    if (!recipientAddress.trim() || recipientAddress.trim().length < 10) {
+      Alert.alert('Invalid Address', 'Please enter a valid wallet address');
+      return;
+    }
 
-  const loadAll = useCallback(async () => {
+    const asset = CRYPTO_ASSETS.find(a => a.id === selectedAsset);
+    const currentBalance = cryptoBalances[selectedAsset] || 0;
+    if (numAmount > currentBalance) {
+      Alert.alert('Insufficient Balance', `You only have ${currentBalance.toFixed(6)} ${asset?.symbol}`);
+      return;
+    }
+
     setLoading(true);
-    await Promise.all([fetchAssets(), fetchTransactions()]);
-    setLoading(false);
-  }, [fetchAssets, fetchTransactions]);
+    try {
+      const { data: tx, error } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user?.id,
+          wallet_id: activeAccount?.id,
+          amount: numAmount,
+          type: 'crypto_send',
+          status: 'pending',
+          description: `Send ${numAmount} ${asset?.symbol} to ${recipientAddress.slice(0, 12)}...`,
+          reference_type: 'crypto_transfer',
+          currency: asset?.symbol,
+          metadata: { to_address: recipientAddress, asset: selectedAsset, memo: memo || null },
+        })
+        .select()
+        .single();
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+      if (error) throw error;
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true); await loadAll(); setRefreshing(false);
-  }, [loadAll]);
+      setTimeout(async () => {
+        await supabase.from('wallet_transactions').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', tx.id);
+        setCryptoBalances(prev => ({ ...prev, [selectedAsset]: (prev[selectedAsset] || 0) - numAmount }));
+        addTransaction({
+          id: tx.id,
+          type: 'debit',
+          amount: numAmount,
+          currency: asset?.symbol || 'BTC',
+          description: `Sent ${numAmount} ${asset?.symbol}`,
+          status: 'completed',
+          timestamp: new Date().toISOString(),
+          balanceAfter: (activeAccount?.balance || 0),
+        });
+        setLoading(false);
+        Alert.alert('Transaction Sent', `${numAmount} ${asset?.symbol} sent to ${recipientAddress.slice(0, 12)}...`, [{ text: 'OK', onPress: () => { setAmount(''); setRecipientAddress(''); setMemo(''); } }]);
+      }, 2000);
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert('Send Failed', err.message);
+    }
+  }, [amount, recipientAddress, memo, selectedAsset, cryptoBalances, user, activeAccount, addTransaction]);
 
-  const handleTrade = async () => {
-    if (!selectedAsset || !user) return;
-    const amount = parseFloat(tradeAmount);
-    if (isNaN(amount) || amount <= 0) { Alert.alert('Error', 'Enter valid amount'); return; }
-    const totalKes = amount * selectedAsset.price_kes;
-    if (tradeType === 'buy' && totalKes > balance) { Alert.alert('Error', 'Insufficient KES balance'); return; }
-    if (tradeType === 'sell' && amount > selectedAsset.balance) { Alert.alert('Error', `Insufficient ${selectedAsset.symbol} balance`); return; }
-    setProcessing(true);
-    const { error } = await supabase.rpc('crypto_trade', {
-      p_user_id: user.id,
-      p_asset_symbol: selectedAsset.symbol,
-      p_type: tradeType,
-      p_amount: amount,
-      p_price_kes: selectedAsset.price_kes
-    });
-    setProcessing(false);
-    if (error) { Alert.alert('Error', error.message); return; }
-    Alert.alert('Success', `${tradeType === 'buy' ? 'Bought' : 'Sold'} ${amount} ${selectedAsset.symbol}`);
-    setTradeModalVisible(false); setTradeAmount(''); loadAll();
-  };
+  const handleSwap = useCallback(async () => {
+    const numAmount = parseFloat(swapAmount);
+    if (!numAmount || numAmount <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter an amount to swap');
+      return;
+    }
+    const fromAsset = CRYPTO_ASSETS.find(a => a.id === swapFrom);
+    const toAsset = CRYPTO_ASSETS.find(a => a.id === swapTo);
+    const fromBalance = cryptoBalances[swapFrom] || 0;
 
-  const totalPortfolioKes = assets.reduce((sum, a) => sum + (a.balance * a.price_kes), 0);
-  const totalPortfolioUsd = assets.reduce((sum, a) => sum + (a.balance * a.price_usd), 0);
+    if (numAmount > fromBalance) {
+      Alert.alert('Insufficient Balance', `You only have ${fromBalance.toFixed(6)} ${fromAsset?.symbol}`);
+      return;
+    }
+    if (swapFrom === swapTo) {
+      Alert.alert('Invalid Swap', 'Cannot swap the same asset');
+      return;
+    }
 
-  if (loading) return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" color="#F7931A" />
-      <Text style={styles.loadingText}>Loading crypto...</Text>
-    </View>
-  );
+    const fromValue = numAmount * (rates[swapFrom] || 1);
+    const toValue = fromValue / (rates[swapTo] || 1);
+    const receiveAmount = toValue * 0.995;
+
+    setLoading(true);
+    try {
+      const { data: tx, error } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user?.id,
+          wallet_id: activeAccount?.id,
+          amount: numAmount,
+          type: 'crypto_swap',
+          status: 'completed',
+          description: `Swapped ${numAmount} ${fromAsset?.symbol} to ${receiveAmount.toFixed(6)} ${toAsset?.symbol}`,
+          reference_type: 'crypto_swap',
+          currency: fromAsset?.symbol,
+          metadata: { from_asset: swapFrom, to_asset: swapTo, from_amount: numAmount, to_amount: receiveAmount },
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCryptoBalances(prev => ({
+        ...prev,
+        [swapFrom]: (prev[swapFrom] || 0) - numAmount,
+        [swapTo]: (prev[swapTo] || 0) + receiveAmount,
+      }));
+
+      addTransaction({
+        id: tx.id,
+        type: 'crypto_swap',
+        amount: numAmount,
+        currency: fromAsset?.symbol || 'BTC',
+        description: `Swapped to ${toAsset?.symbol}`,
+        status: 'completed',
+        timestamp: new Date().toISOString(),
+        balanceAfter: activeAccount?.balance || 0,
+      });
+
+      setLoading(false);
+      Alert.alert('Swap Complete', `You swapped ${numAmount} ${fromAsset?.symbol} for ${receiveAmount.toFixed(6)} ${toAsset?.symbol}`, [{ text: 'OK', onPress: () => { setSwapAmount(''); setEstimatedReceive(''); } }]);
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert('Swap Failed', err.message);
+    }
+  }, [swapAmount, swapFrom, swapTo, cryptoBalances, user, activeAccount, addTransaction]);
+
+  const calculateSwapEstimate = useCallback(() => {
+    const numAmount = parseFloat(swapAmount);
+    if (!numAmount || swapFrom === swapTo) { setEstimatedReceive(''); return; }
+    const fromValue = numAmount * (rates[swapFrom] || 1);
+    const toValue = fromValue / (rates[swapTo] || 1);
+    setEstimatedReceive((toValue * 0.995).toFixed(6));
+  }, [swapAmount, swapFrom, swapTo]);
+
+  useEffect(() => { calculateSwapEstimate(); }, [calculateSwapEstimate]);
+
+  const currentAsset = CRYPTO_ASSETS.find(a => a.id === selectedAsset);
+  const currentBalance = cryptoBalances[selectedAsset] || 0;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Crypto</Text>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/(os)/wallet/crypto-settings')}>
-          <Ionicons name="settings-outline" size={22} color="#8E8E93" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Portfolio Summary */}
-      <View style={styles.portfolioCard}>
-        <Text style={styles.portfolioLabel}>Total Portfolio Value</Text>
-        <Text style={styles.portfolioKes}>KES {totalPortfolioKes.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
-        <Text style={styles.portfolioUsd}>${totalPortfolioUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
-        <View style={styles.portfolioActions}>
-          <TouchableOpacity style={styles.portfolioBtn} onPress={() => { setTradeType('buy'); setTradeModalVisible(true); }}>
-            <Ionicons name="arrow-down" size={18} color="#34C759" /><Text style={[styles.portfolioBtnText, { color: '#34C759' }]}>Buy</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.portfolioBtn} onPress={() => { setTradeType('sell'); setTradeModalVisible(true); }}>
-            <Ionicons name="arrow-up" size={18} color="#FF9500" /><Text style={[styles.portfolioBtnText, { color: '#FF9500' }]}>Sell</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.portfolioBtn} onPress={() => Alert.alert('Send', 'Send crypto coming soon')}>
-            <Ionicons name="send" size={18} color="#007AFF" /><Text style={[styles.portfolioBtnText, { color: '#007AFF' }]}>Send</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Crypto Wallet</Text>
+          <View style={{ width: 40 }} />
         </View>
-      </View>
 
-      <View style={styles.tabBar}>
-        {(['portfolio', 'market', 'history'] as const).map(tab => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        {/* Asset Selector */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+          {CRYPTO_ASSETS.map((asset) => {
+            const balance = cryptoBalances[asset.id] || 0;
+            const kesValue = balance * (rates[asset.id] || 0);
+            return (
+              <TouchableOpacity key={asset.id} onPress={() => setSelectedAsset(asset.id)} style={[styles.assetCard, selectedAsset === asset.id && { borderColor: asset.color, backgroundColor: asset.color + '15' }]}>
+                <View style={[styles.assetIcon, { backgroundColor: asset.color + '30' }]}>
+                  <Text style={{ color: asset.color, fontWeight: '800', fontSize: 12 }}>{asset.symbol}</Text>
+                </View>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14, marginTop: 8 }}>{balance.toFixed(4)}</Text>
+                <Text style={{ color: '#9ca3af', fontSize: 11, marginTop: 2 }}>KSh {kesValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={styles.scrollContent}>
-        {activeTab === 'portfolio' && assets.map(asset => (
-          <TouchableOpacity key={asset.id} style={styles.assetCard} onPress={() => { setSelectedAsset(asset); setTradeModalVisible(true); }}>
-            <View style={[styles.assetIcon, { backgroundColor: (SUPPORTED_ASSETS.find(a => a.symbol === asset.symbol)?.color || '#8E8E93') + '15' }]}>
-              <Text style={[styles.assetSymbolText, { color: SUPPORTED_ASSETS.find(a => a.symbol === asset.symbol)?.color || '#8E8E93' }]}>{asset.symbol.slice(0, 2)}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.assetName}>{asset.name}</Text>
-              <Text style={styles.assetBalance}>{asset.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })} {asset.symbol}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.assetValue}>KES {(asset.balance * asset.price_kes).toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
-              <Text style={[styles.assetChange, { color: asset.change_24h >= 0 ? '#34C759' : '#FF3B30' }]}>
-                {asset.change_24h >= 0 ? '+' : ''}{asset.change_24h.toFixed(2)}%
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {/* Tab Switcher */}
+        <View style={styles.tabBar}>
+          {(['send', 'receive', 'swap'] as const).map((tab) => (
+            <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab, activeTab === tab && styles.tabActive]}>
+              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {activeTab === 'market' && SUPPORTED_ASSETS.map(asset => {
-          const marketAsset = assets.find(a => a.symbol === asset.symbol);
-          const price = marketAsset?.price_kes || 0;
-          const change = marketAsset?.change_24h || 0;
-          return (
-            <View key={asset.symbol} style={styles.marketCard}>
-              <View style={[styles.marketIcon, { backgroundColor: asset.color + '15' }]}>
-                <Text style={[styles.marketSymbol, { color: asset.color }]}>{asset.symbol}</Text>
+        {/* SEND TAB */}
+        {activeTab === 'send' && (
+          <View style={{ paddingHorizontal: 16 }}>
+            <View style={styles.card}>
+              <Text style={styles.label}>Amount ({currentAsset?.symbol})</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: currentAsset?.color, fontSize: 18, fontWeight: '700', marginRight: 8 }}>{currentAsset?.symbol}</Text>
+                <TextInput value={amount} onChangeText={setAmount} placeholder="0.000000" placeholderTextColor="#6b7280" keyboardType="decimal-pad" style={{ flex: 1, color: '#fff', fontSize: 24, fontWeight: '700' }} />
+                <TouchableOpacity onPress={() => setAmount(currentBalance.toString())}><Text style={{ color: '#6366f1', fontWeight: '600' }}>MAX</Text></TouchableOpacity>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.marketName}>{asset.name}</Text>
-                <Text style={styles.marketPrice}>KES {price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Text>
-              </View>
-              <Text style={[styles.marketChange, { color: change >= 0 ? '#34C759' : '#FF3B30' }]}>{change >= 0 ? '+' : ''}{change.toFixed(2)}%</Text>
+              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 8 }}>Balance: {currentBalance.toFixed(6)} {currentAsset?.symbol}</Text>
             </View>
-          );
-        })}
 
-        {activeTab === 'history' && transactions.map(tx => (
-          <View key={tx.id} style={styles.txCard}>
-            <View style={styles.txRow}>
-              <View style={[styles.txIcon, { backgroundColor: tx.type === 'buy' ? '#34C75920' : tx.type === 'sell' ? '#FF950020' : '#007AFF20' }]}>
-                <Ionicons name={tx.type === 'buy' ? 'arrow-down' : tx.type === 'sell' ? 'arrow-up' : 'swap-horizontal'} size={16}
-                  color={tx.type === 'buy' ? '#34C759' : tx.type === 'sell' ? '#FF9500' : '#007AFF'} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.txType}>{tx.type.toUpperCase()} {tx.asset_symbol}</Text>
-                <Text style={styles.txDate}>{new Date(tx.created_at).toLocaleString()}</Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.txAmount}>{tx.amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {tx.asset_symbol}</Text>
-                <Text style={styles.txValue}>KES {tx.total_value_kes.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
-              </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20, paddingHorizontal: 0 }}>
+              {QUICK_AMOUNTS.map((val) => (
+                <TouchableOpacity key={val} onPress={() => setAmount(val.toString())} style={[styles.quickBtn, amount === val.toString() && { backgroundColor: '#6366f1', borderColor: '#6366f1' }]}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>{val}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-            <View style={[styles.txStatusBadge, { backgroundColor: tx.status === 'completed' ? '#34C75920' : '#FF950020' }]}>
-              <Text style={[styles.txStatusText, { color: tx.status === 'completed' ? '#34C759' : '#FF9500' }]}>{tx.status.toUpperCase()}</Text>
-            </View>
-          </View>
-        ))}
 
-        {activeTab === 'portfolio' && assets.length === 0 && (
-          <View style={styles.empty}>
-            <FontAwesome5 name="coins" size={48} color="#C7C7CC" />
-            <Text style={styles.emptyText}>No crypto assets yet</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={() => { setTradeType('buy'); setTradeModalVisible(true); }}>
-              <Text style={styles.emptyBtnText}>Buy Crypto</Text>
+            <View style={styles.card}>
+              <Text style={styles.label}>Recipient Address</Text>
+              <TextInput value={recipientAddress} onChangeText={setRecipientAddress} placeholder={`Enter ${currentAsset?.symbol} wallet address...`} placeholderTextColor="#6b7280" autoCapitalize="none" style={styles.input} />
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.label}>Memo (Optional)</Text>
+              <TextInput value={memo} onChangeText={setMemo} placeholder="Transaction memo or tag..." placeholderTextColor="#6b7280" style={styles.input} />
+            </View>
+
+            <TouchableOpacity onPress={handleSendCrypto} disabled={loading} style={[styles.confirmBtn, { backgroundColor: currentAsset?.color || '#6366f1' }]}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmText}>Send {currentAsset?.symbol}</Text>}
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
 
-      {/* Trade Modal */}
-      <Modal visible={tradeModalVisible} transparent animationType="slide">
-        <BlurView intensity={60} style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{tradeType === 'buy' ? 'Buy' : 'Sell'} Crypto</Text>
-            <Text style={styles.modalSubtitle}>KES Balance: {balance.toLocaleString()}</Text>
+        {/* RECEIVE TAB */}
+        {activeTab === 'receive' && (
+          <View style={{ paddingHorizontal: 16, alignItems: 'center' }}>
+            <View style={styles.whiteCard}>
+              <Text style={{ color: '#000', fontSize: 14, fontWeight: '700', marginBottom: 12 }}>{currentAsset?.name} ({currentAsset?.symbol})</Text>
+              <View style={styles.qrBox}>
+                <Ionicons name="qr-code" size={100} color="#000" />
+              </View>
+            </View>
 
-            {!selectedAsset ? (
-              <>
-                <Text style={styles.label}>Select Asset</Text>
-                {SUPPORTED_ASSETS.map(asset => {
-                  const bal = assets.find(a => a.symbol === asset.symbol);
-                  return (
-                    <TouchableOpacity key={asset.symbol} style={styles.assetSelectCard} onPress={() => setSelectedAsset(bal || { id: '', symbol: asset.symbol, name: asset.name, balance: 0, price_usd: 0, price_kes: 0, change_24h: 0, icon_url: null })}>
-                      <View style={[styles.assetSelectIcon, { backgroundColor: asset.color + '15' }]}>
-                        <Text style={[styles.assetSelectSymbol, { color: asset.color }]}>{asset.symbol}</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.assetSelectName}>{asset.name}</Text>
-                        <Text style={styles.assetSelectBalance}>{bal ? `${bal.balance} ${asset.symbol}` : '0 ' + asset.symbol}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
-                    </TouchableOpacity>
-                  );
-                })}
-              </>
-            ) : (
-              <>
-                <TouchableOpacity style={styles.selectedAssetBar} onPress={() => setSelectedAsset(null)}>
-                  <Text style={styles.selectedAssetText}>{selectedAsset.symbol} @ KES {selectedAsset.price_kes.toLocaleString()}</Text>
-                  <Ionicons name="swap-vertical" size={18} color="#8E8E93" />
-                </TouchableOpacity>
-                <TextInput style={styles.input} placeholder={`Amount in ${selectedAsset.symbol}`} keyboardType="decimal-pad" value={tradeAmount} onChangeText={setTradeAmount} />
-                {tradeAmount && (
-                  <Text style={styles.tradeEstimate}>
-                    ≈ KES {(parseFloat(tradeAmount) * selectedAsset.price_kes).toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                  </Text>
-                )}
-                <View style={styles.modalActions}>
-                  <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setTradeModalVisible(false)}><Text style={styles.modalBtnSecondaryText}>Cancel</Text></TouchableOpacity>
-                  <TouchableOpacity style={[styles.modalBtnPrimary, { backgroundColor: tradeType === 'buy' ? '#34C759' : '#FF9500' }]} onPress={handleTrade} disabled={processing}>
-                    {processing ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalBtnPrimaryText}>{tradeType === 'buy' ? 'Buy' : 'Sell'} {selectedAsset.symbol}</Text>}
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+            <View style={styles.card}>
+              <Text style={styles.label}>Your {currentAsset?.symbol} Address</Text>
+              <Text style={{ color: '#fff', fontSize: 12, fontFamily: 'monospace' }} numberOfLines={1}>{`${user?.id?.slice(0, 16) || '0x'}...${currentAsset?.symbol.toLowerCase()}_mtaa`}</Text>
+            </View>
+
+            <TouchableOpacity onPress={() => Alert.alert('Copied', `${currentAsset?.symbol} address copied to clipboard`)} style={styles.copyBtn}>
+              <Ionicons name="copy-outline" size={18} color="#fff" />
+              <Text style={{ color: '#fff', marginLeft: 10, fontWeight: '700' }}>Copy Address</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.warningText}>Only send {currentAsset?.symbol} to this address. Sending other assets may result in permanent loss.</Text>
           </View>
-        </BlurView>
-      </Modal>
-    </View>
+        )}
+
+        {/* SWAP TAB */}
+        {activeTab === 'swap' && (
+          <View style={{ paddingHorizontal: 16 }}>
+            <View style={styles.card}>
+              <Text style={styles.label}>From</Text>
+              <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                {CRYPTO_ASSETS.map((asset) => (
+                  <TouchableOpacity key={asset.id} onPress={() => setSwapFrom(asset.id)} style={[styles.assetChip, swapFrom === asset.id && { backgroundColor: asset.color + '30', borderColor: asset.color }]}>
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>{asset.symbol}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TextInput value={swapAmount} onChangeText={setSwapAmount} placeholder="0.00" placeholderTextColor="#6b7280" keyboardType="decimal-pad" style={{ color: '#fff', fontSize: 22, fontWeight: '700' }} />
+              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>Balance: {(cryptoBalances[swapFrom] || 0).toFixed(6)} {CRYPTO_ASSETS.find(a => a.id === swapFrom)?.symbol}</Text>
+            </View>
+
+            <View style={{ alignItems: 'center', marginVertical: 8 }}>
+              <TouchableOpacity onPress={() => { const temp = swapFrom; setSwapFrom(swapTo); setSwapTo(temp); }} style={styles.swapArrow}>
+                <Ionicons name="swap-vertical" size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.label}>To</Text>
+              <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                {CRYPTO_ASSETS.map((asset) => (
+                  <TouchableOpacity key={asset.id} onPress={() => setSwapTo(asset.id)} style={[styles.assetChip, swapTo === asset.id && { backgroundColor: asset.color + '30', borderColor: asset.color }]}>
+                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>{asset.symbol}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={{ color: '#fff', fontSize: 22, fontWeight: '700' }}>{estimatedReceive || '0.00'} {CRYPTO_ASSETS.find(a => a.id === swapTo)?.symbol}</Text>
+              <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>Rate: 1 {CRYPTO_ASSETS.find(a => a.id === swapFrom)?.symbol} = {((rates[swapFrom] || 1) / (rates[swapTo] || 1)).toFixed(6)} {CRYPTO_ASSETS.find(a => a.id === swapTo)?.symbol}</Text>
+            </View>
+
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                <Text style={{ color: '#9ca3af' }}>Network Fee</Text><Text style={{ color: '#fff' }}>0.5%</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ color: '#9ca3af' }}>Minimum Receive</Text><Text style={{ color: '#fff' }}>{estimatedReceive || '0.00'} {CRYPTO_ASSETS.find(a => a.id === swapTo)?.symbol}</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity onPress={handleSwap} disabled={loading || !swapAmount || parseFloat(swapAmount) <= 0} style={[styles.confirmBtn, (!swapAmount || parseFloat(swapAmount) <= 0) && { backgroundColor: '#333', opacity: 0.6 }]}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmText}>Swap Now</Text>}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Transaction History */}
+        <View style={[styles.card, { marginTop: 24 }]}>
+          <Text style={styles.sectionLabel}>Recent Transactions</Text>
+          {txHistory.length === 0 ? (
+            <Text style={{ color: '#6b7280', fontStyle: 'italic' }}>No crypto transactions yet</Text>
+          ) : (
+            txHistory.slice(0, 5).map((tx, idx) => {
+              const asset = CRYPTO_ASSETS.find(a => a.symbol === tx.currency);
+              return (
+                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                  <View style={[styles.txIcon, { backgroundColor: (asset?.color || '#6366f1') + '20' }]}>
+                    <Text style={{ color: asset?.color || '#6366f1', fontWeight: '800', fontSize: 10 }}>{asset?.symbol || 'BTC'}</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={{ color: '#fff', fontSize: 14 }} numberOfLines={1}>{tx.description}</Text>
+                    <Text style={{ color: '#6b7280', fontSize: 11 }}>{new Date(tx.created_at || tx.timestamp).toLocaleDateString()}</Text>
+                  </View>
+                  <Text style={{ color: tx.type === 'crypto_send' || tx.type === 'debit' ? '#ef4444' : '#22c55e', fontWeight: '700' }}>
+                    {tx.type === 'crypto_send' || tx.type === 'debit' ? '-' : '+'}{tx.amount} {tx.currency}
+                  </Text>
+                </View>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0F' },
-  loadingText: { color: '#8E8E93', marginTop: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16, backgroundColor: '#1C1C1E' },
-  backBtn: { padding: 4 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  settingsBtn: { padding: 4 },
-  portfolioCard: { backgroundColor: '#1C1C1E', margin: 16, borderRadius: 20, padding: 24, alignItems: 'center' },
-  portfolioLabel: { fontSize: 13, color: '#8E8E93', marginBottom: 4 },
-  portfolioKes: { fontSize: 32, fontWeight: '800', color: '#fff' },
-  portfolioUsd: { fontSize: 16, color: '#8E8E93', marginBottom: 20 },
-  portfolioActions: { flexDirection: 'row', gap: 12 },
-  portfolioBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2C2C2E', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
-  portfolioBtnText: { fontSize: 14, fontWeight: '700' },
-  tabBar: { flexDirection: 'row', backgroundColor: '#1C1C1E', paddingHorizontal: 16, paddingBottom: 8 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8 },
-  tabActive: { backgroundColor: '#2C2C2E' },
-  tabText: { fontSize: 13, color: '#8E8E93', fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  scroll: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  assetCard: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 16, marginRight: 12, minWidth: 120, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  assetIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  tabBar: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 16, padding: 4, borderRadius: 14, marginBottom: 20 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
+  tabActive: { backgroundColor: '#6366f1' },
+  tabText: { fontSize: 14, color: '#9ca3af', fontWeight: '600' },
   tabTextActive: { color: '#fff' },
-  scrollContent: { padding: 16, paddingBottom: 40 },
-  assetCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 10 },
-  assetIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  assetSymbolText: { fontSize: 16, fontWeight: '800' },
-  assetName: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  assetBalance: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  assetValue: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  assetChange: { fontSize: 13, fontWeight: '600', marginTop: 2 },
-  marketCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 10 },
-  marketIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  marketSymbol: { fontSize: 14, fontWeight: '800' },
-  marketName: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  marketPrice: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  marketChange: { fontSize: 14, fontWeight: '700' },
-  txCard: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 10 },
-  txRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  txIcon: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  txType: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  txDate: { fontSize: 11, color: '#8E8E93', marginTop: 2 },
-  txAmount: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  txValue: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  txStatusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
-  txStatusText: { fontSize: 10, fontWeight: '800' },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 16, color: '#8E8E93', marginTop: 12, marginBottom: 16 },
-  emptyBtn: { backgroundColor: '#34C759', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#1C1C1E', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  modalSubtitle: { fontSize: 13, color: '#8E8E93', marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#8E8E93', marginBottom: 10, marginTop: 4 },
-  assetSelectCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2C2C2E', borderRadius: 12, padding: 14, marginBottom: 8 },
-  assetSelectIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  assetSelectSymbol: { fontSize: 14, fontWeight: '800' },
-  assetSelectName: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  assetSelectBalance: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  selectedAssetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#2C2C2E', borderRadius: 12, padding: 14, marginBottom: 12 },
-  selectedAssetText: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  input: { backgroundColor: '#2C2C2E', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: '#fff', fontSize: 15, marginBottom: 12 },
-  tradeEstimate: { fontSize: 14, color: '#8E8E93', marginBottom: 16, textAlign: 'center' },
-  modalActions: { flexDirection: 'row', gap: 12 },
-  modalBtnSecondary: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#2C2C2E', alignItems: 'center' },
-  modalBtnSecondaryText: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  modalBtnPrimary: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#34C759', alignItems: 'center' },
-  modalBtnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  label: { fontSize: 14, color: '#9ca3af', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  quickBtn: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  confirmBtn: { backgroundColor: '#6366f1', padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 24 },
+  confirmText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  whiteCard: { backgroundColor: '#fff', padding: 24, borderRadius: 24, alignItems: 'center', marginBottom: 20 },
+  qrBox: { width: 160, height: 160, backgroundColor: '#f0f0f0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  copyBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#6366f1', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14 },
+  warningText: { color: '#6b7280', textAlign: 'center', marginTop: 20, fontSize: 13, lineHeight: 20, paddingHorizontal: 20 },
+  assetChip: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  swapArrow: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
+  sectionLabel: { color: '#9ca3af', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
+  txIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
 });
