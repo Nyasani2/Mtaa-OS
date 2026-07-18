@@ -231,12 +231,28 @@ async function walletTransfer(supabaseAdmin, userId, params) {
   if (fee > 0) {
     const { data: mtaaWallet } = await supabaseAdmin
       .from("wallets")
-      .select("id")
+      .select("id, balance, available_balance, user_id")
       .eq("wallet_type", "main")
       .ilike("wallet_name", "%MTAA%")
       .maybeSingle();
 
     if (mtaaWallet) {
+      // FIXED 2026-07-17: this previously only inserted a wallet_transactions
+      // row without ever updating the wallet's actual balance — meaning the
+      // platform fee was "recorded" but never actually collected. The
+      // platform revenue wallet itself did not exist in production until
+      // today either (see migration create_mtaa_platform_revenue_wallet),
+      // and is now owned by the founder account (Kevin Nyasani,
+      // user_id 8e41ee2e-ae74-43a5-a550-a1d02a5591a3) so this insert
+      // satisfies wallet_transactions.user_id's NOT NULL constraint.
+      await supabaseAdmin
+        .from("wallets")
+        .update({
+          balance: (mtaaWallet.balance || 0) + fee,
+          available_balance: (mtaaWallet.available_balance || 0) + fee,
+        })
+        .eq("id", mtaaWallet.id);
+
       await supabaseAdmin.from("wallet_transactions").insert({
         wallet_id: mtaaWallet.id,
         user_id: mtaaWallet.user_id,
