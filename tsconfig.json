@@ -42,6 +42,7 @@
     "backend",
     "schema",
     "sql",
-    "modules_disabled"
+    "modules_disabled",
+    "_orphaned_root_screens"
   ]
 }

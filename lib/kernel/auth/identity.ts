@@ -1,9 +1,10 @@
 /**
  * lib/kernel/auth/identity.ts — Current-User Session Cache
  *
- * NOT the same thing as lib/kernel/identity.ts (the KYC/trust-score/
- * verification-workflow engine). Both previously exported a singleton
- * named `identityEngine`, which is a naming collision risk — importing
+ * NOT the same thing as lib/kernel/identity-engine.ts (the KYC/trust-score/
+ * verification-workflow engine, renamed from identity.ts independently
+ * to resolve this same naming collision). Both previously exported a
+ * singleton named `identityEngine`, which is a naming collision risk —
  * the wrong one and calling e.g. `.getUser()` on the KYC engine (which
  * has no such method) would be a runtime crash. Renamed to
  * `currentUserSession` on 2026-07-17 to disambiguate. This file has
