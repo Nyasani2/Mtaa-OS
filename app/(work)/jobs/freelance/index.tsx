@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions
+  Dimensions, ActivityIndicator, Alert
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -11,8 +11,21 @@ import {
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { supabase } from "@/lib/supabase";
 
 const { width } = Dimensions.get("window");
+
+interface RealContract {
+  id: string;
+  job_id: string;
+  employer_id: string;
+  worker_id: string;
+  agreed_amount: number;
+  status: string;
+  job_title?: string;
+  other_party_name?: string;
+}
 
 const PROJECTS = [
   { id: "1", title: "Mobile App Redesign", client: "Fintech Startup", budget: 150000, duration: "2 months", proposals: 8, status: "open", escrow: true },
@@ -26,13 +39,77 @@ const MILESTONES = [
   { id: "3", title: "Development", amount: 75000, status: "pending", date: "2024-12-01" },
 ];
 
-const MY_CONTRACTS = [
-  { id: "1", title: "MTAA OS Mobile Build", client: "MTAA Technologies", value: 450000, paid: 200000, status: "active", milestones: 5, completed: 2 },
-];
+// NOTE: PROJECTS and MILESTONES below remain mock data — the freelance
+// marketplace/proposal flow and milestone-based payments need their own
+// tables (e.g. project_proposals, contract_milestones) that don't exist
+// yet. That's new-feature scope, not a settlement-wiring fix, so it's
+// intentionally left out of this pass. MY_CONTRACTS was replaced with
+// real job_contracts data below since that's the table that actually
+// exists and matches the settlement gap this fix addresses.
 
 export default function FreelanceScreen() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("projects");
+  const [contracts, setContracts] = useState<RealContract[]>([]);
+  const [loadingContracts, setLoadingContracts] = useState(false);
+  const [settlingId, setSettlingId] = useState<string | null>(null);
+
+  const loadContracts = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingContracts(true);
+    const { data, error } = await supabase
+      .from('job_contracts')
+      .select('id, job_id, employer_id, worker_id, agreed_amount, status')
+      .or(`employer_id.eq.${user.id},worker_id.eq.${user.id}`)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const enriched = await Promise.all(
+        data.map(async (c) => {
+          const [{ data: job }, { data: otherParty }] = await Promise.all([
+            supabase.from('jobs').select('title').eq('id', c.job_id).maybeSingle(),
+            supabase.from('user_profiles').select('full_name')
+              .eq('user_id', user.id === c.employer_id ? c.worker_id : c.employer_id)
+              .maybeSingle(),
+          ]);
+          return {
+            ...c,
+            job_title: job?.title || 'Untitled contract',
+            other_party_name: otherParty?.full_name || 'Unknown',
+          };
+        })
+      );
+      setContracts(enriched);
+    }
+    setLoadingContracts(false);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'contracts') loadContracts();
+  }, [activeTab, loadContracts]);
+
+  const handleSettle = async (contractId: string) => {
+    setSettlingId(contractId);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const { data, error } = await supabase.functions.invoke('job-contract-settle', {
+        body: { contract_id: contractId },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (error || data?.error) {
+        Alert.alert('Settlement Failed', data?.error || error?.message || 'Unknown error');
+      } else {
+        Alert.alert('Payment Released', `Worker received KES ${data.worker_amount.toLocaleString()}`);
+        loadContracts();
+      }
+    } catch (e: any) {
+      Alert.alert('Settlement Failed', e?.message || 'Unknown error');
+    } finally {
+      setSettlingId(null);
+    }
+  };
 
   const TABS = [
     { id: "projects", label: "Projects" },
@@ -144,47 +221,62 @@ export default function FreelanceScreen() {
 
         {activeTab === "contracts" && (
           <View>
-            {MY_CONTRACTS.map((contract) => (
-              <View key={contract.id} style={styles.contractCard}>
-                <View style={styles.contractHeader}>
-                  <View style={styles.contractIcon}><FileText size={18} color={Colors.primary} /></View>
-                  <View style={styles.contractInfo}>
-                    <Text style={styles.contractTitle}>{contract.title}</Text>
-                    <Text style={styles.contractClient}>{contract.client}</Text>
-                  </View>
-                  <View style={[styles.contractStatus, { backgroundColor: "#34C75915" }]}>
-                    <Text style={[styles.contractStatusText, { color: "#34C759" }]}>Active</Text>
-                  </View>
-                </View>
+            {loadingContracts ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+            ) : contracts.length === 0 ? (
+              <Text style={styles.emptyText}>No contracts yet.</Text>
+            ) : (
+              contracts.map((contract) => {
+                const isEmployer = user?.id === contract.employer_id;
+                const canSettle = isEmployer && contract.status === 'active';
+                const statusColor = contract.status === 'completed' ? '#34C759' : contract.status === 'active' ? '#FF9500' : '#8E8E93';
+                return (
+                  <View key={contract.id} style={styles.contractCard}>
+                    <View style={styles.contractHeader}>
+                      <View style={styles.contractIcon}><FileText size={18} color={Colors.primary} /></View>
+                      <View style={styles.contractInfo}>
+                        <Text style={styles.contractTitle}>{contract.job_title}</Text>
+                        <Text style={styles.contractClient}>{isEmployer ? 'Worker' : 'Employer'}: {contract.other_party_name}</Text>
+                      </View>
+                      <View style={[styles.contractStatus, { backgroundColor: `${statusColor}15` }]}>
+                        <Text style={[styles.contractStatusText, { color: statusColor }]}>{contract.status}</Text>
+                      </View>
+                    </View>
 
-                <View style={styles.contractValue}>
-                  <View style={styles.valueItem}>
-                    <Text style={styles.valueLabel}>Contract Value</Text>
-                    <Text style={styles.valueAmount}>KES {contract.value.toLocaleString()}</Text>
-                  </View>
-                  <View style={styles.valueItem}>
-                    <Text style={styles.valueLabel}>Paid</Text>
-                    <Text style={[styles.valueAmount, { color: "#34C759" }]}>KES {contract.paid.toLocaleString()}</Text>
-                  </View>
-                </View>
+                    <View style={styles.contractValue}>
+                      <View style={styles.valueItem}>
+                        <Text style={styles.valueLabel}>Agreed Amount</Text>
+                        <Text style={styles.valueAmount}>KES {Number(contract.agreed_amount).toLocaleString()}</Text>
+                      </View>
+                    </View>
 
-                <View style={styles.contractProgress}>
-                  <View style={styles.contractProgressHeader}>
-                    <Text style={styles.contractProgressLabel}>Milestones</Text>
-                    <Text style={styles.contractProgressValue}>{contract.completed}/{contract.milestones}</Text>
+                    <View style={styles.contractActions}>
+                      {canSettle ? (
+                        <TouchableOpacity
+                          style={[styles.contractAction, { backgroundColor: Colors.primary }]}
+                          onPress={() => handleSettle(contract.id)}
+                          disabled={settlingId === contract.id}
+                        >
+                          {settlingId === contract.id ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                          ) : (
+                            <Text style={[styles.contractActionText, { color: '#fff' }]}>Release Payment</Text>
+                          )}
+                        </TouchableOpacity>
+                      ) : contract.status === 'completed' ? (
+                        <View style={styles.contractAction}>
+                          <Text style={styles.contractActionText}>✓ Paid</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.contractAction}>
+                          <Text style={styles.contractActionText}>Awaiting employer action</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
-                  <View style={styles.contractBar}>
-                    <View style={[styles.contractFill, { width: `${(contract.completed / contract.milestones) * 100}%` }]} />
-                  </View>
-                </View>
-
-                <View style={styles.contractActions}>
-                  <TouchableOpacity style={styles.contractAction}><Text style={styles.contractActionText}>View Contract</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.contractAction}><Text style={styles.contractActionText}>Invoice</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.contractAction}><Text style={styles.contractActionText}>Message</Text></TouchableOpacity>
-                </View>
-              </View>
-            ))}
+                );
+              })
+            )}
           </View>
         )}
 
@@ -195,6 +287,7 @@ export default function FreelanceScreen() {
 }
 
 const styles = StyleSheet.create({
+  emptyText: { textAlign: 'center', color: '#8E8E93', marginTop: 40, fontSize: 14 },
   container: { flex: 1, backgroundColor: Colors.background },
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   title: { fontSize: 24, fontWeight: "800", color: Colors.text },
