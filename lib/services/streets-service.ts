@@ -2,6 +2,7 @@
 // MTAA Streets — Canonical Service
 
 import { supabase } from '@/lib/supabase';
+import { Platform } from 'react-native';
 
 export interface StreetPost {
   id: string;
@@ -32,7 +33,7 @@ export interface CreatePostInput {
   is_public?: boolean;
 }
 
-const BUCKET_NAME = 'media';
+// NOTE: broken bucket constant removed 2026-07-18 — see STREETS_BUCKET below
 
 /* ─────────── FEED ─────────── */
 
@@ -269,35 +270,72 @@ export async function deletePost(postId: string): Promise<boolean> {
 
 /* ─────────── MEDIA UPLOAD ─────────── */
 
+const STREETS_BUCKET = 'streets-media';
+// FIXED 2026-07-18: was hardcoded to 'media', which internal notes flag
+// as schema-broken. Verified 'streets-media' exists live in storage.
+
+export interface UploadMediaResult {
+  mediaUrl: string;
+  thumbnailUrl: string | null;
+}
+
+/**
+ * FIXED 2026-07-18: this function's signature never matched what
+ * app/(os)/streets/create.tsx actually calls — confirmed 3 separate
+ * mismatched versions existed (this one, a second orphaned attempt at
+ * lib/services/upload-media-fix.ts with zero importers, and the call
+ * site itself). Rewritten to match the real call site exactly:
+ *   uploadMedia(uri, fileName, mimeType, onProgress) -> { mediaUrl, thumbnailUrl }
+ *
+ * The URI-to-uploadable-data conversion below is copied from the
+ * confirmed-working avatar upload flow in app/(os)/profile/edit.tsx
+ * (17 real objects in the 'avatars' bucket) rather than reinvented —
+ * Platform.OS === 'web' needs a Blob, native RN needs an ArrayBuffer
+ * via fetch(uri).arrayBuffer(), a bare URI string was never valid
+ * input to supabase.storage.upload() in the first place.
+ */
 export async function uploadMedia(
-  file: File | Blob,
-  folder: string = 'streets'
-): Promise<string | null> {
-  try {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) {
-      console.warn('[streets-service] uploadMedia: no user');
-      return null;
-    }
-
-    const ext = file instanceof File ? file.name.split('.').pop() || 'jpg' : 'jpg';
-    const path = `${folder}/${user.id}/${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET_NAME)
-      .upload(path, file, { upsert: true });
-
-    if (uploadError) {
-      console.error('[streets-service] uploadMedia upload error:', uploadError);
-      return null;
-    }
-
-    const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
-    console.log('[streets-service] uploadMedia success:', urlData?.publicUrl?.slice(0, 60));
-    return urlData?.publicUrl || null;
-  } catch (err) {
-    console.error('[streets-service] uploadMedia crash:', err);
-    return null;
+  uri: string,
+  fileName: string,
+  mimeType: string,
+  onProgress?: (progress: { percentage: number }) => void
+): Promise<UploadMediaResult> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) {
+    throw new Error('Not authenticated');
   }
+
+  onProgress?.({ percentage: 10 });
+
+  const ext = fileName.split('.').pop()?.toLowerCase() || (mimeType.startsWith('video') ? 'mp4' : 'jpg');
+  const path = `${user.id}/${Date.now()}.${ext}`;
+
+  let fileData: Blob | ArrayBuffer;
+  if (Platform.OS === 'web') {
+    fileData = await (await fetch(uri)).blob();
+  } else {
+    fileData = await (await fetch(uri)).arrayBuffer();
+  }
+
+  onProgress?.({ percentage: 50 });
+
+  const { error: uploadError } = await supabase.storage
+    .from(STREETS_BUCKET)
+    .upload(path, fileData, { contentType: mimeType, upsert: true });
+
+  if (uploadError) {
+    throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  onProgress?.({ percentage: 90 });
+
+  const { data: urlData } = supabase.storage.from(STREETS_BUCKET).getPublicUrl(path);
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to get public URL after upload');
+  }
+
+  onProgress?.({ percentage: 100 });
+
+  return { mediaUrl: urlData.publicUrl, thumbnailUrl: null };
 }
