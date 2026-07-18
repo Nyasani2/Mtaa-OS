@@ -1,301 +1,361 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
   Dimensions,
-  StatusBar,
-  Pressable,
+  RefreshControl,
+  ImageBackground,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useHomeStore } from '@/lib/home/store/home.store';
-import SmartDock from '@/lib/home/components/SmartDock';
-import { WallpaperPicker } from '@/lib/home/components/WallpaperPicker';
-import LongPressMenu from '@/lib/home/components/LongPressMenu';
-import { ALL_APPS, HIDDEN_APP_IDS, AppTile } from '@/lib/kernel/app-catalog';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
-const { width } = Dimensions.get('window');
-const ICON_SIZE = 52;
-const GRID_GAP = 14;
-const COLS = 4;
-const TILE_WIDTH = (width - 40 - (COLS - 1) * GRID_GAP) / COLS;
+import {
+  ALL_APPS,
+  PUBLIC_APPS,
+  OWNER_APPS,
+  AppTile,
+  getAppsByCategory,
+} from '@/lib/catalog/app-catalog';
 
-// ─── ALL APPS — Complete Catalog (~60+ apps) — ALPHABETICAL ───
-
-// Sort alphabetically
-ALL_APPS.sort((a, b) => a.name.localeCompare(b.name));
-
-function AppIcon({ app }: { app: AppTile }) {
-  const IconComponent = app.iconSet === 'MaterialCommunityIcons' ? MaterialCommunityIcons : Ionicons;
-  return (
-    <View style={[styles.iconContainer, { backgroundColor: app.bgColor }]}>
-      <IconComponent name={app.icon as any} size={22} color={app.color} />
-    </View>
-  );
-}
-
-// ─── Status Bar Component ───
-function StatusBarInfo() {
-  const [time, setTime] = useState('');
-  const [battery, setBattery] = useState(85);
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setTime(`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`);
-    };
-    update();
-    const interval = setInterval(update, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <View style={styles.statusBar}>
-      <View style={styles.statusLeft}>
-        <Ionicons name="cellular" size={14} color="#fff" />
-        <Ionicons name="wifi" size={14} color="#fff" style={{ marginLeft: 4 }} />
-      </View>
-      <Text style={styles.statusTime}>{time}</Text>
-      <View style={styles.statusRight}>
-        <Ionicons name="bluetooth" size={14} color="#fff" />
-        <Text style={styles.statusBattery}>{battery}%</Text>
-        <Ionicons name="battery-half" size={14} color="#fff" style={{ marginLeft: 2 }} />
-      </View>
-    </View>
-  );
-}
+const { width, height } = Dimensions.get('window');
+const TILE_SIZE = (width - 48) / 4;
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const {
-    settings, loadSettings, loadLayouts,
-    isEditMode, setEditMode,
-    setSelectedApp, setShowMenu,
-    setShowWallpaperPicker,
-    trackAppOpen,
-  } = useHomeStore();
+  const insets = useSafeAreaInsets();
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const isOwner = user?.role === 'owner' || user?.role === 'admin';
 
-  const [greeting, setGreeting] = useState('Good evening');
-  const [currentDate, setCurrentDate] = useState('');
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null);
-
-  // Owner check
-  const isOwner = user?.email === 'OWNER_EMAIL_HERE';
-
-  useEffect(() => {
-    loadSettings();
-    loadLayouts();
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good morning');
-    else if (hour < 17) setGreeting('Good afternoon');
-    else setGreeting('Good evening');
-    const now = new Date();
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    setCurrentDate(`${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  const handlePressIn = useCallback((app: AppTile) => {
-    const timer = setTimeout(() => {
-      setSelectedApp({
-        id: app.id, appId: app.id, appName: app.name, appIcon: app.icon,
-        appRoute: app.route, positionX: 0, positionY: 0, pageNumber: 0,
-        folderId: null, isHidden: false, isPinned: false,
-      });
-      setShowMenu(true);
-    }, 500);
-    setPressTimer(timer);
-  }, []);
+  const navigateToApp = useCallback(
+    (route: string) => {
+      router.push(route as any);
+    },
+    [router]
+  );
 
-  const handlePressOut = useCallback(() => {
-    if (pressTimer) { clearTimeout(pressTimer); setPressTimer(null); }
-  }, [pressTimer]);
+  const visibleApps = isOwner ? ALL_APPS : PUBLIC_APPS;
+  const displayedApps = activeCategory
+    ? getAppsByCategory(activeCategory).filter((a) =>
+        isOwner ? true : !a.ownerOnly
+      )
+    : visibleApps;
 
-  const launchApp = (app: AppTile) => {
-    if (pressTimer) { clearTimeout(pressTimer); setPressTimer(null); }
-    trackAppOpen(app.id);
-    router.push(app.route as any);
+  const renderIcon = (app: AppTile, size: number = 24) => {
+    return <Ionicons name={app.icon as any} size={size} color={app.color} />;
   };
 
-  const handleEmptySpaceLongPress = () => {
-    setShowWallpaperPicker(true);
-  };
+  const renderAppTile = (app: AppTile, index: number) => (
+    <Animated.View
+      key={app.id}
+      entering={FadeInUp.delay(index * 30).duration(400)}
+      style={styles.tileContainer}
+    >
+      <TouchableOpacity
+        onPress={() => navigateToApp(app.route)}
+        activeOpacity={0.7}
+        style={styles.tileTouchable}
+      >
+        <View style={[styles.tileIcon, { backgroundColor: app.bgColor }]}>
+          {renderIcon(app, 22)}
+          {app.badge ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{app.badge}</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.tileLabel} numberOfLines={1}>
+          {app.name}
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
 
-  // ─── FILTER: Hide civic apps and nested sub-apps ───
-  const visibleApps = ALL_APPS.filter((app) => {
-    // Always hide apps in HIDDEN_APP_IDS
-    if (HIDDEN_APP_IDS.has(app.id)) return false;
-    // Hide owner-only apps for non-owners
-    if (app.ownerOnly && !isOwner) return false;
-    return true;
-  });
+  const categories = [
+    { key: 'OS', label: 'OS', color: '#3b82f6' },
+    { key: 'FINANCE', label: 'Finance', color: '#f97316' },
+    { key: 'HEALTH', label: 'Health', color: '#06b6d4' },
+    { key: 'COMMERCE', label: 'Commerce', color: '#ec4899' },
+    { key: 'CIVIC', label: 'Civic', color: '#3b82f6' },
+    { key: 'TRANSPORT', label: 'Transport', color: '#10b981' },
+    { key: 'SOCIAL', label: 'Social', color: '#d946ef' },
+    { key: 'MEDIA', label: 'Media', color: '#6366f1' },
+    { key: 'WORK', label: 'Work', color: '#f59e0b' },
+    { key: 'EDUCATION', label: 'Edu', color: '#14b8a6' },
+    { key: 'ADMIN', label: 'Admin', color: '#7c3aed' },
+    { key: 'UTILITY', label: 'Utility', color: '#6b7280' },
+  ];
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <ImageBackground
-        source={settings.wallpaperType === 'default'
-          ? require('@/assets/images/mtaa_home.png')
-          : { uri: settings.wallpaperUrl }
-        }
-        style={styles.background}
-        resizeMode="cover"
+    <ImageBackground
+      source={require('@/assets/images/mtaa_home.png')}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <LinearGradient
+        colors={['rgba(15,23,42,0.3)', 'rgba(15,23,42,0.85)', 'rgba(15,23,42,0.95)']}
+        style={styles.gradientOverlay}
       >
-        {/* Status Bar */}
-        <StatusBarInfo />
-
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
           {/* Header */}
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.greeting}>{greeting}</Text>
-              <Text style={styles.username}>{user?.user_metadata?.full_name || 'User'}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <TouchableOpacity onPress={() => router.push('/notifications')}>
-                <Ionicons name="notifications" size={26} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/profile')}>
-                <Ionicons name="person-circle" size={28} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
+            <BlurView intensity={60} style={styles.blurHeader}>
+              <View style={styles.headerContent}>
+                <View>
+                  <Text style={styles.greeting}>Good Day</Text>
+                  <Text style={styles.userName}>
+                    {user?.full_name || user?.email || 'User'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => router.push('/(os)/settings' as any)}
+                  style={styles.settingsBtn}
+                >
+                  <Ionicons name="settings-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </Animated.View>
 
-          {/* Date */}
-          <View style={styles.dateSection}>
-            <Text style={styles.dayNumber}>{new Date().getDate()}</Text>
-            <Text style={styles.monthYear}>{currentDate}</Text>
-          </View>
-
-          {/* Edit Mode Banner */}
-          {isEditMode && (
-            <View style={styles.editBanner}>
-              <Text style={styles.editText}>Edit Mode — Drag apps to rearrange</Text>
-              <TouchableOpacity onPress={() => setEditMode(false)}>
-                <Text style={styles.doneText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* App Count */}
-          <Text style={styles.appCount}>{visibleApps.length} Apps</Text>
-
-          {/* All Apps — Single Alphabetical Grid */}
-          <View style={styles.grid}>
-            {visibleApps.map((app) => (
-              <Pressable
-                key={app.id}
-                style={styles.tile}
-                onPress={() => launchApp(app)}
-                onPressIn={() => handlePressIn(app)}
-                onPressOut={handlePressOut}
-                delayLongPress={500}
+          {/* Category Filter */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryScroll}
+            style={styles.categoryBar}
+          >
+            <TouchableOpacity
+              onPress={() => setActiveCategory(null)}
+              style={[
+                styles.categoryChip,
+                activeCategory === null && styles.categoryChipActive,
+              ]}
+            >
+              <Text style={[styles.categoryChipText, activeCategory === null && styles.categoryChipTextActive]}>
+                All
+              </Text>
+            </TouchableOpacity>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.key}
+                onPress={() => setActiveCategory(activeCategory === cat.key ? null : cat.key)}
+                style={[
+                  styles.categoryChip,
+                  activeCategory === cat.key && {
+                    ...styles.categoryChipActive,
+                    borderColor: cat.color,
+                    backgroundColor: cat.color + '20',
+                  },
+                ]}
               >
-                <AppIcon app={app} />
-                <Text style={styles.tileLabel}>{app.name}</Text>
-                {isEditMode && (
-                  <View style={styles.editBadge}>
-                    <Ionicons name="remove-circle" size={18} color="#f44" />
-                  </View>
-                )}
-              </Pressable>
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    activeCategory === cat.key && {
+                      ...styles.categoryChipTextActive,
+                      color: cat.color,
+                    },
+                  ]}
+                >
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
 
-          {/* Empty space for long-press wallpaper */}
-          <Pressable
-            style={{ height: 120 }}
-            onLongPress={handleEmptySpaceLongPress}
-            delayLongPress={600}
-          />
-        </ScrollView>
+          {/* App Grid */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+            }
+          >
+            <View style={styles.grid}>
+              {displayedApps.map((app, index) => renderAppTile(app, index))}
+            </View>
 
-        {/* Smart Dock */}
-        <SmartDock />
-      </ImageBackground>
+            {isOwner && OWNER_APPS.length > 0 && activeCategory === null && (
+              <View style={styles.ownerSection}>
+                <Text style={styles.ownerTitle}>Owner Tools</Text>
+                <View style={styles.grid}>
+                  {OWNER_APPS.map((app, index) =>
+                    renderAppTile(app, displayedApps.length + index)
+                  )}
+                </View>
+              </View>
+            )}
 
-      {/* Overlays */}
-      <WallpaperPicker />
-      <LongPressMenu />
-    </View>
+            <View style={styles.footer} />
+          </ScrollView>
+        </View>
+      </LinearGradient>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  background: { flex: 1, width: '100%', height: '100%' },
-
-  // Status Bar
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-    zIndex: 10,
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
-  statusLeft: { flexDirection: 'row', alignItems: 'center' },
-  statusTime: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  statusRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statusBattery: { color: '#fff', fontSize: 11, marginLeft: 4 },
-
-  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 120 },
+  gradientOverlay: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
-  greeting: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
-  username: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  dateSection: { alignItems: 'center', marginBottom: 20 },
-  dayNumber: { color: '#fff', fontSize: 52, fontWeight: '200', lineHeight: 58 },
-  monthYear: { color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2 },
-  editBanner: {
+  blurHeader: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(30,41,59,0.6)',
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,170,255,0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  greeting: {
+    fontSize: 13,
+    color: '#cbd5e1',
+    fontWeight: '500',
+  },
+  userName: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  settingsBtn: {
+    padding: 8,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  editText: { color: '#0af', fontSize: 13, fontWeight: '600' },
-  doneText: { color: '#0af', fontSize: 13, fontWeight: '600' },
-  appCount: { color: 'rgba(255,255,255,0.5)', fontSize: 11, marginBottom: 12, textAlign: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
-  tile: { width: TILE_WIDTH, alignItems: 'center', marginBottom: 4 },
-  iconContainer: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    borderRadius: 14,
+  categoryBar: {
+    maxHeight: 52,
+    marginTop: 12,
+  },
+  categoryScroll: {
+    paddingHorizontal: 12,
+    gap: 8,
     alignItems: 'center',
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: 'rgba(30,41,59,0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    marginRight: 8,
+  },
+  categoryChipActive: {
+    backgroundColor: 'rgba(59,130,246,0.2)',
+    borderColor: '#3b82f6',
+  },
+  categoryChipText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  categoryChipTextActive: {
+    color: '#3b82f6',
+  },
+  scrollContent: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  tileContainer: {
+    width: TILE_SIZE,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tileTouchable: {
+    alignItems: 'center',
+  },
+  tileIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
-    marginBottom: 4,
+    alignItems: 'center',
+    marginBottom: 6,
+    position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     elevation: 4,
   },
   tileLabel: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '600',
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    width: TILE_SIZE - 8,
+    textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  editBadge: {
+  badge: {
     position: 'absolute',
     top: -4,
-    right: 4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#0f172a',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  ownerSection: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  ownerTitle: {
+    color: '#fbbf24',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  footer: {
+    height: 40,
   },
 });

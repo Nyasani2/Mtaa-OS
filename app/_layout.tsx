@@ -4,12 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { IdentityProvider } from '@/lib/auth/identity-provider';
 import { OSShellProvider } from '@/lib/shell/os-shell-provider';
 import { AsisProviderV4 } from '@/lib/kernel/ai/asis-provider-v4';
+import { useASISBoot } from '@/lib/system/hooks/asis-boot-hook';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 5 * 60 * 1000 } },
 });
 
 export default function RootLayout() {
+  useASISBoot(); // Activate fraud monitoring on boot
+
   return (
     <QueryClientProvider client={queryClient}>
       <IdentityProvider>
