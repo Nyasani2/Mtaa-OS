@@ -51,8 +51,8 @@ export default function FollowingScreen() {
     }
 
     const { data, error } = await supabase
-      .from('studio_videos')
-      .select('id, title, thumbnail_url, duration_seconds, view_count, creator_id, published_at, is_live, creator:creator_id (full_name, avatar_url)')
+      .from('studio_videos_with_creator')
+      .select('id, title, thumbnail_url, duration_seconds, view_count, creator_id, published_at, is_live, creator_name, creator_avatar')
       .in('creator_id', followingIds)
       .eq('status', 'published')
       .order('published_at', { ascending: false })

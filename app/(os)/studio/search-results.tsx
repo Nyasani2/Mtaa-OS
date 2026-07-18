@@ -33,8 +33,8 @@ export default function SearchResultsScreen() {
     setLoading(true);
 
     let dbQuery = supabase
-      .from('studio_videos')
-      .select('id, title, thumbnail_url, view_count, creator:creator_id (full_name), type')
+      .from('studio_videos_with_creator')
+      .select('id, title, thumbnail_url, view_count, creator_name, type')
       .ilike('title', `%${searchQuery.trim()}%`)
       .eq('status', 'published')
       .limit(30);

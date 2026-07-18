@@ -118,18 +118,19 @@ export default function UploadCenterScreen() {
       updateFile(file.id, { progress: 80 });
 
       // Insert into database
+      // FIXED 2026-07-18: was writing storage_path, file_size, mime_type —
+      // none of these columns exist on studio_videos, so this insert would
+      // have failed with a "column does not exist" error even after the
+      // (also confirmed missing) mstudio-videos storage bucket was created.
       const { error: dbError } = await supabase.from('studio_videos').insert({
         creator_id: user.id,
         title: file.title,
         description: file.description,
         video_url: videoUrl,
-        storage_path: filePath,
         category: file.category.toLowerCase(),
         visibility: file.visibility,
         tags: file.tags.split(',').map(t => t.trim()).filter(Boolean),
         status: file.visibility === 'private' ? 'private' : 'published',
-        file_size: file.size,
-        mime_type: file.type,
       });
 
       if (dbError) throw dbError;

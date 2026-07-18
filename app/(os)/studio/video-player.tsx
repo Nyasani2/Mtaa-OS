@@ -62,13 +62,25 @@ export default function VideoPlayerScreen() {
     if (!id) return;
     setLoading(true);
 
+    // FIXED 2026-07-18: studio_videos.creator_id has a real FK, but it
+    // points to auth.users(id) — which has no full_name/avatar_url
+    // columns. The embedded relationship syntax below was guaranteed to
+    // fail (PostgREST would try to embed auth.users, not user_profiles,
+    // for those requested columns). Fetching the creator profile
+    // separately from user_profiles instead.
     const { data, error } = await supabase
       .from('studio_videos')
-      .select('id, title, description, video_url, view_count, like_count, creator_id, creator:creator_id (full_name, avatar_url), published_at')
+      .select('id, title, description, video_url, view_count, like_count, creator_id, published_at')
       .eq('id', id)
       .single();
 
     if (!error && data) {
+      const { data: creatorProfile } = await supabase
+        .from('user_profiles')
+        .select('full_name, avatar_url')
+        .eq('user_id', data.creator_id)
+        .maybeSingle();
+
       // Check subscription
       const { data: sub } = await supabase
         .from('studio_subscriptions')
@@ -93,8 +105,8 @@ export default function VideoPlayerScreen() {
         view_count: data.view_count || 0,
         like_count: data.like_count || 0,
         creator_id: data.creator_id,
-        creator_name: data.creator?.full_name || 'Unknown',
-        creator_avatar: data.creator?.avatar_url || '',
+        creator_name: creatorProfile?.full_name || 'Unknown',
+        creator_avatar: creatorProfile?.avatar_url || '',
         published_at: data.published_at,
         is_subscribed: !!sub,
       });
