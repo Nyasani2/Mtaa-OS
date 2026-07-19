@@ -64,7 +64,7 @@ export default function ChannelScreen() {
         const { data: sub } = await supabase
           .from('studio_subscriptions')
           .select('*')
-          .eq('subscriber_id', user.id)
+          .eq('user_id', user.id)
           .eq('creator_id', creatorId)
           .single();
         setIsSubscribed(!!sub);
@@ -80,11 +80,11 @@ export default function ChannelScreen() {
     if (!user?.id || !creatorId) return;
     try {
       if (isSubscribed) {
-        await supabase.from('studio_subscriptions').delete().eq('subscriber_id', user.id).eq('creator_id', creatorId);
+        await supabase.from('studio_subscriptions').delete().eq('user_id', user.id).eq('creator_id', creatorId);
         setIsSubscribed(false);
         setSubscriberCount(c => Math.max(0, c - 1));
       } else {
-        await supabase.from('studio_subscriptions').insert({ subscriber_id: user.id, creator_id: creatorId });
+        await supabase.from('studio_subscriptions').insert({ user_id: user.id, creator_id: creatorId });
         setIsSubscribed(true);
         setSubscriberCount(c => c + 1);
       }

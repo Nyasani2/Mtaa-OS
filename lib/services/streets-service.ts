@@ -39,12 +39,20 @@ export interface CreatePostInput {
 
 export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]> {
   try {
-    const { data, error } = await supabase
+    // FIXED 2026-07-18: this query used an embedded relationship
+    // (creator:user_profiles!streets_posts_creator_id_fkey(...)) naming
+    // an EXPLICIT foreign key constraint — but that constraint,
+    // streets_posts_creator_id_fkey, actually points creator_id at
+    // auth.users(id), not user_profiles. PostgREST rejects this outright
+    // since the named FK doesn't establish any relationship to
+    // user_profiles at all. This meant the entire main Streets feed
+    // query has been failing on every call — verified via
+    // pg_constraint directly before fixing, same root cause as the
+    // mstudio video-embedding bug fixed earlier in this audit, just
+    // hitting the feed itself this time rather than a secondary screen.
+    const { data: posts, error } = await supabase
       .from('streets_posts')
-      .select(`
-        *,
-        creator:user_profiles!streets_posts_creator_id_fkey(user_id, display_name, avatar_url)
-      `)
+      .select('*')
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -54,8 +62,25 @@ export async function getFeedPosts(limit = 20, offset = 0): Promise<StreetPost[]
       return [];
     }
 
-    console.log('[streets-service] getFeedPosts returned:', data?.length || 0, 'posts');
-    return (data || []) as StreetPost[];
+    if (!posts || posts.length === 0) {
+      return [];
+    }
+
+    const creatorIds = [...new Set(posts.map((p) => p.creator_id))];
+    const { data: creators } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name, avatar_url')
+      .in('user_id', creatorIds);
+
+    const creatorMap = new Map((creators || []).map((c) => [c.user_id, c]));
+
+    const enriched = posts.map((p) => ({
+      ...p,
+      creator: creatorMap.get(p.creator_id) || null,
+    }));
+
+    console.log('[streets-service] getFeedPosts returned:', enriched.length, 'posts');
+    return enriched as StreetPost[];
   } catch (err) {
     console.error('[streets-service] getFeedPosts crash:', err);
     return [];
