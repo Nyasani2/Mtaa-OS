@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export function useHospitalWallet(facilityId: string | null) {
-  const { supabase } = useSupabase();
   const [wallet, setWallet] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balance, setBalance] = useState(0);

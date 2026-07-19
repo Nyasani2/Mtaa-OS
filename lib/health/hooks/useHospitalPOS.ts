@@ -1,11 +1,10 @@
 import { useState, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 interface CartItem { id: string; name: string; type: string; price: number; quantity: number; }
 
 export function useHospitalPOS(facilityId: string | null) {
-  const { supabase } = useSupabase();
   const { user } = useAuthStore();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [session, setSession] = useState<any>(null);
