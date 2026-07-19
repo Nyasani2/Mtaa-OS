@@ -28,6 +28,30 @@ export default function AppointmentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuthStore();
+  const [settling, setSettling] = useState(false);
+
+  const handleCollectPayment = async () => {
+    if (!id) return;
+    setSettling(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const { data, error } = await supabase.functions.invoke('garage-settle', {
+        body: { appointment_id: id },
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (error || data?.error) {
+        Alert.alert('Payment Failed', data?.error || error?.message || 'Unknown error');
+      } else {
+        Alert.alert('Payment Collected', `Garage received KES ${data.garage_amount.toLocaleString()}`);
+        fetchData();
+      }
+    } catch (e: any) {
+      Alert.alert('Payment Failed', e?.message || 'Unknown error');
+    } finally {
+      setSettling(false);
+    }
+  };
   const { garage } = useGarage();
 
   const [appointment, setAppointment] = useState<any>(null);
@@ -255,6 +279,27 @@ export default function AppointmentDetailScreen() {
         <CostRow label="VAT (16%)" value={vat} />
         <CostRow label="TOTAL" value={total} bold total />
       </View>
+
+      {/* Payment Collection */}
+      {appointment.payment_status !== 'paid' && ['ready_for_pickup', 'completed'].includes(appointment.status) && (
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionPrimary, { marginHorizontal: 16, marginTop: 8 }]}
+          onPress={handleCollectPayment}
+          disabled={settling}
+        >
+          {settling ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.actionPrimaryText}>Collect Payment — KES {total.toLocaleString()}</Text>
+          )}
+        </TouchableOpacity>
+      )}
+      {appointment.payment_status === 'paid' && (
+        <View style={[styles.invoiceCard, { marginHorizontal: 16 }]}>
+          <FileText size={20} color="#22c55e" />
+          <Text style={[styles.invoiceTitle, { color: '#22c55e' }]}>Payment Collected</Text>
+        </View>
+      )}
 
       {/* Invoice Link */}
       {invoice && (
