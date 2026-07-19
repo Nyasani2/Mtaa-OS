@@ -100,11 +100,16 @@ export function getBodaFareEstimate(
 }
 
 export async function getAvailableBodas(lat: number, lng: number, radiusKm: number = 5) {
+  // FIXED 2026-07-18: was filtering on 'status' and 'online' columns that
+  // don't exist on boda_riders — the real columns are 'is_approved' and
+  // 'is_online'. This query would have silently returned zero results
+  // (or errored) for every search, regardless of how many bodas were
+  // actually online nearby.
   const { data, error } = await supabase
     .from('boda_riders')
     .select('*')
-    .eq('status', 'approved')
-    .eq('online', true)
+    .eq('is_approved', true)
+    .eq('is_online', true)
     .gte('current_lat', lat - 0.045)
     .lte('current_lat', lat + 0.045)
     .gte('current_lng', lng - 0.045)
