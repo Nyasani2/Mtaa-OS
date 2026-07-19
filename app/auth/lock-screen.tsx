@@ -15,7 +15,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useOSShell } from '@/lib/shell/use-os-shell';
 
 const MAX_LENGTH = 6;
-const MIN_LENGTH = 4;
+const MIN_LENGTH = 6;
 
 export default function LockScreen() {
   const router = useRouter();

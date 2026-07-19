@@ -70,8 +70,8 @@ async function runMigration(): Promise<void> {
 // ─── Public API ─────────────────────────────────────────────
 
 export async function setPin(pin: string): Promise<void> {
-  if (!pin || pin.length < 4 || pin.length > 6) {
-    throw new Error('PIN must be 4-6 digits');
+  if (!pin || pin.length !== 6) {
+    throw new Error('PIN must be exactly 6 digits');
   }
   const hash = simpleHash(pin);
 
