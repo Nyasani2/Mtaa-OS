@@ -32,8 +32,8 @@ export default function LearningFeedScreen() {
   const fetchCourses = async () => {
     setLoading(true);
     let query = supabase
-      .from('studio_education_content')
-      .select('id, title, type, subject, grade_level, price_kes, is_public, creator:creator_id (full_name)')
+      .from('studio_education_content_with_creator')
+      .select('id, title, type, subject, grade_level, price_kes, is_public, creator_name')
       .eq('status', 'published')
       .order('created_at', { ascending: false })
       .limit(40);
