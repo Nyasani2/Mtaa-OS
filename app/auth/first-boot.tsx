@@ -11,7 +11,7 @@ export default function FirstBootScreen() {
   const router = useRouter();
 
   async function handleSetPin() {
-    if (pin.length < 4) { setError('PIN must be at least 4 digits'); return; }
+    if (pin.length < 6) { setError('PIN must be at least 6 digits'); return; }
     if (pin !== confirmPin) { setError('PINs do not match'); return; }
     setLoading(true); setError('');
     try {
