@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export function usePatientConsent() {
-  const { supabase } = useSupabase();
   const { user } = useAuthStore();
   const [consents, setConsents] = useState<any[]>([]);
   const [activeGrants, setActiveGrants] = useState<any[]>([]);

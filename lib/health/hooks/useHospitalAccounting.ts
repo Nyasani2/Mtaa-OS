@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export function useHospitalAccounting(facilityId: string | null, period: string) {
-  const { supabase } = useSupabase();
   const [stats, setStats] = useState<any>(null);
   const [revenueBreakdown, setRevenueBreakdown] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export function useTraditionalMedicine() {
-  const { supabase } = useSupabase();
   const [healers, setHealers] = useState<any[]>([]);
   const [remedies, setRemedies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

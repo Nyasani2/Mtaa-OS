@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export type HealthRole = 'patient' | 'doctor' | 'nurse' | 'pharmacist' | 'lab_tech' | 'admin' | 'cashier' | 'traditional_healer' | 'herbalist' | 'ambulance_dispatcher' | 'accountant' | 'receptionist';
 
 export function useHealthRole() {
-  const { supabase } = useSupabase();
   const { user } = useAuthStore();
   const [role, setRole] = useState<HealthRole | null>(null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
