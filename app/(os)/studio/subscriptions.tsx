@@ -32,9 +32,9 @@ export default function SubscriptionsScreen() {
     setLoading(true);
 
     const { data, error } = await supabase
-      .from('studio_subscriptions')
-      .select('id, creator_id, notification_enabled, creator:creator_id (full_name, avatar_url)')
-      .eq('subscriber_id', user.id)
+      .from('studio_subscriptions_with_creator')
+      .select('id, creator_id, notification_enabled, creator_name, creator_avatar')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (!error) {
@@ -65,8 +65,8 @@ export default function SubscriptionsScreen() {
         return {
           id: sub.id,
           creator_id: sub.creator_id,
-          creator_name: sub.creator?.full_name || 'Unknown',
-          creator_avatar: sub.creator?.avatar_url || '',
+          creator_name: sub.creator_name || 'Unknown',
+          creator_avatar: sub.creator_avatar || '',
           subscriber_count: count || 0,
           is_live: !!live,
           latest_video_title: latest?.title || 'No videos yet',
@@ -94,7 +94,7 @@ export default function SubscriptionsScreen() {
         text: 'Unsubscribe',
         style: 'destructive',
         onPress: async () => {
-          await supabase.from('studio_subscriptions').delete().eq('creator_id', creatorId).eq('subscriber_id', user?.id);
+          await supabase.from('studio_subscriptions').delete().eq('creator_id', creatorId).eq('user_id', user?.id);
           setSubs(prev => prev.filter(s => s.creator_id !== creatorId));
         },
       },

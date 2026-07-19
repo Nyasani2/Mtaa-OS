@@ -86,7 +86,7 @@ export default function VideoPlayerScreen() {
         .from('studio_subscriptions')
         .select('id')
         .eq('creator_id', data.creator_id)
-        .eq('subscriber_id', user?.id)
+        .eq('user_id', user?.id)
         .single();
 
       // Check like
@@ -171,10 +171,10 @@ export default function VideoPlayerScreen() {
   const handleSubscribe = async () => {
     if (!user?.id || !video) return;
     if (video.is_subscribed) {
-      await supabase.from('studio_subscriptions').delete().eq('creator_id', video.creator_id).eq('subscriber_id', user.id);
+      await supabase.from('studio_subscriptions').delete().eq('creator_id', video.creator_id).eq('user_id', user.id);
       setVideo(prev => prev ? { ...prev, is_subscribed: false } : prev);
     } else {
-      await supabase.from('studio_subscriptions').insert({ creator_id: video.creator_id, subscriber_id: user.id });
+      await supabase.from('studio_subscriptions').insert({ creator_id: video.creator_id, user_id: user.id });
       setVideo(prev => prev ? { ...prev, is_subscribed: true } : prev);
     }
   };
