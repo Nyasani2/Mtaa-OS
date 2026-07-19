@@ -46,7 +46,7 @@ export default function AssetsScreen() {
       <SafeAreaView style={[styles.container, styles.center]}>
         <Ionicons name="cube-outline" size={64} color="#ccc" />
         <Text style={styles.emptyTitle}>Sign in to view Assets</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/sign-in')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/login')}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </SafeAreaView>

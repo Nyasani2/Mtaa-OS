@@ -186,7 +186,7 @@ export default function DocumentsScreen() {
       <View style={[styles.container, styles.center]}>
         <Ionicons name="document-text-outline" size={64} color="#333" />
         <Text style={styles.emptyTitle}>Sign in to view Documents</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/sign-in')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/login')}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
