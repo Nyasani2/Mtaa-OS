@@ -1,7 +1,7 @@
 // app/(os)/settings/index.tsx — MTAA OS Settings
-// v3.1: Uses unified useAuth with full_name, username, etc.
+// v3.2: Added Network & Internet section
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView,
 } from 'react-native';
@@ -15,9 +15,28 @@ export default function SettingsScreen() {
   const { user, isAuthenticated, signOut } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  const [networkType, setNetworkType] = useState('Unknown');
 
   const displayName = user?.full_name || user?.display_name || user?.username || user?.email?.split('@')[0] || 'User';
   const email = user?.email || 'Not signed in';
+
+  // Read network state on mount
+  useEffect(() => {
+    async function checkNetwork() {
+      try {
+        const Network = require('expo-network');
+        const state = await Network.getNetworkStateAsync();
+        setNetworkType(
+          state.type === 'WIFI' ? 'Wi-Fi' :
+          state.type === 'CELLULAR' ? 'Mobile Data' :
+          state.isConnected ? 'Connected' : 'Off'
+        );
+      } catch {
+        setNetworkType('Unknown');
+      }
+    }
+    checkNetwork();
+  }, []);
 
   const sections = [
     {
@@ -25,6 +44,12 @@ export default function SettingsScreen() {
       items: [
         { icon: 'moon-outline', label: 'Dark Mode', type: 'switch', value: darkMode, onChange: setDarkMode },
         { icon: 'notifications-outline', label: 'Notifications', type: 'switch', value: notifications, onChange: setNotifications },
+      ],
+    },
+    {
+      title: 'NETWORK & INTERNET',
+      items: [
+        { icon: 'wifi-outline', label: 'Network & Internet', type: 'link', route: '/(os)/settings/network', value: networkType },
       ],
     },
     {
@@ -75,6 +100,11 @@ export default function SettingsScreen() {
                   {item.type === 'switch' ? (
                     <Switch value={item.value as boolean} onValueChange={item.onChange as any}
                       trackColor={{ false: '#e2e8f0', true: '#6366f1' }} />
+                  ) : item.value ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.rowValue}>{item.value}</Text>
+                      <Ionicons name="chevron-forward" size={20} color="#999" style={{ marginLeft: 4 }} />
+                    </View>
                   ) : (
                     <Ionicons name="chevron-forward" size={20} color="#999" />
                   )}
@@ -83,27 +113,25 @@ export default function SettingsScreen() {
             </View>
           </View>
         ))}
-
-        <Text style={styles.version}>MTAA OS v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { alignItems: 'center', paddingVertical: 28, backgroundColor: '#fff', marginBottom: 12 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#6366f1', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  name: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
-  email: { fontSize: 14, color: '#888', marginTop: 4 },
-  signOutBtn: { marginTop: 12, backgroundColor: '#fee2e2', paddingHorizontal: 24, paddingVertical: 8, borderRadius: 20 },
-  signOutText: { color: '#ef4444', fontSize: 13, fontWeight: '600' },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 11, fontWeight: '700', color: '#9ca3af', letterSpacing: 1, marginHorizontal: 20, marginBottom: 8 },
-  card: { backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { alignItems: 'center', paddingVertical: 32 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatarText: { color: '#fff', fontSize: 32, fontWeight: '700' },
+  name: { fontSize: 20, fontWeight: '700', color: '#1e293b' },
+  email: { fontSize: 14, color: '#64748b', marginTop: 4 },
+  signOutBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fee2e2' },
+  signOutText: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  section: { marginBottom: 20, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 },
+  card: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   rowLast: { borderBottomWidth: 0 },
-  rowText: { flex: 1, fontSize: 15, marginLeft: 12, color: '#333', fontWeight: '500' },
-  version: { textAlign: 'center', color: '#9ca3af', fontSize: 12, marginVertical: 24 },
+  rowText: { flex: 1, fontSize: 16, color: '#1e293b', marginLeft: 12 },
+  rowValue: { fontSize: 14, color: '#64748b' },
 });
