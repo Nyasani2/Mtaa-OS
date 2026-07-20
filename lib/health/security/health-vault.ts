@@ -68,20 +68,20 @@ const webStore = {
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.setItem(key, value); } catch {}
+      try { localStorage.setItem(key, value); } catch (e) { console.error('[health-vault] localStorage.setItem failed:', e); }
       return;
     }
     if (SecureStore?.setItemAsync) {
-      try { await SecureStore.setItemAsync(key, value); } catch {}
+      try { await SecureStore.setItemAsync(key, value); } catch (e) { console.error('[health-vault] SecureStore.setItemAsync failed:', e); }
     }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch {}
+      try { localStorage.removeItem(key); } catch (e) { console.error('[health-vault] localStorage.removeItem failed:', e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
-      try { await SecureStore.deleteItemAsync(key); } catch {}
+      try { await SecureStore.deleteItemAsync(key); } catch (e) { console.error('[health-vault] SecureStore.deleteItemAsync failed:', e); }
     }
   },
 };
