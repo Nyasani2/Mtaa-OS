@@ -68,20 +68,36 @@ const webStore = {
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
+<<<<<<< HEAD
       try { localStorage.setItem(key, value); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.setItemAsync) {
       try { await SecureStore.setItemAsync(key, value); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
+=======
+      try { localStorage.setItem(key, value); } catch (e) { console.error('[health-vault] localStorage.setItem failed:', e); }
+      return;
+    }
+    if (SecureStore?.setItemAsync) {
+      try { await SecureStore.setItemAsync(key, value); } catch (e) { console.error('[health-vault] SecureStore.setItemAsync failed:', e); }
+>>>>>>> origin/claude/consolidation-audit
     }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
+<<<<<<< HEAD
       try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
       try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
+=======
+      try { localStorage.removeItem(key); } catch (e) { console.error('[health-vault] localStorage.removeItem failed:', e); }
+      return;
+    }
+    if (SecureStore?.deleteItemAsync) {
+      try { await SecureStore.deleteItemAsync(key); } catch (e) { console.error('[health-vault] SecureStore.deleteItemAsync failed:', e); }
+>>>>>>> origin/claude/consolidation-audit
     }
   },
 };
