@@ -47,7 +47,6 @@ export function useWalletSend() {
     if (!user?.id) return { success: false, error: 'Not authenticated' };
     setSending(true);
 
-    // Find recipient by phone
     const { data: recipient } = await supabase
       .from('user_profiles')
       .select('id')
@@ -83,7 +82,6 @@ export function useWalletReceive() {
 
   const createRequest = useCallback(async (params: { amount?: number; description?: string }) => {
     setLoading(true);
-    // Generate a payment request link/QR
     const req = {
       request_id: `req-${Date.now()}`,
       amount: params.amount || 0,
@@ -126,4 +124,99 @@ export function useWalletHistory({ limit = 20 }: { limit?: number } = {}) {
   useEffect(() => { refresh(); }, [refresh]);
 
   return { transactions, loading, refresh };
+}
+
+// ─── useWalletStore ─────────────────────────────────────────
+// Added to fix: useWalletStore is not a function
+// Provides wallet state management for components that expect a store pattern
+
+export function useWalletStore() {
+  const user = useAuthStore((s) => s.user);
+  const [wallet, setWallet] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchWallet = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+    setError(null);
+
+    const { data, error } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setWallet(data);
+    }
+    setLoading(false);
+  }, [user?.id]);
+
+  const fetchTransactions = useCallback(async (limit = 20) => {
+    if (!user?.id) return;
+    const { data, error } = await supabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!error) setTransactions(data || []);
+  }, [user?.id]);
+
+  const deposit = useCallback(async (amount: number) => {
+    if (!user?.id) return { success: false, error: 'Not authenticated' };
+    const { error } = await supabase.rpc('wallet_deposit', {
+      p_user_id: user.id,
+      p_amount: amount
+    });
+    if (error) return { success: false, error: error.message };
+    await fetchWallet();
+    return { success: true };
+  }, [user?.id, fetchWallet]);
+
+  const withdraw = useCallback(async (amount: number) => {
+    if (!user?.id) return { success: false, error: 'Not authenticated' };
+    const { error } = await supabase.rpc('wallet_withdraw', {
+      p_user_id: user.id,
+      p_amount: amount
+    });
+    if (error) return { success: false, error: error.message };
+    await fetchWallet();
+    return { success: true };
+  }, [user?.id, fetchWallet]);
+
+  const transfer = useCallback(async (recipientId: string, amount: number) => {
+    if (!user?.id) return { success: false, error: 'Not authenticated' };
+    const { error } = await supabase.rpc('wallet_send', {
+      p_sender: user.id,
+      p_receiver: recipientId,
+      p_amount: amount
+    });
+    if (error) return { success: false, error: error.message };
+    await fetchWallet();
+    await fetchTransactions();
+    return { success: true };
+  }, [user?.id, fetchWallet, fetchTransactions]);
+
+  useEffect(() => {
+    fetchWallet();
+    fetchTransactions();
+  }, [fetchWallet, fetchTransactions]);
+
+  return {
+    wallet,
+    transactions,
+    loading,
+    error,
+    fetchWallet,
+    fetchTransactions,
+    deposit,
+    withdraw,
+    transfer,
+  };
 }

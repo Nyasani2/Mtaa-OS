@@ -5,111 +5,123 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
-
-async function supabaseSignUp(email: string, password: string) {
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) throw new Error(error.message);
-  return data;
-}
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const theme = useColorScheme();
+  const isDark = theme === 'dark';
+  const { signUp } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [success, setSuccess] = useState(false);
 
-  const handleSignup = async () => {
-    if (!email.trim() || !password.trim()) {
-      setErrorMsg('Email and password are required');
+  async function handleSignup() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    if (password !== confirm) {
-      setErrorMsg('Passwords do not match');
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
     if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters');
+      Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
-    setErrorMsg('');
     try {
-      await supabaseSignUp(email.trim(), password);
-      setSuccess(true);
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Sign up failed. Please try again.');
+      const { error } = await signUp(email, password);
+      if (error) throw error;
+
+      // ✅ SUCCESS: Redirect to set PIN (not login)
+      Alert.alert('Success', 'Account created! Now set your PIN.', [
+        { text: 'Continue', onPress: () => router.replace('/auth/set-pin') }
+      ]);
+    } catch (e: any) {
+      Alert.alert('Signup Failed', e?.message || 'Please try again');
     } finally {
       setLoading(false);
     }
-  };
-
-  if (success) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.header}>Account Created!</Text>
-        <Text style={styles.subtitle}>Check your email to confirm your account.</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth/login')}>
-          <Text style={styles.buttonText}>Go to Sign In</Text>
-        </TouchableOpacity>
-      </View>
-    );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Create Account</Text>
+    <View style={[styles.container, isDark && styles.containerDark]}>
+      <Text style={[styles.title, isDark && styles.textDark]}>Create Account</Text>
+
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        placeholderTextColor={isDark ? '#888' : '#999'}
         keyboardType="email-address"
         autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
       />
+
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         placeholder="Password"
+        placeholderTextColor={isDark ? '#888' : '#999'}
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
       />
+
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         placeholder="Confirm Password"
-        value={confirm}
-        onChangeText={setConfirm}
+        placeholderTextColor={isDark ? '#888' : '#999'}
         secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
       />
-      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
+
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleSignup}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Create Account</Text>
+        )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/auth/login')}>
-        <Text style={styles.link}>Already have an account? Sign In</Text>
+
+      <TouchableOpacity onPress={() => router.replace('/auth/login')}>
+        <Text style={[styles.link, isDark && styles.linkDark]}>
+          Already have an account? Log in
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', marginBottom: 24, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  containerDark: { backgroundColor: '#0f0f0f' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
+  textDark: { color: '#fff' },
+  input: {
+    borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
+    padding: 16, marginBottom: 12, fontSize: 16,
+  },
+  inputDark: { borderColor: '#333', color: '#fff', backgroundColor: '#1a1a1a' },
+  button: {
+    backgroundColor: '#ef4444', padding: 16, borderRadius: 12,
+    alignItems: 'center', marginTop: 8,
+  },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  error: { color: '#ef4444', marginBottom: 12 },
-  link: { color: '#2563eb', textAlign: 'center', marginTop: 16, fontSize: 14 },
+  link: { marginTop: 16, textAlign: 'center', color: '#ef4444' },
+  linkDark: { color: '#f87171' },
 });
