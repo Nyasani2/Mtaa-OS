@@ -1,9 +1,11 @@
 // domains/wallet/hooks/useWallet.ts
-// Shim for shop wallet imports — re-exports from canonical wallet service
+// v3: Matches wallet index screen API — returns balance, setBalance, transactions, etc.
 
 import { useCallback, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+
+// ─── useWalletBalance ───────────────────────────────────────
 
 export function useWalletBalance() {
   const user = useAuthStore((s) => s.user);
@@ -36,6 +38,8 @@ export function useWalletBalance() {
 
   return { balance, loading, error, refresh };
 }
+
+// ─── useWalletSend ──────────────────────────────────────────
 
 export function useWalletSend() {
   const user = useAuthStore((s) => s.user);
@@ -76,6 +80,8 @@ export function useWalletSend() {
   return { send, sending, error, lastTx };
 }
 
+// ─── useWalletReceive ───────────────────────────────────────
+
 export function useWalletReceive() {
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -103,6 +109,8 @@ export function useWalletReceive() {
   return { request, createRequest, cancelRequest, loading };
 }
 
+// ─── useWalletHistory ───────────────────────────────────────
+
 export function useWalletHistory({ limit = 20 }: { limit?: number } = {}) {
   const user = useAuthStore((s) => s.user);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -127,12 +135,12 @@ export function useWalletHistory({ limit = 20 }: { limit?: number } = {}) {
 }
 
 // ─── useWalletStore ─────────────────────────────────────────
-// Added to fix: useWalletStore is not a function
-// Provides wallet state management for components that expect a store pattern
+// v3: Returns exactly what wallet/index.tsx expects:
+//   balance, setBalance, transactions, loading, error, deposit, withdraw, transfer
 
 export function useWalletStore() {
   const user = useAuthStore((s) => s.user);
-  const [wallet, setWallet] = useState<any>(null);
+  const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,14 +152,14 @@ export function useWalletStore() {
 
     const { data, error } = await supabase
       .from('wallets')
-      .select('*')
+      .select('balance, held_balance, currency')
       .eq('user_id', user.id)
       .single();
 
     if (error) {
       setError(error.message);
-    } else {
-      setWallet(data);
+    } else if (data) {
+      setBalance((data.balance || 0) - (data.held_balance || 0));
     }
     setLoading(false);
   }, [user?.id]);
@@ -209,7 +217,8 @@ export function useWalletStore() {
   }, [fetchWallet, fetchTransactions]);
 
   return {
-    wallet,
+    balance,
+    setBalance,
     transactions,
     loading,
     error,
