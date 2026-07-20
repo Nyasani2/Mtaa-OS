@@ -12,7 +12,7 @@ import { setPin } from '@/lib/security/pin-engine';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const MAX_LENGTH = 6;
-const MIN_LENGTH = 4;
+const MIN_LENGTH = 6;
 
 export default function SetPinScreen() {
   const router = useRouter();

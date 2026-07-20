@@ -1,400 +1,389 @@
-// app/(os)/wallet/deposit.tsx — Clean Deposit Screen
-// Uses expo-clipboard (installed), NOT react-native Clipboard (deprecated)
-
 import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
-import { useWallet } from '@/domains/wallet/hooks';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
+import { useAuth } from '@/lib/auth/useAuth';
+import { useWalletStore } from '@/lib/modules/wallet/store';
+import { depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';
+import { supabase } from '@/lib/supabase';
 
-const DEPOSIT_METHODS = [
-  { id: 'mpesa', label: 'M-Pesa', icon: 'phone-portrait', color: '#00A650', desc: 'STK Push to your phone' },
-  { id: 'card', label: 'Card', icon: 'card', color: '#2563EB', desc: 'Visa, Mastercard, Amex' },
-  { id: 'bank', label: 'Bank Transfer', icon: 'business', color: '#F59E0B', desc: 'KCB, Equity, Co-op' },
-  { id: 'crypto', label: 'Crypto', icon: 'logo-bitcoin', color: '#8B5CF6', desc: 'USDT, BTC, ETH' },
+const PAYMENT_METHODS = [
+  { id: 'card', label: 'Credit/Debit Card', icon: 'card-outline' as const },
+  { id: 'bank', label: 'Bank Transfer', icon: 'business-outline' as const },
+  { id: 'mobile', label: 'M-Pesa', icon: 'phone-portrait-outline' as const },
+  { id: 'crypto', label: 'Crypto Deposit', icon: 'logo-bitcoin' as const },
 ];
+
+const QUICK_AMOUNTS = [500, 1000, 5000, 10000, 50000];
 
 export default function DepositScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { deposit, getAvailableBalance, getFormattedBalance, isProcessing, error, clearError } = useWallet();
-  const { user } = useAuthStore();
+  const { user } = useAuth();
+  const { accounts, activeAccountId, addTransaction, syncBalance } = useWalletStore();
 
-  const [method, setMethod] = useState('mpesa');
+  const activeAccount = accounts.find(a => a.id === activeAccountId) || accounts[0];
+
   const [amount, setAmount] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
+  const [selectedMethod, setSelectedMethod] = useState('card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [depositResult, setDepositResult] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
 
-  const quickAmounts = ['500', '1000', '5000', '10000'];
+  const handleQuickAmount = useCallback((val: number) => {
+    setAmount(val.toString());
+  }, []);
+
+  const validateCard = useCallback(() => {
+    if (!cardNumber.replace(/\s/g, '').match(/^\d{13,19}$/)) {
+      Alert.alert('Invalid Card', 'Please enter a valid card number (13-19 digits)');
+      return false;
+    }
+    if (!expiry.match(/^\d{2}\/\d{2}$/)) {
+      Alert.alert('Invalid Expiry', 'Please enter expiry as MM/YY');
+      return false;
+    }
+    if (!cvv.match(/^\d{3,4}$/)) {
+      Alert.alert('Invalid CVV', 'Please enter a valid CVV (3-4 digits)');
+      return false;
+    }
+    if (cardHolder.trim().length < 2) {
+      Alert.alert('Invalid Name', 'Please enter the cardholder name');
+      return false;
+    }
+    return true;
+  }, [cardNumber, expiry, cvv, cardHolder]);
+
+  const validateBank = useCallback(() => {
+    if (bankName.trim().length < 2) {
+      Alert.alert('Invalid Bank', 'Please enter your bank name');
+      return false;
+    }
+    if (!accountNumber.match(/^\d{8,20}$/)) {
+      Alert.alert('Invalid Account', 'Please enter a valid account number');
+      return false;
+    }
+    return true;
+  }, [bankName, accountNumber]);
+
+  const validateMobile = useCallback(() => {
+    if (!mobileNumber.match(/^\d{9,12}$/)) {
+      Alert.alert('Invalid Number', 'Please enter a valid M-Pesa number');
+      return false;
+    }
+    return true;
+  }, [mobileNumber]);
 
   const handleDeposit = useCallback(async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+    const numAmount = parseFloat(amount);
+    if (!numAmount || numAmount <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid deposit amount');
       return;
     }
-    const amt = parseFloat(amount);
-    if (amt < 10) {
-      Alert.alert('Error', 'Minimum deposit is KES 10');
+    if (numAmount < 100) {
+      Alert.alert('Minimum Deposit', 'Minimum deposit amount is KSh 100');
       return;
     }
+
+    if (selectedMethod === 'card' && !validateCard()) return;
+    if (selectedMethod === 'bank' && !validateBank()) return;
+    if (selectedMethod === 'mobile' && !validateMobile()) return;
 
     setLoading(true);
-    clearError?.();
-
     try {
-      const result = await deposit(amt, method, phoneNumber);
-      if (!result.success) {
-        Alert.alert('Deposit Failed', result.error || 'Unknown error');
-        return;
-      }
-      setDepositResult(result);
+      const success = await depositToWallet(
+        user?.id || '',
+        numAmount,
+        `Deposit via ${selectedMethod}`,
+        undefined,
+        selectedMethod
+      );
 
-      if (method === 'mpesa') {
-        Alert.alert(
-          'STK Push Sent',
-          'Check your phone and enter your M-Pesa PIN to complete the deposit.',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
-      } else if (method === 'bank') {
-        Alert.alert('Bank Transfer Instructions', 'Please complete the bank transfer using the provided details. Funds will reflect within 1-24 hours.', [{ text: 'OK' }]);
-      } else if (method === 'crypto') {
-        Alert.alert('Crypto Deposit', 'Send the specified amount to the provided address. Funds will reflect after confirmations.', [{ text: 'OK' }]);
-      } else {
-        Alert.alert('Deposit Initiated', 'Your deposit is being processed.');
+      if (!success) {
+        throw new Error('Deposit failed on server');
       }
-    } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Deposit failed');
-    } finally {
+
+      // Get updated wallet
+      const { data: wallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (wallet) {
+        syncBalance(activeAccountId, wallet.balance);
+      }
+
+      // Create local transaction record
+      addTransaction({
+        id: Date.now().toString(),
+        type: 'credit',
+        amount: numAmount,
+        currency: 'KES',
+        description: `Deposit via ${selectedMethod}`,
+        status: 'completed',
+        timestamp: new Date().toISOString(),
+        balanceAfter: (activeAccount?.balance || 0) + numAmount,
+      });
+
       setLoading(false);
+      Alert.alert(
+        'Deposit Successful',
+        `KSh ${numAmount.toLocaleString()} has been deposited to your wallet.`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (err: any) {
+      setLoading(false);
+      Alert.alert('Deposit Failed', err.message || 'Something went wrong');
     }
-  }, [amount, method, phoneNumber, deposit, clearError, router]);
+  }, [amount, selectedMethod, user, activeAccountId, activeAccount, validateCard, validateBank, validateMobile, syncBalance, addTransaction, router]);
 
-  const copyToClipboard = async (text: string) => {
-    await Clipboard.setStringAsync(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const formatCardNumber = useCallback((text: string) => {
+    const cleaned = text.replace(/\D/g, '').slice(0, 19);
+    const groups = cleaned.match(/.{1,4}/g);
+    return groups ? groups.join(' ') : cleaned;
+  }, []);
+
+  const formatExpiry = useCallback((text: string) => {
+    const cleaned = text.replace(/\D/g, '').slice(0, 4);
+    if (cleaned.length >= 2) {
+      return cleaned.slice(0, 2) + '/' + cleaned.slice(2);
+    }
+    return cleaned;
+  }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Deposit</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceValue}>{getFormattedBalance()}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Deposit</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        <Text style={styles.sectionLabel}>Deposit Method</Text>
-        <View style={styles.methodGrid}>
-          {DEPOSIT_METHODS.map((m) => (
+        {/* Amount Input */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Amount (KSh)</Text>
+          <View style={styles.amountRow}>
+            <Text style={styles.currency}>KSh</Text>
+            <TextInput
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="0.00"
+              placeholderTextColor="#6b7280"
+              keyboardType="decimal-pad"
+              style={styles.amountInput}
+            />
+          </View>
+          <View style={styles.quickRow}>
+            {QUICK_AMOUNTS.map((val) => (
+              <TouchableOpacity
+                key={val}
+                onPress={() => handleQuickAmount(val)}
+                style={[styles.quickBtn, amount === val.toString() && styles.quickBtnActive]}
+              >
+                <Text style={[styles.quickText, amount === val.toString() && styles.quickTextActive]}>
+                  {val.toLocaleString()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Payment Methods */}
+        <View style={styles.card}>
+          <Text style={styles.label}>Payment Method</Text>
+          {PAYMENT_METHODS.map((method) => (
             <TouchableOpacity
-              key={m.id}
-              style={[styles.methodCard, method === m.id && styles.methodCardActive]}
-              onPress={() => { setMethod(m.id); setDepositResult(null); }}
+              key={method.id}
+              onPress={() => setSelectedMethod(method.id)}
+              style={[styles.methodRow, selectedMethod === method.id && styles.methodRowActive]}
             >
-              <View style={[styles.methodIconWrap, { backgroundColor: m.color + '20' }]}>
-                <Ionicons name={m.icon as any} size={24} color={m.color} />
-              </View>
-              <Text style={[styles.methodLabel, method === m.id && styles.methodLabelActive]}>{m.label}</Text>
-              <Text style={styles.methodDesc}>{m.desc}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.sectionLabel}>Amount (KES)</Text>
-        <View style={styles.amountRow}>
-          <Text style={styles.currency}>KES</Text>
-          <TextInput
-            style={styles.amountInput}
-            placeholder="0.00"
-            placeholderTextColor={COLORS.textSecondary}
-            keyboardType="decimal-pad"
-            value={amount}
-            onChangeText={setAmount}
-            maxLength={10}
-          />
-        </View>
-
-        <View style={styles.quickRow}>
-          {quickAmounts.map((amt) => (
-            <TouchableOpacity
-              key={amt}
-              style={[styles.quickChip, amount === amt && styles.quickChipActive]}
-              onPress={() => setAmount(amt)}
-            >
-              <Text style={[styles.quickText, amount === amt && styles.quickTextActive]}>
-                KES {parseInt(amt).toLocaleString()}
+              <Ionicons
+                name={method.icon}
+                size={22}
+                color={selectedMethod === method.id ? '#10b981' : '#9ca3af'}
+              />
+              <Text style={[styles.methodText, selectedMethod === method.id && styles.methodTextActive]}>
+                {method.label}
               </Text>
+              <View style={[styles.radio, selectedMethod === method.id && styles.radioActive]}>
+                {selectedMethod === method.id && <Ionicons name="checkmark" size={12} color="#fff" />}
+              </View>
             </TouchableOpacity>
           ))}
         </View>
 
-        {method === 'mpesa' && (
-          <View style={styles.section}>
-            <Text style={styles.label}>M-Pesa Phone Number</Text>
-            <View style={styles.inputRow}>
-              <Ionicons name="call" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+        {/* Card Form */}
+        {selectedMethod === 'card' && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Card Details</Text>
+            <TextInput
+              value={cardNumber}
+              onChangeText={(text) => setCardNumber(formatCardNumber(text))}
+              placeholder="Card Number"
+              placeholderTextColor="#6b7280"
+              keyboardType="number-pad"
+              maxLength={23}
+              style={styles.input}
+            />
+            <View style={styles.row}>
               <TextInput
-                style={styles.input}
-                placeholder="2547XXXXXXXX"
-                placeholderTextColor={COLORS.textSecondary}
-                keyboardType="phone-pad"
-                value={phoneNumber}
-                onChangeText={setPhoneNumber}
-                maxLength={12}
+                value={expiry}
+                onChangeText={(text) => setExpiry(formatExpiry(text))}
+                placeholder="MM/YY"
+                placeholderTextColor="#6b7280"
+                keyboardType="number-pad"
+                maxLength={5}
+                style={[styles.input, { flex: 1 }]}
+              />
+              <TextInput
+                value={cvv}
+                onChangeText={(text) => setCvv(text.replace(/\D/g, '').slice(0, 4))}
+                placeholder="CVV"
+                placeholderTextColor="#6b7280"
+                keyboardType="number-pad"
+                maxLength={4}
+                secureTextEntry
+                style={[styles.input, { flex: 1, marginLeft: 12 }]}
               />
             </View>
-            <Text style={styles.hint}>Enter your M-Pesa registered number</Text>
+            <TextInput
+              value={cardHolder}
+              onChangeText={setCardHolder}
+              placeholder="Cardholder Name"
+              placeholderTextColor="#6b7280"
+              autoCapitalize="words"
+              style={styles.input}
+            />
           </View>
         )}
 
-        {method === 'bank' && depositResult?.instructions && (
-          <View style={styles.instructionCard}>
-            <Text style={styles.instructionTitle}>Bank Transfer Details</Text>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Bank</Text>
-              <Text style={styles.instructionValue}>{depositResult.instructions.bank_name}</Text>
-            </View>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Account Name</Text>
-              <Text style={styles.instructionValue}>{depositResult.instructions.account_name}</Text>
-            </View>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Account Number</Text>
-              <View style={styles.copyRow}>
-                <Text style={styles.instructionValue}>{depositResult.instructions.account_number}</Text>
-                <TouchableOpacity onPress={() => copyToClipboard(depositResult.instructions.account_number)}>
-                  <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Reference</Text>
-              <View style={styles.copyRow}>
-                <Text style={styles.instructionValue}>{depositResult.instructions.reference}</Text>
-                <TouchableOpacity onPress={() => copyToClipboard(depositResult.instructions.reference)}>
-                  <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <Text style={styles.instructionNote}>{depositResult.instructions.instructions}</Text>
+        {/* Bank Transfer Form */}
+        {selectedMethod === 'bank' && (
+          <View style={styles.card}>
+            <Text style={styles.label}>Bank Details</Text>
+            <TextInput
+              value={bankName}
+              onChangeText={setBankName}
+              placeholder="Bank Name"
+              placeholderTextColor="#6b7280"
+              style={styles.input}
+            />
+            <TextInput
+              value={accountNumber}
+              onChangeText={(text) => setAccountNumber(text.replace(/\D/g, '').slice(0, 20))}
+              placeholder="Account Number"
+              placeholderTextColor="#6b7280"
+              keyboardType="number-pad"
+              style={styles.input}
+            />
           </View>
         )}
 
-        {method === 'crypto' && depositResult?.instructions && (
-          <View style={styles.instructionCard}>
-            <Text style={styles.instructionTitle}>Crypto Deposit</Text>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Network</Text>
-              <Text style={styles.instructionValue}>{depositResult.instructions.network}</Text>
+        {/* M-Pesa Form */}
+        {selectedMethod === 'mobile' && (
+          <View style={styles.card}>
+            <Text style={styles.label}>M-Pesa Number</Text>
+            <TextInput
+              value={mobileNumber}
+              onChangeText={(text) => setMobileNumber(text.replace(/\D/g, '').slice(0, 12))}
+              placeholder="2547XXXXXXXX"
+              placeholderTextColor="#6b7280"
+              keyboardType="phone-pad"
+              style={styles.input}
+            />
+            <Text style={styles.hint}>You will receive an M-Pesa STK push to complete payment</Text>
+          </View>
+        )}
+
+        {/* Crypto Deposit Info */}
+        {selectedMethod === 'crypto' && (
+          <View style={styles.card}>
+            <View style={{ alignItems: 'center', padding: 16 }}>
+              <Ionicons name="logo-bitcoin" size={48} color="#f59e0b" />
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 12 }}>
+                Crypto Deposit
+              </Text>
+              <Text style={{ color: '#9ca3af', textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+                Use the Crypto tab in your wallet to deposit Bitcoin, Ethereum, or USDT directly.
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(os)/wallet/crypto')}
+                style={styles.cryptoBtn}
+              >
+                <Text style={styles.cryptoBtnText}>Go to Crypto</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.instructionRow}>
-              <Text style={styles.instructionLabel}>Address</Text>
-              <View style={styles.copyRow}>
-                <Text style={styles.instructionValue} numberOfLines={1}>{depositResult.instructions.address}</Text>
-                <TouchableOpacity onPress={() => copyToClipboard(depositResult.instructions.address)}>
-                  <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <Text style={styles.instructionNote}>{depositResult.instructions.instructions}</Text>
           </View>
         )}
 
-        {method === 'card' && (
-          <View style={styles.instructionCard}>
-            <Text style={styles.instructionTitle}>Card Payment</Text>
-            <Text style={styles.instructionNote}>
-              Card payment integration is coming soon. For now, please use M-Pesa or Bank Transfer to deposit funds.
-            </Text>
-          </View>
-        )}
-
-        {error && (
-          <View style={styles.errorCard}>
-            <Ionicons name="alert-circle" size={20} color="#EF4444" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
+        {/* Deposit Button */}
         <TouchableOpacity
-          style={[styles.depositBtn, (!amount || loading || isProcessing) && styles.depositBtnDisabled]}
           onPress={handleDeposit}
-          disabled={!amount || loading || isProcessing}
+          disabled={loading || !amount || parseFloat(amount) <= 0}
+          style={[styles.confirmBtn, (!amount || parseFloat(amount) <= 0) && styles.confirmBtnDisabled]}
         >
-          {loading || isProcessing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="arrow-down" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.depositBtnText}>Deposit KES {amount || '0'}</Text>
-            </>
+          {loading ? <ActivityIndicator color="#fff" /> : (
+            <Text style={styles.confirmText}>
+              Deposit KSh {amount ? parseFloat(amount).toLocaleString() : '0'}
+            </Text>
           )}
         </TouchableOpacity>
-
-        <View style={{ height: SIZES.xl }} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
-  },
-  backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
-  balanceCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
-    padding: SIZES.lg,
-    marginBottom: SIZES.lg,
-  },
-  balanceLabel: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
-  balanceValue: { fontFamily: FONTS.bold, fontSize: 28, color: '#fff', marginTop: 4 },
-  sectionLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: 16,
-    color: COLORS.text,
-    marginTop: SIZES.lg,
-    marginBottom: SIZES.sm,
-  },
-  methodGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SIZES.sm,
-  },
-  methodCard: {
-    width: '47%',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    padding: SIZES.md,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  methodCardActive: { borderColor: COLORS.primary },
-  methodIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  methodLabel: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
-  methodLabelActive: { color: COLORS.primary },
-  methodDesc: { fontFamily: FONTS.regular, fontSize: 11, color: COLORS.textSecondary, marginTop: 2, textAlign: 'center' },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
-    height: 64,
-  },
-  currency: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginRight: SIZES.sm },
-  amountInput: {
-    flex: 1,
-    fontFamily: FONTS.bold,
-    fontSize: 28,
-    color: COLORS.text,
-  },
-  quickRow: {
-    flexDirection: 'row',
-    marginTop: SIZES.md,
-    gap: SIZES.sm,
-  },
-  quickChip: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingVertical: SIZES.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  quickChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  quickText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.text },
-  quickTextActive: { color: '#fff', fontFamily: FONTS.bold },
-  section: { marginTop: SIZES.lg },
-  label: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary, marginBottom: SIZES.sm },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
-    height: 52,
-  },
-  inputIcon: { marginRight: SIZES.sm },
-  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
-  hint: { fontFamily: FONTS.regular, fontSize: 12, color: COLORS.textSecondary, marginTop: 6 },
-  instructionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    padding: SIZES.md,
-    marginTop: SIZES.lg,
-  },
-  instructionTitle: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text, marginBottom: SIZES.md },
-  instructionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  instructionLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
-  instructionValue: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
-  copyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  instructionNote: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, marginTop: SIZES.md, lineHeight: 20 },
-  errorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EF444420',
-    borderRadius: SIZES.sm,
-    padding: SIZES.md,
-    marginTop: SIZES.lg,
-    gap: 8,
-  },
-  errorText: { fontFamily: FONTS.medium, fontSize: 14, color: '#EF4444', flex: 1 },
-  depositBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SIZES.lg,
-  },
-  depositBtnDisabled: { opacity: 0.5 },
-  depositBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
+  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  scroll: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginHorizontal: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  label: { fontSize: 14, color: '#9ca3af', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
+  amountRow: { flexDirection: 'row', alignItems: 'center' },
+  currency: { color: '#fff', fontSize: 24, fontWeight: '700', marginRight: 8 },
+  amountInput: { flex: 1, color: '#fff', fontSize: 32, fontWeight: '700' },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, gap: 8 },
+  quickBtn: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  quickBtnActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
+  quickText: { color: '#9ca3af', fontSize: 13, fontWeight: '600' },
+  quickTextActive: { color: '#fff' },
+  methodRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  methodRowActive: { backgroundColor: 'rgba(16,185,129,0.1)', borderColor: '#10b981' },
+  methodText: { flex: 1, marginLeft: 12, color: '#fff', fontSize: 15, fontWeight: '600' },
+  methodTextActive: { color: '#10b981' },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#4b5563', alignItems: 'center', justifyContent: 'center' },
+  radioActive: { borderColor: '#10b981', backgroundColor: '#10b981' },
+  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  row: { flexDirection: 'row' },
+  hint: { color: '#6b7280', fontSize: 12, marginTop: 8 },
+  cryptoBtn: { backgroundColor: '#f59e0b', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, marginTop: 16 },
+  cryptoBtnText: { color: '#000', fontWeight: '700' },
+  confirmBtn: { backgroundColor: '#10b981', marginHorizontal: 16, padding: 18, borderRadius: 16, alignItems: 'center', marginBottom: 24 },
+  confirmBtnDisabled: { backgroundColor: '#333', opacity: 0.6 },
+  confirmText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

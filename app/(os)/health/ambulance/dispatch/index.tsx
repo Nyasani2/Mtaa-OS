@@ -1,243 +1,150 @@
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert
-} from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAmbulanceDispatch } from '@/lib/health/hooks/useAmbulanceDispatch';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Phone, MapPin, AlertTriangle, Clock, Navigation, Send, Activity, Heart } from 'lucide-react-native';
 
-const PRIORITIES = [
-  { id: "routine", label: "Routine", color: "#6b7280" },
-  { id: "urgent", label: "Urgent", color: "#f59e0b" },
-  { id: "emergency", label: "Emergency", color: "#ef4444" },
-];
-
-const CALL_TYPES = ["Medical Emergency", "Trauma", "Maternity", "Pediatric", "Cardiac", "Respiratory", "Stroke", "Other"];
-
-export default function AmbulanceDispatch() {
+export default function AmbulanceDispatchScreen() {
   const router = useRouter();
-  const { dispatchAmbulance } = useHealthStore();
-
-  const [callerName, setCallerName] = useState("");
-  const [callerPhone, setCallerPhone] = useState("");
-  const [patientName, setPatientName] = useState("");
-  const [patientAge, setPatientAge] = useState("");
-  const [location, setLocation] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [priority, setPriority] = useState("emergency");
-  const [callType, setCallType] = useState("Medical Emergency");
-  const [complaint, setComplaint] = useState("");
-  const [conscious, setConscious] = useState(true);
-  const [breathing, setBreathing] = useState(true);
-  const [bleeding, setBleeding] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuthStore();
+  const { units, activeDispatches, createDispatch, updateDispatch, loading } = useAmbulanceDispatch();
+  const [form, setForm] = useState({ patient_name: '', phone: '', location: '', chief_complaint: '', priority: 'medium', notes: '', conscious: true, breathing: true, bleeding: false });
+  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
 
   const handleDispatch = async () => {
-    if (!callerPhone || !location || !complaint) {
-      Alert.alert("Missing Fields", "Please fill in caller phone, location, and chief complaint.");
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await dispatchAmbulance({
-        caller_name: callerName,
-        caller_phone: callerPhone,
-        patient_name: patientName,
-        patient_age: patientAge,
-        location,
-        landmark,
-        priority,
-        call_type: callType,
-        chief_complaint: complaint,
-        conscious,
-        breathing,
-        bleeding,
-        notes,
-      });
-      Alert.alert("Dispatched", "Ambulance dispatched successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
-    } catch (e) {
-      Alert.alert("Error", "Failed to dispatch ambulance.");
-    } finally {
-      setSubmitting(false);
-    }
+    if (!form.patient_name || !form.location || !form.chief_complaint) { Alert.alert('Error', 'Patient name, location, and complaint required'); return; }
+    const result = await createDispatch({ ...form, unit_id: selectedUnit });
+    if (result.success) { Alert.alert('Dispatch Created', 'Unit assigned. ETA will be updated shortly.'); setForm({ patient_name: '', phone: '', location: '', chief_complaint: '', priority: 'medium', notes: '', conscious: true, breathing: true, bleeding: false }); }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Dispatch</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Ambulance Dispatch</Text>
+        <View style={styles.statusBadge}>
+          <Activity size={14} color="#10B981" />
+          <Text style={styles.statusText}>{units?.filter((u: any) => u.status === 'available').length || 0} Available</Text>
+        </View>
       </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Caller Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Caller Information</Text>
-          <TextInput style={styles.input} placeholder="Caller Name" value={callerName} onChangeText={setCallerName} />
-          <TextInput style={styles.input} placeholder="Caller Phone *" value={callerPhone} onChangeText={setCallerPhone} keyboardType="phone-pad" />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>New Emergency Call</Text>
+        <TextInput style={styles.input} placeholder="Patient Name" value={form.patient_name} onChangeText={t => setForm({...form, patient_name: t})} />
+        <View style={styles.inputRow}><Phone size={18} color="#6B7280" /><TextInput style={styles.inputFlex} placeholder="Phone Number" value={form.phone} onChangeText={t => setForm({...form, phone: t})} keyboardType="phone-pad" /></View>
+        <View style={styles.inputRow}><MapPin size={18} color="#6B7280" /><TextInput style={styles.inputFlex} placeholder="Location / Address" value={form.location} onChangeText={t => setForm({...form, location: t})} /></View>
+        <TextInput style={[styles.input, styles.textArea]} placeholder="Chief Complaint / Symptoms" value={form.chief_complaint} onChangeText={t => setForm({...form, chief_complaint: t})} multiline numberOfLines={3} />
+        <Text style={styles.label}>Priority</Text>
+        <View style={styles.priorityRow}>
+          {['low','medium','high','critical'].map(p => (
+            <TouchableOpacity key={p} style={[styles.priorityChip, form.priority === p && styles[`priority${p}` as keyof typeof styles]]} onPress={() => setForm({...form, priority: p})}>
+              <Text style={[styles.priorityText, form.priority === p && styles.priorityTextActive]}>{p.toUpperCase()}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-
-        {/* Patient Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Patient Information</Text>
-          <TextInput style={styles.input} placeholder="Patient Name (if known)" value={patientName} onChangeText={setPatientName} />
-          <TextInput style={styles.input} placeholder="Age" value={patientAge} onChangeText={setPatientAge} keyboardType="numeric" />
-        </View>
-
-        {/* Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Location</Text>
-          <TextInput style={styles.input} placeholder="Address / Location *" value={location} onChangeText={setLocation} />
-          <TextInput style={styles.input} placeholder="Nearby Landmark" value={landmark} onChangeText={setLandmark} />
-        </View>
-
-        {/* Priority */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Priority</Text>
-          <View style={styles.priorityRow}>
-            {PRIORITIES.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={[styles.priorityChip, priority === p.id && { backgroundColor: p.color + "20", borderColor: p.color }]}
-                onPress={() => setPriority(p.id)}
-              >
-                <View style={[styles.priorityDot, { backgroundColor: p.color }]} />
-                <Text style={[styles.priorityChipText, priority === p.id && { color: p.color, fontWeight: "700" }]}>
-                  {p.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Call Type */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Call Type</Text>
-          <View style={styles.chipWrap}>
-            {CALL_TYPES.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.chip, callType === t && styles.chipActive]}
-                onPress={() => setCallType(t)}
-              >
-                <Text style={[styles.chipText, callType === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Chief Complaint */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chief Complaint *</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Describe the emergency situation..."
-            value={complaint}
-            onChangeText={setComplaint}
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-
-        {/* Vitals Check */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Assessment</Text>
-          <TouchableOpacity style={styles.toggleRow} onPress={() => setConscious(!conscious)}>
-            <View style={[styles.toggle, conscious && styles.toggleActive]}>
-              {conscious && <View style={styles.toggleKnob} />}
-            </View>
-            <Text style={styles.toggleLabel}>Patient Conscious</Text>
+        <View style={styles.vitalsRow}>
+          <TouchableOpacity style={[styles.vitalChip, form.conscious && styles.vitalActive]} onPress={() => setForm({...form, conscious: !form.conscious})}>
+            <Heart size={14} color={form.conscious ? '#10B981' : '#6B7280'} /><Text style={styles.vitalText}>Conscious</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.toggleRow} onPress={() => setBreathing(!breathing)}>
-            <View style={[styles.toggle, breathing && styles.toggleActive]}>
-              {breathing && <View style={styles.toggleKnob} />}
-            </View>
-            <Text style={styles.toggleLabel}>Patient Breathing</Text>
+          <TouchableOpacity style={[styles.vitalChip, form.breathing && styles.vitalActive]} onPress={() => setForm({...form, breathing: !form.breathing})}>
+            <Activity size={14} color={form.breathing ? '#10B981' : '#6B7280'} /><Text style={styles.vitalText}>Breathing</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.toggleRow} onPress={() => setBleeding(!bleeding)}>
-            <View style={[styles.toggle, bleeding && styles.toggleActive]}>
-              {bleeding && <View style={styles.toggleKnob} />}
-            </View>
-            <Text style={styles.toggleLabel}>Active Bleeding</Text>
+          <TouchableOpacity style={[styles.vitalChip, form.bleeding && styles.vitalActive]} onPress={() => setForm({...form, bleeding: !form.bleeding})}>
+            <AlertTriangle size={14} color={form.bleeding ? '#EF4444' : '#6B7280'} /><Text style={styles.vitalText}>Bleeding</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Notes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Additional Notes</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Any hazards, access issues, special instructions..."
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.dispatchBtn, submitting && { opacity: 0.6 }]}
-          onPress={handleDispatch}
-          disabled={submitting}
-        >
-          <Ionicons name="navigate" size={20} color="#fff" />
-          <Text style={styles.dispatchBtnText}>{submitting ? "Dispatching..." : "Dispatch Ambulance"}</Text>
+        <TextInput style={[styles.input, styles.textArea]} placeholder="Additional Notes" value={form.notes} onChangeText={t => setForm({...form, notes: t})} multiline numberOfLines={2} />
+        <Text style={styles.label}>Assign Unit</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.unitScroll}>
+          {units?.map((unit: any) => (
+            <TouchableOpacity key={unit.id} style={[styles.unitCard, selectedUnit === unit.id && styles.unitCardActive]} onPress={() => setSelectedUnit(unit.id)}>
+              <Navigation size={20} color={selectedUnit === unit.id ? '#0A4DA6' : '#6B7280'} />
+              <Text style={[styles.unitName, selectedUnit === unit.id && styles.unitNameActive]}>{unit.unit_number}</Text>
+              <Text style={styles.unitType}>{unit.vehicle_type}</Text>
+              <View style={[styles.unitStatus, { backgroundColor: unit.status === 'available' ? '#ECFDF5' : '#FEF3C7' }]}>
+                <Text style={[styles.unitStatusText, { color: unit.status === 'available' ? '#10B981' : '#F59E0B' }]}>{unit.status}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <TouchableOpacity style={styles.dispatchBtn} onPress={handleDispatch} disabled={loading}>
+          <Send size={18} color="#fff" /><Text style={styles.dispatchText}>{loading ? 'Dispatching...' : 'Dispatch Ambulance'}</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Active Dispatches</Text>
+        {activeDispatches?.length === 0 ? <Text style={styles.emptyText}>No active dispatches</Text>
+         : activeDispatches?.map((d: any) => (
+          <View key={d.id} style={styles.dispatchCard}>
+            <View style={styles.dispatchHeader}>
+              <View style={styles.dispatchLeft}>
+                <Text style={styles.dispatchPatient}>{d.patient_name}</Text>
+                <Text style={styles.dispatchLocation}><MapPin size={12} color="#6B7280" /> {d.location}</Text>
+              </View>
+              <View style={[styles.priorityBadge, styles[`badge${d.priority}` as keyof typeof styles]]}>
+                <Text style={styles.priorityBadgeText}>{d.priority}</Text>
+              </View>
+            </View>
+            <Text style={styles.dispatchComplaint}>{d.chief_complaint}</Text>
+            <View style={styles.dispatchFooter}>
+              <View style={styles.dispatchMeta}><Clock size={12} color="#9CA3AF" /><Text style={styles.metaText}>ETA: {d.eta_minutes || '--'} min</Text></View>
+              <View style={styles.dispatchMeta}><Activity size={12} color="#9CA3AF" /><Text style={styles.metaText}>{d.status}</Text></View>
+            </View>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  content: { padding: 16, paddingBottom: 40 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151", marginBottom: 10 },
-  input: {
-    backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 14, color: "#111827", borderWidth: 1, borderColor: "#e5e7eb", marginBottom: 10,
-  },
-  textArea: { height: 90, textAlignVertical: "top", paddingTop: 12 },
-  priorityRow: { flexDirection: "row", gap: 10 },
-  priorityChip: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10,
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", flex: 1,
-  },
-  priorityDot: { width: 8, height: 8, borderRadius: 4 },
-  priorityChipText: { fontSize: 12, color: "#6b7280", fontWeight: "500" },
-  chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  chipActive: { backgroundColor: "#ef4444", borderColor: "#ef4444" },
-  chipText: { fontSize: 12, color: "#6b7280", fontWeight: "500" },
-  chipTextActive: { color: "#fff", fontWeight: "700" },
-  toggleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-  toggle: {
-    width: 44, height: 24, borderRadius: 12, backgroundColor: "#d1d5db",
-    justifyContent: "center", paddingHorizontal: 2,
-  },
-  toggleActive: { backgroundColor: "#ef4444" },
-  toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: "#fff" },
-  toggleLabel: { fontSize: 14, color: "#374151", fontWeight: "500" },
-  dispatchBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: "#ef4444", borderRadius: 14, paddingVertical: 16, marginTop: 8,
-  },
-  dispatchBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#EF4444', paddingTop: 50 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  statusText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  section: { backgroundColor: '#fff', margin: 12, padding: 16, borderRadius: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 12, fontSize: 15, color: '#1F2937', marginBottom: 10 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, marginBottom: 10 },
+  inputFlex: { flex: 1, paddingVertical: 10, fontSize: 15, color: '#1F2937' },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  label: { fontSize: 13, fontWeight: '600', color: '#6B7280', marginBottom: 8, marginTop: 4 },
+  priorityRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  priorityChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
+  prioritylow: { backgroundColor: '#ECFDF5' },
+  prioritymedium: { backgroundColor: '#DBEAFE' },
+  priorityhigh: { backgroundColor: '#FEF3C7' },
+  prioritycritical: { backgroundColor: '#FEE2E2' },
+  priorityText: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
+  priorityTextActive: { color: '#1F2937' },
+  vitalsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  vitalChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
+  vitalActive: { borderColor: '#10B981', backgroundColor: '#ECFDF5' },
+  vitalText: { fontSize: 12, fontWeight: '600', color: '#374151' },
+  unitScroll: { maxHeight: 120, marginBottom: 12 },
+  unitCard: { width: 120, alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 2, borderColor: '#E5E7EB', backgroundColor: '#F9FAFB', marginRight: 10 },
+  unitCardActive: { borderColor: '#0A4DA6', backgroundColor: '#EFF6FF' },
+  unitName: { fontSize: 13, fontWeight: '700', color: '#1F2937', marginTop: 6 },
+  unitNameActive: { color: '#0A4DA6' },
+  unitType: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  unitStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 6 },
+  unitStatusText: { fontSize: 10, fontWeight: '600' },
+  dispatchBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EF4444', paddingVertical: 14, borderRadius: 10, gap: 8 },
+  dispatchText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  dispatchCard: { backgroundColor: '#F9FAFB', borderRadius: 10, padding: 12, marginBottom: 8 },
+  dispatchHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  dispatchLeft: { flex: 1 },
+  dispatchPatient: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  dispatchLocation: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  priorityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  badgelow: { backgroundColor: '#ECFDF5' },
+  badgemedium: { backgroundColor: '#DBEAFE' },
+  badgehigh: { backgroundColor: '#FEF3C7' },
+  badgecritical: { backgroundColor: '#FEE2E2' },
+  priorityBadgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  dispatchComplaint: { fontSize: 13, color: '#374151', marginTop: 8, lineHeight: 18 },
+  dispatchFooter: { flexDirection: 'row', gap: 16, marginTop: 10 },
+  dispatchMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 12, color: '#6B7280' },
+  emptyText: { color: '#9CA3AF', textAlign: 'center', padding: 16 },
 });

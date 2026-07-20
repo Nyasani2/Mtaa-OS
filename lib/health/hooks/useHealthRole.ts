@@ -1,175 +1,37 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { healthRoleService } from "@/lib/health/services/health-role.service";
-import { HealthRole, StaffRecord } from "@/lib/health/types";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-export interface UseHealthRoleReturn {
-  role: HealthRole | null;
-  displayName: string;
-  isPatient: boolean;
-  isAdmin: boolean;
-  isClinical: boolean;
-  isOperational: boolean;
-  staffRecord: StaffRecord | null;
-  allRoles: { id: string; facility_id: string | null; role: HealthRole; department: string | null; facility_name: string | null; verified: boolean }[];
-  loading: boolean;
-  error: string | null;
-  selectedRole: HealthRole | null;
-  selectedFacilityId: string | null;
-  refresh: () => Promise<void>;
-  selectRole: (role: HealthRole, facilityId: string) => void;
-  clearRoleSelection: () => void;
-  clockIn: (method?: string) => Promise<{ success: boolean; error?: string }>;
-  clockOut: (method?: string) => Promise<{ success: boolean; error?: string }>;
-}
+export type HealthRole = 'patient' | 'doctor' | 'nurse' | 'pharmacist' | 'lab_tech' | 'admin' | 'cashier' | 'traditional_healer' | 'herbalist' | 'ambulance_dispatcher' | 'accountant' | 'receptionist';
 
-export function useHealthRole(): UseHealthRoleReturn {
-  const user = useAuthStore((s) => s.user);
+export function useHealthRole() {
+  const { user } = useAuthStore();
   const [role, setRole] = useState<HealthRole | null>(null);
-  const [staffRecord, setStaffRecord] = useState<StaffRecord | null>(null);
-  const [allRoles, setAllRoles] = useState<UseHealthRoleReturn["allRoles"]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<HealthRole | null>(null);
   const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ============================================================
-  // FIX: Use refs for selection state to break the re-render loop
-  // ============================================================
-  const selectedRoleRef = useRef(selectedRole);
-  const selectedFacilityIdRef = useRef(selectedFacilityId);
-
-  useEffect(() => {
-    selectedRoleRef.current = selectedRole;
-  }, [selectedRole]);
-
-  useEffect(() => {
-    selectedFacilityIdRef.current = selectedFacilityId;
-  }, [selectedFacilityId]);
-
-  // ============================================================
-  // FIX: fetchRole NO LONGER depends on selectedRole/selectedFacilityId
-  // It reads from refs instead, preventing the infinite loop
-  // ============================================================
   const fetchRole = useCallback(async () => {
-    if (!user?.id) {
-      setRole(null);
-      setStaffRecord(null);
-      setAllRoles([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
+    if (!user) { setIsLoading(false); return; }
+    setIsLoading(true);
     try {
-      const primary = await healthRoleService.getPrimaryStaffRecord(user.id);
-      const all = await healthRoleService.getAllUserRoles(user.id);
-
-      setStaffRecord(primary);
-      setAllRoles(all);
-
-      if (primary) {
-        // Read selection from refs, NOT from state (breaks the loop)
-        const currentSelectedRole = selectedRoleRef.current;
-        const currentSelectedFacilityId = selectedFacilityIdRef.current;
-
-        if (currentSelectedRole && all.some((r) => r.role === currentSelectedRole && r.facility_id === currentSelectedFacilityId)) {
-          setRole(currentSelectedRole);
-        } else {
-          setRole(primary.role);
-          setSelectedRole(primary.role);
-          setSelectedFacilityId(primary.facilityId || null);
-        }
-      } else {
-        setRole("patient");
-        setSelectedRole(null);
-        setSelectedFacilityId(null);
+      const { data: staff } = await supabase.from('health_staff').select('*, health_facilities!inner(id, name)').eq('user_id', user.id).single();
+      if (staff) {
+        setRole(staff.role_type as HealthRole);
+        setSelectedFacilityId(staff.health_facilities?.id || null);
+        const { data: allStaff } = await supabase.from('health_staff').select('facility_id, health_facilities(id, name)').eq('user_id', user.id);
+        setFacilities(allStaff?.map(s => s.health_facilities).filter(Boolean) || []);
+        setIsLoading(false); return;
       }
-    } catch (err: any) {
-      console.error("[useHealthRole] fetch error:", err);
-      setError(err.message || "Failed to load role");
-      setRole("patient");
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]); // ← ONLY depends on user.id, NOT selectedRole/selectedFacilityId
+      const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).single();
+      if (healer) { setRole('traditional_healer'); setSelectedFacilityId(healer.facility_id); setIsLoading(false); return; }
+      const { data: patient } = await supabase.from('health_patients').select('*').eq('user_id', user.id).single();
+      if (patient) { setRole('patient'); setIsLoading(false); return; }
+      setRole(null);
+    } finally { setIsLoading(false); }
+  }, [user, supabase]);
 
-  // ============================================================
-  // FIX: Only run fetchRole when user.id changes, not on every render
-  // ============================================================
-  useEffect(() => {
-    fetchRole();
-  }, [user?.id]); // ← Direct dependency on user.id, NOT fetchRole reference
-
-  const selectRole = useCallback((newRole: HealthRole, facilityId: string) => {
-    setSelectedRole(newRole);
-    setSelectedFacilityId(facilityId);
-    setRole(newRole);
-  }, []);
-
-  const clearRoleSelection = useCallback(() => {
-    setSelectedRole(null);
-    setSelectedFacilityId(null);
-    if (staffRecord) {
-      setRole(staffRecord.role);
-    } else {
-      setRole("patient");
-    }
-  }, [staffRecord]);
-
-  const clockIn = useCallback(
-    async (method: string = "manual") => {
-      if (!user?.id || !selectedFacilityId) {
-        return { success: false, error: "No facility selected" };
-      }
-      const result = await healthRoleService.clockIn(user.id, selectedFacilityId, method);
-      if (result.success) {
-        await fetchRole();
-      }
-      return result;
-    },
-    [user?.id, selectedFacilityId, fetchRole]
-  );
-
-  const clockOut = useCallback(
-    async (method: string = "manual") => {
-      if (!user?.id || !selectedFacilityId) {
-        return { success: false, error: "No facility selected" };
-      }
-      const result = await healthRoleService.clockOut(user.id, selectedFacilityId, method);
-      if (result.success) {
-        await fetchRole();
-      }
-      return result;
-    },
-    [user?.id, selectedFacilityId, fetchRole]
-  );
-
-  const displayName = healthRoleService.getDisplayName(role || "patient");
-  const isPatient = role === "patient" || role === null;
-  const isAdmin = healthRoleService.isAdmin(role || "patient");
-  const isClinical = healthRoleService.isClinical(role || "patient");
-  const isOperational = healthRoleService.isOperational(role || "patient");
-
-  return {
-    role,
-    displayName,
-    isPatient,
-    isAdmin,
-    isClinical,
-    isOperational,
-    staffRecord,
-    allRoles,
-    loading,
-    error,
-    selectedRole,
-    selectedFacilityId,
-    refresh: fetchRole,
-    selectRole,
-    clearRoleSelection,
-    clockIn,
-    clockOut,
-  };
+  const selectFacility = useCallback((facilityId: string) => { setSelectedFacilityId(facilityId); }, []);
+  useEffect(() => { fetchRole(); }, [fetchRole]);
+  return { role, selectedFacilityId, facilities, isLoading, selectFacility, refresh: fetchRole };
 }

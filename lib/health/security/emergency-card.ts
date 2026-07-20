@@ -32,29 +32,29 @@ const EMERGENCY_DATA_KEY = 'health_emergency_data';
 const webStore = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
-      try { return localStorage.getItem(key); } catch { return null; }
+      try { return localStorage.getItem(key); } catch (e: any) { console.error("[EmergencyCard] Storage read failed:", e?.message || e); return null; }
     }
     if (SecureStore?.getItemAsync) {
-      try { return await SecureStore.getItemAsync(key); } catch { return null; }
+      try { return await SecureStore.getItemAsync(key); } catch (e: any) { console.error("[EmergencyCard] Storage read failed:", e?.message || e); return null; }
     }
     return null;
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.setItem(key, value); } catch (e) { console.error('[health-vault] localStorage.setItem failed:', e); }
+      try { localStorage.setItem(key, value); } catch (e: any) { console.error("[EmergencyCard] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.setItemAsync) {
-      try { await SecureStore.setItemAsync(key, value); } catch (e) { console.error('[health-vault] SecureStore.setItemAsync failed:', e); }
+      try { await SecureStore.setItemAsync(key, value); } catch (e: any) { console.error("[EmergencyCard] Storage write failed:", e?.message || e); }
     }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch (e) { console.error('[health-vault] localStorage.removeItem failed:', e); }
+      try { localStorage.removeItem(key); } catch (e: any) { console.error("[EmergencyCard] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
-      try { await SecureStore.deleteItemAsync(key); } catch (e) { console.error('[health-vault] SecureStore.deleteItemAsync failed:', e); }
+      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[EmergencyCard] Storage write failed:", e?.message || e); }
     }
   },
 };
@@ -63,7 +63,7 @@ export async function getEmergencyData(): Promise<EmergencyData | null> {
   try {
     const raw = await webStore.getItem(EMERGENCY_DATA_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch (e: any) { console.error("[EmergencyCard] Operation failed:", e?.message || e); }
   return null;
 }
 

@@ -139,7 +139,7 @@ export default function CreatePostScreen() {
 
       router.back();
     } catch (e: any) {
-      const message = e instanceof StreetsError ? e.message : 'Failed to create post';
+      const message = (e && typeof e === 'object' && 'message' in e) ? (e as any).message : 'Failed to create post';
       Alert.alert('Error', message);
       console.error('Create post error:', e);
     } finally {

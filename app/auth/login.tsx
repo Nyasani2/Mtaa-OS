@@ -5,105 +5,115 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-
-// Direct Supabase auth — no dependency on context hooks that might fail
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
-
-async function supabaseSignIn(email: string, password: string) {
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message);
-  return data;
-}
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { hasPin } from '@/lib/security/pin-engine';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const theme = useColorScheme();
+  const isDark = theme === 'dark';
+  const { signIn } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setErrorMsg('Email and password are required');
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrorMsg('Please enter a valid email address');
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
     setLoading(true);
-    setErrorMsg('');
     try {
-      await supabaseSignIn(email.trim(), password);
-      // Success — go to OS
-      router.replace('/(os)');
-    } catch (err: any) {
-      // Ensure error is always a string, never an Error object
-      setErrorMsg(err?.message || 'Sign in failed. Please try again.');
+      const { error } = await signIn(email, password);
+      if (error) throw error;
+
+      // ✅ Check if PIN is set
+      const pinSet = await hasPin();
+      if (!pinSet) {
+        // No PIN → redirect to set PIN
+        router.replace('/auth/set-pin');
+      } else {
+        // PIN exists → go to OS
+        router.replace('/(os)');
+      }
+    } catch (e: any) {
+      Alert.alert('Login Failed', e?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
-  };
-
-  const goToSignup = () => {
-    try { router.push('/auth/signup'); } catch { Alert.alert('Sign Up', 'Sign up screen coming soon'); }
-  };
-
-  const goToForgot = () => {
-    try { router.push('/auth/forgot-password'); } catch { Alert.alert('Forgot Password', 'Password reset coming soon'); }
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Sign In</Text>
+    <View style={[styles.container, isDark && styles.containerDark]}>
+      <Text style={[styles.title, isDark && styles.textDark]}>Welcome Back</Text>
+
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
+        placeholderTextColor={isDark ? '#888' : '#999'}
         keyboardType="email-address"
         autoCapitalize="none"
-        autoCorrect={false}
+        value={email}
+        onChangeText={setEmail}
       />
+
       <TextInput
-        style={styles.input}
+        style={[styles.input, isDark && styles.inputDark]}
         placeholder="Password"
+        placeholderTextColor={isDark ? '#888' : '#999'}
+        secureTextEntry
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
       />
-      {errorMsg ? <Text style={styles.error}>{errorMsg}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Sign In</Text>
+          <Text style={styles.buttonText}>Log In</Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={goToForgot}>
-        <Text style={styles.link}>Forgot password?</Text>
+
+      <TouchableOpacity onPress={() => router.push('/auth/forgot-password')}>
+        <Text style={[styles.link, isDark && styles.linkDark]}>Forgot Password?</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={goToSignup}>
-        <Text style={styles.link}>Create account</Text>
+
+      <TouchableOpacity onPress={() => router.push('/auth/signup')}>
+        <Text style={[styles.link, isDark && styles.linkDark]}>
+          Don't have an account? Sign up
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  header: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  containerDark: { backgroundColor: '#0f0f0f' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
+  textDark: { color: '#fff' },
+  input: {
+    borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
+    padding: 16, marginBottom: 12, fontSize: 16,
+  },
+  inputDark: { borderColor: '#333', color: '#fff', backgroundColor: '#1a1a1a' },
+  button: {
+    backgroundColor: '#ef4444', padding: 16, borderRadius: 12,
+    alignItems: 'center', marginTop: 8,
+  },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  error: { color: '#ef4444', marginBottom: 12 },
-  link: { color: '#2563eb', textAlign: 'center', marginTop: 16, fontSize: 14 },
+  link: { marginTop: 16, textAlign: 'center', color: '#ef4444' },
+  linkDark: { color: '#f87171' },
 });

@@ -1,225 +1,223 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Vibration,
-  useColorScheme,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { verifyPin, getPinState, clearPin } from '@/lib/security/pin-engine';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { verifyPin, clearPin, getPinState } from '@/lib/security/pin-engine';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useOSShell } from '@/lib/shell/use-os-shell';
 
-const MAX_LENGTH = 6;
-const MIN_LENGTH = 4;
+const PIN_LENGTH = 6;
 
 export default function LockScreen() {
   const router = useRouter();
-  const theme = useColorScheme();
-  const isDark = theme === 'dark';
-  const signOut = useAuthStore((s) => s.signOut);
-  const { unlock } = useOSShell();
-
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
   const [pin, setPin] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [attemptsRemaining, setAttemptsRemaining] = useState(5);
+  const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
-  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [lockoutEndTime, setLockoutEndTime] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState(0);
+  const { signOut } = useAuthStore();
 
-  // Refresh PIN state on mount
+  // Check lockout status on mount
   useEffect(() => {
-    refreshState();
+    checkLockoutStatus();
   }, []);
 
-  // Check lockout countdown
+  // Countdown timer for lockout
   useEffect(() => {
-    if (!lockoutUntil) return;
+    if (!lockoutEndTime || !isLocked) return;
+
     const interval = setInterval(() => {
-      if (Date.now() >= lockoutUntil) {
+      const now = new Date();
+      const diff = Math.ceil((lockoutEndTime.getTime() - now.getTime()) / 1000);
+
+      if (diff <= 0) {
         setIsLocked(false);
-        setLockoutUntil(null);
-        setError('');
-        refreshState();
+        setLockoutEndTime(null);
+        setCountdown(0);
+        setAttempts(0);
+        clearInterval(interval);
+      } else {
+        setCountdown(diff);
       }
     }, 1000);
-    return () => clearInterval(interval);
-  }, [lockoutUntil]);
 
-  const refreshState = async () => {
-    try {
-      const state = await getPinState();
-      setAttemptsRemaining(state.attemptsRemaining);
-      setIsLocked(state.isLocked);
-      setLockoutUntil(state.lockoutUntil);
-    } catch (e) {
-      console.error('[LockScreen] Failed to refresh PIN state:', e);
+    return () => clearInterval(interval);
+  }, [lockoutEndTime, isLocked]);
+
+  const checkLockoutStatus = async () => {
+    const state = await getPinState();
+    if (state.isLocked && state.lockoutUntil) {
+      const remaining = state.lockoutUntil - Date.now();
+      if (remaining > 0) {
+        setIsLocked(true);
+        setLockoutEndTime(new Date(state.lockoutUntil));
+        setCountdown(Math.ceil(remaining / 1000));
+        setAttempts(5 - state.attemptsRemaining);
+      }
     }
   };
 
   const handleDigit = useCallback((digit: string) => {
-    if (isLocked || loading) return;
+    if (isLocked) return;
+    if (pin.length >= PIN_LENGTH) return;
+
+    Vibration.vibrate(10);
+    const newPin = pin + digit;
+    setPin(newPin);
     setError('');
-    if (pin.length < MAX_LENGTH) {
-      setPin((prev) => prev + digit);
+
+    // Auto-submit when PIN is complete
+    if (newPin.length === PIN_LENGTH) {
+      setTimeout(() => handleSubmit(newPin), 150);
     }
-  }, [pin, isLocked, loading]);
+  }, [pin, isLocked]);
 
   const handleBackspace = useCallback(() => {
-    if (isLocked || loading) return;
-    setError('');
+    if (isLocked) return;
     setPin((prev) => prev.slice(0, -1));
-  }, [isLocked, loading]);
-
-  const handleUnlock = useCallback(async () => {
-    if (pin.length < MIN_LENGTH) {
-      setError(`Enter at least ${MIN_LENGTH} digits`);
-      Vibration.vibrate(200);
-      return;
-    }
-    if (isLocked) {
-      setError('PIN locked. Please wait.');
-      return;
-    }
-
-    setLoading(true);
     setError('');
+  }, [isLocked]);
 
-    try {
-      const valid = await verifyPin(pin);
-      if (valid) {
-        setPin('');
-        setError('');
-        // CRITICAL: Call unlock() to tell OSShellProvider we're unlocked
-        unlock();
-        // Navigate to OS home
-        router.replace('/(os)');
+  const handleSubmit = async (pinToVerify: string) => {
+    if (isLocked) return;
+
+    const valid = await verifyPin(pinToVerify);
+
+    if (valid) {
+      Vibration.vibrate([0, 50, 50, 50]);
+      setPin('');
+      setError('');
+      setAttempts(0);
+      setIsLocked(false);
+      setLockoutEndTime(null);
+
+      // Navigate back or to home
+      if (returnTo && returnTo !== 'auth/lock-screen') {
+        router.replace(`/${returnTo}` as any);
       } else {
-        await refreshState();
-        const state = await getPinState();
-        if (state.isLocked) {
-          setIsLocked(true);
-          setLockoutUntil(state.lockoutUntil);
-          setError(`Locked. Try again in ${Math.ceil((state.lockoutUntil! - Date.now()) / 1000)}s`);
-        } else {
-          setError(`Invalid PIN. ${state.attemptsRemaining} attempts remaining.`);
-        }
-        Vibration.vibrate(200);
-        setPin('');
+        router.replace('/(os)');
       }
-    } catch (e: any) {
-      setError(e?.message || 'Verification failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [pin, isLocked, unlock, router]);
+    } else {
+      Vibration.vibrate([0, 100, 50, 100]);
+      setPin('');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
 
-  // Auto-submit when PIN reaches expected length
-  useEffect(() => {
-    if (pin.length >= MIN_LENGTH && pin.length <= MAX_LENGTH && !loading && !isLocked) {
-      handleUnlock();
-    }
-  }, [pin, handleUnlock, loading, isLocked]);
+      // Re-check lockout state after failed attempt
+      const state = await getPinState();
+      if (state.isLocked && state.lockoutUntil) {
+        const remaining = state.lockoutUntil - Date.now();
+        if (remaining > 0) {
+          setIsLocked(true);
+          setLockoutEndTime(new Date(state.lockoutUntil));
+          setCountdown(Math.ceil(remaining / 1000));
+          setError(`Too many attempts. Locked for ${Math.ceil(remaining / 1000)}s.`);
+          return;
+        }
+      }
 
-  const handleForgotPin = useCallback(() => {
+      setError(`Incorrect PIN. ${state.attemptsRemaining} attempts remaining.`);
+    }
+  };
+
+  const handleForgotPin = () => {
     Alert.alert(
       'Forgot PIN?',
-      'You will be logged out and need to sign in again. Your PIN will be reset.',
+      "This will sign you out. You\'ll need to log in again and set a new PIN.",
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Log Out',
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             try {
               await clearPin();
               await signOut();
-              // Force navigation to auth screen
-              router.replace('/auth');
-            } catch (e) {
-              console.error('[LockScreen] Forgot PIN error:', e);
-              // Even if clearPin fails, force logout
-              await signOut();
-              router.replace('/auth');
+              router.replace('/auth/login');
+            } catch (err: any) {
+              Alert.alert('Error', err.message || 'Failed to sign out');
             }
           },
         },
       ]
     );
-  }, [signOut, router]);
+  };
 
-  const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'back'];
-
-  const lockoutText = isLocked && lockoutUntil
-    ? `Locked. Try again in ${Math.ceil((lockoutUntil - Date.now()) / 1000)}s`
-    : null;
+  const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0'];
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0a0a0f' : '#f8f9fa' }]}>
-      <Text style={[styles.title, { color: isDark ? '#fff' : '#1a1a2e' }]}>
-        Enter PIN
-      </Text>
-      <Text style={[styles.subtitle, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
-        Unlock your MTAA OS
-      </Text>
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <Ionicons name="lock-closed" size={48} color="#ef4444" style={{ marginBottom: 16 }} />
 
-      {/* PIN Dots */}
-      <View style={styles.dotsContainer}>
-        {Array.from({ length: MAX_LENGTH }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              {
-                backgroundColor: i < pin.length
-                  ? '#6366f1'
-                  : isDark ? '#374151' : '#e5e7eb',
-                opacity: i >= MIN_LENGTH && i >= pin.length ? 0.3 : 1,
-              },
-            ]}
-          />
-        ))}
+        <Text style={styles.title}>Enter PIN</Text>
+
+        {isLocked ? (
+          <Text style={styles.lockoutText}>
+            Too many attempts. Try again in {countdown}s.
+          </Text>
+        ) : (
+          <Text style={styles.subtitle}>
+            {5 - attempts} attempts remaining
+          </Text>
+        )}
+
+        {/* PIN Dots */}
+        <View style={styles.dotsContainer}>
+          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i < pin.length && styles.dotFilled,
+                error && styles.dotError,
+              ]}
+            />
+          ))}
+        </View>
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        {/* Numpad */}
+        <View style={styles.numpad}>
+          {digits.map((digit, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.digitButton, !digit && styles.digitButtonEmpty]}
+              onPress={() => digit && handleDigit(digit)}
+              disabled={!digit || isLocked}
+              activeOpacity={0.7}
+            >
+              {digit === '' ? (
+                <TouchableOpacity
+                  onPress={handleBackspace}
+                  disabled={pin.length === 0 || isLocked}
+                  style={styles.backspaceButton}
+                >
+                  <Ionicons name="backspace-outline" size={24} color={pin.length === 0 || isLocked ? '#444' : '#fff'} />
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.digitText, isLocked && styles.digitTextDisabled]}>
+                  {digit}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Forgot PIN */}
+        <TouchableOpacity onPress={handleForgotPin} style={styles.forgotButton}>
+          <Text style={styles.forgotText}>Forgot PIN?</Text>
+        </TouchableOpacity>
       </View>
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {lockoutText ? <Text style={styles.errorText}>{lockoutText}</Text> : null}
-
-      {/* Keypad */}
-      <View style={styles.keypad}>
-        {digits.map((digit, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.key,
-              digit === '' && { opacity: 0 },
-              (isLocked || loading) && digit !== '' && { opacity: 0.3 },
-            ]}
-            onPress={() => {
-              if (digit === 'back') handleBackspace();
-              else if (digit !== '') handleDigit(digit);
-            }}
-            disabled={digit === '' || isLocked || loading}
-            activeOpacity={0.6}
-          >
-            {loading && digit === '' ? (
-              <ActivityIndicator color="#6366f1" />
-            ) : (
-              <Text style={[styles.keyText, { color: isDark ? '#fff' : '#1a1a2e' }]}>
-                {digit === 'back' ? '⌫' : digit}
-              </Text>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Forgot PIN */}
-      <TouchableOpacity onPress={handleForgotPin} style={styles.forgotLink}>
-        <Text style={{ color: '#9ca3af', fontSize: 14 }}>Forgot PIN?</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -227,57 +225,97 @@ export default function LockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+  },
+  content: {
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 32,
   },
   title: {
     fontSize: 28,
     fontWeight: '700',
+    color: '#111',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    marginBottom: 32,
-    textAlign: 'center',
+    color: '#666',
+    marginBottom: 24,
+  },
+  lockoutText: {
+    fontSize: 14,
+    color: '#ef4444',
+    marginBottom: 24,
+    fontWeight: '600',
   },
   dotsContainer: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     marginBottom: 32,
   },
   dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    backgroundColor: 'transparent',
+  },
+  dotFilled: {
+    backgroundColor: '#ef4444',
+    borderColor: '#ef4444',
+  },
+  dotError: {
+    borderColor: '#ef4444',
   },
   errorText: {
     color: '#ef4444',
-    fontSize: 14,
+    fontSize: 13,
     marginBottom: 16,
     textAlign: 'center',
   },
-  keypad: {
+  numpad: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    width: 280,
     justifyContent: 'center',
-    gap: 12,
+    gap: 16,
+    width: 280,
     marginBottom: 24,
   },
-  key: {
+  digitButton: {
     width: 72,
     height: 72,
     borderRadius: 36,
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.1)',
   },
-  keyText: {
+  digitButtonEmpty: {
+    backgroundColor: 'transparent',
+  },
+  digitText: {
     fontSize: 24,
     fontWeight: '600',
+    color: '#111',
   },
-  forgotLink: {
-    marginTop: 8,
+  digitTextDisabled: {
+    color: '#ccc',
+  },
+  backspaceButton: {
+    width: 72,
+    height: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  forgotButton: {
+    paddingVertical: 8,
+  },
+  forgotText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
