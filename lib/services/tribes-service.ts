@@ -707,3 +707,111 @@ export async function getTribesStats(): Promise<any> {
   const { count: events } = await supabase.from('tribe_events').select('*', { count: 'exact', head: true });
   return { tribes, members, posts, events };
 }
+
+// === AUTO-MERGED: tribes-service-additions.ts ===
+// Add these methods to lib/services/tribes-service.ts
+// after the existing exports (around line 80+)
+
+/* ─────────── CATEGORIES ─────────── */
+
+export async function getCategories(): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tribes')
+      .select('category')
+      .not('category', 'is', null);
+
+    if (error) {
+      console.error('[tribes-service] getCategories error:', error);
+      return [];
+    }
+
+    const categories = [...new Set((data || []).map((t) => t.category).filter(Boolean))];
+    return categories;
+  } catch (e) {
+    console.error('[tribes-service] getCategories exception:', e);
+    return [];
+  }
+}
+
+/* ─────────── EVENTS ─────────── */
+
+export async function getEvents(tribeId: string): Promise<TribeEvent[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tribe_events')
+      .select('*')
+      .eq('tribe_id', tribeId)
+      .order('event_date', { ascending: true });
+
+    if (error) {
+      console.error('[tribes-service] getEvents error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (e) {
+    console.error('[tribes-service] getEvents exception:', e);
+    return [];
+  }
+}
+
+export async function getTribe(tribeId: string): Promise<Tribe | null> {
+  try {
+    const { data, error } = await supabase
+      .from('tribes')
+      .select('*')
+      .eq('id', tribeId)
+      .single();
+
+    if (error) {
+      console.error('[tribes-service] getTribe error:', error);
+      return null;
+    }
+
+    return data;
+  } catch (e) {
+    console.error('[tribes-service] getTribe exception:', e);
+    return null;
+  }
+}
+
+export async function getPosts(tribeId: string): Promise<TribePost[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tribe_posts')
+      .select('*')
+      .eq('tribe_id', tribeId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[tribes-service] getPosts error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (e) {
+    console.error('[tribes-service] getPosts exception:', e);
+    return [];
+  }
+}
+
+export async function getMembers(tribeId: string): Promise<TribeMember[]> {
+  try {
+    const { data, error } = await supabase
+      .from('tribe_members')
+      .select('*')
+      .eq('tribe_id', tribeId)
+      .eq('status', 'active');
+
+    if (error) {
+      console.error('[tribes-service] getMembers error:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (e) {
+    console.error('[tribes-service] getMembers exception:', e);
+    return [];
+  }
+}

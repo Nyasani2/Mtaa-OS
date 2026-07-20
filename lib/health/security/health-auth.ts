@@ -48,29 +48,29 @@ let _sessionTimer: ReturnType<typeof setTimeout> | null = null;
 const webStore = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
-      try { return localStorage.getItem(key); } catch { return null; }
+      try { return localStorage.getItem(key); } catch (e: any) { console.error("[HealthAuth] Storage read failed:", e?.message || e); return null; }
     }
     if (SecureStore?.getItemAsync) {
-      try { return await SecureStore.getItemAsync(key); } catch { return null; }
+      try { return await SecureStore.getItemAsync(key); } catch (e: any) { console.error("[HealthAuth] Storage read failed:", e?.message || e); return null; }
     }
     return null;
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.setItem(key, value); } catch {}
+      try { localStorage.setItem(key, value); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.setItemAsync) {
-      try { await SecureStore.setItemAsync(key, value); } catch {}
+      try { await SecureStore.setItemAsync(key, value); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
     }
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch {}
+      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
-      try { await SecureStore.deleteItemAsync(key); } catch {}
+      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
     }
   },
 };
@@ -116,7 +116,7 @@ export async function initializeHealthAuth(config?: Partial<HealthAuthConfig>): 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
       biometric = hasHardware && enrolled;
-    } catch {}
+    } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
   }
   const state = await loadState();
   state.biometricAvailable = biometric;
