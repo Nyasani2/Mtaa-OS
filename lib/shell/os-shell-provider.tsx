@@ -36,7 +36,18 @@ export function OSShellProvider({ children }: { children: React.ReactNode }) {
     try {
       const state = await getPinState();
       setIsPinSet(state.isSet);
-      setIsLocked(state.isLocked || (state.isSet && !state.isLocked ? false : state.isLocked));
+      // FIXED 2026-07-20: getPinState().isLocked means "rate-limited from
+      // failed PIN attempts" (see lib/security/pin-engine.ts) — it is NOT
+      // the same thing as "this session requires PIN re-entry." These were
+      // being conflated, meaning a fully killed-and-reopened app would NOT
+      // show the lock screen on cold start (isLocked would be false unless
+      // the user happened to be rate-limited), even though a fresh app
+      // launch should always require the PIN if one is set. Cold start now
+      // always locks when a PIN exists; only an in-session unlock() call
+      // (after the user enters a correct PIN) clears it.
+      if (state.isSet) {
+        setIsLocked(true);
+      }
     } catch (e) {
       console.error('[OSShell] Pin state refresh failed:', e);
     }
