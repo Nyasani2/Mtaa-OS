@@ -1,99 +1,96 @@
-/**
- * MTAA Auth Store — Production Hardened
- * 
- * Security Model:
- * - Session data encrypted with AES-256-GCM (device-bound key)
- * - Zustand persist uses custom storage that encrypts before writing
- * - 15-minute idle timeout, 24-hour absolute timeout
- * - Device fingerprint validation on every restore
- * - Trust score: 0-100, < 50 requires step-up auth
- * - Session revocation on password change, new device, or suspicious activity
- */
-
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
-const SESSION_KEY = 'mtaa_auth_session_v2';
-const ENCRYPTION_KEY_KEY = 'mtaa_session_key_v2';
-const LAST_ACTIVITY_KEY = 'mtaa_last_activity_v2';
-const DEVICE_TRUST_KEY = 'mtaa_device_trust_v2';
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, any>;
+  [key: string]: any;
+}
 
-const IDLE_TIMEOUT_MS = 15 * 60 * 1000;   // 15 minutes
-const ABSOLUTE_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24 hours
-const TRUST_THRESHOLD = 50;
+export interface AuthState {
+  user: User | null;
+  session: any | null;
+  profile: any | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  initialized: boolean;
+  getDisplayName: () => string;
+  getAvatarUrl: () => string | null;
+  getUserInitials: () => string;
+  getUserRole: () => string;
+  getTrustScore: () => number;
+  initialize: () => Promise<void>;
+  setUser: (user: User | null, session?: any) => void;
+  setSession: (session: any) => void;
+  setProfile: (profile: any) => void;
+  signOut: () => Promise<void>;
+  updateProfileField: (field: string, value: any) => void;
+  refreshProfile: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; data?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error?: string; success?: boolean; user?: User | null }>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
+}
 
-// ─── AES-256-GCM Encryption Layer ──────────────────────────────────────────
+let authListenerUnsubscribe: (() => void) | null = null;
+
+function getRedirectOrigin(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return 'https://mtaa.app';
+}
+
+// ─── AES-256-GCM Session Encryption ───────────────────────────────────────
+
+const ENCRYPTION_KEY_KEY = 'mtaa_session_enc_key';
 
 async function getOrCreateEncryptionKey(): Promise<CryptoKey> {
   let keyB64 = await SecureStore.getItemAsync(ENCRYPTION_KEY_KEY);
-
   if (!keyB64) {
     const raw = crypto.getRandomValues(new Uint8Array(32));
     keyB64 = btoa(String.fromCharCode(...raw));
     await SecureStore.setItemAsync(ENCRYPTION_KEY_KEY, keyB64);
   }
-
-  const raw = new Uint8Array(
-    atob(keyB64).split('').map(c => c.charCodeAt(0))
-  );
-
-  return crypto.subtle.importKey(
-    'raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']
-  );
+  const raw = new Uint8Array(atob(keyB64).split('').map(c => c.charCodeAt(0)));
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 
-async function encryptSession(data: string): Promise<string> {
+async function encryptData(data: string): Promise<string> {
   const key = await getOrCreateEncryptionKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoder = new TextEncoder();
-
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encoder.encode(data)
-  );
-
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(data));
   const combined = new Uint8Array(iv.length + new Uint8Array(ciphertext).length);
   combined.set(iv);
   combined.set(new Uint8Array(ciphertext), iv.length);
-
   return btoa(String.fromCharCode(...combined));
 }
 
-async function decryptSession(ciphertext: string): Promise<string | null> {
+async function decryptData(ciphertext: string): Promise<string | null> {
   try {
     const key = await getOrCreateEncryptionKey();
-    const combined = new Uint8Array(
-      atob(ciphertext).split('').map(c => c.charCodeAt(0))
-    );
+    const combined = new Uint8Array(atob(ciphertext).split('').map(c => c.charCodeAt(0)));
     const iv = combined.slice(0, 12);
     const data = combined.slice(12);
-
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      data
-    );
-
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
     return new TextDecoder().decode(decrypted);
   } catch {
     return null;
   }
 }
 
-// ─── Custom Encrypted Storage ────────────────────────────────────────────────
-
 const encryptedStorage = {
   getItem: async (name: string): Promise<string | null> => {
     const encrypted = await SecureStore.getItemAsync(name);
     if (!encrypted) return null;
-    return decryptSession(encrypted);
+    return decryptData(encrypted);
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    const encrypted = await encryptSession(value);
+    const encrypted = await encryptData(value);
     await SecureStore.setItemAsync(name, encrypted);
   },
   removeItem: async (name: string): Promise<void> => {
@@ -101,301 +98,271 @@ const encryptedStorage = {
   },
 };
 
-// ─── Device Trust Score ──────────────────────────────────────────────────────
-
-interface DeviceTrust {
-  score: number;
-  fingerprint: string;
-  enrolledAt: string;
-  lastVerified: string;
-  failedAttempts: number;
-  isNewDevice: boolean;
-}
-
-async function computeDeviceFingerprint(): Promise<string> {
-  const components = [
-    Platform.OS,
-    Platform.Version?.toString() || '',
-    Platform.select({ ios: 'ios', android: 'android', default: 'unknown' }),
-    // Add device-specific identifiers via expo-device if available
-  ];
-  const raw = components.join('|');
-  const encoder = new TextEncoder();
-  const hash = await crypto.subtle.digest('SHA-256', encoder.encode(raw));
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function getDeviceTrust(userId: string): Promise<DeviceTrust | null> {
-  const raw = await SecureStore.getItemAsync(DEVICE_TRUST_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-async function saveDeviceTrust(trust: DeviceTrust): Promise<void> {
-  await SecureStore.setItemAsync(DEVICE_TRUST_KEY, JSON.stringify(trust));
-}
-
-// ─── Auth Store Interface ────────────────────────────────────────────────────
-
-interface AuthState {
-  user: { id: string; email: string; role?: string } | null;
-  session: { access_token: string; refresh_token: string; expires_at: number } | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  pinSet: boolean;
-  biometricEnabled: boolean;
-  deviceTrust: DeviceTrust | null;
-  lastActivity: number;
-  trustScore: number;
-  requiresStepUp: boolean;
-
-  // Actions
-  setUser: (user: AuthState['user']) => void;
-  setSession: (session: AuthState['session']) => void;
-  setPinSet: (set: boolean) => void;
-  setBiometricEnabled: (enabled: boolean) => void;
-  updateLastActivity: () => void;
-  checkSessionTimeout: () => boolean;
-  validateDevice: () => Promise<{ valid: boolean; requiresStepUp: boolean }>;
-  revokeSession: (reason: string) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshSession: () => Promise<boolean>;
-}
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       session: null,
+      profile: null,
       isAuthenticated: false,
       isLoading: true,
-      pinSet: false,
-      biometricEnabled: false,
-      deviceTrust: null,
-      lastActivity: Date.now(),
-      trustScore: 0,
-      requiresStepUp: false,
+      initialized: false,
 
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-
-      setSession: (session) => {
-        set({ session });
-        if (session) {
-          set({ isAuthenticated: true, lastActivity: Date.now() });
-        }
+      getDisplayName: () => {
+        const { profile, user } = get();
+        if (profile?.full_name?.trim()) return profile.full_name.trim();
+        if (profile?.display_name?.trim()) return profile.display_name.trim();
+        if (profile?.username?.trim()) return profile.username.trim();
+        if (user?.email) return user.email.split('@')[0];
+        return 'User';
+      },
+      getAvatarUrl: () => {
+        const { profile } = get();
+        return profile?.avatar_url || profile?.cover_photo_url || null;
+      },
+      getUserInitials: () => {
+        const name = get().getDisplayName();
+        return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+      },
+      getUserRole: () => {
+        const { profile } = get();
+        return profile?.role || 'user';
+      },
+      getTrustScore: () => {
+        const { profile } = get();
+        return profile?.trust_score || 0;
       },
 
-      setPinSet: (pinSet) => set({ pinSet }),
-      setBiometricEnabled: (biometricEnabled) => set({ biometricEnabled }),
-
-      updateLastActivity: () => {
-        set({ lastActivity: Date.now() });
-        SecureStore.setItemAsync(LAST_ACTIVITY_KEY, Date.now().toString());
-      },
-
-      checkSessionTimeout: () => {
+      initialize: async () => {
         const state = get();
-        const now = Date.now();
-        const idle = now - state.lastActivity;
-
-        if (idle > IDLE_TIMEOUT_MS) {
-          return true; // Timed out
-        }
-
-        if (state.session?.expires_at) {
-          const sessionAge = now - (state.session.expires_at * 1000 - ABSOLUTE_TIMEOUT_MS);
-          if (sessionAge > ABSOLUTE_TIMEOUT_MS) {
-            return true;
-          }
-        }
-
-        return false;
-      },
-
-      validateDevice: async () => {
-        const state = get();
-        if (!state.user) return { valid: false, requiresStepUp: true };
-
-        const currentFingerprint = await computeDeviceFingerprint();
-        const storedTrust = await getDeviceTrust(state.user.id);
-
-        if (!storedTrust) {
-          // First time on this device — requires step-up
-          const newTrust: DeviceTrust = {
-            score: 0,
-            fingerprint: currentFingerprint,
-            enrolledAt: new Date().toISOString(),
-            lastVerified: new Date().toISOString(),
-            failedAttempts: 0,
-            isNewDevice: true,
-          };
-          await saveDeviceTrust(newTrust);
-          set({ deviceTrust: newTrust, trustScore: 0, requiresStepUp: true });
-          return { valid: true, requiresStepUp: true };
-        }
-
-        if (storedTrust.fingerprint !== currentFingerprint) {
-          // Device fingerprint mismatch — possible tampering or new device
-          storedTrust.failedAttempts += 1;
-          storedTrust.score = Math.max(0, storedTrust.score - 25);
-          await saveDeviceTrust(storedTrust);
-          set({ deviceTrust: storedTrust, trustScore: storedTrust.score, requiresStepUp: true });
-
-          // Log security event
-          await supabase.from('security_events').insert({
-            user_id: state.user.id,
-            event_type: 'device_mismatch',
-            severity: 'high',
-            details: { failed_attempts: storedTrust.failedAttempts },
-          });
-
-          return { valid: storedTrust.failedAttempts < 3, requiresStepUp: true };
-        }
-
-        // Device valid — increase trust
-        storedTrust.lastVerified = new Date().toISOString();
-        storedTrust.score = Math.min(100, storedTrust.score + 5);
-        storedTrust.failedAttempts = 0;
-        storedTrust.isNewDevice = false;
-        await saveDeviceTrust(storedTrust);
-
-        const requiresStepUp = storedTrust.score < TRUST_THRESHOLD;
-        set({ 
-          deviceTrust: storedTrust, 
-          trustScore: storedTrust.score, 
-          requiresStepUp 
-        });
-
-        return { valid: true, requiresStepUp };
-      },
-
-      revokeSession: async (reason) => {
-        const state = get();
-        if (state.session?.refresh_token) {
-          await supabase.auth.signOut();
-        }
-
-        // Clear all local auth state
-        await SecureStore.deleteItemAsync(SESSION_KEY);
-        await SecureStore.deleteItemAsync(LAST_ACTIVITY_KEY);
-        await SecureStore.deleteItemAsync(DEVICE_TRUST_KEY);
-        await SecureStore.deleteItemAsync(ENCRYPTION_KEY_KEY);
-
-        // Log revocation
-        if (state.user) {
-          await supabase.from('security_events').insert({
-            user_id: state.user.id,
-            event_type: 'session_revoked',
-            severity: 'medium',
-            details: { reason },
-          });
-        }
-
-        set({
-          user: null,
-          session: null,
-          isAuthenticated: false,
-          pinSet: false,
-          biometricEnabled: false,
-          deviceTrust: null,
-          trustScore: 0,
-          requiresStepUp: false,
-          lastActivity: 0,
-        });
-      },
-
-      logout: async () => {
-        await get().revokeSession('user_logout');
-      },
-
-      refreshSession: async () => {
-        const state = get();
-        if (!state.session?.refresh_token) return false;
-
+        if (state.initialized) return;
+        set({ isLoading: true });
         try {
-          const { data, error } = await supabase.auth.refreshSession({
-            refresh_token: state.session.refresh_token,
-          });
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !session) {
+            set({ isLoading: false, initialized: true });
+            return;
+          }
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) {
+            set({ isLoading: false, initialized: true });
+            return;
+          }
 
-          if (error || !data.session) {
-            await get().revokeSession('refresh_failed');
-            return false;
+          let profile = null;
+          const { data: existingProfile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profileError && profileError.code === 'PGRST116') {
+            const { data: newProfile, error: createError } = await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name || '',
+                display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
+                username: user.user_metadata?.username || '',
+                role: 'user',
+                trust_score: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+            if (!createError) profile = newProfile;
+            else console.warn('[Auth] Auto-create profile failed:', createError.message);
+          } else if (!profileError) {
+            profile = existingProfile;
+          } else {
+            console.warn('[Auth] Profile fetch error:', profileError.message);
           }
 
           set({
-            session: {
-              access_token: data.session.access_token,
-              refresh_token: data.session.refresh_token,
-              expires_at: data.session.expires_at || Date.now() / 1000 + 3600,
-            },
-            lastActivity: Date.now(),
+            user,
+            session,
+            profile: profile || null,
+            isAuthenticated: true,
+            isLoading: false,
+            initialized: true,
           });
 
-          return true;
-        } catch {
-          await get().revokeSession('refresh_exception');
-          return false;
+          if (authListenerUnsubscribe) {
+            try { authListenerUnsubscribe(); } catch (e) { /* noop */ }
+          }
+
+          const { data: listener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+            if (event === 'SIGNED_IN' && newSession) {
+              const { data: { user: newUser } } = await supabase.auth.getUser();
+              let newProfile = null;
+              const { data: ep } = await supabase
+                .from('user_profiles')
+                .select('*')
+                .eq('user_id', newUser?.id)
+                .single();
+              if (!ep) {
+                const { data: cp } = await supabase
+                  .from('user_profiles')
+                  .insert({
+                    user_id: newUser?.id,
+                    email: newUser?.email,
+                    full_name: newUser?.user_metadata?.full_name || '',
+                    display_name: newUser?.user_metadata?.display_name || newUser?.email?.split('@')[0] || '',
+                    role: 'user',
+                    trust_score: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                  })
+                  .select()
+                  .single();
+                newProfile = cp;
+              } else {
+                newProfile = ep;
+              }
+              set({
+                user: newUser,
+                session: newSession,
+                profile: newProfile || null,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } else if (event === 'SIGNED_OUT') {
+              set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
+            } else if (event === 'USER_UPDATED' && newSession) {
+              const { data: { user: updatedUser } } = await supabase.auth.getUser();
+              set({ user: updatedUser, session: newSession });
+            }
+          });
+          authListenerUnsubscribe = listener?.subscription?.unsubscribe ?? null;
+        } catch (error) {
+          console.error('[Auth] Initialization error:', error);
+          set({ isLoading: false, initialized: true });
+        }
+      },
+
+      setUser: (user, session) => set({ user, session, isAuthenticated: !!user }),
+      setSession: (session) => set({ session }),
+      setProfile: (profile) => set({ profile }),
+
+      signOut: async () => {
+        if (authListenerUnsubscribe) {
+          try { authListenerUnsubscribe(); } catch (e) { /* noop */ }
+          authListenerUnsubscribe = null;
+        }
+        await supabase.auth.signOut();
+        set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
+      },
+
+      updateProfileField: (field, value) => {
+        const { profile } = get();
+        if (profile) set({ profile: { ...profile, [field]: value } });
+      },
+
+      refreshProfile: async () => {
+        const { user } = get();
+        if (!user) return;
+        try {
+          const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          if (error && error.code !== 'PGRST116') {
+            console.warn('[Auth] refreshProfile error:', error.message);
+          }
+          set({ profile: profile || null });
+        } catch (e) {
+          console.error('[Auth] refreshProfile failed:', e);
+        }
+      },
+
+      signIn: async (email, password) => {
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) return { error: error.message };
+          set({ user: data.user, session: data.session, isAuthenticated: true });
+          return { data };
+        } catch (e: any) {
+          return { error: e.message || 'Sign in failed' };
+        }
+      },
+
+      signUp: async (email, password, metadata) => {
+        try {
+          const redirectUrl = `${getRedirectOrigin()}/auth/callback`;
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: metadata,
+              emailRedirectTo: redirectUrl,
+            },
+          });
+          if (error) return { error: error.message, success: false };
+
+          if (data.user) {
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                user_id: data.user.id,
+                email: data.user.email,
+                full_name: metadata?.full_name || '',
+                display_name: metadata?.display_name || email.split('@')[0],
+                username: metadata?.username || '',
+                role: 'user',
+                trust_score: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              }, { onConflict: 'user_id' });
+            if (profileError) {
+              console.warn('[Auth] Auto-create profile on signUp failed:', profileError.message);
+            }
+          }
+
+          set({ user: data.user, session: data.session, isAuthenticated: !!data.session });
+          return { success: true, user: data.user };
+        } catch (e: any) {
+          return { error: e.message || 'Sign up failed', success: false };
+        }
+      },
+
+      resetPassword: async (email) => {
+        try {
+          const redirectUrl = `${getRedirectOrigin()}/auth/reset-password`;
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: redirectUrl,
+          });
+          if (error) return { error: error.message };
+          return {};
+        } catch (e: any) {
+          return { error: e.message || 'Reset failed' };
+        }
+      },
+
+      updateProfile: async (data) => {
+        try {
+          const { user } = get();
+          if (!user) return { error: 'Not authenticated' };
+          const { error } = await supabase.auth.updateUser({ data });
+          if (error) return { error: error.message };
+          set({ user: { ...user, ...data } });
+          return {};
+        } catch (e: any) {
+          return { error: e.message || 'Update failed' };
         }
       },
     }),
     {
-      name: SESSION_KEY,
-      storage: createJSONStorage(() => encryptedStorage),
+      name: 'mtaa-auth-storage',
+      storage: encryptedStorage as any,
       partialize: (state) => ({
         user: state.user,
         session: state.session,
-        pinSet: state.pinSet,
-        biometricEnabled: state.biometricEnabled,
+        profile: state.profile,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )
 );
-
-// ─── Session Activity Monitor ────────────────────────────────────────────────
-
-let activityInterval: NodeJS.Timeout | null = null;
-
-export function startSessionMonitor() {
-  if (activityInterval) return;
-
-  activityInterval = setInterval(() => {
-    const state = useAuthStore.getState();
-    if (state.isAuthenticated && state.checkSessionTimeout()) {
-      state.revokeSession('idle_timeout');
-    }
-  }, 30000); // Check every 30 seconds
-}
-
-export function stopSessionMonitor() {
-  if (activityInterval) {
-    clearInterval(activityInterval);
-    activityInterval = null;
-  }
-}
-
-// ─── Hook for React components ─────────────────────────────────────────────
-
-export function useAuth() {
-  return useAuthStore();
-}
-
-export function useIdentity() {
-  const { user, isAuthenticated, validateDevice, trustScore, requiresStepUp } = useAuthStore();
-  return {
-    user,
-    isAuthenticated,
-    validateDevice,
-    trustScore,
-    requiresStepUp,
-    isAdmin: user?.role === 'admin',
-    isDeveloper: user?.role === 'developer',
-  };
-}
-
-export default useAuthStore;
