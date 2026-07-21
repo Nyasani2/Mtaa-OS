@@ -5,6 +5,8 @@ export default function AppStoreLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="my-apps" />
+      <Stack.Screen name="updates" />
     </Stack>
   );
 }

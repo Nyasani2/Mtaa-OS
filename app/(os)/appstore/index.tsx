@@ -1,133 +1,297 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  TextInput, FlatList, Dimensions, RefreshControl,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useAppStore } from '@/lib/appstore/useAppStore';
+import {
+  ALL_APPS, getFeaturedApps, getTrendingApps, searchApps,
+  CATEGORY_LABELS, CATEGORY_COLORS,
+} from '@/lib/appstore/data';
+import { AppManifest } from '@/lib/appstore/types';
 
-interface AppItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  route: string;
-  color: string;
-  category: 'os' | 'commerce' | 'transport' | 'work' | 'social' | 'civic' | 'finance' | 'tools';
-  devOnly?: boolean;
-}
-
-const apps: AppItem[] = [
-  // OS Core
-  { id: 'wallet', name: 'Wallet', description: 'Manage your MTAA balance, top up, withdraw, and transfer funds.', icon: 'cash-outline', route: '/(os)/wallet', color: '#10B981', category: 'os' },
-  { id: 'health', name: 'Health', description: 'Access health records, book appointments, and find providers.', icon: 'medical-outline', route: '/(os)/health', color: '#EF4444', category: 'os' },
-  { id: 'education', name: 'Education', description: 'School management, classes, assignments, and grades.', icon: 'school-outline', route: '/(education)', color: '#8B5CF6', category: 'os' },
-  { id: 'settings', name: 'Settings', description: 'App preferences, security, and account settings.', icon: 'settings-outline', route: '/(os)/settings', color: '#6B7280', category: 'os' },
-  { id: 'phone', name: 'Phone', description: 'Calls, contacts, and messaging.', icon: 'call-outline', route: '/(os)/phone', color: '#3B82F6', category: 'os' },
-  { id: 'profile', name: 'Profile', description: 'Your profile, achievements, and analytics.', icon: 'person-outline', route: '/(os)/profile', color: '#F59E0B', category: 'os' },
-
-  // Social
-  { id: 'streets', name: 'Streets', description: 'Share posts, photos, videos, and articles with your community.', icon: 'newspaper-outline', route: '/(os)/streets', color: '#3B82F6', category: 'social' },
-  { id: 'tribes', name: 'Tribes', description: 'Join and manage community groups.', icon: 'people-outline', route: '/(os)/tribes', color: '#14B8A6', category: 'social' },
-  { id: 'messages', name: 'Messages', description: 'Chat with friends and groups.', icon: 'chatbubble-outline', route: '/(communication)/messages', color: '#06B6D4', category: 'social' },
-  { id: 'gallery', name: 'Gallery', description: 'Photos and videos.', icon: 'images-outline', route: '/(media)/gallery', color: '#EC4899', category: 'social' },
-  { id: 'camera', name: 'Camera', description: 'Take photos and videos.', icon: 'camera-outline', route: '/(media)/camera', color: '#6366F1', category: 'social' },
-
-  // Commerce
-  { id: 'marketplace', name: 'Marketplace', description: 'Buy and sell products in your local community.', icon: 'cart-outline', route: '/(commerce)/marketplace', color: '#F59E0B', category: 'commerce' },
-  { id: 'shop', name: 'Shop', description: 'Manage your store, inventory, and sales.', icon: 'storefront-outline', route: '/(commerce)/shop', color: '#EC4899', category: 'commerce' },
-  { id: 'restaurant', name: 'Restaurant', description: 'POS, inventory, staff, and analytics for restaurants.', icon: 'restaurant-outline', route: '/(os)/restaurant', color: '#F97316', category: 'commerce' },
-  { id: 'property', name: 'Property', description: 'List, book, and manage properties.', icon: 'home-outline', route: '/(os)/property', color: '#84CC16', category: 'commerce' },
-
-  // Transport
-  { id: 'mtaxi', name: 'MTaxi', description: 'Book rides and manage transportation.', icon: 'car-outline', route: '/(mtaxi)', color: '#06B6D4', category: 'transport' },
-  { id: 'mtruck', name: 'MTruck', description: 'Logistics and freight management.', icon: 'bus-outline', route: '/(mtruck)', color: '#84CC16', category: 'transport' },
-  { id: 'boda', name: 'Boda', description: 'Motorcycle taxi booking.', icon: 'bicycle-outline', route: '/(boda)', color: '#8B5CF6', category: 'transport' },
-
-  // Work
-  { id: 'jobs', name: 'Jobs', description: 'Find and post job opportunities.', icon: 'briefcase-outline', route: '/(work)/jobs', color: '#6366F1', category: 'work' },
-  { id: 'studio', name: 'Studio', description: 'Creator tools, live streaming, and monetization.', icon: 'videocam-outline', route: '/(os)/studio', color: '#EF4444', category: 'work' },
-
-  // Civic
-  { id: 'civic', name: 'Civic', description: 'Government services: police, courts, revenue, and more.', icon: 'shield-outline', route: '/(civic)', color: '#1E3A5F', category: 'civic' },
-
-  // Finance
-  { id: 'binance', name: 'Binance', description: 'Crypto trading and wallet.', icon: 'trending-up-outline', route: '/(finance)/binance', color: '#F0B90B', category: 'finance' },
-  { id: 'credit', name: 'Credit', description: 'Loans and credit services.', icon: 'card-outline', route: '/(finance)/credit', color: '#10B981', category: 'finance' },
-
-  // Tools
-  { id: 'calculator', name: 'Calculator', description: 'Basic calculator.', icon: 'calculator-outline', route: '/(os)/calculator', color: '#6B7280', category: 'tools' },
-  { id: 'calendar', name: 'Calendar', description: 'Events and scheduling.', icon: 'calendar-outline', route: '/(os)/calendar', color: '#3B82F6', category: 'tools' },
-  { id: 'clock', name: 'Clock', description: 'Alarm, timer, and stopwatch.', icon: 'time-outline', route: '/(os)/clock', color: '#F59E0B', category: 'tools' },
-  { id: 'reader', name: 'Reader', description: 'Read documents and books.', icon: 'book-outline', route: '/(os)/reader', color: '#8B5CF6', category: 'tools' },
-
-  // Developer (dev only)
-  { id: 'developer', name: 'Developer', description: 'Submit apps, view earnings, manage ASIS submissions.', icon: 'code-outline', route: '/(os)/developer', color: '#6366F1', category: 'tools', devOnly: true },
-];
+const { width: SCREEN_W } = Dimensions.get('window');
+const CARD_W = (SCREEN_W - 48) / 2;
 
 export default function AppStoreScreen() {
   const router = useRouter();
   const { user, profile } = useAuthStore();
+  const {
+    isReady, getInstallStatus, installApp, isInstallingApp,
+    installedCount, getAppsWithUpdates,
+  } = useAppStore();
+
   const isDeveloper = profile?.is_developer || user?.user_metadata?.is_developer || false;
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleOpenApp = (route: string) => {
-    router.push(route);
-  };
+  const featured = getFeaturedApps();
+  const trending = getTrendingApps();
+  const updates = getAppsWithUpdates();
 
-  const categories = ['os', 'commerce', 'transport', 'work', 'social', 'civic', 'finance', 'tools'] as const;
-  const categoryNames: Record<string, string> = {
-    os: 'OS Core', commerce: 'Commerce', transport: 'Transport',
-    work: 'Work', social: 'Social', civic: 'Civic', finance: 'Finance', tools: 'Tools'
-  };
+  const filteredApps = searchQuery.trim()
+    ? searchApps(searchQuery)
+    : activeCategory === 'all'
+      ? ALL_APPS.filter(a => !a.devOnly || isDeveloper)
+      : ALL_APPS.filter(a => a.category === activeCategory && (!a.devOnly || isDeveloper));
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
+
+  const categories = ['all', ...Object.keys(CATEGORY_LABELS)];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AppStore</Text>
-        <Text style={styles.headerSub}>Discover MTAA apps</Text>
+        <TouchableOpacity onPress={() => router.push('/(os)')} style={styles.homeBtn}>
+          <Ionicons name="home-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.headerTitle}>AppStore</Text>
+          <Text style={styles.headerSub}>Discover MTAA apps</Text>
+        </View>
+        <View style={styles.headerActions}>
+          {updates.length > 0 && (
+            <TouchableOpacity style={styles.updateBadge} onPress={() => router.push('/(os)/appstore/updates' as any)}>
+              <Ionicons name="arrow-up-circle" size={20} color="#F59E0B" />
+              <Text style={styles.updateBadgeText}>{updates.length}</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.myAppsBtn} onPress={() => router.push('/(os)/appstore/my-apps' as any)}>
+            <Ionicons name="apps-outline" size={20} color="#fff" />
+            {installedCount > 0 && (
+              <View style={styles.installedDot}><Text style={styles.installedDotText}>{installedCount}</Text></View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        {categories.map((cat) => {
-          const catApps = apps.filter(a => a.category === cat && (!a.devOnly || isDeveloper));
-          if (catApps.length === 0) return null;
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
+      >
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color="#64748b" />
+          <TextInput
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search apps, games, developers..."
+            placeholderTextColor="#64748b"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color="#64748b" />
+            </TouchableOpacity>
+          )}
+        </View>
 
-          return (
-            <View key={cat} style={styles.categorySection}>
-              <Text style={styles.categoryTitle}>{categoryNames[cat]}</Text>
-              {catApps.map((item) => (
+        {/* Category Tabs */}
+        {!searchQuery && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+            {categories.map(cat => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryTab, activeCategory === cat && styles.categoryTabActive]}
+                onPress={() => setActiveCategory(cat)}
+              >
+                <Text style={[styles.categoryTabText, activeCategory === cat && styles.categoryTabTextActive]}>
+                  {cat === 'all' ? 'All' : CATEGORY_LABELS[cat]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Featured Banner */}
+        {!searchQuery && activeCategory === 'all' && featured.length > 0 && (
+          <View style={styles.featuredSection}>
+            <Text style={styles.sectionTitle}>Featured</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} pagingEnabled>
+              {featured.map(app => (
                 <TouchableOpacity
-                  key={item.id}
-                  style={styles.appCard}
-                  onPress={() => handleOpenApp(item.route)}
+                  key={app.id}
+                  style={styles.featuredCard}
+                  onPress={() => router.push({ pathname: '/(os)/appstore/[id]', params: { id: app.id } })}
                 >
-                  <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
-                    <Ionicons name={item.icon as any} size={24} color={item.color} />
+                  <View style={[styles.featuredIcon, { backgroundColor: app.color + '20' }]}>
+                    <Ionicons name={app.icon as any} size={40} color={app.color} />
                   </View>
-                  <View style={styles.appInfo}>
-                    <Text style={styles.appName}>{item.name}</Text>
-                    <Text style={styles.appDesc}>{item.description}</Text>
+                  <View style={styles.featuredInfo}>
+                    <Text style={styles.featuredName}>{app.name}</Text>
+                    <Text style={styles.featuredDesc} numberOfLines={2}>{app.shortDescription || app.description}</Text>
+                    <View style={styles.featuredMeta}>
+                      <Text style={styles.featuredRating}>★ {app.rating}</Text>
+                      <Text style={styles.featuredDev}>{app.developer}</Text>
+                    </View>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Trending */}
+        {!searchQuery && activeCategory === 'all' && trending.length > 0 && (
+          <View style={styles.trendingSection}>
+            <Text style={styles.sectionTitle}>Trending Now</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {trending.map((app, i) => (
+                <TouchableOpacity
+                  key={app.id}
+                  style={styles.trendingCard}
+                  onPress={() => router.push({ pathname: '/(os)/appstore/[id]', params: { id: app.id } })}
+                >
+                  <View style={[styles.trendingRank, { backgroundColor: i < 3 ? '#F59E0B' : '#334155' }]}>
+                    <Text style={styles.trendingRankText}>{i + 1}</Text>
+                  </View>
+                  <View style={[styles.trendingIcon, { backgroundColor: app.color + '20' }]}>
+                    <Ionicons name={app.icon as any} size={28} color={app.color} />
+                  </View>
+                  <Text style={styles.trendingName} numberOfLines={1}>{app.name}</Text>
+                  <Text style={styles.trendingCat}>{CATEGORY_LABELS[app.category]}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* App Grid */}
+        <View style={styles.gridSection}>
+          <Text style={styles.sectionTitle}>
+            {searchQuery ? `Results for "${searchQuery}"` : activeCategory === 'all' ? 'All Apps' : CATEGORY_LABELS[activeCategory]}
+          </Text>
+          <View style={styles.grid}>
+            {filteredApps.map(app => (
+              <AppCard
+                key={app.id}
+                app={app}
+                status={getInstallStatus(app.id)}
+                onInstall={() => installApp(app.id)}
+                onPress={() => router.push({ pathname: '/(os)/appstore/[id]', params: { id: app.id } })}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Developer CTA */}
+        {!searchQuery && (
+          <TouchableOpacity style={styles.devCard} onPress={() => router.push('/(os)/developer' as any)}>
+            <Ionicons name="code-slash" size={28} color="#6366F1" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.devTitle}>Are you a developer?</Text>
+              <Text style={styles.devDesc}>Submit your app to the MTAA AppStore and reach millions of users.</Text>
             </View>
-          );
-        })}
+            <Ionicons name="arrow-forward" size={20} color="#6366F1" />
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
+  );
+}
+
+function AppCard({ app, status, onInstall, onPress }: {
+  app: AppManifest;
+  status: string;
+  onInstall: () => void;
+  onPress: () => void;
+}) {
+  const isInstalling = status === 'installing';
+  const isInstalled = status === 'installed';
+
+  return (
+    <TouchableOpacity style={styles.appCard} onPress={onPress} activeOpacity={0.8}>
+      <View style={[styles.appIcon, { backgroundColor: app.color + '20' }]}>
+        <Ionicons name={app.icon as any} size={32} color={app.color} />
+      </View>
+      <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+      <Text style={styles.appCat}>{CATEGORY_LABELS[app.category]}</Text>
+      <View style={styles.appMeta}>
+        <Text style={styles.appRating}>★ {app.rating}</Text>
+        <Text style={styles.appSize}>{app.sizeMB} MB</Text>
+      </View>
+      <TouchableOpacity
+        style={[
+          styles.installBtn,
+          isInstalled && styles.installedBtn,
+          isInstalling && styles.installingBtn,
+        ]}
+        onPress={(e) => { e.stopPropagation(); if (!isInstalled && !isInstalling) onInstall(); }}
+        disabled={isInstalled || isInstalling}
+      >
+        <Text style={[
+          styles.installText,
+          isInstalled && styles.installedText,
+        ]}>
+          {isInstalling ? '...' : isInstalled ? 'Open' : 'Get'}
+        </Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { backgroundColor: '#1e3a5f', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  headerSub: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
-  content: { padding: 16 },
-  categorySection: { marginBottom: 24 },
-  categoryTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
-  appCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8 },
-  iconContainer: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  appInfo: { flex: 1 },
-  appName: { fontSize: 16, fontWeight: '600', color: '#1e293b' },
-  appDesc: { fontSize: 13, color: '#64748b', marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12 },
+  homeBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
+  headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  updateBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#451a03', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
+  updateBadgeText: { color: '#F59E0B', fontSize: 12, fontWeight: '700', marginLeft: 4 },
+  myAppsBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
+  installedDot: { position: 'absolute', top: -4, right: -4, backgroundColor: '#10B981', borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  installedDotText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, marginHorizontal: 20, paddingHorizontal: 12, height: 44, marginBottom: 12 },
+  searchInput: { flex: 1, color: '#fff', fontSize: 15, marginLeft: 8 },
+  categoryScroll: { paddingHorizontal: 20, marginBottom: 16 },
+  categoryTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#1e293b', marginRight: 8 },
+  categoryTabActive: { backgroundColor: '#3B82F6' },
+  categoryTabText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  categoryTabTextActive: { color: '#fff' },
+  featuredSection: { marginBottom: 20 },
+  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginHorizontal: 20, marginBottom: 12 },
+  featuredCard: { width: SCREEN_W - 40, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginHorizontal: 20, marginRight: 12, borderWidth: 1, borderColor: '#334155' },
+  featuredIcon: { width: 72, height: 72, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  featuredInfo: { flex: 1, marginLeft: 14 },
+  featuredName: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  featuredDesc: { color: '#94a3b8', fontSize: 13, marginTop: 4, lineHeight: 18 },
+  featuredMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 },
+  featuredRating: { color: '#F59E0B', fontSize: 13, fontWeight: '600' },
+  featuredDev: { color: '#64748b', fontSize: 12 },
+  trendingSection: { marginBottom: 20 },
+  trendingCard: { width: 100, alignItems: 'center', marginRight: 12, marginLeft: 4 },
+  trendingRank: { position: 'absolute', top: -4, left: -4, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
+  trendingRankText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  trendingIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  trendingName: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 8, textAlign: 'center' },
+  trendingCat: { color: '#64748b', fontSize: 10, marginTop: 2 },
+  gridSection: { paddingHorizontal: 20, marginBottom: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  appCard: { width: CARD_W, backgroundColor: '#1e293b', borderRadius: 16, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
+  appIcon: { width: 56, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  appName: { color: '#fff', fontSize: 13, fontWeight: '600', textAlign: 'center', width: '100%' },
+  appCat: { color: '#64748b', fontSize: 11, marginTop: 2 },
+  appMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  appRating: { color: '#F59E0B', fontSize: 11, fontWeight: '600' },
+  appSize: { color: '#64748b', fontSize: 10 },
+  installBtn: { marginTop: 8, backgroundColor: '#3B82F6', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 6, minWidth: 70, alignItems: 'center' },
+  installedBtn: { backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
+  installingBtn: { backgroundColor: '#1e3a5f' },
+  installText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  installedText: { color: '#3B82F6' },
+  devCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginHorizontal: 20, marginBottom: 20, borderWidth: 1, borderColor: '#334155' },
+  devTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  devDesc: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
 });
