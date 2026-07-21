@@ -27,37 +27,58 @@ interface RealContract {
   other_party_name?: string;
 }
 
-const PROJECTS = [
-  { id: "1", title: "Mobile App Redesign", client: "Fintech Startup", budget: 150000, duration: "2 months", proposals: 8, status: "open", escrow: true },
-  { id: "2", title: "E-commerce API Development", client: "Retail Co", budget: 200000, duration: "3 months", proposals: 12, status: "open", escrow: true },
-  { id: "3", title: "Brand Identity Design", client: "NGO", budget: 75000, duration: "1 month", proposals: 5, status: "open", escrow: false },
-];
+interface RealJob {
+  id: string;
+  title: string;
+  description: string;
+  budget_min: number;
+  budget_max: number;
+  duration: string;
+  status: string;
+  employer_id: string;
+  created_at: string;
+  escrow_required: boolean;
+}
 
-const MILESTONES = [
-  { id: "1", title: "Discovery Phase", amount: 25000, status: "completed", date: "2024-11-01" },
-  { id: "2", title: "UI Design", amount: 50000, status: "in_progress", date: "2024-11-15" },
-  { id: "3", title: "Development", amount: 75000, status: "pending", date: "2024-12-01" },
-];
-
-// NOTE: PROJECTS and MILESTONES below remain mock data — the freelance
-// marketplace/proposal flow and milestone-based payments need their own
-// tables (e.g. project_proposals, contract_milestones) that don't exist
-// yet. That's new-feature scope, not a settlement-wiring fix, so it's
-// intentionally left out of this pass. MY_CONTRACTS was replaced with
-// real job_contracts data below since that's the table that actually
-// exists and matches the settlement gap this fix addresses.
+interface RealMilestone {
+  id: string;
+  contract_id: string;
+  title: string;
+  amount: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'disputed';
+  due_date: string;
+}
 
 export default function FreelanceScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("projects");
   const [contracts, setContracts] = useState<RealContract[]>([]);
-  const [loadingContracts, setLoadingContracts] = useState(false);
+  const [projects, setProjects] = useState<RealJob[]>([]);
+  const [milestones, setMilestones] = useState<RealMilestone[]>([]);
+  const [loading, setLoading] = useState(false);
   const [settlingId, setSettlingId] = useState<string | null>(null);
+
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('id, title, description, budget_min, budget_max, duration, status, employer_id, created_at, escrow_required')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (!error && data) {
+      setProjects(data);
+    } else if (error) {
+      console.error('[Freelance] Projects load error:', error);
+    }
+    setLoading(false);
+  }, []);
 
   const loadContracts = useCallback(async () => {
     if (!user?.id) return;
-    setLoadingContracts(true);
+    setLoading(true);
     const { data, error } = await supabase
       .from('job_contracts')
       .select('id, job_id, employer_id, worker_id, agreed_amount, status')
@@ -82,12 +103,40 @@ export default function FreelanceScreen() {
       );
       setContracts(enriched);
     }
-    setLoadingContracts(false);
+    setLoading(false);
+  }, [user?.id]);
+
+  const loadMilestones = useCallback(async () => {
+    if (!user?.id) return;
+    setLoading(true);
+
+    // Get user's active contracts first
+    const { data: userContracts } = await supabase
+      .from('job_contracts')
+      .select('id')
+      .or(`employer_id.eq.${user.id},worker_id.eq.${user.id}`)
+      .in('status', ['active', 'in_progress']);
+
+    if (userContracts && userContracts.length > 0) {
+      const contractIds = userContracts.map(c => c.id);
+      const { data, error } = await supabase
+        .from('contract_milestones')
+        .select('id, contract_id, title, amount, status, due_date')
+        .in('contract_id', contractIds)
+        .order('due_date', { ascending: true });
+
+      if (!error && data) {
+        setMilestones(data);
+      }
+    }
+    setLoading(false);
   }, [user?.id]);
 
   useEffect(() => {
+    if (activeTab === 'projects') loadProjects();
     if (activeTab === 'contracts') loadContracts();
-  }, [activeTab, loadContracts]);
+    if (activeTab === 'milestones') loadMilestones();
+  }, [activeTab, loadProjects, loadContracts, loadMilestones]);
 
   const handleSettle = async (contractId: string) => {
     setSettlingId(contractId);
@@ -109,6 +158,56 @@ export default function FreelanceScreen() {
     } finally {
       setSettlingId(null);
     }
+  };
+
+  const handleBid = (jobId: string) => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please log in to place a bid.');
+      return;
+    }
+    router.push({ pathname: '/(work)/jobs/bid' as any, params: { job_id: jobId } });
+  };
+
+  const handleSaveJob = async (jobId: string) => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please log in to save jobs.');
+      return;
+    }
+    const { error } = await supabase
+      .from('job_saved_items')
+      .insert({ user_id: user.id, job_id: jobId })
+      .select();
+
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      Alert.alert('Saved', 'Job saved to your list.');
+    }
+  };
+
+  const handleMessage = (jobId: string, employerId: string) => {
+    router.push({
+      pathname: '/(os)/messenger' as any,
+      params: { recipient_id: employerId, context: 'job', job_id: jobId }
+    });
+  };
+
+  const handleFundEscrow = async () => {
+    Alert.alert('Fund Escrow', 'This will create an escrow deposit. Continue?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Continue', onPress: () => router.push('/(finance)/wallet/escrow' as any) }
+    ]);
+  };
+
+  const handleReleaseEscrow = async () => {
+    Alert.alert('Release Escrow', 'This will release funds to the worker. Continue?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Release', onPress: () => Alert.alert('Coming Soon', 'Escrow release via smart contract coming soon.') }
+    ]);
+  };
+
+  const handleDispute = () => {
+    router.push('/(work)/jobs/dispute' as any);
   };
 
   const TABS = [
@@ -140,52 +239,69 @@ export default function FreelanceScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {activeTab === "projects" && (
           <View>
-            {PROJECTS.map((project) => (
-              <View key={project.id} style={styles.projectCard}>
-                <View style={styles.projectHeader}>
-                  <View style={styles.projectInfo}>
-                    <Text style={styles.projectTitle}>{project.title}</Text>
-                    <Text style={styles.projectClient}>{project.client}</Text>
-                  </View>
-                  {project.escrow && (
-                    <View style={styles.escrowBadge}>
-                      <Shield size={12} color="#34C759" />
-                      <Text style={styles.escrowText}>Escrow</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+            ) : projects.length === 0 ? (
+              <Text style={styles.emptyText}>No open projects found.</Text>
+            ) : (
+              projects.map((project) => (
+                <View key={project.id} style={styles.projectCard}>
+                  <View style={styles.projectHeader}>
+                    <View style={styles.projectInfo}>
+                      <Text style={styles.projectTitle}>{project.title}</Text>
+                      <Text style={styles.projectClient} numberOfLines={2}>{project.description}</Text>
                     </View>
-                  )}
+                    {project.escrow_required && (
+                      <View style={styles.escrowBadge}>
+                        <Shield size={12} color="#34C759" />
+                        <Text style={styles.escrowText}>Escrow</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.projectMeta}>
+                    <View style={styles.metaItem}><DollarSign size={14} color={Colors.textSecondary} /><Text style={styles.metaText}>KES {project.budget_min?.toLocaleString()} - {project.budget_max?.toLocaleString()}</Text></View>
+                    <View style={styles.metaItem}><Clock size={14} color={Colors.textSecondary} /><Text style={styles.metaText}>{project.duration || 'Not specified'}</Text></View>
+                  </View>
+                  <View style={styles.projectActions}>
+                    <TouchableOpacity style={styles.projectAction} onPress={() => handleBid(project.id)}>
+                      <Text style={styles.projectActionText}>Bid</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.projectAction} onPress={() => handleSaveJob(project.id)}>
+                      <Text style={styles.projectActionText}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.projectAction} onPress={() => handleMessage(project.id, project.employer_id)}>
+                      <Text style={styles.projectActionText}>Message</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.projectMeta}>
-                  <View style={styles.metaItem}><DollarSign size={14} color={Colors.textSecondary} /><Text style={styles.metaText}>KES {project.budget.toLocaleString()}</Text></View>
-                  <View style={styles.metaItem}><Clock size={14} color={Colors.textSecondary} /><Text style={styles.metaText}>{project.duration}</Text></View>
-                  <View style={styles.metaItem}><Users size={14} color={Colors.textSecondary} /><Text style={styles.metaText}>{project.proposals} proposals</Text></View>
-                </View>
-                <View style={styles.projectActions}>
-                  <TouchableOpacity style={styles.projectAction}><Text style={styles.projectActionText}>Bid</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.projectAction}><Text style={styles.projectActionText}>Save</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.projectAction} onPress={() => router.push("/(os)/messenger" as any)}><Text style={styles.projectActionText}>Message</Text></TouchableOpacity>
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
 
         {activeTab === "milestones" && (
           <View>
-            {MILESTONES.map((m) => (
-              <View key={m.id} style={styles.milestoneCard}>
-                <View style={styles.milestoneHeader}>
-                  <View style={[styles.milestoneDot, { backgroundColor: m.status === "completed" ? "#34C759" : m.status === "in_progress" ? "#FF9500" : Colors.border }]} />
-                  <View style={styles.milestoneInfo}>
-                    <Text style={styles.milestoneTitle}>{m.title}</Text>
-                    <Text style={styles.milestoneDate}>{m.date}</Text>
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+            ) : milestones.length === 0 ? (
+              <Text style={styles.emptyText}>No active milestones.</Text>
+            ) : (
+              milestones.map((m) => (
+                <View key={m.id} style={styles.milestoneCard}>
+                  <View style={styles.milestoneHeader}>
+                    <View style={[styles.milestoneDot, { backgroundColor: m.status === "completed" ? "#34C759" : m.status === "in_progress" ? "#FF9500" : Colors.border }]} />
+                    <View style={styles.milestoneInfo}>
+                      <Text style={styles.milestoneTitle}>{m.title}</Text>
+                      <Text style={styles.milestoneDate}>{new Date(m.due_date).toLocaleDateString()}</Text>
+                    </View>
+                    <Text style={styles.milestoneAmount}>KES {Number(m.amount).toLocaleString()}</Text>
                   </View>
-                  <Text style={styles.milestoneAmount}>KES {m.amount.toLocaleString()}</Text>
+                  <View style={styles.milestoneStatus}>
+                    <Text style={[styles.milestoneStatusText, { color: m.status === "completed" ? "#34C759" : m.status === "in_progress" ? "#FF9500" : Colors.textSecondary }]}>{m.status.replace("_", " ")}</Text>
+                  </View>
                 </View>
-                <View style={styles.milestoneStatus}>
-                  <Text style={[styles.milestoneStatusText, { color: m.status === "completed" ? "#34C759" : m.status === "in_progress" ? "#FF9500" : Colors.textSecondary }]}>{m.status.replace("_", " ")}</Text>
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
 
@@ -196,32 +312,31 @@ export default function FreelanceScreen() {
                 <Shield size={24} color="#34C759" />
                 <Text style={styles.escrowTitle}>Active Escrow</Text>
               </View>
-              <Text style={styles.escrowAmount}>KES 125,000</Text>
+              <Text style={styles.escrowAmount}>KES 0</Text>
               <Text style={styles.escrowLabel}>Protected by MTAA Escrow</Text>
               <View style={styles.escrowActions}>
-                <TouchableOpacity style={styles.escrowAction}><Text style={styles.escrowActionText}>Fund Escrow</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.escrowAction}><Text style={styles.escrowActionText}>Release</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.escrowAction}><Text style={styles.escrowActionText}>Dispute</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.escrowAction} onPress={handleFundEscrow}>
+                  <Text style={styles.escrowActionText}>Fund Escrow</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.escrowAction} onPress={handleReleaseEscrow}>
+                  <Text style={styles.escrowActionText}>Release</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.escrowAction} onPress={handleDispute}>
+                  <Text style={styles.escrowActionText}>Dispute</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.escrowHistory}>
               <Text style={styles.escrowHistoryTitle}>Escrow History</Text>
-              <View style={styles.historyItem}>
-                <View style={styles.historyDot}><CheckCircle size={12} color="#34C759" /></View>
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyTitle}>Milestone 1 Released</Text>
-                  <Text style={styles.historyDate}>Nov 1, 2024</Text>
-                </View>
-                <Text style={styles.historyAmount}>KES 25,000</Text>
-              </View>
+              <Text style={styles.emptyText}>No escrow history yet.</Text>
             </View>
           </View>
         )}
 
         {activeTab === "contracts" && (
           <View>
-            {loadingContracts ? (
+            {loading ? (
               <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
             ) : contracts.length === 0 ? (
               <Text style={styles.emptyText}>No contracts yet.</Text>
@@ -265,7 +380,7 @@ export default function FreelanceScreen() {
                         </TouchableOpacity>
                       ) : contract.status === 'completed' ? (
                         <View style={styles.contractAction}>
-                          <Text style={styles.contractActionText}>✓ Paid</Text>
+                          <Text style={styles.contractActionText}>Paid</Text>
                         </View>
                       ) : (
                         <View style={styles.contractAction}>
@@ -329,12 +444,6 @@ const styles = StyleSheet.create({
   escrowActionText: { fontSize: 12, color: Colors.primary, fontWeight: "600" },
   escrowHistory: { backgroundColor: Colors.card, borderRadius: 16, padding: 16, marginHorizontal: 16, marginTop: 12, borderWidth: 1, borderColor: Colors.border },
   escrowHistoryTitle: { fontSize: 16, fontWeight: "700", color: Colors.text, marginBottom: 12 },
-  historyItem: { flexDirection: "row", alignItems: "center", gap: 12 },
-  historyDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: "#34C75915", justifyContent: "center", alignItems: "center" },
-  historyInfo: { flex: 1 },
-  historyTitle: { fontSize: 14, fontWeight: "600", color: Colors.text },
-  historyDate: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  historyAmount: { fontSize: 14, fontWeight: "700", color: Colors.primary },
   contractCard: { backgroundColor: Colors.card, marginHorizontal: 16, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
   contractHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   contractIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: Colors.primary + "15", justifyContent: "center", alignItems: "center" },
@@ -347,12 +456,6 @@ const styles = StyleSheet.create({
   valueItem: { flex: 1 },
   valueLabel: { fontSize: 12, color: Colors.textSecondary },
   valueAmount: { fontSize: 16, fontWeight: "800", color: Colors.text, marginTop: 2 },
-  contractProgress: { marginTop: 14 },
-  contractProgressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  contractProgressLabel: { fontSize: 12, color: Colors.textSecondary },
-  contractProgressValue: { fontSize: 12, fontWeight: "700", color: Colors.text },
-  contractBar: { height: 6, backgroundColor: Colors.border, borderRadius: 3, overflow: "hidden" },
-  contractFill: { height: "100%", backgroundColor: Colors.primary, borderRadius: 3 },
   contractActions: { flexDirection: "row", gap: 8, marginTop: 14 },
   contractAction: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: Colors.background, alignItems: "center", borderWidth: 1, borderColor: Colors.border },
   contractActionText: { fontSize: 12, color: Colors.primary, fontWeight: "600" },
