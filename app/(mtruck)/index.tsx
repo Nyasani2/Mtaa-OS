@@ -45,6 +45,14 @@ export default function MTruckScreen() {
         <TouchableOpacity style={[styles.bookBtn, { backgroundColor: selected.color }]} onPress={() => router.push({ pathname: '/(mtruck)/request-haul', params: { haulType: selectedType } })}>
           <Text style={styles.bookBtnText}>Request {selected.label}</Text>
         </TouchableOpacity>
+
+        {/* Onboarding CTA */}
+        <TouchableOpacity style={styles.onboardBtn} onPress={() => router.push('/(mtruck)/onboarding' as any)}>
+          <Ionicons name="business" size={18} color="#84cc16" />
+          <Text style={styles.onboardText}>Register Your Trucking Company</Text>
+          <Ionicons name="arrow-forward" size={16} color="#84cc16" />
+        </TouchableOpacity>
+
         <View style={styles.bottomNav}>
           <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtruck)/equipment')}>
             <Ionicons name="hammer" size={20} color="#94a3b8" /><Text style={styles.navText}>Equipment</Text>
@@ -71,8 +79,14 @@ const styles = StyleSheet.create({
   haulLabel: { fontSize: 15, fontWeight: '700', color: '#fff' },
   haulDesc: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
   haulPrice: { fontSize: 14, fontWeight: '700' },
-  bookBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 16 },
+  bookBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   bookBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  onboardBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#0f172a', borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: '#334155', marginBottom: 16, gap: 8,
+  },
+  onboardText: { color: '#84cc16', fontSize: 14, fontWeight: '600', flex: 1, textAlign: 'center' },
   bottomNav: { flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 12 },
   navItem: { alignItems: 'center', gap: 4 },
   navText: { fontSize: 11, color: '#94a3b8' },
