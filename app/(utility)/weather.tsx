@@ -5,8 +5,7 @@ import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 
 // OpenWeatherMap API — free tier: 1000 calls/day
-// User must add OPENWEATHER_API_KEY to environment
-const OPENWEATHER_API_KEY = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY || '';
+const OPENWEATHER_API_KEY = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY || '6880de1035f9ead123ea914fe03d19dc';
 const OPENWEATHER_BASE = 'https://api.openweathermap.org/data/2.5';
 
 interface WeatherData {
@@ -49,10 +48,6 @@ export default function WeatherScreen() {
     setError(null);
 
     try {
-      if (!OPENWEATHER_API_KEY) {
-        throw new Error('OpenWeatherMap API key not configured. Add EXPO_PUBLIC_OPENWEATHER_API_KEY to your environment.');
-      }
-
       // Current weather
       const currentRes = await fetch(
         `${OPENWEATHER_BASE}/weather?q=${encodeURIComponent(cityName)}&appid=${OPENWEATHER_API_KEY}&units=metric`
@@ -145,15 +140,13 @@ export default function WeatherScreen() {
       const loc = await Location.getCurrentPositionAsync({});
 
       // Reverse geocode using OpenWeatherMap
-      if (OPENWEATHER_API_KEY) {
-        const res = await fetch(
-          `${OPENWEATHER_BASE}/weather?lat=${loc.coords.latitude}&lon=${loc.coords.longitude}&appid=${OPENWEATHER_API_KEY}&units=metric`
-        );
+      const res = await fetch(
+        `${OPENWEATHER_BASE}/weather?lat=${loc.coords.latitude}&lon=${loc.coords.longitude}&appid=${OPENWEATHER_API_KEY}&units=metric`
+      );
 
-        if (res.ok) {
-          const data = await res.json();
-          setCity(data.name);
-        }
+      if (res.ok) {
+        const data = await res.json();
+        setCity(data.name);
       }
     } catch (err: any) {
       console.error('[Weather] Location error:', err);
