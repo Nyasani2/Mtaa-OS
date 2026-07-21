@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth/useAuth';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const STEPS = ['Basic Info', 'Skills & Experience', 'Preferences', 'Review'];
+const STEPS = ['Personal Info', 'Skills & Experience', 'Preferences', 'Review'];
 
 export default function JobsOnboarding() {
   const router = useRouter();
@@ -23,7 +23,6 @@ export default function JobsOnboarding() {
   const [city, setCity] = useState('');
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
-  const [newSkill, setNewSkill] = useState('');
   const [yearsExperience, setYearsExperience] = useState('');
   const [education, setEducation] = useState('');
   const [currentRole, setCurrentRole] = useState('');
@@ -34,19 +33,31 @@ export default function JobsOnboarding() {
   const [isOpenToRelocation, setIsOpenToRelocation] = useState(false);
   const [preferredIndustries, setPreferredIndustries] = useState('');
 
-  const skillSuggestions = ['JavaScript', 'React', 'Python', 'Sales', 'Marketing', 'Accounting', 'Nursing', 'Teaching', 'Driving', 'Carpentry', 'Plumbing', 'Electrician', 'Chef', 'Customer Service'];
-  const jobTypeOptions = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Remote'];
+  const skillOptions = [
+    'JavaScript', 'Python', 'React', 'Node.js', 'Design',
+    'Marketing', 'Sales', 'Data Analysis', 'Project Management',
+    'Writing', 'Customer Service', 'Accounting', 'HR', 'Legal',
+  ];
+
+  const jobTypeOptions = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
+
+  const toggleSkill = (skill: string) => {
+    setSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
+  };
+
+  const toggleJobType = (type: string) => {
+    setJobTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+  };
 
   const validateStep = () => {
     switch (step) {
       case 0:
         if (!fullName.trim()) return 'Full name is required';
-        if (!headline.trim()) return 'Professional headline is required';
         if (!phone.trim()) return 'Phone number is required';
         if (!city.trim()) return 'City is required';
         break;
       case 1:
-        if (skills.length === 0) return 'Add at least one skill';
+        if (skills.length === 0) return 'Select at least one skill';
         if (!yearsExperience.trim()) return 'Years of experience is required';
         break;
       case 2:
@@ -54,22 +65,6 @@ export default function JobsOnboarding() {
         break;
     }
     return null;
-  };
-
-  const addSkill = () => {
-    if (!newSkill.trim()) return;
-    if (!skills.includes(newSkill.trim())) {
-      setSkills([...skills, newSkill.trim()]);
-    }
-    setNewSkill('');
-  };
-
-  const removeSkill = (skill: string) => {
-    setSkills(skills.filter(s => s !== skill));
-  };
-
-  const toggleJobType = (type: string) => {
-    setJobTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
   };
 
   const handleNext = () => {
@@ -91,7 +86,7 @@ export default function JobsOnboarding() {
     setLoading(true);
     try {
       const { error: insertError } = await supabase
-        .from('job_seekers')
+        .from('worker_profiles')
         .insert({
           user_id: user.id,
           full_name: fullName.trim(),
@@ -101,7 +96,7 @@ export default function JobsOnboarding() {
           city: city.trim(),
           bio: bio.trim(),
           skills: skills,
-          years_experience: parseInt(yearsExperience) || 0,
+          years_experience: parseInt(yearsExperience, 10) || 0,
           education: education.trim(),
           current_role: currentRole.trim(),
           current_company: currentCompany.trim(),
@@ -114,7 +109,8 @@ export default function JobsOnboarding() {
           is_available: true,
           profile_views: 0,
           applications_count: 0,
-          created_at: new Date().toISOString(),
+          worker_handle: fullName.trim().toLowerCase().replace(/\s+/g, '_'),
+          is_active: true,
         });
 
       if (insertError) throw insertError;
@@ -150,67 +146,30 @@ export default function JobsOnboarding() {
       case 0:
         return (
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
             <Input label="Full Name *" value={fullName} onChangeText={setFullName} icon="account" />
-            <Input label="Professional Headline *" value={headline} onChangeText={setHeadline} icon="briefcase" placeholder="e.g. Senior React Developer" />
+            <Input label="Professional Headline" value={headline} onChangeText={setHeadline} icon="briefcase" placeholder="e.g. Senior React Developer" />
             <Input label="Phone *" value={phone} onChangeText={setPhone} icon="phone" keyboardType="phone-pad" />
             <Input label="Email" value={email} onChangeText={setEmail} icon="email" keyboardType="email-address" />
-            <Input label="City *" value={city} onChangeText={setCity} icon="city" />
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Bio / Summary</Text>
-              <View style={[styles.inputWrapper, { alignItems: 'flex-start', paddingVertical: 10 }]}>
-                <MaterialCommunityIcons name="text" size={18} color="#9CA3AF" style={[styles.inputIcon, { marginTop: 4 }]} />
-                <TextInput
-                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  value={bio}
-                  onChangeText={setBio}
-                  multiline
-                  numberOfLines={4}
-                  placeholder="Tell employers about yourself..."
-                  placeholderTextColor="#9CA3AF"
-                />
-              </View>
-            </View>
+            <Input label="City *" value={city} onChangeText={setCity} icon="map-marker" />
+            <Input label="Bio" value={bio} onChangeText={setBio} icon="text" placeholder="Tell employers about yourself" multiline />
           </View>
         );
       case 1:
         return (
           <View style={styles.formSection}>
             <Text style={styles.sectionTitle}>Skills & Experience</Text>
-            <Text style={styles.label}>Your Skills *</Text>
+            <Text style={styles.label}>Skills *</Text>
             <View style={styles.chipContainer}>
-              {skills.map(skill => (
-                <TouchableOpacity key={skill} style={styles.skillChip} onPress={() => removeSkill(skill)}>
-                  <Text style={styles.skillChipText}>{skill}</Text>
-                  <MaterialCommunityIcons name="close" size={14} color="#2563EB" />
+              {skillOptions.map(skill => (
+                <TouchableOpacity key={skill} style={[styles.chip, skills.includes(skill) && styles.chipActive]} onPress={() => toggleSkill(skill)}>
+                  <Text style={[styles.chipText, skills.includes(skill) && styles.chipTextActive]}>{skill}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={styles.inputWrapper}>
-              <MaterialCommunityIcons name="plus" size={18} color="#9CA3AF" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                value={newSkill}
-                onChangeText={setNewSkill}
-                placeholder="Type a skill and tap Add"
-                placeholderTextColor="#9CA3AF"
-                onSubmitEditing={addSkill}
-              />
-              <TouchableOpacity style={styles.addSkillBtn} onPress={addSkill}>
-                <Text style={styles.addSkillBtnText}>Add</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.suggestionsLabel}>Suggestions:</Text>
-            <View style={styles.chipContainer}>
-              {skillSuggestions.filter(s => !skills.includes(s)).map(s => (
-                <TouchableOpacity key={s} style={styles.suggestionChip} onPress={() => { setNewSkill(s); addSkill(); }}>
-                  <Text style={styles.suggestionChipText}>{s}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Input label="Years of Experience *" value={yearsExperience} onChangeText={setYearsExperience} icon="calendar-clock" keyboardType="number-pad" />
-            <Input label="Education" value={education} onChangeText={setEducation} icon="school" placeholder="e.g. BSc Computer Science, University of Nairobi" />
-            <Input label="Current Role" value={currentRole} onChangeText={setCurrentRole} icon="briefcase-account" placeholder="e.g. Software Engineer" />
+            <Input label="Years of Experience *" value={yearsExperience} onChangeText={setYearsExperience} icon="calendar" keyboardType="number-pad" />
+            <Input label="Education" value={education} onChangeText={setEducation} icon="school" placeholder="e.g. BSc Computer Science" />
+            <Input label="Current Role" value={currentRole} onChangeText={setCurrentRole} icon="briefcase" />
             <Input label="Current Company" value={currentCompany} onChangeText={setCurrentCompany} icon="office-building" />
           </View>
         );
@@ -226,16 +185,16 @@ export default function JobsOnboarding() {
                 </TouchableOpacity>
               ))}
             </View>
-            <Input label="Expected Salary (KES/month)" value={expectedSalary} onChangeText={setExpectedSalary} icon="cash" keyboardType="number-pad" />
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Open to Remote Work</Text>
+            <Input label="Expected Salary (KES/month)" value={expectedSalary} onChangeText={setExpectedSalary} icon="cash" keyboardType="decimal-pad" />
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Open to Remote Work</Text>
               <Switch value={isOpenToRemote} onValueChange={setIsOpenToRemote} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
             </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Open to Relocation</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Open to Relocation</Text>
               <Switch value={isOpenToRelocation} onValueChange={setIsOpenToRelocation} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
             </View>
-            <Input label="Preferred Industries" value={preferredIndustries} onChangeText={setPreferredIndustries} icon="domain" placeholder="e.g. Technology, Healthcare, Finance" />
+            <Input label="Preferred Industries (comma separated)" value={preferredIndustries} onChangeText={setPreferredIndustries} icon="domain" placeholder="e.g. Technology, Finance, Healthcare" />
           </View>
         );
       case 3:
@@ -244,20 +203,17 @@ export default function JobsOnboarding() {
             <Text style={styles.sectionTitle}>Review Your Profile</Text>
             <ReviewRow label="Name" value={fullName} />
             <ReviewRow label="Headline" value={headline} />
-            <ReviewRow label="Phone" value={phone} />
+            <ReviewRow label="Contact" value={`${phone}${email ? ' / ' + email : ''}`} />
             <ReviewRow label="City" value={city} />
+            <ReviewRow label="Skills" value={skills.join(', ')} />
             <ReviewRow label="Experience" value={`${yearsExperience} years`} />
             <ReviewRow label="Education" value={education} />
-            <ReviewRow label="Current Role" value={`${currentRole}${currentCompany ? ' at ' + currentCompany : ''}`} />
-            <ReviewRow label="Skills" value={skills.join(', ')} />
+            <ReviewRow label="Current" value={`${currentRole}${currentCompany ? ' at ' + currentCompany : ''}`} />
             <ReviewRow label="Job Types" value={jobTypes.join(', ')} />
-            <ReviewRow label="Expected Salary" value={expectedSalary ? `KES ${expectedSalary}/month` : ''} />
+            <ReviewRow label="Salary" value={expectedSalary ? `KES ${expectedSalary}` : 'Not specified'} />
             <ReviewRow label="Remote" value={isOpenToRemote ? 'Yes' : 'No'} />
             <ReviewRow label="Relocation" value={isOpenToRelocation ? 'Yes' : 'No'} />
-            <View style={styles.infoBox}>
-              <MaterialCommunityIcons name="check-circle" size={20} color="#10B981" />
-              <Text style={styles.infoText}>By submitting, you confirm all information is accurate and agree to MTAA Jobs terms.</Text>
-            </View>
+            <ReviewRow label="Industries" value={preferredIndustries} />
           </View>
         );
     }
@@ -269,7 +225,7 @@ export default function JobsOnboarding() {
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Professional Profile</Text>
+        <Text style={styles.headerTitle}>Create Job Profile</Text>
         <View style={{ width: 40 }} />
       </View>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -300,13 +256,21 @@ export default function JobsOnboarding() {
   );
 }
 
-function Input({ label, value, onChangeText, icon, keyboardType = 'default', placeholder }: any) {
+function Input({ label, value, onChangeText, icon, keyboardType = 'default', placeholder, multiline }: any) {
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, multiline && { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
         <MaterialCommunityIcons name={icon} size={18} color="#9CA3AF" style={styles.inputIcon} />
-        <TextInput style={styles.input} value={value} onChangeText={onChangeText} keyboardType={keyboardType} placeholder={placeholder} placeholderTextColor="#9CA3AF" />
+        <TextInput 
+          style={[styles.input, multiline && { height: 80, textAlignVertical: 'top' }]} 
+          value={value} 
+          onChangeText={onChangeText} 
+          keyboardType={keyboardType} 
+          placeholder={placeholder} 
+          placeholderTextColor="#9CA3AF"
+          multiline={multiline}
+        />
       </View>
     </View>
   );
@@ -350,17 +314,8 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#DBEAFE', borderColor: '#2563EB' },
   chipText: { fontSize: 13, color: '#6B7280' },
   chipTextActive: { color: '#2563EB', fontWeight: '600' },
-  skillChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#DBEAFE', borderWidth: 1, borderColor: '#2563EB' },
-  skillChipText: { fontSize: 13, color: '#2563EB', fontWeight: '600' },
-  suggestionChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  suggestionChipText: { fontSize: 12, color: '#6B7280' },
-  addSkillBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#2563EB', borderRadius: 8, marginLeft: 8 },
-  addSkillBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  suggestionsLabel: { fontSize: 12, color: '#9CA3AF', marginBottom: 8, marginTop: 4 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  toggleLabel: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  infoBox: { flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, gap: 10, marginTop: 8 },
-  infoText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 18 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  switchLabel: { fontSize: 15, color: '#374151', fontWeight: '500' },
   reviewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   reviewLabel: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   reviewValue: { fontSize: 13, color: '#1F2937', fontWeight: '600', flex: 1, textAlign: 'right', marginLeft: 12 },

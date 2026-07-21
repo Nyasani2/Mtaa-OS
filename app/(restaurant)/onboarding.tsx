@@ -26,41 +26,53 @@ export default function RestaurantOnboarding() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [hasDelivery, setHasDelivery] = useState(false);
-  const [hasPickup, setHasPickup] = useState(true);
-  const [hasDineIn, setHasDineIn] = useState(true);
+  const [hasPickup, setHasPickup] = useState(false);
+  const [hasDineIn, setHasDineIn] = useState(false);
   const [openingTime, setOpeningTime] = useState('08:00');
   const [closingTime, setClosingTime] = useState('22:00');
-  const [menuItems, setMenuItems] = useState<{name: string; price: string; category: string}[]>([]);
+  const [menuItems, setMenuItems] = useState<{ name: string; price: string; category: string }[]>([]);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemCategory, setNewItemCategory] = useState('');
 
-  const cuisineOptions = ['Kenyan', 'Swahili', 'Indian', 'Chinese', 'Italian', 'Fast Food', 'BBQ', 'Vegetarian', 'Seafood', 'Bakery'];
+  const cuisineOptions = [
+    'Kenyan', 'Nigerian', 'Ethiopian', 'Indian', 'Chinese',
+    'Italian', 'Fast Food', 'Seafood', 'Vegetarian', 'BBQ',
+  ];
 
   const validateStep = () => {
     switch (step) {
       case 0:
         if (!restaurantName.trim()) return 'Restaurant name is required';
-        if (!businessReg.trim()) return 'Business registration is required';
+        if (!businessReg.trim()) return 'Business registration number is required';
         if (!kraPin.trim()) return 'KRA PIN is required';
-        if (!phone.trim()) return 'Phone number is required';
+        if (!cuisineType.trim()) return 'Cuisine type is required';
         break;
       case 1:
+        if (!phone.trim()) return 'Phone number is required';
         if (!address.trim()) return 'Address is required';
         if (!city.trim()) return 'City is required';
         break;
       case 2:
-        if (menuItems.length === 0) return 'Add at least one menu item';
+        if (!hasDelivery && !hasPickup && !hasDineIn) return 'Select at least one service type';
         break;
     }
     return null;
   };
 
+  const handleNext = () => {
+    const error = validateStep();
+    if (error) { Alert.alert('Validation Error', error); return; }
+    if (step < STEPS.length - 1) setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 0) setStep(step - 1);
+    else router.back();
+  };
+
   const addMenuItem = () => {
-    if (!newItemName.trim() || !newItemPrice.trim()) {
-      Alert.alert('Error', 'Item name and price are required');
-      return;
-    }
+    if (!newItemName.trim() || !newItemPrice.trim()) return;
     setMenuItems([...menuItems, {
       name: newItemName.trim(),
       price: newItemPrice.trim(),
@@ -73,17 +85,6 @@ export default function RestaurantOnboarding() {
 
   const removeMenuItem = (index: number) => {
     setMenuItems(menuItems.filter((_, i) => i !== index));
-  };
-
-  const handleNext = () => {
-    const error = validateStep();
-    if (error) { Alert.alert('Validation Error', error); return; }
-    if (step < STEPS.length - 1) setStep(step + 1);
-  };
-
-  const handleBack = () => {
-    if (step > 0) setStep(step - 1);
-    else router.back();
   };
 
   const handleSubmit = async () => {
@@ -115,7 +116,6 @@ export default function RestaurantOnboarding() {
           rating: 0,
           total_orders: 0,
           is_open: false,
-          created_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -127,17 +127,17 @@ export default function RestaurantOnboarding() {
           restaurant_id: restaurant.id,
           name: item.name,
           price: parseFloat(item.price) || 0,
-          category: item.category,
+          category_id: null, // Will be linked later
           is_available: true,
-          created_at: new Date().toISOString(),
         }));
+
         const { error: menuError } = await supabase.from('restaurant_menu_items').insert(menuData);
         if (menuError) throw menuError;
       }
 
       Alert.alert(
         'Restaurant Registered',
-        'Your restaurant is pending verification. You can start setting up your full menu once approved.',
+        'Your restaurant is pending verification. You can start setting up your menu while waiting for approval.',
         [{ text: 'OK', onPress: () => router.replace('/(restaurant)') }]
       );
     } catch (err: any) {
@@ -170,83 +170,70 @@ export default function RestaurantOnboarding() {
             <Input label="Restaurant Name *" value={restaurantName} onChangeText={setRestaurantName} icon="store" />
             <Input label="Business Registration No. *" value={businessReg} onChangeText={setBusinessReg} icon="file-document" />
             <Input label="KRA PIN *" value={kraPin} onChangeText={setKraPin} icon="identifier" />
-            <Text style={styles.label}>Cuisine Type</Text>
+            <Text style={styles.label}>Cuisine Type *</Text>
             <View style={styles.chipContainer}>
-              {cuisineOptions.map(c => (
-                <TouchableOpacity key={c} style={[styles.chip, cuisineType === c && styles.chipActive]} onPress={() => setCuisineType(c)}>
-                  <Text style={[styles.chipText, cuisineType === c && styles.chipTextActive]}>{c}</Text>
+              {cuisineOptions.map(cuisine => (
+                <TouchableOpacity key={cuisine} style={[styles.chip, cuisineType === cuisine && styles.chipActive]} onPress={() => setCuisineType(cuisine)}>
+                  <Text style={[styles.chipText, cuisineType === cuisine && styles.chipTextActive]}>{cuisine}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Input label="Description" value={description} onChangeText={setDescription} icon="text" placeholder="Brief description of your restaurant" />
-            <Input label="Phone *" value={phone} onChangeText={setPhone} icon="phone" keyboardType="phone-pad" />
-            <Input label="Email" value={email} onChangeText={setEmail} icon="email" keyboardType="email-address" />
+            <Input label="Description" value={description} onChangeText={setDescription} icon="text" placeholder="Describe your restaurant" multiline />
           </View>
         );
       case 1:
         return (
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Location & Service Options</Text>
-            <Input label="Street Address *" value={address} onChangeText={setAddress} icon="map-marker" />
+            <Text style={styles.sectionTitle}>Location & Contact</Text>
+            <Input label="Phone *" value={phone} onChangeText={setPhone} icon="phone" keyboardType="phone-pad" />
+            <Input label="Email" value={email} onChangeText={setEmail} icon="email" keyboardType="email-address" />
+            <Input label="Address *" value={address} onChangeText={setAddress} icon="map-marker" />
             <Input label="City *" value={city} onChangeText={setCity} icon="city" />
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Delivery Available</Text>
-              <Switch value={hasDelivery} onValueChange={setHasDelivery} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
-            </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Pickup Available</Text>
-              <Switch value={hasPickup} onValueChange={setHasPickup} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
-            </View>
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Dine-in Available</Text>
-              <Switch value={hasDineIn} onValueChange={setHasDineIn} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
-            </View>
+            <Text style={styles.sectionTitle}>Operating Hours</Text>
             <View style={styles.timeRow}>
               <View style={styles.timeInput}>
                 <Text style={styles.label}>Opens</Text>
-                <TextInput style={styles.timeField} value={openingTime} onChangeText={setOpeningTime} placeholder="08:00" />
+                <TextInput style={styles.input} value={openingTime} onChangeText={setOpeningTime} placeholder="08:00" />
               </View>
               <View style={styles.timeInput}>
                 <Text style={styles.label}>Closes</Text>
-                <TextInput style={styles.timeField} value={closingTime} onChangeText={setClosingTime} placeholder="22:00" />
+                <TextInput style={styles.input} value={closingTime} onChangeText={setClosingTime} placeholder="22:00" />
               </View>
+            </View>
+            <Text style={styles.sectionTitle}>Service Types</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Delivery</Text>
+              <Switch value={hasDelivery} onValueChange={setHasDelivery} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Pickup</Text>
+              <Switch value={hasPickup} onValueChange={setHasPickup} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Dine-in</Text>
+              <Switch value={hasDineIn} onValueChange={setHasDineIn} trackColor={{ false: '#E5E7EB', true: '#2563EB' }} />
             </View>
           </View>
         );
       case 2:
         return (
           <View style={styles.formSection}>
-            <Text style={styles.sectionTitle}>Initial Menu Items</Text>
-            <Text style={styles.subtitle}>Add at least one item to get started</Text>
-            {menuItems.map((item, i) => (
-              <View key={i} style={styles.menuItemRow}>
-                <View style={styles.menuItemInfo}>
-                  <Text style={styles.menuItemName}>{item.name}</Text>
-                  <Text style={styles.menuItemCat}>{item.category}</Text>
-                </View>
-                <Text style={styles.menuItemPrice}>KES {item.price}</Text>
-                <TouchableOpacity onPress={() => removeMenuItem(i)}>
-                  <MaterialCommunityIcons name="close-circle" size={22} color="#EF4444" />
+            <Text style={styles.sectionTitle}>Menu Items (Optional)</Text>
+            {menuItems.map((item, index) => (
+              <View key={index} style={styles.menuItemRow}>
+                <Text style={styles.menuItemText}>{item.name} — KES {item.price}</Text>
+                <TouchableOpacity onPress={() => removeMenuItem(index)}>
+                  <MaterialCommunityIcons name="close-circle" size={20} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             ))}
-            <View style={styles.addItemBox}>
-              <Input label="Item Name" value={newItemName} onChangeText={setNewItemName} icon="food" placeholder="e.g. Pilau" />
-              <View style={styles.rowInputs}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Price (KES)</Text>
-                  <TextInput style={styles.smallInput} value={newItemPrice} onChangeText={setNewItemPrice} keyboardType="decimal-pad" placeholder="250" />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.label}>Category</Text>
-                  <TextInput style={styles.smallInput} value={newItemCategory} onChangeText={setNewItemCategory} placeholder="Main Course" />
-                </View>
-              </View>
-              <TouchableOpacity style={styles.addBtn} onPress={addMenuItem}>
-                <MaterialCommunityIcons name="plus" size={18} color="#FFF" />
-                <Text style={styles.addBtnText}>Add Item</Text>
-              </TouchableOpacity>
-            </View>
+            <Input label="Item Name" value={newItemName} onChangeText={setNewItemName} icon="food" />
+            <Input label="Price (KES)" value={newItemPrice} onChangeText={setNewItemPrice} icon="cash" keyboardType="decimal-pad" />
+            <Input label="Category" value={newItemCategory} onChangeText={setNewItemCategory} icon="tag" placeholder="e.g. Main Course, Drink" />
+            <TouchableOpacity style={styles.addButton} onPress={addMenuItem}>
+              <MaterialCommunityIcons name="plus" size={18} color="#2563EB" />
+              <Text style={styles.addButtonText}>Add Item</Text>
+            </TouchableOpacity>
           </View>
         );
       case 3:
@@ -257,22 +244,15 @@ export default function RestaurantOnboarding() {
             <ReviewRow label="Registration" value={businessReg} />
             <ReviewRow label="KRA PIN" value={kraPin} />
             <ReviewRow label="Cuisine" value={cuisineType} />
-            <ReviewRow label="Phone" value={phone} />
+            <ReviewRow label="Contact" value={`${phone}${email ? ' / ' + email : ''}`} />
             <ReviewRow label="Address" value={`${address}, ${city}`} />
+            <ReviewRow label="Hours" value={`${openingTime} — ${closingTime}`} />
             <ReviewRow label="Services" value={[
               hasDelivery && 'Delivery',
               hasPickup && 'Pickup',
               hasDineIn && 'Dine-in',
             ].filter(Boolean).join(', ')} />
-            <ReviewRow label="Hours" value={`${openingTime} — ${closingTime}`} />
-            <Text style={styles.label}>Menu ({menuItems.length} items)</Text>
-            {menuItems.map((item, i) => (
-              <Text key={i} style={styles.menuPreview}>• {item.name} — KES {item.price}</Text>
-            ))}
-            <View style={styles.infoBox}>
-              <MaterialCommunityIcons name="check-circle" size={20} color="#10B981" />
-              <Text style={styles.infoText}>By submitting, you confirm all information is accurate and agree to MTAA Restaurant terms.</Text>
-            </View>
+            <ReviewRow label="Menu Items" value={`${menuItems.length} items`} />
           </View>
         );
     }
@@ -284,7 +264,7 @@ export default function RestaurantOnboarding() {
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Open Your Restaurant</Text>
+        <Text style={styles.headerTitle}>Register Restaurant</Text>
         <View style={{ width: 40 }} />
       </View>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -306,7 +286,7 @@ export default function RestaurantOnboarding() {
         ) : (
           <TouchableOpacity style={[styles.nextButton, loading && styles.nextButtonDisabled]} onPress={handleSubmit} disabled={loading}>
             {loading ? <ActivityIndicator color="#FFF" /> : (
-              <><Text style={styles.nextButtonText}>Open Restaurant</Text><MaterialCommunityIcons name="store" size={18} color="#FFF" /></>
+              <><Text style={styles.nextButtonText}>Register Restaurant</Text><MaterialCommunityIcons name="check" size={18} color="#FFF" /></>
             )}
           </TouchableOpacity>
         )}
@@ -315,13 +295,21 @@ export default function RestaurantOnboarding() {
   );
 }
 
-function Input({ label, value, onChangeText, icon, keyboardType = 'default', placeholder }: any) {
+function Input({ label, value, onChangeText, icon, keyboardType = 'default', placeholder, multiline }: any) {
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, multiline && { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
         <MaterialCommunityIcons name={icon} size={18} color="#9CA3AF" style={styles.inputIcon} />
-        <TextInput style={styles.input} value={value} onChangeText={onChangeText} keyboardType={keyboardType} placeholder={placeholder} placeholderTextColor="#9CA3AF" />
+        <TextInput 
+          style={[styles.input, multiline && { height: 80, textAlignVertical: 'top' }]} 
+          value={value} 
+          onChangeText={onChangeText} 
+          keyboardType={keyboardType} 
+          placeholder={placeholder} 
+          placeholderTextColor="#9CA3AF"
+          multiline={multiline}
+        />
       </View>
     </View>
   );
@@ -354,8 +342,7 @@ const styles = StyleSheet.create({
   stepLabel: { fontSize: 10, color: '#9CA3AF', marginTop: 4, maxWidth: 60, textAlign: 'center' },
   stepLabelActive: { color: '#2563EB', fontWeight: '600' },
   formSection: { marginTop: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16 },
-  subtitle: { fontSize: 13, color: '#6B7280', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 16, marginTop: 16 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12 },
@@ -366,24 +353,14 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#DBEAFE', borderColor: '#2563EB' },
   chipText: { fontSize: 13, color: '#6B7280' },
   chipTextActive: { color: '#2563EB', fontWeight: '600' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  toggleLabel: { fontSize: 14, color: '#374151', fontWeight: '500' },
-  timeRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  switchLabel: { fontSize: 15, color: '#374151', fontWeight: '500' },
+  timeRow: { flexDirection: 'row', gap: 12 },
   timeInput: { flex: 1 },
-  timeField: { height: 48, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 12, fontSize: 15, color: '#1F2937' },
-  menuItemRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E5E7EB' },
-  menuItemInfo: { flex: 1 },
-  menuItemName: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
-  menuItemCat: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  menuItemPrice: { fontSize: 14, fontWeight: '700', color: '#2563EB', marginRight: 8 },
-  addItemBox: { backgroundColor: '#F3F4F6', borderRadius: 12, padding: 12, marginTop: 8 },
-  rowInputs: { flexDirection: 'row', marginBottom: 12 },
-  smallInput: { height: 44, backgroundColor: '#FFF', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 10, fontSize: 14, color: '#1F2937' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10B981', borderRadius: 10, paddingVertical: 10, gap: 6 },
-  addBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-  menuPreview: { fontSize: 13, color: '#4B5563', paddingVertical: 4, paddingLeft: 8 },
-  infoBox: { flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, gap: 10, marginTop: 8 },
-  infoText: { flex: 1, fontSize: 13, color: '#1E40AF', lineHeight: 18 },
+  menuItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#F3F4F6', borderRadius: 8, marginBottom: 8 },
+  menuItemText: { fontSize: 14, color: '#1F2937', fontWeight: '500' },
+  addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderWidth: 1, borderColor: '#2563EB', borderRadius: 12, borderStyle: 'dashed' },
+  addButtonText: { fontSize: 14, color: '#2563EB', fontWeight: '600', marginLeft: 8 },
   reviewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   reviewLabel: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   reviewValue: { fontSize: 13, color: '#1F2937', fontWeight: '600', flex: 1, textAlign: 'right', marginLeft: 12 },
