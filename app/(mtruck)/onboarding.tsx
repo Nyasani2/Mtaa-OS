@@ -80,24 +80,24 @@ export default function MTruckOnboarding() {
     setLoading(true);
     try {
       const { error: insertError } = await supabase
-        .from('mtruck_companies')
+        .from('mtruck_fleet')
         .insert({
           owner_id: user.id,
-          company_name: companyName.trim(),
+          name: companyName.trim(),
           business_reg: businessReg.trim(),
           kra_pin: kraPin.trim(),
-          address: address.trim(),
-          city: city.trim(),
+          address: address.trim() || null,
+          city: city.trim() || null,
           contact_phone: contactPhone.trim(),
-          contact_email: contactEmail.trim(),
-          fleet_size: parseInt(fleetSize) || 0,
+          contact_email: contactEmail.trim() || null,
+          vehicle_count: parseInt(fleetSize, 10) || 0,
           truck_types: truckTypes,
           coverage_areas: coverageAreas.split(',').map(a => a.trim()).filter(Boolean),
           license_number: licenseNumber.trim(),
           insurance_provider: insuranceProvider.trim(),
           insurance_number: insuranceNumber.trim(),
           status: 'pending_verification',
-          created_at: new Date().toISOString(),
+          verified: false,
         });
 
       if (insertError) throw insertError;

@@ -28,12 +28,27 @@ export async function getFleetByOwner(ownerId: string): Promise<MtruckFleet | nu
 export async function createFleet(payload: {
   name: string;
   owner_id: string;
-  company_name?: string;
+  business_reg?: string;
+  kra_pin?: string;
+  address?: string;
+  city?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  vehicle_count?: number;
+  truck_types?: string[];
+  coverage_areas?: string[];
+  license_number?: string;
+  insurance_provider?: string;
+  insurance_number?: string;
   country_code?: string;
 }): Promise<MtruckFleet> {
   const { data, error } = await supabase
     .from(TABLE_FLEET)
-    .insert({ ...payload, status: 'active', fleet_size: 0 })
+    .insert({
+      ...payload,
+      status: 'pending_verification',
+      verified: false,
+    })
     .select()
     .single();
   if (error) throw new Error(`Create fleet failed: ${error.message}`);
@@ -232,7 +247,7 @@ export async function acknowledgeCommand(commandId: string, response?: Record<st
   const { error } = await supabase
     .from(TABLE_COMMANDS)
     .update({ status: 'acknowledged', response_payload: response, executed_at: new Date().toISOString() })
-    .eq('id', commandId);
+    .eq("id", commandId);
   if (error) throw new Error(`Acknowledge command failed: ${error.message}`);
 }
 
