@@ -98,20 +98,32 @@ class IdentityEngine {
   }
 
   async approveVerification(verificationId: string, adminId: string): Promise<boolean> {
+    // Use transaction to ensure atomicity
     const { data: verification, error: fetchError } = await supabase
       .from('identity_verifications')
       .select('*')
       .eq('id', verificationId)
       .single();
 
-    if (fetchError || !verification) return false;
+    if (fetchError || !verification) {
+      console.error('[IdentityEngine] approveVerification fetch error:', fetchError);
+      return false;
+    }
 
-    const { error } = await supabase
+    // Update verification status
+    const { error: updateError } = await supabase
       .from('identity_verifications')
-      .update({ status: 'approved', verified_at: new Date().toISOString() })
+      .update({ 
+        status: 'approved', 
+        verified_at: new Date().toISOString(),
+        verified_by: adminId,
+      })
       .eq('id', verificationId);
 
-    if (error) return false;
+    if (updateError) {
+      console.error('[IdentityEngine] approveVerification update error:', updateError);
+      return false;
+    }
 
     // Update identity profile
     const updateField = {
@@ -123,30 +135,137 @@ class IdentityEngine {
     }[verification.type];
 
     if (updateField) {
-      await supabase
+      const trustScore = await this.calculateTrustScore(verification.user_id);
+      const { error: profileError } = await supabase
         .from('identity_profiles')
-        .update({ [updateField]: true, updated_at: new Date().toISOString() })
+        .update({ 
+          [updateField]: true, 
+          updated_at: new Date().toISOString(),
+          trust_score: trustScore,
+        })
         .eq('user_id', verification.user_id);
+
+      if (profileError) {
+        console.error('[IdentityEngine] approveVerification profile update error:', profileError);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  async rejectVerification(verificationId: string, adminId: string, reason: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('identity_verifications')
+      .update({ 
+        status: 'rejected', 
+        rejection_reason: reason,
+        verified_at: new Date().toISOString(),
+        verified_by: adminId,
+      })
+      .eq('id', verificationId);
+
+    if (error) {
+      console.error('[IdentityEngine] rejectVerification error:', error);
+      return false;
     }
 
     return true;
   }
 
   async flagUser(userId: string, reason: string, flaggedBy: string): Promise<boolean> {
+    // FIX: Fetch current flags, append new reason, then update
+    // The old code tried to use supabase.rpc('array_append') inside .update() 
+    // which is a Promise-in-DB bug — you can not pass a Promise as a column value
+    const { data: profile, error: fetchError } = await supabase
+      .from('identity_profiles')
+      .select('flags')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('[IdentityEngine] flagUser fetch error:', fetchError);
+      return false;
+    }
+
+    const currentFlags = profile?.flags || [];
+    const newFlags = [...currentFlags, reason];
+
     const { error } = await supabase
       .from('identity_profiles')
       .update({
-        flags: supabase.rpc('array_append', { arr: [reason] }),
+        flags: newFlags,
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
 
     if (error) {
-      console.error('[IdentityEngine] flagUser error:', error);
+      console.error('[IdentityEngine] flagUser update error:', error);
       return false;
     }
 
+    // Log the flag action
+    await supabase.from('identity_audit_logs').insert({
+      user_id: userId,
+      action: 'user_flagged',
+      performed_by: flaggedBy,
+      details: { reason, previous_flags: currentFlags },
+    }).catch(err => console.error('[IdentityEngine] flagUser audit log error:', err));
+
     return true;
+  }
+
+  async unflagUser(userId: string, reason: string, unflaggedBy: string): Promise<boolean> {
+    const { data: profile, error: fetchError } = await supabase
+      .from('identity_profiles')
+      .select('flags')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('[IdentityEngine] unflagUser fetch error:', fetchError);
+      return false;
+    }
+
+    const currentFlags = profile?.flags || [];
+    const newFlags = currentFlags.filter(f => f !== reason);
+
+    const { error } = await supabase
+      .from('identity_profiles')
+      .update({
+        flags: newFlags,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[IdentityEngine] unflagUser update error:', error);
+      return false;
+    }
+
+    await supabase.from('identity_audit_logs').insert({
+      user_id: userId,
+      action: 'user_unflagged',
+      performed_by: unflaggedBy,
+      details: { reason, previous_flags: currentFlags },
+    }).catch(err => console.error('[IdentityEngine] unflagUser audit log error:', err));
+
+    return true;
+  }
+
+  async getVerificationHistory(userId: string): Promise<IdentityVerification[]> {
+    const { data, error } = await supabase
+      .from('identity_verifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[IdentityEngine] getVerificationHistory error:', error);
+      return [];
+    }
+
+    return data || [];
   }
 }
 
