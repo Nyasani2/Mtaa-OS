@@ -239,13 +239,161 @@ export async function deleteComment(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// ─── SUBSCRIPTIONS ───
-export async function subscribeToStudio(studioId: string, subscriberId: string, tier = 'free'): Promise<MStudioSubscription> {
-  const { data, error } = await withTimeout(
-    supabase.from('studio_subscriptions').insert({ studio_id: studioId, subscriber_id: subscriberId, tier }).select().single(),
-    TIMEOUT, 'subscribe'
+// ─── SUBSCRIPTIONS (FIXED: wallet integration + tier validation + revenue sharing) ───
+
+export interface TierInfo {
+  id: string;
+  studio_id: string;
+  name: string;
+  price: number;
+  currency: string;
+  benefits: string[];
+  is_active: boolean;
+}
+
+/**
+ * Subscribe to a studio with proper wallet integration.
+ * - Free tier: no payment required
+ * - Paid tier: validates wallet balance, deducts via execute_p2p_transfer RPC,
+ *   records revenue split (90% creator, 10% platform)
+ */
+export async function subscribeToStudio(
+  studioId: string,
+  subscriberId: string,
+  tier = 'free'
+): Promise<MStudioSubscription> {
+  // 1. Validate tier exists and get pricing
+  const { data: tierData, error: tierError } = await withTimeout(
+    supabase.from('studio_membership_tiers')
+      .select('*')
+      .eq('studio_id', studioId)
+      .eq('name', tier)
+      .eq('is_active', true)
+      .single(),
+    TIMEOUT, 'validateTier'
   );
-  if (error) throw error;
+
+  if (tierError && tier !== 'free') {
+    throw new Error(`Tier "${tier}" not found or inactive for this studio`);
+  }
+
+  const tierInfo: TierInfo | null = tierData;
+  const isPaid = tierInfo && tierInfo.price > 0;
+
+  // 2. For paid tiers: check wallet balance and process payment
+  if (isPaid && tierInfo) {
+    const price = tierInfo.price;
+    const currency = tierInfo.currency || 'KES';
+
+    // Check sender wallet balance
+    const { data: wallet, error: walletError } = await withTimeout(
+      supabase.from('wallet_accounts')
+        .select('id, balance, currency')
+        .eq('user_id', subscriberId)
+        .eq('currency', currency)
+        .eq('is_default', true)
+        .single(),
+      TIMEOUT, 'checkWallet'
+    );
+
+    if (walletError || !wallet) {
+      throw new Error(`No ${currency} wallet found. Please create a wallet first.`);
+    }
+
+    if (Number(wallet.balance) < price) {
+      throw new Error(`Insufficient balance. Required: ${price} ${currency}, Available: ${wallet.balance} ${currency}`);
+    }
+
+    // Get studio owner for revenue split
+    const { data: studio, error: studioError } = await withTimeout(
+      supabase.from('studio_studios')
+        .select('owner_id')
+        .eq('id', studioId)
+        .single(),
+      TIMEOUT, 'getStudioOwner'
+    );
+
+    if (studioError || !studio) {
+      throw new Error('Studio not found');
+    }
+
+    const ownerId = studio.owner_id;
+    const platformFee = Math.round(price * 0.10 * 100) / 100; // 10% platform fee
+    const creatorShare = Math.round((price - platformFee) * 100) / 100; // 90% to creator
+
+    // Execute atomic wallet transfer: subscriber -> platform -> creator
+    const { error: transferError } = await withTimeout(
+      supabase.rpc('execute_p2p_transfer', {
+        p_sender_id: subscriberId,
+        p_receiver_id: ownerId,
+        p_amount: price,
+        p_currency: currency,
+        p_description: `Subscription to studio ${studioId} - ${tier} tier`,
+        p_reference_type: 'studio_subscription',
+        p_reference_id: studioId,
+        p_platform_fee: platformFee,
+      }),
+      TIMEOUT, 'executeTransfer'
+    );
+
+    if (transferError) {
+      console.error('[subscribeToStudio] Transfer failed:', transferError);
+      throw new Error(`Payment failed: ${transferError.message}`);
+    }
+
+    // Record revenue for creator
+    const { error: revenueError } = await withTimeout(
+      supabase.from('studio_revenue').insert({
+        studio_id: studioId,
+        user_id: ownerId,
+        source_type: 'subscription',
+        source_id: studioId,
+        amount: creatorShare,
+        currency,
+        platform_fee: platformFee,
+        net_amount: creatorShare,
+        status: 'completed',
+        metadata: { tier, subscriber_id: subscriberId, original_amount: price },
+      }),
+      TIMEOUT, 'recordRevenue'
+    );
+
+    if (revenueError) {
+      console.error('[subscribeToStudio] Revenue record failed:', revenueError);
+      // Non-fatal: subscription succeeded, revenue tracking failed
+    }
+  }
+
+  // 3. Create subscription record
+  const { data, error } = await withTimeout(
+    supabase.from('studio_subscriptions').insert({
+      studio_id: studioId,
+      subscriber_id: subscriberId,
+      tier,
+      status: 'active',
+      expires_at: isPaid
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days for paid
+        : null, // never expires for free
+    }).select().single(),
+    TIMEOUT, 'createSubscription'
+  );
+
+  if (error) {
+    console.error('[subscribeToStudio] Subscription insert failed:', error);
+    throw new Error(`Subscription creation failed: ${error.message}`);
+  }
+
+  // 4. Increment subscriber count on studio
+  const { error: countError } = await withTimeout(
+    supabase.rpc('studio_increment_subscriber', { p_studio_id: studioId }),
+    TIMEOUT, 'incrementCount'
+  );
+
+  if (countError) {
+    console.error('[subscribeToStudio] Subscriber count increment failed:', countError);
+    // Non-fatal
+  }
+
   return data as MStudioSubscription;
 }
 
@@ -459,24 +607,150 @@ export async function getMerch(studioId: string): Promise<MStudioMerch[]> {
   return (data || []) as MStudioMerch[];
 }
 
-// ─── TIPS ───
+// ─── TIPS (FIXED: wallet integration + revenue split) ───
+
+export interface TipResult {
+  tip: MStudioTip;
+  transactionId?: string;
+}
+
+/**
+ * Send a tip with proper wallet integration.
+ * - Validates sender wallet balance
+ * - Deducts via execute_p2p_transfer RPC
+ * - Records tip in studio_tips
+ * - Splits revenue (90% receiver, 10% platform)
+ */
+export async function sendTip(
+  studioId: string,
+  senderId: string,
+  receiverId: string,
+  amount: number,
+  message?: string
+): Promise<TipResult> {
+  if (!amount || amount <= 0) {
+    throw new Error('Tip amount must be greater than 0');
+  }
+
+  const currency = 'KES';
+  const maxTip = 100000; // 100K KES max tip
+
+  if (amount > maxTip) {
+    throw new Error(`Tip amount exceeds maximum of ${maxTip} ${currency}`);
+  }
+
+  // 1. Check sender wallet balance
+  const { data: wallet, error: walletError } = await withTimeout(
+    supabase.from('wallet_accounts')
+      .select('id, balance, currency')
+      .eq('user_id', senderId)
+      .eq('currency', currency)
+      .eq('is_default', true)
+      .single(),
+    TIMEOUT, 'checkWallet'
+  );
+
+  if (walletError || !wallet) {
+    throw new Error(`No ${currency} wallet found. Please create a wallet first.`);
+  }
+
+  if (Number(wallet.balance) < amount) {
+    throw new Error(`Insufficient balance. Required: ${amount} ${currency}, Available: ${wallet.balance} ${currency}`);
+  }
+
+  // 2. Calculate revenue split
+  const platformFee = Math.round(amount * 0.10 * 100) / 100;
+  const receiverShare = Math.round((amount - platformFee) * 100) / 100;
+
+  // 3. Execute atomic wallet transfer
+  const { data: txId, error: transferError } = await withTimeout(
+    supabase.rpc('execute_p2p_transfer', {
+      p_sender_id: senderId,
+      p_receiver_id: receiverId,
+      p_amount: amount,
+      p_currency: currency,
+      p_description: message || `Tip to studio ${studioId}`,
+      p_reference_type: 'studio_tip',
+      p_reference_id: studioId,
+      p_platform_fee: platformFee,
+    }),
+    TIMEOUT, 'executeTransfer'
+  );
+
+  if (transferError) {
+    console.error('[sendTip] Transfer failed:', transferError);
+    throw new Error(`Tip payment failed: ${transferError.message}`);
+  }
+
+  // 4. Record tip in studio_tips
+  const { data: tip, error: tipError } = await withTimeout(
+    supabase.from('studio_tips').insert({
+      studio_id: studioId,
+      sender_id: senderId,
+      receiver_id: receiverId,
+      amount: receiverShare,
+      currency,
+      message,
+      status: 'completed',
+      transaction_id: txId,
+      metadata: { original_amount: amount, platform_fee: platformFee },
+    }).select().single(),
+    TIMEOUT, 'recordTip'
+  );
+
+  if (tipError) {
+    console.error('[sendTip] Tip record failed:', tipError);
+    throw new Error(`Tip recording failed: ${tipError.message}`);
+  }
+
+  // 5. Record revenue for receiver
+  const { error: revenueError } = await withTimeout(
+    supabase.from('studio_revenue').insert({
+      studio_id: studioId,
+      user_id: receiverId,
+      source_type: 'tip',
+      source_id: tip.id,
+      amount: receiverShare,
+      currency,
+      platform_fee: platformFee,
+      net_amount: receiverShare,
+      status: 'completed',
+      metadata: { sender_id: senderId, message, original_amount: amount },
+    }),
+    TIMEOUT, 'recordRevenue'
+  );
+
+  if (revenueError) {
+    console.error('[sendTip] Revenue record failed:', revenueError);
+    // Non-fatal: tip succeeded, revenue tracking failed
+  }
+
+  // 6. Send notification to receiver
+  const { error: notifError } = await withTimeout(
+    supabase.from('studio_notifications').insert({
+      user_id: receiverId,
+      type: 'tip_received',
+      title: 'New Tip Received',
+      message: `You received a tip of ${amount} ${currency}${message ? ': "' + message + '"' : ''}`,
+      data: { studio_id: studioId, tip_id: tip.id, amount, sender_id: senderId },
+    }),
+    TIMEOUT, 'sendNotification'
+  );
+
+  if (notifError) {
+    console.error('[sendTip] Notification failed:', notifError);
+    // Non-fatal
+  }
+
+  return { tip: tip as MStudioTip, transactionId: txId };
+}
+
 export async function getTips(studioId: string, limit = 50): Promise<MStudioTip[]> {
   const { data, error } = await withTimeout(
     supabase.rpc('studio_get_tips', { p_studio_id: studioId, p_limit: limit }), TIMEOUT, 'getTips'
   );
   if (error) throw error;
   return (data || []) as MStudioTip[];
-}
-
-export async function sendTip(studioId: string, senderId: string, receiverId: string, amount: number, message?: string): Promise<MStudioTip> {
-  const { data, error } = await withTimeout(
-    supabase.from('studio_tips').insert({
-      studio_id: studioId, sender_id: senderId, receiver_id: receiverId,
-      amount, currency: 'KES', message,
-    }).select().single(), TIMEOUT, 'sendTip'
-  );
-  if (error) throw error;
-  return data as MStudioTip;
 }
 
 // ─── ASIS ───
