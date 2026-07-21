@@ -77,11 +77,11 @@ const webStore = {
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
+      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthVault] Storage delete failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
-      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthVault] Storage write failed:", e?.message || e); }
+      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthVault] Storage delete failed:", e?.message || e); }
     }
   },
 };

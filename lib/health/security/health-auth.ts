@@ -66,11 +66,11 @@ const webStore = {
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
+      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthAuth] Storage delete failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {
-      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
+      try { await SecureStore.deleteItemAsync(key); } catch (e: any) { console.error("[HealthAuth] Storage delete failed:", e?.message || e); }
     }
   },
 };
@@ -116,7 +116,7 @@ export async function initializeHealthAuth(config?: Partial<HealthAuthConfig>): 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
       biometric = hasHardware && enrolled;
-    } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
+    } catch (e: any) { console.error("[HealthAuth] Biometric check failed:", e?.message || e); }
   }
   const state = await loadState();
   state.biometricAvailable = biometric;

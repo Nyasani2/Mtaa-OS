@@ -21,7 +21,7 @@ interface QuickAction {
 }
 
 const PRIMARY_ACTIONS: QuickAction[] = [
-  { icon: 'add-circle', label: 'Top Up', route: '/(os)/wallet/top-up', color: '#10b981' },
+  { icon: 'add-circle', label: 'Top Up', route: '/(os)/wallet/deposit', color: '#10b981' },
   { icon: 'arrow-down-circle', label: 'Withdraw', route: '/(os)/wallet/withdraw', color: '#ef4444' },
   { icon: 'swap-horizontal', label: 'Transfer', route: '/(os)/wallet/transfer', color: '#6366f1' },
   { icon: 'qr-code', label: 'Scan', route: '/(os)/wallet/scan', color: '#8b5cf6' },
