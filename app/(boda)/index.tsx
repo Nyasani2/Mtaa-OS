@@ -43,6 +43,13 @@ export default function BodaScreen() {
         <TouchableOpacity style={styles.bookBtn} onPress={() => router.push('/(boda)/request')}>
           <Text style={styles.bookBtnText}>Book Boda Ride</Text>
         </TouchableOpacity>
+
+        {/* Onboarding CTA */}
+        <TouchableOpacity style={styles.onboardBtn} onPress={() => router.push('/(boda)/onboarding' as any)}>
+          <Ionicons name="bicycle" size={18} color="#8B5CF6" />
+          <Text style={styles.onboardText}>Become a Boda Rider</Text>
+          <Ionicons name="arrow-forward" size={16} color="#8B5CF6" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -61,6 +68,12 @@ const styles = StyleSheet.create({
   rideLabel: { fontSize: 15, fontWeight: '700', color: '#fff' },
   rideDesc: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
   ridePrice: { fontSize: 16, fontWeight: '700', color: '#8B5CF6' },
-  bookBtn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 16, alignItems: 'center' },
+  bookBtn: { backgroundColor: '#8B5CF6', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   bookBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  onboardBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#0f172a', borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: '#334155', gap: 8,
+  },
+  onboardText: { color: '#8B5CF6', fontSize: 14, fontWeight: '600', flex: 1, textAlign: 'center' },
 });
