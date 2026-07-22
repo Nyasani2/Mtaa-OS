@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
+import { secureGetItem, secureSetItem, secureDeleteItem } from '@/lib/security/secure-storage';
 import { supabase } from '@/lib/supabase';
 
 export interface User {
@@ -44,57 +44,17 @@ function getRedirectOrigin(): string {
   return 'https://mtaa.app';
 }
 
-// ─── AES-256-GCM Session Encryption ───────────────────────────────────────
-
-const ENCRYPTION_KEY_KEY = 'mtaa_session_enc_key';
-
-async function getOrCreateEncryptionKey(): Promise<CryptoKey> {
-  let keyB64 = await SecureStore.getItemAsync(ENCRYPTION_KEY_KEY);
-  if (!keyB64) {
-    const raw = crypto.getRandomValues(new Uint8Array(32));
-    keyB64 = btoa(String.fromCharCode(...raw));
-    await SecureStore.setItemAsync(ENCRYPTION_KEY_KEY, keyB64);
-  }
-  const raw = new Uint8Array(atob(keyB64).split('').map(c => c.charCodeAt(0)));
-  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-}
-
-async function encryptData(data: string): Promise<string> {
-  const key = await getOrCreateEncryptionKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encoder = new TextEncoder();
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(data));
-  const combined = new Uint8Array(iv.length + new Uint8Array(ciphertext).length);
-  combined.set(iv);
-  combined.set(new Uint8Array(ciphertext), iv.length);
-  return btoa(String.fromCharCode(...combined));
-}
-
-async function decryptData(ciphertext: string): Promise<string | null> {
-  try {
-    const key = await getOrCreateEncryptionKey();
-    const combined = new Uint8Array(atob(ciphertext).split('').map(c => c.charCodeAt(0)));
-    const iv = combined.slice(0, 12);
-    const data = combined.slice(12);
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
-    return new TextDecoder().decode(decrypted);
-  } catch {
-    return null;
-  }
-}
+// ─── Cross-platform encrypted storage for Zustand persist ─────────────────
 
 const encryptedStorage = {
   getItem: async (name: string): Promise<string | null> => {
-    const encrypted = await SecureStore.getItemAsync(name);
-    if (!encrypted) return null;
-    return decryptData(encrypted);
+    return secureGetItem(name);
   },
   setItem: async (name: string, value: string): Promise<void> => {
-    const encrypted = await encryptData(value);
-    await SecureStore.setItemAsync(name, encrypted);
+    await secureSetItem(name, value);
   },
   removeItem: async (name: string): Promise<void> => {
-    await SecureStore.deleteItemAsync(name);
+    await secureDeleteItem(name);
   },
 };
 

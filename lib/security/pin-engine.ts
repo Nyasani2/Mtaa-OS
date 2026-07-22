@@ -3,14 +3,14 @@
  * 
  * Same API as original: setPin, verifyPin, hasPin, clearPin, getPinState, syncPinWithSupabase
  * Security upgrades:
- * - Storage: AsyncStorage → SecureStore (Keychain/Keystore)
+ * - Storage: AsyncStorage → Cross-platform secure storage (SecureStore native, AES-GCM web)
  * - Hash: simpleHash (djb2) → PBKDF2-SHA256, 100,000 iterations
  * - Server sync: optional hash backup to Supabase
- * - Migration: auto-migrates old AsyncStorage PINs to SecureStore
+ * - Migration: auto-migrates old AsyncStorage PINs to secure storage
  */
 
-import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { secureGetItem, secureSetItem, secureDeleteItem, secureMultiDelete } from './secure-storage';
 import { supabase } from '@/lib/supabase';
 
 // ─── Storage Keys ───────────────────────────────────────────
@@ -76,38 +76,31 @@ function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ─── Migration: one-time AsyncStorage → SecureStore ─────────
+// ─── Migration: one-time AsyncStorage → Secure Storage ─────────
 async function runMigration(): Promise<void> {
-  const done = await SecureStore.getItemAsync(MIGRATION_DONE_KEY);
+  const done = await secureGetItem(MIGRATION_DONE_KEY);
   if (done === 'true') return;
 
   try {
     const legacyHash = await AsyncStorage.getItem(LEGACY_PIN_KEY);
-    const canonicalHash = await SecureStore.getItemAsync(PIN_HASH_KEY);
+    const canonicalHash = await secureGetItem(PIN_HASH_KEY);
 
     if (legacyHash && !canonicalHash) {
-      // Generate a salt for the migrated PIN and re-hash with PBKDF2
       const salt = bytesToHex(secureRandomBytes(32));
-      // We can't recover the original PIN, so we store the legacy hash
-      // and flag it for re-hash on next verification
-      await SecureStore.setItemAsync(PIN_HASH_KEY, legacyHash);
-      await SecureStore.setItemAsync(PIN_SALT_KEY, 'LEGACY_' + salt);
-      await SecureStore.setItemAsync(PIN_ENABLED_KEY, 'true');
+      await secureSetItem(PIN_HASH_KEY, legacyHash);
+      await secureSetItem(PIN_SALT_KEY, 'LEGACY_' + salt);
+      await secureSetItem(PIN_ENABLED_KEY, 'true');
 
       const legacyAttempts = await AsyncStorage.getItem(LEGACY_ATTEMPTS_KEY);
-      if (legacyAttempts) {
-        await SecureStore.setItemAsync(PIN_ATTEMPTS_KEY, legacyAttempts);
-      }
+      if (legacyAttempts) await secureSetItem(PIN_ATTEMPTS_KEY, legacyAttempts);
 
       const legacyLockout = await AsyncStorage.getItem(LEGACY_LOCKOUT_KEY);
-      if (legacyLockout) {
-        await SecureStore.setItemAsync(PIN_LOCK_UNTIL_KEY, legacyLockout);
-      }
+      if (legacyLockout) await secureSetItem(PIN_LOCK_UNTIL_KEY, legacyLockout);
 
-      console.log('[PinEngine] ✅ Migrated legacy PIN to SecureStore');
+      console.log('[PinEngine] ✅ Migrated legacy PIN to secure storage');
     }
 
-    await SecureStore.setItemAsync(MIGRATION_DONE_KEY, 'true');
+    await secureSetItem(MIGRATION_DONE_KEY, 'true');
   } catch (e) {
     console.warn('[PinEngine] Migration error:', e);
   }
@@ -123,14 +116,12 @@ export async function setPin(pin: string): Promise<void> {
   const salt = bytesToHex(secureRandomBytes(32));
   const hash = await pbkdf2Hash(pin, salt);
 
-  // Write to SecureStore
-  await SecureStore.setItemAsync(PIN_HASH_KEY, hash);
-  await SecureStore.setItemAsync(PIN_SALT_KEY, salt);
-  await SecureStore.setItemAsync(PIN_ENABLED_KEY, 'true');
-  await SecureStore.deleteItemAsync(PIN_ATTEMPTS_KEY);
-  await SecureStore.deleteItemAsync(PIN_LOCK_UNTIL_KEY);
+  await secureSetItem(PIN_HASH_KEY, hash);
+  await secureSetItem(PIN_SALT_KEY, salt);
+  await secureSetItem(PIN_ENABLED_KEY, 'true');
+  await secureDeleteItem(PIN_ATTEMPTS_KEY);
+  await secureDeleteItem(PIN_LOCK_UNTIL_KEY);
 
-  // Clear legacy keys
   await AsyncStorage.multiRemove([LEGACY_PIN_KEY, LEGACY_LOCKOUT_KEY, LEGACY_ATTEMPTS_KEY]);
 
   console.log('[PinEngine] PIN set securely with PBKDF2-SHA256');
@@ -139,65 +130,59 @@ export async function setPin(pin: string): Promise<void> {
 export async function verifyPin(pin: string): Promise<boolean> {
   await runMigration();
 
-  // Check lockout
-  const lockUntilStr = await SecureStore.getItemAsync(PIN_LOCK_UNTIL_KEY);
+  const lockUntilStr = await secureGetItem(PIN_LOCK_UNTIL_KEY);
   if (lockUntilStr) {
     const lockUntil = parseInt(lockUntilStr, 10);
     if (Date.now() < lockUntil) {
       console.log('[PinEngine] PIN locked until', new Date(lockUntil).toISOString());
       return false;
     }
-    await SecureStore.deleteItemAsync(PIN_LOCK_UNTIL_KEY);
+    await secureDeleteItem(PIN_LOCK_UNTIL_KEY);
   }
 
-  const storedHash = await SecureStore.getItemAsync(PIN_HASH_KEY);
+  const storedHash = await secureGetItem(PIN_HASH_KEY);
   if (!storedHash) {
     console.log('[PinEngine] No PIN stored');
     return false;
   }
 
   let valid = false;
-  const salt = await SecureStore.getItemAsync(PIN_SALT_KEY);
+  const salt = await secureGetItem(PIN_SALT_KEY);
 
   if (salt && salt.startsWith('LEGACY_')) {
-    // Legacy hash comparison (djb2)
     const inputHash = simpleHash(pin);
     valid = inputHash === storedHash;
     if (valid) {
-      // Re-hash with PBKDF2 now that we have the PIN
       const newSalt = bytesToHex(secureRandomBytes(32));
       const newHash = await pbkdf2Hash(pin, newSalt);
-      await SecureStore.setItemAsync(PIN_HASH_KEY, newHash);
-      await SecureStore.setItemAsync(PIN_SALT_KEY, newSalt);
+      await secureSetItem(PIN_HASH_KEY, newHash);
+      await secureSetItem(PIN_SALT_KEY, newSalt);
       console.log('[PinEngine] Legacy PIN re-hashed to PBKDF2');
     }
   } else if (salt) {
-    // PBKDF2 comparison
     const inputHash = await pbkdf2Hash(pin, salt);
     valid = inputHash === storedHash;
   } else {
-    // Fallback: try simpleHash for edge cases
     const inputHash = simpleHash(pin);
     valid = inputHash === storedHash;
   }
 
   if (valid) {
-    await SecureStore.deleteItemAsync(PIN_ATTEMPTS_KEY);
-    await SecureStore.deleteItemAsync(PIN_LOCK_UNTIL_KEY);
+    await secureDeleteItem(PIN_ATTEMPTS_KEY);
+    await secureDeleteItem(PIN_LOCK_UNTIL_KEY);
     console.log('[PinEngine] PIN verified successfully');
     return true;
   }
 
-  // Wrong PIN: increment attempts
-  const attemptsStr = await SecureStore.getItemAsync(PIN_ATTEMPTS_KEY);
+  const attemptsStr = await secureGetItem(PIN_ATTEMPTS_KEY);
   const attempts = (parseInt(attemptsStr || '0', 10)) + 1;
-  await SecureStore.setItemAsync(PIN_ATTEMPTS_KEY, attempts.toString());
+  await secureSetItem(PIN_ATTEMPTS_KEY, attempts.toString());
 
   console.log(`[PinEngine] Wrong PIN. Attempt ${attempts}/${MAX_ATTEMPTS}`);
 
   if (attempts >= MAX_ATTEMPTS) {
     const lockUntil = Date.now() + LOCKOUT_DURATION_MS;
-    await SecureStore.setItemAsync(PIN_LOCK_UNTIL_KEY, lockUntil.toString());
+    await secureSetItem(PIN_LOCK_UNTIL_KEY, lockUntil.toString());
     console.log('[PinEngine] PIN locked for 5 minutes');
   }
 
@@ -206,17 +191,17 @@ export async function verifyPin(pin: string): Promise<boolean> {
 
 export async function hasPin(): Promise<boolean> {
   await runMigration();
-  const stored = await SecureStore.getItemAsync(PIN_HASH_KEY);
+  const stored = await secureGetItem(PIN_HASH_KEY);
   return !!stored;
 }
 
 export async function clearPin(): Promise<void> {
-  await SecureStore.deleteItemAsync(PIN_HASH_KEY);
-  await SecureStore.deleteItemAsync(PIN_SALT_KEY);
-  await SecureStore.deleteItemAsync(PIN_ATTEMPTS_KEY);
-  await SecureStore.deleteItemAsync(PIN_LOCK_UNTIL_KEY);
-  await SecureStore.deleteItemAsync(PIN_ENABLED_KEY);
-  await SecureStore.deleteItemAsync(MIGRATION_DONE_KEY);
+  await secureDeleteItem(PIN_HASH_KEY);
+  await secureDeleteItem(PIN_SALT_KEY);
+  await secureDeleteItem(PIN_ATTEMPTS_KEY);
+  await secureDeleteItem(PIN_LOCK_UNTIL_KEY);
+  await secureDeleteItem(PIN_ENABLED_KEY);
+  await secureDeleteItem(MIGRATION_DONE_KEY);
   await AsyncStorage.multiRemove([LEGACY_PIN_KEY, LEGACY_LOCKOUT_KEY, LEGACY_ATTEMPTS_KEY]);
   console.log('[PinEngine] PIN cleared');
 }
@@ -225,8 +210,8 @@ export async function getPinState(): Promise<PinState> {
   await runMigration();
 
   const isSet = await hasPin();
-  const lockUntilStr = await SecureStore.getItemAsync(PIN_LOCK_UNTIL_KEY);
-  const attemptsStr = await SecureStore.getItemAsync(PIN_ATTEMPTS_KEY);
+  const lockUntilStr = await secureGetItem(PIN_LOCK_UNTIL_KEY);
+  const attemptsStr = await secureGetItem(PIN_ATTEMPTS_KEY);
 
   const lockoutUntil = lockUntilStr ? parseInt(lockUntilStr, 10) : null;
   const isLocked = lockoutUntil ? Date.now() < lockoutUntil : false;
@@ -238,7 +223,7 @@ export async function getPinState(): Promise<PinState> {
 
 export async function syncPinWithSupabase(userId: string): Promise<void> {
   try {
-    const pinHash = await SecureStore.getItemAsync(PIN_HASH_KEY);
+    const pinHash = await secureGetItem(PIN_HASH_KEY);
     await supabase
       .from('user_profiles')
       .update({
