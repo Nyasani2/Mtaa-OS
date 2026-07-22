@@ -73,6 +73,28 @@ export default function BodaOnboarding() {
 
     setLoading(true);
     try {
+      // FIXED 2026-07-21: this insert had extensive column mismatches
+      // against the real boda_riders table, verified directly — email,
+      // city, operating_area, vehicle_make, vehicle_model, engine_cc,
+      // year_of_manufacture, has_helmet, has_reflective_jacket,
+      // driving_license, insurance_provider, insurance_number,
+      // sacco_name, status, and total_rides do NOT exist as written.
+      // This would have failed immediately for every user on the first
+      // mismatched column Postgres hit.
+      //
+      // Real columns: id_number, phone, license_number, license_expiry,
+      // helmet_serial (a serial number, not a boolean), emergency_contact,
+      // vehicle_type, plate_number, is_active, is_approved, photo_url,
+      // documents (likely a jsonb catch-all).
+      //
+      // NOT a silent data-loss fix: email, city, operating_area,
+      // vehicle_make, vehicle_model, engine_cc, year_of_manufacture,
+      // insurance_provider, insurance_number, and sacco_name are all
+      // still collected by this form's UI but have no matching column.
+      // Storing them in `documents` (jsonb) as a stopgap rather than
+      // silently dropping them, but this needs a real schema decision —
+      // structured columns for at least insurance/sacco data, which
+      // matter for compliance and dispute resolution.
       const { error: insertError } = await supabase
         .from('boda_riders')
         .insert({
@@ -80,26 +102,26 @@ export default function BodaOnboarding() {
           full_name: fullName.trim(),
           id_number: idNumber.trim(),
           phone: phone.trim(),
-          email: email.trim(),
-          city: city.trim(),
-          operating_area: area.trim(),
-          vehicle_make: vehicleMake.trim(),
-          vehicle_model: vehicleModel.trim(),
+          vehicle_type: `${vehicleMake.trim()} ${vehicleModel.trim()}`.trim(),
           plate_number: plateNumber.trim().toUpperCase(),
-          engine_cc: parseInt(engineCc) || 0,
-          year_of_manufacture: parseInt(yearOfManufacture) || null,
-          has_helmet: hasHelmet,
-          has_reflective_jacket: hasReflectiveJacket,
-          driving_license: drivingLicense.trim(),
-          insurance_provider: insuranceProvider.trim(),
-          insurance_number: insuranceNumber.trim(),
-          sacco_name: saccoName.trim(),
-          status: 'pending_verification',
+          license_number: drivingLicense.trim(),
+          is_active: false,
+          is_approved: false,
           is_online: false,
-          total_rides: 0,
+          total_trips: 0,
           rating: 0,
-          earnings_today: 0,
-          created_at: new Date().toISOString(),
+          documents: {
+            email: email.trim(),
+            city: city.trim(),
+            operating_area: area.trim(),
+            engine_cc: parseInt(engineCc) || 0,
+            year_of_manufacture: parseInt(yearOfManufacture) || null,
+            has_helmet: hasHelmet,
+            has_reflective_jacket: hasReflectiveJacket,
+            insurance_provider: insuranceProvider.trim(),
+            insurance_number: insuranceNumber.trim(),
+            sacco_name: saccoName.trim(),
+          },
         });
 
       if (insertError) throw insertError;

@@ -79,25 +79,32 @@ export default function MTruckOnboarding() {
 
     setLoading(true);
     try {
+      // FIXED 2026-07-21: this previously inserted into 'mtruck_companies',
+      // which does not exist in the database at all — this screen would
+      // have failed for every single user who tried to onboard. Verified
+      // against live schema: the real matching table is mtruck_fleet, but
+      // it only has 9 columns (id, name, owner_id, company_name,
+      // country_code, fleet_size, status, created_at, updated_at).
+      //
+      // IMPORTANT — NOT a silent data-loss fix: business_reg, kra_pin,
+      // address, city, contact_phone, contact_email, truck_types,
+      // coverage_areas, license_number, insurance_provider, and
+      // insurance_number are all still collected by this form (see the
+      // fields above) but have NOWHERE to be persisted — no compliance/
+      // details table exists for mtruck_fleet. This is a real schema gap,
+      // not something to paper over by inventing a table or silently
+      // dropping the fields without a trace. Needs a product decision:
+      // either extend mtruck_fleet (or add a companion details table)
+      // to actually store this compliance data, or trim this form to
+      // only collect what can currently be saved.
       const { error: insertError } = await supabase
-        .from('mtruck_companies')
+        .from('mtruck_fleet')
         .insert({
           owner_id: user.id,
+          name: companyName.trim(),
           company_name: companyName.trim(),
-          business_reg: businessReg.trim(),
-          kra_pin: kraPin.trim(),
-          address: address.trim(),
-          city: city.trim(),
-          contact_phone: contactPhone.trim(),
-          contact_email: contactEmail.trim(),
           fleet_size: parseInt(fleetSize) || 0,
-          truck_types: truckTypes,
-          coverage_areas: coverageAreas.split(',').map(a => a.trim()).filter(Boolean),
-          license_number: licenseNumber.trim(),
-          insurance_provider: insuranceProvider.trim(),
-          insurance_number: insuranceNumber.trim(),
           status: 'pending_verification',
-          created_at: new Date().toISOString(),
         });
 
       if (insertError) throw insertError;
