@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { secureGetItem, secureSetItem, secureDeleteItem } from '@/lib/security/secure-storage';
 import { supabase } from '@/lib/supabase';
 
 export interface User {
@@ -43,20 +42,6 @@ function getRedirectOrigin(): string {
   }
   return 'https://mtaa.app';
 }
-
-// ─── Cross-platform encrypted storage for Zustand persist ─────────────────
-
-const encryptedStorage = {
-  getItem: async (name: string): Promise<string | null> => {
-    return secureGetItem(name);
-  },
-  setItem: async (name: string, value: string): Promise<void> => {
-    await secureSetItem(name, value);
-  },
-  removeItem: async (name: string): Promise<void> => {
-    await secureDeleteItem(name);
-  },
-};
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -117,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
             .single();
 
           if (profileError && profileError.code === 'PGRST116') {
+            // No profile found — auto-create one
             const { data: newProfile, error: createError } = await supabase
               .from('user_profiles')
               .insert({
@@ -149,6 +135,7 @@ export const useAuthStore = create<AuthState>()(
             initialized: true,
           });
 
+          // Clean up old listener before registering new one
           if (authListenerUnsubscribe) {
             try { authListenerUnsubscribe(); } catch (e) { /* noop */ }
           }
@@ -262,6 +249,7 @@ export const useAuthStore = create<AuthState>()(
           });
           if (error) return { error: error.message, success: false };
 
+          // Auto-create profile on signUp
           if (data.user) {
             const { error: profileError } = await supabase
               .from('user_profiles')
@@ -316,7 +304,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'mtaa-auth-storage',
-      storage: encryptedStorage as any,
       partialize: (state) => ({
         user: state.user,
         session: state.session,
