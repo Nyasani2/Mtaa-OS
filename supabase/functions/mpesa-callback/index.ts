@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -81,7 +82,7 @@ serve(async (req) => {
     })
 
     // 📡 7. EVENT LOG (REALTIME SYSTEM)
-    await supabase.from('wallet_events').insert({
+    await supabase.from('wallet_deposit_events').insert({
       user_id: tx.user_id,
       event_type: 'MPESA_DEPOSIT_SUCCESS',
       metadata: {

@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface BootResult {
   success: boolean;

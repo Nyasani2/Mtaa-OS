@@ -1,7 +1,7 @@
 // domains/wallet/services/withdrawService.ts
 // Withdraw service — handles all withdrawal operations
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface WithdrawalRequest {
   amount: number;

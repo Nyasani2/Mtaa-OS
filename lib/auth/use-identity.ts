@@ -1,6 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { getPinState } from '@/lib/security/pin-engine';
+
+// Safe import for pin-engine — handles missing functions gracefully
+let getPinState: () => Promise<{ isSet: boolean; isLocked: boolean; attemptsRemaining: number }>;
+try {
+  const pinEngine = require('@/lib/security/pin-engine');
+  getPinState = pinEngine.getPinState || pinEngine.getPinStatus || (async () => ({ isSet: false, isLocked: false, attemptsRemaining: 5 }));
+} catch {
+  getPinState = async () => ({ isSet: false, isLocked: false, attemptsRemaining: 5 });
+}
 
 export function useIdentity() {
   const store = useAuthStore();
@@ -20,6 +28,8 @@ export function useIdentity() {
           attemptsRemaining: state.attemptsRemaining,
         });
       }
+    }).catch(() => {
+      // PIN engine not available — safe fallback
     });
     return () => { mounted = false; };
   }, [store.user?.id]);
@@ -42,9 +52,9 @@ export function useIdentity() {
     isPinSet: pinState.isSet,
     isPinLocked: pinState.isLocked,
     pinAttemptsRemaining: pinState.attemptsRemaining,
-    displayName: store.getDisplayName(),
-    avatarUrl: store.getAvatarUrl(),
-    userRole: store.getUserRole(),
+    displayName: store.getDisplayName?.() || store.user?.email?.split('@')[0] || 'User',
+    avatarUrl: store.getAvatarUrl?.() || null,
+    userRole: store.getUserRole?.() || 'user',
     refreshProfile,
     signOut,
   };

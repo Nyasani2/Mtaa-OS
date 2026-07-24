@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 const WORKSPACES = [
   { key: "video", label: "Video Studio", icon: "video-camera", color: "#E53935", route: "/studio/camera" },

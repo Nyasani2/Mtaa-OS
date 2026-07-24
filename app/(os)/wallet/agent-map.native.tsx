@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';

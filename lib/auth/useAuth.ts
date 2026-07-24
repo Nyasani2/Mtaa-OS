@@ -31,10 +31,10 @@ export function useAuth() {
     isAuthenticated: store.isAuthenticated,
     isLoading: store.isLoading,
     initialized: store.initialized,
-    displayName: store.getDisplayName(),
-    avatarUrl: store.getAvatarUrl(),
-    userRole: store.getUserRole(),
-    trustScore: store.getTrustScore(),
+    displayName: store.getDisplayName?.() || store.user?.email?.split('@')[0] || 'User',
+    avatarUrl: store.getAvatarUrl?.() || null,
+    userRole: store.getUserRole?.() || 'user',
+    trustScore: store.getTrustScore?.() || 0,
     login,
     register,
     logout,
@@ -47,5 +47,6 @@ export function useAuth() {
   };
 }
 
+// Re-export for barrel compatibility
 export { useAuthStore } from '@/lib/auth/store/auth.store';
 export { useIdentity } from './use-identity';

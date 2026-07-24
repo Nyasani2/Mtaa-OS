@@ -1,7 +1,7 @@
 // domains/streets/components/CreateModal.tsx — FIXED
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { useState } from 'react';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';

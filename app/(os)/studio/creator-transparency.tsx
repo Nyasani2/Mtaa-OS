@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 interface TransparencyRecord {
   label: string; daily: number; monthly: number; annual: number; color: string;

@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import { verifyPin, setPin } from '@/lib/security/pin-engine';
 
 export default function ChangePinScreen() {
   const router = useRouter();
@@ -25,8 +25,8 @@ export default function ChangePinScreen() {
       return;
     }
 
-    if (newPin.length < 4 || newPin.length > 6) {
-      Alert.alert('Invalid PIN', 'PIN must be 4-6 digits');
+    if (newPin.length !== 6) {
+      Alert.alert('Invalid PIN', 'PIN must be exactly 6 digits');
       return;
     }
 
@@ -37,30 +37,16 @@ export default function ChangePinScreen() {
 
     setLoading(true);
     try {
-      // Verify current PIN first
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('pin_hash')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Note: In production, compare hashed PINs. This is a simplified version.
-      // The actual PIN verification should use bcrypt.compare or similar.
-      if (profile?.pin_hash && currentPin !== profile.pin_hash) {
+      // Verify current PIN using pin-engine (hashed comparison)
+      const valid = await verifyPin(currentPin);
+      if (!valid) {
         Alert.alert('Incorrect PIN', 'Current PIN is incorrect');
         setLoading(false);
         return;
       }
 
-      // Update PIN
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ pin_hash: newPin }) // In production: hash the PIN before storing
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
+      // Set new PIN via pin-engine (hashes + syncs to cloud)
+      await setPin(newPin);
 
       Alert.alert('Success', 'PIN changed successfully', [
         { text: 'OK', onPress: () => router.back() },
@@ -117,7 +103,7 @@ export default function ChangePinScreen() {
 
         {/* New PIN */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>New PIN (4-6 digits)</Text>
+          <Text style={styles.label}>New PIN (6 digits)</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}

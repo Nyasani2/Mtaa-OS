@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export async function getEmergencyCases(filter: string, range: { from: number; to: number }) {
   let q = supabase.from("health_ambulance_dispatches").select("*", { count: "exact" }).order("reported_at", { ascending: false });

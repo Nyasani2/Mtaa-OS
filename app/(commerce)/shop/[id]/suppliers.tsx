@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput, Alert,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface Supplier { id: string; name: string; contact_name?: string; phone?: string; email?: string; status: 'active' | 'inactive'; products_count: number; }
 

@@ -19,7 +19,7 @@ import {
   Bell,
   Filter,
 } from 'lucide-react-native';
-import { useAuth } from '@/lib/auth/useAuthStore';
+import { useAuth } from '@/lib/auth/store/auth.store';
 
 interface MessageThread {
   id: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/kernel/supabase";
+import { supabase } from "@/lib/supabase";
 
 export function usePatient(patientId?: string) {
   const [patient, setPatient] = useState<any>(null);

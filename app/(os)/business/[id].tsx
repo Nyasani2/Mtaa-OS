@@ -12,7 +12,7 @@ export default function BusinessPublicScreen() {
 
   useEffect(() => {
     if (!id) return;
-    supabase.from('profiles').select('*').eq('user_id', id).single().then(({ data }) => {
+    supabase.from('user_profiles').select('*').eq('user_id', id).single().then(({ data }) => {
       setBusiness(data);
       setLoading(false);
     });

@@ -1,96 +1,57 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 export interface Facility {
   id: string;
   name: string;
-  type: string | null;
-  city: string | null;
-  departments: string[] | null;
-  insurance_accepted: string[] | null;
-  rating: number | null;
+  type: string;
+  address: string;
+  city: string;
+  phone: string;
+  email?: string;
+  rating?: number;
+  is_24h?: boolean;
+  latitude?: number;
+  longitude?: number;
+  created_at: string;
 }
 
-export interface Doctor {
-  id: string;
-  name: string | null;
-  specialization: string | null;
-  hospital_id: string | null;
-  hospital_name: string | null;
-  experience_years: number | null;
-  rating: number | null;
-}
+const FACILITY_SELECT = `
+  id, name, type, address, city, phone, email, rating, is_24h, latitude, longitude, created_at
+`;
 
 export function useFindCare() {
-  const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: facilities, isLoading, error } = useQuery({
+    queryKey: ['health-facilities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('health_facilities')
+        .select(FACILITY_SELECT)
+        .order('name');
+      if (error) throw error;
+      return (data || []) as Facility[];
+    },
+  });
 
-  const fetchAll = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const [{ data: fData, error: fErr }, { data: dData, error: dErr }] = await Promise.all([
-        supabase.from("health_facilities").select("id, name, type, city, departments, insurance_accepted, rating").limit(50),
-        supabase.from("health_staff").select("id, name, specialization, hospital_id, experience_years, rating, health_facilities(name)").eq("role", "doctor").limit(50),
-      ]);
-      if (fErr) throw fErr;
-      if (dErr) throw dErr;
+  const searchFacilities = async (query: string, filters?: { type?: string; city?: string }) => {
+    let q = supabase
+      .from('health_facilities')
+      .select(FACILITY_SELECT);
 
-      setFacilities((fData || []).map((f: any) => ({ ...f, departments: f.departments || [], insurance_accepted: f.insurance_accepted || [] })));
-      setDoctors((dData || []).map((d: any) => ({ ...d, hospital_name: d.health_facilities?.name || null })));
-    } catch (err: any) {
-      console.error("[useFindCare] error:", err);
-      setError(err.message || "Failed to load care providers");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    if (query) {
+      q = q.or(`name.ilike.%${query}%,address.ilike.%${query}%,city.ilike.%${query}%`);
     }
-  }, []);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const refresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchAll();
-  }, [fetchAll]);
-
-  const searchFacilities = useCallback(async (query: string) => {
-    setLoading(true);
-    try {
-      const { data, error: err } = await supabase
-        .from("health_facilities")
-        .select("id, name, type, city, departments, insurance_accepted, rating")
-        .or(`name.ilike.%${query}%,city.ilike.%${query}%,type.ilike.%${query}%`)
-        .limit(50);
-      if (err) throw err;
-      setFacilities((data || []).map((f: any) => ({ ...f, departments: f.departments || [], insurance_accepted: f.insurance_accepted || [] })));
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (filters?.type) {
+      q = q.eq('type', filters.type);
     }
-  }, []);
-
-  const searchDoctors = useCallback(async (query: string) => {
-    setLoading(true);
-    try {
-      const { data, error: err } = await supabase
-        .from("health_staff")
-        .select("id, name, specialization, hospital_id, experience_years, rating, health_facilities(name)")
-        .eq("role", "doctor")
-        .or(`name.ilike.%${query}%,specialization.ilike.%${query}%`)
-        .limit(50);
-      if (err) throw err;
-      setDoctors((data || []).map((d: any) => ({ ...d, hospital_name: d.health_facilities?.name || null })));
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (filters?.city) {
+      q = q.eq('city', filters.city);
     }
-  }, []);
 
-  return { facilities, doctors, loading, error, refreshing, refresh, searchFacilities, searchDoctors };
+    const { data, error } = await q.order('name');
+    if (error) throw error;
+    return (data || []) as Facility[];
+  };
+
+  return { facilities: facilities || [], isLoading, error, searchFacilities };
 }

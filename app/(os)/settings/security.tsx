@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function SecurityScreen() {
   const router = useRouter();

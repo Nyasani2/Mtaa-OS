@@ -10,7 +10,7 @@ export function useProfileInModule(moduleName: string) {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
-    const { data, error } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+    const { data, error } = await supabase.from('user_profiles').select('*').eq('user_id', user.id).single();
     if (!error && data) setProfile(data as Profile);
     setLoading(false);
   }, []);

@@ -4,7 +4,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, Switch
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const FACILITY_TYPES = [

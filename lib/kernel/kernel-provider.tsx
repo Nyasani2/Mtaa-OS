@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { kernelEventBus } from './kernel-event-bus';
 
 interface KernelContextValue { isInitialized: boolean; version: string; health: 'healthy' | 'degraded' | 'down'; }

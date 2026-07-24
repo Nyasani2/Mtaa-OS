@@ -49,7 +49,7 @@ export function useWallet() {
 
     // Read from canonical wallets table
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('*')
       .eq('user_id', user.id)
       .single();
@@ -185,7 +185,7 @@ export function useWallet() {
     if (!user?.id) return 0;
 
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('balance')
       .eq('user_id', user.id)
       .single();

@@ -1,28 +1,14 @@
-// ============================================================
-// MTAA OS V10 — ASIS Fraud Monitoring Boot Hook
-// Auto-activates all fraud adapters on app startup
-// ============================================================
+// lib/system/hooks/asis-boot-hook.ts
+// FIXED: Removed activateAllAdapters() call since the function was removed
+// The adapter itself says this is a "deliberate choice pending a decision"
 
 import { useEffect } from 'react';
-import { activateAllAdapters } from '@/lib/system/adapters/asis-adapter';
-
-let activated = false;
 
 export function useASISBoot() {
   useEffect(() => {
-    if (activated) return;
-    activated = true;
-
-    // Activate fraud monitoring after a short delay to not block boot
-    const timer = setTimeout(() => {
-      try {
-        activateAllAdapters();
-        console.log('[ASIS] Fraud monitoring activated');
-      } catch (e) {
-        console.error('[ASIS] Failed to activate fraud monitoring:', e);
-      }
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    // Fraud monitoring activation deliberately disabled
+    // See lib/system/adapters/asis-adapter.ts for context
+    // activateAllAdapters() was removed 2026-07-16 due to broken imports
+    // Re-enable when fraud monitoring is ready for production
   }, []);
 }

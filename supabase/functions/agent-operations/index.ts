@@ -1,3 +1,4 @@
+
 // ============================================================
 // MTAA AGENT OPERATIONS — CONSOLIDATED EDGE FUNCTION
 // Actions: register, activate, instant_activate, deposit_float, topup_float, 
@@ -307,10 +308,10 @@ async function agentDepositFloat(supabaseAdmin, userId, params) {
 
   // Get user wallet
   const { data: wallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (!wallet || wallet.available_balance < amount) {
@@ -319,7 +320,7 @@ async function agentDepositFloat(supabaseAdmin, userId, params) {
 
   // Debit wallet
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: wallet.available_balance - amount })
     .eq("id", wallet.id);
 
@@ -394,16 +395,16 @@ async function agentCustomerDeposit(supabaseAdmin, agentUserId, params) {
 
   // Credit customer wallet
   const { data: customerWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", customer_id)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (!customerWallet) throw new Error("Customer wallet not found");
 
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: customerWallet.available_balance + amount })
     .eq("id", customerWallet.id);
 
@@ -486,10 +487,10 @@ async function agentCustomerWithdrawal(supabaseAdmin, agentUserId, params) {
 
   // Debit customer wallet
   const { data: customerWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", customer_id)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (!customerWallet || customerWallet.available_balance < amount) {
@@ -497,7 +498,7 @@ async function agentCustomerWithdrawal(supabaseAdmin, agentUserId, params) {
   }
 
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: customerWallet.available_balance - amount })
     .eq("id", customerWallet.id);
 
@@ -587,15 +588,15 @@ async function agentWithdraw(supabaseAdmin, userId, params) {
 
   // Credit agent wallet
   const { data: wallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (wallet) {
     await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .update({ available_balance: wallet.available_balance + amount })
       .eq("id", wallet.id);
   }

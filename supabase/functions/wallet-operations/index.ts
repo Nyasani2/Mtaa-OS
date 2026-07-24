@@ -1,3 +1,4 @@
+
 // ============================================================
 // MTAA WALLET OPERATIONS — CONSOLIDATED EDGE FUNCTION
 // Actions: deposit, transfer, withdraw, execute, balance, history
@@ -94,10 +95,10 @@ async function walletDeposit(supabaseAdmin, userId, params) {
 
   // Get user wallet
   const { data: wallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (!wallet) throw new Error("Wallet not found");
@@ -143,10 +144,10 @@ async function walletTransfer(supabaseAdmin, userId, params) {
 
   // Get sender wallet
   const { data: senderWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance, currency_code")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -157,10 +158,10 @@ async function walletTransfer(supabaseAdmin, userId, params) {
 
   // Get recipient wallet
   const { data: recipientWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, user_id")
     .eq("user_id", recipient_id)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -182,7 +183,7 @@ async function walletTransfer(supabaseAdmin, userId, params) {
 
   // Debit sender
   const { error: debitError } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: senderWallet.available_balance - amount })
     .eq("id", senderWallet.id)
     .eq("available_balance", senderWallet.available_balance);
@@ -191,13 +192,13 @@ async function walletTransfer(supabaseAdmin, userId, params) {
 
   // Credit recipient
   const { data: recipientCurrent } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("available_balance")
     .eq("id", recipientWallet.id)
     .single();
 
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: (recipientCurrent?.available_balance || 0) + netAmount })
     .eq("id", recipientWallet.id);
 
@@ -230,9 +231,9 @@ async function walletTransfer(supabaseAdmin, userId, params) {
   // Record fee if > 0
   if (fee > 0) {
     const { data: mtaaWallet } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("id, balance, available_balance, user_id")
-      .eq("wallet_type", "main")
+      .eq("account_type", "main")
       .ilike("wallet_name", "%MTAA%")
       .maybeSingle();
 
@@ -246,7 +247,7 @@ async function walletTransfer(supabaseAdmin, userId, params) {
       // user_id 8e41ee2e-ae74-43a5-a550-a1d02a5591a3) so this insert
       // satisfies wallet_transactions.user_id's NOT NULL constraint.
       await supabaseAdmin
-        .from("wallets")
+        .from("wallet_accounts")
         .update({
           balance: (mtaaWallet.balance || 0) + fee,
           available_balance: (mtaaWallet.available_balance || 0) + fee,
@@ -291,10 +292,10 @@ async function walletWithdraw(supabaseAdmin, userId, params) {
 
   // Get user wallet
   const { data: wallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance, currency_code")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -337,7 +338,7 @@ async function walletWithdraw(supabaseAdmin, userId, params) {
 
   // Debit wallet
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: wallet.available_balance - amount })
     .eq("id", wallet.id);
 
@@ -400,10 +401,10 @@ async function walletBalance(supabaseAdmin, userId, params) {
   const { wallet_type = "main" } = params;
 
   const { data: wallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance, pending_balance, currency_code, wallet_type, wallet_name, is_active")
     .eq("user_id", userId)
-    .eq("wallet_type", wallet_type)
+    .eq("account_type", wallet_type)
     .single();
 
   if (!wallet) throw new Error("Wallet not found");

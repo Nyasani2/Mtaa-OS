@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 interface HospitalStats {
@@ -70,12 +69,18 @@ export function useHospitalAdmin(facilityId: string | null) {
   const [staffOnDuty, setStaffOnDuty] = useState<StaffMember[]>([]);
   const [recentAdmissions, setRecentAdmissions] = useState<Admission[]>([]);
   const [recentDischarges, setRecentDischarges] = useState<Discharge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   const fetchData = useCallback(async () => {
-    if (!facilityId || !user?.id) return;
+    // CRITICAL FIX: Set loading=false immediately if no facilityId
+    if (!facilityId || !user?.id) {
+      setLoading(false);
+      setError(facilityId ? null : 'No facility selected. Please select a facility first.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -96,8 +101,9 @@ export function useHospitalAdmin(facilityId: string | null) {
       const totalStaff = staffData?.length || 0;
       const staffOnDutyCount = staffData?.filter((s: any) => s.status === 'active').length || 0;
 
+      // Use health_admissions table for today admissions, not health_beds
       const { data: admData } = await supabase
-        .from('health_beds')
+        .from('health_admissions')
         .select('id')
         .eq('facility_id', facilityId)
         .gte('admission_date', today);
@@ -135,10 +141,15 @@ export function useHospitalAdmin(facilityId: string | null) {
         setAvailableBeds(mappedBeds.filter((b: Bed) => b.status === 'available'));
       }
 
-      // Admissions
+      // Admissions — query health_admissions table, not health_beds
       const { data: admissionsList } = await supabase
-        .from('health_beds')
-        .select('*, patient:patient_id(name), bed:bed_id(bed_number, ward), doctor:doctor_id(name)')
+        .from('health_admissions')
+        .select(`
+          id, patient_id, bed_id, diagnosis, doctor_id, admission_date, status,
+          patient:patient_id(name),
+          bed:bed_id(bed_number, ward),
+          doctor:doctor_id(name)
+        `)
         .eq('facility_id', facilityId)
         .order('admission_date', { ascending: false });
       const mappedAdmissions = (admissionsList || []).map((a: any) => ({
@@ -158,10 +169,14 @@ export function useHospitalAdmin(facilityId: string | null) {
         setRecentAdmissions(mappedAdmissions.slice(0, 5));
       }
 
-      // Discharges
+      // Discharges — query health_discharges table
       const { data: dischargesList } = await supabase
-        .from('health_beds')
-        .select('*, patient:patient_id(name), bed:bed_id(bed_number, ward)')
+        .from('health_discharges')
+        .select(`
+          id, patient_id, bed_id, diagnosis, discharge_date, discharge_type, medications,
+          patient:patient_id(name),
+          bed:bed_id(bed_number, ward)
+        `)
         .eq('facility_id', facilityId)
         .order('discharge_date', { ascending: false });
       const mappedDischarges = (dischargesList || []).map((d: any) => ({
@@ -216,9 +231,8 @@ export function useHospitalAdmin(facilityId: string | null) {
   }, [fetchData]);
 
   const admitPatient = useCallback(async (admitData: any) => {
-    const { data, error } = await supabase.from('health_beds').insert(admitData).select().single();
+    const { data, error } = await supabase.from('health_admissions').insert(admitData).select().single();
     if (error) throw error;
-    // Mark bed as occupied
     if (admitData.bed_id) {
       await supabase.from('health_beds').update({ status: 'occupied' }).eq('id', admitData.bed_id);
     }
@@ -227,7 +241,7 @@ export function useHospitalAdmin(facilityId: string | null) {
   }, [fetchData]);
 
   const dischargePatient = useCallback(async (admissionId: string, patientId: string, dischargeData: any) => {
-    const { error: dischargeError } = await supabase.from('health_beds').insert({
+    const { error: dischargeError } = await supabase.from('health_discharges').insert({
       admission_id: admissionId,
       patient_id: patientId,
       facility_id: facilityId,
@@ -235,10 +249,8 @@ export function useHospitalAdmin(facilityId: string | null) {
       discharge_date: new Date().toISOString(),
     });
     if (dischargeError) throw dischargeError;
-    // Update admission status
-    await supabase.from('health_beds').update({ status: 'discharged' }).eq('id', admissionId);
-    // Free the bed
-    const { data: adm } = await supabase.from('health_beds').select('bed_id').eq('id', admissionId).single();
+    await supabase.from('health_admissions').update({ status: 'discharged' }).eq('id', admissionId);
+    const { data: adm } = await supabase.from('health_admissions').select('bed_id').eq('id', admissionId).single();
     if (adm?.bed_id) {
       await supabase.from('health_beds').update({ status: 'available' }).eq('id', adm.bed_id);
     }

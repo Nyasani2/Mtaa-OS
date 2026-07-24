@@ -1,3 +1,4 @@
+
 // ============================================================
 // MTAA TRIBE OPERATIONS — CONSOLIDATED EDGE FUNCTION
 // Actions: donate, join_paid
@@ -91,10 +92,10 @@ async function tribeDonate(supabaseAdmin, donorId, params) {
 
   // Get donor wallet
   const { data: donorWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", donorId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -107,10 +108,10 @@ async function tribeDonate(supabaseAdmin, donorId, params) {
   let recipientWalletId = tribe.wallet_id;
   if (!recipientWalletId) {
     const { data: ownerWallet } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("id")
       .eq("user_id", tribe.owner_id)
-      .eq("wallet_type", "main")
+      .eq("account_type", "main")
       .single();
     recipientWalletId = ownerWallet?.id;
   }
@@ -133,19 +134,19 @@ async function tribeDonate(supabaseAdmin, donorId, params) {
 
   // Debit donor
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: donorWallet.available_balance - amount })
     .eq("id", donorWallet.id);
 
   // Credit tribe
   const { data: tribeWalletCurrent } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("available_balance")
     .eq("id", recipientWalletId)
     .single();
 
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: (tribeWalletCurrent?.available_balance || 0) + netAmount })
     .eq("id", recipientWalletId);
 
@@ -237,10 +238,10 @@ async function tribeJoinPaid(supabaseAdmin, userId, params) {
 
   // Get user wallet
   const { data: userWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", userId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -253,10 +254,10 @@ async function tribeJoinPaid(supabaseAdmin, userId, params) {
   let tribeWalletId = tribe.wallet_id;
   if (!tribeWalletId) {
     const { data: ownerWallet } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("id")
       .eq("user_id", tribe.owner_id)
-      .eq("wallet_type", "main")
+      .eq("account_type", "main")
       .single();
     tribeWalletId = ownerWallet?.id;
   }
@@ -270,19 +271,19 @@ async function tribeJoinPaid(supabaseAdmin, userId, params) {
 
   // Debit user
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: userWallet.available_balance - tribe.join_fee })
     .eq("id", userWallet.id);
 
   // Credit tribe
   const { data: tribeWalletCurrent } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("available_balance")
     .eq("id", tribeWalletId)
     .single();
 
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: (tribeWalletCurrent?.available_balance || 0) + netAmount })
     .eq("id", tribeWalletId);
 

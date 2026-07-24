@@ -66,7 +66,7 @@ export default function SafetyScreen() {
       const blocked: BlockedUser[] = [];
       for (const b of (blocks || [])) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('full_name, avatar_url')
           .eq('id', b.blocked_id)
           .single();
@@ -90,7 +90,7 @@ export default function SafetyScreen() {
       const enrichedReports: ReportItem[] = [];
       for (const r of (reports || [])) {
         const { data: profile } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('full_name')
           .eq('id', r.reported_id)
           .single();

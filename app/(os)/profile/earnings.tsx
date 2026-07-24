@@ -48,7 +48,7 @@ export default function CreatorEarnings() {
     const load = async () => {
       try {
         const profile = await withTimeout(
-          supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('id', user.id).single().then(r => r.data),
+          supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('user_id', user.id).single().then(r => r.data),
           null,
           4000
         );
@@ -108,7 +108,7 @@ export default function CreatorEarnings() {
     if (!user?.id) return;
     setRefreshing(true);
     try {
-      const { data: profile } = await supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('user_profiles').select('creator_earnings, creator_balance, creator_pending').eq('user_id', user.id).single();
       const { data: txs } = await supabase.from('wallet_transactions')
         .select('*').eq('user_id', user.id).eq('type', 'credit').eq('category', 'creator')
         .order('created_at', { ascending: false }).limit(20);

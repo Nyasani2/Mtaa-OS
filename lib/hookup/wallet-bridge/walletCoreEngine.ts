@@ -19,7 +19,7 @@ export class WalletCoreEngine {
 
   async getBalance(userId: string) {
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('balance, currency')
       .eq('user_id', userId)
       .single();

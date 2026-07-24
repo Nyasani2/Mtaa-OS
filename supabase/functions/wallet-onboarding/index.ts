@@ -1,3 +1,4 @@
+
 // Edge Function: wallet-onboarding
 // Handles wallet creation after user completes onboarding
 
@@ -40,12 +41,12 @@ serve(async (req) => {
 
     // Create main wallet
     const { data: wallet, error: walletError } = await supabaseClient
-      .from('wallets')
+      .from('wallet_accounts')
       .insert({
         user_id,
-        wallet_type: 'main',
+        account_type: 'main',
         country_code,
-        currency_code: currency,
+        currency: currency,
         available_balance: 0,
         pending_balance: 0
       })
@@ -55,33 +56,36 @@ serve(async (req) => {
     if (walletError) throw walletError
 
     // Create escrow wallet
-    await supabaseClient.from('wallets').insert({
+    await supabaseClient.from('wallet_accounts').insert({
       user_id,
-      wallet_type: 'escrow',
+      account_type: 'escrow',
       country_code,
-      currency_code: currency,
+      currency: currency,
+      balance: 0,
       available_balance: 0,
-      pending_balance: 0
+      hold_balance: 0
     })
 
     // Create savings wallet
-    await supabaseClient.from('wallets').insert({
+    await supabaseClient.from('wallet_accounts').insert({
       user_id,
-      wallet_type: 'savings',
+      account_type: 'savings',
       country_code,
-      currency_code: currency,
+      currency: currency,
+      balance: 0,
       available_balance: 0,
-      pending_balance: 0
+      hold_balance: 0
     })
 
     // Create rewards wallet
-    await supabaseClient.from('wallets').insert({
+    await supabaseClient.from('wallet_accounts').insert({
       user_id,
-      wallet_type: 'rewards',
+      account_type: 'rewards',
       country_code,
-      currency_code: currency,
+      currency: currency,
+      balance: 0,
       available_balance: 0,
-      pending_balance: 0
+      hold_balance: 0
     })
 
     // Update onboarding status

@@ -279,4 +279,4 @@ async function getDeviceId(): Promise<string> {
 }
 
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';

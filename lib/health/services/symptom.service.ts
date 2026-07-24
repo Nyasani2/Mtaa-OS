@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { HealthSymptomCheck } from "../types";
 export class SymptomService {
   static async getHistory(patientId: string): Promise<HealthSymptomCheck[]> {

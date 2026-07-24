@@ -75,7 +75,7 @@ export default function PublicProfileScreen() {
     if (!targetId) { setError('No user specified'); setLoading(false); return; }
     try {
       const { data, error: pErr } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('user_id, display_name, username, avatar_url, cover_photo_url, bio, city, country, profession, is_verified, follower_count, following_count, online_status, role')
         .eq('user_id', targetId)
         .single();

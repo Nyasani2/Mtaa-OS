@@ -1,7 +1,7 @@
 // lib/marketplace/services/cart.service.ts
 // Cart/Checkout service — handles cart, checkout, escrow, order creation
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { identityEngine } from '@/lib/kernel/identity';
 
 export interface CartItem {
@@ -249,7 +249,7 @@ class CartService {
 
     // Check wallet balance
     const { data: wallet } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('id, balance, status')
       .eq('user_id', user.id)
       .eq('currency', request.currency)

@@ -62,7 +62,7 @@ export async function getDiscoveryProfiles(userId: string, filters?: DiscoveryFi
   ].filter(Boolean);
 
   let query = supabase
-    .from('profiles')
+    .from('user_profiles')
     .select(`
       id, full_name, avatar_url, bio, date_of_birth, gender,
       hookup_preferences(relationship_intent, occupation, city, interests, verified_level)
@@ -137,7 +137,7 @@ export async function getMatches(userId: string): Promise<MatchItem[]> {
     const otherId = match.user1_id === userId ? match.user2_id : match.user1_id;
 
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id, full_name, avatar_url, hookup_preferences(verified_level)')
       .eq('id', otherId)
       .single();
@@ -182,7 +182,7 @@ export async function getReceivedLikes(userId: string): Promise<LikeItem[]> {
   const enriched: LikeItem[] = [];
   for (const like of (received || [])) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id, full_name, avatar_url, date_of_birth, hookup_preferences(city)')
       .eq('id', like.liker_id)
       .single();
@@ -224,7 +224,7 @@ export async function getSentLikes(userId: string): Promise<LikeItem[]> {
   const enriched: LikeItem[] = [];
   for (const like of (sent || [])) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id, full_name, avatar_url, date_of_birth, hookup_preferences(city)')
       .eq('id', like.liked_id)
       .single();
@@ -253,7 +253,7 @@ export async function getSentLikes(userId: string): Promise<LikeItem[]> {
 
 export async function getFullProfile(userId: string, targetId: string) {
   const { data: pData, error: pErr } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select(`
       id, full_name, avatar_url, bio, date_of_birth, gender,
       hookup_preferences(
@@ -354,7 +354,7 @@ export async function getBlockedUsers(blockerId: string) {
   const enriched = [];
   for (const b of (blocks || [])) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('full_name, avatar_url')
       .eq('id', b.blocked_id)
       .single();
@@ -379,7 +379,7 @@ export async function getMyReports(userId: string) {
   const enriched = [];
   for (const r of (reports || [])) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('full_name')
       .eq('id', r.reported_id)
       .single();

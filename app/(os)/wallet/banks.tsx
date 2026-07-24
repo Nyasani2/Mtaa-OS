@@ -5,8 +5,8 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useIdentity } from "@/lib/auth/useAuthStore";
-import { supabase } from "@/lib/supabase/client";
+import { useIdentity } from "@/lib/auth/store/auth.store";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft, Landmark, Plus, Trash2, CheckCircle, XCircle,

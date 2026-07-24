@@ -1,7 +1,7 @@
 // lib/tribes/services/tribes.service.ts
 // Tribes service — discovery, membership, posts, events, donations
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { identityEngine } from '@/lib/kernel/identity';
 
 export interface Tribe {
@@ -50,6 +50,9 @@ export interface TribePost {
   title?: string;
   content: string;
   media_urls?: string[];
+    caption?: string;
+    hashtags?: string[];
+    thumbnail_url?: string;
   poll_options?: any;
   poll_results?: any;
   is_pinned: boolean;
@@ -374,6 +377,9 @@ class TribesService {
     title?: string;
     content: string;
     media_urls?: string[];
+    caption?: string;
+    hashtags?: string[];
+    thumbnail_url?: string;
     poll_options?: string[];
     is_announcement?: boolean;
   }): Promise<{ success: boolean; post?: TribePost; error?: string }> {
@@ -389,6 +395,9 @@ class TribesService {
         title: post.title,
         content: post.content,
         media_urls: post.media_urls,
+        caption: post.caption || null,
+        hashtags: post.hashtags || null,
+        thumbnail_url: post.thumbnail_url || null,
         poll_options: post.poll_options ? { options: post.poll_options } : null,
         is_announcement: post.is_announcement || false,
       })

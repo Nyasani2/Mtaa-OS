@@ -15,7 +15,8 @@ export default function SettingsProfileScreen() {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase.from('profiles').select('display_name, username, email, phone, is_verified, role').eq('user_id', user.id).single()
+    // FIXED: profiles -> user_profiles
+    supabase.from('user_profiles').select('display_name, username, email, phone, is_verified, role').eq('user_id', user.id).single()
       .then(({ data }) => { setProfile(data); setLoading(false); });
   }, [user?.id]);
 
@@ -31,7 +32,29 @@ export default function SettingsProfileScreen() {
   const handleDeleteAccount = () => {
     Alert.alert('Delete Account', 'Permanent. Cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete Forever', style: 'destructive', onPress: async () => { setDeleting(true); try { await supabase.from('profiles').delete().eq('user_id', user?.id); await supabase.rpc('delete_user_account', { user_id: user?.id }).catch(() => {}); await signOut(); router.replace('/auth'); } catch { Alert.alert('Error', 'Failed to delete'); } finally { setDeleting(false); } } },
+      { 
+        text: 'Delete Forever', 
+        style: 'destructive', 
+        onPress: async () => { 
+          setDeleting(true); 
+          try { 
+            // FIXED: profiles -> user_profiles
+            const { error: deleteError } = await supabase.from('user_profiles').delete().eq('user_id', user?.id);
+            if (deleteError) throw deleteError;
+
+            const { error: rpcError } = await supabase.rpc('delete_user_account', { user_id: user?.id });
+            if (rpcError) throw rpcError;
+
+            await signOut(); 
+            router.replace('/auth'); 
+          } catch (err: any) { 
+            // FIXED: Removed .catch(() => {}) — now shows actual error
+            Alert.alert('Error', err?.message || 'Failed to delete account. Please try again.'); 
+          } finally { 
+            setDeleting(false); 
+          } 
+        } 
+      },
     ]);
   };
 

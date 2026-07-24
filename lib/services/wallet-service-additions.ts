@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 
 export async function getWalletBalance(userId: string) {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .select('*')
     .eq('user_id', userId)
     .single();
@@ -32,7 +32,7 @@ export async function createWalletTransaction(params: any) {
 
 export async function updateWalletBalance(userId: string, amount: number) {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .update({ balance: amount, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .select()

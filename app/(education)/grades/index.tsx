@@ -60,7 +60,7 @@ export default function EnterGradesScreen() {
 
     const studentIds = enrollments.map(e => e.student_id);
     const { data: profiles } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id, display_name')
       .in('id', studentIds);
 

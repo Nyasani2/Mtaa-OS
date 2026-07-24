@@ -1,7 +1,7 @@
 // lib/services/business-service.ts
 // FIXED: Removed duplicate supabase import, fixed handleServiceError returns
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ServiceResult, handleServiceError } from '@/lib/utils/service-helpers';
 
 export interface Shop {

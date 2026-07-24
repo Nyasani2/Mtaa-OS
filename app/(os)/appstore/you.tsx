@@ -10,7 +10,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/appstore';
-import { useIdentity } from '@/lib/auth/useAuthStore';
+import { useIdentity } from '@/lib/auth/store/auth.store';
 
 export default function AppStoreYou() {
   const router = useRouter();

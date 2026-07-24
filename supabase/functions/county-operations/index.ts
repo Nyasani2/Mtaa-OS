@@ -1,3 +1,4 @@
+
 // ============================================================
 // MTAA COUNTY PROTOCOL — EDGE FUNCTIONS
 // Consolidated: county-operations
@@ -117,7 +118,7 @@ async function countyCreate(supabaseAdmin, governorId, params) {
 
   // Create county wallet for the county (every account gets a wallet)
   const { data: countyWallet, error: walletError } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .insert({
       user_id: governorId,
       wallet_type: "main",
@@ -253,7 +254,7 @@ async function countyStaffAdd(supabaseAdmin, callerId, params) {
 
   // Create staff wallet (every account gets a wallet)
   const { data: staffWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .insert({
       user_id: user_id,
       wallet_type: "main",
@@ -769,10 +770,10 @@ async function countyPaymentProcess(supabaseAdmin, citizenId, params) {
 
   // Get citizen's main wallet
   const { data: citizenWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance, currency_code")
     .eq("user_id", citizenId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -786,7 +787,7 @@ async function countyPaymentProcess(supabaseAdmin, citizenId, params) {
   if (!countyWalletId) throw new Error("County wallet not configured");
 
   const { data: countyWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, user_id")
     .eq("id", countyWalletId)
     .single();
@@ -807,16 +808,16 @@ async function countyPaymentProcess(supabaseAdmin, citizenId, params) {
 
   // Get MTAA treasury wallet (system wallet for fees)
   const { data: mtaaWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id")
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .ilike("wallet_name", "%MTAA%")
     .maybeSingle();
 
   // STEP 1: Debit citizen wallet
   const { error: debitError } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: citizenWallet.available_balance - totalAmount })
     .eq("id", citizenWallet.id)
     .eq("available_balance", citizenWallet.available_balance); // Optimistic locking
@@ -825,20 +826,20 @@ async function countyPaymentProcess(supabaseAdmin, citizenId, params) {
 
   // STEP 2: Credit county wallet
   const { data: countyWalletCurrent } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("available_balance")
     .eq("id", countyWalletId)
     .single();
 
   const { error: creditError } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: (countyWalletCurrent?.available_balance || 0) + netAmount })
     .eq("id", countyWalletId);
 
   if (creditError) {
     // Rollback citizen wallet
     await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .update({ available_balance: citizenWallet.available_balance })
       .eq("id", citizenWallet.id);
     throw new Error("Failed to credit county wallet: " + creditError.message);
@@ -847,13 +848,13 @@ async function countyPaymentProcess(supabaseAdmin, citizenId, params) {
   // STEP 3: Credit MTAA fee wallet (if exists)
   if (mtaaWallet && mtaaFee > 0) {
     const { data: mtaaCurrent } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("available_balance")
       .eq("id", mtaaWallet.id)
       .single();
 
     await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .update({ available_balance: (mtaaCurrent?.available_balance || 0) + mtaaFee })
       .eq("id", mtaaWallet.id);
   }

@@ -124,7 +124,7 @@ export default function CashPointScreen() {
     setProcessing(true);
     try {
       const { data: customerData } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id')
         .or(`username.eq.${txCustomerCode},phone.eq.${txCustomerCode}`)
         .single();

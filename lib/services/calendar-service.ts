@@ -76,7 +76,7 @@ export async function getEvents(startDate: string, endDate: string): Promise<Cal
     .select('*')
     .gte('start_date', startDate)
     .lte('start_date', endDate)
-    .eq('status', 'confirmed')
+    
     .order('start_date', { ascending: true })
     .order('start_time', { ascending: true });
 
@@ -92,7 +92,7 @@ export async function getEventsForDate(date: string): Promise<CalendarEvent[]> {
     .from('calendar_events')
     .select('*')
     .eq('start_date', date)
-    .eq('status', 'confirmed')
+    
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -194,7 +194,7 @@ export async function searchEvents(query: string): Promise<CalendarEvent[]> {
     .from('calendar_events')
     .select('*')
     .textSearch('search_vector', query)
-    .eq('status', 'confirmed')
+    
     .order('start_date', { ascending: true })
     .limit(20);
 

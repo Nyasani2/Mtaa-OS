@@ -35,13 +35,14 @@ export default function CreateAnnouncementScreen() {
       const { error } = await supabase.from('education_announcements').insert({
         title: form.title.trim(),
         content: form.content.trim(),
-        priority: form.priority,
-        target_audience: form.target_audience,
-        expires_at: form.expires_at || null,
-        posted_by: user.id,
-        school_id: null, // Will be set from context
-        status: 'active',
-        created_at: new Date().toISOString(),
+        priority: form.priority || 'normal',
+        target_roles: form.target_audience ? [form.target_audience] : null,
+        expiry_date: form.expires_at || null,
+        staff_id: user.id,
+        institution_id: form.school_id || null,
+        visibility_scope: form.status || 'public',
+        is_pinned: false,
+        read_count: 0,
       });
       if (error) throw error;
       Alert.alert('Posted', 'Announcement published successfully');

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { FunctionsHttpError } from '@supabase/supabase-js';
 
 export interface Ride {

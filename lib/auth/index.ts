@@ -1,5 +1,13 @@
-export { useAuth, useAuthStore } from './useAuth';
+// Canonical auth exports — ONE source of truth
+export { useAuthStore } from './store/auth.store';
+export type { AuthState, User, UserProfile } from './store/auth.store';
+
+// Wrapper hooks (add router logic, PIN state)
+export { useAuth } from './useAuth';
 export { useIdentity } from './use-identity';
-export type { AuthState, User } from './store/auth.store';
+
+// Context provider
 export { IdentityProvider } from './identity-provider';
-export { OSGate } from './os-gate';
+
+// OS Gate
+export { default as OSGate } from './os-gate';

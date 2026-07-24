@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 type SafetyTab = 'guidelines' | 'reports' | 'tools' | 'audit' | 'appeals';
 
@@ -64,7 +64,7 @@ export default function SafetyScreen() {
   const checkModerator = async () => {
     if (!user?.id) return;
     try {
-      const { data } = await supabase.from('user_profiles').select('is_moderator, is_admin').eq('id', user.id).single();
+      const { data } = await supabase.from('user_profiles').select('is_moderator, is_admin').eq('user_id', user.id).single();
       setIsModerator(!!(data?.is_moderator || data?.is_admin));
     } catch (e) { console.error(e); }
   };

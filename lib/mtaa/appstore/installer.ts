@@ -1,6 +1,6 @@
 // lib/mtaa/appstore/installer.ts
 import { getAppById } from './registry';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { AppManifest, InstalledApp } from '@/types/module.types';
 
 const installedApps = new Map<string, InstalledApp>();

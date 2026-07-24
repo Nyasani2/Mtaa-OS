@@ -1,6 +1,6 @@
 // lib/admin/hooks/useAdmin.ts — Admin panel hook
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface AdminUser {
   id: string;
@@ -83,7 +83,7 @@ export function useAdmin() {
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -101,7 +101,7 @@ export function useAdmin() {
     setError(null);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id, email, full_name, kyc_status, id_number, id_type, id_front_url, id_back_url, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -115,9 +115,9 @@ export function useAdmin() {
 
   const loadStats = useCallback(async () => {
     try {
-      const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-      const { count: activeUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_verified', true);
-      const { count: pendingKyc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('kyc_status', 'pending');
+      const { count: totalUsers } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true });
+      const { count: activeUsers } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('is_verified', true);
+      const { count: pendingKyc } = await supabase.from('user_profiles').select('*', { count: 'exact', head: true }).eq('kyc_status', 'pending');
 
       setStats({
         totalUsers: totalUsers || 0,

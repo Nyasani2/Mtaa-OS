@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { HealthProvider } from "../types";
 export class ProviderService {
   static async getProviders(filters?: any): Promise<HealthProvider[]> {

@@ -56,9 +56,9 @@ export default function ReputationScreen() {
     try {
       // 1. Load trust score and verified status from profiles
       const { data: profileData } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('trust_score, is_verified')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profileData) {

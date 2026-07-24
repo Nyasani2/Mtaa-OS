@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { SEARCH_CONFIGS } from '@/types/module.types';
 import type { SearchQuery, SearchResult, SearchResultItem, SearchConfig } from '@/types/module.types';
 

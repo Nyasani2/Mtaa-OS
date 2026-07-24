@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export async function getAuditLogs(filter: string, range: { from: number; to: number }) {
   let q = supabase.from("health_audit_logs").select("*", { count: "exact" }).order("created_at", { ascending: false });

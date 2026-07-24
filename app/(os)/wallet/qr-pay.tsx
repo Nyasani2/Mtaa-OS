@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/auth';
 import { useWalletStore } from '@/lib/modules/wallet/store';
 import { sendMoney, getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';

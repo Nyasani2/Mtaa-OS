@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { HealthNotification } from "../types";
 export class NotificationService {
   static async getNotifications(userId: string): Promise<HealthNotification[]> {

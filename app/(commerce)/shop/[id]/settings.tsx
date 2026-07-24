@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useShop } from '@/domains/shop/hooks/useShop';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export default function ShopSettingsScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();

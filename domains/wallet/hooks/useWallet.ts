@@ -17,7 +17,7 @@ export function useWalletBalance() {
     if (!user?.id) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('balance, held_balance, currency')
       .eq('user_id', user.id)
       .single();
@@ -151,7 +151,7 @@ export function useWalletStore() {
     setError(null);
 
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('balance, held_balance, currency')
       .eq('user_id', user.id)
       .single();

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, TrendingUp, Users, BedDouble, Wallet, Activity, Calendar, AlertTriangle } from 'lucide-react-native';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useHealthRole } from '@/lib/health/hooks';
 
 export default function HealthAnalyticsScreen() {

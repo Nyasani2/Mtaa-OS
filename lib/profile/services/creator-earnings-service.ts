@@ -167,7 +167,7 @@ export class CreatorEarningsService {
 
   // Streets: Record a tip
   static async recordStreetsTip(tipperId: string, creatorId: string, amount: number, postId?: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', creatorId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', creatorId).single();
     if (!profile) return { data: null, error: new Error('Creator profile not found') };
 
     return this.recordEarning({
@@ -185,7 +185,7 @@ export class CreatorEarningsService {
 
   // Streets: Record a subscription
   static async recordStreetsSubscription(subscriberId: string, creatorId: string, amount: number) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', creatorId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', creatorId).single();
     if (!profile) return { data: null, error: new Error('Creator profile not found') };
 
     return this.recordEarning({
@@ -202,7 +202,7 @@ export class CreatorEarningsService {
 
   // MTaxi: Record driver earnings
   static async recordMtaxiEarning(driverId: string, amount: number, tripId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', driverId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', driverId).single();
     if (!profile) return { data: null, error: new Error('Driver profile not found') };
 
     return this.recordEarning({
@@ -220,7 +220,7 @@ export class CreatorEarningsService {
 
   // Shop: Record a sale
   static async recordShopSale(sellerId: string, amount: number, orderId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', sellerId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', sellerId).single();
     if (!profile) return { data: null, error: new Error('Seller profile not found') };
 
     return this.recordEarning({
@@ -238,7 +238,7 @@ export class CreatorEarningsService {
 
   // Marketplace: Record a sale
   static async recordMarketplaceSale(sellerId: string, amount: number, orderId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', sellerId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', sellerId).single();
     if (!profile) return { data: null, error: new Error('Seller profile not found') };
 
     return this.recordEarning({
@@ -256,7 +256,7 @@ export class CreatorEarningsService {
 
   // Jobs: Record freelance payment
   static async recordJobPayment(workerId: string, amount: number, jobId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', workerId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', workerId).single();
     if (!profile) return { data: null, error: new Error('Worker profile not found') };
 
     return this.recordEarning({
@@ -274,7 +274,7 @@ export class CreatorEarningsService {
 
   // Property: Record rental income
   static async recordPropertyRental(ownerId: string, amount: number, bookingId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', ownerId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', ownerId).single();
     if (!profile) return { data: null, error: new Error('Owner profile not found') };
 
     return this.recordEarning({
@@ -292,7 +292,7 @@ export class CreatorEarningsService {
 
   // Restaurant: Record order income
   static async recordRestaurantOrder(ownerId: string, amount: number, orderId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', ownerId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', ownerId).single();
     if (!profile) return { data: null, error: new Error('Owner profile not found') };
 
     return this.recordEarning({
@@ -310,7 +310,7 @@ export class CreatorEarningsService {
 
   // Education: Record course sale
   static async recordCourseSale(teacherId: string, amount: number, courseId: string) {
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', teacherId).single();
+    const { data: profile } = await supabase.from('user_profiles').select('id').eq('user_id', teacherId).single();
     if (!profile) return { data: null, error: new Error('Teacher profile not found') };
 
     return this.recordEarning({

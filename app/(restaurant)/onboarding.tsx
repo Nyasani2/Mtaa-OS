@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 

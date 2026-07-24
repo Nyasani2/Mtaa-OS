@@ -1,5 +1,5 @@
 // lib/civic/courts/services/courtRooms.ts
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { CourtRoom } from '@/types/courts';
 
 export async function getCourtRooms(courtId?: string): Promise<CourtRoom[]> {

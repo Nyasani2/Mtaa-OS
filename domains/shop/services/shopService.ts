@@ -1,5 +1,5 @@
 // domains/shop/services/shopService.ts
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface ShopProduct {
   id: string;

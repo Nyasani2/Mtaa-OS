@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export const nurseService = {
   async getMedications(facilityId: string) {

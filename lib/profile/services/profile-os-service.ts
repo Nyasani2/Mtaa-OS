@@ -64,7 +64,7 @@ export async function fetchProfile(userId: string): Promise<{
   stats: ProfileStats;
 }> {
   const [{ data: profile }, { data: creator }, { data: business }, { data: stats }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
     supabase.from('creator_profiles').select('*').eq('user_id', userId).single(),
     supabase.from('business_profiles').select('*').eq('user_id', userId).single(),
     supabase.rpc('get_profile_stats', { p_user_id: userId }),
@@ -201,7 +201,7 @@ export async function updateProfile(payload: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+  const { error } = await supabase.from('user_profiles').update(payload).eq('id', user.id);
   if (error) throw error;
 }
 

@@ -1,7 +1,7 @@
 // domains/shop/components/POSScreen.tsx
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, Alert, StyleSheet } from 'react-native';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface CartItem {
   id: string;

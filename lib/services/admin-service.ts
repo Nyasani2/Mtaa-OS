@@ -1,7 +1,7 @@
 // lib/services/admin-service.ts
 // FIXED: Added missing supabase import
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { ServiceResult, handleServiceError } from '@/lib/utils/service-helpers';
 
 export async function getDashboardStats(): Promise<ServiceResult<any>> {

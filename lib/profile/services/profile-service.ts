@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export class ProfileService {
   static async getProfile(userId: string) {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -12,7 +12,7 @@ export class ProfileService {
 
   static async updateProfile(userId: string, updates: Record<string, any>) {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .update(updates)
       .eq('user_id', userId)
       .select()

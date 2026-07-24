@@ -62,7 +62,8 @@ export default function AchievementsScreen() {
       ] = await Promise.all([
         supabase.from('streets_posts').select('id, created_at').eq('creator_id', user.id).limit(1),
         supabase.from('user_follows').select('id, created_at').eq('following_id', user.id).limit(1),
-        supabase.from('profiles').select('is_verified, created_at, trust_score').eq('id', user.id).single(),
+        // FIXED: user_profiles table, user_id column
+        supabase.from('user_profiles').select('is_verified, created_at, trust_score').eq('user_id', user.id).single(),
         supabase.from('content').select('id').eq('user_id', user.id).limit(1),
         supabase.from('cashpoint_agents').select('id, created_at').eq('user_id', user.id).single(),
         supabase.from('marketplace_trust').select('rating').eq('user_id', user.id).gte('rating', 4.5).limit(1),

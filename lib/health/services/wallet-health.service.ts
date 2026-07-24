@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export const walletHealthService = {
   async getBalance(userId: string): Promise<number> {
     const { data, error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('balance')
       .eq('user_id', userId)
       .single();

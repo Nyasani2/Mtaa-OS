@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
+import { useAuth } from '@/lib/auth';
 import { useWalletStore } from '@/lib/modules/wallet/store';
 import { depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
@@ -120,7 +120,7 @@ export default function DepositScreen() {
 
       // Get updated wallet
       const { data: wallet } = await supabase
-        .from('wallets')
+        .from('wallet_accounts')
         .select('balance')
         .eq('user_id', user?.id)
         .single();

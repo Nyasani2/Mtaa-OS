@@ -19,7 +19,7 @@ import { Video } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/auth/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function UploadScreen() {
   const router = useRouter();

@@ -61,12 +61,21 @@ export async function updateStudio(id: string, updates: Partial<MStudioStudio>):
 
 // ─── VIDEOS ───
 export async function getVideos(filters?: MStudioFeedFilters): Promise<MStudioVideo[]> {
-  const { data, error } = await withTimeout(
-    supabase.rpc('studio_get_feed', {
-      p_limit: filters?.limit || 20, p_offset: filters?.offset || 0,
-      p_category: filters?.category || null, p_content_type: filters?.content_type || null,
-    }), TIMEOUT, 'getVideos'
-  );
+  let query = supabase
+    .from('studio_videos')
+    .select('*')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .range(filters?.offset || 0, (filters?.offset || 0) + (filters?.limit || 20) - 1);
+
+  if (filters?.category) {
+    query = query.eq('category', filters.category);
+  }
+  if (filters?.content_type) {
+    query = query.eq('content_type', filters.content_type);
+  }
+
+  const { data, error } = await withTimeout(query, TIMEOUT, 'getVideos');
   if (error) throw error;
   return (data || []) as MStudioVideo[];
 }
@@ -558,7 +567,8 @@ export async function deleteDraft(id: string): Promise<void> {
 // ─── RECORDINGS ───
 export async function getRecordings(userId: string): Promise<MStudioRecording[]> {
   const { data, error } = await withTimeout(
-    supabase.rpc('studio_get_recordings', { p_user_id: userId }), TIMEOUT, 'getRecordings'
+    supabase.from('studio_recordings').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    TIMEOUT, 'getRecordings'
   );
   if (error) throw error;
   return (data || []) as MStudioRecording[];

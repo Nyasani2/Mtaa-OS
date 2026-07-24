@@ -1,11 +1,13 @@
 import { supabase } from '@/lib/supabase';
 
-export async function getHealthProfile(profileId: string) {
+export async function getHealthProfile(userId: string) {
+  // FIXED: profiles -> user_profiles, .eq('id') -> .eq('user_id')
   const { data, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url, phone, date_of_birth, gender')
-    .eq('id', profileId)
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', userId)
     .single();
+
   if (error) throw error;
   return data;
 }

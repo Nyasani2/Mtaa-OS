@@ -1,7 +1,7 @@
 // lib/civic/transport/civic_modules_v3/transport_ntsa/hooks/useLicenses.ts
 import { useState, useEffect } from 'react';
 import { useIdentity } from '@/lib/auth/identity';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export function useLicenses() {
   const { user } = useIdentity();

@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator }
 import { useRouter } from "expo-router";
 import { MapPin, Navigation, Clock, DollarSign, Check, X, Car } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";
-import { useAuth } from "@/lib/auth/useAuthStore";
+import { useAuth } from "@/lib/auth/store/auth.store";
 
 export default function DriverRequests() {
   const router = useRouter();

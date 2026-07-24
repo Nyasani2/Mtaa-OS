@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export async function getPatients(range: { from: number; to: number }) {
   const { data, error, count } = await supabase

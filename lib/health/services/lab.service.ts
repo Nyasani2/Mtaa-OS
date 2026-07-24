@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export async function getLabSamples(filter: string, range: { from: number; to: number }) {
   let q = supabase.from("health_lab_tests").select("*", { count: "exact" }).order("collected_at", { ascending: false });

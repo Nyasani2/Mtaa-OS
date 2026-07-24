@@ -89,3 +89,25 @@ coverage/
 __pycache__/
 *.pyc
 *.pyo
+
+# === PHASE 0: ARCHIVED FILES (never commit backups) ===
+# Backup archives
+backups/phase0_archive_*/
+backups/
+*.bak.*
+*.backup*
+_orphaned_root_screens/
+_wallet_backup_*/
+
+# Build artifacts
+android/app/build/
+ios/build/
+*.apk
+*.aab
+
+# Archives
+*.zip
+*.tar.gz
+
+# Logs
+*.log

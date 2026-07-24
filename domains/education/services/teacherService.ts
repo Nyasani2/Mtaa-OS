@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // teacherService.ts - Education Teacher Service
 // FIXED: import path corrected from @/lib/supabase to @/lib/supabase/client

@@ -1,306 +1,185 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
+  View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { setPin, validatePinStrength, hasPin } from '@/lib/security/pin-engine';
 import { Ionicons } from '@expo/vector-icons';
-
-const PIN_LENGTH = 6;
+import { setPin } from '@/lib/security/pin-engine';
 
 export default function SetPinScreen() {
   const router = useRouter();
-  const { user, setPinSet } = useAuthStore();
+  const [step, setStep] = useState<'create' | 'confirm'>('create');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  const [step, setStep] = useState<'create' | 'confirm' | 'strength'>('create');
-  const [strength, setStrength] = useState<{ score: number; label: string; color: string }>({
-    score: 0,
-    label: '',
-    color: '#ccc',
-  });
   const [loading, setLoading] = useState(false);
-  const [shake, setShake] = useState(false);
 
-  const userId = user?.id;
+  const PIN_LENGTH = 6;
 
-  if (!userId) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.errorText}>Authentication required</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth/login')}>
-          <Text style={styles.buttonText}>Go to Login</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-
-  const handleDigit = useCallback(
-    (digit: string) => {
-      if (step === 'create') {
-        if (pin.length < PIN_LENGTH) {
-          const newPin = pin + digit;
-          setPin(newPin);
-          if (newPin.length === PIN_LENGTH) {
-            const validation = validatePinStrength(newPin);
-            if (!validation.valid) {
-              Alert.alert('Weak PIN', validation.reason);
-              setPin('');
-              setShake(true);
-              setTimeout(() => setShake(false), 500);
-              return;
-            }
-            // Calculate strength score
-            const score = calculateStrengthScore(newPin);
-            setStrength(score);
-            setStep('strength');
-          }
-        }
-      } else if (step === 'confirm') {
-        if (confirmPin.length < PIN_LENGTH) {
-          const newConfirm = confirmPin + digit;
-          setConfirmPin(newConfirm);
-          if (newConfirm.length === PIN_LENGTH) {
-            handleConfirm(newConfirm);
-          }
-        }
-      }
-    },
-    [pin, confirmPin, step, userId]
-  );
-
-  const calculateStrengthScore = (p: string) => {
-    let score = 0;
-    const unique = new Set(p.split('')).size;
-    score += unique * 15;
-    if (!/^(\d)\1{5}$/.test(p)) score += 20;
-    if (!['012345','123456','234567'].some(s => p.includes(s))) score += 20;
-    if (unique >= 4) score += 20;
-    if (unique >= 5) score += 25;
-
-    score = Math.min(100, score);
-    if (score < 40) return { score, label: 'Weak', color: '#e74c3c' };
-    if (score < 70) return { score, label: 'Fair', color: '#f39c12' };
-    if (score < 90) return { score, label: 'Strong', color: '#27ae60' };
-    return { score, label: 'Very Strong', color: '#2ecc71' };
+  const handlePress = (digit: string) => {
+    if (step === 'create' && pin.length < PIN_LENGTH) {
+      setPin(prev => prev + digit);
+    } else if (step === 'confirm' && confirmPin.length < PIN_LENGTH) {
+      setConfirmPin(prev => prev + digit);
+    }
   };
 
-  const handleConfirm = async (confirmedPin: string) => {
-    if (confirmedPin !== pin) {
-      Alert.alert('PIN Mismatch', 'The PINs do not match. Please try again.');
+  const handleBackspace = () => {
+    if (step === 'create') {
+      setPin(prev => prev.slice(0, -1));
+    } else {
+      setConfirmPin(prev => prev.slice(0, -1));
+    }
+  };
+
+  useState(() => {
+    if (pin.length === PIN_LENGTH && step === 'create') {
+      setStep('confirm');
+    }
+  });
+
+  // Watch for PIN completion
+  React.useEffect(() => {
+    if (pin.length === PIN_LENGTH && step === 'create') {
+      const timer = setTimeout(() => setStep('confirm'), 200);
+      return () => clearTimeout(timer);
+    }
+  }, [pin, step]);
+
+  React.useEffect(() => {
+    if (confirmPin.length === PIN_LENGTH && step === 'confirm') {
+      handleSubmit();
+    }
+  }, [confirmPin, step]);
+
+  const handleSubmit = async () => {
+    if (pin !== confirmPin) {
+      Alert.alert('PINs Do Not Match', 'Please try again.');
+      setPin('');
       setConfirmPin('');
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setStep('create');
       return;
     }
 
     setLoading(true);
-    const result = await setPin(pin, userId);
-    setLoading(false);
+    try {
+      await setPin(pin);
+      Alert.alert('PIN Set', 'Your PIN has been set successfully.', [
+        { text: 'OK', onPress: () => router.replace('/(os)') }
+      ]);
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Could not set PIN');
+      setPin('');
+      setConfirmPin('');
+      setStep('create');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (result.success) {
-      setPinSet(true);
-      Alert.alert(
-        'PIN Set Successfully',
-        'Your PIN has been secured. You can now enable biometric authentication.',
-        [
-          {
-            text: 'Enable Biometric',
-            onPress: () => router.push('/auth/biometric-enroll'),
-          },
-          {
-            text: 'Skip for Now',
-            onPress: () => router.replace('/(os)'),
-            style: 'cancel',
-          },
-        ]
+  const renderDots = (value: string) => {
+    const dots = [];
+    for (let i = 0; i < PIN_LENGTH; i++) {
+      dots.push(
+        <View
+          key={i}
+          style={[styles.dot, i < value.length && styles.dotFilled]}
+        />
       );
-    } else {
-      Alert.alert('Error', result.error || 'Failed to set PIN');
-      setPin('');
-      setConfirmPin('');
-      setStep('create');
     }
+    return dots;
   };
 
-  const handleDelete = () => {
-    if (step === 'create') {
-      setPin(pin.slice(0, -1));
-    } else if (step === 'confirm') {
-      setConfirmPin(confirmPin.slice(0, -1));
-    }
-  };
+  const currentValue = step === 'create' ? pin : confirmPin;
 
-  const handleBack = () => {
-    if (step === 'confirm') {
-      setConfirmPin('');
-      setStep('create');
-    } else if (step === 'strength') {
-      setStep('create');
-      setPin('');
-    }
-  };
+  return (
+    <View style={styles.container}>
+      <Ionicons name="lock-closed-outline" size={48} color="#10b981" style={styles.lockIcon} />
+      <Text style={styles.title}>
+        {step === 'create' ? 'Create PIN' : 'Confirm PIN'}
+      </Text>
+      <Text style={styles.subtitle}>
+        {step === 'create'
+          ? 'Set a 6-digit PIN to secure your session'
+          : 'Re-enter your PIN to confirm'}
+      </Text>
 
-  const renderDots = () => {
-    const current = step === 'confirm' ? confirmPin : pin;
-    return (
       <View style={styles.dotsContainer}>
-        {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              i < current.length && styles.dotFilled,
-              shake && styles.dotShake,
-            ]}
-          />
-        ))}
+        {renderDots(currentValue)}
       </View>
-    );
-  };
 
-  const renderKeypad = () => (
-    <View style={styles.keypad}>
-      {[['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['', '0', 'del']].map(
-        (row, rowIndex) => (
-          <View key={rowIndex} style={styles.keypadRow}>
-            {row.map((key) => (
+      {loading && <ActivityIndicator color="#10b981" style={{ marginBottom: 12 }} />}
+
+      <View style={styles.keypad}>
+        {[['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']].map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.keypadRow}>
+            {row.map(digit => (
               <TouchableOpacity
-                key={key}
-                style={[styles.key, key === '' && styles.keyEmpty]}
-                onPress={() => {
-                  if (key === 'del') handleDelete();
-                  else if (key !== '') handleDigit(key);
-                }}
-                disabled={key === ''}
+                key={digit}
+                style={styles.key}
+                onPress={() => handlePress(digit)}
+                disabled={loading}
               >
-                {key === 'del' ? (
-                  <Ionicons name="backspace-outline" size={24} color="#fff" />
-                ) : (
-                  <Text style={styles.keyText}>{key}</Text>
-                )}
+                <Text style={styles.keyText}>{digit}</Text>
               </TouchableOpacity>
             ))}
           </View>
-        )
-      )}
-    </View>
-  );
-
-  const renderStrengthMeter = () => (
-    <View style={styles.strengthContainer}>
-      <Text style={styles.strengthTitle}>PIN Strength</Text>
-      <View style={styles.strengthBar}>
-        <View
-          style={[
-            styles.strengthFill,
-            { width: `${strength.score}%`, backgroundColor: strength.color },
-          ]}
-        />
-      </View>
-      <Text style={[styles.strengthLabel, { color: strength.color }]}>
-        {strength.label}
-      </Text>
-      <Text style={styles.strengthHint}>
-        Avoid sequential numbers, repeated digits, and date patterns.
-      </Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => setStep('confirm')}
-      >
-        <Text style={styles.buttonText}>Continue</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.backButtonText}>Change PIN</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {step === 'create' && 'Create PIN'}
-          {step === 'strength' && 'PIN Strength'}
-          {step === 'confirm' && 'Confirm PIN'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {step === 'create' && 'Choose a 6-digit PIN to secure your wallet'}
-          {step === 'strength' && 'Review your PIN strength'}
-          {step === 'confirm' && 'Re-enter your PIN to confirm'}
-        </Text>
-      </View>
-
-      {step !== 'strength' && renderDots()}
-      {step === 'strength' && renderStrengthMeter()}
-      {step !== 'strength' && renderKeypad()}
-
-      {loading && (
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.overlayText}>Securing your PIN...</Text>
+        ))}
+        <View style={styles.keypadRow}>
+          <View style={[styles.key, { backgroundColor: 'transparent', borderColor: 'transparent' }]} />
+          <TouchableOpacity style={styles.key} onPress={() => handlePress('0')} disabled={loading}>
+            <Text style={styles.keyText}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.key} onPress={handleBackspace} disabled={loading || currentValue.length === 0}>
+            <Ionicons name="backspace-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
 
       {step === 'confirm' && (
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={styles.backButtonText}>Back</Text>
+        <TouchableOpacity onPress={() => { setStep('create'); setConfirmPin(''); }}>
+          <Text style={styles.backText}>Start Over</Text>
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+  lockIcon: { marginBottom: 16 },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
     color: '#fff',
-    marginBottom: 8,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   subtitle: {
+    color: '#94a3b8',
     fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
+    marginBottom: 32,
   },
   dotsContainer: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 40,
+    marginBottom: 32,
   },
   dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#444',
+    borderColor: '#475569',
     backgroundColor: 'transparent',
   },
   dotFilled: {
-    backgroundColor: '#00d4aa',
-    borderColor: '#00d4aa',
-  },
-  dotShake: {
-    borderColor: '#e74c3c',
-    backgroundColor: '#e74c3c22',
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
   },
   keypad: {
     gap: 12,
@@ -308,95 +187,26 @@ const styles = StyleSheet.create({
   keypadRow: {
     flexDirection: 'row',
     gap: 12,
+    justifyContent: 'center',
   },
   key: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1e293b',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#333',
-  },
-  keyEmpty: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
+    borderColor: '#334155',
   },
   keyText: {
+    color: '#fff',
     fontSize: 24,
     fontWeight: '600',
-    color: '#fff',
   },
-  strengthContainer: {
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 40,
-  },
-  strengthTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 16,
-  },
-  strengthBar: {
-    width: '100%',
-    height: 8,
-    backgroundColor: '#333',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  strengthFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  strengthLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  strengthHint: {
-    fontSize: 12,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  button: {
-    backgroundColor: '#00d4aa',
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  backButton: {
-    marginTop: 16,
-    padding: 12,
-  },
-  backButtonText: {
-    color: '#888',
+  backText: {
+    color: '#3b82f6',
     fontSize: 14,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlayText: {
-    color: '#fff',
     marginTop: 16,
-    fontSize: 14,
-  },
-  errorText: {
-    color: '#e74c3c',
-    fontSize: 16,
-    marginBottom: 16,
   },
 });

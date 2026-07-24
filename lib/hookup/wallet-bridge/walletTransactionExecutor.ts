@@ -123,7 +123,7 @@ class WalletTransactionExecutor {
    */
   async createWallet(input: any) {
     const { error } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .insert({
         user_id: input.userId,
         balance: 0,

@@ -2,7 +2,7 @@
 // Server-side wallet operations via Supabase
 // All balance changes go through here for validation
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { WalletTransaction, WalletAccount, WalletNotification } from './types';
 
 export interface SendMoneyParams {
@@ -41,7 +41,7 @@ function generateId(): string {
  */
 async function verifyRecipient(phone: string): Promise<string | null> {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .select('id')
     .eq('phone', phone)
     .single();
@@ -57,7 +57,7 @@ async function verifyRecipient(phone: string): Promise<string | null> {
  */
 async function getServerBalance(accountId: string): Promise<number | null> {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .select('balance')
     .eq('id', accountId)
     .single();
@@ -155,7 +155,7 @@ export async function sendMoney(params: SendMoneyParams): Promise<SendMoneyResul
 
   // Update sender balance
   const { error: balanceError } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .update({ balance: newBalance, updated_at: now })
     .eq('id', senderAccountId);
 
@@ -217,7 +217,7 @@ export async function syncWalletState(accountId: string): Promise<{
 
   // Fetch balance
   const { data: walletData, error: walletError } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .select('balance')
     .eq('id', accountId)
     .single();

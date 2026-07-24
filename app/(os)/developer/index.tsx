@@ -38,7 +38,7 @@ export default function DeveloperScreen() {
   const loadData = useCallback(async () => {
     if (!user?.id) return;
     try {
-      const { data: devProfile } = await supabase.from('user_profiles').select('is_developer').eq('id', user.id).single();
+      const { data: devProfile } = await supabase.from('user_profiles').select('is_developer').eq('user_id', user.id).single();
       setIsDeveloper(devProfile?.is_developer || false);
       if (devProfile?.is_developer) {
         const { data: appData } = await supabase.from('developer_apps').select('*').eq('developer_id', user.id).order('created_at', { ascending: false });

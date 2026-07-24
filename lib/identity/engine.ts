@@ -140,7 +140,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
   try {
     // 1. Core Identity + Profile
     const { data: profile, error: profileErr } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -166,7 +166,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
 
     // 2. Wallet
     const { data: wallet, error: walletErr } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -382,7 +382,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
 
 export async function updateIdentityCore(userId: string, data: Partial<MTAAIdentity>) {
   const { error } = await supabase
-    .from('profiles')
+    .from('user_profiles')
     .update({
       full_name: data.full_name,
       username: data.username,

@@ -73,7 +73,7 @@ export interface ReceiveRequestResult {
 
 export async function getWallet(userId: string): Promise<Wallet | null> {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .select('*')
     .eq('user_id', userId)
     .eq('is_default', true)
@@ -84,7 +84,7 @@ export async function getWallet(userId: string): Promise<Wallet | null> {
 
 export async function getWalletById(walletId: string): Promise<Wallet | null> {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .select('*')
     .eq('id', walletId)
     .single();
@@ -94,7 +94,7 @@ export async function getWalletById(walletId: string): Promise<Wallet | null> {
 
 export async function createWallet(userId: string, currency = 'KES'): Promise<Wallet> {
   const { data, error } = await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .insert({ user_id: userId, balance: 0, currency, status: 'active', is_default: true })
     .select()
     .single();
@@ -211,7 +211,7 @@ export async function sendMoney(
   let recipientId = payload.recipient_id;
   if (!recipientId && payload.recipient_phone) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('id')
       .eq('phone', payload.recipient_phone)
       .single();
@@ -244,7 +244,7 @@ export async function sendMoney(
 
   // Update sender balance
   await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .update({ balance: senderWallet.balance - payload.amount, updated_at: new Date().toISOString() })
     .eq('id', senderWallet.id);
 
@@ -253,7 +253,7 @@ export async function sendMoney(
     const recipientWallet = await getWallet(recipientId);
     if (recipientWallet) {
       await supabase
-        .from('wallets')
+        .from('wallet_accounts')
         .update({ balance: recipientWallet.balance + payload.amount, updated_at: new Date().toISOString() })
         .eq('id', recipientWallet.id);
 
@@ -376,7 +376,7 @@ export async function confirmDeposit(txId: string): Promise<SendResult> {
     .eq('id', txId);
 
   await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .update({ balance: wallet.balance + tx.amount, updated_at: new Date().toISOString() })
     .eq('id', wallet.id);
 
@@ -430,7 +430,7 @@ export async function confirmWithdrawal(txId: string): Promise<SendResult> {
     .eq('id', txId);
 
   await supabase
-    .from('wallets')
+    .from('wallet_accounts')
     .update({ balance: wallet.balance - tx.amount, updated_at: new Date().toISOString() })
     .eq('id', wallet.id);
 

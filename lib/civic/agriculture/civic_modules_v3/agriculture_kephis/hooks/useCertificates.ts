@@ -1,7 +1,7 @@
 // lib/civic/agriculture/civic_modules_v3/agriculture_kephis/hooks/useCertificates.ts
 import { useState, useEffect } from 'react';
 import { useIdentity } from '@/lib/auth/identity';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export function useCertificates() {
   const { user } = useIdentity();

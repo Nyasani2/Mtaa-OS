@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,111 +6,99 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Vibration,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import * as LocalAuthentication from 'expo-local-authentication';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { verifyPin } from '@/lib/security/pin-engine';
 import { Ionicons } from '@expo/vector-icons';
-
-const PIN_LENGTH = 6;
+import { verifyPin, getPinState, PinState, resetPinData } from '@/lib/security/pin-engine';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function LockScreen() {
   const router = useRouter();
-  const { user, logout, biometricEnabled, updateLastActivity } = useAuthStore();
-  const [pin, setPin] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [attemptsLeft, setAttemptsLeft] = useState(5);
-  const [locked, setLocked] = useState(false);
-  const [lockoutUntil, setLockoutUntil] = useState<string | null>(null);
-  const [shake, setShake] = useState(false);
+  const { signOut } = useAuthStore();
 
-  const userId = user?.id;
+  const [pin, setPin] = useState('');
+  const [pinState, setPinState] = useState<PinState>({
+    isSet: true,
+    isLocked: false,
+    attemptsRemaining: 3,
+    lockoutUntil: null,
+  });
+  const [shaking, setShaking] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const PIN_LENGTH = 6;
+
+  const refreshState = useCallback(async () => {
+    const state = await getPinState();
+    setPinState(state);
+  }, []);
 
   useEffect(() => {
-    if (biometricEnabled) {
-      attemptBiometric();
-    }
-  }, [biometricEnabled]);
+    refreshState();
+  }, [refreshState]);
 
-  const attemptBiometric = async () => {
-    try {
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock MTAA',
-        fallbackLabel: 'Use PIN',
-        disableDeviceFallback: true,
-      });
-
-      if (result.success) {
-        updateLastActivity();
-        router.replace('/(os)');
-      }
-    } catch {
-      // Fall through to PIN
+  const handlePress = (digit: string) => {
+    if (pin.length < PIN_LENGTH && !pinState.isLocked) {
+      setPin((prev) => prev + digit);
     }
   };
 
-  const handleDigit = useCallback(
-    async (digit: string) => {
-      if (locked || loading) return;
-
-      if (pin.length < PIN_LENGTH) {
-        const newPin = pin + digit;
-        setPin(newPin);
-
-        if (newPin.length === PIN_LENGTH) {
-          setLoading(true);
-          const result = await verifyPin(newPin, userId || '');
-          setLoading(false);
-
-          if (result.valid) {
-            updateLastActivity();
-            setPin('');
-            router.replace('/(os)');
-          } else {
-            setPin('');
-            setShake(true);
-            setTimeout(() => setShake(false), 500);
-
-            if (result.locked_until) {
-              setLocked(true);
-              setLockoutUntil(result.locked_until);
-              setAttemptsLeft(0);
-            } else {
-              const remaining = result.attempts_remaining ?? Math.max(0, attemptsLeft - 1);
-              setAttemptsLeft(remaining);
-
-              if (remaining <= 0) {
-                setLocked(true);
-              } else {
-                Alert.alert('Incorrect PIN', `${remaining} attempts remaining`);
-              }
-            }
-          }
-        }
-      }
-    },
-    [pin, userId, locked, loading, attemptsLeft, updateLastActivity]
-  );
-
-  const handleDelete = () => {
-    if (!locked) {
-      setPin(pin.slice(0, -1));
-    }
+  const handleBackspace = () => {
+    setPin((prev) => prev.slice(0, -1));
   };
+
+  const handleVerify = useCallback(async () => {
+    if (pin.length !== PIN_LENGTH) return;
+
+    setLoading(true);
+    const valid = await verifyPin(pin);
+    setLoading(false);
+
+    if (valid) {
+      router.replace('/(os)');
+    } else {
+      Vibration.vibrate(200);
+      setShaking(true);
+      setTimeout(() => setShaking(false), 300);
+      setPin('');
+      await refreshState();
+    }
+  }, [pin, router, refreshState]);
+
+  useEffect(() => {
+    if (pin.length === PIN_LENGTH) {
+      handleVerify();
+    }
+  }, [pin, handleVerify]);
 
   const handleLogout = async () => {
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: async () => {
+          await resetPinData();
+          await signOut();
+          router.replace('/auth/login');
+        },
+      },
+    ]);
+  };
+
+  const handleForgotPin = () => {
     Alert.alert(
-      'Log Out?',
-      'You will need to sign in again.',
+      'Forgot PIN?',
+      'This will clear your PIN and log you out. You will need to log in again and set a new PIN.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Log Out',
+          text: 'Reset PIN',
           style: 'destructive',
           onPress: async () => {
-            await logout();
+            await resetPinData();
+            await signOut();
             router.replace('/auth/login');
           },
         },
@@ -118,147 +106,175 @@ export default function LockScreen() {
     );
   };
 
-  const renderDots = () => (
-    <View style={styles.dotsContainer}>
-      {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+  const renderDots = () => {
+    const dots = [];
+    for (let i = 0; i < PIN_LENGTH; i++) {
+      const filled = i < pin.length;
+      dots.push(
         <View
           key={i}
           style={[
             styles.dot,
-            i < pin.length && styles.dotFilled,
-            shake && styles.dotShake,
+            filled && styles.dotFilled,
+            shaking && styles.dotError,
           ]}
         />
-      ))}
-    </View>
-  );
+      );
+    }
+    return dots;
+  };
 
-  const renderKeypad = () => (
-    <View style={styles.keypad}>
-      {[['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['bio', '0', 'del']].map(
-        (row, rowIndex) => (
-          <View key={rowIndex} style={styles.keypadRow}>
-            {row.map((key) => (
-              <TouchableOpacity
-                key={key}
-                style={[styles.key, key === '' && styles.keyEmpty]}
-                onPress={() => {
-                  if (key === 'del') handleDelete();
-                  else if (key === 'bio') attemptBiometric();
-                  else if (key !== '') handleDigit(key);
-                }}
-                disabled={locked}
-              >
-                {key === 'del' ? (
-                  <Ionicons name="backspace-outline" size={24} color="#fff" />
-                ) : key === 'bio' ? (
-                  <Ionicons name="finger-print-outline" size={28} color="#00d4aa" />
-                ) : (
-                  <Text style={styles.keyText}>{key}</Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )
-      )}
-    </View>
-  );
-
-  if (locked) {
+  if (pinState.isLocked) {
+    const minutes = pinState.lockoutUntil
+      ? Math.ceil((pinState.lockoutUntil - Date.now()) / 60000)
+      : 5;
     return (
-      <SafeAreaView style={styles.container}>
-        <Ionicons name="lock-closed" size={64} color="#e74c3c" style={{ marginBottom: 24 }} />
-        <Text style={styles.lockedTitle}>Too Many Attempts</Text>
-        <Text style={styles.lockedText}>
-          {lockoutUntil
-            ? `Try again at ${new Date(lockoutUntil).toLocaleTimeString()}`
-            : 'Your account has been temporarily locked.'}
+      <View style={styles.container}>
+        <Ionicons name="lock-closed" size={48} color="#ef4444" />
+        <Text style={styles.title}>PIN Locked</Text>
+        <Text style={styles.subtitle}>
+          Too many failed attempts.{"\n"}Try again in {minutes} minute{minutes !== 1 ? 's' : ''}.
         </Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Log Out</Text>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutBtnText}>Log Out</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Ionicons name="lock-closed-outline" size={48} color="#00d4aa" style={{ marginBottom: 16 }} />
-        <Text style={styles.title}>Enter PIN</Text>
-        <Text style={styles.subtitle}>
-          {biometricEnabled ? 'Or use biometric authentication' : 'Secure your session'}
-        </Text>
+    <View style={styles.container}>
+      <Ionicons
+        name="lock-closed-outline"
+        size={48}
+        color="#10b981"
+        style={styles.lockIcon}
+      />
+      <Text style={styles.title}>Enter PIN</Text>
+      <Text style={styles.subtitle}>Secure your session</Text>
+
+      <View style={[styles.dotsContainer, shaking && styles.shake]}>
+        {renderDots()}
       </View>
 
-      {renderDots()}
+      <Text
+        style={[
+          styles.attemptsText,
+          pinState.attemptsRemaining <= 2 && styles.attemptsWarning,
+        ]}
+      >
+        {pinState.attemptsRemaining} attempt
+        {pinState.attemptsRemaining !== 1 ? 's' : ''} remaining
+      </Text>
 
-      {attemptsLeft < 5 && (
-        <Text style={styles.attemptsText}>{attemptsLeft} attempts remaining</Text>
-      )}
+      {loading && <ActivityIndicator color="#10b981" style={{ marginBottom: 12 }} />}
 
-      {renderKeypad()}
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-
-      {loading && (
-        <View style={styles.overlay}>
-          <ActivityIndicator size="large" color="#fff" />
+      <View style={styles.keypad}>
+        {[
+          ['1', '2', '3'],
+          ['4', '5', '6'],
+          ['7', '8', '9'],
+        ].map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.keypadRow}>
+            {row.map((digit) => (
+              <TouchableOpacity
+                key={digit}
+                style={styles.key}
+                onPress={() => handlePress(digit)}
+                disabled={loading}
+              >
+                <Text style={styles.keyText}>{digit}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
+        <View style={styles.keypadRow}>
+          <TouchableOpacity style={styles.key} disabled>
+            <Ionicons name="finger-print" size={28} color="#10b981" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.key}
+            onPress={() => handlePress('0')}
+            disabled={loading}
+          >
+            <Text style={styles.keyText}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.key}
+            onPress={handleBackspace}
+            disabled={loading || pin.length === 0}
+          >
+            <Ionicons name="backspace-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-      )}
-    </SafeAreaView>
+      </View>
+
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={handleForgotPin}>
+          <Text style={styles.forgotText}>Forgot PIN?</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
+  lockIcon: { marginBottom: 16 },
   title: {
+    color: '#fff',
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
+    color: '#94a3b8',
     fontSize: 14,
-    color: '#888',
+    marginBottom: 32,
+    textAlign: 'center',
   },
   dotsContainer: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 32,
+    marginBottom: 16,
+  },
+  shake: {
+    transform: [{ translateX: -5 }],
   },
   dot: {
     width: 16,
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#444',
+    borderColor: '#475569',
     backgroundColor: 'transparent',
   },
   dotFilled: {
-    backgroundColor: '#00d4aa',
-    borderColor: '#00d4aa',
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
   },
-  dotShake: {
-    borderColor: '#e74c3c',
-    backgroundColor: '#e74c3c22',
+  dotError: {
+    borderColor: '#ef4444',
+    backgroundColor: '#ef4444',
   },
   attemptsText: {
-    color: '#e74c3c',
-    fontSize: 13,
-    marginBottom: 16,
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 24,
+  },
+  attemptsWarning: {
+    color: '#f97316',
+    fontWeight: '700',
   },
   keypad: {
     gap: 12,
@@ -266,51 +282,47 @@ const styles = StyleSheet.create({
   keypadRow: {
     flexDirection: 'row',
     gap: 12,
+    justifyContent: 'center',
   },
   key: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1e293b',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#333',
-  },
-  keyEmpty: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
+    borderColor: '#334155',
   },
   keyText: {
+    color: '#fff',
     fontSize: 24,
     fontWeight: '600',
-    color: '#fff',
   },
-  logoutButton: {
+  footer: {
     marginTop: 32,
-    padding: 12,
+    alignItems: 'center',
+    gap: 12,
+  },
+  forgotText: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '500',
   },
   logoutText: {
-    color: '#888',
+    color: '#64748b',
     fontSize: 14,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockedTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#e74c3c',
-    marginBottom: 8,
-  },
-  lockedText: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 24,
+  logoutBtn: {
+    marginTop: 24,
+    paddingVertical: 12,
     paddingHorizontal: 32,
+    backgroundColor: '#1e293b',
+    borderRadius: 8,
+  },
+  logoutBtnText: {
+    color: '#ef4444',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

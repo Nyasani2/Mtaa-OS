@@ -3,6 +3,7 @@ import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuthStore, startSessionMonitor, stopSessionMonitor } from '@/lib/auth/store/auth.store';
 import { hasPin } from '@/lib/security/pin-engine';
+import { supabase } from '@/lib/supabase';
 
 /**
  * MTAA OS Gate — Production Hardened Route Guard
@@ -126,10 +127,11 @@ export default function OSGate({ children }: { children: React.ReactNode }) {
 }
 
 async function checkAccountFrozen(userId: string): Promise<boolean> {
+  // FIXED: Use .eq('user_id', ...) since user_profiles.user_id is the PK
   const { data } = await supabase
     .from('user_profiles')
     .select('account_frozen, freeze_until')
-    .eq('id', userId)
+    .eq('user_id', userId)
     .single();
 
   if (!data) return false;
@@ -141,8 +143,6 @@ async function checkAccountFrozen(userId: string): Promise<boolean> {
   }
   return true;
 }
-
-import { supabase } from '@/lib/supabase/client';
 
 const styles = StyleSheet.create({
   container: {

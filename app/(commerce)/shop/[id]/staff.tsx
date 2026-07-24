@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert, TextInput,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 
 interface StaffMember { id: string; user_id: string; role: string; status: string; joined_at: string; profile?: { full_name?: string; email?: string; phone?: string; avatar_url?: string; }; }

@@ -67,37 +67,37 @@ function handleError(err: any, fallback: any = null) {
 // ─── WALLETS (Canonical — reads from `wallets` table) ───
 
 export async function getWallets(): Promise<Wallet[]> {
-  const { data, error } = await supabase.from('wallets').select('*');
+  const { data, error } = await supabase.from('wallet_accounts').select('*');
   if (error) return handleError(error, []);
   return data || [];
 }
 
 export async function getWalletById(id: string): Promise<Wallet | null> {
-  const { data, error } = await supabase.from('wallets').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('id', id).single();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function getWalletByUserId(userId: string): Promise<Wallet | null> {
-  const { data, error } = await supabase.from('wallets').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('user_id', userId).single();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createWallet(data: Partial<Wallet>): Promise<Wallet | null> {
-  const { data: result, error } = await supabase.from('wallets').insert(data).select().single();
+  const { data: result, error } = await supabase.from('wallet_accounts').insert(data).select().single();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateWallet(id: string, data: Partial<Wallet>): Promise<Wallet | null> {
-  const { data: result, error } = await supabase.from('wallets').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('wallet_accounts').update(data).eq('id', id).select().single();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function deleteWallet(id: string): Promise<boolean> {
-  const { error } = await supabase.from('wallets').delete().eq('id', id);
+  const { error } = await supabase.from('wallet_accounts').delete().eq('id', id);
   if (error) return handleError(error, false);
   return true;
 }
@@ -259,7 +259,7 @@ export async function getWalletTransactionsByWalletId(walletId: string): Promise
   const byWallet = await supabase.from('wallet_transactions').select('*').eq('wallet_id', walletId).order('created_at', { ascending: false });
   if (byWallet.data && byWallet.data.length > 0) return byWallet.data;
   // Try finding user_id from wallets table
-  const { data: wallet } = await supabase.from('wallets').select('user_id').eq('id', walletId).single();
+  const { data: wallet } = await supabase.from('wallet_accounts').select('user_id').eq('id', walletId).single();
   if (wallet?.user_id) {
     const byUser = await supabase.from('wallet_transactions').select('*').eq('user_id', wallet.user_id).order('created_at', { ascending: false });
     return byUser.data || [];
@@ -270,7 +270,7 @@ export async function getWalletTransactionsByWalletId(walletId: string): Promise
 // ─── STATS ───
 
 export async function getWalletStats(): Promise<any> {
-  const { count: wallets } = await supabase.from('wallets').select('*', { count: 'exact', head: true });
+  const { count: wallets } = await supabase.from('wallet_accounts').select('*', { count: 'exact', head: true });
   const { count: transactions } = await supabase.from('wallet_transactions').select('*', { count: 'exact', head: true });
   const { count: agents } = await supabase.from('wallet_agents').select('*', { count: 'exact', head: true });
   const { count: partners } = await supabase.from('wallet_partners').select('*', { count: 'exact', head: true });

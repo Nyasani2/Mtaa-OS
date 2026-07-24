@@ -1,3 +1,4 @@
+
 // ============================================================
 // MTAA MARKETPLACE OPERATIONS — CONSOLIDATED EDGE FUNCTION
 // Actions: checkout, confirm_delivery, seller_payout, escrow_release
@@ -92,10 +93,10 @@ async function marketplaceCheckout(supabaseAdmin, buyerId, params) {
 
   // Get buyer wallet
   const { data: buyerWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", buyerId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -157,7 +158,7 @@ async function marketplaceCheckout(supabaseAdmin, buyerId, params) {
 
   // Debit buyer wallet
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: buyerWallet.available_balance - total_amount })
     .eq("id", buyerWallet.id);
 
@@ -222,10 +223,10 @@ async function confirmDelivery(supabaseAdmin, buyerId, params) {
   // Release escrow to sellers
   for (const item of order.order_items) {
     const { data: sellerWallet } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("id, available_balance")
       .eq("user_id", item.seller_id)
-      .eq("wallet_type", "main")
+      .eq("account_type", "main")
       .single();
 
     if (sellerWallet) {
@@ -243,7 +244,7 @@ async function confirmDelivery(supabaseAdmin, buyerId, params) {
 
       // Credit seller
       await supabaseAdmin
-        .from("wallets")
+        .from("wallet_accounts")
         .update({ available_balance: sellerWallet.available_balance + netAmount })
         .eq("id", sellerWallet.id);
 
@@ -308,10 +309,10 @@ async function sellerPayout(supabaseAdmin, sellerId, params) {
 
   // Get seller wallet
   const { data: sellerWallet } = await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", sellerId)
-    .eq("wallet_type", "main")
+    .eq("account_type", "main")
     .single();
 
   if (!sellerWallet) throw new Error("Seller wallet not found");
@@ -335,7 +336,7 @@ async function sellerPayout(supabaseAdmin, sellerId, params) {
 
   // Debit seller wallet
   await supabaseAdmin
-    .from("wallets")
+    .from("wallet_accounts")
     .update({ available_balance: sellerWallet.available_balance - amount })
     .eq("id", sellerWallet.id);
 
@@ -401,15 +402,15 @@ async function escrowRelease(supabaseAdmin, adminId, params) {
   // Release to sellers
   for (const item of escrow.orders.order_items) {
     const { data: sellerWallet } = await supabaseAdmin
-      .from("wallets")
+      .from("wallet_accounts")
       .select("id, available_balance")
       .eq("user_id", item.seller_id)
-      .eq("wallet_type", "main")
+      .eq("account_type", "main")
       .single();
 
     if (sellerWallet) {
       await supabaseAdmin
-        .from("wallets")
+        .from("wallet_accounts")
         .update({ available_balance: sellerWallet.available_balance + item.total })
         .eq("id", sellerWallet.id);
     }

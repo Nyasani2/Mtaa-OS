@@ -38,7 +38,7 @@ export function useFollow(targetProfileId: string) {
 
       // Get follower/following counts from profiles table
       const { data: targetProfile } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('follower_count, following_count')
         .eq('id', targetProfileId)
         .single();

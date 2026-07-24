@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase";
 import type { HealthTelemedicineSession } from "../types";
 export class TelemedicineService {
   static async getSession(sessionId: string): Promise<HealthTelemedicineSession | null> {

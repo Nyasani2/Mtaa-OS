@@ -6,6 +6,9 @@ export interface FeedPost {
   content: string;
   media_url?: string;
   media_type?: 'image' | 'video';
+  caption?: string;
+  hashtags?: string[];
+  thumbnail_url?: string;
   created_at: string;
   updated_at: string;
   likes_count: number;
