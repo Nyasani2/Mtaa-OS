@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 // Lazy-load SecureStore to prevent web crash on module import
 let SecureStore: any = null;
 try {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
   SecureStore = require('expo-secure-store');
 } catch {
   // Web or missing module — will fall through to localStorage
@@ -112,6 +113,7 @@ export async function initializeHealthAuth(config?: Partial<HealthAuthConfig>): 
   let biometric = false;
   if (Platform.OS !== 'web') {
     try {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
       const LocalAuthentication = require('expo-local-authentication');
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
@@ -150,6 +152,7 @@ export async function authenticateBiometric(): Promise<boolean> {
     return false;
   }
   try {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
     const LocalAuthentication = require('expo-local-authentication');
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Unlock MTAA Health',

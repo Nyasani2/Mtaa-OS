@@ -842,10 +842,11 @@ export class IntentRouter {
         actions.push('Show me a tutorial');
         actions.push('What can you do?');
         break;
-      case 'app_navigation':
+      case 'app_navigation': {
         const app = entities.find(e => e.type === 'app_name');
         if (app) actions.push(`Open ${app.value}`);
         break;
+      }
       case 'general_knowledge':
         actions.push('Tell me more');
         actions.push('Related topics');

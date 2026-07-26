@@ -1,9 +1,17 @@
-import React from 'react';
-import { ASISProvider } from './asis-provider-v6';
-
 /**
- * Compatibility wrapper: AsisProviderV4 -> ASISProvider v6
- * Allows app/_layout.tsx to import without changes.
+ * ASIS CSE v2 — Legacy Provider Bridge
+ * Replaces dead asis-provider-v6 import
  */
-export const AsisProviderV4 = ASISProvider;
-export { useASIS } from './asis-provider-v6';
+
+import React from 'react';
+import { ASISCSEProvider, useASIS } from '@/lib/asis-cse/asis-cse-provider';
+
+export { ASISCSEProvider as ASISProvider, useASIS };
+
+export function AsisProviderV4({ children }: { children: React.ReactNode }) {
+  return (
+    <ASISCSEProvider supabase={null} autoInitialize={true}>
+      {children}
+    </ASISCSEProvider>
+  );
+}

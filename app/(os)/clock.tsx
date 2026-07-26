@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, Alert, Platform, Vibration, Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -358,11 +358,11 @@ export default function ClockScreen() {
             <Text style={styles.modalTitle}>Add Alarm</Text>
             <View style={styles.timeInputRow}>
               <TextInput style={styles.timeInput} value={alarmHour}
-                onChangeText={t => setAlarmHour(t.replace(/[^0-9]/g, '').slice(0, 2))}
+                onChangeText={text => setAlarmHour(text.replace(/[^0-9]/g, '').slice(0, 2))}
                 keyboardType="number-pad" maxLength={2} placeholder="HH" placeholderTextColor="#555" />
               <Text style={styles.timeColon}>:</Text>
               <TextInput style={styles.timeInput} value={alarmMinute}
-                onChangeText={t => setAlarmMinute(t.replace(/[^0-9]/g, '').slice(0, 2))}
+                onChangeText={text => setAlarmMinute(text.replace(/[^0-9]/g, '').slice(0, 2))}
                 keyboardType="number-pad" maxLength={2} placeholder="MM" placeholderTextColor="#555" />
             </View>
             <TextInput style={styles.labelInput} value={alarmLabel} onChangeText={setAlarmLabel}

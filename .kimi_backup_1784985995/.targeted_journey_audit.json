@@ -1,0 +1,1057 @@
+{
+  "auth": {
+    "checked": 550,
+    "passed": 512,
+    "failed": 38,
+    "issues": [
+      {
+        "file": "app/(admin)/command-centre/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(boda)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(business)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(civic)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(civic)/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(commerce)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(commerce)/shop/[id]/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(communication)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(education)/feed.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(education)/messages.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(education)/payroll.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(education)/schools.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(education)/teachers.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(finance)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(local)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(media)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/driver-earnings.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/driver-requests.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/driver-ride.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/driver.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtaxi)/history.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(mtruck)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/hookup/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/hooks/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/restaurant/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/streets/comments/[postId].tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/streets/creator.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/streets/settings.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(os)/studio/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(productivity)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(regulatory)/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(social)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(system)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(transport)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(tribes)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(utility)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      },
+      {
+        "file": "app/(work)/_layout.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "session check"
+        ]
+      }
+    ]
+  },
+  "profile": {
+    "checked": 41,
+    "passed": 2,
+    "failed": 39,
+    "issues": [
+      {
+        "file": "app/(os)/hookup/profile-detail.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/hookup/profile-setup.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/[id].tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/_layout.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/achievements.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/analytics.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/assets/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/business/edit.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/business/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/creator/dashboard.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/creator/earnings.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/creator/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/documents/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/documents/upload.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/earnings.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/edit.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/family/[id].tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/family/add.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/family/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/followers.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/following.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/hooks/_layout.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/messages.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/photo-viewer.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/posts.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/privacy.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/professional/dashboard.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/professional/edit.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/professional/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/professional/portfolio/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/qr/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/qr/professional.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/reputation/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/reputation/verified-history.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/profile/reputation/warnings.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/search/profiles.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(os)/studio/creator-profile.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "profile fetch",
+          "user_id filter",
+          "display user data"
+        ]
+      },
+      {
+        "file": "app/(work)/jobs/profile/index.tsx",
+        "score": 40,
+        "grade": "C",
+        "missing": [
+          "user_id filter",
+          "display user data"
+        ]
+      }
+    ]
+  },
+  "wallet": {
+    "checked": 50,
+    "passed": 21,
+    "failed": 29,
+    "issues": [
+      {
+        "file": "app/(os)/wallet/_layout.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/advance/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/banks.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "wallet import",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/business-documents.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "wallet import",
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/business-register.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/business.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/cards/index.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/cashpoint/qr.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "wallet import",
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/credit/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/escrow-hub.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "balance fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/gofund/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/government-hub.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/history.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "balance fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/merchant-analytics.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "balance fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/merchant-customers.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "wallet import",
+          "user_id query",
+          "balance fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/onboarding/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/onboarding/phone-verify.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/qr-action.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "wallet import",
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/qr-scan.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/receive.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "wallet import",
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/regulatory.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/rewards.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/savings/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/scan/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/settings.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/transactions.tsx",
+        "score": 50,
+        "grade": "C",
+        "missing": [
+          "user_id query",
+          "balance fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/transfer/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/treasury-hub.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/withdraw/index.tsx",
+        "score": 25,
+        "grade": "D",
+        "missing": [
+          "user_id query",
+          "balance fetch",
+          "transactions fetch"
+        ]
+      }
+    ]
+  },
+  "content": {
+    "checked": 18,
+    "passed": 11,
+    "failed": 7,
+    "issues": [
+      {
+        "file": "app/(education)/schools/create.tsx",
+        "score": 0,
+        "grade": "F",
+        "missing": [
+          "creator_id",
+          "insert to posts table",
+          "input validation"
+        ]
+      },
+      {
+        "file": "app/(education)/teachers/create.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      },
+      {
+        "file": "app/(os)/streets/create.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      },
+      {
+        "file": "app/(os)/studio/publish.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      },
+      {
+        "file": "app/(os)/wallet/onboarding/pin-create.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      },
+      {
+        "file": "app/(tribes)/create.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      },
+      {
+        "file": "app/(tribes)/post-create.tsx",
+        "score": 20,
+        "grade": "D",
+        "missing": [
+          "creator_id",
+          "insert to posts table"
+        ]
+      }
+    ]
+  },
+  "appRecognition": {
+    "checked": 41,
+    "passed": 40,
+    "failed": 1,
+    "issues": [
+      {
+        "file": "app/(regulatory)/index.tsx",
+        "score": 35,
+        "grade": "D",
+        "missing": [
+          "user in UI",
+          "auth guard"
+        ]
+      }
+    ]
+  }
+}

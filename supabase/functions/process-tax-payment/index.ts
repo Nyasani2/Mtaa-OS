@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { taxpayer_id, return_id, amount, payment_method, wallet_id } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   // Verify return exists and is unpaid
   const { data: ret } = await supabase.from("revenue_returns").select("*, revenue_taxpayers(country_code)").eq("id", return_id).single();

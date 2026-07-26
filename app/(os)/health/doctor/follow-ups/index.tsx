@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import {
-  ChevronLeft, Plus, Calendar, Clock, CheckCircle2, Bell, User,
+  ChevronLeft, Plus, Calendar, CheckCircle2, Bell, User,
   AlertTriangle, Search, Filter, Phone, MessageSquare
 } from 'lucide-react-native';
 

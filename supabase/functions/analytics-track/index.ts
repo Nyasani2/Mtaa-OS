@@ -8,7 +8,7 @@ const corsHeaders = {
 (globalThis as any).Deno?.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL')!, (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL') || '', (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || '');
     const { event_type, event_name, user_id, session_id, app_id, page, properties, timestamp } = await req.json();
 
     if (!event_type || !event_name) {

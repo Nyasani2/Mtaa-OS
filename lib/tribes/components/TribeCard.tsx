@@ -2,6 +2,11 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tribe } from '../types';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DEFAULT_TRIBE_COVER = require('@/assets/images/default-tribe-cover.png');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DEFAULT_AVATAR = require('@/assets/images/default-avatar.png');
+
 interface TribeCardProps {
   tribe: Tribe;
   onPress: () => void;
@@ -9,9 +14,9 @@ interface TribeCardProps {
 
 export const TribeCard: React.FC<TribeCardProps> = ({ tribe, onPress }) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
-    <Image source={{ uri: tribe.cover_url || require('@/assets/images/default-tribe-cover.png') }} style={styles.cover} />
+    <Image source={{ uri: tribe.cover_url || DEFAULT_TRIBE_COVER }} style={styles.cover} />
     <View style={styles.content}>
-      <Image source={{ uri: tribe.avatar_url || require('@/assets/images/default-avatar.png') }} style={styles.avatar} />
+      <Image source={{ uri: tribe.avatar_url || DEFAULT_AVATAR }} style={styles.avatar} />
       <View style={styles.info}>
         <Text style={styles.name}>{tribe.name}</Text>
         <Text style={styles.category}>{tribe.category.toUpperCase()}</Text>
@@ -40,4 +45,3 @@ const styles = StyleSheet.create({
   verifiedBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#e94560', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   verifiedText: { color: '#fff', fontSize: 10, fontWeight: 'bold' }
 });
-

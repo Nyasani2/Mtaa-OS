@@ -89,7 +89,7 @@ async function searchQuery(supabaseAdmin, userId, params) {
 
   // Search based on module
   switch (module) {
-    case "users":
+    case "users": {
       const { data: users, count: userCount } = await supabaseAdmin
         .from("user_profiles")
         .select("user_id, display_name, username, avatar_url, bio", { count: "exact" })
@@ -99,8 +99,9 @@ async function searchQuery(supabaseAdmin, userId, params) {
       results = users || [];
       total = userCount || 0;
       break;
+    }
 
-    case "content":
+    case "content": {
       const { data: content, count: contentCount } = await supabaseAdmin
         .from("content")
         .select("id, title, body, content_type, user_id, created_at", { count: "exact" })
@@ -111,8 +112,9 @@ async function searchQuery(supabaseAdmin, userId, params) {
       results = content || [];
       total = contentCount || 0;
       break;
+    }
 
-    case "marketplace":
+    case "marketplace": {
       const { data: products, count: productCount } = await supabaseAdmin
         .from("products")
         .select("id, name, description, price, seller_id, category", { count: "exact" })
@@ -123,8 +125,9 @@ async function searchQuery(supabaseAdmin, userId, params) {
       results = products || [];
       total = productCount || 0;
       break;
+    }
 
-    case "jobs":
+    case "jobs": {
       const { data: jobs, count: jobCount } = await supabaseAdmin
         .from("jobs")
         .select("id, title, description, employer_id, salary_range, location", { count: "exact" })
@@ -135,8 +138,9 @@ async function searchQuery(supabaseAdmin, userId, params) {
       results = jobs || [];
       total = jobCount || 0;
       break;
+    }
 
-    default:
+    default: {
       // Global search across all public content
       const { data: global } = await supabaseAdmin
         .from("content")
@@ -146,6 +150,7 @@ async function searchQuery(supabaseAdmin, userId, params) {
         .limit(limit);
       results = global || [];
       total = results.length;
+    }
   }
 
   // Log search query

@@ -2,8 +2,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 (globalThis as any).Deno?.serve(async (req) => {
   const supabase = createClient(
-    (globalThis as any).Deno?.env?.get('SUPABASE_URL')!,
-    (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!
+    (globalThis as any).Deno?.env?.get('SUPABASE_URL') || '',
+    (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || ''
   );
 
   const body = await req.json().catch(() => ({}));

@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { country_code, profile_id } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   // Get country config
   const { data: config } = await supabase.from("revenue_country_config").select("*").eq("country_code", country_code).single();

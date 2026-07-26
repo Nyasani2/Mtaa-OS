@@ -27,6 +27,48 @@ export default function StudentIdentityCard() {
   const [generatingQR, setGeneratingQR] = useState(false);
   const [showBack, setShowBack] = useState(false);
 
+  // ─── HANDLE GENERATE QR ───
+  const handleGenerateQR = useCallback(async () => {
+    if (!studentId || !identity?.institution_id) {
+      Alert.alert('Error', 'Missing student or institution information');
+      return;
+    }
+    try {
+      setGeneratingQR(true);
+      await generateQR();
+      Alert.alert('Success', 'Identity card generated successfully');
+      refresh();
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to generate QR code');
+    } finally {
+      setGeneratingQR(false);
+    }
+  }, [studentId, identity, generateQR, refresh]);
+
+  // ─── HANDLE SHARE ───
+  const handleShare = useCallback(async () => {
+    if (!identity) return;
+    try {
+      await Share.share({
+        message: `Student ID: ${identity.card_number}\nName: ${student?.full_name}\nSchool: ${institution?.name}\nLevel: ${student?.current_level}`,
+        title: `${student?.full_name} - Student ID`,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [identity, student, institution]);
+
+  // ─── HANDLE COPY CARD NUMBER ───
+  const handleCopyCardNumber = useCallback(async () => {
+    if (identity?.card_number) {
+      await Clipboard.setStringAsync(identity.card_number);
+      Alert.alert('Copied', 'Card number copied to clipboard');
+    }
+  }, [identity?.card_number]);
+
+  const student = identity?.student;
+  const institution = student?.institution;
+
   // ─── LOADING STATE ───
   if (loading && !identity) {
     return (
@@ -69,47 +111,6 @@ export default function StudentIdentityCard() {
       </View>
     );
   }
-
-  const student = identity.student;
-  const institution = student?.institution;
-
-  // ─── HANDLE GENERATE QR ───
-  const handleGenerateQR = useCallback(async () => {
-    if (!studentId || !identity?.institution_id) {
-      Alert.alert('Error', 'Missing student or institution information');
-      return;
-    }
-    try {
-      setGeneratingQR(true);
-      await generateQR();
-      Alert.alert('Success', 'Identity card generated successfully');
-      refresh();
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to generate QR code');
-    } finally {
-      setGeneratingQR(false);
-    }
-  }, [studentId, identity, generateQR, refresh]);
-
-  // ─── HANDLE SHARE ───
-  const handleShare = useCallback(async () => {
-    try {
-      await Share.share({
-        message: `Student ID: ${identity.card_number}\nName: ${student?.full_name}\nSchool: ${institution?.name}\nLevel: ${student?.current_level}`,
-        title: `${student?.full_name} - Student ID`,
-      });
-    } catch {
-      // User cancelled
-    }
-  }, [identity, student, institution]);
-
-  // ─── HANDLE COPY CARD NUMBER ───
-  const handleCopyCardNumber = useCallback(async () => {
-    if (identity.card_number) {
-      await Clipboard.setStringAsync(identity.card_number);
-      Alert.alert('Copied', 'Card number copied to clipboard');
-    }
-  }, [identity.card_number]);
 
   // ─── SUCCESS STATE (Card Display) ───
   return (

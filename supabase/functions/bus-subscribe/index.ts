@@ -18,8 +18,8 @@ const corsHeaders = {
 
   try {
     const supabase = createClient(
-      (globalThis as any).Deno?.env?.get('SUPABASE_URL')!,
-      (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      (globalThis as any).Deno?.env?.get('SUPABASE_URL') || '',
+      (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || '',
       { auth: { persistSession: false } }
     );
 
@@ -61,3 +61,4 @@ const corsHeaders = {
     );
   }
 });
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";

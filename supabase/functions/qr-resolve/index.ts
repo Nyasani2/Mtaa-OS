@@ -20,7 +20,6 @@ serve(async (req) => {
     const body = await req.json();
     const { qr_id, scanner_id, scanner_lat, scanner_lng, scanner_device_id } = body;
 
-    // Fetch QR code
     const { data: qrCode, error: qrError } = await supabase
       .from("qr_codes")
       .select("*")
@@ -35,7 +34,6 @@ serve(async (req) => {
       );
     }
 
-    // Check expiry
     if (qrCode.expires_at && new Date(qrCode.expires_at) < new Date()) {
       return new Response(
         JSON.stringify({ error: "QR code has expired" }),
@@ -43,7 +41,6 @@ serve(async (req) => {
       );
     }
 
-    // Check max scans
     if (qrCode.max_scans && qrCode.scan_count >= qrCode.max_scans) {
       return new Response(
         JSON.stringify({ error: "QR code scan limit reached" }),
@@ -51,7 +48,6 @@ serve(async (req) => {
       );
     }
 
-    // Log the scan
     await supabase.from("qr_scans").insert({
       qr_code_id: qr_id,
       scanner_id,
@@ -60,12 +56,11 @@ serve(async (req) => {
       scanner_device_id,
     });
 
-    // Resolve entity details based on type
     let entityDetails = null;
     const entityId = qrCode.entity_id;
 
     switch (qrCode.entity_type) {
-      case "user":
+      case "user": {
         const { data: profile } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url, phone")
@@ -73,8 +68,9 @@ serve(async (req) => {
           .single();
         entityDetails = profile;
         break;
+      }
 
-      case "shop":
+      case "shop": {
         const { data: shop } = await supabase
           .from("shops")
           .select("id, name, description, logo_url, location")
@@ -82,8 +78,9 @@ serve(async (req) => {
           .single();
         entityDetails = shop;
         break;
+      }
 
-      case "agent":
+      case "agent": {
         const { data: agent } = await supabase
           .from("agents")
           .select("id, business_name, agent_level, location, services")
@@ -91,8 +88,9 @@ serve(async (req) => {
           .single();
         entityDetails = agent;
         break;
+      }
 
-      case "hospital":
+      case "hospital": {
         const { data: hospital } = await supabase
           .from("health_facilities")
           .select("id, name, type, location, services")
@@ -100,8 +98,9 @@ serve(async (req) => {
           .single();
         entityDetails = hospital;
         break;
+      }
 
-      case "escrow":
+      case "escrow": {
         const { data: escrow } = await supabase
           .from("escrow_transactions")
           .select("id, status, amount, currency, description, buyer_id, seller_id")
@@ -109,8 +108,9 @@ serve(async (req) => {
           .single();
         entityDetails = escrow;
         break;
+      }
 
-      case "goods":
+      case "goods": {
         const { data: goods } = await supabase
           .from("marketplace_items")
           .select("id, title, price, currency, seller_id, status")
@@ -118,21 +118,16 @@ serve(async (req) => {
           .single();
         entityDetails = goods;
         break;
+      }
 
       default:
         entityDetails = { id: entityId, type: qrCode.entity_type };
     }
 
-    // Determine available actions based on entity type
     const actions = getAvailableActions(qrCode.entity_type, qrCode, entityDetails, scanner_id);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        qr_code: qrCode,
-        entity: entityDetails,
-        actions,
-      }),
+      JSON.stringify({ success: true, qr_code: qrCode, entity: entityDetails, actions }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
@@ -198,7 +193,6 @@ function getAvailableActions(entityType: string, qrCode: any, entity: any, scann
     { id: "view", label: "View Details", icon: "eye", description: "View details" },
   ];
 
-  // Add prefilled context if dynamic QR
   if (!qrCode.is_static && qrCode.prefilled_amount) {
     actions.push({
       id: "pay_prefilled",
@@ -215,7 +209,6 @@ function getAvailableActions(entityType: string, qrCode: any, entity: any, scann
 
   actions.push(...typeActions);
 
-  // Add owner-only actions
   if (isOwner) {
     actions.push(
       { id: "edit_qr", label: "Edit QR", icon: "edit", description: "Edit QR settings" },

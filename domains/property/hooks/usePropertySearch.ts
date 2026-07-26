@@ -1,33 +1,21 @@
-// MTAA PROPERTY OS — SEARCH HOOK
-
-import { useState, useCallback, useEffect } from "react";
-import { usePropertyStore } from "../state/propertyStore";
-import type { PropertySearchFilters } from "../types";
+import { useState, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function usePropertySearch() {
-  const [filters, setFilters] = useState<PropertySearchFilters>({});
-  const store = usePropertyStore();
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const applyFilters = useCallback(() => {
-    store.fetchProperties(filters);
-  }, [filters, store.fetchProperties]);
-
-  const clearFilters = useCallback(() => {
-    setFilters({});
-    store.fetchProperties();
-  }, [store.fetchProperties]);
-
-  useEffect(() => {
-    store.fetchProperties();
+  const search = useCallback(async (query: string, location?: string, maxPrice?: number) => {
+    setLoading(true);
+    try {
+      let q = supabase.from('properties').select('*').ilike('title', `%${query}%`);
+      if (location) q = q.ilike('location', `%${location}%`);
+      if (maxPrice) q = q.lte('price', maxPrice);
+      const { data } = await q.limit(50);
+      setResults(data || []);
+    } catch (e) { setResults([]); }
+    setLoading(false);
   }, []);
 
-  return {
-    filters,
-    setFilters,
-    applyFilters,
-    clearFilters,
-    results: store.properties,
-    isLoading: store.isLoading,
-    error: store.error,
-  };
+  return { results, loading, search };
 }

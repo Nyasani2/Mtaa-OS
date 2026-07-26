@@ -1,217 +1,193 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl
-} from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
 
 interface AmbulanceUnit {
   id: string;
-  unit_number: string;
-  status: "available" | "dispatched" | "en-route" | "on-scene" | "transporting" | "at-hospital" | "off-duty";
-  crew: string[];
-  current_call?: {
-    id: string;
-    patient_name: string;
-    location: string;
-    priority: "routine" | "urgent" | "emergency";
-    eta: string;
-  };
+  vehicle_number: string;
+  status: 'available' | 'active' | 'off_duty' | 'maintenance';
+  driver_name?: string;
+  driver_phone?: string;
+  latitude?: number;
+  longitude?: number;
+  last_updated?: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  available: "#10b981",
-  dispatched: "#3b82f6",
-  "en-route": "#f59e0b",
-  "on-scene": "#ef4444",
-  transporting: "#8b5cf6",
-  "at-hospital": "#06b6d4",
-  "off-duty": "#6b7280",
-};
-
-export default function AmbulanceDashboard() {
+export default function AmbulanceScreen() {
   const router = useRouter();
-  const { fetchAmbulanceUnits } = useHealthStore();
-
   const [units, setUnits] = useState<AmbulanceUnit[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadUnits = async () => {
-    const data = await fetchAmbulanceUnits();
-    setUnits(data || []);
+    try {
+      setErrorMsg(null);
+      const { data, error } = await supabase
+        .from('health_ambulances')
+        .select('id, vehicle_number, status, latitude, longitude, updated_at, health_ambulance_drivers(full_name, phone)')
+        .order('status', { ascending: true });
+
+      if (error) throw error;
+
+      const mapped = (data || []).map((u: any) => ({
+        id: u.id,
+        vehicle_number: u.vehicle_number,
+        status: u.status,
+        latitude: u.latitude,
+        longitude: u.longitude,
+        last_updated: u.updated_at,
+        driver_name: u.health_ambulance_drivers?.full_name,
+        driver_phone: u.health_ambulance_drivers?.phone,
+      }));
+
+      setUnits(mapped);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to load ambulance units');
+      setUnits([]);
+    }
   };
 
   useEffect(() => {
-    loadUnits();
+    loadUnits().finally(() => setLoading(false));
   }, []);
 
-  const onRefresh = async () => {
+  const refresh = async () => {
     setRefreshing(true);
     await loadUnits();
     setRefreshing(false);
   };
 
-  const stats = {
-    available: units.filter((u) => u.status === "available").length,
-    dispatched: units.filter((u) => ["dispatched", "en-route", "on-scene", "transporting", "at-hospital"].includes(u.status)).length,
-    offDuty: units.filter((u) => u.status === "off-duty").length,
-    total: units.length,
-  };
+  const available = units.filter((u) => u.status === 'available').length;
+  const active = units.filter((u) => u.status === 'active').length;
+  const offDuty = units.filter((u) => u.status === 'off_duty').length;
+
+  const renderUnit = ({ item }: { item: AmbulanceUnit }) => (
+    <View style={s.unitCard}>
+      <View style={s.unitRow}>
+        <View style={[s.statusDot, s[`dot_${item.status}`]]} />
+        <Text style={s.unitTitle}>Unit {item.vehicle_number}</Text>
+        <Text style={[s.statusBadge, s[`badge_${item.status}`]]}>{item.status}</Text>
+      </View>
+      {item.driver_name ? (
+        <Text style={s.unitDriver}>Driver: {item.driver_name} {item.driver_phone ? `• ${item.driver_phone}` : ''}</Text>
+      ) : null}
+      <View style={s.unitActions}>
+        <TouchableOpacity style={s.actionBtn} onPress={() => router.push(`/health/ambulance/unit/${item.id}`)}>
+          <Text style={s.actionText}>Details</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.actionBtn, s.actionPrimary]} onPress={() => router.push(`/health/ambulance/dispatch?unit=${item.id}`)}>
+          <Text style={[s.actionText, s.actionTextPrimary]}>Dispatch</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ambulance Control</Text>
-        <TouchableOpacity onPress={() => router.push("/(os)/health/ambulance/dispatch")}>
-          <Ionicons name="add-circle" size={28} color="#ef4444" />
+    <View style={s.container}>
+      <View style={s.header}>
+        <Text style={s.headerTitle}>Ambulance Control</Text>
+        <TouchableOpacity style={s.addBtn} onPress={() => router.push('/health/ambulance/dispatch')}>
+          <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#10b981" }]}>{stats.available}</Text>
-            <Text style={styles.statLabel}>Available</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#ef4444" }]}>{stats.dispatched}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#6b7280" }]}>{stats.offDuty}</Text>
-            <Text style={styles.statLabel}>Off Duty</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total Units</Text>
-          </View>
+      <View style={s.statsRow}>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#10b981' }]}>{available}</Text>
+          <Text style={s.statLabel}>Available</Text>
         </View>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#ef4444' }]}>{active}</Text>
+          <Text style={s.statLabel}>Active</Text>
+        </View>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#f59e0b' }]}>{offDuty}</Text>
+          <Text style={s.statLabel}>Off Duty</Text>
+        </View>
+        <View style={s.statBox}>
+          <Text style={s.statNum}>{units.length}</Text>
+          <Text style={s.statLabel}>Total Units</Text>
+        </View>
+      </View>
 
-        {/* Active Dispatches */}
-        <Text style={styles.sectionTitle}>Active Dispatches</Text>
-        {units.filter((u) => u.current_call).length === 0 ? (
-          <View style={styles.emptyCard}>
-            <MaterialCommunityIcons name="ambulance" size={40} color="#d1d5db" />
-            <Text style={styles.emptyText}>No active dispatches</Text>
-          </View>
-        ) : (
-          units.filter((u) => u.current_call).map((unit) => (
-            <TouchableOpacity
-              key={unit.id}
-              style={styles.dispatchCard}
-              onPress={() => router.push(`/(os)/health/ambulance/handover?unitId=${unit.id}`)}
-            >
-              <View style={styles.dispatchHeader}>
-                <View style={[styles.unitBadge, { backgroundColor: STATUS_COLORS[unit.status] }]}>
-                  <Text style={styles.unitBadgeText}>{unit.unit_number}</Text>
-                </View>
-                <View style={[styles.priorityBadge, { backgroundColor: unit.current_call!.priority === "emergency" ? "#ef444420" : "#f59e0b20" }]}>
-                  <Text style={[styles.priorityText, { color: unit.current_call!.priority === "emergency" ? "#ef4444" : "#f59e0b" }]}>
-                    {unit.current_call!.priority.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.patientName}>{unit.current_call!.patient_name}</Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location" size={14} color="#ef4444" />
-                <Text style={styles.locationText}>{unit.current_call!.location}</Text>
-              </View>
-              <View style={styles.dispatchFooter}>
-                <View style={styles.crewRow}>
-                  {unit.crew.map((member, i) => (
-                    <View key={i} style={styles.crewBadge}>
-                      <Text style={styles.crewText}>{member}</Text>
-                    </View>
-                  ))}
-                </View>
-                <View style={styles.etaRow}>
-                  <Ionicons name="time" size={14} color="#6b7280" />
-                  <Text style={styles.etaText}>ETA {unit.current_call!.eta}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
+      {errorMsg ? (
+        <View style={s.errorBox}>
+          <Text style={s.errorText}>{errorMsg}</Text>
+          <TouchableOpacity onPress={refresh}><Text style={s.retry}>Retry</Text></TouchableOpacity>
+        </View>
+      ) : null}
 
-        {/* All Units */}
-        <Text style={[styles.sectionTitle, { marginTop: 8 }]}>All Units</Text>
-        {units.map((unit) => (
-          <View key={unit.id} style={styles.unitRow}>
-            <View style={[styles.unitDot, { backgroundColor: STATUS_COLORS[unit.status] }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.unitNumber}>{unit.unit_number}</Text>
-              <Text style={styles.unitStatus}>{unit.status.replace("-", " ").toUpperCase()}</Text>
+      <Text style={s.sectionTitle}>Active Dispatches</Text>
+      <View style={s.dispatchBox}>
+        <Ionicons name="medical-outline" size={32} color="#cbd5e1" />
+        <Text style={s.emptyText}>No active dispatches</Text>
+      </View>
+
+      <Text style={s.sectionTitle}>All Units</Text>
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 20 }} size="large" color="#0ea5e9" />
+      ) : (
+        <FlatList
+          data={units}
+          keyExtractor={(item) => item.id}
+          renderItem={renderUnit}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          ListEmptyComponent={
+            <View style={s.emptyBox}>
+              <Text style={s.emptyText}>No ambulance units registered</Text>
             </View>
-            <View style={styles.crewRow}>
-              {unit.crew.slice(0, 2).map((member, i) => (
-                <View key={i} style={[styles.crewBadge, { backgroundColor: "#f3f4f6" }]}>
-                  <Text style={[styles.crewText, { color: "#6b7280" }]}>{member}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          }
+        />
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  content: { padding: 12, paddingBottom: 24 },
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  statCard: {
-    flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 12,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  statValue: { fontSize: 22, fontWeight: "800", color: "#111827" },
-  statLabel: { fontSize: 11, color: "#6b7280", marginTop: 2, fontWeight: "500" },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 10 },
-  emptyCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 30, alignItems: "center",
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2, marginBottom: 16,
-  },
-  emptyText: { fontSize: 14, color: "#9ca3af", marginTop: 8 },
-  dispatchCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 10,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-    borderLeftWidth: 4, borderLeftColor: "#ef4444",
-  },
-  dispatchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  unitBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  unitBadgeText: { color: "#fff", fontSize: 12, fontWeight: "800" },
-  priorityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  priorityText: { fontSize: 10, fontWeight: "800" },
-  patientName: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  locationRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
-  locationText: { fontSize: 13, color: "#6b7280", flex: 1 },
-  dispatchFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-  crewRow: { flexDirection: "row", gap: 6 },
-  crewBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: "#2563eb15" },
-  crewText: { fontSize: 10, color: "#2563eb", fontWeight: "600" },
-  etaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  etaText: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-  unitRow: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 12,
-    padding: 12, marginBottom: 6, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  unitDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
-  unitNumber: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  unitStatus: { fontSize: 11, color: "#9ca3af", marginTop: 1 },
-});
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#0c4a6e' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#ef4444', alignItems: 'center', justifyContent: 'center' },
+  statsRow: { flexDirection: 'row', padding: 12, gap: 8 },
+  statBox: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
+  statNum: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
+  statLabel: { fontSize: 11, color: '#64748b', marginTop: 4 },
+  errorBox: { marginHorizontal: 12, marginVertical: 8, backgroundColor: '#fef2f2', borderRadius: 10, padding: 12, alignItems: 'center' },
+  errorText: { color: '#ef4444', fontSize: 13 },
+  retry: { color: '#0ea5e9', marginTop: 6, fontWeight: '600' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  dispatchBox: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 12, padding: 24, alignItems: 'center' },
+  emptyBox: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { color: '#94a3b8', marginTop: 8, fontSize: 14 },
+  unitCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 10, borderRadius: 12, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
+  unitRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  dot_available: { backgroundColor: '#10b981' },
+  dot_active: { backgroundColor: '#ef4444' },
+  dot_off_duty: { backgroundColor: '#f59e0b' },
+  dot_maintenance: { backgroundColor: '#64748b' },
+  unitTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1e293b' },
+  statusBadge: { fontSize: 10, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },
+  badge_available: { backgroundColor: '#d1fae5', color: '#065f46' },
+  badge_active: { backgroundColor: '#fee2e2', color: '#991b1b' },
+  badge_off_duty: { backgroundColor: '#fef3c7', color: '#92400e' },
+  badge_maintenance: { backgroundColor: '#f1f5f9', color: '#475569' },
+  unitDriver: { fontSize: 12, color: '#64748b', marginBottom: 10 },
+  unitActions: { flexDirection: 'row', gap: 8 },
+  actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: '#f1f5f9', alignItems: 'center' },
+  actionPrimary: { backgroundColor: '#0ea5e9' },
+  actionText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  actionTextPrimary: { color: '#fff' },
+} as any);

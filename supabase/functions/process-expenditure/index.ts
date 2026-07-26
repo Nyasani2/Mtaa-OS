@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { expenditure_id, action, authorized_by } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   const { data: exp } = await supabase.from("treasury_expenditures").select("*, treasury_budgets(available_amount, spent_amount, budget_code), treasury_accounts(current_balance)").eq("id", expenditure_id).single();
   if (!exp) return new Response(JSON.stringify({ error: "Expenditure not found" }), { status: 404 });

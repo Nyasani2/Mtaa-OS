@@ -1,238 +1,190 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator
-} from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
 
 interface ImagingRequest {
   id: string;
   patient_name: string;
-  patient_id: string;
-  modality: string;
-  body_part: string;
-  priority: "routine" | "urgent" | "stat";
-  status: "ordered" | "scheduled" | "in_progress" | "completed" | "reported";
-  ordered_by: string;
-  ordered_at: string;
-  scheduled_at?: string;
-  completed_at?: string;
+  exam_type: string;
+  status: 'ordered' | 'scheduled' | 'in_progress' | 'completed' | 'reported';
+  requested_at: string;
+  priority: string;
 }
 
-const MODALITY_ICONS: Record<string, string> = {
-  xray: "scan-circle",
-  ct: "cube-scan",
-  mri: "magnet",
-  ultrasound: "waves",
-  nuclear: "atom",
-  fluoroscopy: "video",
-};
-
-const MODALITY_LABELS: Record<string, string> = {
-  xray: "X-Ray",
-  ct: "CT Scan",
-  mri: "MRI",
-  ultrasound: "Ultrasound",
-  mammography: "Mammography",
-  nuclear: "Nuclear Med",
-  fluoroscopy: "Fluoroscopy",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  ordered: "#f59e0b",
-  scheduled: "#3b82f6",
-  in_progress: "#8b5cf6",
-  completed: "#10b981",
-  reported: "#059669",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  routine: "#6b7280",
-  urgent: "#f59e0b",
-  stat: "#ef4444",
-};
-
-export default function RadiologyDashboard() {
+export default function RadiologyScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const { radiologyRequests, fetchRadiologyRequests, isLoading } = useHealthStore();
-
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'preparing' | 'ready' | 'urgent'>('all');
+  const [requests, setRequests] = useState<ImagingRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "ordered" | "in_progress" | "completed" | "reported">("all");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const loadRequests = async () => {
+    try {
+      setErrorMsg(null);
+      const { data, error } = await supabase
+        .from('health_imaging_requests')
+        .select('id, patient_name, exam_type, status, requested_at, priority')
+        .order('requested_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setRequests(data || []);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to load imaging requests');
+      setRequests([]);
+    }
+  };
 
   useEffect(() => {
-    fetchRadiologyRequests();
+    loadRequests().finally(() => setLoading(false));
   }, []);
 
-  const onRefresh = async () => {
+  const refresh = async () => {
     setRefreshing(true);
-    await fetchRadiologyRequests();
+    await loadRequests();
     setRefreshing(false);
   };
 
-  const filtered = filter === "all"
+  // Defensive: always default to empty array
+  const radiologyRequests = requests || [];
+
+  const filtered = activeTab === 'all'
     ? radiologyRequests
-    : radiologyRequests.filter((r: ImagingRequest) => r.status === filter);
+    : activeTab === 'pending'
+    ? radiologyRequests.filter((r) => ['ordered', 'scheduled'].includes(r.status))
+    : activeTab === 'preparing'
+    ? radiologyRequests.filter((r) => r.status === 'in_progress')
+    : activeTab === 'ready'
+    ? radiologyRequests.filter((r) => ['completed', 'reported'].includes(r.status))
+    : radiologyRequests.filter((r) => r.priority === 'urgent');
 
   const stats = {
     total: radiologyRequests.length,
-    pending: radiologyRequests.filter((r: ImagingRequest) => ["ordered", "scheduled"].includes(r.status)).length,
-    inProgress: radiologyRequests.filter((r: ImagingRequest) => r.status === "in_progress").length,
-    completed: radiologyRequests.filter((r: ImagingRequest) => ["completed", "reported"].includes(r.status)).length,
+    pending: radiologyRequests.filter((r) => ['ordered', 'scheduled'].includes(r.status)).length,
+    inProgress: radiologyRequests.filter((r) => r.status === 'in_progress').length,
+    completed: radiologyRequests.filter((r) => ['completed', 'reported'].includes(r.status)).length,
   };
 
   const renderRequest = ({ item }: { item: ImagingRequest }) => (
-    <TouchableOpacity
-      style={styles.requestCard}
-      onPress={() => router.push(`/(os)/health/radiology/report?id=${item.id}`)}
-    >
-      <View style={styles.requestHeader}>
-        <View style={styles.modalityBadge}>
-          <MaterialCommunityIcons
-            name={MODALITY_ICONS[item.modality] || "scan-circle"}
-            size={18}
-            color="#fff"
-          />
-          <Text style={styles.modalityText}>{MODALITY_LABELS[item.modality] || item.modality}</Text>
-        </View>
-        <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[item.priority] + "20" }]}>
-          <Text style={[styles.priorityText, { color: PRIORITY_COLORS[item.priority] }]}>{item.priority.toUpperCase()}</Text>
-        </View>
+    <TouchableOpacity style={s.card} onPress={() => router.push(`/health/radiology/request/${item.id}`)}>
+      <View style={s.cardRow}>
+        <Ionicons name="scan-outline" size={20} color="#8b5cf6" />
+        <Text style={s.cardTitle}>{item.exam_type}</Text>
+        <Text style={[s.badge, item.status === 'ordered' ? s.badgeOrdered : item.status === 'in_progress' ? s.badgeProgress : s.badgeDone]}>
+          {item.status}
+        </Text>
       </View>
-      <Text style={styles.patientName}>{item.patient_name}</Text>
-      <Text style={styles.bodyPart}>{item.body_part}</Text>
-      <View style={styles.requestFooter}>
-        <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] + "20" }]}>
-          <Text style={[styles.statusText, { color: STATUS_COLORS[item.status] }]}>{item.status.replace("_", " ").toUpperCase()}</Text>
-        </View>
-        <Text style={styles.orderedBy}>Dr. {item.ordered_by} · {new Date(item.ordered_at).toLocaleDateString()}</Text>
-      </View>
+      <Text style={s.cardSub}>{item.patient_name || 'Unknown'} • {new Date(item.requested_at).toLocaleDateString()}</Text>
+      {item.priority === 'urgent' && <Text style={s.urgentTag}>URGENT</Text>}
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
+    <View style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Radiology</Text>
-        <TouchableOpacity onPress={() => router.push("/(os)/health/radiology/request")}>
-          <Ionicons name="add-circle" size={28} color="#2563eb" />
-        </TouchableOpacity>
+        <Text style={s.headerTitle}>Radiology</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#f59e0b" }]}>{stats.pending}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#8b5cf6" }]}>{stats.inProgress}</Text>
-            <Text style={styles.statLabel}>In Progress</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: "#10b981" }]}>{stats.completed}</Text>
-            <Text style={styles.statLabel}>Done</Text>
-          </View>
+      <View style={s.statsRow}>
+        <View style={s.statBox}>
+          <Text style={s.statNum}>{stats.total}</Text>
+          <Text style={s.statLabel}>Total</Text>
         </View>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#f59e0b' }]}>{stats.pending}</Text>
+          <Text style={s.statLabel}>Pending</Text>
+        </View>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#0ea5e9' }]}>{stats.inProgress}</Text>
+          <Text style={s.statLabel}>In Lab</Text>
+        </View>
+        <View style={s.statBox}>
+          <Text style={[s.statNum, { color: '#ef4444' }]}>{radiologyRequests.filter((r) => r.priority === 'urgent').length}</Text>
+          <Text style={s.statLabel}>Urgent</Text>
+        </View>
+      </View>
 
-        {/* Filters */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-          {(["all", "ordered", "in_progress", "completed", "reported"] as const).map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterChip, filter === f && styles.filterChipActive]}
-              onPress={() => setFilter(f)}
-            >
-              <Text style={[styles.filterChipText, filter === f && styles.filterChipTextActive]}>
-                {f === "all" ? "All" : f.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      <View style={s.tabRow}>
+        {(['all', 'pending', 'preparing', 'ready', 'urgent'] as const).map((tab) => (
+          <TouchableOpacity key={tab} style={[s.tab, activeTab === tab && s.tabActive]} onPress={() => setActiveTab(tab)}>
+            <Text style={[s.tabText, activeTab === tab && s.tabTextActive]}>
+              {tab === 'all' ? 'All' : tab === 'pending' ? 'Pending' : tab === 'preparing' ? 'Preparing' : tab === 'ready' ? 'Ready' : 'Urgent'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        {/* Requests List */}
-        {isLoading && !refreshing ? (
-          <ActivityIndicator size="large" color="#2563eb" style={{ marginTop: 40 }} />
-        ) : filtered.length === 0 ? (
-          <View style={styles.empty}>
-            <MaterialCommunityIcons name="scan-circle" size={48} color="#d1d5db" />
-            <Text style={styles.emptyTitle}>No imaging requests</Text>
-            <Text style={styles.emptySub}>All caught up in radiology</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.id}
-            renderItem={renderRequest}
-            scrollEnabled={false}
-            contentContainerStyle={styles.listContainer}
-          />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+      {errorMsg ? (
+        <View style={s.errorBox}>
+          <Text style={s.errorText}>{errorMsg}</Text>
+          <TouchableOpacity onPress={refresh}><Text style={s.retry}>Retry</Text></TouchableOpacity>
+        </View>
+      ) : null}
+
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#8b5cf6" />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={renderRequest}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+          contentContainerStyle={filtered.length === 0 ? s.emptyContainer : s.list}
+          ListEmptyComponent={
+            <View style={s.emptyState}>
+              <Ionicons name="images-outline" size={48} color="#cbd5e1" />
+              <Text style={s.emptyTitle}>No imaging requests</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f3f4f6" },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff",
-    borderBottomWidth: 1, borderBottomColor: "#e5e7eb",
-  },
-  headerTitle: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  statsRow: {
-    flexDirection: "row", paddingHorizontal: 12, paddingTop: 12, gap: 8,
-  },
-  statCard: {
-    flex: 1, backgroundColor: "#fff", borderRadius: 12, padding: 12,
-    alignItems: "center", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
-  },
-  statValue: { fontSize: 22, fontWeight: "800", color: "#111827" },
-  statLabel: { fontSize: 11, color: "#6b7280", marginTop: 2, fontWeight: "500" },
-  filterScroll: { paddingHorizontal: 12, paddingVertical: 12 },
-  filterChip: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: "#fff", marginRight: 8, borderWidth: 1, borderColor: "#e5e7eb",
-  },
-  filterChipActive: { backgroundColor: "#2563eb", borderColor: "#2563eb" },
-  filterChipText: { fontSize: 12, color: "#6b7280", fontWeight: "600" },
-  filterChipTextActive: { color: "#fff" },
-  listContainer: { padding: 12, paddingBottom: 24 },
-  requestCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 10,
-    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
-  },
-  requestHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  modalityBadge: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#2563eb", paddingHorizontal: 10, paddingVertical: 4,
-    borderRadius: 8, gap: 6,
-  },
-  modalityText: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  priorityBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  priorityText: { fontSize: 10, fontWeight: "800" },
-  patientName: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  bodyPart: { fontSize: 13, color: "#6b7280", marginTop: 2 },
-  requestFooter: { flexDirection: "row", alignItems: "center", marginTop: 10, gap: 8 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: "700" },
-  orderedBy: { fontSize: 11, color: "#9ca3af", flex: 1 },
-  empty: { alignItems: "center", marginTop: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: "600", color: "#6b7280", marginTop: 12 },
-  emptySub: { fontSize: 13, color: "#9ca3af", marginTop: 4 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12 },
+  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  statsRow: { flexDirection: 'row', padding: 12, gap: 8 },
+  statBox: { flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 12, alignItems: 'center' },
+  statNum: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  statLabel: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
+  tabRow: { flexDirection: 'row', paddingHorizontal: 12, marginBottom: 8, gap: 6 },
+  tab: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, backgroundColor: '#1e293b' },
+  tabActive: { backgroundColor: '#8b5cf6' },
+  tabText: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
+  tabTextActive: { color: '#fff' },
+  list: { paddingHorizontal: 12, paddingBottom: 24 },
+  emptyContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#64748b', marginTop: 12 },
+  card: { backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: '#fff' },
+  cardSub: { fontSize: 12, color: '#94a3b8' },
+  badge: { fontSize: 10, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },
+  badgeOrdered: { backgroundColor: '#fef3c7', color: '#92400e' },
+  badgeProgress: { backgroundColor: '#dbeafe', color: '#1e40af' },
+  badgeDone: { backgroundColor: '#d1fae5', color: '#065f46' },
+  urgentTag: { fontSize: 10, fontWeight: '800', color: '#ef4444', marginTop: 6 },
+  errorBox: { marginHorizontal: 12, marginVertical: 8, backgroundColor: '#450a0a', borderRadius: 10, padding: 12, alignItems: 'center' },
+  errorText: { color: '#fca5a5', fontSize: 13 },
+  retry: { color: '#a78bfa', marginTop: 6, fontWeight: '600' },
 });

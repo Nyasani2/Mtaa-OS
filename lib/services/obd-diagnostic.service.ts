@@ -5,7 +5,7 @@ export interface OBDDiagnostic {
   vehicle_id: string;
   scan_date: string;
   scanner_device_id?: string;
-  fault_codes: OBD FaultCode[];
+  fault_codes: OBDFaultCode[];
   readiness_status: Record<string, boolean>;
   live_data: Record<string, number>;
   freeze_frame?: Record<string, any>;

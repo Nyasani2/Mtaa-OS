@@ -82,7 +82,7 @@ export default function CrewHandover() {
       Alert.alert("Handover Complete", "Patient successfully handed over to ED.", [
         { text: "OK", onPress: () => router.back() },
       ]);
-    } catch (e) {
+    } catch (_e) {
       Alert.alert("Error", "Failed to complete handover.");
     } finally {
       setSubmitting(false);

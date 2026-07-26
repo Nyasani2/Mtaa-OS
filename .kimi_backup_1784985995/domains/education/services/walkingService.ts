@@ -1,0 +1,12 @@
+import{supabase}from'@/lib/supabase';import type{Database}from'@/types/supabase';
+type WS=Database['public']['Tables']['education_walking_squads']['Row'];type WM=Database['public']['Tables']['education_walking_members']['Row'];type WC=Database['public']['Tables']['education_walking_checkpoints']['Row'];
+export async function getSquads(instId:string){const{d,e}=await supabase.from('education_walking_squads').select('*,leader:user_profiles(full_name,phone)').eq('institution_id',instId).order('squad_name');if(e)throw e;return d||[];}
+export async function getSquad(id:string){const{d,e}=await supabase.from('education_walking_squads').select('*,members:education_walking_members(parent:user_profiles(full_name,phone),child:education_students(full_name)),checkpoints:education_walking_checkpoints(*)').eq('id',id).single();if(e)throw e;return d;}
+export async function createSquad(s:Omit<WS,'id'|'created_at'|'updated_at'>){const{d,e}=await supabase.from('education_walking_squads').insert(s).select().single();if(e)throw e;return d;}
+export async function updateSquad(id:string,u:Partial<WS>){const{d,e}=await supabase.from('education_walking_squads').update(u).eq('id',id).select().single();if(e)throw e;return d;}
+export async function addMember(m:Omit<WM,'id'|'created_at'>){const{d,e}=await supabase.from('education_walking_members').insert(m).select().single();if(e)throw e;return d;}
+export async function removeMember(id:string){const{e}=await supabase.from('education_walking_members').delete().eq('id',id);if(e)throw e;}
+export async function getSquadMembers(squadId:string){const{d,e}=await supabase.from('education_walking_members').select('*,parent:user_profiles(full_name,phone),child:education_students(full_name,grade)').eq('squad_id',squadId).order('duty_date');if(e)throw e;return d||[];}
+export async function recordCheckpoint(c:Omit<WC,'id'|'created_at'>){const{d,e}=await supabase.from('education_walking_checkpoints').insert(c).select().single();if(e)throw e;return d;}
+export async function getCheckpoints(squadId:string){const{d,e}=await supabase.from('education_walking_checkpoints').select('*,parent:user_profiles(full_name),child:education_students(full_name)').eq('squad_id',squadId).order('created_at',{ascending:false});if(e)throw e;return d||[];}
+export async function getParentSquads(parentId:string){const{d,e}=await supabase.from('education_walking_members').select('*,squad:education_walking_squads(squad_name,meeting_point,meeting_time)').eq('parent_id',parentId).order('duty_date');if(e)throw e;return d||[];}

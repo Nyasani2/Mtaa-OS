@@ -20,7 +20,6 @@ serve(async (req) => {
     const body = await req.json();
     const { qr_code_id, action, scanner_id, amount, currency = "KES", description, metadata = {} } = body;
 
-    // Fetch QR code
     const { data: qrCode, error: qrError } = await supabase
       .from("qr_codes")
       .select("*")
@@ -34,7 +33,6 @@ serve(async (req) => {
       );
     }
 
-    // Update scan with action taken
     await supabase
       .from("qr_scans")
       .update({ action_taken: action, action_result: "pending" })
@@ -51,8 +49,7 @@ serve(async (req) => {
       case "pay_prefilled":
       case "pay_fare":
       case "pay_tax":
-      case "pay_fee":
-        // Create wallet transaction
+      case "pay_fee": {
         const payAmount = amount || qrCode.prefilled_amount;
         if (!payAmount) {
           return new Response(
@@ -86,9 +83,9 @@ serve(async (req) => {
         if (txError) throw txError;
         result = { transaction: tx, next_step: "confirm_payment" };
         break;
+      }
 
       case "request":
-        // Create payment request (notification to recipient)
         result = { 
           type: "payment_request", 
           recipient_id: qrCode.owner_id,
@@ -96,8 +93,7 @@ serve(async (req) => {
         };
         break;
 
-      case "follow":
-        // Create follow relationship
+      case "follow": {
         const { error: followError } = await supabase
           .from("follows")
           .upsert({
@@ -108,9 +104,9 @@ serve(async (req) => {
         if (followError) throw followError;
         result = { type: "follow", message: "Now following" };
         break;
+      }
 
-      case "release":
-        // Release escrow
+      case "release": {
         const { data: escrow, error: escrowError } = await supabase
           .from("escrow_transactions")
           .update({ status: "released", released_at: new Date().toISOString() })
@@ -122,9 +118,9 @@ serve(async (req) => {
         if (escrowError) throw escrowError;
         result = { type: "escrow_release", escrow };
         break;
+      }
 
-      case "pickup":
-        // Confirm goods pickup
+      case "pickup": {
         const { data: item, error: itemError } = await supabase
           .from("marketplace_items")
           .update({ status: "picked_up", picked_up_at: new Date().toISOString() })
@@ -135,9 +131,9 @@ serve(async (req) => {
         if (itemError) throw itemError;
         result = { type: "pickup", item };
         break;
+      }
 
-      case "delivery":
-        // Confirm delivery
+      case "delivery": {
         const { data: delivered, error: deliveryError } = await supabase
           .from("marketplace_items")
           .update({ status: "delivered", delivered_at: new Date().toISOString() })
@@ -148,6 +144,7 @@ serve(async (req) => {
         if (deliveryError) throw deliveryError;
         result = { type: "delivery", item: delivered };
         break;
+      }
 
       case "book":
         result = { type: "booking", message: "Booking initiated", redirect_to: "booking_screen" };
@@ -157,7 +154,6 @@ serve(async (req) => {
         result = { type: "view", message: "Viewing details", entity_type: qrCode.entity_type };
     }
 
-    // Update scan result
     await supabase
       .from("qr_scans")
       .update({ action_result: "success" })

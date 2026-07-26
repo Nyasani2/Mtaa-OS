@@ -24,7 +24,7 @@ async function edgeFetch(path: string, opts?: RequestInit) {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${session?.access_token || ''}`,
-      ...(opts?.headers || {}),
+      ...opts?.headers,
     },
   });
   if (!res.ok) {

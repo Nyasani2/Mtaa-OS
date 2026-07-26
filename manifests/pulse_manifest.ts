@@ -1,5 +1,6 @@
 import { ModuleManifest } from '../runtime/module.types';
 
+const pulseManifest: ModuleManifest = {
   name: 'Pulse',
   description: 'News, trends, alerts, and community feed',
   version: '1.0.0',
@@ -14,3 +15,5 @@ import { ModuleManifest } from '../runtime/module.types';
   installable: false,
   minOSVersion: '1.0.0',
 };
+
+export default pulseManifest;

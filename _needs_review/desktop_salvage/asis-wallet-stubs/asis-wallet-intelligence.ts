@@ -99,7 +99,7 @@ export class ASISWalletIntelligence {
     return {
       id: 'unknown', baseValue: 0.1, growthFactor: 0.1, replicationRate: 0.05,
       interactionStrength: 0.05, observationState: 0.1,
-      contextVector: new Array(10).fill(0.1), entropy: 0.8,
+      contextVector: Array.from({length: 10}, () => 0.1), entropy: 0.8,
     };
   }
 
@@ -134,7 +134,7 @@ export class ASISWalletIntelligence {
     const hours = transactions.map(t => new Date(t.created_at).getHours());
     const preferredTimes = [...new Set(hours)];
 
-    const hourCounts = new Array(24).fill(0);
+    const hourCounts = Array.from({length: 24}, () => 0);
     hours.forEach(h => hourCounts[h]++);
     const temporalRhythm = hourCounts.map(c => c / (hours.length || 1));
 
@@ -166,11 +166,11 @@ export class ASISWalletIntelligence {
   }
 
   private binAmounts(amounts: number[], bins: number): number[] {
-    if (amounts.length === 0) return new Array(bins).fill(0);
+    if (amounts.length === 0) return Array.from({length: bins}, () => 0);
     const max = Math.max(...amounts);
     const min = Math.min(...amounts);
     const range = max - min || 1;
-    const result = new Array(bins).fill(0);
+    const result = Array.from({length: bins}, () => 0);
     amounts.forEach(a => {
       const bin = Math.min(bins - 1, Math.floor(((a - min) / range) * bins));
       result[bin]++;
@@ -214,7 +214,7 @@ export class ASISWalletIntelligence {
     return {
       avgTransactionSize: 0, transactionFrequency: 'low', preferredTimes: [],
       preferredRecipients: [], geographicPattern: 'stable', deviceConsistency: 1,
-      temporalRhythm: new Array(24).fill(0), entropyLevel: 1,
+      temporalRhythm: Array.from({length: 24}, () => 0), entropyLevel: 1,
     };
   }
 
@@ -379,7 +379,7 @@ export class ASISWalletIntelligence {
     const kamosEntity: KamosEntity = {
       id: `pending_${claimToken}`, baseValue: 0.1, growthFactor: 0.8,
       replicationRate: 0.1, interactionStrength: 0.05, observationState: 0.05,
-      contextVector: new Array(10).fill(0.1), entropy: 0.9,
+      contextVector: Array.from({length: 10}, () => 0.1), entropy: 0.9,
     };
 
     const onboardingWorkflow: KamosOnboardingWorkflow = {
@@ -472,7 +472,7 @@ export class ASISWalletIntelligence {
     const newUserEntity: KamosEntity = {
       id: newProfileId, baseValue: 0.3, growthFactor: metadata.kamos_growth_potential || 0.8,
       replicationRate: 0.1, interactionStrength: 0.1, observationState: 0.3,
-      contextVector: new Array(10).fill(0.3), entropy: 0.6,
+      contextVector: Array.from({length: 10}, () => 0.3), entropy: 0.6,
     };
     this.setEntityCache(newProfileId, newUserEntity, 300);
     return true;
@@ -785,7 +785,7 @@ export class ASISWalletIntelligence {
     for (const step of steps) {
       orchestration.sequence.push({
         name: step.name, status: 'pending', subsystem: step.subsystem, data: {},
-        kamosEntity: { id: `step_${step.name}`, baseValue: 0.5, growthFactor: 0.1, replicationRate: 0, interactionStrength: 0.1, observationState: 0.5, contextVector: new Array(10).fill(0.5), entropy: 0.3 },
+        kamosEntity: { id: `step_${step.name}`, baseValue: 0.5, growthFactor: 0.1, replicationRate: 0, interactionStrength: 0.1, observationState: 0.5, contextVector: Array.from({length: 10}, () => 0.5), entropy: 0.3 },
       });
     }
 
@@ -926,7 +926,7 @@ export class ASISWalletIntelligence {
       supportedJurisdictions: ['US', 'EU', 'UK', 'KE', 'NG', 'ZA', 'GH'],
       maxAmount: 100000, minAmount: 0.01, fees: { percentage: 0, fixed: 0 },
       settlementTime: 0, kycRequired: false, complianceLevel: 'standard',
-      kamosEntity: { id: 'mtaa_core', baseValue: 1, growthFactor: 0.9, replicationRate: 0.8, interactionStrength: 0.9, observationState: 0.95, contextVector: new Array(10).fill(0.9), entropy: 0.05 },
+      kamosEntity: { id: 'mtaa_core', baseValue: 1, growthFactor: 0.9, replicationRate: 0.8, interactionStrength: 0.9, observationState: 0.95, contextVector: Array.from({length: 10}, () => 0.9), entropy: 0.05 },
     });
 
     this.plugins.set('binance', {
@@ -934,7 +934,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['BTC', 'ETH', 'USDT', 'USDC', 'BNB'], supportedJurisdictions: ['GLOBAL'],
       maxAmount: 1000000, minAmount: 10, fees: { percentage: 0.001, fixed: 0 },
       settlementTime: 600, kycRequired: true, complianceLevel: 'enhanced',
-      kamosEntity: { id: 'binance', baseValue: 0.8, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.8, contextVector: new Array(10).fill(0.7), entropy: 0.2 },
+      kamosEntity: { id: 'binance', baseValue: 0.8, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.8, contextVector: Array.from({length: 10}, () => 0.7), entropy: 0.2 },
     });
 
     this.plugins.set('stripe', {
@@ -942,7 +942,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'EUR', 'GBP'], supportedJurisdictions: ['US', 'EU', 'UK', 'CA', 'AU'],
       maxAmount: 50000, minAmount: 0.5, fees: { percentage: 0.029, fixed: 0.3 },
       settlementTime: 86400, kycRequired: true, complianceLevel: 'pci_dss',
-      kamosEntity: { id: 'stripe', baseValue: 0.7, growthFactor: 0.6, replicationRate: 0.5, interactionStrength: 0.6, observationState: 0.85, contextVector: new Array(10).fill(0.6), entropy: 0.15 },
+      kamosEntity: { id: 'stripe', baseValue: 0.7, growthFactor: 0.6, replicationRate: 0.5, interactionStrength: 0.6, observationState: 0.85, contextVector: Array.from({length: 10}, () => 0.6), entropy: 0.15 },
     });
 
     this.plugins.set('visa_direct', {
@@ -950,7 +950,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'EUR', 'GBP'], supportedJurisdictions: ['GLOBAL'],
       maxAmount: 25000, minAmount: 1, fees: { percentage: 0.015, fixed: 0 },
       settlementTime: 30, kycRequired: true, complianceLevel: 'enhanced',
-      kamosEntity: { id: 'visa_direct', baseValue: 0.75, growthFactor: 0.65, replicationRate: 0.55, interactionStrength: 0.65, observationState: 0.82, contextVector: new Array(10).fill(0.65), entropy: 0.18 },
+      kamosEntity: { id: 'visa_direct', baseValue: 0.75, growthFactor: 0.65, replicationRate: 0.55, interactionStrength: 0.65, observationState: 0.82, contextVector: Array.from({length: 10}, () => 0.65), entropy: 0.18 },
     });
 
     this.plugins.set('mastercard_send', {
@@ -958,7 +958,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'EUR', 'GBP'], supportedJurisdictions: ['GLOBAL'],
       maxAmount: 25000, minAmount: 1, fees: { percentage: 0.015, fixed: 0 },
       settlementTime: 30, kycRequired: true, complianceLevel: 'enhanced',
-      kamosEntity: { id: 'mastercard_send', baseValue: 0.75, growthFactor: 0.65, replicationRate: 0.55, interactionStrength: 0.65, observationState: 0.82, contextVector: new Array(10).fill(0.65), entropy: 0.18 },
+      kamosEntity: { id: 'mastercard_send', baseValue: 0.75, growthFactor: 0.65, replicationRate: 0.55, interactionStrength: 0.65, observationState: 0.82, contextVector: Array.from({length: 10}, () => 0.65), entropy: 0.18 },
     });
 
     this.plugins.set('stablecoin_usdc', {
@@ -966,7 +966,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USDC'], supportedJurisdictions: ['GLOBAL'],
       maxAmount: 1000000, minAmount: 1, fees: { percentage: 0.0001, fixed: 0 },
       settlementTime: 60, kycRequired: false, complianceLevel: 'standard',
-      kamosEntity: { id: 'stablecoin_usdc', baseValue: 0.85, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.9, contextVector: new Array(10).fill(0.7), entropy: 0.1 },
+      kamosEntity: { id: 'stablecoin_usdc', baseValue: 0.85, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.9, contextVector: Array.from({length: 10}, () => 0.7), entropy: 0.1 },
     });
 
     this.plugins.set('cross_border_ach', {
@@ -974,7 +974,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'EUR', 'GBP'], supportedJurisdictions: ['US', 'EU', 'UK', 'CA'],
       maxAmount: 10000, minAmount: 100, fees: { percentage: 0.005, fixed: 5 },
       settlementTime: 172800, kycRequired: true, complianceLevel: 'enhanced',
-      kamosEntity: { id: 'cross_border_ach', baseValue: 0.6, growthFactor: 0.5, replicationRate: 0.4, interactionStrength: 0.5, observationState: 0.75, contextVector: new Array(10).fill(0.5), entropy: 0.25 },
+      kamosEntity: { id: 'cross_border_ach', baseValue: 0.6, growthFactor: 0.5, replicationRate: 0.4, interactionStrength: 0.5, observationState: 0.75, contextVector: Array.from({length: 10}, () => 0.5), entropy: 0.25 },
     });
 
     this.plugins.set('offline_mtaa', {
@@ -982,7 +982,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'KES', 'NGN', 'ZAR', 'GHS'], supportedJurisdictions: ['KE', 'NG', 'ZA', 'GH'],
       maxAmount: 500, minAmount: 1, fees: { percentage: 0, fixed: 0 },
       settlementTime: 0, kycRequired: false, complianceLevel: 'basic',
-      kamosEntity: { id: 'offline_mtaa', baseValue: 0.5, growthFactor: 0.4, replicationRate: 0.3, interactionStrength: 0.4, observationState: 0.5, contextVector: new Array(10).fill(0.4), entropy: 0.4 },
+      kamosEntity: { id: 'offline_mtaa', baseValue: 0.5, growthFactor: 0.4, replicationRate: 0.3, interactionStrength: 0.4, observationState: 0.5, contextVector: Array.from({length: 10}, () => 0.4), entropy: 0.4 },
     });
 
     this.plugins.set('government_disbursement', {
@@ -990,7 +990,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'KES', 'NGN', 'ZAR', 'GHS'], supportedJurisdictions: ['KE', 'NG', 'ZA', 'GH'],
       maxAmount: 1000000, minAmount: 0, fees: { percentage: 0, fixed: 0 },
       settlementTime: 0, kycRequired: true, complianceLevel: 'government',
-      kamosEntity: { id: 'government_disbursement', baseValue: 0.9, growthFactor: 0.8, replicationRate: 0.7, interactionStrength: 0.8, observationState: 0.95, contextVector: new Array(10).fill(0.8), entropy: 0.05 },
+      kamosEntity: { id: 'government_disbursement', baseValue: 0.9, growthFactor: 0.8, replicationRate: 0.7, interactionStrength: 0.8, observationState: 0.95, contextVector: Array.from({length: 10}, () => 0.8), entropy: 0.05 },
     });
 
     this.plugins.set('aid_distribution', {
@@ -998,7 +998,7 @@ export class ASISWalletIntelligence {
       supportedCurrencies: ['USD', 'KES', 'NGN', 'ZAR', 'GHS'], supportedJurisdictions: ['KE', 'NG', 'ZA', 'GH'],
       maxAmount: 50000, minAmount: 0, fees: { percentage: 0, fixed: 0 },
       settlementTime: 0, kycRequired: false, complianceLevel: 'humanitarian',
-      kamosEntity: { id: 'aid_distribution', baseValue: 0.8, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.85, contextVector: new Array(10).fill(0.7), entropy: 0.15 },
+      kamosEntity: { id: 'aid_distribution', baseValue: 0.8, growthFactor: 0.7, replicationRate: 0.6, interactionStrength: 0.7, observationState: 0.85, contextVector: Array.from({length: 10}, () => 0.7), entropy: 0.15 },
     });
   }
 

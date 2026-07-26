@@ -8,7 +8,7 @@ const corsHeaders = {
 (globalThis as any).Deno?.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL')!, (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL') || '', (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || '');
     const { fileId, bucket, path } = await req.json();
     if (!fileId || !bucket || !path) return new Response(JSON.stringify({ error: 'Missing parameters' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     const { data: fileData, error: downloadError } = await supabase.storage.from(bucket).download(path);

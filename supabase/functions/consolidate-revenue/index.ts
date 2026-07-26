@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { country_code, fiscal_year, revenue_period } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   // Pull from revenue_payments
   const { data: taxRevenue } = await supabase.from("revenue_payments").select("tax_type, amount").eq("country_code", country_code).eq("payment_status", "completed");

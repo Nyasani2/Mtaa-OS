@@ -25,6 +25,7 @@ export default function BatterySettingsScreen() {
   useEffect(() => {
     async function loadBattery() {
       try {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
         const Battery = require('expo-battery');
         const level = await Battery.getBatteryLevelAsync?.().catch(() => 0.72);
         const state = await Battery.getBatteryStateAsync?.().catch(() => 1);

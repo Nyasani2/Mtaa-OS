@@ -247,18 +247,18 @@ function parseWhereClause(clause: string): string | null {
   // e.g., "name is John" -> "name = 'John'"
 
   const operators: [RegExp, string][] = [
-    [/is\s+(.+)/i, '='],
-    [/equals?\s+(.+)/i, '='],
-    [/greater than\s+(.+)/i, '>'],
-    [/more than\s+(.+)/i, '>'],
-    [/less than\s+(.+)/i, '<'],
-    [/fewer than\s+(.+)/i, '<'],
-    [/greater than or equal to\s+(.+)/i, '>='],
-    [/less than or equal to\s+(.+)/i, '<='],
-    [/contains\s+(.+)/i, 'ILIKE'],
-    [/like\s+(.+)/i, 'ILIKE'],
-    [/starts? with\s+(.+)/i, 'ILIKE'],
-    [/ends? with\s+(.+)/i, 'ILIKE'],
+    [/(?:^|\s)is\s+(.+)/i, '='],
+    [/(?:^|\s)equals?\s+(.+)/i, '='],
+    [/(?:^|\s)greater than\s+(.+)/i, '>'],
+    [/(?:^|\s)more than\s+(.+)/i, '>'],
+    [/(?:^|\s)less than\s+(.+)/i, '<'],
+    [/(?:^|\s)fewer than\s+(.+)/i, '<'],
+    [/(?:^|\s)greater than or equal to\s+(.+)/i, '>='],
+    [/(?:^|\s)less than or equal to\s+(.+)/i, '<='],
+    [/(?:^|\s)contains\s+(.+)/i, 'ILIKE'],
+    [/(?:^|\s)like\s+(.+)/i, 'ILIKE'],
+    [/(?:^|\s)starts? with\s+(.+)/i, 'ILIKE'],
+    [/(?:^|\s)ends? with\s+(.+)/i, 'ILIKE'],
   ];
 
   for (const [regex, op] of operators) {

@@ -4,9 +4,7 @@ export function startFleetRealtimeWorker(
   intervalMs = 10000
 ) {
 
-    // Fleet realtime event logged via kernel observability
-    "🚛 MTRUCK realtime intelligence started"
-  );
+    console.log("🚛 MTRUCK realtime intelligence started");
 
   setInterval(async () => {
 
@@ -15,10 +13,7 @@ export function startFleetRealtimeWorker(
       const snapshot =
         await saveFleetSnapshot();
 
-    // Fleet realtime event logged via kernel observability
-        "📡 Fleet Snapshot:",
-        snapshot
-      );
+    console.log("📡 Fleet Snapshot:", snapshot);
 
     } catch (error) {
 
@@ -31,4 +26,3 @@ export function startFleetRealtimeWorker(
 
   }, intervalMs);
 }
-

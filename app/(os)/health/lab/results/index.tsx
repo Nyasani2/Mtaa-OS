@@ -41,7 +41,7 @@ export default function LabResultsScreen() {
       setTest({ id: data.id, test_name: data.test_name, patient_name: data.patients?.full_name || 'Unknown',
         sample_id: data.sample_id, status: data.status, results: resultList });
       setResults(resultList);
-    } catch (err) { Alert.alert('Error', 'Failed to load test'); }
+    } catch (_err) { Alert.alert('Error', 'Failed to load test'); }
   };
 
   const getTestTemplate = (testName: string): ResultField[] => {
@@ -111,7 +111,7 @@ export default function LabResultsScreen() {
       }
       Alert.alert('Saved', 'Results saved and test marked complete');
       router.back();
-    } catch (err) { Alert.alert('Error', 'Failed to save results'); }
+    } catch (_err) { Alert.alert('Error', 'Failed to save results'); }
   };
 
   const getFlagColor = (flag: string | null) => {

@@ -126,6 +126,7 @@ export async function getAvailableBodas(lat: number, lng: number, radiusKm: numb
 }
 
 export function getBodaTypes(countryCode: string = 'kenya') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { getServiceTypes, getCountryInfo } = require('./fare-engine');
   const types = getServiceTypes(countryCode);
   const country = getCountryInfo(countryCode);

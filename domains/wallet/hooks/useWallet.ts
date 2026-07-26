@@ -1,7 +1,8 @@
 // domains/wallet/hooks/useWallet.ts
-// v3: Matches wallet index screen API — returns balance, setBalance, transactions, etc.
+// v3.1: Returns balance, setBalance, transactions, loading, error, deposit, withdraw, transfer
+//       PLUS accounts, activeAccountId, addTransaction, syncBalance for claim/qr-pay/deposit/rewards/crypto screens
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
@@ -135,8 +136,10 @@ export function useWalletHistory({ limit = 20 }: { limit?: number } = {}) {
 }
 
 // ─── useWalletStore ─────────────────────────────────────────
-// v3: Returns exactly what wallet/index.tsx expects:
-//   balance, setBalance, transactions, loading, error, deposit, withdraw, transfer
+// Returns everything wallet screens need:
+//   balance, setBalance, transactions, loading, error,
+//   deposit, withdraw, transfer,
+//   accounts, activeAccountId, addTransaction, syncBalance
 
 export function useWalletStore() {
   const user = useAuthStore((s) => s.user);
@@ -211,6 +214,26 @@ export function useWalletStore() {
     return { success: true };
   }, [user?.id, fetchWallet, fetchTransactions]);
 
+  // ── Fields required by claim/qr-pay/deposit/rewards/crypto screens ──
+
+  const accounts = useMemo(() => [{
+    id: user?.id || 'default',
+    name: 'Main Account',
+    balance,
+    currency: 'KES',
+    type: 'primary' as const,
+  }], [user?.id, balance]);
+
+  const activeAccountId = user?.id || 'default';
+
+  const addTransaction = useCallback((tx: any) => {
+    setTransactions((prev) => [tx, ...prev]);
+  }, []);
+
+  const syncBalance = fetchWallet;
+
+  // ── Lifecycle ──
+
   useEffect(() => {
     fetchWallet();
     fetchTransactions();
@@ -227,5 +250,9 @@ export function useWalletStore() {
     deposit,
     withdraw,
     transfer,
+    accounts,
+    activeAccountId,
+    addTransaction,
+    syncBalance,
   };
 }

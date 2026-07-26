@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 import { TribeMember } from '../types';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const DEFAULT_AVATAR_SMALL = require('@/assets/images/default-avatar-small.png');
+
 interface Props {
   members: TribeMember[];
 }
@@ -12,7 +15,7 @@ export const TribeMemberList: React.FC<Props> = ({ members }) => (
     keyExtractor={item => item.id}
     renderItem={({ item }) => (
       <View style={styles.row}>
-        <Image source={{ uri: item.profile?.avatar_url || require('@/assets/images/default-avatar-small.png') }} style={styles.avatar} />
+        <Image source={{ uri: item.profile?.avatar_url || DEFAULT_AVATAR_SMALL }} style={styles.avatar} />
         <View>
           <Text style={styles.name}>{item.profile?.full_name || 'Member'}</Text>
           <Text style={styles.role}>{item.role} • {item.membership_status}</Text>
@@ -28,4 +31,3 @@ const styles = StyleSheet.create({
   name: { color: '#fff', fontWeight: 'bold' },
   role: { color: '#a0a0a0', fontSize: 12, marginTop: 2 }
 });
-

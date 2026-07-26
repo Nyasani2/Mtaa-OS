@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput, FlatList,
-  ActivityIndicator, Alert, Dimensions
+  ActivityIndicator, Alert, Dimensions, Image
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

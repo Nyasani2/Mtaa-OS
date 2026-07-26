@@ -1,5 +1,14 @@
+import { supabase } from '@/lib/supabase';
+import { handleError } from '@/lib/utils';
+import type {
+  SHAClaim, SHAContributor, AmbulanceVehicle, AmbulanceRequest,
+  AmbulanceDispatch, AmbulanceLog, PatientQueue, Queue, CheckIn,
+  Facility, FacilityAdmin, Alert, AuditLog, Practitioner, WalletTransaction
+} from '@/types/health';
 
-  if (error) return handleError(error, []);
+export async function getSHAClaims(): Promise<SHAClaim[]> {
+  const { data, error } = await supabase.from('health_sha_claims').select('*');
+if (error) return handleError(error, []);
   return data || [];
 }
 

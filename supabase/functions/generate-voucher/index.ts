@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { country_code, fiscal_year } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   const prefix = country_code;
   const year = fiscal_year.toString().slice(-2);

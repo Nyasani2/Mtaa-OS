@@ -40,6 +40,7 @@ export default function SettingsScreen() {
   useEffect(() => {
     async function checkNetwork() {
       try {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
         const Network = require('expo-network');
         const state = await Network.getNetworkStateAsync();
         setNetworkType(

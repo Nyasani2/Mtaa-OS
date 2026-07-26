@@ -453,7 +453,7 @@ export default function DiagnosticsHubScreen() {
                     >
                       <Text style={styles.programIcon}>🔧</Text>
                       <View style={styles.programInfo}>
-                        <Text style={styles.programName}>{op.replace(/_/g, ' ').replace(/\w/g, l => l.toUpperCase())}</Text>
+                        <Text style={styles.programName}>{op.replace(/_/g, ' ').replace(/(^|\s)\w/g, l => l.toUpperCase())}</Text>
                         <Text style={styles.programDesc}>Requires {capabilities.protocols[0]} protocol</Text>
                       </View>
                       <Text style={styles.programArrow}>→</Text>
@@ -503,7 +503,7 @@ function ActionBtn({ icon, label, onPress, loading }: { icon: string; label: str
 function formatParamName(key: string): string {
   return key
     .replace(/_/g, ' ')
-    .replace(/\w/g, l => l.toUpperCase())
+    .replace(/(^|\s)\w/g, l => l.toUpperCase())
     .replace(/Rpm/g, 'RPM')
     .replace(/Temp/g, 'Temperature')
     .replace(/Pos/g, 'Position')

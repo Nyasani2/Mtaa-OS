@@ -561,6 +561,7 @@ export default function PhoneScreen() {
   // ─── Import from Phone ───────────────────────────────────────────
   const handleImport = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const Contacts = require('expo-contacts');
       const { status } = await Contacts.requestPermissionsAsync();
       if (status !== 'granted') {

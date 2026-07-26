@@ -38,7 +38,7 @@ export default function OrdersScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
   const [showNewOrder, setShowNewOrder] = useState(false);
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);

@@ -198,7 +198,7 @@ export default function RestaurantReports() {
 function SalesMetric({ label, value, color = '#1F2937' }: any) {
   return (
     <View style={styles.salesMetric}>
-      <Text style={styles.salesMetricValue} style={{ color }}>{value}</Text>
+      <Text style={[styles.salesMetricValue, { color }]}>{value}</Text>
       <Text style={styles.salesMetricLabel}>{label}</Text>
     </View>
   );

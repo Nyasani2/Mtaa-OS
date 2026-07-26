@@ -1,0 +1,73 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/*.{ts,tsx}",
+    "app/**/index.{ts,tsx}",
+    "lib/**/*.ts",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "supabase/functions/*/index.ts",
+    "*.config.{ts,js,mjs}",
+    "metro.config.js",
+    "babel.config.js"
+  ],
+  "project": [
+    "app/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "domains/**/*.{ts,tsx}",
+    "hooks/**/*.{ts,tsx}",
+    "services/**/*.{ts,tsx}",
+    "types/**/*.{ts,tsx}",
+    "utils/**/*.{ts,tsx}",
+    "supabase/functions/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "**/*.d.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__mocks__/**",
+    "**/__tests__/**",
+    "**/__generated__/**",
+    "scripts/**",
+    "supabase/functions/_shared/**",
+    "supabase/migrations/**",
+    "supabase/seed.sql",
+    "ios/**",
+    "android/**",
+    ".expo/**",
+    ".next/**",
+    "dist/**",
+    "build/**",
+    "coverage/**"
+  ],
+  "ignoreDependencies": [
+    "@types/*",
+    "typescript",
+    "eslint",
+    "prettier",
+    "jest",
+    "@testing-library/*",
+    "husky",
+    "lint-staged",
+    "oxlint",
+    "knip"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "types": "warn",
+    "enumMembers": "off",
+    "classMembers": "off",
+    "dependencies": "warn",
+    "devDependencies": "warn",
+    "optionalDependencies": "off",
+    "peerDependencies": "off",
+    "unlisted": "warn",
+    "unresolved": "warn",
+    "exports": "warn",
+    "nsExports": "warn",
+    "duplicates": "warn"
+  }
+}

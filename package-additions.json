@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "lint:ox": "oxlint --max-warnings 0 --tsconfig tsconfig.json --config .oxlintrc.json .",
+    "typecheck": "tsc --noEmit",
+    "knip": "knip",
+    "lint:ci": "npm run lint:ox && npm run typecheck && npm run knip"
+  },
+  "devDependencies": {
+    "knip": "^5.0.0",
+    "oxlint": "^0.6.0"
+  }
+}

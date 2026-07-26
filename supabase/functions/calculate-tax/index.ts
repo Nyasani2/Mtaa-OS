@@ -1,9 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 serve(async (req) => {
   const { country_code, tax_type, gross_amount, deductions = 0, exemptions = 0 } = await req.json();
-  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL")!, (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const supabase = createClient((globalThis as any).Deno?.env?.get("SUPABASE_URL") || '', (globalThis as any).Deno?.env?.get("SUPABASE_SERVICE_ROLE_KEY") || '');
 
   const { data: config } = await supabase.from("revenue_country_config").select("*").eq("country_code", country_code).single();
   if (!config) return new Response(JSON.stringify({ error: "Country not configured" }), { status: 400 });

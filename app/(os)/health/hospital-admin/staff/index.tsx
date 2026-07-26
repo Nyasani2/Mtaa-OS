@@ -1,209 +1,355 @@
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, ActivityIndicator,
-  RefreshControl, Alert, TextInput
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
+  ActivityIndicator, Alert 
 } from 'react-native';
-import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
-import { useHospitalAdmin } from '@/lib/health/hooks/useHospitalAdmin';
+import { useRouter } from 'expo-router';
+import { useStaffManagement } from '@/hooks/useStaffManagement';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { 
+  ChevronLeft, Users, Search, Filter, ShieldCheck, ShieldAlert, 
+  UserX, CheckCircle2, XCircle, MoreVertical, Stethoscope, 
+  Ambulance, Pill, CreditCard, Building2, Leaf, ClipboardList 
+} from 'lucide-react-native';
 
-export default function HospitalStaffScreen() {
-  const { selectedFacilityId, facilities, isLoading: roleLoading, selectFacility } = useHealthRole();
-  const {
-    staff, staffOnDuty, loading, error, refresh, inviteStaff
-  } = useHospitalAdmin(selectedFacilityId);
+const ROLE_ICONS: Record<string, any> = {
+  doctor: Stethoscope,
+  nurse: Stethoscope,
+  pharmacist: Pill,
+  ambulance_driver: Ambulance,
+  cashier: CreditCard,
+  admin: Building2,
+  herbalist: Leaf,
+  lab_tech: ClipboardList,
+};
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteName, setInviteName] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('nurse');
-  const [inviteDepartment, setInviteDepartment] = useState('');
-  const [inviting, setInviting] = useState(false);
+const ROLE_COLORS: Record<string, string> = {
+  doctor: '#059669',
+  nurse: '#0891B2',
+  pharmacist: '#7C3AED',
+  ambulance_driver: '#DC2626',
+  cashier: '#D97706',
+  admin: '#4F46E5',
+  herbalist: '#15803D',
+  lab_tech: '#BE185D',
+};
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
+const STATUS_STYLES: Record<string, { bg: string; color: string; label: string }> = {
+  active: { bg: '#D1FAE5', color: '#059669', label: 'Active' },
+  pending: { bg: '#FEF3C7', color: '#D97706', label: 'Pending' },
+  suspended: { bg: '#FEE2E2', color: '#DC2626', label: 'Suspended' },
+  inactive: { bg: '#F3F4F6', color: '#6B7280', label: 'Inactive' },
+};
+
+export default function StaffManagementScreen() {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<string | null>(null);
+
+  // In real app, get facility_id from admin profile
+  const { 
+    staff, loading, error, filters, updateFilters, 
+    updateStaffStatus, verifyStaff, deleteStaff, refresh, 
+    roles, departments, stats 
+  } = useStaffManagement();
+
+  const handleVerify = (id: string, name?: string) => {
+    Alert.alert(
+      'Verify Staff',
+      `Approve and verify ${name || 'this staff member'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Verify', 
+          style: 'default',
+          onPress: async () => {
+            await verifyStaff(id);
+          }
+        },
+      ]
+    );
   };
 
-  const handleInvite = async () => {
-    if (!inviteName.trim() || !inviteEmail.trim() || !selectedFacilityId) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields and select a facility.');
-      return;
-    }
-    setInviting(true);
-    try {
-      await inviteStaff({
-        name: inviteName.trim(),
-        email: inviteEmail.trim(),
-        role: inviteRole,
-        department: inviteDepartment.trim(),
-        facility_id: selectedFacilityId,
-        status: 'active',
-      });
-      setShowInvite(false);
-      setInviteName('');
-      setInviteEmail('');
-      setInviteDepartment('');
-      Alert.alert('Success', 'Staff member invited successfully.');
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to invite staff');
-    } finally {
-      setInviting(false);
-    }
+  const handleSuspend = (id: string, name?: string) => {
+    Alert.alert(
+      'Suspend Staff',
+      `Suspend ${name || 'this staff member'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Suspend', 
+          style: 'destructive',
+          onPress: async () => {
+            await updateStaffStatus(id, 'suspended');
+          }
+        },
+      ]
+    );
   };
 
-  if (roleLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
+  const handleDelete = (id: string, name?: string) => {
+    Alert.alert(
+      'Remove Staff',
+      `Permanently remove ${name || 'this staff member'}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: async () => {
+            await deleteStaff(id);
+          }
+        },
+      ]
     );
-  }
-
-  // CRITICAL FIX: Show facility selector if none selected
-  if (!selectedFacilityId) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#0f172a', padding: 16 }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#fff', marginBottom: 16 }}>Hospital Staff</Text>
-        <Text style={{ color: '#94a3b8', marginBottom: 16 }}>Select a facility to manage staff:</Text>
-        {facilities.length === 0 ? (
-          <Text style={{ color: '#64748b' }}>No facilities found. Please contact your administrator.</Text>
-        ) : (
-          facilities.map((f: any) => (
-            <TouchableOpacity
-              key={f.id}
-              onPress={() => selectFacility(f.id)}
-              style={{
-                backgroundColor: '#1e293b', padding: 16, borderRadius: 12,
-                marginBottom: 12, borderWidth: 1, borderColor: '#334155'
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>{f.name}</Text>
-              <Text style={{ color: '#94a3b8', marginTop: 4 }}>{f.type || 'Hospital'}</Text>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-    );
-  }
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0f172a' }}>
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#fff' }}>Hospital Staff</Text>
-        <TouchableOpacity
-          onPress={() => setShowInvite(!showInvite)}
-          style={{ backgroundColor: '#3b82f6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>+ Invite</Text>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ChevronLeft size={22} color="#1F2937" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Staff Management</Text>
+        <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={styles.filterBtn}>
+          <Filter size={18} color={showFilters ? '#2563EB' : '#6B7280'} />
         </TouchableOpacity>
       </View>
 
-      {showInvite && (
-        <View style={{ padding: 16, backgroundColor: '#1e293b', marginHorizontal: 16, borderRadius: 12, marginBottom: 12 }}>
-          <Text style={{ color: '#fff', fontWeight: '600', marginBottom: 8 }}>Invite Staff Member</Text>
-          <TextInput
-            value={inviteName}
-            onChangeText={setInviteName}
-            placeholder="Full name"
-            placeholderTextColor="#64748b"
-            style={{ backgroundColor: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 8 }}
-          />
-          <TextInput
-            value={inviteEmail}
-            onChangeText={setInviteEmail}
-            placeholder="Email"
-            placeholderTextColor="#64748b"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={{ backgroundColor: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 8 }}
-          />
-          <TextInput
-            value={inviteDepartment}
-            onChangeText={setInviteDepartment}
-            placeholder="Department"
-            placeholderTextColor="#64748b"
-            style={{ backgroundColor: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, marginBottom: 8 }}
-          />
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-            {['nurse', 'doctor', 'admin', 'receptionist'].map((r) => (
-              <TouchableOpacity
-                key={r}
-                onPress={() => setInviteRole(r)}
-                style={{
-                  flex: 1, paddingVertical: 8, borderRadius: 6, alignItems: 'center',
-                  backgroundColor: inviteRole === r ? '#3b82f6' : '#0f172a'
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 12, textTransform: 'capitalize' }}>{r}</Text>
-              </TouchableOpacity>
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <StatBox label="Total" value={stats.total} color="#2563EB" />
+        <StatBox label="Active" value={stats.active} color="#059669" />
+        <StatBox label="Pending" value={stats.pending} color="#D97706" />
+        <StatBox label="Verified" value={stats.verified} color="#7C3AED" />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBox}>
+        <Search size={16} color="#9CA3AF" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search staff..."
+          value={filters.search || ''}
+          onChangeText={v => updateFilters({ search: v })}
+          placeholderTextColor="#9CA3AF"
+        />
+      </View>
+
+      {/* Filters */}
+      {showFilters && (
+        <View style={styles.filterPanel}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
+            <FilterChip label="All Roles" active={!filters.role} onPress={() => updateFilters({ role: undefined })} />
+            {roles.map(r => (
+              <FilterChip key={r} label={r} active={filters.role === r} onPress={() => updateFilters({ role: r })} />
             ))}
-          </View>
-          <TouchableOpacity
-            onPress={handleInvite}
-            disabled={inviting}
-            style={{ backgroundColor: inviting ? '#1e40af' : '#22c55e', padding: 12, borderRadius: 8, alignItems: 'center' }}
-          >
-            {inviting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Send Invite</Text>}
+          </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
+            <FilterChip label="All Status" active={!filters.status} onPress={() => updateFilters({ status: undefined })} />
+            {['active', 'pending', 'suspended', 'inactive'].map(s => (
+              <FilterChip key={s} label={s} active={filters.status === s} onPress={() => updateFilters({ status: s })} />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Staff List */}
+      {loading ? (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color="#2563EB" />
+          <Text style={styles.loadingText}>Loading staff...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorBox}>
+          <XCircle size={24} color="#DC2626" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={refresh} style={styles.retryBtn}>
+            <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      )}
+      ) : (
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          {staff.map(member => {
+            const RoleIcon = ROLE_ICONS[member.role] || Users;
+            const roleColor = ROLE_COLORS[member.role] || '#6B7280';
+            const statusStyle = STATUS_STYLES[member.status] || STATUS_STYLES.inactive;
+            const isSelected = selectedStaff === member.id;
 
-      {error && (
-        <View style={{ marginHorizontal: 16, marginBottom: 12, backgroundColor: '#ef444422', padding: 12, borderRadius: 8 }}>
-          <Text style={{ color: '#ef4444' }}>{error}</Text>
-        </View>
-      )}
-
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}
-        style={{ flex: 1, paddingHorizontal: 16 }}
-      >
-        {loading && !refreshing ? (
-          <ActivityIndicator color="#3b82f6" style={{ marginTop: 40 }} />
-        ) : staff.length === 0 ? (
-          <Text style={{ color: '#64748b', textAlign: 'center', marginTop: 40 }}>No staff members found</Text>
-        ) : (
-          <>
-            {staffOnDuty.length > 0 && (
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ color: '#94a3b8', fontWeight: '600', marginBottom: 8 }}>On Duty</Text>
-                {staffOnDuty.map((s) => (
-                  <View key={s.id} style={{ backgroundColor: '#1e293b', padding: 12, borderRadius: 8, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e', marginRight: 10 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ color: '#fff', fontWeight: '600' }}>{s.name}</Text>
-                      <Text style={{ color: '#94a3b8', fontSize: 12 }}>{s.role} · {s.department}</Text>
-                    </View>
+            return (
+              <TouchableOpacity
+                key={member.id}
+                style={[styles.staffCard, isSelected && styles.staffCardActive]}
+                onPress={() => setSelectedStaff(isSelected ? null : member.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.staffHeader}>
+                  <View style={[styles.avatarCircle, { backgroundColor: roleColor + '20' }]}>
+                    <RoleIcon size={18} color={roleColor} />
                   </View>
-                ))}
-              </View>
-            )}
-
-            <Text style={{ color: '#94a3b8', fontWeight: '600', marginBottom: 8 }}>All Staff</Text>
-            {staff.map((s) => (
-              <View key={s.id} style={{ backgroundColor: '#1e293b', padding: 12, borderRadius: 8, marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <Text style={{ color: '#fff', fontWeight: '600' }}>{s.name}</Text>
-                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>{s.role} · {s.department}</Text>
+                  <View style={styles.staffInfo}>
+                    <Text style={styles.staffName}>{member.full_name || 'Unnamed'}</Text>
+                    <Text style={styles.staffRole}>{member.role.replace('_', ' ').toUpperCase()}</Text>
                   </View>
-                  <View style={{
-                    backgroundColor: s.status === 'active' ? '#22c55e22' : '#ef444422',
-                    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4
-                  }}>
-                    <Text style={{
-                      color: s.status === 'active' ? '#22c55e' : '#ef4444',
-                      fontSize: 12, fontWeight: '600', textTransform: 'capitalize'
-                    }}>{s.status}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.color }]}>{statusStyle.label}</Text>
                   </View>
                 </View>
-              </View>
-            ))}
-          </>
-        )}
-      </ScrollView>
+
+                <View style={styles.staffMeta}>
+                  {member.department && (
+                    <Text style={styles.metaText}>Dept: {member.department}</Text>
+                  )}
+                  {member.license_number && (
+                    <Text style={styles.metaText}>License: {member.license_number}</Text>
+                  )}
+                  {member.years_experience !== undefined && (
+                    <Text style={styles.metaText}>{member.years_experience} yrs exp</Text>
+                  )}
+                  {member.total_patients !== undefined && (
+                    <Text style={styles.metaText}>{member.total_patients} patients</Text>
+                  )}
+                </View>
+
+                {member.is_verified && (
+                  <View style={styles.verifiedRow}>
+                    <ShieldCheck size={14} color="#059669" />
+                    <Text style={styles.verifiedText}>Verified</Text>
+                  </View>
+                )}
+
+                {/* Action Menu */}
+                {isSelected && (
+                  <View style={styles.actionRow}>
+                    {!member.is_verified && member.status === 'pending' && (
+                      <ActionButton 
+                        icon={CheckCircle2} 
+                        label="Verify" 
+                        color="#059669" 
+                        bg="#D1FAE5"
+                        onPress={() => handleVerify(member.id, member.full_name)}
+                      />
+                    )}
+                    {member.status !== 'suspended' && (
+                      <ActionButton 
+                        icon={ShieldAlert} 
+                        label="Suspend" 
+                        color="#D97706" 
+                        bg="#FEF3C7"
+                        onPress={() => handleSuspend(member.id, member.full_name)}
+                      />
+                    )}
+                    {member.status === 'suspended' && (
+                      <ActionButton 
+                        icon={CheckCircle2} 
+                        label="Reactivate" 
+                        color="#2563EB" 
+                        bg="#DBEAFE"
+                        onPress={() => updateStaffStatus(member.id, 'active')}
+                      />
+                    )}
+                    <ActionButton 
+                      icon={UserX} 
+                      label="Remove" 
+                      color="#DC2626" 
+                      bg="#FEE2E2"
+                      onPress={() => handleDelete(member.id, member.full_name)}
+                    />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+          {staff.length === 0 && (
+            <View style={styles.emptyBox}>
+              <Users size={32} color="#CBD5E1" />
+              <Text style={styles.emptyText}>No staff found</Text>
+              <Text style={styles.emptySub}>Try adjusting your filters</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }
+
+function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <View style={[styles.statBox, { borderTopColor: color }]}>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity 
+      style={[styles.filterChip, active && styles.filterChipActive]} 
+      onPress={onPress}
+    >
+      <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+        {label.charAt(0).toUpperCase() + label.slice(1)}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function ActionButton({ icon: Icon, label, color, bg, onPress }: any) {
+  return (
+    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: bg }]} onPress={onPress}>
+      <Icon size={14} color={color} />
+      <Text style={[styles.actionBtnText, { color }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  backBtn: { width: 36, height: 36, justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '700', color: '#1F2937', textAlign: 'center' },
+  filterBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
+  statBox: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 10, alignItems: 'center', borderTopWidth: 3 },
+  statValue: { fontSize: 20, fontWeight: '800' },
+  statLabel: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#1F2937' },
+  filterPanel: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  filterChips: { gap: 8 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E5E7EB', marginRight: 8 },
+  filterChipActive: { backgroundColor: '#DBEAFE', borderColor: '#2563EB' },
+  filterChipText: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+  filterChipTextActive: { color: '#2563EB', fontWeight: '700' },
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 8, fontSize: 13, color: '#6B7280' },
+  errorBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { marginTop: 8, fontSize: 14, color: '#DC2626', textAlign: 'center' },
+  retryBtn: { marginTop: 12, backgroundColor: '#DBEAFE', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  retryText: { color: '#2563EB', fontWeight: '600' },
+  list: { flex: 1 },
+  listContent: { paddingHorizontal: 16, paddingBottom: 24, gap: 10 },
+  staffCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, borderWidth: 1.5, borderColor: '#E5E7EB' },
+  staffCardActive: { borderColor: '#2563EB' },
+  staffHeader: { flexDirection: 'row', alignItems: 'center' },
+  avatarCircle: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  staffInfo: { flex: 1, marginLeft: 12 },
+  staffName: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  staffRole: { fontSize: 11, color: '#9CA3AF', marginTop: 2, textTransform: 'capitalize' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusText: { fontSize: 10, fontWeight: '700' },
+  staffMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
+  metaText: { fontSize: 11, color: '#6B7280', backgroundColor: '#F3F4F6', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
+  verifiedText: { fontSize: 12, color: '#059669', fontWeight: '600' },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6 },
+  actionBtnText: { fontSize: 12, fontWeight: '600' },
+  emptyBox: { alignItems: 'center', paddingVertical: 40 },
+  emptyText: { fontSize: 15, fontWeight: '600', color: '#94A3B8', marginTop: 8 },
+  emptySub: { fontSize: 13, color: '#CBD5E1', marginTop: 4 },
+});

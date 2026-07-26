@@ -2,13 +2,18 @@
   "name": "mtaa-os-v10",
   "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "lint:ox": "oxlint --max-warnings 0 --tsconfig tsconfig.json --config .oxlintrc.json .",
+    "lint:ox:fix": "oxlint --max-warnings 0 --tsconfig tsconfig.json --config .oxlintrc.json --fix .",
+    "knip": "knip",
+    "knip:fix": "knip --fix",
+    "typecheck": "tsc --noEmit",
+    "lint:ci": "npm run lint:ox && npm run typecheck && npm run knip"
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
@@ -82,7 +87,10 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~18.3.12",
     "eslint": "^9.39.4",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "oxlint": "^0.6.0",
+    "knip": "^5.0.0",
+    "lint-staged": "^15.0.0"
   },
   "expo": {
     "doctor": {
@@ -97,5 +105,6 @@
         "listUnknownPackages": false
       }
     }
-  }
+  },
+  "main": "expo-router/entry"
 }

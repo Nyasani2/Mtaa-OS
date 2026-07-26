@@ -1,148 +1,145 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert, Linking } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useEmergencyCases, useCreateEmergencyCase } from "@/lib/health/hooks/useEmergency";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-const TRIAGE_LEVELS = ["green", "yellow", "red", "black"];
-const FILTERS = ["all", "red", "yellow", "green", "black", "resolved"];
+interface EmergencyCase {
+  id: string;
+  patient_name: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  location?: string;
+}
 
 export default function EmergencyScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [filter, setFilter] = useState("all");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [patientName, setPatientName] = useState("");
-  const [triage, setTriage] = useState("yellow");
-  const [chiefComplaint, setChiefComplaint] = useState("");
-  const [location, setLocation] = useState("");
+  const [activeTab, setActiveTab] = useState<'queue' | 'schedule' | 'patients'>('queue');
+  const [cases, setCases] = useState<EmergencyCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const { data: cases, isLoading, refetch } = useEmergencyCases(filter);
-  const createCase = useCreateEmergencyCase();
+  const loadCases = async () => {
+    try {
+      setErrorMsg(null);
+      const { data, error } = await supabase
+        .from('health_emergency_cases')
+        .select('id, patient_name, status, priority, created_at, location')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-  const onCreate = () => {
-    if (!patientName.trim() || !chiefComplaint.trim()) {
-      Alert.alert("Validation", "Patient name and chief complaint are required.");
-      return;
+      if (error) throw error;
+      setCases(data || []);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Failed to load emergency cases');
+      setCases([]);
     }
-    createCase.mutate({
-      reporter_id: user!.id,
-      patient_name: patientName.trim(),
-      triage_level: triage,
-      chief_complaint: chiefComplaint.trim(),
-      location: location.trim() || undefined,
-      status: "active",
-      reported_at: new Date().toISOString(),
-    }, {
-      onSuccess: () => { setModalOpen(false); setPatientName(""); setTriage("yellow"); setChiefComplaint(""); setLocation(""); refetch(); },
-    });
   };
 
-  const triageColor = (level: string) => ({
-    green: "#065F46", yellow: "#78350F", red: "#7F1D1D", black: "#374151",
-  }[level] || "#1F2937");
+  React.useEffect(() => {
+    loadCases().finally(() => setLoading(false));
+  }, []);
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      <View style={styles.rowBetween}>
-        <Text style={styles.cardTitle}>{item.patient_name}</Text>
-        <View style={[styles.badge, { backgroundColor: triageColor(item.triage_level) }]}>
-          <Text style={styles.badgeText}>{item.triage_level?.toUpperCase()}</Text>
-        </View>
+  const refresh = async () => {
+    setRefreshing(true);
+    await loadCases();
+    setRefreshing(false);
+  };
+
+  const filtered = activeTab === 'queue'
+    ? cases.filter((c) => ['waiting', 'triaged'].includes(c.status))
+    : activeTab === 'schedule'
+    ? cases.filter((c) => ['scheduled', 'admitted'].includes(c.status))
+    : cases;
+
+  const renderCase = ({ item }: { item: EmergencyCase }) => (
+    <TouchableOpacity style={s.caseCard} onPress={() => router.push(`/health/emergency/case/${item.id}`)}>
+      <View style={s.caseRow}>
+        <Ionicons name="warning-outline" size={20} color={item.priority === 'critical' ? '#ef4444' : '#f59e0b'} />
+        <Text style={s.caseName}>{item.patient_name || 'Unknown'}</Text>
+        <Text style={[s.caseBadge, item.status === 'waiting' ? s.badgeWait : s.badgeDone]}>{item.status}</Text>
       </View>
-      <Text style={styles.meta}>Complaint: {item.chief_complaint}</Text>
-      <Text style={styles.meta}>Location: {item.location || "Emergency Dept"}</Text>
-      <Text style={styles.meta}>Status: <Text style={{ color: item.status === "active" ? "#EF4444" : "#00D09C" }}>{item.status}</Text></Text>
-      <Text style={styles.date}>{new Date(item.reported_at).toLocaleString()}</Text>
-      {item.location && (
-        <TouchableOpacity style={styles.mapBtn} onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(item.location)}`)}>
-          <Ionicons name="location-outline" size={14} color="#fff" />
-          <Text style={styles.mapBtnText}>Open Map</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+      <Text style={s.caseMeta}>{item.location || 'Location unknown'} • {new Date(item.created_at).toLocaleString()}</Text>
+    </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff"/></TouchableOpacity>
-        <Text style={styles.headerTitle}>Emergency Cases</Text>
-        <TouchableOpacity onPress={() => setModalOpen(true)}><Ionicons name="add" size={24} color="#fff"/></TouchableOpacity>
+    <View style={s.container}>
+      <View style={s.header}>
+        <Text style={s.headerTitle}>Emergency</Text>
       </View>
-      <View style={styles.chipRow}>
-        {FILTERS.map((f) => (
-          <TouchableOpacity key={f} style={[styles.chip, filter === f && styles.chipActive]} onPress={() => setFilter(f)}>
-            <Text style={[styles.chipText, filter === f && styles.chipTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
+
+      <View style={s.tabRow}>
+        {(['queue', 'schedule', 'patients'] as const).map((tab) => (
+          <TouchableOpacity key={tab} style={[s.tab, activeTab === tab && s.tabActive]} onPress={() => setActiveTab(tab)}>
+            <Text style={[s.tabText, activeTab === tab && s.tabTextActive]}>
+              {tab === 'queue' ? 'Queue' : tab === 'schedule' ? 'Schedule' : 'Patients'}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
-      <FlatList data={cases} keyExtractor={(i) => i.id} renderItem={renderItem}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
-      <Modal visible={modalOpen} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>New Emergency Case</Text>
-            <Text style={styles.label}>Patient Name</Text>
-            <TextInput style={styles.input} value={patientName} onChangeText={setPatientName} placeholder='Patient name or "Unknown"' />
-            <Text style={styles.label}>Triage Level</Text>
-            <View style={styles.typeRow}>
-              {TRIAGE_LEVELS.map((t) => (
-                <TouchableOpacity key={t} style={[styles.typeChip, triage === t && styles.typeChipActive, { borderColor: triageColor(t), borderWidth: triage === t ? 2 : 0 }]} onPress={() => setTriage(t)}>
-                  <Text style={[styles.typeChipText, triage === t && styles.typeChipTextActive]}>{t.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.label}>Chief Complaint</Text>
-            <TextInput style={[styles.input, { height: 80, textAlignVertical: "top" }]} multiline value={chiefComplaint} onChangeText={setChiefComplaint} placeholder="Describe the emergency…" />
-            <Text style={styles.label}>Location (optional)</Text>
-            <TextInput style={styles.input} value={location} onChangeText={setLocation} placeholder="Street address or coordinates" />
-            <TouchableOpacity style={styles.submitBtn} onPress={onCreate}>
-              <Text style={styles.submitBtnText}>{createCase.isPending ? "Creating…" : "Log Emergency"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalOpen(false)}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+
+      {errorMsg ? (
+        <View style={s.errorBox}>
+          <Text style={s.errorText}>{errorMsg}</Text>
+          <TouchableOpacity onPress={refresh}><Text style={s.retry}>Retry</Text></TouchableOpacity>
         </View>
-      </Modal>
+      ) : null}
+
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#ef4444" />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCase}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
+          contentContainerStyle={filtered.length === 0 ? s.emptyContainer : s.list}
+          ListEmptyComponent={
+            <View style={s.emptyState}>
+              <Ionicons name="checkmark-circle-outline" size={48} color="#cbd5e1" />
+              <Text style={s.emptyTitle}>No {activeTab} cases</Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0B0F19" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: "#111827" },
-  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  chipRow: { flexDirection: "row", paddingHorizontal: 12, marginBottom: 8, flexWrap: "wrap", gap: 6 },
-  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: "#1F2937", marginBottom: 6 },
-  chipActive: { backgroundColor: "#00D09C" },
-  chipText: { color: "#9CA3AF", fontSize: 11 },
-  chipTextActive: { color: "#000", fontWeight: "600" },
-  card: { backgroundColor: "#1F2937", marginHorizontal: 12, marginBottom: 10, borderRadius: 12, padding: 14 },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  cardTitle: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  badge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
-  badgeText: { color: "#fff", fontSize: 11, fontWeight: "600" },
-  meta: { color: "#D1D5DB", fontSize: 13, marginTop: 4 },
-  date: { color: "#6B7280", fontSize: 11, marginTop: 8 },
-  mapBtn: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginTop: 10, backgroundColor: "#1E3A8A", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
-  mapBtnText: { color: "#fff", fontWeight: "600", fontSize: 13, marginLeft: 6 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "center", padding: 20 },
-  modalBox: { backgroundColor: "#1F2937", borderRadius: 16, padding: 20 },
-  modalTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  label: { color: "#9CA3AF", fontSize: 12, marginTop: 10, marginBottom: 4 },
-  input: { backgroundColor: "#111827", color: "#fff", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
-  typeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
-  typeChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: "#111827" },
-  typeChipActive: { backgroundColor: "#00D09C" },
-  typeChipText: { color: "#9CA3AF", fontSize: 11 },
-  typeChipTextActive: { color: "#000", fontWeight: "600" },
-  submitBtn: { backgroundColor: "#00D09C", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 16 },
-  submitBtnText: { color: "#000", fontWeight: "700", fontSize: 15 },
-  cancelBtn: { backgroundColor: "#374151", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 10 },
-  cancelBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#991b1b' },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  tabRow: { flexDirection: 'row', padding: 12, gap: 8 },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#e2e8f0' },
+  tabActive: { backgroundColor: '#991b1b' },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  tabTextActive: { color: '#fff' },
+  list: { paddingHorizontal: 12, paddingBottom: 24 },
+  emptyContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#94a3b8', marginTop: 12 },
+  caseCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
+  caseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  caseName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1e293b' },
+  caseBadge: { fontSize: 10, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },
+  badgeWait: { backgroundColor: '#fef3c7', color: '#92400e' },
+  badgeDone: { backgroundColor: '#d1fae5', color: '#065f46' },
+  caseMeta: { fontSize: 12, color: '#94a3b8' },
+  errorBox: { marginHorizontal: 12, marginVertical: 8, backgroundColor: '#fef2f2', borderRadius: 10, padding: 12, alignItems: 'center' },
+  errorText: { color: '#ef4444', fontSize: 13 },
+  retry: { color: '#0ea5e9', marginTop: 6, fontWeight: '600' },
 });

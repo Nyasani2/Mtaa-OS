@@ -138,12 +138,13 @@ export default function AchievementsScreen() {
             earnedAt = null;
             progress = Math.min(100, ((followerCount || 0) / 1000) * 100);
             break;
-          case 'power_user':
+          case 'power_user': {
             const engagement = (followerCount || 0) + (postCount || 0) + (contentCount || 0) + (walletTxs?.length || 0);
             earned = engagement >= 100;
             earnedAt = null;
             progress = Math.min(100, engagement);
             break;
+          }
           case 'community_builder':
             earned = (followerCount || 0) >= 500;
             earnedAt = null;

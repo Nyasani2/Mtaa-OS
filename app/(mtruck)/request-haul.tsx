@@ -72,6 +72,7 @@ export default function MTruckRequestScreen() {
 
       const urgencyMult = URGENCY_LEVELS.find(u => u.id === urgency)?.multiplier || 1.0;
       estimate.estimatedFare.amount = Math.round(estimate.estimatedFare.amount * urgencyMult);
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { formatCurrency } = require('@/lib/services/fare-engine');
       estimate.estimatedFare.formatted = formatCurrency(estimate.estimatedFare.amount, estimate.estimatedFare.currency);
 

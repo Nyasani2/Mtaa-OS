@@ -17,6 +17,9 @@ import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const MTAA_HOME_BG = require('@/assets/images/mtaa_home.png');
+
 import {
   ALL_APPS,
   PUBLIC_APPS,
@@ -102,7 +105,7 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/mtaa_home.png')}
+      source={MTAA_HOME_BG}
       style={styles.backgroundImage}
       resizeMode="cover"
     >

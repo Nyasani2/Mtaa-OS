@@ -39,6 +39,8 @@ import {
   Archive,
   User,
   Phone,
+  Mail,
+  MapPin,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';

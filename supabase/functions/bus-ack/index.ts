@@ -18,8 +18,8 @@ const corsHeaders = {
 
   try {
     const supabase = createClient(
-      (globalThis as any).Deno?.env?.get('SUPABASE_URL')!,
-      (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      (globalThis as any).Deno?.env?.get('SUPABASE_URL') || '',
+      (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || '',
       { auth: { persistSession: false } }
     );
 

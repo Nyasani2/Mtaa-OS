@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator
+  View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator, ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

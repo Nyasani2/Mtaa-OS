@@ -21,9 +21,9 @@ export interface IdentityContextValue {
 export const IdentityContext = createContext<IdentityContextValue | undefined>(undefined);
 
 export function useIdentity(): IdentityContextValue {
+  const store = useAuthStore();
   const context = useContext(IdentityContext);
   if (context === undefined) {
-    const store = useAuthStore();
     return {
       user: store.user,
       session: store.session,

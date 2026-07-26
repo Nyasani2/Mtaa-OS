@@ -1,0 +1,9 @@
+{
+  "*.{ts,tsx}": [
+    "oxlint --max-warnings 0 --config .oxlintrc.json",
+    "tsc --noEmit"
+  ],
+  "*.{ts,tsx,js,jsx}": [
+    "oxlint --max-warnings 0 --config .oxlintrc.json"
+  ]
+}

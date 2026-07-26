@@ -321,10 +321,11 @@ class RegulatoryService {
         case 'geofence':
           if (rule.config.blocked_countries?.includes(tx.country)) triggered = true;
           break;
-        case 'sanctions':
+        case 'sanctions': {
           const check = await this.runSanctionsCheck(tx.buyer_id, tx.buyer_id, undefined);
           if (!check.passed) triggered = true;
           break;
+        }
         case 'category_block':
           if (rule.config.blocked_categories?.includes(tx.category)) triggered = true;
           break;
