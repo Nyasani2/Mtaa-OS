@@ -28,9 +28,13 @@ export interface StreetPost {
 
 export interface CreatePostInput {
   content?: string;
+  caption?: string;
   media_url?: string | null;
   media_type?: 'image' | 'video' | 'text';
+  hashtags?: string[];
   is_public?: boolean;
+  allow_comments?: boolean;
+  thumbnail_url?: string | null;
 }
 
 // NOTE: broken bucket constant removed 2026-07-18 — see STREETS_BUCKET below
