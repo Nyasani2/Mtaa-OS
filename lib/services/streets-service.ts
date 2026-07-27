@@ -253,9 +253,12 @@ export async function createPost(input: CreatePostInput): Promise<StreetPost | n
       .insert({
         creator_id: user.id,
         content: input.content || null,
+        caption: input.caption || null,
         media_url: input.media_url || null,
         media_type: input.media_type || 'text',
+        hashtags: input.hashtags || [],
         is_public: input.is_public !== false,
+        thumbnail_url: input.thumbnail_url || null,
       })
       .select()
       .single();
