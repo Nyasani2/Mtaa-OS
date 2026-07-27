@@ -57,7 +57,7 @@ export class AttentionEngine extends BaseEngine {
     }>;
 
     let result: unknown;
-    let confidence = 0.8;
+    const confidence = 0.8;
 
     switch (action) {
       case 'allocate':

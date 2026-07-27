@@ -19,7 +19,7 @@ export default function CalculatorScreen() {
       setDisplay('0');
     } else if (value === '=') {
       try {
-        // eslint-disable-next-line no-eval
+         
         setDisplay(String(eval(display)));
       } catch {
         setDisplay('Error');

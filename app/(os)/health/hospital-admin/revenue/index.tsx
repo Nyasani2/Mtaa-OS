@@ -19,7 +19,7 @@ export default function HospitalRevenueScreen() {
     setLoading(true);
     try {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       if (period === 'today') startDate.setHours(0, 0, 0, 0);
       else if (period === 'week') startDate.setDate(now.getDate() - 7);
       else startDate.setMonth(now.getMonth() - 1);

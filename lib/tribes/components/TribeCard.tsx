@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Tribe } from '../types';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const DEFAULT_TRIBE_COVER = require('@/assets/images/default-tribe-cover.png');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const DEFAULT_AVATAR = require('@/assets/images/default-avatar.png');
 
 interface TribeCardProps {

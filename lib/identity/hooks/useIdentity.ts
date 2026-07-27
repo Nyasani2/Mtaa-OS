@@ -7,7 +7,7 @@ import { fetchIdentityEngine, DEFAULT_STATE } from '../engine';
 import { IdentityEngineState } from '../types';
 
 let globalState: IdentityEngineState = DEFAULT_STATE;
-let listeners: Set<(state: IdentityEngineState) => void> = new Set();
+const listeners: Set<(state: IdentityEngineState) => void> = new Set();
 let isFetching = false;
 
 function notifyListeners() {

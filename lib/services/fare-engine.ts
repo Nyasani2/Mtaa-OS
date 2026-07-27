@@ -275,7 +275,7 @@ export function calculateFare(
   const timeCharge = durationMinutes * country.perMinute * serviceRate.baseMultiplier;
   const bookingFee = country.bookingFee;
 
-  let subtotal = baseFare + distanceCharge + timeCharge + bookingFee;
+  const subtotal = baseFare + distanceCharge + timeCharge + bookingFee;
   const surgeCharge = subtotal * (surgeMultiplier - 1);
   let total = subtotal * surgeMultiplier;
 

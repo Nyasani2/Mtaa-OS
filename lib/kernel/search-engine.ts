@@ -1,64 +1,62 @@
 import { supabase } from '@/lib/supabase';
-import { SEARCH_CONFIGS } from '@/types/module.types';
-import type { SearchQuery, SearchResult, SearchResultItem, SearchConfig } from '@/types/module.types';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-export class SearchEngine {
-  private configs: SearchConfig[];
-
-  constructor() {
-    this.configs = SEARCH_CONFIGS as SearchConfig[];
-  }
-
-  async search(query: SearchQuery): Promise<SearchResult> {
-    const start = Date.now();
-    const config = this.configs.find((c: SearchConfig) => c.id === query.domain);
-    if (!config) {
-      return { items: [], total: 0, query, duration: Date.now() - start };
-    }
-
-    const { data, error } = await supabase
-      .from(config.table)
-      .select('*')
-      .textSearch(config.columns.join(' || '), query.q)
-      .limit(query.limit ?? 10);
-
-    if (error || !data) {
-      return { items: [], total: 0, query, duration: Date.now() - start };
-    }
-
-    const items: SearchResultItem[] = data.map((row: Record<string, unknown>) => ({
-      id: String(row.id ?? ''),
-      type: config.id,
-      title: String(row[config.columns[0]] ?? ''),
-      subtitle: config.columns[1] ? String(row[config.columns[1]] ?? '') : undefined,
-      score: 1.0,
-      data: row,
-    }));
-
-    return { items, total: items.length, query, duration: Date.now() - start };
-  }
-
-  async searchAll(query: SearchQuery): Promise<Record<string, SearchResult>> {
-    const results: Record<string, SearchResult> = {};
-    for (const config of this.configs) {
-      results[config.id] = await this.search({ ...query, domain: config.id });
-    }
-    return results;
-  }
+export interface SearchResult {
+  id: string;
+  type: 'user' | 'post' | 'product' | 'job' | 'property' | 'restaurant' | 'tribe';
+  title: string;
+  subtitle?: string;
+  image_url?: string;
+  score: number;
+  metadata?: Record<string, any>;
 }
 
-let engineInstance: SearchEngine | null = null;
-
-export function getSearchEngine(): SearchEngine {
-  if (!engineInstance) {
-    engineInstance = new SearchEngine();
-  }
-  return engineInstance;
+export interface SearchFilters {
+  types?: SearchResult['type'][];
+  dateRange?: { from: string; to: string };
+  location?: { lat: number; lng: number; radius: number };
+  sortBy?: 'relevance' | 'date' | 'popularity';
 }
 
-export function resetSearchEngine(): void {
-  engineInstance = null;
+export async function globalSearch(query: string, filters?: SearchFilters, page: number = 1, limit: number = 20): Promise<{ results: SearchResult[]; total: number }> {
+  if (!query.trim()) return { results: [], total: 0 };
+  const { data, error } = await supabase.rpc('global_search', {
+    search_query: query.trim(),
+    result_types: filters?.types || null,
+    page_num: page,
+    page_limit: limit,
+    sort_by: filters?.sortBy || 'relevance',
+  });
+  if (error) throw new Error(error.message);
+  return { results: data?.results || [], total: data?.total_count || 0 };
 }
 
-export { SEARCH_CONFIGS };
-export type { SearchQuery, SearchResult, SearchResultItem, SearchConfig };
+export async function searchUsers(query: string, limit: number = 10): Promise<SearchResult[]> {
+  const { data, error } = await supabase.from('user_profiles').select('id, display_name, username, avatar_url, bio').ilike('display_name', `%${query}%`).limit(limit);
+  if (error) throw new Error(error.message);
+  return (data || []).map(u => ({ id: u.id, type: 'user', title: u.display_name || u.username || 'Unknown', subtitle: u.bio, image_url: u.avatar_url, score: 1 }));
+}
+
+export async function searchPosts(query: string, limit: number = 20): Promise<SearchResult[]> {
+  const { data, error } = await supabase.from('streets_posts').select('id, content, caption, media_url, media_type, creator_id, creator:creator_id(display_name, avatar_url)').or(`content.ilike.%${query}%,caption.ilike.%${query}%`).limit(limit);
+  if (error) throw new Error(error.message);
+  return (data || []).map(p => ({ id: p.id, type: 'post', title: p.content || p.caption || 'Post', subtitle: p.creator?.display_name, image_url: p.media_url, score: 1 }));
+}
+
+export function useSearchHistory() {
+  const { user } = useAuthStore();
+  const getHistory = async (): Promise<string[]> => {
+    if (!user) return [];
+    const { data } = await supabase.from('search_history').select('query').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
+    return (data || []).map(h => h.query);
+  };
+  const saveQuery = async (query: string) => {
+    if (!user || !query.trim()) return;
+    await supabase.from('search_history').upsert({ user_id: user.id, query: query.trim() }, { onConflict: 'user_id,query' });
+  };
+  const clearHistory = async () => {
+    if (!user) return;
+    await supabase.from('search_history').delete().eq('user_id', user.id);
+  };
+  return { getHistory, saveQuery, clearHistory };
+}

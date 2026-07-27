@@ -1,18 +1,25 @@
-// Generated types from Supabase schema
-// Run: npx supabase gen types typescript --project-id <id> --schema public > lib/types/database.ts
+// MTAA OS — Database Types
+// Auto-generated + hand-maintained union
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = Record<string, unknown>;
 
 export interface Database {
   public: {
     Tables: {
-      // Add generated types here after running supabase gen types
+      [key: string]: {
+        Row: Record<string, unknown>;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+    };
+    Functions: {
+      [key: string]: {
+        Args: Record<string, unknown>;
+        Returns: unknown;
+      };
     };
   };
 }
+
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T];

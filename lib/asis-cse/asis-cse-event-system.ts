@@ -121,7 +121,7 @@ export class CognitiveEventBus {
   }
 
   getHistory(type?: CognitiveEventType, limit = 100): CognitiveEvent[] {
-    let filtered = type
+    const filtered = type
       ? this.history.filter((e) => e.type === type)
       : [...this.history];
     return filtered.slice(-limit);

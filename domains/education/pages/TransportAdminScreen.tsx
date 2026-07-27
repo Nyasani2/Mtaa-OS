@@ -1,23 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, TextInput, Alert, ActivityIndicator, FlatList,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTransportRoutes } from '@/domains/education/hooks/useTransport';
-import { useTransportStudents } from '@/domains/education/hooks/useTransport';
-import { useTransportScans } from '@/domains/education/hooks/useTransport';
-import { useTransportAnomalies } from '@/domains/education/hooks/useTransport';
-import { useRouteStats } from '@/domains/education/hooks/useTransport';
-import { useLiveGPS } from '@/domains/education/hooks/useTransport';
-import { usePsvRegistration } from '@/domains/education/hooks/useTransport';
+import { useTransportRoutes, useTransportStudents, useTransportScans, useTransportAnomalies, useRouteStats, useLiveGPS, usePsvRegistration } from '@/domains/education/hooks/useTransport';
 import { TransportRoute, TransportStudent, TransportAnomaly } from '@/domains/education/services/transportService';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 
-interface TransportAdminScreenProps {
-  schoolId: string;
-}
-
+interface TransportAdminScreenProps { schoolId: string; }
 type TabType = 'routes' | 'students' | 'live' | 'anomalies';
 
 export default function TransportAdminScreen({ schoolId }: TransportAdminScreenProps) {
@@ -26,8 +14,6 @@ export default function TransportAdminScreen({ schoolId }: TransportAdminScreenP
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [showCreateRoute, setShowCreateRoute] = useState(false);
   const [showRegisterPsv, setShowRegisterPsv] = useState(false);
-  const [showAnomalyDetail, setShowAnomalyDetail] = useState<TransportAnomaly | null>(null);
-
   const { routes, loading: routesLoading, error: routesError, addRoute, refresh: refreshRoutes } = useTransportRoutes(schoolId);
   const { students, loading: studentsLoading } = useTransportStudents(selectedRouteId || undefined);
   const { todayScans } = useTransportScans(undefined, selectedRouteId || undefined);
@@ -35,599 +21,74 @@ export default function TransportAdminScreen({ schoolId }: TransportAdminScreenP
   const { stats, loading: statsLoading } = useRouteStats(selectedRouteId || undefined);
   const { routeLocations } = useLiveGPS(undefined, selectedRouteId || undefined);
   const { registerDriver, registering } = usePsvRegistration();
-
-  // ─── 5 STATES ───
   const isLoading = routesLoading || studentsLoading || anomaliesLoading || statsLoading;
   const hasError = routesError;
   const isEmpty = routes.length === 0 && activeTab === 'routes';
   const hasData = routes.length > 0;
 
-  // ─── CREATE ROUTE FORM ───
-  const [routeForm, setRouteForm] = useState({
-    route_name: '',
-    route_code: '',
-    description: '',
-    max_students: '14',
-    registration_fee: '500',
-    monthly_fee: '3000',
-    morning_pickup_time: '07:00',
-    afternoon_dropoff_time: '16:00',
-  });
-
+  const [routeForm, setRouteForm] = useState({ route_name: '', route_code: '', description: '', max_students: '14', registration_fee: '500', monthly_fee: '3000', morning_pickup_time: '07:00', afternoon_dropoff_time: '16:00' });
   const handleCreateRoute = useCallback(async () => {
-    if (!routeForm.route_name || !routeForm.route_code) {
-      Alert.alert('Error', 'Route name and code are required');
-      return;
-    }
+    if (!routeForm.route_name || !routeForm.route_code) { Alert.alert('Error', 'Route name and code are required'); return; }
     try {
-      await addRoute({
-        school_id: schoolId,
-        route_name: routeForm.route_name,
-        route_code: routeForm.route_code,
-        description: routeForm.description,
-        stops: [],
-        max_students: parseInt(routeForm.max_students) || 14,
-        registration_fee: parseFloat(routeForm.registration_fee) || 0,
-        monthly_fee: parseFloat(routeForm.monthly_fee) || 0,
-        morning_pickup_time: routeForm.morning_pickup_time,
-        afternoon_dropoff_time: routeForm.afternoon_dropoff_time,
-      });
-      setShowCreateRoute(false);
-      setRouteForm({
-        route_name: '', route_code: '', description: '', max_students: '14',
-        registration_fee: '500', monthly_fee: '3000',
-        morning_pickup_time: '07:00', afternoon_dropoff_time: '16:00',
-      });
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
+      await addRoute({ school_id: schoolId, route_name: routeForm.route_name, route_code: routeForm.route_code, description: routeForm.description, stops: [], max_students: parseInt(routeForm.max_students) || 14, registration_fee: parseFloat(routeForm.registration_fee) || 0, monthly_fee: parseFloat(routeForm.monthly_fee) || 0, morning_pickup_time: routeForm.morning_pickup_time, afternoon_dropoff_time: routeForm.afternoon_dropoff_time });
+      setShowCreateRoute(false); setRouteForm({ route_name: '', route_code: '', description: '', max_students: '14', registration_fee: '500', monthly_fee: '3000', morning_pickup_time: '07:00', afternoon_dropoff_time: '16:00' });
+    } catch (err: any) { Alert.alert('Error', err.message); }
   }, [routeForm, schoolId, addRoute]);
 
-  // ─── PSV REGISTRATION FORM ───
-  const [psvForm, setPsvForm] = useState({
-    full_name: '', phone: '', license_number: '', license_expiry: '',
-    vehicle_plate: '', vehicle_model: '', vehicle_color: '', vehicle_capacity: '14',
-    insurance_number: '', insurance_expiry: '',
-  });
-
+  const [psvForm, setPsvForm] = useState({ full_name: '', phone: '', license_number: '', license_expiry: '', vehicle_plate: '', vehicle_model: '', vehicle_color: '', vehicle_capacity: '14', insurance_number: '', insurance_expiry: '' });
   const handleRegisterPsv = useCallback(async () => {
     if (!selectedRouteId) { Alert.alert('Error', 'Select a route first'); return; }
-    if (!psvForm.full_name || !psvForm.phone || !psvForm.license_number) {
-      Alert.alert('Error', 'Driver name, phone, and license are required');
-      return;
-    }
+    if (!psvForm.full_name || !psvForm.phone || !psvForm.license_number) { Alert.alert('Error', 'Driver name, phone, and license are required'); return; }
     try {
-      await registerDriver(selectedRouteId, {
-        full_name: psvForm.full_name,
-        phone: psvForm.phone,
-        license_number: psvForm.license_number,
-        license_expiry: psvForm.license_expiry,
-        vehicle_plate: psvForm.vehicle_plate,
-        vehicle_model: psvForm.vehicle_model,
-        vehicle_color: psvForm.vehicle_color,
-        vehicle_capacity: parseInt(psvForm.vehicle_capacity) || 14,
-        insurance_number: psvForm.insurance_number,
-        insurance_expiry: psvForm.insurance_expiry,
-      });
-      setShowRegisterPsv(false);
-      refreshRoutes();
-      Alert.alert('Success', 'PSV driver registered and assigned to route');
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
+      await registerDriver(selectedRouteId, { full_name: psvForm.full_name, phone: psvForm.phone, license_number: psvForm.license_number, license_expiry: psvForm.license_expiry, vehicle_plate: psvForm.vehicle_plate, vehicle_model: psvForm.vehicle_model, vehicle_color: psvForm.vehicle_color, vehicle_capacity: parseInt(psvForm.vehicle_capacity) || 14, insurance_number: psvForm.insurance_number, insurance_expiry: psvForm.insurance_expiry });
+      setShowRegisterPsv(false); refreshRoutes(); Alert.alert('Success', 'PSV driver registered and assigned to route');
+    } catch (err: any) { Alert.alert('Error', err.message); }
   }, [selectedRouteId, psvForm, registerDriver, refreshRoutes]);
 
-  // ─── ANOMALY ACTIONS ───
   const handleResolveAnomaly = useCallback((anomaly: TransportAnomaly) => {
-    Alert.prompt(
-      'Resolve Anomaly',
-      'Enter resolution notes:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Resolve',
-          onPress: (notes) => {
-            if (notes) resolve(anomaly.id, notes);
-          },
-        },
-      ]
-    );
+    Alert.prompt('Resolve Anomaly', 'Enter resolution notes:', [{ text: 'Cancel', style: 'cancel' }, { text: 'Resolve', onPress: (notes) => { if (notes) resolve(anomaly.id, notes); } }]);
   }, [resolve]);
-
   const handleEscalateAnomaly = useCallback((anomaly: TransportAnomaly) => {
-    Alert.alert(
-      'Escalate to Authorities',
-      'This will notify law enforcement. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Escalate', style: 'destructive', onPress: () => escalate(anomaly.id) },
-      ]
-    );
+    Alert.alert('Escalate to Authorities', 'This will notify law enforcement. Continue?', [{ text: 'Cancel', style: 'cancel' }, { text: 'Escalate', style: 'destructive', onPress: () => escalate(anomaly.id) }]);
   }, [escalate]);
 
-  // ─── RENDER: LOADING ───
-  if (isLoading && !hasData) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text style={styles.loadingText}>Loading transport system...</Text>
-      </View>
-    );
-  }
-
-  // ─── RENDER: ERROR ───
-  if (hasError && !hasData) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Ionicons name="alert-circle" size={48} color="#EF4444" />
-        <Text style={styles.errorText}>{hasError}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={refreshRoutes}>
-          <Text style={styles.retryBtnText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // ─── RENDER: EMPTY ───
-  if (isEmpty) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <MaterialCommunityIcons name="bus-school" size={64} color="#CBD5E1" />
-        <Text style={styles.emptyTitle}>No Transport Routes</Text>
-        <Text style={styles.emptySub}>Create your first route to start tracking students</Text>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => setShowCreateRoute(true)}>
-          <Text style={styles.primaryBtnText}>Create Route</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (isLoading && !hasData) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#2563EB" /><Text style={styles.loadingText}>Loading transport system...</Text></View>;
+  if (hasError && !hasData) return <View style={[styles.container, styles.center]}><Ionicons name="alert-circle" size={48} color="#EF4444" /><Text style={styles.errorText}>{hasError}</Text><TouchableOpacity style={styles.retryBtn} onPress={refreshRoutes}><Text style={styles.retryBtnText}>Retry</Text></TouchableOpacity></View>;
+  if (isEmpty) return <View style={[styles.container, styles.center]}><MaterialCommunityIcons name="bus-school" size={64} color="#CBD5E1" /><Text style={styles.emptyTitle}>No Transport Routes</Text><Text style={styles.emptySub}>Create your first route to start tracking students</Text><TouchableOpacity style={styles.primaryBtn} onPress={() => setShowCreateRoute(true)}><Text style={styles.primaryBtnText}>Create Route</Text></TouchableOpacity></View>;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🚌 Transport Control</Text>
-        <Text style={styles.headerSub}>{schoolId ? 'School Admin' : 'System Admin'}</Text>
-      </View>
-
-      {/* STATS BAR */}
-      {stats && (
-        <View style={styles.statsBar}>
-          <StatBox icon="people" label="Students" value={stats.totalStudents} color="#3B82F6" />
-          <StatBox icon="bus" label="In Transit" value={stats.inTransit} color="#F59E0B" />
-          <StatBox icon="school" label="At School" value={stats.presentToday} color="#10B981" />
-          <StatBox icon="warning" label="Anomalies" value={stats.anomaliesToday} color="#EF4444" />
-        </View>
-      )}
-
-      {/* TAB BAR */}
-      <View style={styles.tabBar}>
-        <TabBtn label="Routes" icon="map" active={activeTab === 'routes'} onPress={() => setActiveTab('routes')} />
-        <TabBtn label="Students" icon="people" active={activeTab === 'students'} onPress={() => setActiveTab('students')} />
-        <TabBtn label="Live Map" icon="location" active={activeTab === 'live'} onPress={() => setActiveTab('live')} />
-        <TabBtn label={`Alerts ${openAnomalies.length > 0 ? `(${openAnomalies.length})` : ''}`} icon="warning" active={activeTab === 'anomalies'} onPress={() => setActiveTab('anomalies')} badge={openAnomalies.length} />
-      </View>
-
-      {/* CONTENT */}
+      <View style={styles.header}><Text style={styles.headerTitle}>🚌 Transport Control</Text><Text style={styles.headerSub}>{schoolId ? 'School Admin' : 'System Admin'}</Text></View>
+      {stats && <View style={styles.statsBar}><StatBox icon="people" label="Students" value={stats.totalStudents} color="#3B82F6" /><StatBox icon="bus" label="In Transit" value={stats.inTransit} color="#F59E0B" /><StatBox icon="school" label="At School" value={stats.presentToday} color="#10B981" /><StatBox icon="warning" label="Anomalies" value={stats.anomaliesToday} color="#EF4444" /></View>}
+      <View style={styles.tabBar}><TabBtn label="Routes" icon="map" active={activeTab==='routes'} onPress={()=>setActiveTab('routes')} /><TabBtn label="Students" icon="people" active={activeTab==='students'} onPress={()=>setActiveTab('students')} /><TabBtn label="Live Map" icon="location" active={activeTab==='live'} onPress={()=>setActiveTab('live')} /><TabBtn label={`Alerts ${openAnomalies.length>0?`(${openAnomalies.length})`:''}`} icon="warning" active={activeTab==='anomalies'} onPress={()=>setActiveTab('anomalies')} badge={openAnomalies.length} /></View>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'routes' && (
-          <View>
-            <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreateRoute(true)}>
-              <Ionicons name="add-circle" size={20} color="#fff" />
-              <Text style={styles.createBtnText}>New Route</Text>
-            </TouchableOpacity>
-
-            {routes.map(route => (
-              <TouchableOpacity
-                key={route.id}
-                style={[styles.routeCard, selectedRouteId === route.id && styles.routeCardSelected]}
-                onPress={() => setSelectedRouteId(route.id === selectedRouteId ? null : route.id)}
-              >
-                <View style={styles.routeHeader}>
-                  <View>
-                    <Text style={styles.routeName}>{route.route_name}</Text>
-                    <Text style={styles.routeCode}>{route.route_code}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: route.status === 'active' ? '#10B981' : '#EF4444' }]}>
-                    <Text style={styles.statusText}>{route.status}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.routeMeta}>
-                  <MetaItem icon="people" text={`${route.current_student_count}/${route.max_students} students`} />
-                  <MetaItem icon="cash" text={`KES ${route.registration_fee} reg / KES ${route.monthly_fee}/mo`} />
-                  <MetaItem icon="time" text={`${route.morning_pickup_time} - ${route.afternoon_dropoff_time}`} />
-                </View>
-
-                {route.driver && (
-                  <View style={styles.driverRow}>
-                    <FontAwesome5 name="user-tie" size={14} color="#64748B" />
-                    <Text style={styles.driverText}>{route.driver.full_name} • {route.vehicle?.plate_number || 'No vehicle'}</Text>
-                  </View>
-                )}
-
-                {selectedRouteId === route.id && (
-                  <View style={styles.routeActions}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => setShowRegisterPsv(true)}>
-                      <Ionicons name="person-add" size={16} color="#2563EB" />
-                      <Text style={styles.actionBtnText}>Register PSV</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => setActiveTab('students')}>
-                      <Ionicons name="people" size={16} color="#2563EB" />
-                      <Text style={styles.actionBtnText}>View Students</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {activeTab === 'students' && selectedRouteId && (
-          <View>
-            <Text style={styles.sectionTitle}>Students on Route</Text>
-            {students.map(student => (
-              <View key={student.id} style={styles.studentCard}>
-                <View style={styles.studentHeader}>
-                  <View style={styles.studentAvatar}>
-                    <Text style={styles.studentAvatarText}>
-                      {student.child?.first_name?.[0]}{student.child?.last_name?.[0]}
-                    </Text>
-                  </View>
-                  <View style={styles.studentInfo}>
-                    <Text style={styles.studentName}>{student.child?.first_name} {student.child?.last_name}</Text>
-                    <Text style={styles.studentMeta}>MTAA ID: {student.child?.mtaa_id}</Text>
-                  </View>
-                  <CustodyBadge status={student.custody_status} />
-                </View>
-                <View style={styles.studentDetails}>
-                  <DetailRow label="Home" value={student.home_address || 'Not set'} />
-                  <DetailRow label="Pickup" value={`Stop #${student.pickup_stop_order}`} />
-                  <DetailRow label="Payment" value={student.registration_paid && student.monthly_paid ? '✅ Paid' : '❌ Pending'} />
-                  <DetailRow label="Last Scan" value={student.last_known_at ? new Date(student.last_known_at).toLocaleTimeString() : 'Never'} />
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {activeTab === 'live' && (
-          <View style={styles.liveContainer}>
-            <Text style={styles.sectionTitle}>Live GPS Tracking</Text>
-            <Text style={styles.liveSub}>Real-time PSV locations via MTaxi integration</Text>
-
-            {routeLocations.length === 0 ? (
-              <View style={styles.emptyLive}>
-                <Ionicons name="location-outline" size={48} color="#CBD5E1" />
-                <Text style={styles.emptyLiveText}>No active PSVs on this route</Text>
-              </View>
-            ) : (
-              routeLocations.map((loc, i) => (
-                <View key={i} style={styles.gpsCard}>
-                  <View style={styles.gpsHeader}>
-                    <Ionicons name="bus" size={20} color="#2563EB" />
-                    <Text style={styles.gpsTitle}>PSV #{i + 1}</Text>
-                    <View style={styles.liveDot} />
-                    <Text style={styles.liveText}>LIVE</Text>
-                  </View>
-                  <View style={styles.gpsCoords}>
-                    <Text style={styles.gpsCoordText}>Lat: {loc.lat?.toFixed(6)}</Text>
-                    <Text style={styles.gpsCoordText}>Lng: {loc.lng?.toFixed(6)}</Text>
-                  </View>
-                  {loc.speed_kmh && <Text style={styles.gpsSpeed}>Speed: {loc.speed_kmh} km/h</Text>}
-                  <Text style={styles.gpsTime}>Updated: {new Date(loc.timestamp).toLocaleTimeString()}</Text>
-                </View>
-              ))
-            )}
-          </View>
-        )}
-
-        {activeTab === 'anomalies' && (
-          <View>
-            <Text style={styles.sectionTitle}>Safety Anomalies</Text>
-            {anomalies.length === 0 ? (
-              <View style={styles.emptyAnomalies}>
-                <Ionicons name="shield-checkmark" size={48} color="#10B981" />
-                <Text style={styles.emptyAnomaliesText}>No anomalies detected</Text>
-                <Text style={styles.emptyAnomaliesSub}>All children are safe and accounted for</Text>
-              </View>
-            ) : (
-              anomalies.map(anomaly => (
-                <TouchableOpacity
-                  key={anomaly.id}
-                  style={[styles.anomalyCard, anomaly.severity === 'critical' && styles.anomalyCritical]}
-                  onPress={() => setShowAnomalyDetail(anomaly)}
-                >
-                  <View style={styles.anomalyHeader}>
-                    <SeverityIcon severity={anomaly.severity} />
-                    <View style={styles.anomalyInfo}>
-                      <Text style={styles.anomalyType}>{anomaly.anomaly_type.replace(/_/g, ' ').toUpperCase()}</Text>
-                      <Text style={styles.anomalyChild}>{anomaly.child?.first_name} {anomaly.child?.last_name}</Text>
-                    </View>
-                    <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(anomaly.severity) }]}>
-                      <Text style={styles.severityText}>{anomaly.severity}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.anomalyDesc}>{anomaly.description}</Text>
-                  <Text style={styles.anomalyTime}>{new Date(anomaly.created_at).toLocaleString()}</Text>
-                  {anomaly.status === 'open' && (
-                    <View style={styles.anomalyActions}>
-                      <TouchableOpacity style={styles.resolveBtn} onPress={() => handleResolveAnomaly(anomaly)}>
-                        <Text style={styles.resolveBtnText}>Resolve</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.escalateBtn} onPress={() => handleEscalateAnomaly(anomaly)}>
-                        <Text style={styles.escalateBtnText}>Escalate</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        )}
+        {activeTab==='routes' && <View><TouchableOpacity style={styles.createBtn} onPress={()=>setShowCreateRoute(true)}><Ionicons name="add-circle" size={20} color="#fff" /><Text style={styles.createBtnText}>New Route</Text></TouchableOpacity>
+          {routes.map(route=>(<TouchableOpacity key={route.id} style={[styles.routeCard,selectedRouteId===route.id&&styles.routeCardSelected]} onPress={()=>setSelectedRouteId(route.id===selectedRouteId?null:route.id)}>
+            <View style={styles.routeHeader}><View><Text style={styles.routeName}>{route.route_name}</Text><Text style={styles.routeCode}>{route.route_code}</Text></View><View style={[styles.statusBadge,{backgroundColor:route.status==='active'?'#10B981':'#EF4444'}]}><Text style={styles.statusText}>{route.status}</Text></View></View>
+            <View style={styles.routeMeta}><MetaItem icon="people" text={`${route.current_student_count}/${route.max_students} students`} /><MetaItem icon="cash" text={`KES ${route.registration_fee} reg / KES ${route.monthly_fee}/mo`} /><MetaItem icon="time" text={`${route.morning_pickup_time} - ${route.afternoon_dropoff_time}`} /></View>
+            {route.driver&&<View style={styles.driverRow}><FontAwesome5 name="user-tie" size={14} color="#64748B" /><Text style={styles.driverText}>{route.driver.full_name} • {route.vehicle?.plate_number||'No vehicle'}</Text></View>}
+            {selectedRouteId===route.id&&<View style={styles.routeActions}><TouchableOpacity style={styles.actionBtn} onPress={()=>setShowRegisterPsv(true)}><Ionicons name="person-add" size={16} color="#2563EB" /><Text style={styles.actionBtnText}>Register PSV</Text></TouchableOpacity><TouchableOpacity style={styles.actionBtn} onPress={()=>setActiveTab('students')}><Ionicons name="people" size={16} color="#2563EB" /><Text style={styles.actionBtnText}>View Students</Text></TouchableOpacity></View>}
+          </TouchableOpacity>))}
+        </View>}
+        {activeTab==='students'&&selectedRouteId&&<View><Text style={styles.sectionTitle}>Students on Route</Text>{students.map(student=>(<View key={student.id} style={styles.studentCard}><View style={styles.studentHeader}><View style={styles.studentAvatar}><Text style={styles.studentAvatarText}>{student.child?.first_name?.[0]}{student.child?.last_name?.[0]}</Text></View><View style={styles.studentInfo}><Text style={styles.studentName}>{student.child?.first_name} {student.child?.last_name}</Text><Text style={styles.studentMeta}>MTAA ID: {student.child?.mtaa_id}</Text></View><CustodyBadge status={student.custody_status} /></View><View style={styles.studentDetails}><DetailRow label="Home" value={student.home_address||'Not set'} /><DetailRow label="Pickup" value={`Stop #${student.pickup_stop_order}`} /><DetailRow label="Payment" value={student.registration_paid&&student.monthly_paid?'✅ Paid':'❌ Pending'} /><DetailRow label="Last Scan" value={student.last_known_at?new Date(student.last_known_at).toLocaleTimeString():'Never'} /></View></View>))}</View>}
+        {activeTab==='live'&&<View style={styles.liveContainer}><Text style={styles.sectionTitle}>Live GPS Tracking</Text><Text style={styles.liveSub}>Real-time PSV locations via MTaxi integration</Text>{routeLocations.length===0?<View style={styles.emptyLive}><Ionicons name="location-outline" size={48} color="#CBD5E1" /><Text style={styles.emptyLiveText}>No active PSVs on this route</Text></View>:routeLocations.map((loc,i)=>(<View key={i} style={styles.gpsCard}><View style={styles.gpsHeader}><Ionicons name="bus" size={20} color="#2563EB" /><Text style={styles.gpsTitle}>PSV #{i+1}</Text><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View><View style={styles.gpsCoords}><Text style={styles.gpsCoordText}>Lat: {loc.lat?.toFixed(6)}</Text><Text style={styles.gpsCoordText}>Lng: {loc.lng?.toFixed(6)}</Text></View>{loc.speed_kmh&&<Text style={styles.gpsSpeed}>Speed: {loc.speed_kmh} km/h</Text>}<Text style={styles.gpsTime}>Updated: {new Date(loc.timestamp).toLocaleTimeString()}</Text></View>))}</View>}
+        {activeTab==='anomalies'&&<View><Text style={styles.sectionTitle}>Safety Anomalies</Text>{anomalies.length===0?<View style={styles.emptyAnomalies}><Ionicons name="shield-checkmark" size={48} color="#10B981" /><Text style={styles.emptyAnomaliesText}>No anomalies detected</Text><Text style={styles.emptyAnomaliesSub}>All children are safe and accounted for</Text></View>:anomalies.map(anomaly=>(<TouchableOpacity key={anomaly.id} style={[styles.anomalyCard,anomaly.severity==='critical'&&styles.anomalyCritical]} onPress={()=>{}}><View style={styles.anomalyHeader}><SeverityIcon severity={anomaly.severity} /><View style={styles.anomalyInfo}><Text style={styles.anomalyType}>{anomaly.anomaly_type.replace(/_/g,' ').toUpperCase()}</Text><Text style={styles.anomalyChild}>{anomaly.child?.first_name} {anomaly.child?.last_name}</Text></View><View style={[styles.severityBadge,{backgroundColor:getSeverityColor(anomaly.severity)}]}><Text style={styles.severityText}>{anomaly.severity}</Text></View></View><Text style={styles.anomalyDesc}>{anomaly.description}</Text><Text style={styles.anomalyTime}>{new Date(anomaly.created_at).toLocaleString()}</Text>{anomaly.status==='open'&&<View style={styles.anomalyActions}><TouchableOpacity style={styles.resolveBtn} onPress={()=>handleResolveAnomaly(anomaly)}><Text style={styles.resolveBtnText}>Resolve</Text></TouchableOpacity><TouchableOpacity style={styles.escalateBtn} onPress={()=>handleEscalateAnomaly(anomaly)}><Text style={styles.escalateBtnText}>Escalate</Text></TouchableOpacity></View>}</TouchableOpacity>))}</View>}
       </ScrollView>
-
-      {/* CREATE ROUTE MODAL */}
-      <Modal visible={showCreateRoute} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Route</Text>
-            <ScrollView>
-              <FormInput label="Route Name" value={routeForm.route_name} onChange={v => setRouteForm(p => ({ ...p, route_name: v }))} placeholder="e.g., Karen-Langata Morning" />
-              <FormInput label="Route Code" value={routeForm.route_code} onChange={v => setRouteForm(p => ({ ...p, route_code: v }))} placeholder="e.g., KLA-M-01" />
-              <FormInput label="Description" value={routeForm.description} onChange={v => setRouteForm(p => ({ ...p, description: v }))} placeholder="Optional description" />
-              <FormInput label="Max Students" value={routeForm.max_students} onChange={v => setRouteForm(p => ({ ...p, max_students: v }))} keyboardType="numeric" />
-              <FormInput label="Registration Fee (KES)" value={routeForm.registration_fee} onChange={v => setRouteForm(p => ({ ...p, registration_fee: v }))} keyboardType="numeric" />
-              <FormInput label="Monthly Fee (KES)" value={routeForm.monthly_fee} onChange={v => setRouteForm(p => ({ ...p, monthly_fee: v }))} keyboardType="numeric" />
-              <FormInput label="Morning Pickup" value={routeForm.morning_pickup_time} onChange={v => setRouteForm(p => ({ ...p, morning_pickup_time: v }))} placeholder="07:00" />
-              <FormInput label="Afternoon Dropoff" value={routeForm.afternoon_dropoff_time} onChange={v => setRouteForm(p => ({ ...p, afternoon_dropoff_time: v }))} placeholder="16:00" />
-            </ScrollView>
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreateRoute(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleCreateRoute}>
-                <Text style={styles.saveBtnText}>Create Route</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* REGISTER PSV MODAL */}
-      <Modal visible={showRegisterPsv} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Register PSV Driver</Text>
-            <ScrollView>
-              <FormInput label="Driver Full Name" value={psvForm.full_name} onChange={v => setPsvForm(p => ({ ...p, full_name: v }))} />
-              <FormInput label="Phone Number" value={psvForm.phone} onChange={v => setPsvForm(p => ({ ...p, phone: v }))} keyboardType="phone-pad" />
-              <FormInput label="License Number" value={psvForm.license_number} onChange={v => setPsvForm(p => ({ ...p, license_number: v }))} />
-              <FormInput label="License Expiry" value={psvForm.license_expiry} onChange={v => setPsvForm(p => ({ ...p, license_expiry: v }))} placeholder="YYYY-MM-DD" />
-              <FormInput label="Vehicle Plate" value={psvForm.vehicle_plate} onChange={v => setPsvForm(p => ({ ...p, vehicle_plate: v }))} />
-              <FormInput label="Vehicle Model" value={psvForm.vehicle_model} onChange={v => setPsvForm(p => ({ ...p, vehicle_model: v }))} />
-              <FormInput label="Vehicle Color" value={psvForm.vehicle_color} onChange={v => setPsvForm(p => ({ ...p, vehicle_color: v }))} />
-              <FormInput label="Capacity" value={psvForm.vehicle_capacity} onChange={v => setPsvForm(p => ({ ...p, vehicle_capacity: v }))} keyboardType="numeric" />
-              <FormInput label="Insurance Number" value={psvForm.insurance_number} onChange={v => setPsvForm(p => ({ ...p, insurance_number: v }))} />
-              <FormInput label="Insurance Expiry" value={psvForm.insurance_expiry} onChange={v => setPsvForm(p => ({ ...p, insurance_expiry: v }))} placeholder="YYYY-MM-DD" />
-            </ScrollView>
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowRegisterPsv(false)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleRegisterPsv} disabled={registering}>
-                <Text style={styles.saveBtnText}>{registering ? 'Registering...' : 'Register PSV'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <Modal visible={showCreateRoute} animationType="slide" transparent><View style={styles.modalOverlay}><View style={styles.modalContent}><Text style={styles.modalTitle}>Create New Route</Text><ScrollView><FormInput label="Route Name" value={routeForm.route_name} onChange={v=>setRouteForm(p=>({...p,route_name:v}))} placeholder="e.g., Karen-Langata Morning" /><FormInput label="Route Code" value={routeForm.route_code} onChange={v=>setRouteForm(p=>({...p,route_code:v}))} placeholder="e.g., KLA-M-01" /><FormInput label="Description" value={routeForm.description} onChange={v=>setRouteForm(p=>({...p,description:v}))} /><FormInput label="Max Students" value={routeForm.max_students} onChange={v=>setRouteForm(p=>({...p,max_students:v}))} keyboardType="numeric" /><FormInput label="Registration Fee (KES)" value={routeForm.registration_fee} onChange={v=>setRouteForm(p=>({...p,registration_fee:v}))} keyboardType="numeric" /><FormInput label="Monthly Fee (KES)" value={routeForm.monthly_fee} onChange={v=>setRouteForm(p=>({...p,monthly_fee:v}))} keyboardType="numeric" /><FormInput label="Morning Pickup" value={routeForm.morning_pickup_time} onChange={v=>setRouteForm(p=>({...p,morning_pickup_time:v}))} placeholder="07:00" /><FormInput label="Afternoon Dropoff" value={routeForm.afternoon_dropoff_time} onChange={v=>setRouteForm(p=>({...p,afternoon_dropoff_time:v}))} placeholder="16:00" /></ScrollView><View style={styles.modalActions}><TouchableOpacity style={styles.cancelBtn} onPress={()=>setShowCreateRoute(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity><TouchableOpacity style={styles.saveBtn} onPress={handleCreateRoute}><Text style={styles.saveBtnText}>Create Route</Text></TouchableOpacity></View></View></View></Modal>
+      <Modal visible={showRegisterPsv} animationType="slide" transparent><View style={styles.modalOverlay}><View style={styles.modalContent}><Text style={styles.modalTitle}>Register PSV Driver</Text><ScrollView><FormInput label="Driver Full Name" value={psvForm.full_name} onChange={v=>setPsvForm(p=>({...p,full_name:v}))} /><FormInput label="Phone Number" value={psvForm.phone} onChange={v=>setPsvForm(p=>({...p,phone:v}))} keyboardType="phone-pad" /><FormInput label="License Number" value={psvForm.license_number} onChange={v=>setPsvForm(p=>({...p,license_number:v}))} /><FormInput label="License Expiry" value={psvForm.license_expiry} onChange={v=>setPsvForm(p=>({...p,license_expiry:v}))} placeholder="YYYY-MM-DD" /><FormInput label="Vehicle Plate" value={psvForm.vehicle_plate} onChange={v=>setPsvForm(p=>({...p,vehicle_plate:v}))} /><FormInput label="Vehicle Model" value={psvForm.vehicle_model} onChange={v=>setPsvForm(p=>({...p,vehicle_model:v}))} /><FormInput label="Vehicle Color" value={psvForm.vehicle_color} onChange={v=>setPsvForm(p=>({...p,vehicle_color:v}))} /><FormInput label="Capacity" value={psvForm.vehicle_capacity} onChange={v=>setPsvForm(p=>({...p,vehicle_capacity:v}))} keyboardType="numeric" /><FormInput label="Insurance Number" value={psvForm.insurance_number} onChange={v=>setPsvForm(p=>({...p,insurance_number:v}))} /><FormInput label="Insurance Expiry" value={psvForm.insurance_expiry} onChange={v=>setPsvForm(p=>({...p,insurance_expiry:v}))} placeholder="YYYY-MM-DD" /></ScrollView><View style={styles.modalActions}><TouchableOpacity style={styles.cancelBtn} onPress={()=>setShowRegisterPsv(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity><TouchableOpacity style={styles.saveBtn} onPress={handleRegisterPsv} disabled={registering}><Text style={styles.saveBtnText}>{registering?'Registering...':'Register PSV'}</Text></TouchableOpacity></View></View></View></Modal>
     </View>
   );
 }
 
-// ─── SUB-COMPONENTS ───
-
-function StatBox({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
-  return (
-    <View style={styles.statBox}>
-      <Ionicons name={icon as any} size={20} color={color} />
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function TabBtn({ label, icon, active, onPress, badge }: { label: string; icon: string; active: boolean; onPress: () => void; badge?: number }) {
-  return (
-    <TouchableOpacity style={[styles.tabBtn, active && styles.tabBtnActive]} onPress={onPress}>
-      <Ionicons name={icon as any} size={18} color={active ? '#2563EB' : '#64748B'} />
-      <Text style={[styles.tabBtnText, active && styles.tabBtnTextActive]}>{label}</Text>
-      {badge && badge > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-}
-
-function MetaItem({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={styles.metaItem}>
-      <Ionicons name={icon as any} size={12} color="#94A3B8" />
-      <Text style={styles.metaText}>{text}</Text>
-    </View>
-  );
-}
-
-function CustodyBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    home: '#10B981',
-    with_house_girl: '#F59E0B',
-    in_psv: '#3B82F6',
-    at_school: '#10B981',
-    missing: '#EF4444',
-    anomaly: '#DC2626',
-  };
-  const labels: Record<string, string> = {
-    home: 'Home',
-    with_house_girl: 'House Girl',
-    in_psv: 'In PSV',
-    at_school: 'At School',
-    missing: 'MISSING',
-    anomaly: 'ANOMALY',
-  };
-  return (
-    <View style={[styles.custodyBadge, { backgroundColor: colors[status] || '#64748B' }]}>
-      <Text style={styles.custodyText}>{labels[status] || status}</Text>
-    </View>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}:</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
-  );
-}
-
-function SeverityIcon({ severity }: { severity: string }) {
-  const icons: Record<string, string> = { low: 'information-circle', medium: 'alert', high: 'warning', critical: 'skull' };
-  const colors: Record<string, string> = { low: '#3B82F6', medium: '#F59E0B', high: '#EF4444', critical: '#DC2626' };
-  return <Ionicons name={icons[severity] as any} size={24} color={colors[severity]} />;
-}
-
-function getSeverityColor(severity: string): string {
-  const colors: Record<string, string> = { low: '#3B82F6', medium: '#F59E0B', high: '#EF4444', critical: '#DC2626' };
-  return colors[severity] || '#64748B';
-}
-
-function FormInput({ label, value, onChange, placeholder, keyboardType }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; keyboardType?: any }) {
-  return (
-    <View style={styles.formGroup}>
-      <Text style={styles.formLabel}>{label}</Text>
-      <TextInput
-        style={styles.formInput}
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-        placeholderTextColor="#94A3B8"
-      />
-    </View>
-  );
-}
+function StatBox({icon,label,value,color}:{icon:string;label:string;value:number;color:string}){return(<View style={styles.statBox}><Ionicons name={icon as any} size={20} color={color}/><Text style={[styles.statValue,{color}]}>{value}</Text><Text style={styles.statLabel}>{label}</Text></View>);}
+function TabBtn({label,icon,active,onPress,badge}:{label:string;icon:string;active:boolean;onPress:()=>void;badge?:number}){return(<TouchableOpacity style={[styles.tabBtn,active&&styles.tabBtnActive]} onPress={onPress}><Ionicons name={icon as any} size={18} color={active?'#2563EB':'#64748B'}/><Text style={[styles.tabBtnText,active&&styles.tabBtnTextActive]}>{label}</Text>{badge&&badge>0&&<View style={styles.badge}><Text style={styles.badgeText}>{badge}</Text></View>}</TouchableOpacity>);}
+function MetaItem({icon,text}:{icon:string;text:string}){return(<View style={styles.metaItem}><Ionicons name={icon as any} size={12} color="#94A3B8"/><Text style={styles.metaText}>{text}</Text></View>);}
+function CustodyBadge({status}:{status:string}){const colors:Record<string,string>={home:'#10B981',with_house_girl:'#F59E0B',in_psv:'#3B82F6',at_school:'#10B981',missing:'#EF4444',anomaly:'#DC2626'};const labels:Record<string,string>={home:'Home',with_house_girl:'House Girl',in_psv:'In PSV',at_school:'At School',missing:'MISSING',anomaly:'ANOMALY'};return(<View style={[styles.custodyBadge,{backgroundColor:colors[status]||'#64748B'}]}><Text style={styles.custodyText}>{labels[status]||status}</Text></View>);}
+function DetailRow({label,value}:{label:string;value:string}){return(<View style={styles.detailRow}><Text style={styles.detailLabel}>{label}:</Text><Text style={styles.detailValue}>{value}</Text></View>);}
+function SeverityIcon({severity}:{severity:string}){const icons:Record<string,string>={low:'information-circle',medium:'alert',high:'warning',critical:'skull'};const colors:Record<string,string>={low:'#3B82F6',medium:'#F59E0B',high:'#EF4444',critical:'#DC2626'};return<Ionicons name={icons[severity] as any} size={24} color={colors[severity]}/>;}
+function getSeverityColor(severity:string):string{const colors:Record<string,string>={low:'#3B82F6',medium:'#F59E0B',high:'#EF4444',critical:'#DC2626'};return colors[severity]||'#64748B';}
+function FormInput({label,value,onChange,placeholder,keyboardType}:{label:string;value:string;onChange:(v:string)=>void;placeholder?:string;keyboardType?:any}){return(<View style={styles.formGroup}><Text style={styles.formLabel}>{label}</Text><TextInput style={styles.formInput} value={value} onChangeText={onChange} placeholder={placeholder} keyboardType={keyboardType} placeholderTextColor="#94A3B8"/></View>);}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748B' },
-  errorText: { marginTop: 12, fontSize: 14, color: '#EF4444', textAlign: 'center' },
-  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, backgroundColor: '#2563EB', borderRadius: 8 },
-  retryBtnText: { color: '#fff', fontWeight: '600' },
-  emptyTitle: { marginTop: 16, fontSize: 18, fontWeight: '700', color: '#1E293B' },
-  emptySub: { marginTop: 4, fontSize: 13, color: '#64748B', textAlign: 'center', paddingHorizontal: 32 },
-  primaryBtn: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#2563EB', borderRadius: 10 },
-  primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-
-  header: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
-  headerSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
-
-  statsBar: { flexDirection: 'row', padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  statBox: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  statValue: { fontSize: 20, fontWeight: '800', marginTop: 4 },
-  statLabel: { fontSize: 11, color: '#64748B', marginTop: 2 },
-
-  tabBar: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingHorizontal: 4 },
-  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, flexDirection: 'row', justifyContent: 'center', gap: 4 },
-  tabBtnActive: { borderBottomWidth: 2, borderBottomColor: '#2563EB' },
-  tabBtnText: { fontSize: 11, color: '#64748B' },
-  tabBtnTextActive: { color: '#2563EB', fontWeight: '600' },
-  badge: { backgroundColor: '#EF4444', borderRadius: 10, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', marginLeft: 2 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700', paddingHorizontal: 4 },
-
-  content: { flex: 1, padding: 12 },
-  createBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#2563EB', paddingVertical: 12, borderRadius: 10, marginBottom: 12, gap: 8 },
-  createBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-
-  routeCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  routeCardSelected: { borderColor: '#2563EB', borderWidth: 2 },
-  routeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  routeName: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-  routeCode: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  routeMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 10 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 11, color: '#64748B' },
-  driverRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  driverText: { fontSize: 12, color: '#475569' },
-  routeActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#EFF6FF', borderRadius: 6 },
-  actionBtnText: { fontSize: 12, color: '#2563EB', fontWeight: '600' },
-
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 10 },
-
-  studentCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  studentHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  studentAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center' },
-  studentAvatarText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  studentInfo: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '700', color: '#1E293B' },
-  studentMeta: { fontSize: 11, color: '#64748B' },
-  custodyBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  custodyText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  studentDetails: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  detailLabel: { fontSize: 12, color: '#64748B' },
-  detailValue: { fontSize: 12, color: '#1E293B', fontWeight: '500' },
-
-  liveContainer: { paddingBottom: 20 },
-  liveSub: { fontSize: 12, color: '#64748B', marginBottom: 12 },
-  emptyLive: { alignItems: 'center', paddingVertical: 40 },
-  emptyLiveText: { marginTop: 12, fontSize: 14, color: '#64748B' },
-  gpsCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  gpsHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  gpsTitle: { fontSize: 14, fontWeight: '700', color: '#1E293B', flex: 1 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' },
-  liveText: { fontSize: 10, color: '#EF4444', fontWeight: '700' },
-  gpsCoords: { flexDirection: 'row', gap: 16 },
-  gpsCoordText: { fontSize: 12, color: '#475569', fontFamily: 'monospace' },
-  gpsSpeed: { fontSize: 12, color: '#2563EB', marginTop: 4 },
-  gpsTime: { fontSize: 11, color: '#94A3B8', marginTop: 4 },
-
-  emptyAnomalies: { alignItems: 'center', paddingVertical: 40 },
-  emptyAnomaliesText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: '#10B981' },
-  emptyAnomaliesSub: { marginTop: 4, fontSize: 12, color: '#64748B' },
-  anomalyCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  anomalyCritical: { borderColor: '#EF4444', borderWidth: 2, backgroundColor: '#FEF2F2' },
-  anomalyHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  anomalyInfo: { flex: 1 },
-  anomalyType: { fontSize: 12, fontWeight: '700', color: '#1E293B' },
-  anomalyChild: { fontSize: 11, color: '#64748B' },
-  severityBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  severityText: { color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  anomalyDesc: { fontSize: 13, color: '#475569', lineHeight: 18 },
-  anomalyTime: { fontSize: 11, color: '#94A3B8', marginTop: 6 },
-  anomalyActions: { flexDirection: 'row', gap: 8, marginTop: 10 },
-  resolveBtn: { flex: 1, paddingVertical: 8, backgroundColor: '#10B981', borderRadius: 6, alignItems: 'center' },
-  resolveBtnText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-  escalateBtn: { flex: 1, paddingVertical: 8, backgroundColor: '#EF4444', borderRadius: 6, alignItems: 'center' },
-  escalateBtnText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '85%' },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#1E293B', marginBottom: 16 },
-  formGroup: { marginBottom: 12 },
-  formLabel: { fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 4, textTransform: 'uppercase' },
-  formInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#1E293B', backgroundColor: '#F8FAFC' },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  cancelBtn: { flex: 1, paddingVertical: 12, backgroundColor: '#F1F5F9', borderRadius: 8, alignItems: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600' },
-  saveBtn: { flex: 2, paddingVertical: 12, backgroundColor: '#2563EB', borderRadius: 8, alignItems: 'center' },
-  saveBtnText: { color: '#fff', fontWeight: '700' },
+  container:{flex:1,backgroundColor:'#F8FAFC'},center:{justifyContent:'center',alignItems:'center',padding:24},loadingText:{marginTop:12,fontSize:14,color:'#64748B'},errorText:{marginTop:12,fontSize:14,color:'#EF4444',textAlign:'center'},retryBtn:{marginTop:16,paddingHorizontal:24,paddingVertical:10,backgroundColor:'#2563EB',borderRadius:8},retryBtnText:{color:'#fff',fontWeight:'600'},emptyTitle:{marginTop:16,fontSize:18,fontWeight:'700',color:'#1E293B'},emptySub:{marginTop:4,fontSize:13,color:'#64748B',textAlign:'center',paddingHorizontal:32},primaryBtn:{marginTop:20,paddingHorizontal:24,paddingVertical:12,backgroundColor:'#2563EB',borderRadius:10},primaryBtnText:{color:'#fff',fontWeight:'700',fontSize:14},header:{paddingHorizontal:16,paddingVertical:12,backgroundColor:'#fff',borderBottomWidth:1,borderBottomColor:'#E2E8F0'},headerTitle:{fontSize:20,fontWeight:'800',color:'#1E293B'},headerSub:{fontSize:12,color:'#64748B',marginTop:2},statsBar:{flexDirection:'row',padding:12,backgroundColor:'#fff',borderBottomWidth:1,borderBottomColor:'#E2E8F0'},statBox:{flex:1,alignItems:'center',paddingVertical:8},statValue:{fontSize:20,fontWeight:'800',marginTop:4},statLabel:{fontSize:11,color:'#64748B',marginTop:2},tabBar:{flexDirection:'row',backgroundColor:'#fff',borderBottomWidth:1,borderBottomColor:'#E2E8F0',paddingHorizontal:4},tabBtn:{flex:1,alignItems:'center',paddingVertical:10,flexDirection:'row',justifyContent:'center',gap:4},tabBtnActive:{borderBottomWidth:2,borderBottomColor:'#2563EB'},tabBtnText:{fontSize:11,color:'#64748B'},tabBtnTextActive:{color:'#2563EB',fontWeight:'600'},badge:{backgroundColor:'#EF4444',borderRadius:10,minWidth:18,height:18,justifyContent:'center',alignItems:'center',marginLeft:2},badgeText:{color:'#fff',fontSize:10,fontWeight:'700',paddingHorizontal:4},content:{flex:1,padding:12},createBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',backgroundColor:'#2563EB',paddingVertical:12,borderRadius:10,marginBottom:12,gap:8},createBtnText:{color:'#fff',fontWeight:'700',fontSize:14},routeCard:{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:10,borderWidth:1,borderColor:'#E2E8F0'},routeCardSelected:{borderColor:'#2563EB',borderWidth:2},routeHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},routeName:{fontSize:16,fontWeight:'700',color:'#1E293B'},routeCode:{fontSize:12,color:'#64748B',marginTop:2},statusBadge:{paddingHorizontal:8,paddingVertical:3,borderRadius:6},statusText:{color:'#fff',fontSize:10,fontWeight:'700',textTransform:'uppercase'},routeMeta:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:10},metaItem:{flexDirection:'row',alignItems:'center',gap:4},metaText:{fontSize:11,color:'#64748B'},driverRow:{flexDirection:'row',alignItems:'center',gap:6,marginTop:8,paddingTop:8,borderTopWidth:1,borderTopColor:'#F1F5F9'},driverText:{fontSize:12,color:'#475569'},routeActions:{flexDirection:'row',gap:8,marginTop:10},actionBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:12,paddingVertical:6,backgroundColor:'#EFF6FF',borderRadius:6},actionBtnText:{fontSize:12,color:'#2563EB',fontWeight:'600'},sectionTitle:{fontSize:16,fontWeight:'700',color:'#1E293B',marginBottom:10},studentCard:{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:10,borderWidth:1,borderColor:'#E2E8F0'},studentHeader:{flexDirection:'row',alignItems:'center',gap:10},studentAvatar:{width:40,height:40,borderRadius:20,backgroundColor:'#3B82F6',justifyContent:'center',alignItems:'center'},studentAvatarText:{color:'#fff',fontWeight:'700',fontSize:14},studentInfo:{flex:1},studentName:{fontSize:14,fontWeight:'700',color:'#1E293B'},studentMeta:{fontSize:11,color:'#64748B'},custodyBadge:{paddingHorizontal:8,paddingVertical:3,borderRadius:6},custodyText:{color:'#fff',fontSize:10,fontWeight:'700'},studentDetails:{marginTop:10,paddingTop:10,borderTopWidth:1,borderTopColor:'#F1F5F9'},detailRow:{flexDirection:'row',justifyContent:'space-between',paddingVertical:3},detailLabel:{fontSize:12,color:'#64748B'},detailValue:{fontSize:12,color:'#1E293B',fontWeight:'500'},liveContainer:{paddingBottom:20},liveSub:{fontSize:12,color:'#64748B',marginBottom:12},emptyLive:{alignItems:'center',paddingVertical:40},emptyLiveText:{marginTop:12,fontSize:14,color:'#64748B'},gpsCard:{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:10,borderWidth:1,borderColor:'#E2E8F0'},gpsHeader:{flexDirection:'row',alignItems:'center',gap:8,marginBottom:8},gpsTitle:{fontSize:14,fontWeight:'700',color:'#1E293B',flex:1},liveDot:{width:8,height:8,borderRadius:4,backgroundColor:'#EF4444'},liveText:{fontSize:10,color:'#EF4444',fontWeight:'700'},gpsCoords:{flexDirection:'row',gap:16},gpsCoordText:{fontSize:12,color:'#475569',fontFamily:'monospace'},gpsSpeed:{fontSize:12,color:'#2563EB',marginTop:4},gpsTime:{fontSize:11,color:'#94A3B8',marginTop:4},emptyAnomalies:{alignItems:'center',paddingVertical:40},emptyAnomaliesText:{marginTop:12,fontSize:16,fontWeight:'700',color:'#10B981'},emptyAnomaliesSub:{marginTop:4,fontSize:12,color:'#64748B'},anomalyCard:{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:10,borderWidth:1,borderColor:'#E2E8F0'},anomalyCritical:{borderColor:'#EF4444',borderWidth:2,backgroundColor:'#FEF2F2'},anomalyHeader:{flexDirection:'row',alignItems:'center',gap:10,marginBottom:8},anomalyInfo:{flex:1},anomalyType:{fontSize:12,fontWeight:'700',color:'#1E293B'},anomalyChild:{fontSize:11,color:'#64748B'},severityBadge:{paddingHorizontal:8,paddingVertical:2,borderRadius:4},severityText:{color:'#fff',fontSize:10,fontWeight:'700',textTransform:'uppercase'},anomalyDesc:{fontSize:13,color:'#475569',lineHeight:18},anomalyTime:{fontSize:11,color:'#94A3B8',marginTop:6},anomalyActions:{flexDirection:'row',gap:8,marginTop:10},resolveBtn:{flex:1,paddingVertical:8,backgroundColor:'#10B981',borderRadius:6,alignItems:'center'},resolveBtnText:{color:'#fff',fontWeight:'600',fontSize:12},escalateBtn:{flex:1,paddingVertical:8,backgroundColor:'#EF4444',borderRadius:6,alignItems:'center'},escalateBtnText:{color:'#fff',fontWeight:'600',fontSize:12},modalOverlay:{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'},modalContent:{backgroundColor:'#fff',borderTopLeftRadius:20,borderTopRightRadius:20,padding:20,maxHeight:'85%'},modalTitle:{fontSize:18,fontWeight:'800',color:'#1E293B',marginBottom:16},formGroup:{marginBottom:12},formLabel:{fontSize:12,fontWeight:'600',color:'#475569',marginBottom:4,textTransform:'uppercase'},formInput:{borderWidth:1,borderColor:'#E2E8F0',borderRadius:8,paddingHorizontal:12,paddingVertical:10,fontSize:14,color:'#1E293B',backgroundColor:'#F8FAFC'},modalActions:{flexDirection:'row',gap:10,marginTop:16,paddingTop:16,borderTopWidth:1,borderTopColor:'#E2E8F0'},cancelBtn:{flex:1,paddingVertical:12,backgroundColor:'#F1F5F9',borderRadius:8,alignItems:'center'},cancelBtnText:{color:'#64748B',fontWeight:'600'},saveBtn:{flex:2,paddingVertical:12,backgroundColor:'#2563EB',borderRadius:8,alignItems:'center'},saveBtnText:{color:'#fff',fontWeight:'700'},
 });

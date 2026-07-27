@@ -62,45 +62,45 @@ let registerKernelApp: any, getKernelEntry: any;
 let BootSequence: any, usePanicHandler: any, SafeModeScreen: any, KernelProvider: any;
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const keb = require('@/lib/kernel/kernel-event-bus');
   kernelEventBus = keb.kernelEventBus || keb.default;
 } catch (e) { kernelEventBus = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const reg = require('@/lib/kernel/registry');
   registerApp = reg.registerApp;
   getAppById = reg.getAppById;
 } catch (e) { registerApp = null; getAppById = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const kreg = require('@/lib/kernel/registry/kernel-registry');
   registerKernelApp = kreg.registerKernelApp;
   getKernelEntry = kreg.getKernelEntry;
 } catch (e) { registerKernelApp = null; getKernelEntry = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const bs = require('@/lib/mtaa/kernel/boot-sequence');
   BootSequence = bs.BootSequence || bs.default;
 } catch (e) { BootSequence = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const ph = require('@/lib/mtaa/kernel/panic-handler');
   usePanicHandler = ph.usePanicHandler || ph.default;
 } catch (e) { usePanicHandler = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const sm = require('@/lib/mtaa/kernel/safe-mode');
   SafeModeScreen = sm.SafeModeScreen || sm.default;
 } catch (e) { SafeModeScreen = null; }
 
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const kp = require('@/lib/kernel/kernel-provider');
   KernelProvider = kp.KernelProvider || kp.default;
 } catch (e) { KernelProvider = null; }

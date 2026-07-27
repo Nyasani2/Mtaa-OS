@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 import { TribeMember } from '../types';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const DEFAULT_AVATAR_SMALL = require('@/assets/images/default-avatar-small.png');
 
 interface Props {

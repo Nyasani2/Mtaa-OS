@@ -52,7 +52,7 @@ export class ObservationEngine extends BaseEngine {
     const rawObservations = (payload as Record<string, unknown>)?.observations as Array<Record<string, unknown>>;
 
     let result: unknown;
-    let confidence = 0.85;
+    const confidence = 0.85;
 
     switch (action) {
       case 'collect':

@@ -17,7 +17,7 @@ import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const MTAA_HOME_BG = require('@/assets/images/mtaa_home.png');
 
 import {

@@ -74,7 +74,7 @@ export default function DiscoveryScreen() {
       swipedIds.push(user.id);
 
       // Fetch profiles
-      let query = supabase
+      const query = supabase
         .from('hookup_profiles')
         .select('user_id, bio, gender, looking_for, photos, interests, intent, relationship_type')
         .not('user_id', 'in', `(${swipedIds.join(',')})`)

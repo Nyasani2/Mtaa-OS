@@ -41,7 +41,7 @@ export async function getMessages(
 
 export function subscribeToMessages(
   conversation_id: string,
-  callback: Function
+  callback: (...args: any[]) => any
 ) {
 
   return supabase

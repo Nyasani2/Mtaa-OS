@@ -1,6 +1,5 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StreetsLayout() {
@@ -10,28 +9,17 @@ export default function StreetsLayout() {
 
   useEffect(() => {
     if (isLoading) return;
-    // Protect create and post detail routes
-    const isProtected = segments.some(
-      s => s === 'create' || s === 'post'
-    );
-    if (isProtected && !user) {
-      router.replace('/(os)/auth/login');
-    }
+    const isProtected = segments.some(s => s === 'create' || s === 'post');
+    if (isProtected && !user) { router.replace('/(os)/auth/login'); }
   }, [user, isLoading, segments, router]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: '#000' },
-        animation: 'slide_from_right',
-      }}
-    >
-      <Stack.Screen name="index" options={{ title: 'Streets' }} />
-      <Stack.Screen name="create" options={{ title: 'New Post', presentation: 'modal' }} />
-      <Stack.Screen name="post/[postId]" options={{ title: 'Post' }} />
-      <Stack.Screen name="creator/[creatorId]" options={{ title: 'Creator' }} />
-      <Stack.Screen name="hashtag/[tag]" options={{ title: 'Hashtag' }} />
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' }, animation: 'slide_from_right' }}>
+      <Stack.Screen name="index" options={{ title: 'Streets' }}/>
+      <Stack.Screen name="create" options={{ title: 'New Post', presentation: 'modal' }}/>
+      <Stack.Screen name="post/[postId]" options={{ title: 'Post' }}/>
+      <Stack.Screen name="creator/[creatorId]" options={{ title: 'Creator' }}/>
+      <Stack.Screen name="hashtag/[tag]" options={{ title: 'Hashtag' }}/>
     </Stack>
   );
 }

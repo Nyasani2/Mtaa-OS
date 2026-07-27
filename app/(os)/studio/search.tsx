@@ -73,7 +73,7 @@ export default function SearchScreen() {
     setLoading(true);
     try {
       const searchTerm = `%${query.trim()}%`;
-      let allResults: SearchResult[] = [];
+      const allResults: SearchResult[] = [];
 
       // Search videos
       if (activeCategory === 'all' || activeCategory === 'videos') {

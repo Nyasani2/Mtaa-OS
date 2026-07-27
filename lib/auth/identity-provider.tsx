@@ -2,8 +2,7 @@
 // v3.1: Thin compatibility wrapper — delegates to Zustand store
 
 import React, { createContext, useContext, useEffect } from 'react';
-import { useAuthStore } from './store/auth.store';
-import type { User } from './store/auth.store';
+import { useAuthStore, type User } from './store/auth.store';
 
 export interface IdentityContextValue {
   user: User | null;
@@ -55,7 +54,6 @@ export function useIdentity(): IdentityContextValue {
 export function IdentityProvider({ children }: { children: React.ReactNode }) {
   const store = useAuthStore();
   useEffect(() => { store.initialize(); }, []);
-
   const value: IdentityContextValue = {
     user: store.user,
     session: store.session,
@@ -80,10 +78,5 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
     },
     refreshSession: async () => { await store.initialize(); },
   };
-
-  return (
-    <IdentityContext.Provider value={value}>
-      {children}
-    </IdentityContext.Provider>
-  );
+  return <IdentityContext.Provider value={value}>{children}</IdentityContext.Provider>;
 }

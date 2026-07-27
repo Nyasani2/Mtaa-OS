@@ -32,6 +32,7 @@ export default function PostDetailScreen() {
   const loadPost = useCallback(async () => {
     setLoading(true);
     // Get single post
+// eslint-disable-next-line no-unsafe-optional-chaining
     const { data } = await tribesService['getPosts']?.(postId, { limit: 1 });
     // Actually we need a getPostById method — let's fetch from the list for now
     // Since service doesn't have getPostById, we'll query directly

@@ -73,7 +73,7 @@ export class IdentityEngine extends BaseEngine {
     const userId = (payload as Record<string, unknown>)?.userId as string ?? source;
 
     let result: unknown;
-    let confidence = 0.9;
+    const confidence = 0.9;
 
     switch (action) {
       case 'resolve':

@@ -61,7 +61,7 @@ export async function getDiscoveryProfiles(userId: string, filters?: DiscoveryFi
     ...(passed || []).map((p: any) => p.passed_id),
   ].filter(Boolean);
 
-  let query = supabase
+  const query = supabase
     .from('user_profiles')
     .select(`
       id, full_name, avatar_url, bio, date_of_birth, gender,

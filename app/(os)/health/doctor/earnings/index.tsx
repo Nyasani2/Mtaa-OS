@@ -19,7 +19,7 @@ export default function DoctorEarningsScreen() {
     setLoading(true);
     try {
       const now = new Date();
-      let startDate = new Date();
+      const startDate = new Date();
       if (period === 'week') startDate.setDate(now.getDate() - 7);
       else if (period === 'month') startDate.setMonth(now.getMonth() - 1);
       else startDate.setFullYear(now.getFullYear() - 1);

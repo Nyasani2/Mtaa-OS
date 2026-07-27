@@ -1,7 +1,0 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/types/supabase';
-type PC=Database['public']['Tables']['education_parent_connections']['Row'];
-export async function getParentConnections(parentId:string){const{d,e}=await supabase.from('education_parent_connections').select('*,student:education_students(full_name,grade,class:education_classes(name)),institution:education_institutions(name)').eq('parent_id',parentId).order('created_at',{ascending:false});if(e)throw e;return d||[];}
-export async function getStudentParents(studentId:string){const{d,e}=await supabase.from('education_parent_connections').select('*,parent:user_profiles(full_name,email,phone)').eq('student_id',studentId).order('priority',{ascending:true});if(e)throw e;return d||[];}
-export async function connectParent(c:Omit<PC,'id'|'created_at'>){const{d,e}=await supabase.from('education_parent_connections').insert(c).select().single();if(e)throw e;return d;}
-export async function updateConnection(id:string,u:Partial<PC>){const{d,e}=await supabase.from('education_parent_connections').update(u).eq('id',id).select().single();if(e)throw e;return d;}
-export async function getParentNotifications(parentId:string){const{d,e}=await supabase.from('education_attendance').select('*,student:education_students(full_name)').eq('student_id',supabase.from('education_parent_connections').select('student_id').eq('parent_id',parentId)).order('session_date',{ascending:false}).limit(20);if(e)throw e;return d||[];}

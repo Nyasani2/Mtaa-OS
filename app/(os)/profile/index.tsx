@@ -15,7 +15,7 @@ import {
 // Conditional clipboard import
 let Clipboard: any = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   Clipboard = require('expo-clipboard');
 } catch {
   Clipboard = null;

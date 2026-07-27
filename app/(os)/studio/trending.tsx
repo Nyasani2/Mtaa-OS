@@ -28,7 +28,7 @@ export default function TrendingScreen() {
   const fetchTrending = async () => {
     setLoading(true);
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
     if (timeFilter === 'today') startDate.setHours(0, 0, 0, 0);
     else if (timeFilter === 'week') startDate.setDate(now.getDate() - 7);
     else startDate.setDate(now.getDate() - 30);

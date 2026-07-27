@@ -150,14 +150,14 @@ export default function NetworkSettingsScreen() {
 
   useEffect(() => {
     let mounted = true;
-    let subs: any[] = [];
+    const subs: any[] = [];
 
     async function loadAll() {
       setLoading(true);
 
       // ─── Network ───────────────────────────────────────────────
       try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
         const Network = require('expo-network');
         setHasNetwork(true);
         const state = await Network.getNetworkStateAsync();
@@ -190,7 +190,7 @@ export default function NetworkSettingsScreen() {
 
       // ─── Location ──────────────────────────────────────────────
       try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
         const Location = require('expo-location');
         setHasLocation(true);
         const provider = await Location.getProviderStatusAsync?.().catch(() => null);
@@ -205,7 +205,7 @@ export default function NetworkSettingsScreen() {
 
       // ─── Cellular ────────────────────────────────────────────────
       try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
         const Cellular = require('expo-cellular');
         setHasCellular(true);
         const [carrier, iso, mcc, mnc, voip, gen] = await Promise.all([
@@ -230,7 +230,7 @@ export default function NetworkSettingsScreen() {
 
       // ─── Battery ─────────────────────────────────────────────────
       try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
         const Battery = require('expo-battery');
         setHasBattery(true);
         const level = await Battery.getBatteryLevelAsync?.().catch(() => 0.5);

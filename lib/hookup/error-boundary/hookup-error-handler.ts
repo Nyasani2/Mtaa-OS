@@ -1,4 +1,4 @@
-export function safeExecute(fn: Function) {
+export function safeExecute(fn: (...args: any[]) => any) {
 
   try {
     return fn();

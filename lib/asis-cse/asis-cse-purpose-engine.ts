@@ -66,7 +66,7 @@ export class PurposeEngine extends BaseEngine {
     const action = (payload as Record<string, unknown>)?.action as string;
 
     let result: unknown;
-    let confidence = 0.85;
+    const confidence = 0.85;
 
     switch (action) {
       case 'define':

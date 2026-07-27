@@ -4,7 +4,7 @@ import { healthCrypto, EncryptedData } from './health-crypto';
 // Lazy-load SecureStore to prevent web crash on module import
 let SecureStore: any = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   SecureStore = require('expo-secure-store');
 } catch {
   // Web or missing module

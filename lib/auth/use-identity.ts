@@ -4,7 +4,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 // Safe import for pin-engine — handles missing functions gracefully
 let getPinState: () => Promise<{ isSet: boolean; isLocked: boolean; attemptsRemaining: number }>;
 try {
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
   const pinEngine = require('@/lib/security/pin-engine');
   getPinState = pinEngine.getPinState || pinEngine.getPinStatus || (async () => ({ isSet: false, isLocked: false, attemptsRemaining: 5 }));
 } catch {

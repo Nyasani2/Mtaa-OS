@@ -25,7 +25,7 @@ export function generateAdvice(
   context: RelationshipContext
 ) {
 
-  let advice: string[] = [];
+  const advice: string[] = [];
 
   switch (context.issue_type) {
 

@@ -11,7 +11,7 @@ export interface MTAAEvent {
   timestamp: string;
 }
 
-const listeners: Record<string, Function[]> = {};
+const listeners: Record<string, (...args: any[]) => any[]> = {};
 
 export function emitGlobalEvent(event: MTAAEvent) {
 
@@ -24,7 +24,7 @@ export function emitGlobalEvent(event: MTAAEvent) {
 
 export function subscribeGlobal(
   type: AppEvent,
-  fn: Function
+  fn: (...args: any[]) => any
 ) {
 
   if (!listeners[type]) {

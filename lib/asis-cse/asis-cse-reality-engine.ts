@@ -63,7 +63,7 @@ export class RealityEngine extends BaseEngine {
     const observations = (payload as Record<string, unknown>)?.observations as Record<string, unknown>[];
 
     let result: unknown;
-    let confidence = 0.8;
+    const confidence = 0.8;
 
     switch (action) {
       case 'observe':

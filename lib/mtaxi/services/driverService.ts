@@ -49,7 +49,7 @@ export async function updateDriverLocation(driverId: string, lat: number, lng: n
 }
 
 export async function getDriverEarnings(driverId: string, period: "today" | "week" | "month" = "today"): Promise<{ total: number; trips: number }> {
-  let startDate = new Date();
+  const startDate = new Date();
   if (period === "week") startDate.setDate(startDate.getDate() - 7);
   if (period === "month") startDate.setDate(startDate.getDate() - 30);
 
