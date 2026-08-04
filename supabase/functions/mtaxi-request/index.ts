@@ -30,13 +30,18 @@ serve(async (req) => {
   const estimated_fare = Math.round(base_fare * vehicleMult * surge);
 
   const { data: ride, error: rideError } = await supabase
-    .from("rides")
+    .from("mtaxi_rides")
     .insert({ rider_id: user.id, pickup_location: pickup, dropoff_location: dropoff, ride_type, estimated_fare, status: "requested" })
     .select().single();
 
   if (rideError) return new Response(JSON.stringify({ error: rideError.message }), { status: 500 });
 
-  await supabase.from("escrow_accounts").insert({ job_id: ride.id, employer_id: user.id, amount: estimated_fare, status: "held" });
+  try {
+    await supabase.from("wallet_escrows").insert({
+      reference_id: ride.id, user_id: user.id, amount: estimated_fare,
+      status: "held", module: "mtaxi", created_at: new Date().toISOString()
+    });
+  } catch (_e) {}
 
   const { data: drivers } = await supabase.rpc("mtaa_find_nearby_drivers", { pickup_lat: pickup.lat, pickup_lng: pickup.lng, radius_km: 5 });
   if (drivers && drivers.length > 0) {

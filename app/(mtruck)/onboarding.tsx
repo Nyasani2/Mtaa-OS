@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,7 +12,7 @@ const STEPS = ['Company Info', 'Fleet Details', 'Documents', 'Review'];
 
 export default function MTruckOnboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 

@@ -9,7 +9,7 @@ export async function runRepositionAI() {
   const forecast = await forecastDemand();
 
   const { data: idleTrucks } = await supabase
-    .from("trucks")
+    .from("mtruck_trucks")
     .select("*")
     .eq("status", "IDLE");
 
@@ -27,7 +27,7 @@ export async function runRepositionAI() {
 
     if (!target) continue;
 
-    await supabase.from("truck_repositioning").insert({
+    await supabase.from("mtruck_locations").insert({
       truck_id: truck.truck_id,
       target_zone: target.cell_id,
       reason: "PREDICTIVE_DEMAND"

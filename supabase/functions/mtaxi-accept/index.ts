@@ -18,7 +18,7 @@ serve(async (req) => {
   if (!vehicle) return new Response(JSON.stringify({ error: "Vehicle verification required" }), { status: 403 });
 
   const { data: ride, error: rideError } = await supabase
-    .from("rides").update({ driver_id: user.id, status: "accepted", accepted_at: new Date().toISOString() })
+    .from("mtaxi_rides").update({ driver_id: user.id, status: "accepted", accepted_at: new Date().toISOString() })
     .eq("id", ride_id).eq("status", "requested").select().single();
 
   if (rideError) return new Response(JSON.stringify({ error: rideError.message }), { status: 500 });

@@ -1,3 +1,6 @@
+// NOTE: 'mtruck_loads' and 'mtruck_alerts' tables were not explicitly
+// confirmed in schema audit. If queries fail, verify these tables exist.
+
 import { supabase } from "@/lib/supabase";
 import type {
   Truck, Load, Driver, FleetAlert, FleetMetrics,

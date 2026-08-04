@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import UnifiedMap from '@/lib/components/maps/UnifiedMap';
-import { useLocation } from '@/lib/hooks/useLocation';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
 
 export default function HaulTrackingScreen() {
   const router = useRouter();

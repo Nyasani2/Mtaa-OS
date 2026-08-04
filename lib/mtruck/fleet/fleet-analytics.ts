@@ -6,7 +6,7 @@ export async function getFleetAnalytics() {
     .select("*");
 
   const { data: trucks } = await supabase
-    .from("trucks")
+    .from("mtruck_trucks")
     .select("*");
 
   const utilization =

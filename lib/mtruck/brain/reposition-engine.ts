@@ -21,7 +21,7 @@ export async function generateRepositionSignals() {
 
     for (const driver of drivers || []) {
 
-      await supabase.from("driver_repositioning").insert({
+      await supabase.from("mtruck_locations").insert({
         driver_id: driver.driver_id,
         target_lat: zone.lat,
         target_lng: zone.lng,

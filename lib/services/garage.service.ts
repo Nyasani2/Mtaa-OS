@@ -300,14 +300,8 @@ export async function getGarageStats(garageId: string): Promise<GarageStats> {
 
   if (apptError) throw apptError;
 
-  // Reviews
-  const { data: reviews, error: reviewError } = await supabase
-    .from('garage_reviews')
-    .select('overall_rating')
-    .eq('garage_id', garageId)
-    .eq('is_visible', true);
-
-  if (reviewError) throw reviewError;
+  // Reviews — garage_reviews table not in schema; return empty until created
+  const reviews: any[] = [];
 
   // Inventory
   const { data: inventory, error: invError } = await supabase

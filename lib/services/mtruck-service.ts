@@ -186,31 +186,31 @@ export async function updateTruckLocation(truckId: string, lat: number, lng: num
 
 // ─── FREIGHT ───
 export async function getFreights(): Promise<Freight[]> {
-  const { data, error } = await supabase.from('mtruck_freight').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('mtruck_shipments').select('*').order('created_at', { ascending: false });
   if (error) return handleError(error, []); return data || [];
 }
 export async function getFreightById(id: string): Promise<Freight | null> {
-  const { data, error } = await supabase.from('mtruck_freight').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtruck_shipments').select('*').eq('id', id).single();
   if (error) return handleError(error, null); return data;
 }
 export async function getShipperFreights(shipperId: string): Promise<Freight[]> {
-  const { data, error } = await supabase.from('mtruck_freight').select('*').eq('shipper_id', shipperId);
+  const { data, error } = await supabase.from('mtruck_shipments').select('*').eq('shipper_id', shipperId);
   if (error) return handleError(error, []); return data || [];
 }
 export async function getDriverFreights(driverId: string): Promise<Freight[]> {
-  const { data, error } = await supabase.from('mtruck_freight').select('*').eq('driver_id', driverId);
+  const { data, error } = await supabase.from('mtruck_shipments').select('*').eq('driver_id', driverId);
   if (error) return handleError(error, []); return data || [];
 }
 export async function createFreight(data: Partial<Freight>): Promise<Freight | null> {
-  const { data: result, error } = await supabase.from('mtruck_freight').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtruck_shipments').insert(data).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function updateFreight(id: string, data: Partial<Freight>): Promise<Freight | null> {
-  const { data: result, error } = await supabase.from('mtruck_freight').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtruck_shipments').update(data).eq('id', id).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteFreight(id: string): Promise<boolean> {
-  const { error } = await supabase.from('mtruck_freight').delete().eq('id', id);
+  const { error } = await supabase.from('mtruck_shipments').delete().eq('id', id);
   if (error) return handleError(error, false); return true;
 }
 export async function requestFreight(data: Partial<Freight>): Promise<Freight | null> {
@@ -219,63 +219,63 @@ export async function requestFreight(data: Partial<Freight>): Promise<Freight | 
 
 // ─── FLEETS ───
 export async function getFleets(): Promise<Fleet[]> {
-  const { data, error } = await supabase.from('mtruck_fleets').select('*');
+  const { data, error } = await supabase.from('mtruck_fleet').select('*');
   if (error) return handleError(error, []); return data || [];
 }
 export async function getFleetById(id: string): Promise<Fleet | null> {
-  const { data, error } = await supabase.from('mtruck_fleets').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtruck_fleet').select('*').eq('id', id).single();
   if (error) return handleError(error, null); return data;
 }
 export async function getOwnerFleets(ownerId: string): Promise<Fleet[]> {
-  const { data, error } = await supabase.from('mtruck_fleets').select('*').eq('owner_id', ownerId);
+  const { data, error } = await supabase.from('mtruck_fleet').select('*').eq('owner_id', ownerId);
   if (error) return handleError(error, []); return data || [];
 }
 export async function createFleet(data: Partial<Fleet>): Promise<Fleet | null> {
-  const { data: result, error } = await supabase.from('mtruck_fleets').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtruck_fleet').insert(data).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function updateFleet(id: string, data: Partial<Fleet>): Promise<Fleet | null> {
-  const { data: result, error } = await supabase.from('mtruck_fleets').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtruck_fleet').update(data).eq('id', id).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteFleet(id: string): Promise<boolean> {
-  const { error } = await supabase.from('mtruck_fleets').delete().eq('id', id);
+  const { error } = await supabase.from('mtruck_fleet').delete().eq('id', id);
   if (error) return handleError(error, false); return true;
 }
 
 // ─── FLEET TRUCKS ───
 export async function getFleetTrucks(fleetId: string): Promise<FleetTruck[]> {
-  const { data, error } = await supabase.from('mtruck_fleet_trucks').select('*').eq('fleet_id', fleetId);
+  const { data, error } = await supabase.from('mtruck_trucks').select('*').eq('fleet_id', fleetId);
   if (error) return handleError(error, []); return data || [];
 }
 export async function addTruckToFleet(data: Partial<FleetTruck>): Promise<FleetTruck | null> {
-  const { data: result, error } = await supabase.from('mtruck_fleet_trucks').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtruck_trucks').insert(data).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function removeTruckFromFleet(id: string): Promise<boolean> {
-  const { error } = await supabase.from('mtruck_fleet_trucks').delete().eq('id', id);
+  const { error } = await supabase.from('mtruck_trucks').delete().eq('id', id);
   if (error) return handleError(error, false); return true;
 }
 
 // ─── HAUL TYPES ───
 export async function getHaulTypes(): Promise<HaulType[]> {
-  const { data, error } = await supabase.from('mtruck_haul_types').select('*');
+  const { data, error } = await supabase.from('mtruck_haul_quotes').select('*');
   if (error) return handleError(error, []); return data || [];
 }
 export async function getHaulTypeById(id: string): Promise<HaulType | null> {
-  const { data, error } = await supabase.from('mtruck_haul_types').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtruck_haul_quotes').select('*').eq('id', id).single();
   if (error) return handleError(error, null); return data;
 }
 export async function createHaulType(data: Partial<HaulType>): Promise<HaulType | null> {
-  const { data: result, error } = await supabase.from('mtruck_haul_types').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtruck_haul_quotes').insert(data).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function updateHaulType(id: string, data: Partial<HaulType>): Promise<HaulType | null> {
-  const { data: result, error } = await supabase.from('mtruck_haul_types').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtruck_haul_quotes').update(data).eq('id', id).select().single();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteHaulType(id: string): Promise<boolean> {
-  const { error } = await supabase.from('mtruck_haul_types').delete().eq('id', id);
+  const { error } = await supabase.from('mtruck_haul_quotes').delete().eq('id', id);
   if (error) return handleError(error, false); return true;
 }
 
@@ -715,7 +715,7 @@ export async function mtruckOperation(type: string, data?: any): Promise<any> {
 // ─── STATS ───
 export async function getMTruckStats(): Promise<any> {
   const { count: trucks } = await supabase.from('mtruck_trucks').select('*', { count: 'exact', head: true });
-  const { count: freights } = await supabase.from('mtruck_freight').select('*', { count: 'exact', head: true });
-  const { count: fleets } = await supabase.from('mtruck_fleets').select('*', { count: 'exact', head: true });
+  const { count: freights } = await supabase.from('mtruck_shipments').select('*', { count: 'exact', head: true });
+  const { count: fleets } = await supabase.from('mtruck_fleet').select('*', { count: 'exact', head: true });
   return { trucks, freights, fleets };
 }

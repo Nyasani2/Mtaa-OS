@@ -1,3 +1,7 @@
+// NOTE: 'device_assignments' and 'fleet_alerts' tables were not confirmed
+// in the schema audit. If these tables do not exist, queries will fail.
+// Create these tables or replace with suitable alternatives.
+
 import { supabase } from '@/lib/supabase';
 
 export interface FleetCameraStatus {
@@ -36,14 +40,22 @@ export async function getFleetCameraStatus(): Promise<FleetCameraStatus[]> {
     .from('mtruck_trucks')
     .select('id, plate_number, make, model');
 
-  const { data: assignments } = await supabase
-    .from('device_assignments')
-    .select(`
-      device:device_id(*),
-      vehicle:assigned_vehicle_id(id)
-    `)
-    .eq('assigned_type', 'vehicle')
-    .is('unassigned_at', null);
+  // NOTE: 'device_assignments' table existence not verified in schema audit.
+  // If this table does not exist, fleet camera status will show empty assignments.
+  let assignments: any[] = [];
+  try {
+    const { data: _assignments } = await supabase
+      .from('device_assignments')
+      .select(`
+        device:device_id(*),
+        vehicle:assigned_vehicle_id(id)
+      `)
+      .eq('assigned_type', 'vehicle')
+      .is('unassigned_at', null);
+    assignments = _assignments || [];
+  } catch (_e) {
+    assignments = [];
+  }
 
   const fleetStatus: FleetCameraStatus[] = [];
 

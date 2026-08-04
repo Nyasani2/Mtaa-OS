@@ -42,7 +42,7 @@ export async function matchFreightRequest(request: any) {
 
   if (!bestTruck) return null;
 
-  await supabase.from("dispatch_assignments").insert({
+  await supabase.from("mtruck_jobs").insert({
     request_id: request.id,
     truck_id: bestTruck.truck_id,
     status: "ASSIGNED",

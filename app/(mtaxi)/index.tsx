@@ -1,80 +1,131 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import UnifiedMap from '@/lib/components/maps/UnifiedMap';
-import { useLocation } from '@/lib/hooks/useLocation';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-const RIDE_TYPES = [
-  { key: 'economy', label: 'Economy', desc: 'Affordable rides', price: 250, icon: 'car', color: '#3b82f6' },
-  { key: 'comfort', label: 'Comfort', desc: 'Newer cars, top drivers', price: 400, icon: 'car-sport', color: '#8B5CF6' },
-  { key: 'premium', label: 'Premium', desc: 'Luxury vehicles', price: 800, icon: 'diamond', color: '#f59e0b' },
+const { width } = Dimensions.get('window');
+
+const SERVICE_CARDS = [
+  { label: 'Rides', sub: "Let's get moving", icon: 'taxi', color: '#3B82F6', bg: '#EFF6FF', route: '/(mtaxi)/request?serviceType=car' },
+  { label: 'Schedule', sub: 'Book ahead', icon: 'calendar-alt', color: '#10B981', bg: '#ECFDF5', route: '/(mtaxi)/schedule' },
+  { label: 'Motorbike', sub: '2-wheel rides', icon: 'motorcycle', color: '#8B5CF6', bg: '#F5F3FF', route: '/(mtaxi)/request?serviceType=boda' },
+  { label: 'Food', sub: 'Quick delivery', icon: 'hamburger', color: '#F59E0B', bg: '#FFFBEB', route: '/(mtaxi)/request?serviceType=delivery' },
+  { label: 'Send', sub: 'Send or receive', icon: 'box', color: '#EF4444', bg: '#FEF2F2', route: '/(mtaxi)/request?serviceType=send' },
 ];
 
-export default function MTaxiScreen() {
+export default function MTaxiHub() {
   const router = useRouter();
-  const { latitude, longitude } = useLocation();
-  const [selectedType, setSelectedType] = useState('economy');
-  const selected = RIDE_TYPES.find(r => r.key === selectedType)!;
+  const { user } = useAuthStore();
+  const [recentPlaces, setRecentPlaces] = useState<any[]>([]);
+
+  useEffect(() => {
+    setRecentPlaces([
+      { name: 'Home', address: 'Lavington, Nairobi', icon: 'home' },
+      { name: 'Work', address: 'Upper Hill, Nairobi', icon: 'briefcase' },
+    ]);
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <UnifiedMap latitude={latitude} longitude={longitude} zoom={14}
-          markers={[{ id: 'pickup', latitude, longitude, title: 'Pickup', color: '#3b82f6' }]}
-          showUserLocation />
-      </View>
-      <View style={styles.bottomSheet}>
-        <View style={styles.handle} />
-        <Text style={styles.title}>Choose your ride</Text>
-        <View style={styles.rideOptions}>
-          {RIDE_TYPES.map(type => (
-            <TouchableOpacity key={type.key}
-              style={[styles.rideCard, selectedType === type.key && { borderColor: type.color, borderWidth: 2 }]}
-              onPress={() => setSelectedType(type.key)}>
-              <Ionicons name={type.icon as any} size={24} color={type.color} />
-              <View style={styles.rideInfo}>
-                <Text style={styles.rideLabel}>{type.label}</Text>
-                <Text style={styles.rideDesc}>{type.desc}</Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Promo Banner */}
+        <View style={styles.promoBanner}>
+          <View style={styles.promoIcon}>
+            <FontAwesome5 name="tag" size={16} color="#3B82F6" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.promoTitle}>15% off 5 rides</Text>
+            <TouchableOpacity><Text style={styles.promoLink}>View details</Text></TouchableOpacity>
+          </View>
+          <TouchableOpacity><Ionicons name="close" size={20} color="#9CA3AF" /></TouchableOpacity>
+        </View>
+
+        <Text style={styles.heading}>Your journey begins here.</Text>
+
+        <View style={styles.cardsRow}>
+          {SERVICE_CARDS.slice(0, 2).map(card => (
+            <TouchableOpacity key={card.label} style={[styles.bigCard, { backgroundColor: card.bg }]} onPress={() => router.push(card.route as any)}>
+              <View style={[styles.cardIcon, { backgroundColor: card.color }]}>
+                <FontAwesome5 name={card.icon as any} size={20} color="#fff" />
               </View>
-              <Text style={[styles.ridePrice, { color: type.color }]}>KES {type.price}</Text>
+              <Text style={styles.cardLabel}>{card.label}</Text>
+              <Text style={styles.cardSub}>{card.sub}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity style={[styles.bookBtn, { backgroundColor: selected.color }]} onPress={() => router.push({ pathname: '/(mtaxi)/request', params: { rideType: selectedType } })}>
-          <Text style={styles.bookBtnText}>Book {selected.label} — KES {selected.price}</Text>
-        </TouchableOpacity>
-        <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtaxi)/request')}>
-            <Ionicons name="location" size={20} color="#3b82f6" /><Text style={styles.navText}>Book Ride</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtaxi)/tracking')}>
-            <Ionicons name="navigate" size={20} color="#94a3b8" /><Text style={styles.navText}>Track</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtaxi)/driver')}>
-            <Ionicons name="car" size={20} color="#94a3b8" /><Text style={styles.navText}>Driver</Text>
-          </TouchableOpacity>
+
+        <View style={styles.cardsRowSmall}>
+          {SERVICE_CARDS.slice(2).map(card => (
+            <TouchableOpacity key={card.label} style={[styles.smallCard, { backgroundColor: card.bg }]} onPress={() => router.push(card.route as any)}>
+              <View style={[styles.cardIconSmall, { backgroundColor: card.color }]}>
+                <FontAwesome5 name={card.icon as any} size={18} color="#fff" />
+              </View>
+              <Text style={styles.cardLabelSmall}>{card.label}</Text>
+              <Text style={styles.cardSubSmall}>{card.sub}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
-    </View>
+
+        <TouchableOpacity style={styles.whereToBar} onPress={() => router.push('/(mtaxi)/request?serviceType=car')}>
+          <Ionicons name="search" size={20} color="#6B7280" />
+          <Text style={styles.whereToText}>Where to?</Text>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity style={styles.laterBtn} onPress={() => router.push('/(mtaxi)/schedule')}>
+            <FontAwesome5 name="clock" size={14} color="#374151" style={{ marginRight: 6 }} />
+            <Text style={styles.laterText}>Later</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {recentPlaces.length > 0 && (
+          <View style={styles.recentSection}>
+            <Text style={styles.recentTitle}>Recent</Text>
+            {recentPlaces.map((place, idx) => (
+              <TouchableOpacity key={idx} style={styles.recentItem}>
+                <View style={styles.recentIcon}>
+                  <FontAwesome5 name={place.icon} size={16} color="#6B7280" />
+                </View>
+                <View>
+                  <Text style={styles.recentName}>{place.name}</Text>
+                  <Text style={styles.recentAddress}>{place.address}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  mapContainer: { flex: 1 },
-  bottomSheet: { backgroundColor: '#1e293b', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 30, marginTop: -20 },
-  handle: { width: 40, height: 4, backgroundColor: '#475569', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 16 },
-  rideOptions: { gap: 10, marginBottom: 16 },
-  rideCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#334155' },
-  rideInfo: { flex: 1, marginLeft: 12 },
-  rideLabel: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  rideDesc: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  ridePrice: { fontSize: 15, fontWeight: '700' },
-  bookBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 16 },
-  bookBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 12 },
-  navItem: { alignItems: 'center', gap: 4 },
-  navText: { fontSize: 11, color: '#94a3b8' },
+  container: { flex: 1, backgroundColor: '#fff' },
+  promoBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', margin: 16, padding: 12, borderRadius: 12 },
+  promoIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  promoTitle: { fontSize: 14, fontWeight: '700', color: '#1E3A8A' },
+  promoLink: { fontSize: 12, color: '#3B82F6', marginTop: 2 },
+  heading: { fontSize: 22, fontWeight: '800', color: '#111827', marginHorizontal: 16, marginTop: 8 },
+  cardsRow: { flexDirection: 'row', paddingHorizontal: 12, marginTop: 16, gap: 10 },
+  bigCard: { flex: 1, borderRadius: 16, padding: 16, minHeight: 100 },
+  cardIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  cardLabel: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  cardSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  cardsRowSmall: { flexDirection: 'row', paddingHorizontal: 12, marginTop: 10, gap: 10 },
+  smallCard: { flex: 1, borderRadius: 16, padding: 14, alignItems: 'center' },
+  cardIconSmall: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  cardLabelSmall: { fontSize: 13, fontWeight: '700', color: '#111827' },
+  cardSubSmall: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  whereToBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', marginHorizontal: 16, marginTop: 16, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12 },
+  whereToText: { fontSize: 16, fontWeight: '600', color: '#374151', marginLeft: 10 },
+  laterBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  laterText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  recentSection: { marginTop: 20, paddingHorizontal: 16 },
+  recentTitle: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 10 },
+  recentItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+  recentIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  recentName: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  recentAddress: { fontSize: 12, color: '#6B7280', marginTop: 1 },
 });

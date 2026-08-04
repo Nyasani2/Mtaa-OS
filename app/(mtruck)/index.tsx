@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import UnifiedMap from '@/lib/components/maps/UnifiedMap';
-import { useLocation } from '@/lib/hooks/useLocation';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
 
 const HAUL_TYPES = [
   { key: 'local', label: 'Local Haul', desc: 'Within city · Same day', price: 3500, icon: 'truck', color: '#84cc16' },

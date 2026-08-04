@@ -9,7 +9,7 @@ export interface MaintenanceRecord {
 
 export async function scheduleMaintenance(record: MaintenanceRecord) {
   const { data, error } = await supabase
-    .from("maintenance_logs")
+    .from("mtruck_maintenance_alerts")
     .insert({
       ...record,
       created_at: new Date().toISOString(),
@@ -20,7 +20,7 @@ export async function scheduleMaintenance(record: MaintenanceRecord) {
   if (error) throw error;
 
   await supabase
-    .from("trucks")
+    .from("mtruck_trucks")
     .update({ status: "MAINTENANCE" })
     .eq("id", record.truck_id);
 
@@ -29,7 +29,7 @@ export async function scheduleMaintenance(record: MaintenanceRecord) {
 
 export async function getMaintenanceQueue() {
   const { data } = await supabase
-    .from("maintenance_logs")
+    .from("mtruck_maintenance_alerts")
     .select("*")
     .neq("status", "DONE");
 

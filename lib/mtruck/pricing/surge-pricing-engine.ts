@@ -62,7 +62,7 @@ export async function calculateFreightPrice(ctx: PricingContext) {
 export async function getZoneMarketState(zone_id: string) {
   const [{ data: orders }, { data: trucks }] = await Promise.all([
     supabase.from("freight_orders").select("*").eq("zone_id", zone_id),
-    supabase.from("trucks").select("*").eq("zone_id", zone_id)
+    supabase.from("mtruck_trucks").select("*").eq("zone_id", zone_id)
   ]);
 
   return {

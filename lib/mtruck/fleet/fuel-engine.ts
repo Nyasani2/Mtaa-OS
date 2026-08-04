@@ -1,7 +1,7 @@
 import { supabase } from "../../supabase";
 
 export async function logFuel(truck_id: string, liters: number, cost: number) {
-  const { error } = await supabase.from("fuel_logs").insert({
+  const { error } = await supabase.from("mtruck_fuel_alerts").insert({
     truck_id,
     liters,
     cost,
@@ -15,7 +15,7 @@ export async function logFuel(truck_id: string, liters: number, cost: number) {
 
 export async function getFuelStats(truck_id: string) {
   const { data } = await supabase
-    .from("fuel_logs")
+    .from("mtruck_fuel_alerts")
     .select("*")
     .eq("truck_id", truck_id);
 

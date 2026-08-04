@@ -1,7 +1,6 @@
 import { AppManifest } from './types';
 
 export const ALL_APPS: AppManifest[] = [
-  // === OS CORE ===
   {
     id: 'wallet', name: 'Wallet', version: '3.2.1',
     description: 'Manage your MTAA balance, top up via M-Pesa, withdraw to bank, transfer funds to other users, and view transaction history.',
@@ -61,8 +60,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 10, permissions: ['profile_read', 'profile_write'],
     tags: ['social', 'identity'],
   },
-
-  // === SOCIAL ===
   {
     id: 'streets', name: 'Streets', version: '2.3.0',
     description: 'Share posts, photos, videos, and articles with your community. Follow creators, comment, like, and discover trending content.',
@@ -113,8 +110,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 7, permissions: ['camera', 'microphone', 'photos'],
     tags: ['media', 'camera'],
   },
-
-  // === COMMERCE ===
   {
     id: 'marketplace', name: 'Marketplace', version: '2.1.0',
     description: 'Buy and sell products in your local community. Browse listings, chat with sellers, and pay with MTAA Wallet.',
@@ -146,26 +141,24 @@ export const ALL_APPS: AppManifest[] = [
     tags: ['food', 'pos', 'business'],
   },
   {
-    id: 'property', name: 'Property', version: '1.2.0',
-    description: 'List, book, and manage properties. Find rentals, buy land, and manage tenant payments.',
-    shortDescription: 'List, book, and manage properties.',
-    category: 'commerce', icon: 'home-outline', route: '/(os)/property',
+    id: 'stay', name: 'Stay', version: '1.3.0',
+    description: 'Find accommodations, book stays, manage reservations, and discover local lodging options.',
+    shortDescription: 'Find and book accommodations.',
+    category: 'commerce', icon: 'bed-outline', route: '/(os)/stay',
     developer: 'MTAA OS', isOSApp: true, requiresAuth: true,
-    color: '#84CC16', rating: 4.0, reviewCount: 280, downloadCount: 12000,
-    sizeMB: 11, permissions: ['location', 'wallet_read', 'camera', 'photos'],
-    tags: ['real estate', 'rentals'],
+    color: '#84CC16', rating: 4.2, reviewCount: 350, downloadCount: 14000,
+    sizeMB: 12, permissions: ['location', 'wallet_read', 'wallet_write', 'camera', 'photos'],
+    tags: ['accommodation', 'hotels', 'lodging'],
   },
-
-  // === TRANSPORT ===
   {
     id: 'mtaxi', name: 'MTaxi', version: '3.5.0',
-    description: 'Book rides and manage transportation. Request cabs, track drivers in real-time, and pay with MTAA Wallet.',
+    description: 'Book car rides and motorcycle taxis. Request MTaxi cabs or Boda boda rides, track drivers in real-time, and pay with MTAA Wallet.',
     shortDescription: 'Book rides and manage transportation.',
     category: 'transport', icon: 'car-outline', route: '/(mtaxi)',
     developer: 'MTAA OS', isOSApp: true, requiresAuth: true,
-    color: '#06B6D4', rating: 4.7, reviewCount: 1800, downloadCount: 48000,
+    color: '#06B6D4', rating: 4.7, reviewCount: 2470, downloadCount: 74000,
     sizeMB: 17, permissions: ['location', 'wallet_read', 'wallet_write', 'camera'],
-    featured: true, trending: true, tags: ['taxi', 'rides', 'transport'],
+    featured: true, trending: true, tags: ['taxi', 'boda', 'rides', 'transport'],
   },
   {
     id: 'mtruck', name: 'MTruck', version: '2.0.0',
@@ -177,18 +170,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 14, permissions: ['location', 'wallet_read', 'wallet_write', 'camera'],
     tags: ['logistics', 'freight', 'trucking'],
   },
-  {
-    id: 'boda', name: 'Boda', version: '1.8.0',
-    description: 'Motorcycle taxi booking. Fast, affordable rides through your city with helmet and safety tracking.',
-    shortDescription: 'Motorcycle taxi booking.',
-    category: 'transport', icon: 'bicycle-outline', route: '/(boda)',
-    developer: 'MTAA OS', isOSApp: true, requiresAuth: true,
-    color: '#8B5CF6', rating: 4.5, reviewCount: 670, downloadCount: 26000,
-    sizeMB: 12, permissions: ['location', 'wallet_read', 'wallet_write'],
-    tags: ['motorcycle', 'rides', 'boda boda'],
-  },
-
-  // === WORK ===
   {
     id: 'jobs', name: 'Jobs', version: '2.2.0',
     description: 'Find and post job opportunities. Create your professional profile, apply to jobs, and get hired.',
@@ -209,8 +190,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 19, permissions: ['camera', 'microphone', 'wallet_read', 'wallet_write'],
     trending: true, tags: ['live', 'streaming', 'creator'],
   },
-
-  // === CIVIC ===
   {
     id: 'civic', name: 'Civic', version: '1.0.0',
     description: 'Government services: police reports, court cases, revenue payments, treasury, and public records.',
@@ -221,8 +200,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 15, permissions: ['identity', 'wallet_read', 'wallet_write'],
     tags: ['government', 'public services'],
   },
-
-  // === FINANCE ===
   {
     id: 'binance', name: 'Binance', version: '1.1.0',
     description: 'Crypto trading and wallet. Buy, sell, and trade Bitcoin, Ethereum, and other cryptocurrencies.',
@@ -243,8 +220,6 @@ export const ALL_APPS: AppManifest[] = [
     sizeMB: 10, permissions: ['wallet_read', 'identity', 'credit_check'],
     tags: ['loans', 'credit', 'microfinance'],
   },
-
-  // === TOOLS ===
   {
     id: 'calculator', name: 'Calculator', version: '1.0.0',
     description: 'Basic and scientific calculator with history, unit conversion, and currency exchange rates.',
@@ -282,8 +257,6 @@ export const ALL_APPS: AppManifest[] = [
     color: '#8B5CF6', rating: 4.3, reviewCount: 320, downloadCount: 16000,
     sizeMB: 8, permissions: ['photos', 'files'], tags: ['reading', 'pdf'],
   },
-
-  // === DEVELOPER ===
   {
     id: 'developer', name: 'Developer', version: '1.0.0',
     description: 'Submit apps, view earnings, manage ASIS submissions, and track your app performance on the MTAA AppStore.',

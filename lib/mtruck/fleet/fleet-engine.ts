@@ -21,8 +21,8 @@ export interface Driver {
 
 export async function getFleetOverview() {
   const [{ data: trucks }, { data: drivers }] = await Promise.all([
-    supabase.from("trucks").select("*"),
-    supabase.from("drivers").select("*"),
+    supabase.from("mtruck_trucks").select("*"),
+    supabase.from("mtruck_drivers").select("*"),
   ]);
 
   return {
@@ -35,14 +35,14 @@ export async function getFleetOverview() {
 
 export async function assignDriverToTruck(driver_id: string, truck_id: string) {
   const { error } = await supabase
-    .from("drivers")
+    .from("mtruck_drivers")
     .update({ assigned_truck_id: truck_id })
     .eq("id", driver_id);
 
   if (error) throw error;
 
   await supabase
-    .from("trucks")
+    .from("mtruck_trucks")
     .update({ status: "ACTIVE" })
     .eq("id", truck_id);
 

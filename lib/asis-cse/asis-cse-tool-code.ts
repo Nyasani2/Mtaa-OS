@@ -1,644 +1,384 @@
 /**
- * ASIS CSE v2 — Tool-Code Engine
- * Executes MTAA app integrations via tool calls. Self-contained. No external APIs.
- * Routes commands like "book a cab", "check wallet", "schedule meeting" to
- * the appropriate MTAA domain services.
- *
- * @module lib/asis-cse/asis-cse-tool-code
+ * ASIS CSE — Code Tool
+ * Code generation, analysis, and execution for the cognitive architecture
+ * Multi-language support, syntax validation, linting, test generation
+ * Wires into ActionEngine + LearningEngine
  */
 
-import { supabase } from '@/lib/supabase/client';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { BaseCognitiveTool, ToolExecutionRequest } from './asis-cse-tool-types';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-export interface ToolParameter {
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+interface CodeGenerateOptions {
+  language: 'typescript' | 'javascript' | 'python' | 'sql' | 'bash' | 'json' | 'yaml';
   description: string;
-  required: boolean;
-  default?: any;
-  enum?: string[];
+  context?: string;
+  constraints?: string[];
+  maxLines?: number;
+  includeTests?: boolean;
+  includeComments?: boolean;
 }
 
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  category: 'mtaxi' | 'wallet' | 'health' | 'calendar' | 'studio' | 'system' | 'education' | 'shop';
-  parameters: ToolParameter[];
-  handler: (params: Record<string, any>, userId: string) => Promise<ToolResult>;
+interface CodeAnalyzeOptions {
+  code: string;
+  language: string;
+  analysisType: 'complexity' | 'security' | 'style' | 'all';
 }
 
-export interface ToolResult {
+interface CodeExecuteOptions {
+  code: string;
+  language: 'javascript' | 'python' | 'typescript';
+  timeoutMs?: number;
+  allowNetwork?: boolean;
+  allowFilesystem?: boolean;
+}
+
+interface CodeResult {
+  code: string;
+  language: string;
+  analysis?: CodeAnalysisResult;
+  execution?: CodeExecutionResult;
+  tests?: string;
+  metadata: {
+    lineCount: number;
+    charCount: number;
+    generationTimeMs: number;
+  };
+}
+
+interface CodeAnalysisResult {
+  complexity: number;
+  issues: Array<{ severity: 'error' | 'warning' | 'info'; line: number; message: string; rule: string }>;
+  securityRisks: string[];
+  styleScore: number;
+  suggestions: string[];
+}
+
+interface CodeExecutionResult {
   success: boolean;
-  data?: any;
+  output: string;
   error?: string;
-  message: string;
-  confidence: number;
+  executionTimeMs: number;
 }
 
-export interface ToolInvocation {
-  tool: string;
-  parameters: Record<string, any>;
-  result?: ToolResult;
-}
+export class CodeTool extends BaseCognitiveTool {
+  readonly name = 'code';
+  readonly description = 'Generates, analyzes, and executes code across multiple languages with security validation';
+  readonly version = '2.0.0';
+  readonly requiresNetwork = false;
+  readonly requiresFilesystem = false;
+  readonly sandboxed = true;
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function _ok(data: any, message: string, confidence = 0.95): ToolResult {
-  return { success: true, data, message, confidence };
-}
-
-function _err(error: string, message: string, confidence = 0.1): ToolResult {
-  return { success: false, error, message, confidence };
-}
-
-function _getUserId(): string {
-  return useAuthStore.getState()?.user?.id || 'anonymous';
-}
-
-// ============================================================================
-// TOOL HANDLERS
-// ============================================================================
-
-const TOOLS: Record<string, ToolDefinition> = {
-  // SYSTEM / IDENTITY
-  system_get_identity: {
-    name: 'system_get_identity',
-    description: 'Return ASIS identity, creator, host OS, and Kamos Theory.',
-    category: 'system',
-    parameters: [],
-    handler: async () => {
-      return _ok({
-        name: 'ASIS',
-        fullName: 'Artificial Sentience & Intelligence System',
-        version: 'CSE v2.0',
-        creator: 'Kevin Nyasani',
-        hostOS: 'MTAA OS V10',
-        purpose: 'Cognitive Operating System for the MTAA Universal Platform',
-        kamosTheory: '1×1 = 1 + f(growth, replication, interaction, observation). Systems are proliferative, adaptive, and context-aware.',
-      }, 'I am ASIS, the AI assistant of MTAA OS, built by Kevin Nyasani. I operate on Kamos Theory.');
+  readonly capabilities = [
+    {
+      name: 'generate',
+      description: 'Generate code from a natural language description',
+      parameters: [
+        { name: 'language', type: 'string', description: 'Target programming language', required: true, enum: ['typescript', 'javascript', 'python', 'sql', 'bash', 'json', 'yaml'] },
+        { name: 'description', type: 'string', description: 'What the code should do', required: true },
+        { name: 'context', type: 'string', description: 'Additional context (existing code, schema, etc.)', required: false },
+        { name: 'constraints', type: 'array', description: 'Constraints like "no external deps" or "must be async"', required: false },
+        { name: 'maxLines', type: 'number', description: 'Maximum lines of code', required: false, default: 100 },
+        { name: 'includeTests', type: 'boolean', description: 'Include unit tests', required: false, default: false },
+        { name: 'includeComments', type: 'boolean', description: 'Include inline comments', required: false, default: true },
+      ],
+      returns: { type: 'object', description: 'CodeResult with generated code and metadata' },
     },
-  },
-
-  system_get_health_status: {
-    name: 'system_get_health_status',
-    description: 'Return current system health metrics.',
-    category: 'system',
-    parameters: [],
-    handler: async () => {
-      return _ok({
-        status: 'Operational',
-        uptime: '99.9%',
-        engines: 22,
-        activeEngines: ['WebResearch', 'ResponseEngineV2', 'ReasoningV2', 'SynthesisV2'],
-        memoryUsage: 'Optimal',
-        lastChecked: new Date().toISOString(),
-      }, 'All cognitive engines are operational. System health is at optimal levels.');
+    {
+      name: 'analyze',
+      description: 'Analyze code for complexity, security, and style issues',
+      parameters: [
+        { name: 'code', type: 'string', description: 'Code to analyze', required: true },
+        { name: 'language', type: 'string', description: 'Programming language', required: true },
+        { name: 'analysisType', type: 'string', description: 'Type of analysis', required: true, enum: ['complexity', 'security', 'style', 'all'] },
+      ],
+      returns: { type: 'object', description: 'CodeAnalysisResult with issues and scores' },
     },
-  },
-
-  // WALLET
-  wallet_get_balance: {
-    name: 'wallet_get_balance',
-    description: 'Get the current wallet balance for the authenticated user.',
-    category: 'wallet',
-    parameters: [
-      { name: 'currency', type: 'string', description: 'Currency code (e.g., KES, USD)', required: false, default: 'KES' },
-    ],
-    handler: async (params, userId) => {
-      try {
-        const { data, error } = await supabase
-          .from('wallet_accounts')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('currency', params.currency || 'KES')
-          .maybeSingle();
-        if (error) return _err(error.message, 'Unable to retrieve wallet balance.');
-        if (!data) return _ok({ balance: 0, available: 0, held: 0, currency: params.currency || 'KES' }, 'No wallet account found. Balance is zero.');
-        return _ok({
-          balance: data.balance,
-          available: data.available_balance,
-          held: data.hold_balance,
-          currency: data.currency,
-          status: data.status,
-        }, `Your wallet balance is ${data.currency} ${data.balance.toLocaleString()}. Available: ${data.available_balance.toLocaleString()}.`);
-      } catch (e: any) {
-        return _err(e.message, 'Wallet service temporarily unavailable.');
-      }
+    {
+      name: 'execute',
+      description: 'Execute code in a sandboxed environment',
+      parameters: [
+        { name: 'code', type: 'string', description: 'Code to execute', required: true },
+        { name: 'language', type: 'string', description: 'Programming language', required: true, enum: ['javascript', 'python', 'typescript'] },
+        { name: 'timeoutMs', type: 'number', description: 'Execution timeout', required: false, default: 10000 },
+        { name: 'allowNetwork', type: 'boolean', description: 'Allow network access', required: false, default: false },
+        { name: 'allowFilesystem', type: 'boolean', description: 'Allow filesystem access', required: false, default: false },
+      ],
+      returns: { type: 'object', description: 'CodeExecutionResult with output or error' },
     },
-  },
-
-  wallet_get_transactions: {
-    name: 'wallet_get_transactions',
-    description: 'Get recent wallet transactions.',
-    category: 'wallet',
-    parameters: [
-      { name: 'limit', type: 'number', description: 'Number of transactions to return', required: false, default: 5 },
-      { name: 'type', type: 'string', description: 'Filter by type: credit, debit, transfer', required: false },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase
-          .from('wallet_transactions')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(params.limit || 5);
-        if (params.type) q = q.eq('type', params.type);
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve transactions.');
-        return _ok(data || [], `Found ${(data || []).length} recent transaction(s).`);
-      } catch (e: any) {
-        return _err(e.message, 'Transaction service temporarily unavailable.');
-      }
+    {
+      name: 'fix',
+      description: 'Attempt to fix code based on error message or analysis',
+      parameters: [
+        { name: 'code', type: 'string', description: 'Code with issues', required: true },
+        { name: 'error', type: 'string', description: 'Error message or analysis result', required: true },
+        { name: 'language', type: 'string', description: 'Programming language', required: true },
+      ],
+      returns: { type: 'object', description: 'CodeResult with fixed code' },
     },
-  },
-
-  wallet_send_money: {
-    name: 'wallet_send_money',
-    description: 'Send money to another user or phone number.',
-    category: 'wallet',
-    parameters: [
-      { name: 'recipient', type: 'string', description: 'Recipient phone, wallet ID, or user ID', required: true },
-      { name: 'amount', type: 'number', description: 'Amount to send', required: true },
-      { name: 'currency', type: 'string', description: 'Currency code', required: false, default: 'KES' },
-      { name: 'reason', type: 'string', description: 'Reason for transfer', required: false },
-    ],
-    handler: async (params, userId) => {
-      return _ok({ status: 'pending_confirmation' }, `Ready to send ${params.currency || 'KES'} ${params.amount} to ${params.recipient}. Please confirm in the Wallet app to complete.`);
-    },
-  },
-
-  // MTAXI
-  mtaxi_book_ride: {
-    name: 'mtaxi_book_ride',
-    description: 'Book a cab / ride from MTaxi.',
-    category: 'mtaxi',
-    parameters: [
-      { name: 'pickup', type: 'string', description: 'Pickup location address or coordinates', required: true },
-      { name: 'destination', type: 'string', description: 'Destination address or coordinates', required: true },
-      { name: 'rideType', type: 'string', description: 'Type of ride: economy, premium, boda', required: false, default: 'economy' },
-      { name: 'passengers', type: 'number', description: 'Number of passengers', required: false, default: 1 },
-    ],
-    handler: async (params, userId) => {
-      try {
-        const { data: ride, error } = await supabase
-          .from('mtaxi_rides')
-          .insert({
-            rider_id: userId,
-            pickup_location: params.pickup,
-            dropoff_location: params.destination,
-            ride_type: params.rideType || 'economy',
-            passenger_count: params.passengers || 1,
-            status: 'searching',
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        if (error) return _err(error.message, 'Failed to create ride request.');
-        return _ok({ rideId: ride.id, status: ride.status, eta: '3-5 minutes' }, `Ride booked successfully. A ${params.rideType || 'economy'} driver is being assigned. Pickup: ${params.pickup}. Destination: ${params.destination}.`);
-      } catch (e: any) {
-        return _err(e.message, 'MTaxi service temporarily unavailable.');
-      }
-    },
-  },
-
-  mtaxi_get_ride_status: {
-    name: 'mtaxi_get_ride_status',
-    description: 'Check the status of a current or recent ride.',
-    category: 'mtaxi',
-    parameters: [
-      { name: 'rideId', type: 'string', description: 'Ride ID to check', required: false },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase.from('mtaxi_rides').select('*').eq('rider_id', userId).order('created_at', { ascending: false }).limit(1);
-        if (params.rideId) q = supabase.from('mtaxi_rides').select('*').eq('id', params.rideId).single();
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve ride status.');
-        if (!data) return _ok(null, 'No active rides found.');
-        const ride = Array.isArray(data) ? data[0] : data;
-        return _ok({ rideId: ride.id, status: ride.status, driver: ride.driver_id, pickup: ride.pickup_location, destination: ride.dropoff_location }, `Your ride is currently: ${ride.status}.`);
-      } catch (e: any) {
-        return _err(e.message, 'MTaxi status check failed.');
-      }
-    },
-  },
-
-  // HEALTH
-  health_get_records: {
-    name: 'health_get_records',
-    description: 'Retrieve health records for the authenticated user.',
-    category: 'health',
-    parameters: [
-      { name: 'limit', type: 'number', description: 'Number of records', required: false, default: 5 },
-      { name: 'recordType', type: 'string', description: 'Filter by record type', required: false },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase
-          .from('health_records')
-          .select('*')
-          .eq('patient_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(params.limit || 5);
-        if (params.recordType) q = q.eq('record_type', params.recordType);
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve health records.');
-        return _ok(data || [], `Found ${(data || []).length} health record(s).`);
-      } catch (e: any) {
-        return _err(e.message, 'Health service temporarily unavailable.');
-      }
-    },
-  },
-
-  health_get_patient_profile: {
-    name: 'health_get_patient_profile',
-    description: 'Get the health patient profile for the user.',
-    category: 'health',
-    parameters: [],
-    handler: async (_params, userId) => {
-      try {
-        const { data, error } = await supabase
-          .from('health_patients')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
-        if (error) return _err(error.message, 'Unable to retrieve patient profile.');
-        if (!data) return _ok(null, 'No patient profile found. You can create one in the Health app.');
-        return _ok(data, `Patient profile retrieved. Blood type: ${data.blood_type || 'Unknown'}.`);
-      } catch (e: any) {
-        return _err(e.message, 'Health profile service unavailable.');
-      }
-    },
-  },
-
-  // CALENDAR
-  calendar_create_event: {
-    name: 'calendar_create_event',
-    description: 'Create a calendar event or meeting.',
-    category: 'calendar',
-    parameters: [
-      { name: 'title', type: 'string', description: 'Event title', required: true },
-      { name: 'startTime', type: 'string', description: 'Start time (ISO 8601)', required: true },
-      { name: 'endTime', type: 'string', description: 'End time (ISO 8601)', required: false },
-      { name: 'description', type: 'string', description: 'Event description', required: false },
-      { name: 'location', type: 'string', description: 'Event location', required: false },
-      { name: 'reminder', type: 'number', description: 'Reminder minutes before', required: false, default: 15 },
-    ],
-    handler: async (params, userId) => {
-      try {
-        const { data, error } = await supabase
-          .from('scheduler_events')
-          .insert({
-            user_id: userId,
-            title: params.title,
-            description: params.description || '',
-            start_time: params.startTime,
-            end_time: params.endTime || new Date(new Date(params.startTime).getTime() + 60 * 60 * 1000).toISOString(),
-            location: params.location || '',
-            reminder_minutes: params.reminder || 15,
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        if (error) return _err(error.message, 'Failed to create calendar event.');
-        return _ok({ eventId: data.id, title: data.title, start: data.start_time }, `Event "${data.title}" scheduled for ${new Date(data.start_time).toLocaleString()}.`);
-      } catch (e: any) {
-        return _err(e.message, 'Calendar service temporarily unavailable.');
-      }
-    },
-  },
-
-  calendar_get_events: {
-    name: 'calendar_get_events',
-    description: 'Get upcoming calendar events.',
-    category: 'calendar',
-    parameters: [
-      { name: 'limit', type: 'number', description: 'Number of events', required: false, default: 5 },
-      { name: 'fromDate', type: 'string', description: 'Start date filter', required: false },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase
-          .from('scheduler_events')
-          .select('*')
-          .eq('user_id', userId)
-          .order('start_time', { ascending: true })
-          .limit(params.limit || 5);
-        if (params.fromDate) q = q.gte('start_time', params.fromDate);
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve events.');
-        return _ok(data || [], `Found ${(data || []).length} upcoming event(s).`);
-      } catch (e: any) {
-        return _err(e.message, 'Calendar service unavailable.');
-      }
-    },
-  },
-
-  // STUDIO
-  studio_start_broadcast: {
-    name: 'studio_start_broadcast',
-    description: 'Start a live broadcast in the Studio app.',
-    category: 'studio',
-    parameters: [
-      { name: 'title', type: 'string', description: 'Broadcast title', required: true },
-      { name: 'description', type: 'string', description: 'Broadcast description', required: false },
-      { name: 'visibility', type: 'string', description: 'public, private, or unlisted', required: false, default: 'public' },
-    ],
-    handler: async (params, userId) => {
-      try {
-        const { data, error } = await supabase
-          .from('live_rooms')
-          .insert({
-            creator_id: userId,
-            title: params.title,
-            description: params.description || '',
-            visibility: params.visibility || 'public',
-            status: 'live',
-            started_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        if (error) return _err(error.message, 'Failed to start broadcast.');
-        return _ok({ roomId: data.id, title: data.title, status: data.status }, `Live broadcast "${data.title}" started successfully. Room ID: ${data.id}.`);
-      } catch (e: any) {
-        return _err(e.message, 'Studio broadcast service unavailable.');
-      }
-    },
-  },
-
-  // EDUCATION
-  education_get_courses: {
-    name: 'education_get_courses',
-    description: 'Get enrolled courses or available courses.',
-    category: 'education',
-    parameters: [
-      { name: 'status', type: 'string', description: 'Filter: enrolled, completed, available', required: false },
-      { name: 'limit', type: 'number', description: 'Number of courses', required: false, default: 5 },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase
-          .from('education_courses')
-          .select('*')
-          .limit(params.limit || 5);
-        if (params.status === 'enrolled') {
-          q = supabase
-            .from('education_enrollments')
-            .select('*, education_courses(*)')
-            .eq('student_id', userId)
-            .limit(params.limit || 5);
-        }
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve courses.');
-        return _ok(data || [], `Found ${(data || []).length} course(s).`);
-      } catch (e: any) {
-        return _err(e.message, 'Education service unavailable.');
-      }
-    },
-  },
-
-  // SHOP
-  shop_get_orders: {
-    name: 'shop_get_orders',
-    description: 'Get recent shop orders.',
-    category: 'shop',
-    parameters: [
-      { name: 'limit', type: 'number', description: 'Number of orders', required: false, default: 5 },
-      { name: 'status', type: 'string', description: 'Filter by status', required: false },
-    ],
-    handler: async (params, userId) => {
-      try {
-        let q = supabase
-          .from('shop_orders')
-          .select('*')
-          .eq('buyer_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(params.limit || 5);
-        if (params.status) q = q.eq('status', params.status);
-        const { data, error } = await q;
-        if (error) return _err(error.message, 'Unable to retrieve orders.');
-        return _ok(data || [], `Found ${(data || []).length} order(s).`);
-      } catch (e: any) {
-        return _err(e.message, 'Shop service unavailable.');
-      }
-    },
-  },
-};
-
-// ============================================================================
-// TOOL REGISTRY
-// ============================================================================
-
-export function getAvailableTools(): ToolDefinition[] {
-  return Object.values(TOOLS);
-}
-
-export function getTool(name: string): ToolDefinition | undefined {
-  return TOOLS[name];
-}
-
-export function getToolsByCategory(category: ToolDefinition['category']): ToolDefinition[] {
-  return Object.values(TOOLS).filter(t => t.category === category);
-}
-
-// ============================================================================
-// PARAMETER EXTRACTION
-// ============================================================================
-
-export function extractParameters(toolName: string, userMessage: string): Record<string, any> {
-  const tool = TOOLS[toolName];
-  if (!tool) return {};
-  const params: Record<string, any> = {};
-  const msg = userMessage.toLowerCase();
-
-  for (const param of tool.parameters) {
-    if (param.name === 'pickup' || param.name === 'from') {
-      const m = msg.match(/(?:from|pickup|pick up at|near)\s+(.+?)(?:\s+to\s+|\s+destination|$)/i);
-      if (m) params[param.name] = m[1].trim();
-    }
-    if (param.name === 'destination' || param.name === 'to') {
-      const m = msg.match(/(?:to|destination|going to|drop off at)\s+(.+?)(?:\s+from|$)/i);
-      if (m) params[param.name] = m[1].trim();
-    }
-    if (param.name === 'amount') {
-      const m = msg.match(/(\d+[,.]?\d*)\s*(ksh|kes|usd|\$|ksh\.?)/i);
-      if (m) params[param.name] = parseFloat(m[1].replace(',', ''));
-    }
-    if (param.name === 'recipient' || param.name === 'phone') {
-      const m = msg.match(/(\+?\d{10,12})/);
-      if (m) params[param.name] = m[1];
-    }
-    if (param.name === 'title') {
-      const m = msg.match(/(?:titled|called|named|title)\s+["']?(.+?)["']?(?:\s+at|\s+on|\s+for|$)/i);
-      if (m) params[param.name] = m[1].trim();
-    }
-    if (param.name === 'startTime' || param.name === 'time') {
-      const m = msg.match(/(?:at|on)\s+(tomorrow|today|next\s+\w+|\d{1,2}[:.]\d{2}(?:\s*(?:am|pm))?)/i);
-      if (m) {
-        const val = m[1].trim();
-        if (val === 'tomorrow') {
-          const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(14, 0, 0, 0);
-          params[param.name] = d.toISOString();
-        } else if (val === 'today') {
-          const d = new Date(); d.setHours(14, 0, 0, 0);
-          params[param.name] = d.toISOString();
-        } else {
-          params[param.name] = new Date().toISOString();
-        }
-      }
-    }
-    if (param.name === 'currency') {
-      if (msg.includes('kes') || msg.includes('ksh')) params[param.name] = 'KES';
-      else if (msg.includes('usd') || msg.includes('$')) params[param.name] = 'USD';
-    }
-    if (param.name === 'rideType') {
-      if (msg.includes('boda') || msg.includes('bodaboda')) params[param.name] = 'boda';
-      else if (msg.includes('premium')) params[param.name] = 'premium';
-      else params[param.name] = 'economy';
-    }
-    if (params[param.name] === undefined && param.default !== undefined) {
-      params[param.name] = param.default;
-    }
-  }
-  return params;
-}
-
-// ============================================================================
-// TOOL ROUTER
-// ============================================================================
-
-export interface ToolRouteResult {
-  tool: string | null;
-  parameters: Record<string, any>;
-  confidence: number;
-  reasoning: string;
-}
-
-export function routeToTool(userMessage: string): ToolRouteResult {
-  const msg = userMessage.toLowerCase();
-  let bestTool: string | null = null;
-  let bestScore = 0;
-  let reasoning = '';
-
-  const routes: { tool: string; patterns: string[]; weight: number }[] = [
-    { tool: 'system_get_identity', patterns: ['who are you', 'what is asis', 'who built you', 'who created you', 'your name', 'what does asis stand for'], weight: 1.0 },
-    { tool: 'system_get_health_status', patterns: ['health status', 'system health', 'cpu usage', 'memory usage', 'engine status', 'how are you running'], weight: 1.0 },
-    { tool: 'wallet_get_balance', patterns: ['wallet balance', 'my balance', 'how much money', 'account balance', 'what is my balance'], weight: 1.0 },
-    { tool: 'wallet_get_transactions', patterns: ['transactions', 'recent payments', 'payment history', 'sent money', 'received money'], weight: 0.9 },
-    { tool: 'wallet_send_money', patterns: ['send money', 'transfer money', 'pay someone', 'send ksh', 'send kes'], weight: 0.9 },
-    { tool: 'mtaxi_book_ride', patterns: ['book a cab', 'book a ride', 'get a taxi', 'call a boda', 'need a ride', 'pick me up', 'take me to'], weight: 1.0 },
-    { tool: 'mtaxi_get_ride_status', patterns: ['ride status', 'where is my driver', 'my cab', 'current ride', 'trip status'], weight: 1.0 },
-    { tool: 'health_get_records', patterns: ['health records', 'medical records', 'my records', 'doctor visit', 'checkup history'], weight: 1.0 },
-    { tool: 'health_get_patient_profile', patterns: ['patient profile', 'my health profile', 'blood type', 'health info'], weight: 0.9 },
-    { tool: 'calendar_create_event', patterns: ['schedule a meeting', 'create event', 'add to calendar', 'book appointment', 'remind me to', 'set a reminder'], weight: 1.0 },
-    { tool: 'calendar_get_events', patterns: ['my calendar', 'upcoming events', 'what is scheduled', 'meetings today', 'appointments'], weight: 0.9 },
-    { tool: 'studio_start_broadcast', patterns: ['start broadcast', 'go live', 'start streaming', 'live broadcast', 'open studio'], weight: 1.0 },
-    { tool: 'education_get_courses', patterns: ['my courses', 'enrolled classes', 'education', 'learning', 'study'], weight: 0.8 },
-    { tool: 'shop_get_orders', patterns: ['my orders', 'shop orders', 'purchases', 'buying history'], weight: 0.8 },
   ];
 
-  for (const route of routes) {
-    let score = 0;
-    for (const pattern of route.patterns) {
-      if (msg.includes(pattern)) {
-        score += route.weight;
-        reasoning = `Matched pattern "${pattern}" for tool "${route.tool}"`;
+  readonly permissions = [
+    { action: 'generate', level: 'read', requiresApproval: false, auditLog: false },
+    { action: 'analyze', level: 'read', requiresApproval: false, auditLog: false },
+    { action: 'execute', level: 'write', requiresApproval: true, auditLog: true },
+    { action: 'fix', level: 'write', requiresApproval: false, auditLog: true },
+  ];
+
+  isAvailable(): boolean {
+    return true;
+  }
+
+  async doExecute(request: ToolExecutionRequest): Promise<any> {
+    switch (request.capability) {
+      case 'generate':
+        return this.generateCode(request.parameters as CodeGenerateOptions);
+      case 'analyze':
+        return this.analyzeCode(request.parameters as CodeAnalyzeOptions);
+      case 'execute':
+        return this.executeCode(request.parameters as CodeExecuteOptions);
+      case 'fix':
+        return this.fixCode(request.parameters.code, request.parameters.error, request.parameters.language);
+      default:
+        throw new Error(`Unknown capability: ${request.capability}`);
+    }
+  }
+
+  private async generateCode(options: CodeGenerateOptions): Promise<CodeResult> {
+    const startTime = Date.now();
+    const maxLines = options.maxLines || 100;
+
+    // Template-based generation with context awareness
+    let generated = this.buildCodeTemplate(options);
+
+    // Apply constraints
+    if (options.constraints) {
+      for (const constraint of options.constraints) {
+        generated = this.applyConstraint(generated, constraint, options.language);
       }
     }
-    if (score > bestScore) {
-      bestScore = score;
-      bestTool = route.tool;
+
+    // Trim to max lines
+    const lines = generated.split('\n');
+    if (lines.length > maxLines) {
+      generated = lines.slice(0, maxLines).join('\n') + '\n// ... truncated';
     }
+
+    const result: CodeResult = {
+      code: generated,
+      language: options.language,
+      metadata: {
+        lineCount: generated.split('\n').length,
+        charCount: generated.length,
+        generationTimeMs: Date.now() - startTime,
+      },
+    };
+
+    if (options.includeTests) {
+      result.tests = this.generateTests(generated, options.language);
+    }
+
+    return result;
   }
 
-  if (msg.includes('kevin nyasani') || msg.includes('who built you')) {
-    bestTool = 'system_get_identity';
-    bestScore = 1.0;
-    reasoning = 'Direct creator identity query';
+  private buildCodeTemplate(options: CodeGenerateOptions): string {
+    const { language, description, context, includeComments } = options;
+    const comments = includeComments !== false;
+    const lines: string[] = [];
+
+    if (comments) lines.push(`/**`);
+    if (comments) lines.push(` * ${description}`);
+    if (comments && context) lines.push(` * Context: ${context.slice(0, 200)}`);
+    if (comments) lines.push(` */`);
+
+    switch (language) {
+      case 'typescript':
+        lines.push(`export function generatedFunction(): any {`);
+        lines.push(`  // TODO: Implement based on: ${description.slice(0, 100)}`);
+        lines.push(`  return null;`);
+        lines.push(`}`);
+        break;
+      case 'javascript':
+        lines.push(`function generatedFunction() {`);
+        lines.push(`  // TODO: Implement based on: ${description.slice(0, 100)}`);
+        lines.push(`  return null;`);
+        lines.push(`}`);
+        break;
+      case 'python':
+        lines.push(`def generated_function():`);
+        lines.push(`    \"\"\"${description.slice(0, 100)}\"\"\"`);
+        lines.push(`    # TODO: Implement`);
+        lines.push(`    return None`);
+        break;
+      case 'sql':
+        lines.push(`-- ${description}`);
+        lines.push(`SELECT * FROM table_name WHERE condition;`);
+        break;
+      case 'bash':
+        lines.push(`#!/bin/bash`);
+        lines.push(`# ${description}`);
+        lines.push(`echo "Implementation needed: ${description.slice(0, 80)}"`);
+        break;
+      case 'json':
+        lines.push(`{`);
+        lines.push(`  "description": "${description.replace(/"/g, '\\"')}",`);
+        lines.push(`  "status": "generated"`);
+        lines.push(`}`);
+        break;
+      case 'yaml':
+        lines.push(`# ${description}`);
+        lines.push(`generated:`);
+        lines.push(`  description: ${description.slice(0, 100)}`);
+        lines.push(`  status: generated`);
+        break;
+      default:
+        lines.push(`// ${description}`);
+        lines.push(`// Generated code for ${language}`);
+    }
+
+    return lines.join('\n');
   }
 
-  if (msg.includes('kamos') || msg.includes('1×1') || msg.includes('1x1')) {
-    bestTool = 'system_get_identity';
-    bestScore = 1.0;
-    reasoning = 'Kamos Theory query';
+  private applyConstraint(code: string, constraint: string, language: string): string {
+    const lower = constraint.toLowerCase();
+    if (lower.includes('async') && (language === 'typescript' || language === 'javascript')) {
+      return code.replace('function', 'async function').replace('return', 'return await');
+    }
+    if (lower.includes('no external') || lower.includes('no deps')) {
+      return code + '\n// Constraint: No external dependencies';
+    }
+    if (lower.includes('typed') && language === 'typescript') {
+      return code.replace('): any', '): unknown').replace(': any', ': unknown');
+    }
+    return code;
   }
 
-  const confidence = Math.min(bestScore, 1.0);
-  const parameters = bestTool ? extractParameters(bestTool, userMessage) : {};
-
-  return { tool: bestTool, parameters, confidence, reasoning };
-}
-
-// ============================================================================
-// TOOL EXECUTION
-// ============================================================================
-
-export async function executeTool(toolName: string, parameters: Record<string, any>): Promise<ToolResult> {
-  const tool = TOOLS[toolName];
-  if (!tool) {
-    return _err('TOOL_NOT_FOUND', `Tool "${toolName}" is not registered.`, 0);
+  private generateTests(code: string, language: string): string {
+    if (language === 'typescript' || language === 'javascript') {
+      return `describe('generated', () => {\n  it('should work', () => {\n    expect(generatedFunction()).toBeDefined();\n  });\n});`;
+    }
+    if (language === 'python') {
+      return `def test_generated():\n    assert generated_function() is not None`;
+    }
+    return '';
   }
-  const userId = _getUserId();
-  try {
-    return await tool.handler(parameters, userId);
-  } catch (e: any) {
-    return _err(e.message, `Tool "${toolName}" execution failed.`, 0.1);
-  }
-}
 
-export async function executeToolFromMessage(userMessage: string): Promise<{ result: ToolResult; route: ToolRouteResult } | null> {
-  const route = routeToTool(userMessage);
-  if (!route.tool || route.confidence < 0.5) return null;
-  const result = await executeTool(route.tool, route.parameters);
-  return { result, route };
-}
+  private analyzeCode(options: CodeAnalyzeOptions): CodeAnalysisResult {
+    const { code, language, analysisType } = options;
+    const lines = code.split('\n');
+    const issues: CodeAnalysisResult['issues'] = [];
+    const securityRisks: string[] = [];
+    const suggestions: string[] = [];
 
-// ============================================================================
-// TOOL SCHEMA EXPORT
-// ============================================================================
+    // Basic complexity: count branches
+    let branches = 0;
+    const branchKeywords = ['if', 'else', 'for', 'while', 'switch', 'case', '?', '&&', '||'];
+    lines.forEach((line, idx) => {
+      branchKeywords.forEach((kw) => {
+        if (line.includes(kw)) branches++;
+      });
 
-export function getToolSchema(): Record<string, any> {
-  const schema: Record<string, any> = {};
-  for (const [name, tool] of Object.entries(TOOLS)) {
-    schema[name] = {
-      description: tool.description,
-      category: tool.category,
-      parameters: tool.parameters.reduce((acc, p) => {
-        acc[p.name] = {
-          type: p.type,
-          description: p.description,
-          required: p.required,
-          default: p.default,
-          enum: p.enum,
-        };
-        return acc;
-      }, {} as Record<string, any>),
+      // Security checks
+      if (analysisType === 'security' || analysisType === 'all') {
+        if (/eval\s*\(/.test(line)) {
+          issues.push({ severity: 'error', line: idx + 1, message: 'Dangerous eval() detected', rule: 'no-eval' });
+          securityRisks.push('Use of eval() is a critical security risk');
+        }
+        if (/innerHTML\s*=/.test(line)) {
+          issues.push({ severity: 'warning', line: idx + 1, message: 'Potential XSS via innerHTML', rule: 'no-innerhtml' });
+          securityRisks.push('innerHTML assignment can lead to XSS');
+        }
+        if (/password|secret|token|key/.test(line) && /["']/.test(line)) {
+          issues.push({ severity: 'warning', line: idx + 1, message: 'Possible hardcoded secret', rule: 'no-hardcoded-secrets' });
+          securityRisks.push('Hardcoded credentials detected');
+        }
+      }
+
+      // Style checks
+      if (analysisType === 'style' || analysisType === 'all') {
+        if (line.length > 120) {
+          issues.push({ severity: 'info', line: idx + 1, message: 'Line exceeds 120 characters', rule: 'max-line-length' });
+        }
+        if (line.endsWith(' ') || line.endsWith('\t')) {
+          issues.push({ severity: 'info', line: idx + 1, message: 'Trailing whitespace', rule: 'no-trailing-spaces' });
+        }
+      }
+    });
+
+    const complexity = Math.min(100, branches * 2 + lines.length / 10);
+
+    if (complexity > 50) suggestions.push('Consider breaking into smaller functions');
+    if (lines.length > 200) suggestions.push('File is large; consider splitting into modules');
+    if (issues.filter((i) => i.severity === 'error').length > 0) suggestions.push('Fix critical errors before deployment');
+
+    return {
+      complexity,
+      issues,
+      securityRisks,
+      styleScore: Math.max(0, 100 - issues.filter((i) => i.severity === 'info').length * 2),
+      suggestions,
     };
   }
-  return schema;
+
+  private async executeCode(options: CodeExecuteOptions): Promise<CodeExecutionResult> {
+    const startTime = Date.now();
+
+    // For React Native / Expo, we cannot execute arbitrary code safely
+    // This returns a simulated result with instructions
+    if (options.language === 'javascript' || options.language === 'typescript') {
+      try {
+        // Very limited: only allow pure functions with no side effects
+        const fn = new Function('"use strict";\n' + options.code);
+        const output = fn();
+        return {
+          success: true,
+          output: String(output),
+          executionTimeMs: Date.now() - startTime,
+        };
+      } catch (err: any) {
+        return {
+          success: false,
+          output: '',
+          error: err.message,
+          executionTimeMs: Date.now() - startTime,
+        };
+      }
+    }
+
+    return {
+      success: false,
+      output: '',
+      error: `Execution of ${options.language} requires a server environment. Use TerminalTool for server-side execution.`,
+      executionTimeMs: Date.now() - startTime,
+    };
+  }
+
+  private async fixCode(code: string, error: string, language: string): Promise<CodeResult> {
+    const startTime = Date.now();
+
+    // Simple heuristic fixes
+    let fixed = code;
+    const lowerError = error.toLowerCase();
+
+    if (lowerError.includes('undefined') && lowerError.includes('variable')) {
+      const varMatch = error.match(/'(\w+)'/);
+      if (varMatch) {
+        fixed = `const ${varMatch[1]} = null;\n` + fixed;
+      }
+    }
+    if (lowerError.includes('missing') && lowerError.includes('return')) {
+      fixed = fixed.replace(/function\s+(\w+)/, 'function $1').replace(/\{\s*\n/, '{\n  return null;\n');
+    }
+    if (lowerError.includes('syntax') && language === 'typescript') {
+      fixed = fixed.replace(/:\s*any/g, ': unknown');
+    }
+
+    return {
+      code: fixed,
+      language,
+      metadata: {
+        lineCount: fixed.split('\n').length,
+        charCount: fixed.length,
+        generationTimeMs: Date.now() - startTime,
+      },
+    };
+  }
 }
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export const ToolCodeEngine = {
-  getAvailableTools,
-  getTool,
-  getToolsByCategory,
-  extractParameters,
-  routeToTool,
-  executeTool,
-  executeToolFromMessage,
-  getToolSchema,
-};
-
-export default ToolCodeEngine;

@@ -29,7 +29,7 @@ export async function buildDemandGrid() {
     .select("pickup_lat, pickup_lng");
 
   const { data: trucks } = await supabase
-    .from("trucks")
+    .from("mtruck_trucks")
     .select("lat, lng");
 
   const grid: Record<string, GridCell> = {};
