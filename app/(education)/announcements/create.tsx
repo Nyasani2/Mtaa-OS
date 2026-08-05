@@ -39,8 +39,8 @@ export default function CreateAnnouncementScreen() {
         target_roles: form.target_audience ? [form.target_audience] : null,
         expiry_date: form.expires_at || null,
         staff_id: user.id,
-        institution_id: form.school_id || null,
-        visibility_scope: form.status || 'public',
+        institution_id: user?.institution_id || null,
+        visibility_scope: 'public',
         is_pinned: false,
         read_count: 0,
       });

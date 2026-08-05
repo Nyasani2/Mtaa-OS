@@ -50,7 +50,7 @@ export default function CreateAssignmentScreen() {
           grade_level: form.grade_level || null,
           due_date: form.due_date,
           max_score: parseInt(form.max_score) || 100,
-          assignment_type: form.assignment_type,
+          type: form.assignment_type,
           instructions: form.instructions.trim() || null,
           attachments: form.attachments ? form.attachments.split(',').map(a => a.trim()).filter(Boolean) : [],
           allow_late_submission: form.allow_late_submission,

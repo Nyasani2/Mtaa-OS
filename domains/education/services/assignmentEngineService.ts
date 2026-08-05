@@ -164,7 +164,7 @@ export const createAssignment = async (input: CreateAssignmentInput): Promise<{ 
       title: input.title,
       description: input.description || null,
       instructions: input.instructions || null,
-      assignment_type: input.assignment_type || 'homework',
+      type: input.assignment_type || 'homework',
       max_score: input.max_score || 100,
       passing_score: input.passing_score || 50,
       due_date: input.due_date || null,

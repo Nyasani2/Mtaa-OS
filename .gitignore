@@ -114,3 +114,19 @@ ios/build/
 .env
 .env.local
 .env.*
+
+# CIVIC APPS — REMOVED FROM OS
+app/(civic)/
+domains/civic/
+lib/civic/
+supabase/functions/civic-*
+supabase/functions/border-*
+supabase/functions/customs-*
+supabase/functions/immigration-*
+supabase/functions/transport-*
+supabase/functions/agriculture-*
+supabase/functions/courts-*
+supabase/functions/prisons-*
+supabase/functions/police-*
+supabase/functions/treasury-*
+supabase/functions/revenue-*

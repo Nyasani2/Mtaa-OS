@@ -24,7 +24,6 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(os)" />
                 <Stack.Screen name="(boda)" />
-                <Stack.Screen name="(civic)" />
                 <Stack.Screen name="(commerce)" />
                 <Stack.Screen name="(communication)" />
                 <Stack.Screen name="(education)" />

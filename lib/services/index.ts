@@ -13,6 +13,5 @@ export * from './jobs-service';
 export * from './mtaxi-service';
 export * from './mtruck-service';
 export * from './tribes-service';
-export * from './treasury-service';
 export * from './pulse-service';
 export * from './studio-service';
