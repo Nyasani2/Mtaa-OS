@@ -130,3 +130,6 @@ supabase/functions/prisons-*
 supabase/functions/police-*
 supabase/functions/treasury-*
 supabase/functions/revenue-*
+
+# ARCHIVED MODULES (not in active build)
+archive/
