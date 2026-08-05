@@ -91,9 +91,6 @@ export const OS_APP_REGISTRY: Record<string, OSAppEntry> = {
     route: '/(os)/studio', category: 'work', requiresAuth: true,
     isSystemApp: true, permissions: ['camera', 'microphone', 'wallet_read', 'wallet_write'],
   },
-  civic: {
-    id: 'civic', name: 'Civic', icon: 'shield-outline', color: '#1E3A5F',
-    route: '/(civic)', category: 'civic', requiresAuth: true,
     isSystemApp: true, permissions: ['identity', 'wallet_read', 'wallet_write'],
   },
   binance: {

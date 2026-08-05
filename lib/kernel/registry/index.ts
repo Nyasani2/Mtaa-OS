@@ -22,7 +22,6 @@ export const appRegistry: AppRegistryEntry[] = [
   { id: 'mtruck', name: 'MTruck', route: '/(transport)/mtruck', icon: 'truck', category: 'Transport', enabled: true, requiresAuth: true },
   { id: 'mtaxi', name: 'MTaxi', route: '/(transport)/mtaxi', icon: 'car', category: 'Transport', enabled: true, requiresAuth: true },
   // Civic apps — HIDDEN from registry (not launchable)
-  // { id: 'police', name: 'Police', route: '/(civic)/police', ... enabled: false },
 ];
 
 export function getEnabledApps(): AppRegistryEntry[] {

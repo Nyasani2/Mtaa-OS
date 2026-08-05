@@ -161,11 +161,8 @@ export const APP_REGISTRY: Record<string, AppManifest> = {
     sizeMB: 19, permissions: ['camera', 'microphone', 'wallet_read', 'wallet_write'],
     trending: true, tags: ['live', 'streaming', 'creator'],
   },
-  civic: {
-    id: 'civic', name: 'Civic', version: '1.0.0',
     description: 'Government services: police reports, court cases, revenue payments, treasury, and public records.',
     shortDescription: 'Government services: police, courts, revenue, and more.',
-    category: 'civic', icon: 'shield-outline', route: '/(civic)',
     developer: 'MTAA OS', isOSApp: true, requiresAuth: true,
     color: '#1E3A5F', rating: 4.2, reviewCount: 180, downloadCount: 8000,
     sizeMB: 15, permissions: ['identity', 'wallet_read', 'wallet_write'],

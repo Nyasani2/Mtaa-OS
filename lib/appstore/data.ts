@@ -191,10 +191,8 @@ export const ALL_APPS: AppManifest[] = [
     trending: true, tags: ['live', 'streaming', 'creator'],
   },
   {
-    id: 'civic', name: 'Civic', version: '1.0.0',
     description: 'Government services: police reports, court cases, revenue payments, treasury, and public records.',
     shortDescription: 'Government services: police, courts, revenue, and more.',
-    category: 'civic', icon: 'shield-outline', route: '/(civic)',
     developer: 'MTAA OS', isOSApp: true, requiresAuth: true,
     color: '#1E3A5F', rating: 4.2, reviewCount: 180, downloadCount: 8000,
     sizeMB: 15, permissions: ['identity', 'wallet_read', 'wallet_write'],
@@ -270,7 +268,6 @@ export const ALL_APPS: AppManifest[] = [
 
 export const CATEGORY_LABELS: Record<string, string> = {
   os: 'OS Core', commerce: 'Commerce', transport: 'Transport',
-  work: 'Work', social: 'Social', civic: 'Civic',
   finance: 'Finance', tools: 'Tools', health: 'Health',
   education: 'Education', entertainment: 'Entertainment',
   productivity: 'Productivity', lifestyle: 'Lifestyle', news: 'News',
@@ -278,7 +275,6 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 export const CATEGORY_COLORS: Record<string, string> = {
   os: '#1E3A5F', commerce: '#F59E0B', transport: '#06B6D4',
-  work: '#6366F1', social: '#3B82F6', civic: '#1E3A5F',
   finance: '#10B981', tools: '#6B7280', health: '#EF4444',
   education: '#8B5CF6', entertainment: '#EC4899',
   productivity: '#3B82F6', lifestyle: '#F97316', news: '#1E3A5F',
