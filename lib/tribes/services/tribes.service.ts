@@ -1,5 +1,6 @@
 // lib/tribes/services/tribes.service.ts
 // Tribes service — tribes, posts, membership, discovery
+// FIXED: All implicit joins replaced with explicit two-query pattern
 
 import { supabase } from '@/lib/supabase';
 
@@ -75,43 +76,54 @@ class TribesService {
   async discoverTribes(category?: string, search?: string): Promise<Tribe[]> {
     let query = supabase
       .from('tribes')
-      .select(`
-        *,
-        profiles:creator_id (display_name)
-      `)
+      .select('*')
       .eq('is_private', false)
       .order('member_count', { ascending: false });
 
     if (category) query = query.eq('category', category);
     if (search) query = query.ilike('name', `%${search}%`);
 
-    const { data, error } = await query.limit(50);
+    const { data: tribes, error } = await query.limit(50);
     if (error) {
       console.error('[TribesService] discoverTribes error:', error);
       return [];
     }
 
-    return (data || []).map((t: any) => ({
+    // Fetch creator profiles separately to avoid implicit join crash
+    const creatorIds = [...new Set((tribes || []).map((t: any) => t.creator_id).filter(Boolean))];
+    const { data: creators } = creatorIds.length > 0
+      ? await supabase.from('user_profiles').select('id, display_name').in('id', creatorIds)
+      : { data: [] };
+    const creatorMap = new Map((creators || []).map((c: any) => [c.id, c.display_name]));
+
+    return (tribes || []).map((t: any) => ({
       ...t,
-      creator_name: t.profiles?.display_name || 'Unknown',
+      creator_name: creatorMap.get(t.creator_id) || 'Unknown',
     })) as Tribe[];
   }
 
   // ─── Get Tribe ───────────────────────────────────────────────────
 
   async getTribe(tribeId: string): Promise<Tribe | null> {
-    const { data, error } = await supabase
+    const { data: tribe, error } = await supabase
       .from('tribes')
-      .select(`*, profiles:creator_id (display_name)`)
+      .select('*')
       .eq('id', tribeId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[TribesService] getTribe error:', error);
       return null;
     }
 
-    return data ? { ...data, creator_name: data.profiles?.display_name || 'Unknown' } as Tribe : null;
+    if (!tribe) return null;
+
+    // Fetch creator profile separately
+    const { data: creator } = tribe.creator_id
+      ? await supabase.from('user_profiles').select('display_name').eq('id', tribe.creator_id).maybeSingle()
+      : { data: null };
+
+    return { ...tribe, creator_name: creator?.display_name || 'Unknown' } as Tribe;
   }
 
   // ─── Create Tribe ────────────────────────────────────────────────
@@ -126,7 +138,7 @@ class TribesService {
         post_count: 0,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[TribesService] createTribe error:', error);
@@ -146,12 +158,9 @@ class TribesService {
   // ─── Posts ───────────────────────────────────────────────────────
 
   async getPosts(tribeId: string, limit: number = 20): Promise<TribePost[]> {
-    const { data, error } = await supabase
+    const { data: posts, error } = await supabase
       .from('tribe_posts')
-      .select(`
-        *,
-        profiles:author_id (display_name, avatar_url)
-      `)
+      .select('*')
       .eq('tribe_id', tribeId)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
@@ -162,11 +171,21 @@ class TribesService {
       return [];
     }
 
-    return (data || []).map((p: any) => ({
-      ...p,
-      author_name: p.profiles?.display_name || 'Unknown',
-      author_avatar: p.profiles?.avatar_url || null,
-    })) as TribePost[];
+    // Fetch author profiles separately
+    const authorIds = [...new Set((posts || []).map((p: any) => p.author_id).filter(Boolean))];
+    const { data: authors } = authorIds.length > 0
+      ? await supabase.from('user_profiles').select('id, display_name, avatar_url').in('id', authorIds)
+      : { data: [] };
+    const authorMap = new Map((authors || []).map((a: any) => [a.id, a]));
+
+    return (posts || []).map((p: any) => {
+      const author = authorMap.get(p.author_id);
+      return {
+        ...p,
+        author_name: author?.display_name || 'Unknown',
+        author_avatar: author?.avatar_url || null,
+      };
+    }) as TribePost[];
   }
 
   async createPost(userId: string, post: Omit<TribePost, 'id' | 'author_id' | 'author_name' | 'author_avatar' | 'likes_count' | 'comments_count' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; post?: TribePost; error?: string }> {
@@ -179,7 +198,7 @@ class TribesService {
         comments_count: 0,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[TribesService] createPost error:', error);
@@ -193,18 +212,24 @@ class TribesService {
   }
 
   async getPost(postId: string): Promise<TribePost | null> {
-    const { data, error } = await supabase
+    const { data: post, error } = await supabase
       .from('tribe_posts')
-      .select(`*, profiles:author_id (display_name, avatar_url)`)
+      .select('*')
       .eq('id', postId)
-      .single();
+      .maybeSingle();
 
-    if (error) return null;
-    return data ? {
-      ...data,
-      author_name: data.profiles?.display_name || 'Unknown',
-      author_avatar: data.profiles?.avatar_url || null,
-    } as TribePost : null;
+    if (error || !post) return null;
+
+    // Fetch author profile separately
+    const { data: author } = post.author_id
+      ? await supabase.from('user_profiles').select('display_name, avatar_url').eq('id', post.author_id).maybeSingle()
+      : { data: null };
+
+    return {
+      ...post,
+      author_name: author?.display_name || 'Unknown',
+      author_avatar: author?.avatar_url || null,
+    } as TribePost;
   }
 
   // ─── Membership ──────────────────────────────────────────────────
@@ -214,7 +239,7 @@ class TribesService {
       .from('tribes')
       .select('is_private')
       .eq('id', tribeId)
-      .single();
+      .maybeSingle();
 
     if (!tribe) return { success: false, error: 'Tribe not found' };
 
@@ -252,22 +277,41 @@ class TribesService {
   }
 
   async getMyTribes(userId: string): Promise<Tribe[]> {
-    const { data, error } = await supabase
+    // Step 1: Get memberships
+    const { data: memberships, error: mError } = await supabase
       .from('tribe_members')
-      .select(`
-        tribe_id,
-        tribes:tribe_id (*, profiles:creator_id (display_name))
-      `)
+      .select('tribe_id')
       .eq('user_id', userId);
 
-    if (error) {
-      console.error('[TribesService] getMyTribes error:', error);
+    if (mError) {
+      console.error('[TribesService] getMyTribes error:', mError);
       return [];
     }
 
-    return (data || []).map((m: any) => ({
-      ...m.tribes,
-      creator_name: m.tribes?.profiles?.display_name || 'Unknown',
+    const tribeIds = (memberships || []).map((m: any) => m.tribe_id);
+    if (tribeIds.length === 0) return [];
+
+    // Step 2: Get tribes
+    const { data: tribes, error: tError } = await supabase
+      .from('tribes')
+      .select('*')
+      .in('id', tribeIds);
+
+    if (tError) {
+      console.error('[TribesService] getMyTribes tribes error:', tError);
+      return [];
+    }
+
+    // Step 3: Get creator profiles
+    const creatorIds = [...new Set((tribes || []).map((t: any) => t.creator_id).filter(Boolean))];
+    const { data: creators } = creatorIds.length > 0
+      ? await supabase.from('user_profiles').select('id, display_name').in('id', creatorIds)
+      : { data: [] };
+    const creatorMap = new Map((creators || []).map((c: any) => [c.id, c.display_name]));
+
+    return (tribes || []).map((t: any) => ({
+      ...t,
+      creator_name: creatorMap.get(t.creator_id) || 'Unknown',
     })) as Tribe[];
   }
 
@@ -277,7 +321,7 @@ class TribesService {
       .select('id')
       .eq('tribe_id', tribeId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     return !error && !!data;
   }

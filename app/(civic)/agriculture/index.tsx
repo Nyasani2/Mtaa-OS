@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAgriculture } from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/controllers/useAgriculture';
 import { SeedLicenseCard } from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/components/SeedLicenseCard';
-import { CertificateCard } from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/components/CertificateCard';
+import CertificateCard from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/components/CertificateCard';
 import { MarketPriceCard } from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/components/MarketPriceCard';
 import { AgricultureNav } from '@/lib/civic/agriculture/civic_modules_v3/agriculture_kephis/components/AgricultureNav';
 

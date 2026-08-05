@@ -12,7 +12,7 @@ export class HospitalService {
   }
 
   static async getHospitalById(id: string) {
-    const { data, error } = await supabase.from('health_hospitals').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('health_hospitals').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as HealthHospital;
   }

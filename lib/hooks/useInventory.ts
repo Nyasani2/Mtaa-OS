@@ -144,7 +144,7 @@ export function useInventory(garageId?: string) {
         .from('garage_inventory')
         .insert(item)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       await loadInventory();
@@ -163,7 +163,7 @@ export function useInventory(garageId?: string) {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       await loadInventory();

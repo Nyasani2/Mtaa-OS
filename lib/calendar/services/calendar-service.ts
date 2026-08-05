@@ -64,7 +64,7 @@ export async function createEvent(
       color: event.color || '#2563eb',
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[CalendarService] createEvent error:', error);
@@ -85,7 +85,7 @@ export async function updateEvent(
     })
     .eq('id', eventId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[CalendarService] updateEvent error:', error);

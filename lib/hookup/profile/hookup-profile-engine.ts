@@ -35,7 +35,7 @@ export async function createHookupProfile(
     .from("hookup_profiles")
     .insert(profile)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
@@ -50,7 +50,7 @@ export async function getHookupProfile(
     .from("hookup_profiles")
     .select("*")
     .eq("user_id", user_id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
@@ -67,7 +67,7 @@ export async function updateHookupProfile(
     .update(updates)
     .eq("user_id", user_id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

@@ -32,7 +32,7 @@ export async function acceptMarriageMode(
       })
       .eq("id", proposal_id)
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

@@ -11,7 +11,7 @@ export class CourtAppealsService {
   }
 
   static async createAppeal(data: Partial<CourtAppeal>): Promise<CourtAppeal> {
-    const { data: result, error } = await supabase.from('court_appeals').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_appeals').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

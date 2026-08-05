@@ -6,7 +6,7 @@ export const walletHealthService = {
       .from('wallet_accounts')
       .select('balance')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data?.balance ?? 0;
   },

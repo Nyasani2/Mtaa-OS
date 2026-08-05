@@ -158,7 +158,7 @@ export async function getTribes(): Promise<Tribe[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeById(id: string): Promise<Tribe | null> {
-  const { data, error } = await supabase.from('tribes').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribes').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getTribesByCategory(category: string): Promise<Tribe[]> {
@@ -170,11 +170,11 @@ export async function searchTribes(query: string): Promise<Tribe[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribe(data: Partial<Tribe>): Promise<Tribe | null> {
-  const { data: result, error } = await supabase.from('tribes').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribes').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribe(id: string, data: Partial<Tribe>): Promise<Tribe | null> {
-  const { data: result, error } = await supabase.from('tribes').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribes').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribe(id: string): Promise<boolean> {
@@ -188,7 +188,7 @@ export async function getTribeMembers(tribeId: string): Promise<TribeMember[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeMemberById(id: string): Promise<TribeMember | null> {
-  const { data, error } = await supabase.from('tribe_members').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_members').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getUserTribes(userId: string): Promise<TribeMember[]> {
@@ -196,7 +196,7 @@ export async function getUserTribes(userId: string): Promise<TribeMember[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function joinTribe(tribeId: string, userId: string, role: string = 'member'): Promise<TribeMember | null> {
-  const { data: result, error } = await supabase.from('tribe_members').insert({ tribe_id: tribeId, user_id: userId, role }).select().single();
+  const { data: result, error } = await supabase.from('tribe_members').insert({ tribe_id: tribeId, user_id: userId, role }).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function leaveTribe(tribeId: string, userId: string): Promise<boolean> {
@@ -204,7 +204,7 @@ export async function leaveTribe(tribeId: string, userId: string): Promise<boole
   if (error) return handleError(error, false); return true;
 }
 export async function updateTribeMember(id: string, data: Partial<TribeMember>): Promise<TribeMember | null> {
-  const { data: result, error } = await supabase.from('tribe_members').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_members').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeMember(id: string): Promise<boolean> {
@@ -218,15 +218,15 @@ export async function getTribePosts(tribeId: string): Promise<TribePost[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribePostById(id: string): Promise<TribePost | null> {
-  const { data, error } = await supabase.from('tribe_posts').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_posts').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTribePost(data: Partial<TribePost>): Promise<TribePost | null> {
-  const { data: result, error } = await supabase.from('tribe_posts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_posts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribePost(id: string, data: Partial<TribePost>): Promise<TribePost | null> {
-  const { data: result, error } = await supabase.from('tribe_posts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_posts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribePost(id: string): Promise<boolean> {
@@ -240,15 +240,15 @@ export async function getTribeEvents(tribeId: string): Promise<TribeEvent[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeEventById(id: string): Promise<TribeEvent | null> {
-  const { data, error } = await supabase.from('tribe_events').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_events').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTribeEvent(data: Partial<TribeEvent>): Promise<TribeEvent | null> {
-  const { data: result, error } = await supabase.from('tribe_events').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_events').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeEvent(id: string, data: Partial<TribeEvent>): Promise<TribeEvent | null> {
-  const { data: result, error } = await supabase.from('tribe_events').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_events').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeEvent(id: string): Promise<boolean> {
@@ -262,11 +262,11 @@ export async function getTribeEventAttendees(eventId: string): Promise<TribeEven
   if (error) return handleError(error, []); return data || [];
 }
 export async function registerForTribeEvent(eventId: string, userId: string, status: string = 'going'): Promise<TribeEventAttendee | null> {
-  const { data: result, error } = await supabase.from('tribe_event_attendees').insert({ event_id: eventId, user_id: userId, status }).select().single();
+  const { data: result, error } = await supabase.from('tribe_event_attendees').insert({ event_id: eventId, user_id: userId, status }).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeEventAttendee(id: string, data: Partial<TribeEventAttendee>): Promise<TribeEventAttendee | null> {
-  const { data: result, error } = await supabase.from('tribe_event_attendees').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_event_attendees').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeEventAttendee(id: string): Promise<boolean> {
@@ -280,15 +280,15 @@ export async function getTribeDonations(tribeId: string): Promise<TribeDonation[
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeDonationById(id: string): Promise<TribeDonation | null> {
-  const { data, error } = await supabase.from('tribe_donations').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_donations').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function donateToTribe(data: Partial<TribeDonation>): Promise<TribeDonation | null> {
-  const { data: result, error } = await supabase.from('tribe_donations').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_donations').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeDonation(id: string, data: Partial<TribeDonation>): Promise<TribeDonation | null> {
-  const { data: result, error } = await supabase.from('tribe_donations').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_donations').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeDonation(id: string): Promise<boolean> {
@@ -302,11 +302,11 @@ export async function getTribeJoinPaids(tribeId: string): Promise<TribeJoinPaid[
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeJoinPaid(data: Partial<TribeJoinPaid>): Promise<TribeJoinPaid | null> {
-  const { data: result, error } = await supabase.from('tribe_join_paid').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_join_paid').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeJoinPaid(id: string, data: Partial<TribeJoinPaid>): Promise<TribeJoinPaid | null> {
-  const { data: result, error } = await supabase.from('tribe_join_paid').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_join_paid').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeJoinPaid(id: string): Promise<boolean> {
@@ -320,15 +320,15 @@ export async function getTribeLineage(tribeId: string): Promise<TribeLineage[]> 
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeLineageById(id: string): Promise<TribeLineage | null> {
-  const { data, error } = await supabase.from('tribe_lineage').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_lineage').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTribeLineage(data: Partial<TribeLineage>): Promise<TribeLineage | null> {
-  const { data: result, error } = await supabase.from('tribe_lineage').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_lineage').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeLineage(id: string, data: Partial<TribeLineage>): Promise<TribeLineage | null> {
-  const { data: result, error } = await supabase.from('tribe_lineage').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_lineage').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeLineage(id: string): Promise<boolean> {
@@ -342,15 +342,15 @@ export async function getTribeMuseumItems(tribeId: string): Promise<TribeMuseum[
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTribeMuseumItemById(id: string): Promise<TribeMuseum | null> {
-  const { data, error } = await supabase.from('tribe_museum').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('tribe_museum').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTribeMuseumItem(data: Partial<TribeMuseum>): Promise<TribeMuseum | null> {
-  const { data: result, error } = await supabase.from('tribe_museum').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_museum').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeMuseumItem(id: string, data: Partial<TribeMuseum>): Promise<TribeMuseum | null> {
-  const { data: result, error } = await supabase.from('tribe_museum').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_museum').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeMuseumItem(id: string): Promise<boolean> {
@@ -364,11 +364,11 @@ export async function getTribeLanguage(tribeId: string): Promise<TribeLanguage[]
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeLanguage(data: Partial<TribeLanguage>): Promise<TribeLanguage | null> {
-  const { data: result, error } = await supabase.from('tribe_language').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_language').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeLanguage(id: string, data: Partial<TribeLanguage>): Promise<TribeLanguage | null> {
-  const { data: result, error } = await supabase.from('tribe_language').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_language').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeLanguage(id: string): Promise<boolean> {
@@ -382,11 +382,11 @@ export async function getTribeCulture(tribeId: string): Promise<TribeCulture[]> 
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeCulture(data: Partial<TribeCulture>): Promise<TribeCulture | null> {
-  const { data: result, error } = await supabase.from('tribe_culture').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_culture').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeCulture(id: string, data: Partial<TribeCulture>): Promise<TribeCulture | null> {
-  const { data: result, error } = await supabase.from('tribe_culture').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_culture').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeCulture(id: string): Promise<boolean> {
@@ -400,11 +400,11 @@ export async function getTribeAnnouncements(tribeId: string): Promise<TribeAnnou
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeAnnouncement(data: Partial<TribeAnnouncement>): Promise<TribeAnnouncement | null> {
-  const { data: result, error } = await supabase.from('tribe_announcements').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_announcements').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeAnnouncement(id: string, data: Partial<TribeAnnouncement>): Promise<TribeAnnouncement | null> {
-  const { data: result, error } = await supabase.from('tribe_announcements').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_announcements').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeAnnouncement(id: string): Promise<boolean> {
@@ -418,11 +418,11 @@ export async function getTribePolls(tribeId: string): Promise<TribePoll[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribePoll(data: Partial<TribePoll>): Promise<TribePoll | null> {
-  const { data: result, error } = await supabase.from('tribe_polls').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_polls').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribePoll(id: string, data: Partial<TribePoll>): Promise<TribePoll | null> {
-  const { data: result, error } = await supabase.from('tribe_polls').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_polls').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribePoll(id: string): Promise<boolean> {
@@ -436,11 +436,11 @@ export async function getTribeResources(tribeId: string): Promise<TribeResource[
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeResource(data: Partial<TribeResource>): Promise<TribeResource | null> {
-  const { data: result, error } = await supabase.from('tribe_resources').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_resources').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeResource(id: string, data: Partial<TribeResource>): Promise<TribeResource | null> {
-  const { data: result, error } = await supabase.from('tribe_resources').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_resources').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeResource(id: string): Promise<boolean> {
@@ -454,11 +454,11 @@ export async function getTribeGallery(tribeId: string): Promise<TribeGallery[]> 
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeGalleryItem(data: Partial<TribeGallery>): Promise<TribeGallery | null> {
-  const { data: result, error } = await supabase.from('tribe_gallery').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_gallery').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeGalleryItem(id: string, data: Partial<TribeGallery>): Promise<TribeGallery | null> {
-  const { data: result, error } = await supabase.from('tribe_gallery').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_gallery').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeGalleryItem(id: string): Promise<boolean> {
@@ -472,7 +472,7 @@ export async function getTribeMessages(tribeId: string): Promise<TribeMessage[]>
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeMessage(data: Partial<TribeMessage>): Promise<TribeMessage | null> {
-  const { data: result, error } = await supabase.from('tribe_messages').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_messages').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeMessage(id: string): Promise<boolean> {
@@ -486,11 +486,11 @@ export async function getTribeRules(tribeId: string): Promise<TribeRule[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeRule(data: Partial<TribeRule>): Promise<TribeRule | null> {
-  const { data: result, error } = await supabase.from('tribe_rules').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_rules').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeRule(id: string, data: Partial<TribeRule>): Promise<TribeRule | null> {
-  const { data: result, error } = await supabase.from('tribe_rules').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_rules').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeRule(id: string): Promise<boolean> {
@@ -504,11 +504,11 @@ export async function getTribeBadges(tribeId: string): Promise<TribeBadge[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeBadge(data: Partial<TribeBadge>): Promise<TribeBadge | null> {
-  const { data: result, error } = await supabase.from('tribe_badges').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_badges').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeBadge(id: string, data: Partial<TribeBadge>): Promise<TribeBadge | null> {
-  const { data: result, error } = await supabase.from('tribe_badges').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_badges').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeBadge(id: string): Promise<boolean> {
@@ -522,7 +522,7 @@ export async function getTribeMemberBadges(memberId: string): Promise<TribeMembe
   if (error) return handleError(error, []); return data || [];
 }
 export async function awardTribeMemberBadge(data: Partial<TribeMemberBadge>): Promise<TribeMemberBadge | null> {
-  const { data: result, error } = await supabase.from('tribe_member_badges').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_member_badges').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -532,11 +532,11 @@ export async function getTribeMarketplace(tribeId: string): Promise<TribeMarketp
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeMarketplaceItem(data: Partial<TribeMarketplace>): Promise<TribeMarketplace | null> {
-  const { data: result, error } = await supabase.from('tribe_marketplace').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_marketplace').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeMarketplaceItem(id: string, data: Partial<TribeMarketplace>): Promise<TribeMarketplace | null> {
-  const { data: result, error } = await supabase.from('tribe_marketplace').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_marketplace').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeMarketplaceItem(id: string): Promise<boolean> {
@@ -550,11 +550,11 @@ export async function getTribeHistory(tribeId: string): Promise<TribeHistory[]> 
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeHistory(data: Partial<TribeHistory>): Promise<TribeHistory | null> {
-  const { data: result, error } = await supabase.from('tribe_history').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_history').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeHistory(id: string, data: Partial<TribeHistory>): Promise<TribeHistory | null> {
-  const { data: result, error } = await supabase.from('tribe_history').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_history').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeHistory(id: string): Promise<boolean> {
@@ -568,11 +568,11 @@ export async function getTribeLeaders(tribeId: string): Promise<TribeLeader[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeLeader(data: Partial<TribeLeader>): Promise<TribeLeader | null> {
-  const { data: result, error } = await supabase.from('tribe_leaders').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_leaders').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeLeader(id: string, data: Partial<TribeLeader>): Promise<TribeLeader | null> {
-  const { data: result, error } = await supabase.from('tribe_leaders').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_leaders').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeLeader(id: string): Promise<boolean> {
@@ -586,11 +586,11 @@ export async function getTribeTerritories(tribeId: string): Promise<TribeTerrito
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeTerritory(data: Partial<TribeTerritory>): Promise<TribeTerritory | null> {
-  const { data: result, error } = await supabase.from('tribe_territory').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_territory').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeTerritory(id: string, data: Partial<TribeTerritory>): Promise<TribeTerritory | null> {
-  const { data: result, error } = await supabase.from('tribe_territory').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_territory').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeTerritory(id: string): Promise<boolean> {
@@ -604,11 +604,11 @@ export async function getTribeConflicts(tribeId: string): Promise<TribeConflict[
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeConflict(data: Partial<TribeConflict>): Promise<TribeConflict | null> {
-  const { data: result, error } = await supabase.from('tribe_conflicts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_conflicts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeConflict(id: string, data: Partial<TribeConflict>): Promise<TribeConflict | null> {
-  const { data: result, error } = await supabase.from('tribe_conflicts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_conflicts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeConflict(id: string): Promise<boolean> {
@@ -622,11 +622,11 @@ export async function getTribeAlliances(tribeId: string): Promise<TribeAlliance[
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeAlliance(data: Partial<TribeAlliance>): Promise<TribeAlliance | null> {
-  const { data: result, error } = await supabase.from('tribe_alliances').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_alliances').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeAlliance(id: string, data: Partial<TribeAlliance>): Promise<TribeAlliance | null> {
-  const { data: result, error } = await supabase.from('tribe_alliances').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_alliances').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeAlliance(id: string): Promise<boolean> {
@@ -640,11 +640,11 @@ export async function getTribeRituals(tribeId: string): Promise<TribeRitual[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeRitual(data: Partial<TribeRitual>): Promise<TribeRitual | null> {
-  const { data: result, error } = await supabase.from('tribe_rituals').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_rituals').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeRitual(id: string, data: Partial<TribeRitual>): Promise<TribeRitual | null> {
-  const { data: result, error } = await supabase.from('tribe_rituals').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_rituals').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeRitual(id: string): Promise<boolean> {
@@ -658,11 +658,11 @@ export async function getTribeRecipes(tribeId: string): Promise<TribeRecipe[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeRecipe(data: Partial<TribeRecipe>): Promise<TribeRecipe | null> {
-  const { data: result, error } = await supabase.from('tribe_recipes').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_recipes').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeRecipe(id: string, data: Partial<TribeRecipe>): Promise<TribeRecipe | null> {
-  const { data: result, error } = await supabase.from('tribe_recipes').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_recipes').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeRecipe(id: string): Promise<boolean> {
@@ -676,11 +676,11 @@ export async function getTribeMusic(tribeId: string): Promise<TribeMusic[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTribeMusic(data: Partial<TribeMusic>): Promise<TribeMusic | null> {
-  const { data: result, error } = await supabase.from('tribe_music').insert(data).select().single();
+  const { data: result, error } = await supabase.from('tribe_music').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTribeMusic(id: string, data: Partial<TribeMusic>): Promise<TribeMusic | null> {
-  const { data: result, error } = await supabase.from('tribe_music').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('tribe_music').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTribeMusic(id: string): Promise<boolean> {
@@ -762,7 +762,7 @@ export async function getTribe(tribeId: string): Promise<Tribe | null> {
       .from('tribes')
       .select('*')
       .eq('id', tribeId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[tribes-service] getTribe error:', error);

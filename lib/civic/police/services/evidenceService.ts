@@ -17,19 +17,19 @@ export class EvidenceService {
   }
 
   async getEvidenceById(id: string) {
-    const { data, error } = await supabase.from('case_evidence').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('case_evidence').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as EvidenceItem;
   }
 
   async createEvidence(evidence: Omit<EvidenceItem, 'id' | 'created_at'>) {
-    const { data, error } = await supabase.from('case_evidence').insert(evidence).select().single();
+    const { data, error } = await supabase.from('case_evidence').insert(evidence).select().maybeSingle();
     if (error) throw error;
     return data as EvidenceItem;
   }
 
   async updateEvidence(id: string, updates: Partial<EvidenceItem>) {
-    const { data, error } = await supabase.from('case_evidence').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('case_evidence').update(updates).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as EvidenceItem;
   }
@@ -51,7 +51,7 @@ export class EvidenceService {
     const { data, error } = await supabase.from('case_evidence').insert({
       case_id: caseId, type: metadata.type, description: metadata.description, url: publicUrl,
       uploaded_by: metadata.collectedBy, created_at: new Date().toISOString(),
-    }).select().single();
+    }).select().maybeSingle();
     if (error) throw error;
     return data as EvidenceItem;
   }
@@ -79,7 +79,7 @@ export class EvidenceService {
     const { data, error } = await supabase.from('evidence_custody').insert({
       evidence_id: evidenceId, from_officer: fromOfficer, to_officer: toOfficer,
       transfer_reason: reason, transferred_at: new Date().toISOString(),
-    }).select().single();
+    }).select().maybeSingle();
     if (error) throw error;
     return data;
   }

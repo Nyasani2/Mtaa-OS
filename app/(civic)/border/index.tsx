@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBorderPosts } from '@/lib/domains/civic/border/hooks/useBorderPosts';
 import { useBorderAlerts } from '@/lib/domains/civic/border/hooks/useBorderAlerts';
-import { BorderNav } from '@/lib/domains/civic/border/components/BorderNav';
-import { StatsCard } from '@/lib/domains/civic/border/components/StatsCard';
+import BorderNav from '@/lib/domains/civic/border/components/BorderNav';
+import StatsCard from '@/lib/domains/civic/border/components/StatsCard';
 
 export default function BorderScreen() {
   const router = useRouter();

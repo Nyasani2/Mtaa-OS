@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { MtaxiDriver, MtaxiRide } from "../types";
 
 export async function getDriverProfile(userId: string): Promise<MtaxiDriver | null> {
-  const { data, error } = await supabase.from("mtaxi_drivers").select("*").eq("user_id", userId).single();
+  const { data, error } = await supabase.from("mtaxi_drivers").select("*").eq("user_id", userId).maybeSingle();
   if (error && error.code !== "PGRST116") throw error;
   return data as MtaxiDriver | null;
 }

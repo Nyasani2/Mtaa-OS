@@ -107,7 +107,7 @@ export async function createEvent(event: Omit<CalendarEvent, 'id' | 'created_at'
     .from('calendar_events')
     .insert(event)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[calendar-service] createEvent error:', error);
@@ -122,7 +122,7 @@ export async function updateEvent(id: string, updates: Partial<CalendarEvent>): 
     .update(updates)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[calendar-service] updateEvent error:', error);
@@ -151,7 +151,7 @@ export async function createReminder(reminder: Omit<CalendarReminder, 'id' | 'cr
     .from('calendar_reminders')
     .insert(reminder)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[calendar-service] createReminder error:', error);

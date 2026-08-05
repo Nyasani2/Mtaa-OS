@@ -11,13 +11,13 @@ export class PrisonParoleService {
   }
 
   static async createReview(data: Partial<PrisonParoleReview>): Promise<PrisonParoleReview> {
-    const { data: result, error } = await supabase.from('prison_parole_reviews').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_parole_reviews').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateReview(id: string, data: Partial<PrisonParoleReview>): Promise<PrisonParoleReview> {
-    const { data: result, error } = await supabase.from('prison_parole_reviews').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('prison_parole_reviews').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

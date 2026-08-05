@@ -20,7 +20,7 @@ export async function sendMessage(payload: {
       attachments: payload.attachments ?? []
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Send message failed: ${error.message}`);
   return data;
 }

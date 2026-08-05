@@ -103,7 +103,7 @@ export async function calculateDriverScore(
     .from('driver_scores')
     .upsert(scoreData, { onConflict: 'driver_id,period_start' })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -127,7 +127,7 @@ export async function getLatestDriverScore(driverId: string) {
     .eq('driver_id', driverId)
     .order('period_start', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   if (error) return null;
   return data;
 }

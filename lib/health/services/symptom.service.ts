@@ -6,7 +6,7 @@ export class SymptomService {
     if (error) throw error; return data || [];
   }
   static async checkSymptoms(checkData: Partial<HealthSymptomCheck>): Promise<HealthSymptomCheck> {
-    const { data, error } = await supabase.from("health_symptom_checks").insert(checkData).select().single();
+    const { data, error } = await supabase.from("health_symptom_checks").insert(checkData).select().maybeSingle();
     if (error) throw error; return data;
   }
 }

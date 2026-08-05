@@ -7,7 +7,7 @@ export async function getBalance(user_id: string) {
       .from("hookup_tokens")
       .select("*")
       .eq("user_id", user_id)
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -34,7 +34,7 @@ export async function addTokens(
         updated_at: new Date(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -64,7 +64,7 @@ export async function deductTokens(
         updated_at: new Date(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

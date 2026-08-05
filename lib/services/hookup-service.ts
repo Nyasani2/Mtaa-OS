@@ -140,7 +140,7 @@ export async function getMatches(userId: string): Promise<MatchItem[]> {
       .from('user_profiles')
       .select('id, full_name, avatar_url, hookup_preferences(verified_level)')
       .eq('id', otherId)
-      .single();
+      .maybeSingle();
 
     const { data: lastMsg } = await supabase
       .from('messages')
@@ -185,7 +185,7 @@ export async function getReceivedLikes(userId: string): Promise<LikeItem[]> {
       .from('user_profiles')
       .select('id, full_name, avatar_url, date_of_birth, hookup_preferences(city)')
       .eq('id', like.liker_id)
-      .single();
+      .maybeSingle();
 
     const age = profile?.date_of_birth
       ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / 31557600000)
@@ -227,7 +227,7 @@ export async function getSentLikes(userId: string): Promise<LikeItem[]> {
       .from('user_profiles')
       .select('id, full_name, avatar_url, date_of_birth, hookup_preferences(city)')
       .eq('id', like.liked_id)
-      .single();
+      .maybeSingle();
 
     const age = profile?.date_of_birth
       ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / 31557600000)
@@ -263,7 +263,7 @@ export async function getFullProfile(userId: string, targetId: string) {
       )
     `)
     .eq('id', targetId)
-    .single();
+    .maybeSingle();
 
   if (pErr) throw pErr;
 
@@ -357,7 +357,7 @@ export async function getBlockedUsers(blockerId: string) {
       .from('user_profiles')
       .select('full_name, avatar_url')
       .eq('id', b.blocked_id)
-      .single();
+      .maybeSingle();
     enriched.push({
       id: b.blocked_id,
       blocked_id: b.blocked_id,
@@ -382,7 +382,7 @@ export async function getMyReports(userId: string) {
       .from('user_profiles')
       .select('full_name')
       .eq('id', r.reported_id)
-      .single();
+      .maybeSingle();
     enriched.push({
       id: r.id,
       reported_name: profile?.full_name || 'Unknown',
@@ -401,7 +401,7 @@ export async function getPreferences(userId: string) {
     .from('hookup_preferences')
     .select('*')
     .eq('profile_id', userId)
-    .single();
+    .maybeSingle();
   return data;
 }
 

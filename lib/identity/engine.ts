@@ -143,7 +143,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profile && !profileErr) {
       state.identity = {
@@ -169,7 +169,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
       .from('wallet_accounts')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (wallet && !walletErr) {
       state.wallet = {
@@ -190,7 +190,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
       .from('professional_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (prof && !profErr) {
       state.professional = {
@@ -217,7 +217,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
       .from('business_profiles')
       .select('*')
       .eq('owner_id', userId)
-      .single();
+      .maybeSingle();
 
     if (biz && !bizErr) {
       state.business = {
@@ -271,7 +271,7 @@ export async function fetchIdentityEngine(userId: string): Promise<IdentityEngin
       .from('creator_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (creator && !creatorErr) {
       state.creator = {

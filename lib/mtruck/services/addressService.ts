@@ -23,7 +23,7 @@ export async function saveAddress(payload: {
   lng?: number;
   is_default?: boolean;
 }) {
-  const { data, error } = await supabase.from(TABLE_ADDRESSES).insert(payload).select().single();
+  const { data, error } = await supabase.from(TABLE_ADDRESSES).insert(payload).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -44,7 +44,7 @@ export async function getCorridorByRoute(origin: string, destination: string): P
     .select('*')
     .eq('origin_city', origin)
     .eq('destination_city', destination)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }

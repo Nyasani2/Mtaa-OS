@@ -64,9 +64,9 @@ export async function fetchProfile(userId: string): Promise<{
   stats: ProfileStats;
 }> {
   const [{ data: profile }, { data: creator }, { data: business }, { data: stats }] = await Promise.all([
-    supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
-    supabase.from('creator_profiles').select('*').eq('user_id', userId).single(),
-    supabase.from('business_profiles').select('*').eq('user_id', userId).single(),
+    supabase.from('user_profiles').select('*').eq('user_id', userId).maybeSingle(),
+    supabase.from('creator_profiles').select('*').eq('user_id', userId).maybeSingle(),
+    supabase.from('business_profiles').select('*').eq('user_id', userId).maybeSingle(),
     supabase.rpc('get_profile_stats', { p_user_id: userId }),
   ]);
 

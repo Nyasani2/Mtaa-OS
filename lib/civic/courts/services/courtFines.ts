@@ -11,13 +11,13 @@ export class CourtFinesService {
   }
 
   static async createFine(data: Partial<CourtFine>): Promise<CourtFine> {
-    const { data: result, error } = await supabase.from('court_fines').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_fines').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async recordPayment(id: string, amount: number, receiptNumber: string): Promise<void> {
-    const { data: fine } = await supabase.from('court_fines').select('*').eq('id', id).single();
+    const { data: fine } = await supabase.from('court_fines').select('*').eq('id', id).maybeSingle();
     if (!fine) throw new Error('Fine not found');
     const newPaid = (fine.amount_paid || 0) + amount;
     const status = newPaid >= fine.amount ? 'paid' : 'partial';

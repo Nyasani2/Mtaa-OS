@@ -62,7 +62,7 @@ export async function getMarketplaceListings(): Promise<MarketplaceListing[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getMarketplaceListingById(id: string): Promise<MarketplaceListing | null> {
-  const { data, error } = await supabase.from('marketplace_listings').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('marketplace_listings').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getMarketplaceListingsBySeller(sellerId: string): Promise<MarketplaceListing[]> {
@@ -78,11 +78,11 @@ export async function searchMarketplaceListings(query: string): Promise<Marketpl
   if (error) return handleError(error, []); return data || [];
 }
 export async function createMarketplaceListing(data: Partial<MarketplaceListing>): Promise<MarketplaceListing | null> {
-  const { data: result, error } = await supabase.from('marketplace_listings').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_listings').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateMarketplaceListing(id: string, data: Partial<MarketplaceListing>): Promise<MarketplaceListing | null> {
-  const { data: result, error } = await supabase.from('marketplace_listings').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('marketplace_listings').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceListing(id: string): Promise<boolean> {
@@ -96,15 +96,15 @@ export async function getMarketplaceCategories(): Promise<MarketplaceCategory[]>
   if (error) return handleError(error, []); return data || [];
 }
 export async function getMarketplaceCategoryById(id: string): Promise<MarketplaceCategory | null> {
-  const { data, error } = await supabase.from('marketplace_categories').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('marketplace_categories').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createMarketplaceCategory(data: Partial<MarketplaceCategory>): Promise<MarketplaceCategory | null> {
-  const { data: result, error } = await supabase.from('marketplace_categories').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_categories').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateMarketplaceCategory(id: string, data: Partial<MarketplaceCategory>): Promise<MarketplaceCategory | null> {
-  const { data: result, error } = await supabase.from('marketplace_categories').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('marketplace_categories').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceCategory(id: string): Promise<boolean> {
@@ -118,7 +118,7 @@ export async function getMarketplaceInquiries(listingId: string): Promise<Market
   if (error) return handleError(error, []); return data || [];
 }
 export async function createMarketplaceInquiry(data: Partial<MarketplaceInquiry>): Promise<MarketplaceInquiry | null> {
-  const { data: result, error } = await supabase.from('marketplace_inquiries').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_inquiries').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceInquiry(id: string): Promise<boolean> {
@@ -132,11 +132,11 @@ export async function getMarketplaceOffers(listingId: string): Promise<Marketpla
   if (error) return handleError(error, []); return data || [];
 }
 export async function createMarketplaceOffer(data: Partial<MarketplaceOffer>): Promise<MarketplaceOffer | null> {
-  const { data: result, error } = await supabase.from('marketplace_offers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_offers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateMarketplaceOffer(id: string, data: Partial<MarketplaceOffer>): Promise<MarketplaceOffer | null> {
-  const { data: result, error } = await supabase.from('marketplace_offers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('marketplace_offers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceOffer(id: string): Promise<boolean> {
@@ -150,15 +150,15 @@ export async function getMarketplaceTransactions(): Promise<MarketplaceTransacti
   if (error) return handleError(error, []); return data || [];
 }
 export async function getMarketplaceTransactionById(id: string): Promise<MarketplaceTransaction | null> {
-  const { data, error } = await supabase.from('marketplace_transactions').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('marketplace_transactions').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createMarketplaceTransaction(data: Partial<MarketplaceTransaction>): Promise<MarketplaceTransaction | null> {
-  const { data: result, error } = await supabase.from('marketplace_transactions').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_transactions').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateMarketplaceTransaction(id: string, data: Partial<MarketplaceTransaction>): Promise<MarketplaceTransaction | null> {
-  const { data: result, error } = await supabase.from('marketplace_transactions').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('marketplace_transactions').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceTransaction(id: string): Promise<boolean> {
@@ -172,7 +172,7 @@ export async function getMarketplaceRatings(userId: string): Promise<Marketplace
   if (error) return handleError(error, []); return data || [];
 }
 export async function createMarketplaceRating(data: Partial<MarketplaceRating>): Promise<MarketplaceRating | null> {
-  const { data: result, error } = await supabase.from('marketplace_ratings').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_ratings').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceRating(id: string): Promise<boolean> {
@@ -186,7 +186,7 @@ export async function getMarketplaceBookmarks(userId: string): Promise<Marketpla
   if (error) return handleError(error, []); return data || [];
 }
 export async function createMarketplaceBookmark(data: Partial<MarketplaceBookmark>): Promise<MarketplaceBookmark | null> {
-  const { data: result, error } = await supabase.from('marketplace_bookmarks').insert(data).select().single();
+  const { data: result, error } = await supabase.from('marketplace_bookmarks').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteMarketplaceBookmark(id: string): Promise<boolean> {

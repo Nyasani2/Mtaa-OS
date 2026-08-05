@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useCustomsStats } from '@/lib/domains/civic/customs/hooks/useCustomsStats';
 import { useCustomsAlerts } from '@/lib/domains/civic/customs/hooks/useCustomsAlerts';
-import { CustomsNav } from '@/lib/domains/civic/customs/components/CustomsNav';
-import { StatsCard } from '@/lib/domains/civic/customs/components/StatsCard';
+import CustomsNav from '@/lib/domains/civic/customs/components/CustomsNav';
+import StatsCard from '@/lib/domains/civic/customs/components/StatsCard';
 
 export default function CustomsScreen() {
   const router = useRouter();

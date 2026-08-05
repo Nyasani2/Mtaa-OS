@@ -11,7 +11,7 @@ export function usePatientConsent() {
 
   const fetchData = useCallback(async () => {
     if (!user) return;
-    const { data: patient } = await supabase.from('health_patients').select('id, qr_access_enabled, biometric_consent_enabled, emergency_access_granted').eq('user_id', user.id).single();
+    const { data: patient } = await supabase.from('health_patients').select('id, qr_access_enabled, biometric_consent_enabled, emergency_access_granted').eq('user_id', user.id).maybeSingle();
     if (patient) {
       setSettings(patient);
       const { data: grants } = await supabase.from('health_consent_logs').select('*').eq('patient_id', patient.id).eq('is_active', true).order('created_at', { ascending: false });
@@ -23,7 +23,7 @@ export function usePatientConsent() {
 
   const grantConsent = useCallback(async (payload: any) => {
     if (!user) return;
-    const { data: patient } = await supabase.from('health_patients').select('id').eq('user_id', user.id).single();
+    const { data: patient } = await supabase.from('health_patients').select('id').eq('user_id', user.id).maybeSingle();
     if (!patient) return;
     const { data, error } = await supabase.rpc('grant_health_consent', {
       p_patient_id: patient.id, p_granted_to: payload.granted_to, p_granted_to_type: payload.granted_to_type,

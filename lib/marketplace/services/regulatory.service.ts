@@ -90,7 +90,7 @@ class RegulatoryService {
       .from('kyc_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       console.error('[Regulatory] getKYCProfile error:', error);

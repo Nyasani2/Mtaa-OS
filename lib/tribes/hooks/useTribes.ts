@@ -44,7 +44,7 @@ export function useTribes() {
   const createTribe = useCallback(async (tribeData: Partial<Tribe>) => {
     setLoading(true); setError(null);
     try {
-      const { data, error: supaError } = await supabase.from("tribes").insert(tribeData).select().single();
+      const { data, error: supaError } = await supabase.from("tribes").insert(tribeData).select().maybeSingle();
       if (supaError) throw supaError;
       setTribes(prev => [data, ...prev]);
       return data;

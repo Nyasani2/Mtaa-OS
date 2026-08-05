@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type { CreditProfile, Loan, Investment, Transaction } from "@/lib/credit/types";
 
 export async function getCreditProfile(userId: string): Promise<CreditProfile | null> {
-  const { data, error } = await supabase.from("credit_profiles").select("*").eq("user_id", userId).single();
+  const { data, error } = await supabase.from("credit_profiles").select("*").eq("user_id", userId).maybeSingle();
   if (error) throw error;
   return data;
 }

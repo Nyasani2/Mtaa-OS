@@ -58,7 +58,7 @@ export async function createFreightAuction(payload: {
       auction_status: 'open'
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create auction failed: ${error.message}`);
   return data;
 }
@@ -78,7 +78,7 @@ export async function getAuctionById(auctionId: string): Promise<MtruckFreightAu
     .from(TABLE_AUCTIONS)
     .select(`*, ${TABLE_FREIGHT_BIDS}(*)`)
     .eq('id', auctionId)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -117,7 +117,7 @@ export async function placeFreightBid(payload: {
       is_winning: false
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Place bid failed: ${error.message}`);
   return data;
 }
@@ -165,7 +165,7 @@ export async function createSettlement(payload: {
       payment_status: 'pending'
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create settlement failed: ${error.message}`);
   return data;
 }
@@ -216,7 +216,7 @@ export async function createMarketplaceListing(payload: {
       bids_count: 0
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create listing failed: ${error.message}`);
   return data;
 }

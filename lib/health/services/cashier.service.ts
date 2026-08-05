@@ -9,13 +9,13 @@ export async function getInsuranceClaims(status: string, range: { from: number; 
 }
 
 export async function approveClaim(claimId: string) {
-  const { data, error } = await supabase.from("health_sha_claims").update({ status: "approved", approved_at: new Date().toISOString() }).eq("id", claimId).select().single();
+  const { data, error } = await supabase.from("health_sha_claims").update({ status: "approved", approved_at: new Date().toISOString() }).eq("id", claimId).select().maybeSingle();
   if (error) throw error;
   return data;
 }
 
 export async function rejectClaim(claimId: string, reason: string) {
-  const { data, error } = await supabase.from("health_sha_claims").update({ status: "rejected", rejection_reason: reason }).eq("id", claimId).select().single();
+  const { data, error } = await supabase.from("health_sha_claims").update({ status: "rejected", rejection_reason: reason }).eq("id", claimId).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -29,7 +29,7 @@ export async function getInvoices(status: string, range: { from: number; to: num
 }
 
 export async function createInvoice(payload: any) {
-  const { data, error } = await supabase.from("health_pos_transactions").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_pos_transactions").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -54,7 +54,7 @@ export async function processPayment(payload: { invoice_id: string; amount: numb
     reference: payload.reference,
     status: "completed",
     processed_at: new Date().toISOString(),
-  }]).select().single();
+  }]).select().maybeSingle();
   if (error) throw error;
 
   // Update invoice status

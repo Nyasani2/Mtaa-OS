@@ -33,7 +33,7 @@ export async function processCustomsClearance(
         clearance.clearance_status,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

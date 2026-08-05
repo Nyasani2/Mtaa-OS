@@ -26,7 +26,7 @@ export async function createRoom(
         access_code,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -48,7 +48,7 @@ export async function joinRoom(
         user_id,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

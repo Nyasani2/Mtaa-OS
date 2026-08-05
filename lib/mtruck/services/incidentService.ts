@@ -25,7 +25,7 @@ export async function reportIncident(payload: {
       status: 'reported'
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Report incident failed: ${error.message}`);
   return data;
 }
@@ -75,7 +75,7 @@ export async function createSecurityAlert(payload: {
     .from(TABLE_SECURITY_ALERTS)
     .insert(payload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create security alert failed: ${error.message}`);
   return data;
 }

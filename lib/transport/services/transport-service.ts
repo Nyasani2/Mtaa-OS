@@ -151,7 +151,7 @@ export async function getRideById(rideId: string, serviceType: ServiceType): Pro
       return { id: r.id, passenger_id: r.rider_id, driver_id: r.driver_id, service_type: 'boda', pickup: { lat: r.pickup_lat, lng: r.pickup_lng, address: r.pickup_address }, dropoff: { lat: r.dropoff_lat, lng: r.dropoff_lng, address: r.dropoff_address }, vehicle_type: r.boda_type, payment_method: r.payment_method, status: r.status, fare_estimate: r.estimated_fare, final_fare: r.final_fare, created_at: r.created_at, updated_at: r.updated_at } as TransportRide;
     } catch { return null; }
   }
-  const { data, error } = await supabase.from('mtaxi_rides').select(`*, driver:mtaxi_drivers(id, full_name, phone, vehicle_plate, vehicle_type, rating, photo_url)`).eq('id', rideId).single();
+  const { data, error } = await supabase.from('mtaxi_rides').select(`*, driver:mtaxi_drivers(id, full_name, phone, vehicle_plate, vehicle_type, rating, photo_url)`).eq('id', rideId).maybeSingle();
   if (error || !data) return null;
   return { id: data.id, passenger_id: data.passenger_id, driver_id: data.driver_id, service_type: 'car', pickup: { lat: data.pickup_lat, lng: data.pickup_lng, address: data.pickup_address }, dropoff: { lat: data.dropoff_lat, lng: data.dropoff_lng, address: data.dropoff_address }, vehicle_type: data.ride_type, payment_method: data.payment_method, status: data.status, fare_estimate: data.fare_estimate, final_fare: data.final_fare, distance_km: data.distance_km, duration_minutes: data.duration_minutes, scheduled_at: data.scheduled_at, created_at: data.created_at, updated_at: data.updated_at, driver: data.driver } as TransportRide;
 }

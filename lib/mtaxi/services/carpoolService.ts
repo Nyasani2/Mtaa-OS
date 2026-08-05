@@ -26,13 +26,13 @@ export async function createCarpoolTrip(data: Partial<CarpoolTrip>): Promise<Car
       vehicle_type: data.vehicle_type,
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return result as CarpoolTrip;
 }
 
 export async function bookCarpool(tripId: string, passengerId: string, seats = 1): Promise<CarpoolBooking> {
-  const { data: trip } = await supabase.from("carpool_trips").select("price_per_seat, available_seats").eq("id", tripId).single();
+  const { data: trip } = await supabase.from("carpool_trips").select("price_per_seat, available_seats").eq("id", tripId).maybeSingle();
   if (!trip || trip.available_seats < seats) throw new Error("Not enough seats available");
 
   const { data: result, error } = await supabase
@@ -45,7 +45,7 @@ export async function bookCarpool(tripId: string, passengerId: string, seats = 1
       status: "confirmed",
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
 
   await supabase.from("carpool_trips").update({ available_seats: trip.available_seats - seats }).eq("id", tripId);

@@ -38,7 +38,7 @@ export async function getCameraStatus(deviceId: string): Promise<CameraStatus> {
     .from('devices')
     .select('*')
     .eq('id', deviceId)
-    .single();
+    .maybeSingle();
 
   if (!device) throw new Error('Device not found');
 
@@ -96,7 +96,7 @@ export async function getRecordingConfig(deviceId: string): Promise<RecordingCon
     .from('devices')
     .select('resolution_preference, frame_rate, audio_enabled, microphone_enabled, auto_upload, wifi_only_upload, encryption_enabled')
     .eq('id', deviceId)
-    .single();
+    .maybeSingle();
 
   if (!device) return DEFAULT_RECORDING_CONFIG;
 

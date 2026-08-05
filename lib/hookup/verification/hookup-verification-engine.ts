@@ -21,7 +21,7 @@ export async function submitVerification(
         status: "PENDING",
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -43,7 +43,7 @@ export async function approveVerification(
       })
       .eq("id", verification_id)
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

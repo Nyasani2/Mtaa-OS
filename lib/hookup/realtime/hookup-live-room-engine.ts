@@ -48,7 +48,7 @@ export class HookupLiveRoomEngine {
           status: "ACTIVE",
         })
         .select()
-        .single();
+        .maybeSingle();
 
     if (error) {
       throw error;

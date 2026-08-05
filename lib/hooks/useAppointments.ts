@@ -172,7 +172,7 @@ export function useAppointments() {
           .from('garage_appointments')
           .select(`*, customer:customer_id(*), vehicle:vehicle_id(*), garage:garage_id(*)`)
           .eq('id', appointmentId)
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'loadAppointment'
       );
@@ -188,7 +188,7 @@ export function useAppointments() {
     setLoading();
     try {
       const { data, error } = await withTimeout(
-        supabase.from('garage_appointments').insert(appointmentData).select().single(),
+        supabase.from('garage_appointments').insert(appointmentData).select().maybeSingle(),
         QUERY_TIMEOUT,
         'createAppointment'
       );
@@ -215,7 +215,7 @@ export function useAppointments() {
       if (extraData) Object.assign(updatePayload, extraData);
 
       const { data, error } = await withTimeout(
-        supabase.from('garage_appointments').update(updatePayload).eq('id', appointmentId).select().single(),
+        supabase.from('garage_appointments').update(updatePayload).eq('id', appointmentId).select().maybeSingle(),
         QUERY_TIMEOUT,
         'updateStatus'
       );
@@ -244,7 +244,7 @@ export function useAppointments() {
           })
           .eq('id', appointmentId)
           .select()
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'addDiagnosis'
       );
@@ -272,7 +272,7 @@ export function useAppointments() {
           })
           .eq('id', appointmentId)
           .select()
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'approveServices'
       );
@@ -290,7 +290,7 @@ export function useAppointments() {
     setLoading();
     try {
       const { data: current } = await withTimeout(
-        supabase.from('garage_appointments').select('parts_used').eq('id', appointmentId).single(),
+        supabase.from('garage_appointments').select('parts_used').eq('id', appointmentId).maybeSingle(),
         QUERY_TIMEOUT,
         'addParts-fetch'
       );
@@ -300,7 +300,7 @@ export function useAppointments() {
           .update({ parts_used: [...existing, ...parts], updated_at: new Date().toISOString() })
           .eq('id', appointmentId)
           .select()
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'addParts-update'
       );
@@ -329,7 +329,7 @@ export function useAppointments() {
           })
           .eq('id', appointmentId)
           .select()
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'completeJob'
       );
@@ -355,7 +355,7 @@ export function useAppointments() {
           })
           .eq('id', appointmentId)
           .select()
-          .single(),
+          .maybeSingle(),
         QUERY_TIMEOUT,
         'addReview'
       );

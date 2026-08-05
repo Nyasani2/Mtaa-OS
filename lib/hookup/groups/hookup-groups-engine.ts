@@ -17,7 +17,7 @@ export async function createGroup(
         category,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -37,7 +37,7 @@ export async function joinGroup(
         user_id,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

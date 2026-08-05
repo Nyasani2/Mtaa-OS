@@ -106,7 +106,7 @@ export function useTransport() {
     store.setLoading(true);
     store.clearError();
     try {
-      const { data, error } = await supabase.from('ntsa_incidents').insert(incident).select().single();
+      const { data, error } = await supabase.from('ntsa_incidents').insert(incident).select().maybeSingle();
       if (error) throw error;
       store.setIncidents([...store.incidents, data]);
       return data;
@@ -122,7 +122,7 @@ export function useTransport() {
     store.setLoading(true);
     store.clearError();
     try {
-      const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('plate_number', plateNumber).single();
+      const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('plate_number', plateNumber).maybeSingle();
       if (error) throw error;
       store.setSelectedItem(data);
       return data;

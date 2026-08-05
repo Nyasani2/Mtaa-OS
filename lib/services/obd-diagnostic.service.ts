@@ -90,7 +90,7 @@ export async function runOBDScan(vehicleId: string, scannerDeviceId?: string) {
     .from('obd_diagnostics')
     .insert(diagnostic)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -120,7 +120,7 @@ export async function getDiagnosticById(id: string) {
       repairs:repair_records(*)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -132,7 +132,7 @@ export async function clearFaultCode(diagnosticId: string, code: string) {
     .from('obd_diagnostics')
     .select('fault_codes')
     .eq('id', diagnosticId)
-    .single();
+    .maybeSingle();
 
   const updatedCodes = (diagnostic?.fault_codes || []).map((fc: any) =>
     fc.code === code ? { ...fc, is_cleared: true, cleared_at: new Date().toISOString(), cleared_by: user.user?.id } : fc
@@ -143,7 +143,7 @@ export async function clearFaultCode(diagnosticId: string, code: string) {
     .update({ fault_codes: updatedCodes, updated_at: new Date().toISOString() })
     .eq('id', diagnosticId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -153,7 +153,7 @@ export async function createRepairRecord(repair: Omit<RepairRecord, 'id' | 'crea
     .from('repair_records')
     .insert(repair)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -181,7 +181,7 @@ export async function updateRepairStatus(repairId: string, status: string, notes
     .update(updates)
     .eq('id', repairId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -191,7 +191,7 @@ export async function compareBeforeAfter(diagnosticId: string) {
     .from('obd_diagnostics')
     .select('fault_codes, live_data, scan_date')
     .eq('id', diagnosticId)
-    .single();
+    .maybeSingle();
 
   const { data: after } = await supabase
     .from('obd_diagnostics')
@@ -200,7 +200,7 @@ export async function compareBeforeAfter(diagnosticId: string) {
     .gt('scan_date', before?.scan_date)
     .order('scan_date', { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   return {
     before: before || null,

@@ -94,7 +94,7 @@ export const doctorService = {
         status: 'active',
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
 
     // Insert prescription items
@@ -139,7 +139,7 @@ export const doctorService = {
         status: 'pending',
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return result;
   },
@@ -178,7 +178,7 @@ export const doctorService = {
         status: 'scheduled',
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return result;
   },
@@ -227,7 +227,7 @@ export const doctorService = {
         status: 'ordered',
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return result;
   },
@@ -261,7 +261,7 @@ export const doctorService = {
         is_signed: false,
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return result;
   },

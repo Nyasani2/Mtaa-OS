@@ -61,7 +61,7 @@ export const hospitalAdminService = {
   },
 
   async admitPatient(admitData: any) {
-    const { data, error } = await supabase.from('health_admissions').insert(admitData).select().single();
+    const { data, error } = await supabase.from('health_admissions').insert(admitData).select().maybeSingle();
     if (error) throw error;
     if (admitData.bed_id) {
       await supabase.from('health_beds').update({ status: 'occupied' }).eq('id', admitData.bed_id);
@@ -91,7 +91,7 @@ export const hospitalAdminService = {
     });
     if (dErr) throw dErr;
     await supabase.from('health_admissions').update({ status: 'discharged' }).eq('id', admissionId);
-    const { data: adm } = await supabase.from('health_admissions').select('bed_id').eq('id', admissionId).single();
+    const { data: adm } = await supabase.from('health_admissions').select('bed_id').eq('id', admissionId).maybeSingle();
     if (adm?.bed_id) {
       await supabase.from('health_beds').update({ status: 'available' }).eq('id', adm.bed_id);
     }

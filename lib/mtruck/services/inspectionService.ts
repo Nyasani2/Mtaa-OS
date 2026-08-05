@@ -23,7 +23,7 @@ export async function scheduleInspection(payload: {
       status: 'pending'
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Schedule inspection failed: ${error.message}`);
   return data;
 }
@@ -90,7 +90,7 @@ export async function submitInspectionResults(
     })
     .eq('id', inspectionId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Submit inspection failed: ${error.message}`);
   return { passed: allPass, data };
 }
@@ -117,7 +117,7 @@ export async function createMaintenanceAlert(payload: {
       is_resolved: false
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create maintenance alert failed: ${error.message}`);
   return data;
 }

@@ -9,7 +9,7 @@ export async function getLabSamples(filter: string, range: { from: number; to: n
 }
 
 export async function createLabSample(payload: any) {
-  const { data, error } = await supabase.from("health_lab_tests").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_lab_tests").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -23,7 +23,7 @@ export async function getLabEquipment(filter: string, range: { from: number; to:
 }
 
 export async function createLabEquipment(payload: any) {
-  const { data, error } = await supabase.from("health_inventory").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_inventory").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -32,7 +32,7 @@ export async function updateEquipmentStatus({ id, status }: { id: string; status
   const { data, error } = await supabase.from("health_inventory").update({
     status,
     last_calibrated_at: status === "calibrating" ? new Date().toISOString() : undefined,
-  }).eq("id", id).select().single();
+  }).eq("id", id).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -46,7 +46,7 @@ export async function getLabResults(filter: string, range: { from: number; to: n
 }
 
 export async function createLabResult(payload: any) {
-  const { data, error } = await supabase.from("health_leave_requests").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_leave_requests").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

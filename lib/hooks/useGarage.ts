@@ -96,7 +96,7 @@ export function useGarage() {
             .from('garages')
             .select('*')
             .eq('owner_id', (await supabase.auth.getUser()).data.user?.id)
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
 

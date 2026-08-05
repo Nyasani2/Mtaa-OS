@@ -11,7 +11,7 @@ export class CourtBailsService {
   }
 
   static async createBail(data: Partial<CourtBail>): Promise<CourtBail> {
-    const { data: result, error } = await supabase.from('court_bails').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_bails').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

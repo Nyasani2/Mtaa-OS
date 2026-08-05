@@ -5,7 +5,7 @@ export async function getJobsProfile(profileId: string) {
     .from('user_profiles')
     .select('id, display_name, username, avatar_url, profession, skills, experience_years, is_verified')
     .eq('id', profileId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

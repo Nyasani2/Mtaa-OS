@@ -13,13 +13,13 @@ if (error) return handleError(error, []);
 }
 
 export async function createSHAClaim(data: Partial<SHAClaim>): Promise<SHAClaim | null> {
-  const { data: result, error } = await supabase.from('health_sha_claims').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_sha_claims').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateSHAClaim(id: string, data: Partial<SHAClaim>): Promise<SHAClaim | null> {
-  const { data: result, error } = await supabase.from('health_sha_claims').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_sha_claims').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -39,13 +39,13 @@ export async function getSHAContributors(): Promise<SHAContributor[]> {
 }
 
 export async function createSHAContributor(data: Partial<SHAContributor>): Promise<SHAContributor | null> {
-  const { data: result, error } = await supabase.from('health_sha_contributors').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_sha_contributors').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateSHAContributor(id: string, data: Partial<SHAContributor>): Promise<SHAContributor | null> {
-  const { data: result, error } = await supabase.from('health_sha_contributors').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_sha_contributors').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -65,19 +65,19 @@ export async function getAmbulanceVehicles(): Promise<AmbulanceVehicle[]> {
 }
 
 export async function getAmbulanceVehicleById(id: string): Promise<AmbulanceVehicle | null> {
-  const { data, error } = await supabase.from('health_ambulance_vehicles').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_ambulance_vehicles').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createAmbulanceVehicle(data: Partial<AmbulanceVehicle>): Promise<AmbulanceVehicle | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_vehicles').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_vehicles').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateAmbulanceVehicle(id: string, data: Partial<AmbulanceVehicle>): Promise<AmbulanceVehicle | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_vehicles').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_vehicles').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -95,19 +95,19 @@ export async function getAmbulanceRequests(): Promise<AmbulanceRequest[]> {
 }
 
 export async function getAmbulanceRequestById(id: string): Promise<AmbulanceRequest | null> {
-  const { data, error } = await supabase.from('health_ambulance_requests').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_ambulance_requests').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createAmbulanceRequest(data: Partial<AmbulanceRequest>): Promise<AmbulanceRequest | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_requests').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_requests').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateAmbulanceRequest(id: string, data: Partial<AmbulanceRequest>): Promise<AmbulanceRequest | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_requests').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_requests').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -125,13 +125,13 @@ export async function getAmbulanceDispatches(): Promise<AmbulanceDispatch[]> {
 }
 
 export async function createAmbulanceDispatch(data: Partial<AmbulanceDispatch>): Promise<AmbulanceDispatch | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_dispatches').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_dispatches').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateAmbulanceDispatch(id: string, data: Partial<AmbulanceDispatch>): Promise<AmbulanceDispatch | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_dispatches').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_dispatches').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -149,7 +149,7 @@ export async function getAmbulanceLogs(): Promise<AmbulanceLog[]> {
 }
 
 export async function createAmbulanceLog(data: Partial<AmbulanceLog>): Promise<AmbulanceLog | null> {
-  const { data: result, error } = await supabase.from('health_ambulance_logs').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_ambulance_logs').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -163,19 +163,19 @@ export async function getPatientQueues(): Promise<PatientQueue[]> {
 }
 
 export async function getPatientQueueById(id: string): Promise<PatientQueue | null> {
-  const { data, error } = await supabase.from('health_patient_queues').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_patient_queues').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createPatientQueue(data: Partial<PatientQueue>): Promise<PatientQueue | null> {
-  const { data: result, error } = await supabase.from('health_patient_queues').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_patient_queues').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updatePatientQueue(id: string, data: Partial<PatientQueue>): Promise<PatientQueue | null> {
-  const { data: result, error } = await supabase.from('health_patient_queues').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_patient_queues').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -193,13 +193,13 @@ export async function getQueues(): Promise<Queue[]> {
 }
 
 export async function createQueue(data: Partial<Queue>): Promise<Queue | null> {
-  const { data: result, error } = await supabase.from('health_queues').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_queues').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateQueue(id: string, data: Partial<Queue>): Promise<Queue | null> {
-  const { data: result, error } = await supabase.from('health_queues').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_queues').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -225,13 +225,13 @@ export async function getPatientCheckIns(patientId: string): Promise<CheckIn[]> 
 }
 
 export async function createCheckIn(data: Partial<CheckIn>): Promise<CheckIn | null> {
-  const { data: result, error } = await supabase.from('health_check_ins').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_check_ins').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateCheckIn(id: string, data: Partial<CheckIn>): Promise<CheckIn | null> {
-  const { data: result, error } = await supabase.from('health_check_ins').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_check_ins').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -251,19 +251,19 @@ export async function getFacilities(): Promise<Facility[]> {
 }
 
 export async function getFacilityById(id: string): Promise<Facility | null> {
-  const { data, error } = await supabase.from('health_facilities').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_facilities').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createFacility(data: Partial<Facility>): Promise<Facility | null> {
-  const { data: result, error } = await supabase.from('health_facilities').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_facilities').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateFacility(id: string, data: Partial<Facility>): Promise<Facility | null> {
-  const { data: result, error } = await supabase.from('health_facilities').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_facilities').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -281,13 +281,13 @@ export async function getFacilityAdmins(): Promise<FacilityAdmin[]> {
 }
 
 export async function createFacilityAdmin(data: Partial<FacilityAdmin>): Promise<FacilityAdmin | null> {
-  const { data: result, error } = await supabase.from('health_facility_admins').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_facility_admins').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateFacilityAdmin(id: string, data: Partial<FacilityAdmin>): Promise<FacilityAdmin | null> {
-  const { data: result, error } = await supabase.from('health_facility_admins').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_facility_admins').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -307,19 +307,19 @@ export async function getAlerts(): Promise<Alert[]> {
 }
 
 export async function getAlertById(id: string): Promise<Alert | null> {
-  const { data, error } = await supabase.from('health_alerts').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_alerts').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createAlert(data: Partial<Alert>): Promise<Alert | null> {
-  const { data: result, error } = await supabase.from('health_alerts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_alerts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateAlert(id: string, data: Partial<Alert>): Promise<Alert | null> {
-  const { data: result, error } = await supabase.from('health_alerts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_alerts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -343,7 +343,7 @@ export async function getAuditLogs(): Promise<AuditLog[]> {
 }
 
 export async function createAuditLog(data: Partial<AuditLog>): Promise<AuditLog | null> {
-  const { data: result, error } = await supabase.from('health_audit_log').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_audit_log').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -357,19 +357,19 @@ export async function getPractitioners(): Promise<Practitioner[]> {
 }
 
 export async function getPractitionerById(id: string): Promise<Practitioner | null> {
-  const { data, error } = await supabase.from('health_practitioners').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('health_practitioners').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createPractitioner(data: Partial<Practitioner>): Promise<Practitioner | null> {
-  const { data: result, error } = await supabase.from('health_practitioners').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_practitioners').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updatePractitioner(id: string, data: Partial<Practitioner>): Promise<Practitioner | null> {
-  const { data: result, error } = await supabase.from('health_practitioners').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_practitioners').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -389,13 +389,13 @@ export async function getHealthWalletTransactions(): Promise<WalletTransaction[]
 }
 
 export async function createHealthWalletTransaction(data: Partial<WalletTransaction>): Promise<WalletTransaction | null> {
-  const { data: result, error } = await supabase.from('health_wallet_transactions').insert(data).select().single();
+  const { data: result, error } = await supabase.from('health_wallet_transactions').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateHealthWalletTransaction(id: string, data: Partial<WalletTransaction>): Promise<WalletTransaction | null> {
-  const { data: result, error } = await supabase.from('health_wallet_transactions').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('health_wallet_transactions').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }

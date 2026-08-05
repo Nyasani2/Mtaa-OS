@@ -9,7 +9,7 @@ export async function getRadiologyReports(filter: string, range: { from: number;
 }
 
 export async function createRadiologyReport(payload: any) {
-  const { data, error } = await supabase.from("health_radiology_reports").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_radiology_reports").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -23,7 +23,7 @@ export async function getRadiologyRequests(filter: string, range: { from: number
 }
 
 export async function createRadiologyRequest(payload: any) {
-  const { data, error } = await supabase.from("health_audit_logs").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_audit_logs").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

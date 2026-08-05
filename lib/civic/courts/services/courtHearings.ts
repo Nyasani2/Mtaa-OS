@@ -12,13 +12,13 @@ export class CourtHearingsService {
   }
 
   static async createHearing(data: Partial<CourtHearing>): Promise<CourtHearing> {
-    const { data: result, error } = await supabase.from('court_hearings').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_hearings').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateHearing(id: string, data: Partial<CourtHearing>): Promise<CourtHearing> {
-    const { data: result, error } = await supabase.from('court_hearings').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('court_hearings').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

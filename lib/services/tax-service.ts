@@ -70,7 +70,7 @@ export async function getTaxpayerByUser(userId: string) {
     .from('revenue_taxpayers')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data as Taxpayer;
 }
@@ -111,7 +111,7 @@ export async function getPlatformFeesForModule(module: string) {
     .select('*')
     .eq('module', module)
     .eq('active', true)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

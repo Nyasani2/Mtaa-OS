@@ -35,7 +35,7 @@ export async function reportIncident(incident: Omit<IncidentReport, 'id' | 'crea
     .from('incidents')
     .insert({ ...incident, status: 'open' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -54,7 +54,7 @@ export async function getIncidentById(id: string) {
       resolver:resolved_by(id, full_name)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -112,7 +112,7 @@ export async function updateIncidentStatus(id: string, status: string, notes?: s
     .update(updates)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -123,7 +123,7 @@ export async function assignIncidentOfficer(id: string, officerId: string) {
     .update({ officer_id: officerId, status: 'investigating', updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -134,7 +134,7 @@ export async function linkIncidentToRecording(id: string, recordingId: string) {
     .update({ recording_id: recordingId, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -145,7 +145,7 @@ export async function linkIncidentToEvidence(id: string, evidenceId: string) {
     .update({ evidence_id: evidenceId, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

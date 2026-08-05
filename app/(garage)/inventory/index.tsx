@@ -490,7 +490,7 @@ export default function InventoryScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading inventory...</Text>
+        <Text style={styles.isLoadingText}>Loading inventory...</Text>
       </View>
     );
   }

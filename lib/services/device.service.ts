@@ -49,7 +49,7 @@ export async function registerDevice(deviceData: Omit<Device, 'id' | 'created_at
     .from('devices')
     .insert(deviceData)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -65,7 +65,7 @@ export async function getDevices(filters?: { status?: string; device_type?: stri
 }
 
 export async function getDeviceById(id: string) {
-  const { data, error } = await supabase.from('devices').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('devices').select('*').eq('id', id).maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -76,7 +76,7 @@ export async function updateDevice(id: string, updates: Partial<Device>) {
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -91,7 +91,7 @@ export async function assignDevice(assignment: Omit<DeviceAssignment, 'id' | 'as
     .from('device_assignments')
     .insert(assignment)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -102,7 +102,7 @@ export async function unassignDevice(assignmentId: string) {
     .update({ unassigned_at: new Date().toISOString() })
     .eq('id', assignmentId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

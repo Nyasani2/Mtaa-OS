@@ -99,7 +99,7 @@ export const useAuthStore = create<AuthState>()(
             .from('user_profiles')
             .select('*')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           if (profileError && profileError.code === 'PGRST116') {
             // No profile found — auto-create one
@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
                 updated_at: new Date().toISOString(),
               })
               .select()
-              .single();
+              .maybeSingle();
             if (!createError) profile = newProfile;
             else console.warn('[Auth] Auto-create profile failed:', createError.message);
           } else if (!profileError) {
@@ -148,7 +148,7 @@ export const useAuthStore = create<AuthState>()(
                 .from('user_profiles')
                 .select('*')
                 .eq('user_id', newUser?.id)
-                .single();
+                .maybeSingle();
               if (!ep) {
                 const { data: cp } = await supabase
                   .from('user_profiles')
@@ -163,7 +163,7 @@ export const useAuthStore = create<AuthState>()(
                     updated_at: new Date().toISOString(),
                   })
                   .select()
-                  .single();
+                  .maybeSingle();
                 newProfile = cp;
               } else {
                 newProfile = ep;
@@ -215,7 +215,7 @@ export const useAuthStore = create<AuthState>()(
             .from('user_profiles')
             .select('*')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
           if (error && error.code !== 'PGRST116') {
             console.warn('[Auth] refreshProfile error:', error.message);
           }

@@ -30,7 +30,7 @@ export function useHealthProfile(userId?: string) {
         .from('health_profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       if (data) setProfile(mapDb(data));
     } catch (e: any) {

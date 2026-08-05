@@ -43,7 +43,7 @@ export async function startRecording(recording: Omit<Recording, 'id' | 'created_
     .from('recordings')
     .insert(recording)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -57,7 +57,7 @@ export async function stopRecording(recordingId: string, endData: { ended_at: st
     })
     .eq('id', recordingId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -94,7 +94,7 @@ export async function getRecordingById(id: string) {
       driver:driver_id(id, full_name, avatar_url)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -107,7 +107,7 @@ export async function updateRecordingUploadStatus(id: string, status: string, st
     .update(updates)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -142,7 +142,7 @@ export async function deleteRecording(id: string) {
     .select('id')
     .eq('recording_id', id)
     .eq('is_locked', true)
-    .single();
+    .maybeSingle();
 
   if (lockedEvidence) {
     throw new Error('Cannot delete recording with locked evidence');

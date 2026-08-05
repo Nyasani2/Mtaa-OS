@@ -16,7 +16,7 @@ export function useProfile(userId: string | undefined) {
           .from('user_profiles')
           .select('*')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (err) throw err;
         setProfile(data);

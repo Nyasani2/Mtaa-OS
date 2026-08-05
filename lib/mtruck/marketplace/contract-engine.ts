@@ -8,7 +8,7 @@ export async function acceptBid(
     .from("freight_bids")
     .select("*")
     .eq("id", bid_id)
-    .single();
+    .maybeSingle();
 
   if (!bid) {
     throw new Error("Bid not found");

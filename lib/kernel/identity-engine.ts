@@ -52,7 +52,7 @@ class IdentityEngine {
       .from('identity_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
       console.error('[IdentityEngine] getIdentity error:', error);
@@ -103,7 +103,7 @@ class IdentityEngine {
       .from('identity_verifications')
       .select('*')
       .eq('id', verificationId)
-      .single();
+      .maybeSingle();
 
     if (fetchError || !verification) {
       console.error('[IdentityEngine] approveVerification fetch error:', fetchError);
@@ -181,7 +181,7 @@ class IdentityEngine {
       .from('identity_profiles')
       .select('flags')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       console.error('[IdentityEngine] flagUser fetch error:', fetchError);
@@ -220,7 +220,7 @@ class IdentityEngine {
       .from('identity_profiles')
       .select('flags')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (fetchError) {
       console.error('[IdentityEngine] unflagUser fetch error:', fetchError);

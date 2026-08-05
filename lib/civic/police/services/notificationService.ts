@@ -28,13 +28,13 @@ export class NotificationService {
   }
 
   async getNotificationById(id: string) {
-    const { data, error } = await supabase.from('police_notifications').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('police_notifications').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as Notification;
   }
 
   async createNotification(notification: Omit<Notification, 'id' | 'created_at'>) {
-    const { data, error } = await supabase.from('police_notifications').insert(notification).select().single();
+    const { data, error } = await supabase.from('police_notifications').insert(notification).select().maybeSingle();
     if (error) throw error;
     return data as Notification;
   }
@@ -42,7 +42,7 @@ export class NotificationService {
   async markAsRead(id: string) {
     const { data, error } = await supabase.from('police_notifications')
       .update({ read: true, read_at: new Date().toISOString() })
-      .eq('id', id).select().single();
+      .eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as Notification;
   }

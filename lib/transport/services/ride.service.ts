@@ -113,7 +113,7 @@ export async function createRide(payload: CreateRidePayload) {
       status: 'searching',
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -124,7 +124,7 @@ export async function getRideById(rideId: string) {
     .from('mtaxi_rides')
     .select('*')
     .eq('id', rideId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -172,7 +172,7 @@ export async function getWalletBalance(userId: string) {
     .eq('status', 'active')
     .order('is_default', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) {
     if (error.code === 'PGRST116') return { balance: 0, available_balance: 0, currency: 'KES' };
@@ -190,7 +190,7 @@ export async function deductRideFare(userId: string, amount: number, rideId: str
     .eq('status', 'active')
     .order('is_default', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (wErr || !wallet) throw new Error('No active KES wallet found');
   if ((wallet.available_balance as number) < amount) throw new Error('Insufficient balance');
@@ -265,7 +265,7 @@ export async function createHaul(payload: CreateHaulPayload) {
       status: 'pending',
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
@@ -296,7 +296,7 @@ export async function createTruckCompany(payload: {
     .from('mtruck_companies')
     .insert({ ...payload, country: 'Kenya', status: 'pending' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -334,7 +334,7 @@ export async function registerGarageDevice(payload: {
     .from('garage_devices')
     .insert({ ...payload, status: 'active' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -371,7 +371,7 @@ export async function createInspection(payload: {
       notes: payload.notes,
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -386,7 +386,7 @@ export async function getDriverProfile(driverId: string) {
     .from('mtaxi_drivers')
     .select('*')
     .eq('id', driverId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -492,7 +492,7 @@ export async function getDriverWalletBalance(driverUserId: string) {
     .eq('status', 'active')
     .order('is_default', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) {
     if (error.code === 'PGRST116') return { balance: 0, available_balance: 0, currency: 'KES' };

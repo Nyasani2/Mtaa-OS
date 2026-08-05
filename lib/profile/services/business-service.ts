@@ -47,7 +47,7 @@ export const businessService = {
       .from('businesses')
       .select('*')
       .eq('id', businessId)
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     return data as Business;
@@ -67,7 +67,7 @@ export const businessService = {
         status: 'draft',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 
@@ -103,7 +103,7 @@ export const businessService = {
       .update(updates)
       .eq('id', businessId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as Business;
@@ -195,7 +195,7 @@ export const businessBranchService = {
       .select('*')
       .eq('business_id', businessId)
       .eq('is_main_branch', true)
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     return data as BusinessBranch;
@@ -207,7 +207,7 @@ export const businessBranchService = {
       .from('business_branches')
       .insert(branch)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as BusinessBranch;
@@ -220,7 +220,7 @@ export const businessBranchService = {
       .update(updates)
       .eq('id', branchId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as BusinessBranch;
@@ -276,7 +276,7 @@ export const businessStaffService = {
         invited_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as BusinessStaff;
@@ -289,7 +289,7 @@ export const businessStaffService = {
       .update(updates)
       .eq('id', staffId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as BusinessStaff;
@@ -332,7 +332,7 @@ export const profileBusinessService = {
       .eq('business_id', businessId)
       .eq('role', 'owner')
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (error || !data) return false;
     return true;

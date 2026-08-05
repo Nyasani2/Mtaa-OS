@@ -19,7 +19,7 @@ export async function getSystemRoles(range: { from: number; to: number }) {
 }
 
 export async function createSystemRole(payload: { name: string; permissions: string[] }) {
-  const { data, error } = await supabase.from("health_roles").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_roles").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

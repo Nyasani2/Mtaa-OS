@@ -121,7 +121,7 @@ export async function acknowledgeAlert(alertId: string) {
     })
     .eq('id', alertId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -131,7 +131,7 @@ export async function createFleetAlert(alert: Omit<FleetAlert, 'id' | 'created_a
     .from('fleet_alerts')
     .insert({ ...alert, acknowledged: false })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

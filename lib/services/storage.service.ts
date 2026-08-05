@@ -137,7 +137,7 @@ export async function archiveRecording(recordingId: string) {
     .update({ upload_status: 'archived', updated_at: new Date().toISOString() })
     .eq('id', recordingId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

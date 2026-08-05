@@ -75,7 +75,7 @@ export async function requestRide(data: {
 }
 
 export async function getRideById(rideId: string): Promise<MtaxiRide> {
-  const { data, error } = await supabase.from("mtaxi_rides").select("*, driver:mtaxi_drivers(id, full_name, phone, vehicle_plate, vehicle_type, rating, photo_url)").eq("id", rideId).single();
+  const { data, error } = await supabase.from("mtaxi_rides").select("*, driver:mtaxi_drivers(id, full_name, phone, vehicle_plate, vehicle_type, rating, photo_url)").eq("id", rideId).maybeSingle();
   if (error) throw error;
   return data as MtaxiRide;
 }

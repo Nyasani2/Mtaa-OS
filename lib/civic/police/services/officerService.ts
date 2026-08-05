@@ -25,25 +25,25 @@ export class OfficerService {
   }
 
   async getOfficerById(id: string) {
-    const { data, error } = await supabase.from('police_officers').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('police_officers').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as PoliceOfficer;
   }
 
   async getOfficerByUserId(userId: string) {
-    const { data, error } = await supabase.from('police_officers').select('*').eq('user_id', userId).single();
+    const { data, error } = await supabase.from('police_officers').select('*').eq('user_id', userId).maybeSingle();
     if (error) throw error;
     return data as PoliceOfficer;
   }
 
   async createOfficer(officer: Omit<PoliceOfficer, 'id' | 'created_at'>) {
-    const { data, error } = await supabase.from('police_officers').insert(officer).select().single();
+    const { data, error } = await supabase.from('police_officers').insert(officer).select().maybeSingle();
     if (error) throw error;
     return data as PoliceOfficer;
   }
 
   async updateOfficer(id: string, updates: Partial<PoliceOfficer>) {
-    const { data, error } = await supabase.from('police_officers').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('police_officers').update(updates).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as PoliceOfficer;
   }
@@ -56,7 +56,7 @@ export class OfficerService {
 
   async updateOfficerStatus(id: string, status: DutyStatus | string) {
     const { data, error } = await supabase.from('police_officers')
-      .update({ duty_status: status as DutyStatus, updated_at: new Date().toISOString() }).eq('id', id).select().single();
+      .update({ duty_status: status as DutyStatus, updated_at: new Date().toISOString() }).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as PoliceOfficer;
   }

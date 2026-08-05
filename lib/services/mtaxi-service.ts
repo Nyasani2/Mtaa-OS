@@ -118,7 +118,7 @@ export async function getRides(): Promise<Ride[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRideById(id: string): Promise<Ride | null> {
-  const { data, error } = await supabase.from('mtaxi_rides').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_rides').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPassengerRides(passengerId: string): Promise<Ride[]> {
@@ -130,11 +130,11 @@ export async function getDriverRides(driverId: string): Promise<Ride[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRide(data: Partial<Ride>): Promise<Ride | null> {
-  const { data: result, error } = await supabase.from('mtaxi_rides').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_rides').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRide(id: string, data: Partial<Ride>): Promise<Ride | null> {
-  const { data: result, error } = await supabase.from('mtaxi_rides').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_rides').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRide(id: string): Promise<boolean> {
@@ -151,19 +151,19 @@ export async function getDrivers(): Promise<Driver[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getDriverById(id: string): Promise<Driver | null> {
-  const { data, error } = await supabase.from('mtaxi_drivers').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_drivers').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getDriverByUserId(userId: string): Promise<Driver | null> {
-  const { data, error } = await supabase.from('mtaxi_drivers').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('mtaxi_drivers').select('*').eq('user_id', userId).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createDriver(data: Partial<Driver>): Promise<Driver | null> {
-  const { data: result, error } = await supabase.from('mtaxi_drivers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_drivers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateDriver(id: string, data: Partial<Driver>): Promise<Driver | null> {
-  const { data: result, error } = await supabase.from('mtaxi_drivers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_drivers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteDriver(id: string): Promise<boolean> {
@@ -181,7 +181,7 @@ export async function getVehicles(): Promise<Vehicle[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getVehicleById(id: string): Promise<Vehicle | null> {
-  const { data, error } = await supabase.from('mtaxi_vehicles').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_vehicles').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getDriverVehicles(driverId: string): Promise<Vehicle[]> {
@@ -193,11 +193,11 @@ export async function getAvailableVehicles(): Promise<Vehicle[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createVehicle(data: Partial<Vehicle>): Promise<Vehicle | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicles').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicles').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateVehicle(id: string, data: Partial<Vehicle>): Promise<Vehicle | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicles').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicles').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteVehicle(id: string): Promise<boolean> {
@@ -211,15 +211,15 @@ export async function getVehicleTypes(): Promise<VehicleType[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getVehicleTypeById(id: string): Promise<VehicleType | null> {
-  const { data, error } = await supabase.from('mtaxi_vehicle_types').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_vehicle_types').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createVehicleType(data: Partial<VehicleType>): Promise<VehicleType | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicle_types').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicle_types').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateVehicleType(id: string, data: Partial<VehicleType>): Promise<VehicleType | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicle_types').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicle_types').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteVehicleType(id: string): Promise<boolean> {
@@ -233,7 +233,7 @@ export async function getFareEstimates(): Promise<FareEstimate[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getFareEstimateById(id: string): Promise<FareEstimate | null> {
-  const { data, error } = await supabase.from('mtaxi_fare_estimates').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_fare_estimates').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getRideFareEstimate(pickup: string, dropoff: string, vehicleTypeId?: string): Promise<FareEstimate | null> {
@@ -242,11 +242,11 @@ export async function getRideFareEstimate(pickup: string, dropoff: string, vehic
   if (error) return handleError(error, null); return data;
 }
 export async function createFareEstimate(data: Partial<FareEstimate>): Promise<FareEstimate | null> {
-  const { data: result, error } = await supabase.from('mtaxi_fare_estimates').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_fare_estimates').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateFareEstimate(id: string, data: Partial<FareEstimate>): Promise<FareEstimate | null> {
-  const { data: result, error } = await supabase.from('mtaxi_fare_estimates').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_fare_estimates').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteFareEstimate(id: string): Promise<boolean> {
@@ -260,7 +260,7 @@ export async function getInspections(): Promise<Inspection[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getInspectionById(id: string): Promise<Inspection | null> {
-  const { data, error } = await supabase.from('mtaxi_inspections').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_inspections').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getVehicleInspections(vehicleId: string): Promise<Inspection[]> {
@@ -268,11 +268,11 @@ export async function getVehicleInspections(vehicleId: string): Promise<Inspecti
   if (error) return handleError(error, []); return data || [];
 }
 export async function createInspection(data: Partial<Inspection>): Promise<Inspection | null> {
-  const { data: result, error } = await supabase.from('mtaxi_inspections').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_inspections').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateInspection(id: string, data: Partial<Inspection>): Promise<Inspection | null> {
-  const { data: result, error } = await supabase.from('mtaxi_inspections').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_inspections').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteInspection(id: string): Promise<boolean> {
@@ -286,7 +286,7 @@ export async function getCarpools(): Promise<Carpool[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCarpoolById(id: string): Promise<Carpool | null> {
-  const { data, error } = await supabase.from('mtaxi_carpools').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_carpools').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getDriverCarpools(driverId: string): Promise<Carpool[]> {
@@ -294,11 +294,11 @@ export async function getDriverCarpools(driverId: string): Promise<Carpool[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCarpool(data: Partial<Carpool>): Promise<Carpool | null> {
-  const { data: result, error } = await supabase.from('mtaxi_carpools').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_carpools').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCarpool(id: string, data: Partial<Carpool>): Promise<Carpool | null> {
-  const { data: result, error } = await supabase.from('mtaxi_carpools').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_carpools').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCarpool(id: string): Promise<boolean> {
@@ -312,11 +312,11 @@ export async function getCarpoolPassengers(carpoolId: string): Promise<CarpoolPa
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCarpoolPassenger(data: Partial<CarpoolPassenger>): Promise<CarpoolPassenger | null> {
-  const { data: result, error } = await supabase.from('mtaxi_carpool_passengers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_carpool_passengers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCarpoolPassenger(id: string, data: Partial<CarpoolPassenger>): Promise<CarpoolPassenger | null> {
-  const { data: result, error } = await supabase.from('mtaxi_carpool_passengers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_carpool_passengers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCarpoolPassenger(id: string): Promise<boolean> {
@@ -330,7 +330,7 @@ export async function getDriverLocations(driverId: string): Promise<DriverLocati
   if (error) return handleError(error, []); return data || [];
 }
 export async function updateDriverLocation(driverId: string, lat: number, lng: number): Promise<DriverLocation | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_locations').insert({ driver_id: driverId, lat, lng }).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_locations').insert({ driver_id: driverId, lat, lng }).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -340,11 +340,11 @@ export async function getDriverDocuments(driverId: string): Promise<DriverDocume
   if (error) return handleError(error, []); return data || [];
 }
 export async function createDriverDocument(data: Partial<DriverDocument>): Promise<DriverDocument | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_documents').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_documents').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateDriverDocument(id: string, data: Partial<DriverDocument>): Promise<DriverDocument | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_documents').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_documents').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteDriverDocument(id: string): Promise<boolean> {
@@ -358,7 +358,7 @@ export async function getDriverPayments(driverId: string): Promise<DriverPayment
   if (error) return handleError(error, []); return data || [];
 }
 export async function createDriverPayment(data: Partial<DriverPayment>): Promise<DriverPayment | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_payments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_payments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -368,7 +368,7 @@ export async function getDriverEarnings(driverId: string): Promise<DriverEarning
   if (error) return handleError(error, []); return data || [];
 }
 export async function createDriverEarning(data: Partial<DriverEarning>): Promise<DriverEarning | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_earnings').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_earnings').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -378,7 +378,7 @@ export async function getRideReviews(rideId: string): Promise<RideReview[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRideReview(data: Partial<RideReview>): Promise<RideReview | null> {
-  const { data: result, error } = await supabase.from('mtaxi_ride_reviews').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_ride_reviews').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -388,7 +388,7 @@ export async function getRideCancellations(): Promise<RideCancellation[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRideCancellation(data: Partial<RideCancellation>): Promise<RideCancellation | null> {
-  const { data: result, error } = await supabase.from('mtaxi_ride_cancellations').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_ride_cancellations').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -404,15 +404,15 @@ export async function getRideRequests(): Promise<RideRequest[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRideRequestById(id: string): Promise<RideRequest | null> {
-  const { data, error } = await supabase.from('mtaxi_ride_requests').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_ride_requests').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRideRequest(data: Partial<RideRequest>): Promise<RideRequest | null> {
-  const { data: result, error } = await supabase.from('mtaxi_ride_requests').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_ride_requests').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRideRequest(id: string, data: Partial<RideRequest>): Promise<RideRequest | null> {
-  const { data: result, error } = await supabase.from('mtaxi_ride_requests').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_ride_requests').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRideRequest(id: string): Promise<boolean> {
@@ -426,15 +426,15 @@ export async function getDriverOnboardings(): Promise<DriverOnboarding[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getDriverOnboardingById(id: string): Promise<DriverOnboarding | null> {
-  const { data, error } = await supabase.from('mtaxi_driver_onboarding').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_driver_onboarding').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createDriverOnboarding(data: Partial<DriverOnboarding>): Promise<DriverOnboarding | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_onboarding').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_onboarding').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateDriverOnboarding(id: string, data: Partial<DriverOnboarding>): Promise<DriverOnboarding | null> {
-  const { data: result, error } = await supabase.from('mtaxi_driver_onboarding').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_driver_onboarding').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -444,15 +444,15 @@ export async function getVehicleApprovals(): Promise<VehicleApproval[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getVehicleApprovalById(id: string): Promise<VehicleApproval | null> {
-  const { data, error } = await supabase.from('mtaxi_vehicle_approvals').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('mtaxi_vehicle_approvals').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createVehicleApproval(data: Partial<VehicleApproval>): Promise<VehicleApproval | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicle_approvals').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicle_approvals').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateVehicleApproval(id: string, data: Partial<VehicleApproval>): Promise<VehicleApproval | null> {
-  const { data: result, error } = await supabase.from('mtaxi_vehicle_approvals').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_vehicle_approvals').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -462,7 +462,7 @@ export async function getInspectionPayments(): Promise<InspectionPayment[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createInspectionPayment(data: Partial<InspectionPayment>): Promise<InspectionPayment | null> {
-  const { data: result, error } = await supabase.from('mtaxi_inspection_payments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_inspection_payments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -472,7 +472,7 @@ export async function getInspectionCompletions(): Promise<InspectionComplete[]> 
   if (error) return handleError(error, []); return data || [];
 }
 export async function createInspectionComplete(data: Partial<InspectionComplete>): Promise<InspectionComplete | null> {
-  const { data: result, error } = await supabase.from('mtaxi_inspection_completes').insert(data).select().single();
+  const { data: result, error } = await supabase.from('mtaxi_inspection_completes').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 

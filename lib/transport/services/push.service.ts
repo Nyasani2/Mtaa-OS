@@ -17,7 +17,7 @@ export async function registerPushToken(userId: string, token: string, deviceTyp
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,token' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -67,7 +67,7 @@ export async function createInAppNotification(userId: string, title: string, bod
     .from('in_app_notifications')
     .insert({ user_id: userId, title, body, data: data || {} })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return notif;
 }

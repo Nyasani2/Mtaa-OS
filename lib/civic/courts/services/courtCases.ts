@@ -13,19 +13,19 @@ export class CourtCasesService {
   static async getCaseById(id: string): Promise<CourtCase | null> {
     const { data, error } = await supabase.from('court_cases')
       .select('*, court_house:court_houses(*), assigned_judge:court_judges(*)')
-      .eq('id', id).single();
+      .eq('id', id).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
 
   static async createCase(data: Partial<CourtCase>): Promise<CourtCase> {
-    const { data: result, error } = await supabase.from('court_cases').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_cases').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateCase(id: string, data: Partial<CourtCase>): Promise<CourtCase> {
-    const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

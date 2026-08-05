@@ -11,13 +11,13 @@ export class PrisonAttendanceService {
   }
 
   static async markAttendance(data: Partial<PrisonStaffAttendance>): Promise<PrisonStaffAttendance> {
-    const { data: result, error } = await supabase.from('prison_staff_attendance').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_staff_attendance').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateAttendance(id: string, data: Partial<PrisonStaffAttendance>): Promise<PrisonStaffAttendance> {
-    const { data: result, error } = await supabase.from('prison_staff_attendance').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('prison_staff_attendance').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

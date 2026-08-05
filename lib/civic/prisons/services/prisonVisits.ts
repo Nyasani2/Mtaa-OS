@@ -15,19 +15,19 @@ export class PrisonVisitsService {
     const { data, error } = await supabase.from('prison_visits')
       .select('*, inmate:prison_inmates(*)')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
 
   static async createVisit(data: Partial<PrisonVisit>): Promise<PrisonVisit> {
-    const { data: result, error } = await supabase.from('prison_visits').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_visits').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateVisit(id: string, data: Partial<PrisonVisit>): Promise<PrisonVisit> {
-    const { data: result, error } = await supabase.from('prison_visits').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('prison_visits').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

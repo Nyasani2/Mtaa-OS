@@ -11,7 +11,7 @@ export class CourtJudgmentsService {
   }
 
   static async createJudgment(data: Partial<CourtJudgment>): Promise<CourtJudgment> {
-    const { data: result, error } = await supabase.from('court_judgments').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_judgments').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

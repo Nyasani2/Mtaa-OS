@@ -10,7 +10,7 @@ export function useCivicAPI() {
           const { data, error } = await supabase
             .from('user_identities')
             .select('*')
-            .single();
+            .maybeSingle();
           if (error) throw error;
           return data;
         },

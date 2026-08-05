@@ -12,7 +12,7 @@ export class PrisonPayrollService {
   }
 
   static async createPayroll(data: Partial<PrisonPayroll>): Promise<PrisonPayroll> {
-    const { data: result, error } = await supabase.from('prison_payroll').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_payroll').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

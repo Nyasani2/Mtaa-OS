@@ -130,7 +130,7 @@ export function useFleet(garageId?: string) {
         .from('garage_fleet_contracts')
         .insert(contract)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       await loadContracts();
@@ -149,7 +149,7 @@ export function useFleet(garageId?: string) {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       await loadContracts();

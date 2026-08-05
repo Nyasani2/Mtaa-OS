@@ -100,7 +100,7 @@ export async function createCSESession(userId: string, title?: string): Promise<
         title: title || 'New Chat',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data as CSESession;

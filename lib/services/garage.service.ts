@@ -114,7 +114,7 @@ export async function registerGarage(garageData: Omit<Garage, 'id' | 'owner_id' 
       wallet_balance: 0,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -162,7 +162,7 @@ export async function getGarageById(id: string) {
       services:garage_services(*)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage & { mechanics: any[]; services: any[] };
@@ -188,7 +188,7 @@ export async function updateGarage(id: string, updates: Partial<Garage>) {
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -212,7 +212,7 @@ export async function uploadVerificationDocument(garageId: string, file: File) {
     .from('garages')
     .select('verification_documents')
     .eq('id', garageId)
-    .single();
+    .maybeSingle();
 
   const docs = garage?.verification_documents || [];
   docs.push({
@@ -226,7 +226,7 @@ export async function uploadVerificationDocument(garageId: string, file: File) {
     .update({ verification_documents: docs })
     .eq('id', garageId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -247,7 +247,7 @@ export async function approveGarage(garageId: string) {
     })
     .eq('id', garageId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -263,7 +263,7 @@ export async function rejectGarage(garageId: string, reason: string) {
     })
     .eq('id', garageId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -279,7 +279,7 @@ export async function suspendGarage(garageId: string, reason: string) {
     })
     .eq('id', garageId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;
@@ -434,7 +434,7 @@ export async function subscribeGarage(garageId: string, planId: string) {
     })
     .eq('id', garageId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as Garage;

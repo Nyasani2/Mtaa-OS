@@ -5,7 +5,7 @@ export async function getWalletBalance(userId: string) {
     .from('wallet_accounts')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -25,7 +25,7 @@ export async function createWalletTransaction(params: any) {
     .from('wallet_transactions')
     .insert(params)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -36,7 +36,7 @@ export async function updateWalletBalance(userId: string, amount: number) {
     .update({ balance: amount, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

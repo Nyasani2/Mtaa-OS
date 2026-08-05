@@ -90,7 +90,7 @@ export async function getEscrowById(escrowId: string) {
     .from('escrow_transactions')
     .select('*')
     .eq('id', escrowId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data as EscrowTransaction;
 }

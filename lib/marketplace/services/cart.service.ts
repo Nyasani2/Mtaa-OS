@@ -146,7 +146,7 @@ class CartService {
       .from('listings')
       .select('price, currency, seller_id')
       .eq('id', listingId)
-      .single();
+      .maybeSingle();
 
     if (listingError || !listing) {
       return { success: false, error: 'Listing not found' };
@@ -157,7 +157,7 @@ class CartService {
       .select('id, quantity')
       .eq('user_id', userId)
       .eq('listing_id', listingId)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       const { error } = await supabase

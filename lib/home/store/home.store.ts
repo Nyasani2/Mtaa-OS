@@ -107,7 +107,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
   loadSettings: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from('user_home_settings').select('*').eq('user_id', user.id).single();
+    const { data } = await supabase.from('user_home_settings').select('*').eq('user_id', user.id).maybeSingle();
     if (data) {
       set({
         settings: {
@@ -190,7 +190,7 @@ export const useHomeStore = create<HomeState>((set, get) => ({
     if (!user) return;
     const { data: folder } = await supabase.from('user_app_folders').insert({
       user_id: user.id, name, icon: 'folder', color: '#6366f1',
-    }).select().single();
+    }).select().maybeSingle();
     if (folder) {
       await supabase.from('user_app_layouts').update({ folder_id: folder.id }).in('app_id', appIds).eq('user_id', user.id);
       await get().loadLayouts();

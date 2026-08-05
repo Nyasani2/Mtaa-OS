@@ -11,7 +11,7 @@ export class PrisonMovementsService {
   }
 
   static async createMovement(data: Partial<PrisonMovement>): Promise<PrisonMovement> {
-    const { data: result, error } = await supabase.from('prison_movements').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_movements').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

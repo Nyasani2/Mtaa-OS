@@ -72,7 +72,7 @@ export const appointmentService = {
         notes: payload.notes || null,
       })
       .select("id")
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data.id as string;
   },

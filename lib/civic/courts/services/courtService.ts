@@ -6,12 +6,12 @@ export async function getAppeals() {
 }
 
 export async function createAppeal(data: any) {
-  const { data: result } = await supabase.from('court_appeals').insert(data).select().single();
+  const { data: result } = await supabase.from('court_appeals').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateAppeal(id: string, data: any) {
-  const { data: result } = await supabase.from('court_appeals').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_appeals').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -21,12 +21,12 @@ export async function getAttendance() {
 }
 
 export async function clockIn(data: any) {
-  const { data: result } = await supabase.from('court_attendance').insert(data).select().single();
+  const { data: result } = await supabase.from('court_attendance').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function clockOut(id: string) {
-  const { data: result } = await supabase.from('court_attendance').update({ clock_out: new Date().toISOString() }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_attendance').update({ clock_out: new Date().toISOString() }).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -36,22 +36,22 @@ export async function getBails() {
 }
 
 export async function createBail(data: any) {
-  const { data: result } = await supabase.from('court_bails').insert(data).select().single();
+  const { data: result } = await supabase.from('court_bails').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateBail(id: string, data: any) {
-  const { data: result } = await supabase.from('court_bails').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_bails').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
 export async function postBail(id: string, amount: number) {
-  const { data: result } = await supabase.from('court_bails').update({ status: 'posted', posted_date: new Date().toISOString() }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_bails').update({ status: 'posted', posted_date: new Date().toISOString() }).eq('id', id).select().maybeSingle();
   return result;
 }
 
 export async function releaseOnBail(id: string) {
-  const { data: result } = await supabase.from('court_bails').update({ status: 'released', release_date: new Date().toISOString() }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_bails').update({ status: 'released', release_date: new Date().toISOString() }).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -61,17 +61,17 @@ export async function getCases() {
 }
 
 export async function getCase(id: string) {
-  const { data } = await supabase.from('court_cases').select('*').eq('id', id).single();
+  const { data } = await supabase.from('court_cases').select('*').eq('id', id).maybeSingle();
   return data;
 }
 
 export async function createCase(data: any) {
-  const { data: result } = await supabase.from('court_cases').insert(data).select().single();
+  const { data: result } = await supabase.from('court_cases').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateCase(id: string, data: any) {
-  const { data: result } = await supabase.from('court_cases').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_cases').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -80,7 +80,7 @@ export async function deleteCase(id: string) {
 }
 
 export async function addParty(caseId: string, party: any) {
-  const { data: result } = await supabase.from('court_parties').insert({ ...party, case_id: caseId }).select().single();
+  const { data: result } = await supabase.from('court_parties').insert({ ...party, case_id: caseId }).select().maybeSingle();
   return result;
 }
 
@@ -94,17 +94,17 @@ export async function getCourtHouses() {
 }
 
 export async function getCourtHouse(id: string) {
-  const { data } = await supabase.from('court_houses').select('*').eq('id', id).single();
+  const { data } = await supabase.from('court_houses').select('*').eq('id', id).maybeSingle();
   return data;
 }
 
 export async function createCourtHouse(data: any) {
-  const { data: result } = await supabase.from('court_houses').insert(data).select().single();
+  const { data: result } = await supabase.from('court_houses').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateCourtHouse(id: string, data: any) {
-  const { data: result } = await supabase.from('court_houses').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_houses').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -118,17 +118,17 @@ export async function getFines() {
 }
 
 export async function createFine(data: any) {
-  const { data: result } = await supabase.from('court_fines').insert(data).select().single();
+  const { data: result } = await supabase.from('court_fines').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateFine(id: string, data: any) {
-  const { data: result } = await supabase.from('court_fines').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_fines').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
 export async function recordPayment(id: string, amount: number) {
-  const { data: result } = await supabase.from('court_fines').update({ paid_amount: amount, paid_date: new Date().toISOString() }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_fines').update({ paid_amount: amount, paid_date: new Date().toISOString() }).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -138,12 +138,12 @@ export async function getHearings() {
 }
 
 export async function createHearing(data: any) {
-  const { data: result } = await supabase.from('court_hearings').insert(data).select().single();
+  const { data: result } = await supabase.from('court_hearings').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateHearing(id: string, data: any) {
-  const { data: result } = await supabase.from('court_hearings').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_hearings').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -157,12 +157,12 @@ export async function getCourtJudges() {
 }
 
 export async function createCourtJudge(data: any) {
-  const { data: result } = await supabase.from('court_judges').insert(data).select().single();
+  const { data: result } = await supabase.from('court_judges').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateCourtJudge(id: string, data: any) {
-  const { data: result } = await supabase.from('court_judges').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_judges').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -176,12 +176,12 @@ export async function getJudgments() {
 }
 
 export async function createJudgment(data: any) {
-  const { data: result } = await supabase.from('court_judgments').insert(data).select().single();
+  const { data: result } = await supabase.from('court_judgments').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateJudgment(id: string, data: any) {
-  const { data: result } = await supabase.from('court_judgments').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_judgments').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -195,12 +195,12 @@ export async function getJuryPool() {
 }
 
 export async function createJuror(data: any) {
-  const { data: result } = await supabase.from('court_jurors').insert(data).select().single();
+  const { data: result } = await supabase.from('court_jurors').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateJuror(id: string, data: any) {
-  const { data: result } = await supabase.from('court_jurors').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_jurors').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -210,7 +210,7 @@ export async function getJuryAssignments() {
 }
 
 export async function assignJuror(caseId: string, jurorId: string) {
-  const { data: result } = await supabase.from('court_jury_assignments').insert({ case_id: caseId, juror_id: jurorId }).select().single();
+  const { data: result } = await supabase.from('court_jury_assignments').insert({ case_id: caseId, juror_id: jurorId }).select().maybeSingle();
   return result;
 }
 
@@ -224,17 +224,17 @@ export async function getPayroll() {
 }
 
 export async function createPayrollEntry(data: any) {
-  const { data: result } = await supabase.from('court_payroll').insert(data).select().single();
+  const { data: result } = await supabase.from('court_payroll').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function approvePayroll(id: string) {
-  const { data: result } = await supabase.from('court_payroll').update({ status: 'approved' }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_payroll').update({ status: 'approved' }).eq('id', id).select().maybeSingle();
   return result;
 }
 
 export async function markPaid(id: string) {
-  const { data: result } = await supabase.from('court_payroll').update({ status: 'paid' }).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_payroll').update({ status: 'paid' }).eq('id', id).select().maybeSingle();
   return result;
 }
 
@@ -244,12 +244,12 @@ export async function getProcurement() {
 }
 
 export async function createProcurement(data: any) {
-  const { data: result } = await supabase.from('court_procurement').insert(data).select().single();
+  const { data: result } = await supabase.from('court_procurement').insert(data).select().maybeSingle();
   return result;
 }
 
 export async function updateProcurement(id: string, data: any) {
-  const { data: result } = await supabase.from('court_procurement').update(data).eq('id', id).select().single();
+  const { data: result } = await supabase.from('court_procurement').update(data).eq('id', id).select().maybeSingle();
   return result;
 }
 

@@ -24,7 +24,7 @@ export async function activatePremium(
         expires_at: expires,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

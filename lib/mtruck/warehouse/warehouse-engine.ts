@@ -30,7 +30,7 @@ export async function addWarehouseInventory(
         item.unit_type,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

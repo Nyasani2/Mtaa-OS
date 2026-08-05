@@ -11,13 +11,13 @@ export async function computeETA(
     .eq("truck_id", truck_id)
     .order("timestamp", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const { data: shipment } = await supabase
     .from("mtruck_shipments")
     .select("*")
     .eq("id", shipment_id)
-    .single();
+    .maybeSingle();
 
   if (!gps || !shipment) {
     return null;

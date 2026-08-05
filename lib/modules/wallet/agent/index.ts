@@ -109,7 +109,7 @@ export const agentMapService = {
       .eq('agent_qr_code', qrCode)
       .eq('status', 'active')
       .eq('collateral_paid', true)
-      .single();
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   },
@@ -119,7 +119,7 @@ export const agentMapService = {
       .from('wallet_agents')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -160,7 +160,7 @@ export const agentTransactionService = {
         reference_code: `AGT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error('Failed to create transaction');
     return data;
@@ -216,7 +216,7 @@ export const agentApplicationService = {
         collateral_paid: false
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     if (!data) throw new Error('Failed to submit application');
     return data;
@@ -238,7 +238,7 @@ export const agentApplicationService = {
       .eq('user_id', useAuthStore.getState().user?.id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   },
@@ -248,7 +248,7 @@ export const agentApplicationService = {
       .from('wallet_agents')
       .select('*')
       .eq('user_id', useAuthStore.getState().user?.id)
-      .single();
+      .maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -411,7 +411,7 @@ export function AgentQRScanScreen() {
       .select('*')
       .eq('agent_qr_code', data)
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
     if (agent) {
       setScannedAgent(agent);
@@ -495,7 +495,7 @@ export function AgentDashboardScreen() {
         .select('*')
         .eq('agent_id', agentProfile?.id)
         .eq('date', new Date().toISOString().split('T')[0])
-        .single();
+        .maybeSingle();
       return data;
     },
     enabled: !!agentProfile?.id,

@@ -22,7 +22,7 @@ export function useHealthEmergency() {
         .from('health_ambulance_requests')
         .insert({ ...req, status: 'pending', created_at: new Date().toISOString() })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     } catch (e: any) {

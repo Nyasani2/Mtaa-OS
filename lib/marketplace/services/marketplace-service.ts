@@ -18,13 +18,13 @@ export async function getMyOrders(userId: string): Promise<Order[]> {
 }
 
 export async function getEscrow(orderId: string): Promise<Escrow | null> {
-  const { data, error } = await supabase.from("marketplace_escrow").select("*").eq("order_id", orderId).single();
+  const { data, error } = await supabase.from("marketplace_escrow").select("*").eq("order_id", orderId).maybeSingle();
   if (error) throw error;
   return data;
 }
 
 export async function getTrustScore(userId: string): Promise<TrustScore | null> {
-  const { data, error } = await supabase.from("marketplace_trust").select("*").eq("user_id", userId).single();
+  const { data, error } = await supabase.from("marketplace_trust").select("*").eq("user_id", userId).maybeSingle();
   if (error) throw error;
   return data;
 }

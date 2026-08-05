@@ -44,7 +44,7 @@ export default function GarageDashboard() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading dashboard...</Text>
+        <Text style={styles.isLoadingText}>Loading dashboard...</Text>
       </View>
     );
   }
@@ -81,7 +81,7 @@ export default function GarageDashboard() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>Garage Dashboard</Text>
-            <Text style={styles.garageName}>{garage.name}</Text>
+            <Text style={styles.myGarageName}>{garage.name}</Text>
           </View>
           <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/(garage)/appointments')}>
             <Search size={20} color="#6b7280" />

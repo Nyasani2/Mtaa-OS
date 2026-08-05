@@ -15,7 +15,7 @@ export async function sendMessage(
       message_type: "TEXT",
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

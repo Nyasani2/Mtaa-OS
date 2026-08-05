@@ -46,7 +46,7 @@ export async function deleteNotification(notificationId: string): Promise<Servic
 
 export async function createNotification(payload: any): Promise<ServiceResult<any>> {
   try {
-    const { data, error } = await supabase.from('notifications').insert(payload).select().single();
+    const { data, error } = await supabase.from('notifications').insert(payload).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {

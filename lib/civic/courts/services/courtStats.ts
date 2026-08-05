@@ -3,7 +3,7 @@ import { CourtStats } from '../types';
 
 export class CourtStatsService {
   static async getStats(courtHouseId: string): Promise<CourtStats | null> {
-    const { data, error } = await supabase.from('court_stats').select('*').eq('court_house_id', courtHouseId).single();
+    const { data, error } = await supabase.from('court_stats').select('*').eq('court_house_id', courtHouseId).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -33,7 +33,7 @@ export class CourtStatsService {
       updated_at: new Date().toISOString()
     };
 
-    const { data: result, error } = await supabase.from('court_stats').upsert(statsData, { onConflict: 'court_house_id' }).select().single();
+    const { data: result, error } = await supabase.from('court_stats').upsert(statsData, { onConflict: 'court_house_id' }).select().maybeSingle();
     if (error) throw error;
     return result;
   }

@@ -100,7 +100,7 @@ export function useAppointments(userId: string | undefined) {
           notes: payload.notes || null,
         })
         .select("id")
-        .single();
+        .maybeSingle();
       if (err) throw err;
       await fetchAppointments();
       return { success: true, id: data.id };

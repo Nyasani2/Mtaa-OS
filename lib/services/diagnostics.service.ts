@@ -191,7 +191,7 @@ export async function createDiagnosticSession(sessionData: Omit<DiagnosticSessio
     .from('garage_diagnostics')
     .insert(sessionData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -218,7 +218,7 @@ export async function getDiagnosticSession(id: string) {
     .from('garage_diagnostics')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -230,7 +230,7 @@ export async function updateDiagnosticSession(id: string, updates: Partial<Diagn
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -290,7 +290,7 @@ export async function clearFaultCodes(sessionId: string) {
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -340,7 +340,7 @@ export async function readLiveData(sessionId: string, _parameters?: string[]) {
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -481,7 +481,7 @@ export async function programVehicle(
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -529,7 +529,7 @@ export async function generateDiagnosticReport(sessionId: string) {
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;
@@ -545,7 +545,7 @@ export async function shareDiagnosticWithCustomer(sessionId: string) {
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data as DiagnosticSession;

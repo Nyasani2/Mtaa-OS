@@ -98,7 +98,7 @@ export function useIncident() {
           resolver:resolved_by(id, full_name)
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       setState(prev => ({ ...prev, currentIncident: data, isLoading: false }));
       return data;
@@ -115,7 +115,7 @@ export function useIncident() {
         .from('incidents')
         .insert(incidentData)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       setState(prev => ({
         ...prev,
@@ -138,7 +138,7 @@ export function useIncident() {
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       setState(prev => ({
         ...prev,
@@ -168,7 +168,7 @@ export function useIncident() {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       setState(prev => ({
         ...prev,

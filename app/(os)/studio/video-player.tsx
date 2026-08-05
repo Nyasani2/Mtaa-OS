@@ -120,72 +120,29 @@ export default function VideoPlayerScreen() {
     // Fetch comments
     const { data: commentsData } = await supabase
       .from('studio_comments')
-      .select('id, text, created_at, like_count, user:user_id (full_name, avatar_url)')
+      .select('id, text, created_at, like_count, user_id')
       .eq('video_id', id)
       .order('created_at', { ascending: false })
       .limit(50);
-
-    setComments((commentsData || []).map((c: any) => ({
-      id: c.id,
-      text: c.text,
-      full_name: c.user?.full_name || 'Anonymous',
-      avatar_url: c.user?.avatar_url || '',
-      created_at: c.created_at,
-      like_count: c.like_count || 0,
-    })));
-
-    // Fetch related
-    const { data: relatedData } = await supabase
-      .from('studio_videos')
-      .select('id, title, thumbnail_url, view_count, duration_seconds, creator:creator_id (full_name)')
-      .neq('id', id)
-      .eq('status', 'published')
-      .limit(10);
-
-    setRelated((relatedData || []).map((v: any) => ({
-      id: v.id,
-      title: v.title,
-      thumbnail_url: v.thumbnail_url,
-      view_count: v.view_count || 0,
-      creator_name: v.creator?.full_name || 'Unknown',
-      duration_seconds: v.duration_seconds || 0,
-    })));
-
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchVideo(); }, [id, user?.id]);
-
-  const handleLike = async () => {
-    if (!user?.id || !video) return;
-    if (isLiked) {
-      await supabase.from('studio_likes').delete().eq('video_id', id).eq('user_id', user.id);
-      setVideo(prev => prev ? { ...prev, like_count: prev.like_count - 1 } : prev);
-    } else {
-      await supabase.from('studio_likes').insert({ video_id: id, user_id: user.id });
-      setVideo(prev => prev ? { ...prev, like_count: prev.like_count + 1 } : prev);
-    }
-    setIsLiked(!isLiked);
-  };
-
-  const handleSubscribe = async () => {
-    if (!user?.id || !video) return;
-    if (video.is_subscribed) {
-      await supabase.from('studio_subscriptions').delete().eq('creator_id', video.creator_id).eq('user_id', user.id);
-      setVideo(prev => prev ? { ...prev, is_subscribed: false } : prev);
-    } else {
-      await supabase.from('studio_subscriptions').insert({ creator_id: video.creator_id, user_id: user.id });
-      setVideo(prev => prev ? { ...prev, is_subscribed: true } : prev);
-    }
-  };
-
-  const postComment = async () => {
-    if (!user?.id || !commentText.trim() || !id) return;
-    const { error } = await supabase.from('studio_comments').insert({
-      video_id: id,
-      user_id: user.id,
-      text: commentText.trim(),
-    });
+    
+    // Fetch user profiles separately
+    const commentUserIds = [...new Set((commentsData || []).map((c: any) => c.user_id).filter(Boolean))];
+    const { data: commentUsers } = commentUserIds.length > 0
+      ? await supabase.from('user_profiles').select('id, full_name, avatar_url').in('id', commentUserIds)
+      : { data: [] };
+    const userMap = new Map((commentUsers || []).map((u: any) => [u.id, u]));
+    
+    setComments((commentsData || []).map((c: any) => {
+      const user = userMap.get(c.user_id);
+      return {
+        id: c.id,
+        text: c.text,
+        full_name: user?.full_name || 'Anonymous',
+        avatar_url: user?.avatar_url || '',
+        created_at: c.created_at,
+        like_count: c.like_count || 0,
+      };
+    }));
     if (!error) {
       setCommentText('');
       fetchVideo();

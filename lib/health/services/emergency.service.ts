@@ -11,7 +11,7 @@ export async function getEmergencyCases(filter: string, range: { from: number; t
 }
 
 export async function createEmergencyCase(payload: any) {
-  const { data, error } = await supabase.from("health_ambulance_dispatches").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_ambulance_dispatches").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

@@ -38,7 +38,7 @@ export async function registerPortShipment(
         shipment.customs_status,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

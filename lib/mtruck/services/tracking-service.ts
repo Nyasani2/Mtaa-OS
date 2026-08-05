@@ -27,7 +27,7 @@ export async function recordLocation(payload: {
     .from(TABLE_LOCATIONS)
     .insert(payload)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Record location failed: ${error.message}`);
   return data;
 }
@@ -58,7 +58,7 @@ export async function getTruckLatestLocation(truckId: string): Promise<MtruckLoc
     .eq('truck_id', truckId)
     .order('recorded_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -84,7 +84,7 @@ export async function pushGpsStream(payload: {
     .from(TABLE_GPS_STREAM)
     .insert({ ...payload, ignition_status: payload.ignition_status ?? false })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Push GPS stream failed: ${error.message}`);
   return data;
 }
@@ -118,7 +118,7 @@ export async function recordTelemetry(payload: {
     .from(TABLE_TELEMETRY)
     .insert({ ...payload, diagnostic_codes: payload.diagnostic_codes ?? [] })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Record telemetry failed: ${error.message}`);
   return data;
 }
@@ -141,7 +141,7 @@ export async function getLatestTelemetry(truckId: string): Promise<MtruckTelemet
     .eq('truck_id', truckId)
     .order('recorded_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -165,7 +165,7 @@ export async function createEtaPrediction(payload: {
       factors: payload.factors ?? {}
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create ETA prediction failed: ${error.message}`);
   return data;
 }

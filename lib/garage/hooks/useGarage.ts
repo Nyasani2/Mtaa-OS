@@ -91,7 +91,7 @@ export function useGarage() {
     const { data, error: err } = await supabase
       .from('garages')
       .insert({ ...payload, owner_id: user.id, status: 'pending' })
-      .select().single();
+      .select().maybeSingle();
     if (err) throw err;
     setGarage(data);
     return data;

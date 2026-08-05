@@ -6,7 +6,7 @@ export async function getHealthProfile(userId: string) {
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

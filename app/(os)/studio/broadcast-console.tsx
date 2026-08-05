@@ -57,11 +57,21 @@ export default function BroadcastConsoleScreen() {
   async function loadMyNetworks() {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
+    // Step 1: Get broadcaster IDs
+    const { data: nodes } = await supabase
       .from("studio_camera_nodes")
-      .select("broadcaster:studio_broadcasters(*)")
+      .select("broadcaster_id")
       .eq("user_id", user.id);
-    const networks = (data || []).map((r: any) => r.broadcaster).filter(Boolean);
+    // Step 2: Fetch broadcaster details separately
+    const broadcasterIds = (nodes || []).map((r: any) => r.broadcaster_id).filter(Boolean);
+    let networks: any[] = [];
+    if (broadcasterIds.length > 0) {
+      const { data: broadcasters } = await supabase
+        .from("studio_broadcasters")
+        .select("*")
+        .in("id", broadcasterIds);
+      networks = broadcasters || [];
+    }
     setMyNetworks(networks);
     if (networks.length > 0 && !selectedNetwork) setSelectedNetwork(networks[0]);
     setLoading(false);

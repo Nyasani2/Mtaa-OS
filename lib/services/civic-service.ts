@@ -158,15 +158,15 @@ export async function getCivicCases(): Promise<CivicCase[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCivicCaseById(id: string): Promise<CivicCase | null> {
-  const { data, error } = await supabase.from('court_cases').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_cases').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createCivicCase(data: Partial<CivicCase>): Promise<CivicCase | null> {
-  const { data: result, error } = await supabase.from('court_cases').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_cases').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCivicCase(id: string, data: Partial<CivicCase>): Promise<CivicCase | null> {
-  const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCivicCase(id: string): Promise<boolean> {
@@ -180,7 +180,7 @@ export async function getPoliceCases(): Promise<PoliceCase[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPoliceCaseById(id: string): Promise<PoliceCase | null> {
-  const { data, error } = await supabase.from('police_cases').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('police_cases').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPoliceCasesByOfficer(officerId: string): Promise<PoliceCase[]> {
@@ -188,11 +188,11 @@ export async function getPoliceCasesByOfficer(officerId: string): Promise<Police
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPoliceCase(data: Partial<PoliceCase>): Promise<PoliceCase | null> {
-  const { data: result, error } = await supabase.from('police_cases').insert(data).select().single();
+  const { data: result, error } = await supabase.from('police_cases').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePoliceCase(id: string, data: Partial<PoliceCase>): Promise<PoliceCase | null> {
-  const { data: result, error } = await supabase.from('police_cases').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('police_cases').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePoliceCase(id: string): Promise<boolean> {
@@ -206,19 +206,19 @@ export async function getPoliceOfficers(): Promise<PoliceOfficer[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPoliceOfficerById(id: string): Promise<PoliceOfficer | null> {
-  const { data, error } = await supabase.from('police_officers').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('police_officers').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPoliceOfficerByUserId(userId: string): Promise<PoliceOfficer | null> {
-  const { data, error } = await supabase.from('police_officers').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('police_officers').select('*').eq('user_id', userId).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createPoliceOfficer(data: Partial<PoliceOfficer>): Promise<PoliceOfficer | null> {
-  const { data: result, error } = await supabase.from('police_officers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('police_officers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePoliceOfficer(id: string, data: Partial<PoliceOfficer>): Promise<PoliceOfficer | null> {
-  const { data: result, error } = await supabase.from('police_officers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('police_officers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePoliceOfficer(id: string): Promise<boolean> {
@@ -232,7 +232,7 @@ export async function getPolicePatrols(): Promise<PolicePatrol[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPolicePatrolById(id: string): Promise<PolicePatrol | null> {
-  const { data, error } = await supabase.from('police_patrols').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('police_patrols').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPolicePatrolsByOfficer(officerId: string): Promise<PolicePatrol[]> {
@@ -240,11 +240,11 @@ export async function getPolicePatrolsByOfficer(officerId: string): Promise<Poli
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPolicePatrol(data: Partial<PolicePatrol>): Promise<PolicePatrol | null> {
-  const { data: result, error } = await supabase.from('police_patrols').insert(data).select().single();
+  const { data: result, error } = await supabase.from('police_patrols').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePolicePatrol(id: string, data: Partial<PolicePatrol>): Promise<PolicePatrol | null> {
-  const { data: result, error } = await supabase.from('police_patrols').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('police_patrols').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePolicePatrol(id: string): Promise<boolean> {
@@ -258,7 +258,7 @@ export async function getPoliceFines(): Promise<PoliceFine[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPoliceFineById(id: string): Promise<PoliceFine | null> {
-  const { data, error } = await supabase.from('police_fines').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('police_fines').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPoliceFinesByOffender(offenderId: string): Promise<PoliceFine[]> {
@@ -266,11 +266,11 @@ export async function getPoliceFinesByOffender(offenderId: string): Promise<Poli
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPoliceFine(data: Partial<PoliceFine>): Promise<PoliceFine | null> {
-  const { data: result, error } = await supabase.from('police_fines').insert(data).select().single();
+  const { data: result, error } = await supabase.from('police_fines').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePoliceFine(id: string, data: Partial<PoliceFine>): Promise<PoliceFine | null> {
-  const { data: result, error } = await supabase.from('police_fines').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('police_fines').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePoliceFine(id: string): Promise<boolean> {
@@ -284,7 +284,7 @@ export async function getCourtCases(): Promise<CourtCase[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCourtCaseById(id: string): Promise<CourtCase | null> {
-  const { data, error } = await supabase.from('court_cases').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_cases').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getCourtCasesByJudge(judgeId: string): Promise<CourtCase[]> {
@@ -292,11 +292,11 @@ export async function getCourtCasesByJudge(judgeId: string): Promise<CourtCase[]
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCourtCase(data: Partial<CourtCase>): Promise<CourtCase | null> {
-  const { data: result, error } = await supabase.from('court_cases').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_cases').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCourtCase(id: string, data: Partial<CourtCase>): Promise<CourtCase | null> {
-  const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_cases').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCourtCase(id: string): Promise<boolean> {
@@ -310,7 +310,7 @@ export async function getCourtHearings(): Promise<CourtHearing[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCourtHearingById(id: string): Promise<CourtHearing | null> {
-  const { data, error } = await supabase.from('court_hearings').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_hearings').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getCourtHearingsByCase(caseId: string): Promise<CourtHearing[]> {
@@ -322,11 +322,11 @@ export async function getCourtHearingsByJudge(judgeId: string): Promise<CourtHea
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCourtHearing(data: Partial<CourtHearing>): Promise<CourtHearing | null> {
-  const { data: result, error } = await supabase.from('court_hearings').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_hearings').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCourtHearing(id: string, data: Partial<CourtHearing>): Promise<CourtHearing | null> {
-  const { data: result, error } = await supabase.from('court_hearings').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_hearings').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCourtHearing(id: string): Promise<boolean> {
@@ -340,15 +340,15 @@ export async function getCourtJudges(): Promise<CourtJudge[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCourtJudgeById(id: string): Promise<CourtJudge | null> {
-  const { data, error } = await supabase.from('court_judges').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_judges').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createCourtJudge(data: Partial<CourtJudge>): Promise<CourtJudge | null> {
-  const { data: result, error } = await supabase.from('court_judges').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_judges').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCourtJudge(id: string, data: Partial<CourtJudge>): Promise<CourtJudge | null> {
-  const { data: result, error } = await supabase.from('court_judges').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_judges').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCourtJudge(id: string): Promise<boolean> {
@@ -362,7 +362,7 @@ export async function getCourtJudgments(): Promise<CourtJudgment[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCourtJudgmentById(id: string): Promise<CourtJudgment | null> {
-  const { data, error } = await supabase.from('court_judgments').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_judgments').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getCourtJudgmentsByCase(caseId: string): Promise<CourtJudgment[]> {
@@ -370,11 +370,11 @@ export async function getCourtJudgmentsByCase(caseId: string): Promise<CourtJudg
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCourtJudgment(data: Partial<CourtJudgment>): Promise<CourtJudgment | null> {
-  const { data: result, error } = await supabase.from('court_judgments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('court_judgments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCourtJudgment(id: string, data: Partial<CourtJudgment>): Promise<CourtJudgment | null> {
-  const { data: result, error } = await supabase.from('court_judgments').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('court_judgments').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCourtJudgment(id: string): Promise<boolean> {
@@ -388,7 +388,7 @@ export async function getPrisonInmates(): Promise<PrisonInmate[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPrisonInmateById(id: string): Promise<PrisonInmate | null> {
-  const { data, error } = await supabase.from('prison_inmates').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('prison_inmates').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPrisonInmatesByPrison(prisonId: string): Promise<PrisonInmate[]> {
@@ -396,11 +396,11 @@ export async function getPrisonInmatesByPrison(prisonId: string): Promise<Prison
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPrisonInmate(data: Partial<PrisonInmate>): Promise<PrisonInmate | null> {
-  const { data: result, error } = await supabase.from('prison_inmates').insert(data).select().single();
+  const { data: result, error } = await supabase.from('prison_inmates').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePrisonInmate(id: string, data: Partial<PrisonInmate>): Promise<PrisonInmate | null> {
-  const { data: result, error } = await supabase.from('prison_inmates').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('prison_inmates').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePrisonInmate(id: string): Promise<boolean> {
@@ -414,7 +414,7 @@ export async function getPrisonCells(): Promise<PrisonCell[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPrisonCellById(id: string): Promise<PrisonCell | null> {
-  const { data, error } = await supabase.from('prison_cells').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('prison_cells').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPrisonCellsByPrison(prisonId: string): Promise<PrisonCell[]> {
@@ -422,11 +422,11 @@ export async function getPrisonCellsByPrison(prisonId: string): Promise<PrisonCe
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPrisonCell(data: Partial<PrisonCell>): Promise<PrisonCell | null> {
-  const { data: result, error } = await supabase.from('prison_cells').insert(data).select().single();
+  const { data: result, error } = await supabase.from('prison_cells').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePrisonCell(id: string, data: Partial<PrisonCell>): Promise<PrisonCell | null> {
-  const { data: result, error } = await supabase.from('prison_cells').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('prison_cells').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePrisonCell(id: string): Promise<boolean> {
@@ -440,7 +440,7 @@ export async function getPrisonVisits(): Promise<PrisonVisit[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPrisonVisitById(id: string): Promise<PrisonVisit | null> {
-  const { data, error } = await supabase.from('prison_visits').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('prison_visits').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getPrisonVisitsByInmate(inmateId: string): Promise<PrisonVisit[]> {
@@ -448,11 +448,11 @@ export async function getPrisonVisitsByInmate(inmateId: string): Promise<PrisonV
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPrisonVisit(data: Partial<PrisonVisit>): Promise<PrisonVisit | null> {
-  const { data: result, error } = await supabase.from('prison_visits').insert(data).select().single();
+  const { data: result, error } = await supabase.from('prison_visits').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePrisonVisit(id: string, data: Partial<PrisonVisit>): Promise<PrisonVisit | null> {
-  const { data: result, error } = await supabase.from('prison_visits').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('prison_visits').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePrisonVisit(id: string): Promise<boolean> {
@@ -466,15 +466,15 @@ export async function getPrisons(): Promise<Prison[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getPrisonById(id: string): Promise<Prison | null> {
-  const { data, error } = await supabase.from('prisons').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('prisons').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createPrison(data: Partial<Prison>): Promise<Prison | null> {
-  const { data: result, error } = await supabase.from('prisons').insert(data).select().single();
+  const { data: result, error } = await supabase.from('prisons').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePrison(id: string, data: Partial<Prison>): Promise<Prison | null> {
-  const { data: result, error } = await supabase.from('prisons').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('prisons').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePrison(id: string): Promise<boolean> {
@@ -488,15 +488,15 @@ export async function getTreasuryPayments(): Promise<TreasuryPayment[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTreasuryPaymentById(id: string): Promise<TreasuryPayment | null> {
-  const { data, error } = await supabase.from('treasury_payments').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('treasury_payments').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTreasuryPayment(data: Partial<TreasuryPayment>): Promise<TreasuryPayment | null> {
-  const { data: result, error } = await supabase.from('treasury_payments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('treasury_payments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTreasuryPayment(id: string, data: Partial<TreasuryPayment>): Promise<TreasuryPayment | null> {
-  const { data: result, error } = await supabase.from('treasury_payments').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('treasury_payments').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTreasuryPayment(id: string): Promise<boolean> {
@@ -509,15 +509,15 @@ export async function getTreasuryTaxpayers(): Promise<TreasuryTaxpayer[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTreasuryTaxpayerById(id: string): Promise<TreasuryTaxpayer | null> {
-  const { data, error } = await supabase.from('treasury_taxpayers').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('treasury_taxpayers').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTreasuryTaxpayer(data: Partial<TreasuryTaxpayer>): Promise<TreasuryTaxpayer | null> {
-  const { data: result, error } = await supabase.from('treasury_taxpayers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('treasury_taxpayers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTreasuryTaxpayer(id: string, data: Partial<TreasuryTaxpayer>): Promise<TreasuryTaxpayer | null> {
-  const { data: result, error } = await supabase.from('treasury_taxpayers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('treasury_taxpayers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTreasuryTaxpayer(id: string): Promise<boolean> {
@@ -531,15 +531,15 @@ export async function getRevenuePayments(): Promise<RevenuePayment[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRevenuePaymentById(id: string): Promise<RevenuePayment | null> {
-  const { data, error } = await supabase.from('revenue_payments').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('revenue_payments').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRevenuePayment(data: Partial<RevenuePayment>): Promise<RevenuePayment | null> {
-  const { data: result, error } = await supabase.from('revenue_payments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('revenue_payments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRevenuePayment(id: string, data: Partial<RevenuePayment>): Promise<RevenuePayment | null> {
-  const { data: result, error } = await supabase.from('revenue_payments').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('revenue_payments').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRevenuePayment(id: string): Promise<boolean> {
@@ -552,11 +552,11 @@ export async function getRevenueTaxpayers(): Promise<RevenueTaxpayer[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRevenueTaxpayer(data: Partial<RevenueTaxpayer>): Promise<RevenueTaxpayer | null> {
-  const { data: result, error } = await supabase.from('revenue_taxpayers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('revenue_taxpayers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRevenueTaxpayer(id: string, data: Partial<RevenueTaxpayer>): Promise<RevenueTaxpayer | null> {
-  const { data: result, error } = await supabase.from('revenue_taxpayers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('revenue_taxpayers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRevenueTaxpayer(id: string): Promise<boolean> {
@@ -570,15 +570,15 @@ export async function getBorderPosts(): Promise<BorderPost[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getBorderPostById(id: string): Promise<BorderPost | null> {
-  const { data, error } = await supabase.from('border_posts').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('border_posts').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createBorderPost(data: Partial<BorderPost>): Promise<BorderPost | null> {
-  const { data: result, error } = await supabase.from('border_posts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('border_posts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateBorderPost(id: string, data: Partial<BorderPost>): Promise<BorderPost | null> {
-  const { data: result, error } = await supabase.from('border_posts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('border_posts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteBorderPost(id: string): Promise<boolean> {
@@ -591,15 +591,15 @@ export async function getBorderCrossings(): Promise<BorderCrossing[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getBorderCrossingById(id: string): Promise<BorderCrossing | null> {
-  const { data, error } = await supabase.from('border_crossings').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('border_crossings').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createBorderCrossing(data: Partial<BorderCrossing>): Promise<BorderCrossing | null> {
-  const { data: result, error } = await supabase.from('border_crossings').insert(data).select().single();
+  const { data: result, error } = await supabase.from('border_crossings').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateBorderCrossing(id: string, data: Partial<BorderCrossing>): Promise<BorderCrossing | null> {
-  const { data: result, error } = await supabase.from('border_crossings').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('border_crossings').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteBorderCrossing(id: string): Promise<boolean> {
@@ -613,15 +613,15 @@ export async function getAgricultureRecords(): Promise<AgricultureRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getAgricultureRecordById(id: string): Promise<AgricultureRecord | null> {
-  const { data, error } = await supabase.from('agriculture_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('agriculture_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createAgricultureRecord(data: Partial<AgricultureRecord>): Promise<AgricultureRecord | null> {
-  const { data: result, error } = await supabase.from('agriculture_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('agriculture_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateAgricultureRecord(id: string, data: Partial<AgricultureRecord>): Promise<AgricultureRecord | null> {
-  const { data: result, error } = await supabase.from('agriculture_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('agriculture_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteAgricultureRecord(id: string): Promise<boolean> {
@@ -635,15 +635,15 @@ export async function getImmigrationRecords(): Promise<ImmigrationRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getImmigrationRecordById(id: string): Promise<ImmigrationRecord | null> {
-  const { data, error } = await supabase.from('immigration_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('immigration_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createImmigrationRecord(data: Partial<ImmigrationRecord>): Promise<ImmigrationRecord | null> {
-  const { data: result, error } = await supabase.from('immigration_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('immigration_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateImmigrationRecord(id: string, data: Partial<ImmigrationRecord>): Promise<ImmigrationRecord | null> {
-  const { data: result, error } = await supabase.from('immigration_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('immigration_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteImmigrationRecord(id: string): Promise<boolean> {
@@ -657,15 +657,15 @@ export async function getTransportRecords(): Promise<TransportRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getTransportRecordById(id: string): Promise<TransportRecord | null> {
-  const { data, error } = await supabase.from('transport_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('transport_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createTransportRecord(data: Partial<TransportRecord>): Promise<TransportRecord | null> {
-  const { data: result, error } = await supabase.from('transport_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('transport_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTransportRecord(id: string, data: Partial<TransportRecord>): Promise<TransportRecord | null> {
-  const { data: result, error } = await supabase.from('transport_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('transport_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTransportRecord(id: string): Promise<boolean> {
@@ -679,15 +679,15 @@ export async function getCustomsRecords(): Promise<CustomsRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCustomsRecordById(id: string): Promise<CustomsRecord | null> {
-  const { data, error } = await supabase.from('customs_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('customs_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createCustomsRecord(data: Partial<CustomsRecord>): Promise<CustomsRecord | null> {
-  const { data: result, error } = await supabase.from('customs_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('customs_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCustomsRecord(id: string, data: Partial<CustomsRecord>): Promise<CustomsRecord | null> {
-  const { data: result, error } = await supabase.from('customs_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('customs_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCustomsRecord(id: string): Promise<boolean> {
@@ -701,15 +701,15 @@ export async function getGovernanceRecords(): Promise<GovernanceRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getGovernanceRecordById(id: string): Promise<GovernanceRecord | null> {
-  const { data, error } = await supabase.from('governance_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('governance_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createGovernanceRecord(data: Partial<GovernanceRecord>): Promise<GovernanceRecord | null> {
-  const { data: result, error } = await supabase.from('governance_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('governance_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateGovernanceRecord(id: string, data: Partial<GovernanceRecord>): Promise<GovernanceRecord | null> {
-  const { data: result, error } = await supabase.from('governance_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('governance_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteGovernanceRecord(id: string): Promise<boolean> {
@@ -723,15 +723,15 @@ export async function getCountyRecords(): Promise<CountyRecord[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCountyRecordById(id: string): Promise<CountyRecord | null> {
-  const { data, error } = await supabase.from('county_records').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('county_records').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createCountyRecord(data: Partial<CountyRecord>): Promise<CountyRecord | null> {
-  const { data: result, error } = await supabase.from('county_records').insert(data).select().single();
+  const { data: result, error } = await supabase.from('county_records').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCountyRecord(id: string, data: Partial<CountyRecord>): Promise<CountyRecord | null> {
-  const { data: result, error } = await supabase.from('county_records').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('county_records').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCountyRecord(id: string): Promise<boolean> {
@@ -745,7 +745,7 @@ export async function getCivicAuditLogs(): Promise<CivicAuditLog[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCivicAuditLog(data: Partial<CivicAuditLog>): Promise<CivicAuditLog | null> {
-  const { data: result, error } = await supabase.from('civic_audit_log').insert(data).select().single();
+  const { data: result, error } = await supabase.from('civic_audit_log').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -755,15 +755,15 @@ export async function getCivicNotifications(): Promise<CivicNotification[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getCivicNotificationById(id: string): Promise<CivicNotification | null> {
-  const { data, error } = await supabase.from('civic_notifications').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('civic_notifications').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createCivicNotification(data: Partial<CivicNotification>): Promise<CivicNotification | null> {
-  const { data: result, error } = await supabase.from('civic_notifications').insert(data).select().single();
+  const { data: result, error } = await supabase.from('civic_notifications').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCivicNotification(id: string, data: Partial<CivicNotification>): Promise<CivicNotification | null> {
-  const { data: result, error } = await supabase.from('civic_notifications').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('civic_notifications').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCivicNotification(id: string): Promise<boolean> {

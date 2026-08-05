@@ -6,7 +6,7 @@ export async function getEducationProfile(userId: string) {
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

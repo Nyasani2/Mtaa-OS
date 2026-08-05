@@ -50,7 +50,7 @@ export const PharmacyService = {
       .from('health_pharmacies')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data as PharmacyRecord;
   },
@@ -72,7 +72,7 @@ export const PharmacyService = {
         created_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data as PharmacyRecord;
   },
@@ -83,7 +83,7 @@ export const PharmacyService = {
       .update({ ...input, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data as PharmacyRecord;
   },

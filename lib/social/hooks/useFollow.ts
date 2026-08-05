@@ -41,7 +41,7 @@ export function useFollow(targetProfileId: string) {
         .from('user_profiles')
         .select('follower_count, following_count')
         .eq('id', targetProfileId)
-        .single();
+        .maybeSingle();
 
       setFollowState({
         isFollowing: !!data && data.status === 'active',

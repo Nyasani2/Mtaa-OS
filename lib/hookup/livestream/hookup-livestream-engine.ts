@@ -26,7 +26,7 @@ export async function createLivestream(
         started_at: new Date(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -46,7 +46,7 @@ export async function endLivestream(
       })
       .eq("id", livestream_id)
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

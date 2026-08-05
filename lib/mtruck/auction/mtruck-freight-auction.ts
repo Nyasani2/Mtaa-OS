@@ -10,7 +10,7 @@ export async function createFreightAuction(listing: any) {
       created_at: new Date().toISOString(),
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

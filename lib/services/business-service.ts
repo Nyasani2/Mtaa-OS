@@ -42,7 +42,7 @@ export interface BusinessDocument {
 
 export async function createShop(payload: Partial<Shop>): Promise<ServiceResult<Shop>> {
   try {
-    const { data, error } = await supabase.from('shops').insert(payload).select().single();
+    const { data, error } = await supabase.from('shops').insert(payload).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -52,7 +52,7 @@ export async function createShop(payload: Partial<Shop>): Promise<ServiceResult<
 
 export async function getShopById(shopId: string): Promise<ServiceResult<Shop>> {
   try {
-    const { data, error } = await supabase.from('shops').select('*').eq('id', shopId).single();
+    const { data, error } = await supabase.from('shops').select('*').eq('id', shopId).maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -72,7 +72,7 @@ export async function getShopsByOwner(ownerId: string): Promise<ServiceResult<Sh
 
 export async function updateShop(shopId: string, updates: Partial<Shop>): Promise<ServiceResult<Shop>> {
   try {
-    const { data, error } = await supabase.from('shops').update(updates).eq('id', shopId).select().single();
+    const { data, error } = await supabase.from('shops').update(updates).eq('id', shopId).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -102,7 +102,7 @@ export async function getShopStaff(shopId: string): Promise<ServiceResult<ShopSt
 
 export async function addShopStaff(shopId: string, staffData: Partial<ShopStaff>): Promise<ServiceResult<ShopStaff>> {
   try {
-    const { data, error } = await supabase.from('shop_staff').insert({ ...staffData, shop_id: shopId }).select().single();
+    const { data, error } = await supabase.from('shop_staff').insert({ ...staffData, shop_id: shopId }).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -132,7 +132,7 @@ export async function getShopSuppliers(shopId: string): Promise<ServiceResult<Sh
 
 export async function addShopSupplier(shopId: string, supplierData: Partial<ShopSupplier>): Promise<ServiceResult<ShopSupplier>> {
   try {
-    const { data, error } = await supabase.from('shop_suppliers').insert({ ...supplierData, shop_id: shopId }).select().single();
+    const { data, error } = await supabase.from('shop_suppliers').insert({ ...supplierData, shop_id: shopId }).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -142,7 +142,7 @@ export async function addShopSupplier(shopId: string, supplierData: Partial<Shop
 
 export async function updateShopSupplier(supplierId: string, updates: Partial<ShopSupplier>): Promise<ServiceResult<ShopSupplier>> {
   try {
-    const { data, error } = await supabase.from('shop_suppliers').update(updates).eq('id', supplierId).select().single();
+    const { data, error } = await supabase.from('shop_suppliers').update(updates).eq('id', supplierId).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
@@ -162,7 +162,7 @@ export async function getShopDocuments(shopId: string): Promise<ServiceResult<Bu
 
 export async function uploadShopDocument(shopId: string, docData: Partial<BusinessDocument>): Promise<ServiceResult<BusinessDocument>> {
   try {
-    const { data, error } = await supabase.from('shop_documents').insert({ ...docData, shop_id: shopId }).select().single();
+    const { data, error } = await supabase.from('shop_documents').insert({ ...docData, shop_id: shopId }).select().maybeSingle();
     if (error) throw error;
     return { data, error: null };
   } catch (err) {

@@ -19,19 +19,19 @@ export class CaseService {
   }
 
   async getCaseById(id: string) {
-    const { data, error } = await supabase.from('police_cases').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('police_cases').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
 
   async createCase(caseData: Partial<PoliceCase>) {
-    const { data, error } = await supabase.from('police_cases').insert(caseData).select().single();
+    const { data, error } = await supabase.from('police_cases').insert(caseData).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
 
   async updateCase(id: string, updates: Partial<PoliceCase>) {
-    const { data, error } = await supabase.from('police_cases').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('police_cases').update(updates).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
@@ -55,7 +55,7 @@ export class CaseService {
   async assignCase(id: string, officerId: string, assignedBy?: string) {
     const { data, error } = await supabase.from('police_cases')
       .update({ assigned_officer_id: officerId, assigned_by: assignedBy || 'system', assigned_at: new Date().toISOString() })
-      .eq('id', id).select().single();
+      .eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
@@ -80,7 +80,7 @@ export class CaseService {
   async addCaseUpdate(caseId: string, update: CaseUpdate) {
     const { data, error } = await supabase.from('case_updates').insert({
       case_id: caseId, notes: update.notes, updated_by: update.updated_by, status: update.status,
-    }).select().single();
+    }).select().maybeSingle();
     if (error) throw error;
     return data;
   }
@@ -117,7 +117,7 @@ export class CaseService {
   async escalateCase(caseId: string, reason: string, escalatedBy: string) {
     const { data, error } = await supabase.from('police_cases')
       .update({ priority: 'high', escalated_at: new Date().toISOString(), escalated_by: escalatedBy, escalation_reason: reason })
-      .eq('id', caseId).select().single();
+      .eq('id', caseId).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
@@ -135,7 +135,7 @@ export class CaseService {
   async closeCase(caseId: string, closureData: { outcome: string; closedBy: string; notes?: string }) {
     const { data, error } = await supabase.from('police_cases')
       .update({ status: 'closed', resolution_notes: closureData.notes, resolved_at: new Date().toISOString() })
-      .eq('id', caseId).select().single();
+      .eq('id', caseId).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }
@@ -143,7 +143,7 @@ export class CaseService {
   async reopenCase(caseId: string, reason: string, reopenedBy: string) {
     const { data, error } = await supabase.from('police_cases')
       .update({ status: 'reopened', reopened_by: reopenedBy })
-      .eq('id', caseId).select().single();
+      .eq('id', caseId).select().maybeSingle();
     if (error) throw error;
     return data as PoliceCase;
   }

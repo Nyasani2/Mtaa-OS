@@ -44,7 +44,7 @@ async function verifyRecipient(phone: string): Promise<string | null> {
     .from('user_profiles')
     .select('id')
     .eq('phone', phone)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -60,7 +60,7 @@ async function getServerBalance(accountId: string): Promise<number | null> {
     .from('wallet_accounts')
     .select('balance')
     .eq('id', accountId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return null;
@@ -220,7 +220,7 @@ export async function syncWalletState(accountId: string): Promise<{
     .from('wallet_accounts')
     .select('balance')
     .eq('id', accountId)
-    .single();
+    .maybeSingle();
 
   // Fetch transactions
   const { data: txData, error: txError } = await supabase
@@ -295,7 +295,7 @@ export async function getGoFundState(): Promise<{
     .from('go_fund')
     .select('credit_limit, credit_used, is_active, is_eligible')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     return { creditLimit: 0, creditUsed: 0, creditAvailable: 0, isActive: false, isEligible: false, error: error?.message };

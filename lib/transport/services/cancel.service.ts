@@ -16,7 +16,7 @@ export async function cancelRideDirect(rideId: string, cancelledBy: string, reas
     .from('mtaxi_rides')
     .select('*')
     .eq('id', rideId)
-    .single();
+    .maybeSingle();
   if (fetchErr) throw fetchErr;
 
   if (ride.status === 'completed') throw new Error('Cannot cancel completed ride');
@@ -31,7 +31,7 @@ export async function cancelRideDirect(rideId: string, cancelledBy: string, reas
       .eq('currency', 'KES')
       .order('is_default', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (wallet) {
       const fare = ride.fare_estimate || 0;
@@ -68,7 +68,7 @@ export async function cancelRideDirect(rideId: string, cancelledBy: string, reas
     })
     .eq('id', rideId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;

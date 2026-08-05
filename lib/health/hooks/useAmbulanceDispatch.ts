@@ -100,7 +100,7 @@ export function useAmbulanceDispatch() {
         .from('health_ambulance_dispatches')
         .insert(insertPayload)
         .select()
-        .single();
+        .maybeSingle();
 
       if (insertError) {
         // If priority column missing, retry without it
@@ -110,7 +110,7 @@ export function useAmbulanceDispatch() {
             .from('health_ambulance_dispatches')
             .insert(insertPayload)
             .select()
-            .single();
+            .maybeSingle();
           if (retryError) throw retryError;
           return { success: true, data: retryData };
         }

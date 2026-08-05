@@ -15,7 +15,7 @@ export function useHealthRole() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     try {
-      const { data: staff } = await supabase.from('health_staff').select('*, health_facilities!inner(id, name)').eq('user_id', user.id).single();
+      const { data: staff } = await supabase.from('health_staff').select('*, health_facilities!inner(id, name)').eq('user_id', user.id).maybeSingle();
       if (staff) {
         setRole(staff.role_type as HealthRole);
         setSelectedFacilityId(staff.health_facilities?.id || null);
@@ -23,9 +23,9 @@ export function useHealthRole() {
         setFacilities(allStaff?.map(s => s.health_facilities).filter(Boolean) || []);
         setIsLoading(false); return;
       }
-      const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).single();
+      const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).maybeSingle();
       if (healer) { setRole('traditional_healer'); setSelectedFacilityId(healer.facility_id); setIsLoading(false); return; }
-      const { data: patient } = await supabase.from('health_patients').select('*').eq('user_id', user.id).single();
+      const { data: patient } = await supabase.from('health_patients').select('*').eq('user_id', user.id).maybeSingle();
       if (patient) { setRole('patient'); setIsLoading(false); return; }
       setRole(null);
     } finally { setIsLoading(false); }

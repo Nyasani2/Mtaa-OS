@@ -41,7 +41,7 @@ export async function startBodycamSession(officerId: string, deviceId: string, s
       metadata: {},
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -52,7 +52,7 @@ export async function endBodycamSession(sessionId: string) {
     .update({ status: 'completed', ended_at: new Date().toISOString() })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -62,7 +62,7 @@ export async function triggerEmergency(sessionId: string, location?: { lat: numb
     .from('bodycam_sessions')
     .select('*')
     .eq('id', sessionId)
-    .single();
+    .maybeSingle();
 
   const { data, error } = await supabase
     .from('bodycam_sessions')
@@ -76,7 +76,7 @@ export async function triggerEmergency(sessionId: string, location?: { lat: numb
     })
     .eq('id', sessionId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 
@@ -128,7 +128,7 @@ export async function assignShift(assignment: Omit<ShiftAssignment, 'id' | 'crea
     .from('shift_assignments')
     .insert(assignment)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

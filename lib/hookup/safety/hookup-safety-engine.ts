@@ -17,7 +17,7 @@ export async function reportUser(
         details,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) {
     throw error;
@@ -39,7 +39,7 @@ export async function blockUser(
         blocked_id,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) {
     throw error;

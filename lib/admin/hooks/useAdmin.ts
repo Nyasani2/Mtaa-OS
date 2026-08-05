@@ -86,7 +86,7 @@ export function useAdmin() {
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       if (data) setAdminUser(data);
     } catch (err: any) {

@@ -61,7 +61,7 @@ export async function getMyJobs(userId: string, role: 'shipper' | 'driver' | 'ca
 }
 
 export async function getJobById(jobId: string): Promise<MtruckJob | null> {
-  const { data, error } = await supabase.from(TABLE_JOBS).select('*').eq('id', jobId).single();
+  const { data, error } = await supabase.from(TABLE_JOBS).select('*').eq('id', jobId).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -87,7 +87,7 @@ export async function createDelivery(payload: {
     .from(TABLE_DELIVERIES)
     .insert({ ...payload, status: 'pending' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create delivery failed: ${error.message}`);
   return data;
 }
@@ -146,7 +146,7 @@ export async function createShipment(payload: {
       status: 'pending'
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create shipment failed: ${error.message}`);
   return data;
 }
@@ -156,7 +156,7 @@ export async function getShipmentByTracking(trackingNumber: string): Promise<Mtr
     .from(TABLE_SHIPMENTS)
     .select('*')
     .eq('tracking_number', trackingNumber)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }

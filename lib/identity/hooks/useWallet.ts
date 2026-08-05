@@ -52,7 +52,7 @@ export function useWallet() {
       .from('wallet_accounts')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[useWallet] getWallet error:', error);
@@ -188,7 +188,7 @@ export function useWallet() {
       .from('wallet_accounts')
       .select('balance')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error || !data) {
       console.error('[useWallet] getBalance error:', error);

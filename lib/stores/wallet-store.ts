@@ -142,7 +142,7 @@ export const useWalletStore = create<WalletState>()(
             .from('wallets')
             .select('balance, currency')
             .eq('user_id', userData.user.id)
-            .single();
+            .maybeSingle();
 
           if (error) {
             if (error.message?.includes('does not exist') || error.code === '42P01') {

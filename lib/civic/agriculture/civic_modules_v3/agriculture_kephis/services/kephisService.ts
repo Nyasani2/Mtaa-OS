@@ -54,13 +54,13 @@ export class KEPHISService {
   }
 
   static async createCertificate(cert: Omit<CropCertificate, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase.from('kephis_certificates').insert(cert).select().single();
+    const { data, error } = await supabase.from('kephis_certificates').insert(cert).select().maybeSingle();
     if (error) throw error;
     return data as CropCertificate;
   }
 
   static async reportPestDisease(report: Omit<PestDiseaseReport, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase.from('kephis_pest_reports').insert(report).select().single();
+    const { data, error } = await supabase.from('kephis_pest_reports').insert(report).select().maybeSingle();
     if (error) throw error;
     return data as PestDiseaseReport;
   }
@@ -68,7 +68,7 @@ export class KEPHISService {
   static async scheduleInspection(farmId: string, inspectorId: string, date: string) {
     const { data, error } = await supabase.from('kephis_inspections').insert({
       farm_id: farmId, inspector_id: inspectorId, inspection_date: date, status: 'scheduled',
-    }).select().single();
+    }).select().maybeSingle();
     if (error) throw error;
     return data as FarmInspection;
   }
@@ -76,7 +76,7 @@ export class KEPHISService {
   static async completeInspection(inspectionId: string, findings: string, status: FarmInspection['status']) {
     const { data, error } = await supabase.from('kephis_inspections')
       .update({ findings, status, completed_at: new Date().toISOString() })
-      .eq('id', inspectionId).select().single();
+      .eq('id', inspectionId).select().maybeSingle();
     if (error) throw error;
     return data as FarmInspection;
   }
@@ -84,7 +84,7 @@ export class KEPHISService {
   static async approveCertificate(certId: string) {
     const { data, error } = await supabase.from('kephis_certificates')
       .update({ status: 'approved', approved_at: new Date().toISOString() })
-      .eq('id', certId).select().single();
+      .eq('id', certId).select().maybeSingle();
     if (error) throw error;
     return data as CropCertificate;
   }
@@ -92,13 +92,13 @@ export class KEPHISService {
   static async rejectCertificate(certId: string, reason: string) {
     const { data, error } = await supabase.from('kephis_certificates')
       .update({ status: 'rejected', rejection_reason: reason, rejected_at: new Date().toISOString() })
-      .eq('id', certId).select().single();
+      .eq('id', certId).select().maybeSingle();
     if (error) throw error;
     return data as CropCertificate;
   }
 
   static async verifyCertificate(certNumber: string): Promise<CropCertificate> {
-    const { data, error } = await supabase.from('kephis_certificates').select('*').eq('certificate_number', certNumber).single();
+    const { data, error } = await supabase.from('kephis_certificates').select('*').eq('certificate_number', certNumber).maybeSingle();
     if (error) throw error;
     return data as CropCertificate;
   }

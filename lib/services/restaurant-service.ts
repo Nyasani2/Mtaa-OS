@@ -118,7 +118,7 @@ export async function getRestaurants(): Promise<RestaurantProfile[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantById(id: string): Promise<RestaurantProfile | null> {
-  const { data, error } = await supabase.from('restaurant_profiles').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_profiles').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getRestaurantsByOwner(ownerId: string): Promise<RestaurantProfile[]> {
@@ -134,11 +134,11 @@ export async function searchRestaurants(query: string): Promise<RestaurantProfil
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurant(data: Partial<RestaurantProfile>): Promise<RestaurantProfile | null> {
-  const { data: result, error } = await supabase.from('restaurant_profiles').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_profiles').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurant(id: string, data: Partial<RestaurantProfile>): Promise<RestaurantProfile | null> {
-  const { data: result, error } = await supabase.from('restaurant_profiles').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_profiles').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurant(id: string): Promise<boolean> {
@@ -152,15 +152,15 @@ export async function getRestaurantMenus(restaurantId: string): Promise<Restaura
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantMenuById(id: string): Promise<RestaurantMenu | null> {
-  const { data, error } = await supabase.from('restaurant_menus').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_menus').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantMenu(data: Partial<RestaurantMenu>): Promise<RestaurantMenu | null> {
-  const { data: result, error } = await supabase.from('restaurant_menus').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_menus').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantMenu(id: string, data: Partial<RestaurantMenu>): Promise<RestaurantMenu | null> {
-  const { data: result, error } = await supabase.from('restaurant_menus').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_menus').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantMenu(id: string): Promise<boolean> {
@@ -174,7 +174,7 @@ export async function getRestaurantMenuItems(menuId: string): Promise<Restaurant
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantMenuItemById(id: string): Promise<RestaurantMenuItem | null> {
-  const { data, error } = await supabase.from('restaurant_menu_items').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_menu_items').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getRestaurantMenuItemsByRestaurant(restaurantId: string): Promise<RestaurantMenuItem[]> {
@@ -182,11 +182,11 @@ export async function getRestaurantMenuItemsByRestaurant(restaurantId: string): 
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantMenuItem(data: Partial<RestaurantMenuItem>): Promise<RestaurantMenuItem | null> {
-  const { data: result, error } = await supabase.from('restaurant_menu_items').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_menu_items').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantMenuItem(id: string, data: Partial<RestaurantMenuItem>): Promise<RestaurantMenuItem | null> {
-  const { data: result, error } = await supabase.from('restaurant_menu_items').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_menu_items').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantMenuItem(id: string): Promise<boolean> {
@@ -200,7 +200,7 @@ export async function getRestaurantOrders(): Promise<RestaurantOrder[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantOrderById(id: string): Promise<RestaurantOrder | null> {
-  const { data, error } = await supabase.from('restaurant_orders').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_orders').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getRestaurantOrdersByRestaurant(restaurantId: string): Promise<RestaurantOrder[]> {
@@ -212,11 +212,11 @@ export async function getRestaurantOrdersByCustomer(customerId: string): Promise
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantOrder(data: Partial<RestaurantOrder>): Promise<RestaurantOrder | null> {
-  const { data: result, error } = await supabase.from('restaurant_orders').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_orders').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantOrder(id: string, data: Partial<RestaurantOrder>): Promise<RestaurantOrder | null> {
-  const { data: result, error } = await supabase.from('restaurant_orders').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_orders').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantOrder(id: string): Promise<boolean> {
@@ -230,11 +230,11 @@ export async function getRestaurantOrderItems(orderId: string): Promise<Restaura
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantOrderItem(data: Partial<RestaurantOrderItem>): Promise<RestaurantOrderItem | null> {
-  const { data: result, error } = await supabase.from('restaurant_order_items').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_order_items').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantOrderItem(id: string, data: Partial<RestaurantOrderItem>): Promise<RestaurantOrderItem | null> {
-  const { data: result, error } = await supabase.from('restaurant_order_items').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_order_items').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantOrderItem(id: string): Promise<boolean> {
@@ -248,15 +248,15 @@ export async function getRestaurantTables(restaurantId: string): Promise<Restaur
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantTableById(id: string): Promise<RestaurantTable | null> {
-  const { data, error } = await supabase.from('restaurant_tables').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_tables').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantTable(data: Partial<RestaurantTable>): Promise<RestaurantTable | null> {
-  const { data: result, error } = await supabase.from('restaurant_tables').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_tables').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantTable(id: string, data: Partial<RestaurantTable>): Promise<RestaurantTable | null> {
-  const { data: result, error } = await supabase.from('restaurant_tables').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_tables').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantTable(id: string): Promise<boolean> {
@@ -270,7 +270,7 @@ export async function getRestaurantReservations(restaurantId: string): Promise<R
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantReservationById(id: string): Promise<RestaurantReservation | null> {
-  const { data, error } = await supabase.from('restaurant_reservations').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_reservations').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getRestaurantReservationsByCustomer(customerId: string): Promise<RestaurantReservation[]> {
@@ -278,11 +278,11 @@ export async function getRestaurantReservationsByCustomer(customerId: string): P
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantReservation(data: Partial<RestaurantReservation>): Promise<RestaurantReservation | null> {
-  const { data: result, error } = await supabase.from('restaurant_reservations').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_reservations').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantReservation(id: string, data: Partial<RestaurantReservation>): Promise<RestaurantReservation | null> {
-  const { data: result, error } = await supabase.from('restaurant_reservations').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_reservations').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantReservation(id: string): Promise<boolean> {
@@ -296,15 +296,15 @@ export async function getRestaurantReviews(restaurantId: string): Promise<Restau
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantReviewById(id: string): Promise<RestaurantReview | null> {
-  const { data, error } = await supabase.from('restaurant_reviews').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_reviews').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantReview(data: Partial<RestaurantReview>): Promise<RestaurantReview | null> {
-  const { data: result, error } = await supabase.from('restaurant_reviews').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_reviews').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantReview(id: string, data: Partial<RestaurantReview>): Promise<RestaurantReview | null> {
-  const { data: result, error } = await supabase.from('restaurant_reviews').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_reviews').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantReview(id: string): Promise<boolean> {
@@ -318,15 +318,15 @@ export async function getRestaurantStaff(restaurantId: string): Promise<Restaura
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantStaffById(id: string): Promise<RestaurantStaff | null> {
-  const { data, error } = await supabase.from('restaurant_staff').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_staff').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantStaff(data: Partial<RestaurantStaff>): Promise<RestaurantStaff | null> {
-  const { data: result, error } = await supabase.from('restaurant_staff').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_staff').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantStaff(id: string, data: Partial<RestaurantStaff>): Promise<RestaurantStaff | null> {
-  const { data: result, error } = await supabase.from('restaurant_staff').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_staff').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantStaff(id: string): Promise<boolean> {
@@ -340,15 +340,15 @@ export async function getRestaurantInventory(restaurantId: string): Promise<Rest
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantInventoryById(id: string): Promise<RestaurantInventory | null> {
-  const { data, error } = await supabase.from('restaurant_inventory').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_inventory').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantInventory(data: Partial<RestaurantInventory>): Promise<RestaurantInventory | null> {
-  const { data: result, error } = await supabase.from('restaurant_inventory').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_inventory').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantInventory(id: string, data: Partial<RestaurantInventory>): Promise<RestaurantInventory | null> {
-  const { data: result, error } = await supabase.from('restaurant_inventory').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_inventory').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantInventory(id: string): Promise<boolean> {
@@ -362,15 +362,15 @@ export async function getRestaurantSuppliers(restaurantId: string): Promise<Rest
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantSupplierById(id: string): Promise<RestaurantSupplier | null> {
-  const { data, error } = await supabase.from('restaurant_suppliers').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_suppliers').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantSupplier(data: Partial<RestaurantSupplier>): Promise<RestaurantSupplier | null> {
-  const { data: result, error } = await supabase.from('restaurant_suppliers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_suppliers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantSupplier(id: string, data: Partial<RestaurantSupplier>): Promise<RestaurantSupplier | null> {
-  const { data: result, error } = await supabase.from('restaurant_suppliers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_suppliers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantSupplier(id: string): Promise<boolean> {
@@ -384,15 +384,15 @@ export async function getRestaurantPromotions(restaurantId: string): Promise<Res
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantPromotionById(id: string): Promise<RestaurantPromotion | null> {
-  const { data, error } = await supabase.from('restaurant_promotions').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_promotions').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantPromotion(data: Partial<RestaurantPromotion>): Promise<RestaurantPromotion | null> {
-  const { data: result, error } = await supabase.from('restaurant_promotions').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_promotions').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantPromotion(id: string, data: Partial<RestaurantPromotion>): Promise<RestaurantPromotion | null> {
-  const { data: result, error } = await supabase.from('restaurant_promotions').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_promotions').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantPromotion(id: string): Promise<boolean> {
@@ -406,15 +406,15 @@ export async function getRestaurantLoyaltyPrograms(restaurantId: string): Promis
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantLoyaltyProgramById(id: string): Promise<RestaurantLoyaltyProgram | null> {
-  const { data, error } = await supabase.from('restaurant_loyalty_programs').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_loyalty_programs').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantLoyaltyProgram(data: Partial<RestaurantLoyaltyProgram>): Promise<RestaurantLoyaltyProgram | null> {
-  const { data: result, error } = await supabase.from('restaurant_loyalty_programs').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_loyalty_programs').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantLoyaltyProgram(id: string, data: Partial<RestaurantLoyaltyProgram>): Promise<RestaurantLoyaltyProgram | null> {
-  const { data: result, error } = await supabase.from('restaurant_loyalty_programs').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_loyalty_programs').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantLoyaltyProgram(id: string): Promise<boolean> {
@@ -428,15 +428,15 @@ export async function getRestaurantLoyaltyMembers(programId: string): Promise<Re
   if (error) return handleError(error, []); return data || [];
 }
 export async function getRestaurantLoyaltyMemberById(id: string): Promise<RestaurantLoyaltyMember | null> {
-  const { data, error } = await supabase.from('restaurant_loyalty_members').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('restaurant_loyalty_members').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createRestaurantLoyaltyMember(data: Partial<RestaurantLoyaltyMember>): Promise<RestaurantLoyaltyMember | null> {
-  const { data: result, error } = await supabase.from('restaurant_loyalty_members').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_loyalty_members').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantLoyaltyMember(id: string, data: Partial<RestaurantLoyaltyMember>): Promise<RestaurantLoyaltyMember | null> {
-  const { data: result, error } = await supabase.from('restaurant_loyalty_members').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_loyalty_members').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantLoyaltyMember(id: string): Promise<boolean> {
@@ -450,7 +450,7 @@ export async function getRestaurantAnalytics(restaurantId: string): Promise<Rest
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantAnalytics(data: Partial<RestaurantAnalytics>): Promise<RestaurantAnalytics | null> {
-  const { data: result, error } = await supabase.from('restaurant_analytics').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_analytics').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -460,11 +460,11 @@ export async function getRestaurantDeliveryZones(restaurantId: string): Promise<
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantDeliveryZone(data: Partial<RestaurantDeliveryZone>): Promise<RestaurantDeliveryZone | null> {
-  const { data: result, error } = await supabase.from('restaurant_delivery_zones').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_delivery_zones').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantDeliveryZone(id: string, data: Partial<RestaurantDeliveryZone>): Promise<RestaurantDeliveryZone | null> {
-  const { data: result, error } = await supabase.from('restaurant_delivery_zones').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_delivery_zones').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantDeliveryZone(id: string): Promise<boolean> {
@@ -478,11 +478,11 @@ export async function getRestaurantKitchenDisplay(restaurantId: string): Promise
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantKitchenDisplay(data: Partial<RestaurantKitchenDisplay>): Promise<RestaurantKitchenDisplay | null> {
-  const { data: result, error } = await supabase.from('restaurant_kitchen_display').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_kitchen_display').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantKitchenDisplay(id: string, data: Partial<RestaurantKitchenDisplay>): Promise<RestaurantKitchenDisplay | null> {
-  const { data: result, error } = await supabase.from('restaurant_kitchen_display').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_kitchen_display').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantKitchenDisplay(id: string): Promise<boolean> {
@@ -496,11 +496,11 @@ export async function getRestaurantPayments(restaurantId: string): Promise<Resta
   if (error) return handleError(error, []); return data || [];
 }
 export async function createRestaurantPayment(data: Partial<RestaurantPayment>): Promise<RestaurantPayment | null> {
-  const { data: result, error } = await supabase.from('restaurant_payments').insert(data).select().single();
+  const { data: result, error } = await supabase.from('restaurant_payments').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateRestaurantPayment(id: string, data: Partial<RestaurantPayment>): Promise<RestaurantPayment | null> {
-  const { data: result, error } = await supabase.from('restaurant_payments').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('restaurant_payments').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteRestaurantPayment(id: string): Promise<boolean> {

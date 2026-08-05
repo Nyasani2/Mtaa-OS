@@ -21,7 +21,7 @@ export async function getPolicies(range: { from: number; to: number }) {
 }
 
 export async function createClaim(payload: any) {
-  const { data, error } = await supabase.from("health_insurance").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_insurance").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

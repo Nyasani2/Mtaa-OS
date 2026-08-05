@@ -313,7 +313,7 @@ export async function getInstitutionById(id: string): Promise<Institution | null
     .from('education_institutions')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -333,7 +333,7 @@ export async function createInstitution(data: Partial<Institution>): Promise<Ins
     .from('education_institutions')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -344,7 +344,7 @@ export async function updateInstitution(id: string, data: Partial<Institution>):
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -371,7 +371,7 @@ export async function getStudentById(id: string): Promise<Student | null> {
     .from('education_students')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -381,7 +381,7 @@ export async function getStudentByUserId(userId: string): Promise<Student | null
     .from('education_students')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -400,7 +400,7 @@ export async function createStudent(data: Partial<Student>): Promise<Student | n
     .from('education_students')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -411,7 +411,7 @@ export async function updateStudent(id: string, data: Partial<Student>): Promise
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -435,7 +435,7 @@ export async function getTeacherById(id: string): Promise<Teacher | null> {
     .from('education_teachers')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -445,7 +445,7 @@ export async function getTeacherByUserId(userId: string): Promise<Teacher | null
     .from('education_teachers')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -464,7 +464,7 @@ export async function createTeacher(data: Partial<Teacher>): Promise<Teacher | n
     .from('education_teachers')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -475,7 +475,7 @@ export async function updateTeacher(id: string, data: Partial<Teacher>): Promise
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -499,7 +499,7 @@ export async function getClassById(id: string): Promise<InstitutionClass | null>
     .from('education_classes')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -509,7 +509,7 @@ export async function createClass(data: Partial<InstitutionClass>): Promise<Inst
     .from('education_classes')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -520,7 +520,7 @@ export async function updateClass(id: string, data: Partial<InstitutionClass>): 
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -544,7 +544,7 @@ export async function getGradeById(id: string): Promise<Grade | null> {
     .from('education_grades')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -563,7 +563,7 @@ export async function createGrade(data: Partial<Grade>): Promise<Grade | null> {
     .from('education_grades')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -574,7 +574,7 @@ export async function updateGrade(id: string, data: Partial<Grade>): Promise<Gra
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -598,7 +598,7 @@ export async function getAssignmentById(id: string): Promise<Assignment | null> 
     .from('education_assignments')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -617,7 +617,7 @@ export async function createAssignment(data: Partial<Assignment>): Promise<Assig
     .from('education_assignments')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -628,7 +628,7 @@ export async function updateAssignment(id: string, data: Partial<Assignment>): P
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -652,7 +652,7 @@ export async function getSubmissionById(id: string): Promise<Submission | null> 
     .from('education_submissions')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -680,7 +680,7 @@ export async function createSubmission(data: Partial<Submission>): Promise<Submi
     .from('education_submissions')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -691,7 +691,7 @@ export async function updateSubmission(id: string, data: Partial<Submission>): P
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -734,7 +734,7 @@ export async function createAttendance(data: Partial<Attendance>): Promise<Atten
     .from('education_attendance')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -745,7 +745,7 @@ export async function updateAttendance(id: string, data: Partial<Attendance>): P
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -759,14 +759,14 @@ export async function deleteAttendance(id: string): Promise<boolean> {
 // ─── TIMETABLE ───
 
 export async function getTimetables(): Promise<Timetable[]> {
-  const { data, error } = await supabase.from('education_timetables').select('*');
+  const { data, error } = await supabase.from('education_timetable').select('*');
   if (error) return handleError(error, []);
   return data || [];
 }
 
 export async function getClassTimetable(classId: string): Promise<Timetable[]> {
   const { data, error } = await supabase
-    .from('education_timetables')
+    .from('education_timetable')
     .select('*')
     .eq('class_id', classId)
     .order('day')
@@ -777,27 +777,27 @@ export async function getClassTimetable(classId: string): Promise<Timetable[]> {
 
 export async function createTimetableEntry(data: Partial<Timetable>): Promise<Timetable | null> {
   const { data: result, error } = await supabase
-    .from('education_timetables')
+    .from('education_timetable')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateTimetableEntry(id: string, data: Partial<Timetable>): Promise<Timetable | null> {
   const { data: result, error } = await supabase
-    .from('education_timetables')
+    .from('education_timetable')
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function deleteTimetableEntry(id: string): Promise<boolean> {
-  const { error } = await supabase.from('education_timetables').delete().eq('id', id);
+  const { error } = await supabase.from('education_timetable').delete().eq('id', id);
   if (error) return handleError(error, false);
   return true;
 }
@@ -815,7 +815,7 @@ export async function getLessonById(id: string): Promise<Lesson | null> {
     .from('education_lessons')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -834,7 +834,7 @@ export async function createLesson(data: Partial<Lesson>): Promise<Lesson | null
     .from('education_lessons')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -845,7 +845,7 @@ export async function updateLesson(id: string, data: Partial<Lesson>): Promise<L
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -869,7 +869,7 @@ export async function getEventById(id: string): Promise<Event | null> {
     .from('education_events')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -888,7 +888,7 @@ export async function createEvent(data: Partial<Event>): Promise<Event | null> {
     .from('education_events')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -899,7 +899,7 @@ export async function updateEvent(id: string, data: Partial<Event>): Promise<Eve
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -923,7 +923,7 @@ export async function getTransportRouteById(id: string): Promise<TransportRoute 
     .from('education_transport_routes')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -933,7 +933,7 @@ export async function createTransportRoute(data: Partial<TransportRoute>): Promi
     .from('education_transport_routes')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -944,7 +944,7 @@ export async function updateTransportRoute(id: string, data: Partial<TransportRo
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -977,7 +977,7 @@ export async function createFeePayment(data: Partial<FeePayment>): Promise<FeePa
     .from('education_fee_payments')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -988,7 +988,7 @@ export async function updateFeePayment(id: string, data: Partial<FeePayment>): P
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1021,7 +1021,7 @@ export async function createEarning(data: Partial<Earning>): Promise<Earning | n
     .from('education_earnings_transactions')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1032,7 +1032,7 @@ export async function updateEarning(id: string, data: Partial<Earning>): Promise
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1056,7 +1056,7 @@ export async function getContentItemById(id: string): Promise<ContentItem | null
     .from('education_content_library')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1066,7 +1066,7 @@ export async function createContentItem(data: Partial<ContentItem>): Promise<Con
     .from('education_content_library')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1077,7 +1077,7 @@ export async function updateContentItem(id: string, data: Partial<ContentItem>):
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1101,7 +1101,7 @@ export async function getLiveStreamById(id: string): Promise<LiveStream | null> 
     .from('education_live_streams')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1111,7 +1111,7 @@ export async function createLiveStream(data: Partial<LiveStream>): Promise<LiveS
     .from('education_live_streams')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1122,7 +1122,7 @@ export async function updateLiveStream(id: string, data: Partial<LiveStream>): P
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1146,7 +1146,7 @@ export async function getQRSessionById(id: string): Promise<QRSession | null> {
     .from('education_qr_sessions')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1156,7 +1156,7 @@ export async function createQRSession(data: Partial<QRSession>): Promise<QRSessi
     .from('education_qr_sessions')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1167,7 +1167,7 @@ export async function updateQRSession(id: string, data: Partial<QRSession>): Pro
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1191,7 +1191,7 @@ export async function getWalkingSquadById(id: string): Promise<WalkingSquad | nu
     .from('education_walking_squads')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1201,7 +1201,7 @@ export async function createWalkingSquad(data: Partial<WalkingSquad>): Promise<W
     .from('education_walking_squads')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1212,7 +1212,7 @@ export async function updateWalkingSquad(id: string, data: Partial<WalkingSquad>
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1236,7 +1236,7 @@ export async function getParentConnectionById(id: string): Promise<ParentConnect
     .from('education_parent_connections')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1246,7 +1246,7 @@ export async function createParentConnection(data: Partial<ParentConnection>): P
     .from('education_parent_connections')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1257,7 +1257,7 @@ export async function updateParentConnection(id: string, data: Partial<ParentCon
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1281,7 +1281,7 @@ export async function getAlumniById(id: string): Promise<Alumni | null> {
     .from('education_alumni')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1291,7 +1291,7 @@ export async function createAlumni(data: Partial<Alumni>): Promise<Alumni | null
     .from('education_alumni')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1302,7 +1302,7 @@ export async function updateAlumni(id: string, data: Partial<Alumni>): Promise<A
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1326,7 +1326,7 @@ export async function getExamById(id: string): Promise<Exam | null> {
     .from('education_exams')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1345,7 +1345,7 @@ export async function createExam(data: Partial<Exam>): Promise<Exam | null> {
     .from('education_exams')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1356,7 +1356,7 @@ export async function updateExam(id: string, data: Partial<Exam>): Promise<Exam 
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1380,7 +1380,7 @@ export async function getTestById(id: string): Promise<Test | null> {
     .from('education_tests')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1390,7 +1390,7 @@ export async function createTest(data: Partial<Test>): Promise<Test | null> {
     .from('education_tests')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1401,7 +1401,7 @@ export async function updateTest(id: string, data: Partial<Test>): Promise<Test 
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1425,7 +1425,7 @@ export async function getGroupById(id: string): Promise<Group | null> {
     .from('education_groups')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1435,7 +1435,7 @@ export async function createGroup(data: Partial<Group>): Promise<Group | null> {
     .from('education_groups')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1446,7 +1446,7 @@ export async function updateGroup(id: string, data: Partial<Group>): Promise<Gro
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1470,7 +1470,7 @@ export async function getPurchaseById(id: string): Promise<Purchase | null> {
     .from('education_purchases')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1480,7 +1480,7 @@ export async function createPurchase(data: Partial<Purchase>): Promise<Purchase 
     .from('education_purchases')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1491,7 +1491,7 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1515,7 +1515,7 @@ export async function getStudentTransportById(id: string): Promise<StudentTransp
     .from('education_student_transport')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1525,7 +1525,7 @@ export async function createStudentTransport(data: Partial<StudentTransport>): P
     .from('education_student_transport')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1536,7 +1536,7 @@ export async function updateStudentTransport(id: string, data: Partial<StudentTr
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1560,7 +1560,7 @@ export async function getTeacherBookingById(id: string): Promise<TeacherBooking 
     .from('education_teacher_bookings')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1570,7 +1570,7 @@ export async function createTeacherBooking(data: Partial<TeacherBooking>): Promi
     .from('education_teacher_bookings')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1581,7 +1581,7 @@ export async function updateTeacherBooking(id: string, data: Partial<TeacherBook
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1605,7 +1605,7 @@ export async function getTeacherDashboardById(id: string): Promise<TeacherDashbo
     .from('education_teacher_dashboards')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1615,7 +1615,7 @@ export async function createTeacherDashboard(data: Partial<TeacherDashboard>): P
     .from('education_teacher_dashboards')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1626,7 +1626,7 @@ export async function updateTeacherDashboard(id: string, data: Partial<TeacherDa
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1650,7 +1650,7 @@ export async function getTeacherServiceById(id: string): Promise<TeacherService 
     .from('education_teacher_services')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1660,7 +1660,7 @@ export async function createTeacherService(data: Partial<TeacherService>): Promi
     .from('education_teacher_services')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1671,7 +1671,7 @@ export async function updateTeacherService(id: string, data: Partial<TeacherServ
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1695,7 +1695,7 @@ export async function getSchoolAdminById(id: string): Promise<SchoolAdmin | null
     .from('education_school_admins')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1705,7 +1705,7 @@ export async function createSchoolAdmin(data: Partial<SchoolAdmin>): Promise<Sch
     .from('education_school_admins')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1716,7 +1716,7 @@ export async function updateSchoolAdmin(id: string, data: Partial<SchoolAdmin>):
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1740,7 +1740,7 @@ export async function getStaffById(id: string): Promise<Staff | null> {
     .from('education_staff')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1750,7 +1750,7 @@ export async function createStaff(data: Partial<Staff>): Promise<Staff | null> {
     .from('education_staff')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1761,7 +1761,7 @@ export async function updateStaff(id: string, data: Partial<Staff>): Promise<Sta
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1785,7 +1785,7 @@ export async function getResourceById(id: string): Promise<Resource | null> {
     .from('education_resources')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1795,7 +1795,7 @@ export async function createResource(data: Partial<Resource>): Promise<Resource 
     .from('education_resources')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1806,7 +1806,7 @@ export async function updateResource(id: string, data: Partial<Resource>): Promi
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1830,7 +1830,7 @@ export async function getHistoryById(id: string): Promise<History | null> {
     .from('education_history')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1840,7 +1840,7 @@ export async function createHistory(data: Partial<History>): Promise<History | n
     .from('education_history')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1851,7 +1851,7 @@ export async function updateHistory(id: string, data: Partial<History>): Promise
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1875,7 +1875,7 @@ export async function getPayrollById(id: string): Promise<PayrollEntry | null> {
     .from('education_payroll')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
@@ -1894,7 +1894,7 @@ export async function createPayroll(data: Partial<PayrollEntry>): Promise<Payrol
     .from('education_payroll')
     .insert(data)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -1905,7 +1905,7 @@ export async function updatePayroll(id: string, data: Partial<PayrollEntry>): Pr
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }

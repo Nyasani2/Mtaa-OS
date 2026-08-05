@@ -76,7 +76,7 @@ export async function getBiometricStatus(userId: string): Promise<{
     .from('user_profiles')
     .select('biometric_devices, biometric_enrolled')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   const devices: BiometricDevice[] = data?.biometric_devices || [];
   const deviceId = getDeviceId();
@@ -118,7 +118,7 @@ export async function enrollBiometric(userId: string): Promise<{
       .from('user_profiles')
       .select('biometric_devices')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     const devices: BiometricDevice[] = profile?.biometric_devices || [];
 
@@ -183,7 +183,7 @@ export async function authenticateWithBiometric(): Promise<{
           .from('user_profiles')
           .select('biometric_devices')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         const devices = (profile?.biometric_devices || []).map((d: BiometricDevice) =>
           d.deviceId === deviceId ? { ...d, lastUsed: new Date().toISOString() } : d
@@ -247,7 +247,7 @@ export async function removeThisDevice(userId: string): Promise<{
       .from('user_profiles')
       .select('biometric_devices')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     const devices = (profile?.biometric_devices || []).filter(
       (d: BiometricDevice) => d.deviceId !== deviceId

@@ -10,7 +10,7 @@ export async function updateFraudScore(
       .from("hookup_fraud_scores")
       .select("*")
       .eq("user_id", user_id)
-      .single();
+      .maybeSingle();
 
   const current =
     data?.fraud_risk_score || 0;

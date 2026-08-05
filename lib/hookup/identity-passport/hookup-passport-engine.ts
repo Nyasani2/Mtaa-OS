@@ -17,7 +17,7 @@ export async function createPassport(
         global_reputation_score: 50,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -34,7 +34,7 @@ export async function updateReputation(
       .from("hookup_identity_passports")
       .select("*")
       .eq("passport_id", passport_id)
-      .single();
+      .maybeSingle();
 
   const newScore =
     Math.max(

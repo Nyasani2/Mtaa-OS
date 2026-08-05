@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/types/supabase';
+import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
 type TS=Database['public']['Tables']['education_teacher_services']['Row'];type TB=Database['public']['Tables']['education_teacher_bookings']['Row'];type CL=Database['public']['Tables']['education_content_library']['Row'];type LS=Database['public']['Tables']['education_live_streams']['Row'];
 export async function getTeacherServices(teacherId?:string){let q=supabase.from('education_teacher_services').select('*,teacher:education_teachers(user:user_profiles(full_name))').order('created_at',{ascending:false});if(teacherId)q=q.eq('teacher_id',teacherId);const{d,e}=await q;if(e)throw e;return d||[];}
 export async function createService(s:Omit<TS,'id'|'created_at'|'updated_at'>){const{d,e}=await supabase.from('education_teacher_services').insert(s).select().single();if(e)throw e;return d;}

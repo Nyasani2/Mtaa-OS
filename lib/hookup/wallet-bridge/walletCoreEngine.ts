@@ -22,7 +22,7 @@ export class WalletCoreEngine {
       .from('wallet_accounts')
       .select('balance, currency')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     if (error || !data) {
       return { balance: 0, currency: "KES" };
     }

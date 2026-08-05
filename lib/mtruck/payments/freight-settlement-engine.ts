@@ -37,7 +37,7 @@ export async function settleFreightPayment(
       .from("mtruck_shipments")
       .select("*")
       .eq("id", shipmentId)
-      .single();
+      .maybeSingle();
 
   const settlement = {
     shipment_id: shipmentId,

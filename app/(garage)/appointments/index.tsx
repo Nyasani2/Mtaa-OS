@@ -147,7 +147,7 @@ export default function AppointmentsScreen() {
 
       const invoice = {
         appointment_id: appt.id,
-        garage_id: appt.garage_id,
+        garage_id: appt.myGarage_id,
         customer_name: appt.customer_name,
         customer_phone: appt.customer_phone,
         vehicle_plate: appt.vehicle_plate,

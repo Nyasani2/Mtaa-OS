@@ -20,7 +20,7 @@ export async function createEvent(
         safety_level: data.safety_level,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

@@ -36,7 +36,7 @@ export async function createFreightListing(
       status: "OPEN",
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

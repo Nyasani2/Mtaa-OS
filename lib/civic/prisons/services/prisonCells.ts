@@ -9,19 +9,19 @@ export class PrisonCellsService {
   }
 
   static async getCellById(id: string): Promise<PrisonCell | null> {
-    const { data, error } = await supabase.from('prison_cells').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('prison_cells').select('*').eq('id', id).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
 
   static async createCell(data: Partial<PrisonCell>): Promise<PrisonCell> {
-    const { data: result, error } = await supabase.from('prison_cells').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_cells').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }
 
   static async updateCell(id: string, data: Partial<PrisonCell>): Promise<PrisonCell> {
-    const { data: result, error } = await supabase.from('prison_cells').update(data).eq('id', id).select().single();
+    const { data: result, error } = await supabase.from('prison_cells').update(data).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return result;
   }

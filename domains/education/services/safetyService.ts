@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/types/supabase';
+import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
 type GF=Database['public']['Tables']['child_geofences']['Row'];type SOS=Database['public']['Tables']['child_sos_logs']['Row'];type EC=Database['public']['Tables']['child_emergency_contacts']['Row'];type INC=Database['public']['Tables']['child_safety_incidents']['Row'];
 export async function getGeofences(instId:string,childId?:string){let q=supabase.from('child_geofences').select('*').eq('institution_id',instId).eq('is_active',true);if(childId)q=q.eq('child_id',childId);const{d,e}=await q;if(e)throw e;return d||[];}
 export async function createGeofence(g:Omit<GF,'id'|'created_at'|'updated_at'>){const{d,e}=await supabase.from('child_geofences').insert(g).select().single();if(e)throw e;return d;}

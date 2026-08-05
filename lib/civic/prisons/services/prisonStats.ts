@@ -3,7 +3,7 @@ import { PrisonStats } from '../types';
 
 export class PrisonStatsService {
   static async getStats(facilityId: string): Promise<PrisonStats | null> {
-    const { data, error } = await supabase.from('prison_stats').select('*').eq('facility_id', facilityId).single();
+    const { data, error } = await supabase.from('prison_stats').select('*').eq('facility_id', facilityId).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -37,7 +37,7 @@ export class PrisonStatsService {
       updated_at: new Date().toISOString()
     };
 
-    const { data: result, error } = await supabase.from('prison_stats').upsert(statsData, { onConflict: 'facility_id' }).select().single();
+    const { data: result, error } = await supabase.from('prison_stats').upsert(statsData, { onConflict: 'facility_id' }).select().maybeSingle();
     if (error) throw error;
     return result;
   }

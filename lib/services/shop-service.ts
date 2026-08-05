@@ -9,7 +9,7 @@ export async function getShopItems(shopId?: string) {
 }
 
 export async function createShopOrder(order: any) {
-  const { data, error } = await supabase.from('shop_orders').insert(order).select().single();
+  const { data, error } = await supabase.from('shop_orders').insert(order).select().maybeSingle();
   if (error) throw error;
   return data;
 }

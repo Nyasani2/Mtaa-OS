@@ -43,7 +43,7 @@ export default function AppointmentDetailScreen() {
       if (error || data?.error) {
         Alert.alert('Payment Failed', data?.error || error?.message || 'Unknown error');
       } else {
-        Alert.alert('Payment Collected', `Garage received KES ${data.garage_amount.toLocaleString()}`);
+        Alert.alert('Payment Collected', `Garage received KES ${data.myGarage_amount.toLocaleString()}`);
         fetchData();
       }
     } catch (e: any) {
@@ -149,7 +149,7 @@ export default function AppointmentDetailScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading work order...</Text>
+        <Text style={styles.isLoadingText}>Loading work order...</Text>
       </View>
     );
   }

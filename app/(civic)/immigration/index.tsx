@@ -5,8 +5,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useImmigrationStats } from '@/lib/domains/civic/immigration/hooks/useImmigrationStats';
 import { useImmigrationAlerts } from '@/lib/domains/civic/immigration/hooks/useImmigrationAlerts';
-import { ImmigrationNav } from '@/lib/domains/civic/immigration/components/ImmigrationNav';
-import { StatsCard } from '@/lib/domains/civic/immigration/components/StatsCard';
+import ImmigrationNav from '@/lib/domains/civic/immigration/components/ImmigrationNav';
+import StatsCard from '@/lib/domains/civic/immigration/components/StatsCard';
 
 export default function ImmigrationScreen() {
   const router = useRouter();

@@ -7,7 +7,7 @@ import { useVehicles } from '@/lib/civic/transport/civic_modules_v3/transport_nt
 import { useLicenses } from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/hooks/useLicenses';
 import { useOffences } from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/hooks/useOffences';
 import { TransportNav } from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/components/TransportNav';
-import { VehicleCard } from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/components/VehicleCard';
+import VehicleCard from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/components/VehicleCard';
 import { LicenseCard } from '@/lib/civic/transport/civic_modules_v3/transport_ntsa/components/LicenseCard';
 
 export default function TransportScreen() {

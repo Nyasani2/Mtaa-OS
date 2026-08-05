@@ -82,7 +82,7 @@ export const shipperService = {
         status: 'pending',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(`Create request failed: ${error.message}`);
     return mapRequest(req);
@@ -104,7 +104,7 @@ export const shipperService = {
       .from(TABLE_REQUESTS)
       .select(`*, mtruck_haul_quotes(*)`)
       .eq('id', requestId)
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(`Fetch request failed: ${error.message}`);
     return mapRequest(data);
@@ -133,7 +133,7 @@ export const shipperService = {
       .from(TABLE_REQUESTS)
       .select(`*, mtruck_haul_quotes!inner(*)`)
       .eq('id', requestId)
-      .single();
+      .maybeSingle();
 
     const acceptedQuote = req.mtruck_haul_quotes.find((q: any) => q.id === quoteId);
 
@@ -158,7 +158,7 @@ export const shipperService = {
         status: 'accepted',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (je) throw new Error(`Create job failed: ${je.message}`);
     return job;
@@ -217,7 +217,7 @@ export const shipperService = {
         status: 'pending',
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(`Submit quote failed: ${error.message}`);
     return mapQuote(quote);

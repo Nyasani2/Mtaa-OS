@@ -121,7 +121,7 @@ export async function verifyPin(pin: string): Promise<boolean> {
         .from('user_profiles')
         .select('pin_hash')
         .eq('user_id', user.user.id)
-        .single();
+        .maybeSingle();
       if (profile?.pin_hash) {
         storedHash = profile.pin_hash;
         await AsyncStorage.setItem(PIN_HASH_KEY, storedHash);

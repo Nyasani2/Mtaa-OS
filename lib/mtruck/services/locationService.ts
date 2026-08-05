@@ -40,7 +40,7 @@ export async function getTruckLatestLocation(truckId: string): Promise<MtruckLoc
     .eq("truck_id", truckId)
     .order("recorded_at", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -83,7 +83,7 @@ export async function pushGpsStream(payload: {
     .from(TABLE_GPS_STREAM)
     .insert({ ...payload, ignition_status: payload.ignition_status ?? false })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Push GPS stream failed: ${error.message}`);
   return data;
 }

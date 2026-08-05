@@ -56,7 +56,7 @@ class HealthService {
       .from('health_wallet')
       .select('balance')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     if (error) {
       if (error.code === 'PGRST116') return 0;
       throw error;

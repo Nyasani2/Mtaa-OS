@@ -31,7 +31,7 @@ export async function createCargoSecurityAlert(
       metadata: alert.metadata || {},
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

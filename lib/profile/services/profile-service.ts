@@ -6,7 +6,7 @@ export class ProfileService {
       .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
     return { data, error };
   }
 
@@ -16,7 +16,7 @@ export class ProfileService {
       .update(updates)
       .eq('user_id', userId)
       .select()
-      .single();
+      .maybeSingle();
     return { data, error };
   }
 
@@ -26,7 +26,7 @@ export class ProfileService {
       .update({ read: true })
       .eq('id', notificationId)
       .select()
-      .single();
+      .maybeSingle();
     return { data, error };
   }
 

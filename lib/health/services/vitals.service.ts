@@ -19,7 +19,7 @@ export async function getVitalsRecords(filter: string, range: { from: number; to
 }
 
 export async function createVitalsRecord(payload: any) {
-  const { data, error } = await supabase.from("health_vitals").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_vitals").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

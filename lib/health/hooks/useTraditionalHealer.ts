@@ -13,7 +13,7 @@ export function useTraditionalHealer() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).single();
+      const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).maybeSingle();
       setProfile(healer);
       if (healer) {
         const { data: rem } = await supabase.from('health_herbal_remedies').select('*').eq('healer_id', healer.id).order('created_at', { ascending: false });

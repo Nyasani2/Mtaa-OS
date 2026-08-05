@@ -61,7 +61,7 @@ class CurrentUserSession {
         .from("profiles")
         .select("*")
         .eq("id", data.user.id)
-        .single();
+        .maybeSingle();
 
       const user: IdentityUser = {
         id: data.user.id,

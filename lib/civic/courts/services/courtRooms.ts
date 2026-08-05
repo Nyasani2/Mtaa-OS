@@ -11,7 +11,7 @@ export async function getCourtRooms(courtId?: string): Promise<CourtRoom[]> {
 }
 
 export async function getCourtRoomById(id: string): Promise<CourtRoom | null> {
-  const { data, error } = await supabase.from('court_rooms').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('court_rooms').select('*').eq('id', id).maybeSingle();
   if (error) return null;
   return data;
 }

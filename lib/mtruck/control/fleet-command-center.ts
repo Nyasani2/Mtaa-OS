@@ -30,7 +30,7 @@ export async function issueFleetCommand(
       issued_by: command.issued_by,
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
 

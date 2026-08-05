@@ -443,7 +443,7 @@ export default function FleetScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading fleet data...</Text>
+        <Text style={styles.isLoadingText}>Loading fleet data...</Text>
       </View>
     );
   }

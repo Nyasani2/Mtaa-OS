@@ -9,7 +9,7 @@ export async function getTrustScore(
       .from("hookup_trust_scores")
       .select("*")
       .eq("user_id", user_id)
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -42,7 +42,7 @@ export async function updateTrustScore(
       })
       .eq("user_id", user_id)
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

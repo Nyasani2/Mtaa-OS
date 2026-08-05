@@ -100,7 +100,7 @@ export function useGovernment(userId: string | undefined) {
       const { data, error: err } = await supabase.from("health_outbreaks").insert({
         title: payload.title, description: payload.description, severity: payload.severity,
         location: payload.location, cases: 0, status: "active", created_by: userId,
-      }).select("id").single();
+      }).select("id").maybeSingle();
       if (err) throw err;
       await fetchAll();
       return { success: true, id: data.id };

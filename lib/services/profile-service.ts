@@ -28,7 +28,7 @@ export async function getProfile(userId: string): Promise<{ data?: ProfileData; 
     .from('user_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
   if (error) return { error: error.message };
   return { data };
 }

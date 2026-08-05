@@ -168,7 +168,7 @@ export async function getJobs(): Promise<Job[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getJobById(id: string): Promise<Job | null> {
-  const { data, error } = await supabase.from('jobs').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('jobs').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getJobsByEmployer(employerId: string): Promise<Job[]> {
@@ -184,11 +184,11 @@ export async function searchJobs(query: string): Promise<Job[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJob(data: Partial<Job>): Promise<Job | null> {
-  const { data: result, error } = await supabase.from('jobs').insert(data).select().single();
+  const { data: result, error } = await supabase.from('jobs').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJob(id: string, data: Partial<Job>): Promise<Job | null> {
-  const { data: result, error } = await supabase.from('jobs').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('jobs').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJob(id: string): Promise<boolean> {
@@ -202,7 +202,7 @@ export async function getApplications(): Promise<JobApplication[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getApplicationById(id: string): Promise<JobApplication | null> {
-  const { data, error } = await supabase.from('job_applications').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('job_applications').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getApplicationsForJob(jobId: string): Promise<JobApplication[]> {
@@ -214,11 +214,11 @@ export async function getApplicationsByApplicant(applicantId: string): Promise<J
   if (error) return handleError(error, []); return data || [];
 }
 export async function applyToJob(data: Partial<JobApplication>): Promise<JobApplication | null> {
-  const { data: result, error } = await supabase.from('job_applications').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_applications').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateApplication(id: string, data: Partial<JobApplication>): Promise<JobApplication | null> {
-  const { data: result, error } = await supabase.from('job_applications').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_applications').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteApplication(id: string): Promise<boolean> {
@@ -232,11 +232,11 @@ export async function getWorkProfiles(): Promise<WorkProfile[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getWorkProfileById(id: string): Promise<WorkProfile | null> {
-  const { data, error } = await supabase.from('work_profiles').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('work_profiles').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getWorkProfileByUserId(userId: string): Promise<WorkProfile | null> {
-  const { data, error } = await supabase.from('work_profiles').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('work_profiles').select('*').eq('user_id', userId).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function upsertWorkProfile(data: Partial<WorkProfile>): Promise<WorkProfile | null> {
@@ -244,11 +244,11 @@ export async function upsertWorkProfile(data: Partial<WorkProfile>): Promise<Wor
     const existing = await getWorkProfileByUserId(data.user_id);
     if (existing) return updateWorkProfile(existing.id, data);
   }
-  const { data: result, error } = await supabase.from('work_profiles').insert(data).select().single();
+  const { data: result, error } = await supabase.from('work_profiles').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateWorkProfile(id: string, data: Partial<WorkProfile>): Promise<WorkProfile | null> {
-  const { data: result, error } = await supabase.from('work_profiles').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('work_profiles').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteWorkProfile(id: string): Promise<boolean> {
@@ -262,11 +262,11 @@ export async function getWorkExperiences(profileId: string): Promise<WorkExperie
   if (error) return handleError(error, []); return data || [];
 }
 export async function createWorkExperience(data: Partial<WorkExperience>): Promise<WorkExperience | null> {
-  const { data: result, error } = await supabase.from('work_experiences').insert(data).select().single();
+  const { data: result, error } = await supabase.from('work_experiences').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateWorkExperience(id: string, data: Partial<WorkExperience>): Promise<WorkExperience | null> {
-  const { data: result, error } = await supabase.from('work_experiences').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('work_experiences').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteWorkExperience(id: string): Promise<boolean> {
@@ -280,11 +280,11 @@ export async function getEducations(profileId: string): Promise<Education[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createEducation(data: Partial<Education>): Promise<Education | null> {
-  const { data: result, error } = await supabase.from('education_entries').insert(data).select().single();
+  const { data: result, error } = await supabase.from('education_entries').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateEducation(id: string, data: Partial<Education>): Promise<Education | null> {
-  const { data: result, error } = await supabase.from('education_entries').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('education_entries').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteEducation(id: string): Promise<boolean> {
@@ -298,11 +298,11 @@ export async function getSkills(profileId: string): Promise<Skill[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createSkill(data: Partial<Skill>): Promise<Skill | null> {
-  const { data: result, error } = await supabase.from('skills').insert(data).select().single();
+  const { data: result, error } = await supabase.from('skills').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateSkill(id: string, data: Partial<Skill>): Promise<Skill | null> {
-  const { data: result, error } = await supabase.from('skills').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('skills').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteSkill(id: string): Promise<boolean> {
@@ -316,11 +316,11 @@ export async function getCertifications(profileId: string): Promise<Certificatio
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCertification(data: Partial<Certification>): Promise<Certification | null> {
-  const { data: result, error } = await supabase.from('certifications').insert(data).select().single();
+  const { data: result, error } = await supabase.from('certifications').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCertification(id: string, data: Partial<Certification>): Promise<Certification | null> {
-  const { data: result, error } = await supabase.from('certifications').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('certifications').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCertification(id: string): Promise<boolean> {
@@ -334,11 +334,11 @@ export async function getPortfolioItems(profileId: string): Promise<PortfolioIte
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPortfolioItem(data: Partial<PortfolioItem>): Promise<PortfolioItem | null> {
-  const { data: result, error } = await supabase.from('portfolio_items').insert(data).select().single();
+  const { data: result, error } = await supabase.from('portfolio_items').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePortfolioItem(id: string, data: Partial<PortfolioItem>): Promise<PortfolioItem | null> {
-  const { data: result, error } = await supabase.from('portfolio_items').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('portfolio_items').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePortfolioItem(id: string): Promise<boolean> {
@@ -352,19 +352,19 @@ export async function getEmployerProfiles(): Promise<EmployerProfile[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getEmployerProfileById(id: string): Promise<EmployerProfile | null> {
-  const { data, error } = await supabase.from('employer_profiles').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('employer_profiles').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getEmployerProfileByUserId(userId: string): Promise<EmployerProfile | null> {
-  const { data, error } = await supabase.from('employer_profiles').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('employer_profiles').select('*').eq('user_id', userId).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createEmployerProfile(data: Partial<EmployerProfile>): Promise<EmployerProfile | null> {
-  const { data: result, error } = await supabase.from('employer_profiles').insert(data).select().single();
+  const { data: result, error } = await supabase.from('employer_profiles').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateEmployerProfile(id: string, data: Partial<EmployerProfile>): Promise<EmployerProfile | null> {
-  const { data: result, error } = await supabase.from('employer_profiles').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('employer_profiles').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteEmployerProfile(id: string): Promise<boolean> {
@@ -378,7 +378,7 @@ export async function getInterviews(): Promise<Interview[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getInterviewById(id: string): Promise<Interview | null> {
-  const { data, error } = await supabase.from('interviews').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('interviews').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getInterviewsByApplication(applicationId: string): Promise<Interview[]> {
@@ -386,11 +386,11 @@ export async function getInterviewsByApplication(applicationId: string): Promise
   if (error) return handleError(error, []); return data || [];
 }
 export async function createInterview(data: Partial<Interview>): Promise<Interview | null> {
-  const { data: result, error } = await supabase.from('interviews').insert(data).select().single();
+  const { data: result, error } = await supabase.from('interviews').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateInterview(id: string, data: Partial<Interview>): Promise<Interview | null> {
-  const { data: result, error } = await supabase.from('interviews').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('interviews').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteInterview(id: string): Promise<boolean> {
@@ -404,11 +404,11 @@ export async function getJobAlerts(userId: string): Promise<JobAlert[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobAlert(data: Partial<JobAlert>): Promise<JobAlert | null> {
-  const { data: result, error } = await supabase.from('job_alerts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_alerts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobAlert(id: string, data: Partial<JobAlert>): Promise<JobAlert | null> {
-  const { data: result, error } = await supabase.from('job_alerts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_alerts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobAlert(id: string): Promise<boolean> {
@@ -422,7 +422,7 @@ export async function getSavedJobs(userId: string): Promise<SavedJob[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function saveJob(data: Partial<SavedJob>): Promise<SavedJob | null> {
-  const { data: result, error } = await supabase.from('saved_jobs').insert(data).select().single();
+  const { data: result, error } = await supabase.from('saved_jobs').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function unsaveJob(id: string): Promise<boolean> {
@@ -436,15 +436,15 @@ export async function getJobCategories(): Promise<JobCategory[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getJobCategoryById(id: string): Promise<JobCategory | null> {
-  const { data, error } = await supabase.from('job_categories').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('job_categories').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createJobCategory(data: Partial<JobCategory>): Promise<JobCategory | null> {
-  const { data: result, error } = await supabase.from('job_categories').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_categories').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobCategory(id: string, data: Partial<JobCategory>): Promise<JobCategory | null> {
-  const { data: result, error } = await supabase.from('job_categories').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_categories').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobCategory(id: string): Promise<boolean> {
@@ -458,11 +458,11 @@ export async function getJobReviews(): Promise<JobReview[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobReview(data: Partial<JobReview>): Promise<JobReview | null> {
-  const { data: result, error } = await supabase.from('job_reviews').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_reviews').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobReview(id: string, data: Partial<JobReview>): Promise<JobReview | null> {
-  const { data: result, error } = await supabase.from('job_reviews').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_reviews').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobReview(id: string): Promise<boolean> {
@@ -476,7 +476,7 @@ export async function getContracts(): Promise<Contract[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getContractById(id: string): Promise<Contract | null> {
-  const { data, error } = await supabase.from('contracts').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('contracts').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function getContractsByEmployee(employeeId: string): Promise<Contract[]> {
@@ -488,11 +488,11 @@ export async function getContractsByEmployer(employerId: string): Promise<Contra
   if (error) return handleError(error, []); return data || [];
 }
 export async function createContract(data: Partial<Contract>): Promise<Contract | null> {
-  const { data: result, error } = await supabase.from('contracts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('contracts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateContract(id: string, data: Partial<Contract>): Promise<Contract | null> {
-  const { data: result, error } = await supabase.from('contracts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('contracts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteContract(id: string): Promise<boolean> {
@@ -506,11 +506,11 @@ export async function getTimesheets(contractId: string): Promise<Timesheet[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createTimesheet(data: Partial<Timesheet>): Promise<Timesheet | null> {
-  const { data: result, error } = await supabase.from('timesheets').insert(data).select().single();
+  const { data: result, error } = await supabase.from('timesheets').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateTimesheet(id: string, data: Partial<Timesheet>): Promise<Timesheet | null> {
-  const { data: result, error } = await supabase.from('timesheets').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('timesheets').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteTimesheet(id: string): Promise<boolean> {
@@ -524,11 +524,11 @@ export async function getPayrolls(contractId: string): Promise<Payroll[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createPayroll(data: Partial<Payroll>): Promise<Payroll | null> {
-  const { data: result, error } = await supabase.from('payrolls').insert(data).select().single();
+  const { data: result, error } = await supabase.from('payrolls').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updatePayroll(id: string, data: Partial<Payroll>): Promise<Payroll | null> {
-  const { data: result, error } = await supabase.from('payrolls').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('payrolls').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deletePayroll(id: string): Promise<boolean> {
@@ -542,7 +542,7 @@ export async function getJobMessages(userId: string): Promise<JobMessage[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobMessage(data: Partial<JobMessage>): Promise<JobMessage | null> {
-  const { data: result, error } = await supabase.from('job_messages').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_messages').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobMessage(id: string): Promise<boolean> {
@@ -556,11 +556,11 @@ export async function getJobReferrals(userId: string): Promise<JobReferral[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobReferral(data: Partial<JobReferral>): Promise<JobReferral | null> {
-  const { data: result, error } = await supabase.from('job_referrals').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_referrals').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobReferral(id: string, data: Partial<JobReferral>): Promise<JobReferral | null> {
-  const { data: result, error } = await supabase.from('job_referrals').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_referrals').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobReferral(id: string): Promise<boolean> {
@@ -574,11 +574,11 @@ export async function getJobReports(): Promise<JobReport[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobReport(data: Partial<JobReport>): Promise<JobReport | null> {
-  const { data: result, error } = await supabase.from('job_reports').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_reports').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobReport(id: string, data: Partial<JobReport>): Promise<JobReport | null> {
-  const { data: result, error } = await supabase.from('job_reports').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_reports').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobReport(id: string): Promise<boolean> {
@@ -592,7 +592,7 @@ export async function getJobAnalytics(jobId: string): Promise<JobAnalytics[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobAnalytics(data: Partial<JobAnalytics>): Promise<JobAnalytics | null> {
-  const { data: result, error } = await supabase.from('job_analytics').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_analytics').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -602,11 +602,11 @@ export async function getCompanyReviews(companyId: string): Promise<CompanyRevie
   if (error) return handleError(error, []); return data || [];
 }
 export async function createCompanyReview(data: Partial<CompanyReview>): Promise<CompanyReview | null> {
-  const { data: result, error } = await supabase.from('company_reviews').insert(data).select().single();
+  const { data: result, error } = await supabase.from('company_reviews').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateCompanyReview(id: string, data: Partial<CompanyReview>): Promise<CompanyReview | null> {
-  const { data: result, error } = await supabase.from('company_reviews').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('company_reviews').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteCompanyReview(id: string): Promise<boolean> {
@@ -620,7 +620,7 @@ export async function getJobBenefits(jobId: string): Promise<JobBenefit[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobBenefit(data: Partial<JobBenefit>): Promise<JobBenefit | null> {
-  const { data: result, error } = await supabase.from('job_benefits').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_benefits').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobBenefit(id: string): Promise<boolean> {
@@ -634,7 +634,7 @@ export async function getJobRequirements(jobId: string): Promise<JobRequirement[
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobRequirement(data: Partial<JobRequirement>): Promise<JobRequirement | null> {
-  const { data: result, error } = await supabase.from('job_requirements').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_requirements').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobRequirement(id: string): Promise<boolean> {
@@ -648,7 +648,7 @@ export async function getJobQuestions(jobId: string): Promise<JobQuestion[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobQuestion(data: Partial<JobQuestion>): Promise<JobQuestion | null> {
-  const { data: result, error } = await supabase.from('job_questions').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_questions').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobQuestion(id: string): Promise<boolean> {
@@ -662,7 +662,7 @@ export async function getJobAnswers(questionId: string): Promise<JobAnswer[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobAnswer(data: Partial<JobAnswer>): Promise<JobAnswer | null> {
-  const { data: result, error } = await supabase.from('job_answers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_answers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 
@@ -672,15 +672,15 @@ export async function getJobOffers(): Promise<JobOffer[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function getJobOfferById(id: string): Promise<JobOffer | null> {
-  const { data, error } = await supabase.from('job_offers').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('job_offers').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null); return data;
 }
 export async function createJobOffer(data: Partial<JobOffer>): Promise<JobOffer | null> {
-  const { data: result, error } = await supabase.from('job_offers').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_offers').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobOffer(id: string, data: Partial<JobOffer>): Promise<JobOffer | null> {
-  const { data: result, error } = await supabase.from('job_offers').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_offers').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobOffer(id: string): Promise<boolean> {
@@ -694,7 +694,7 @@ export async function getJobBookmarks(userId: string): Promise<JobBookmark[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobBookmark(data: Partial<JobBookmark>): Promise<JobBookmark | null> {
-  const { data: result, error } = await supabase.from('job_bookmarks').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_bookmarks').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobBookmark(id: string): Promise<boolean> {
@@ -708,7 +708,7 @@ export async function getJobSearches(userId: string): Promise<JobSearch[]> {
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobSearch(data: Partial<JobSearch>): Promise<JobSearch | null> {
-  const { data: result, error } = await supabase.from('job_searches').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_searches').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobSearch(id: string): Promise<boolean> {
@@ -722,11 +722,11 @@ export async function getJobNotifications(userId: string): Promise<JobNotificati
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobNotification(data: Partial<JobNotification>): Promise<JobNotification | null> {
-  const { data: result, error } = await supabase.from('job_notifications').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_notifications').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function updateJobNotification(id: string, data: Partial<JobNotification>): Promise<JobNotification | null> {
-  const { data: result, error } = await supabase.from('job_notifications').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('job_notifications').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobNotification(id: string): Promise<boolean> {
@@ -740,7 +740,7 @@ export async function getJobSkillMatches(jobId: string): Promise<JobSkillMatch[]
   if (error) return handleError(error, []); return data || [];
 }
 export async function createJobSkillMatch(data: Partial<JobSkillMatch>): Promise<JobSkillMatch | null> {
-  const { data: result, error } = await supabase.from('job_skill_matches').insert(data).select().single();
+  const { data: result, error } = await supabase.from('job_skill_matches').insert(data).select().maybeSingle();
   if (error) return handleError(error, null); return result;
 }
 export async function deleteJobSkillMatch(id: string): Promise<boolean> {

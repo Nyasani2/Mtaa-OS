@@ -15,7 +15,7 @@ export async function getChildrenRecords(filter: string, range: { from: number; 
 }
 
 export async function createChildRecord(payload: any) {
-  const { data, error } = await supabase.from("health_patients").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_patients").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

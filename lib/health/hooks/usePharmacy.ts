@@ -77,7 +77,7 @@ export function usePharmacy(facilityId: string | null) {
       payment_method: saleData.payment_method,
       status: 'completed',
       created_at: new Date().toISOString(),
-    }).select().single();
+    }).select().maybeSingle();
     if (saleError) throw saleError;
 
     // Insert sale items and update inventory
@@ -98,9 +98,9 @@ export function usePharmacy(facilityId: string | null) {
     }).eq('id', prescriptionId);
     if (error) throw error;
     // Decrement inventory for each item
-    const { data: pres } = await supabase.from('health_prescriptions').select('items:health_prescription_items(*)').eq('id', prescriptionId).single();
+    const { data: pres } = await supabase.from('health_prescriptions').select('items:health_prescription_items(*)').eq('id', prescriptionId).maybeSingle();
     for (const item of pres?.items || []) {
-      const { data: inv } = await supabase.from('health_pharmacy_inventory').select('id, quantity').eq('facility_id', facilityId).ilike('name', item.medication_name).single();
+      const { data: inv } = await supabase.from('health_pharmacy_inventory').select('id, quantity').eq('facility_id', facilityId).ilike('name', item.medication_name).maybeSingle();
       if (inv) {
         await supabase.from('health_pharmacy_inventory').update({ quantity: Math.max(0, inv.quantity - item.quantity) }).eq('id', inv.id);
       }
@@ -114,7 +114,7 @@ export function usePharmacy(facilityId: string | null) {
       .from('health_pharmacy_inventory')
       .select('*')
       .or(`and(drug_a.ilike.${drugA},drug_b.ilike.${drugB}),and(drug_a.ilike.${drugB},drug_b.ilike.${drugA})`)
-      .single();
+      .maybeSingle();
     if (data) return data;
     // Fallback: check if both exist in known interaction pairs
     return { severity: 'none', description: `No known interaction between ${drugA} and ${drugB}.`, recommendation: 'Continue monitoring patient.' };

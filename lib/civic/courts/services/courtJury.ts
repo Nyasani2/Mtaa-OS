@@ -17,7 +17,7 @@ export class CourtJuryService {
   }
 
   static async assignJuror(data: Partial<CourtJuryAssignment>): Promise<CourtJuryAssignment> {
-    const { data: result, error } = await supabase.from('court_jury_assignments').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_jury_assignments').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

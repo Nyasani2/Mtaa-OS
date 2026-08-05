@@ -18,7 +18,7 @@ export async function activateBoost(
         cost,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

@@ -11,7 +11,7 @@ export class PrisonProcurementService {
   }
 
   static async createProcurement(data: Partial<PrisonProcurement>): Promise<PrisonProcurement> {
-    const { data: result, error } = await supabase.from('prison_procurements').insert(data).select().single();
+    const { data: result, error } = await supabase.from('prison_procurements').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

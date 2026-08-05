@@ -14,13 +14,13 @@ export async function getDispatchDetail(dispatchId: string) {
     .from("health_ambulance_dispatches")
     .select("*, patient:patient_id(full_name)")
     .eq("id", dispatchId)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
 
 export async function createDispatch(payload: any) {
-  const { data, error } = await supabase.from("health_ambulance_dispatches").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_ambulance_dispatches").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -32,7 +32,7 @@ export async function handoverDispatch(payload: any) {
     condition_notes: payload.condition_notes,
     vitals_snapshot: payload.vitals_snapshot,
     handed_over_at: payload.handed_over_at,
-  }).eq("id", payload.dispatch_id).select().single();
+  }).eq("id", payload.dispatch_id).select().maybeSingle();
   if (error) throw error;
   return data;
 }

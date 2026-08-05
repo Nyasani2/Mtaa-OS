@@ -48,7 +48,7 @@ export function useCashier(facilityId: string | null) {
       .from('health_billing')
       .insert({ ...payload, facility_id: facilityId, status: 'pending' })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   };

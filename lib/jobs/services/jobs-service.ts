@@ -17,7 +17,7 @@ export async function getMyApplications(userId: string): Promise<JobApplication[
 }
 
 export async function getWorkProfile(userId: string): Promise<WorkProfile | null> {
-  const { data, error } = await supabase.from("work_profiles").select("*").eq("user_id", userId).single();
+  const { data, error } = await supabase.from("work_profiles").select("*").eq("user_id", userId).maybeSingle();
   if (error) throw error;
   return data;
 }

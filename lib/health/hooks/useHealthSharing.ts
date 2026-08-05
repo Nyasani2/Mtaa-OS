@@ -52,7 +52,7 @@ export function useHealthSharing(patientId?: string) {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       await load();
       return mapDb(data);

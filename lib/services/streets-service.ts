@@ -63,7 +63,7 @@ export async function createPost(input: CreatePostInput): Promise<StreetPost | n
         is_public: input.is_public !== false,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[streets-service] createPost error:', error);

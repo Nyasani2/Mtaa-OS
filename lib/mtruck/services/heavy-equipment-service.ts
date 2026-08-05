@@ -33,7 +33,7 @@ export const heavyEquipmentService = {
       .from(TABLE_EQUIPMENT)
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(`Fetch equipment failed: ${error.message}`);
     return mapEquipment(data);
@@ -64,7 +64,7 @@ export const heavyEquipmentService = {
       .from(TABLE_EQUIPMENT)
       .select('rate_per_day, rate_per_hour, operator_required')
       .eq('id', data.equipmentId)
-      .single();
+      .maybeSingle();
 
     if (eqErr) throw new Error(`Fetch equipment rate failed: ${eqErr.message}`);
     if (!eq) throw new Error('Equipment not found');
@@ -89,7 +89,7 @@ export const heavyEquipmentService = {
         delivery_location: data.deliveryLocation,
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw new Error(`Book equipment failed: ${error.message}`);
     return mapBooking(booking);

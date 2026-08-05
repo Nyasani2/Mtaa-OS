@@ -12,13 +12,13 @@ export class NTSAService {
   }
 
   async getVehicleById(id: string) {
-    const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('ntsa_vehicles').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as VehicleRegistration;
   }
 
   async registerVehicle(vehicle: Omit<VehicleRegistration, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase.from('ntsa_vehicles').insert(vehicle).select().single();
+    const { data, error } = await supabase.from('ntsa_vehicles').insert(vehicle).select().maybeSingle();
     if (error) throw error;
     return data as VehicleRegistration;
   }
@@ -45,7 +45,7 @@ export class NTSAService {
     const { data, error } = await supabase.from('ntsa_inspections').insert({
       vehicle_id: vehicleId, inspector_id: inspectorId, inspection_date: date,
       status: 'pending', created_at: new Date().toISOString(),
-    }).select().single();
+    }).select().maybeSingle();
     if (error) throw error;
     return data as InspectionRecord;
   }
@@ -53,7 +53,7 @@ export class NTSAService {
   async completeInspection(inspectionId: string, findings: string, status: InspectionRecord['status'], recommendations?: string) {
     const { data, error } = await supabase.from('ntsa_inspections')
       .update({ findings, status, recommendations, expiry_date: status === 'passed' ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : undefined })
-      .eq('id', inspectionId).select().single();
+      .eq('id', inspectionId).select().maybeSingle();
     if (error) throw error;
     return data as InspectionRecord;
   }
@@ -79,7 +79,7 @@ export class NTSAService {
   async payFine(offenceId: string, paymentRef: string) {
     const { data, error } = await supabase.from('ntsa_offences')
       .update({ status: 'paid', paid_at: new Date().toISOString(), payment_reference: paymentRef })
-      .eq('id', offenceId).select().single();
+      .eq('id', offenceId).select().maybeSingle();
     if (error) throw error;
     return data as TrafficOffence;
   }

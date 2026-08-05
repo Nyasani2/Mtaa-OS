@@ -17,7 +17,7 @@ export async function createEvent(
         city,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 
@@ -37,7 +37,7 @@ export async function joinEvent(
         user_id,
       })
       .select()
-      .single();
+      .maybeSingle();
 
   if (error) throw error;
 

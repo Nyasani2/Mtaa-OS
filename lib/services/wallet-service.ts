@@ -73,25 +73,25 @@ export async function getWallets(): Promise<Wallet[]> {
 }
 
 export async function getWalletById(id: string): Promise<Wallet | null> {
-  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function getWalletByUserId(userId: string): Promise<Wallet | null> {
-  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('user_id', userId).single();
+  const { data, error } = await supabase.from('wallet_accounts').select('*').eq('user_id', userId).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createWallet(data: Partial<Wallet>): Promise<Wallet | null> {
-  const { data: result, error } = await supabase.from('wallet_accounts').insert(data).select().single();
+  const { data: result, error } = await supabase.from('wallet_accounts').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
 
 export async function updateWallet(id: string, data: Partial<Wallet>): Promise<Wallet | null> {
-  const { data: result, error } = await supabase.from('wallet_accounts').update(data).eq('id', id).select().single();
+  const { data: result, error } = await supabase.from('wallet_accounts').update(data).eq('id', id).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -134,13 +134,13 @@ export async function getWalletTransactions(userId?: string): Promise<WalletTran
 }
 
 export async function getWalletTransactionById(id: string): Promise<WalletTransaction | null> {
-  const { data, error } = await supabase.from('wallet_transactions').select('*').eq('id', id).single();
+  const { data, error } = await supabase.from('wallet_transactions').select('*').eq('id', id).maybeSingle();
   if (error) return handleError(error, null);
   return data;
 }
 
 export async function createWalletTransaction(data: Partial<WalletTransaction>): Promise<WalletTransaction | null> {
-  const { data: result, error } = await supabase.from('wallet_transactions').insert(data).select().single();
+  const { data: result, error } = await supabase.from('wallet_transactions').insert(data).select().maybeSingle();
   if (error) return handleError(error, null);
   return result;
 }
@@ -259,7 +259,7 @@ export async function getWalletTransactionsByWalletId(walletId: string): Promise
   const byWallet = await supabase.from('wallet_transactions').select('*').eq('wallet_id', walletId).order('created_at', { ascending: false });
   if (byWallet.data && byWallet.data.length > 0) return byWallet.data;
   // Try finding user_id from wallets table
-  const { data: wallet } = await supabase.from('wallet_accounts').select('user_id').eq('id', walletId).single();
+  const { data: wallet } = await supabase.from('wallet_accounts').select('user_id').eq('id', walletId).maybeSingle();
   if (wallet?.user_id) {
     const byUser = await supabase.from('wallet_transactions').select('*').eq('user_id', wallet.user_id).order('created_at', { ascending: false });
     return byUser.data || [];

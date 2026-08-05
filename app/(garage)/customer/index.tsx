@@ -198,7 +198,7 @@ export default function CustomerPortalScreen() {
           id: a.id,
           appointment_id: a.id,
           service_type: a.service_type,
-          garage_name: a.garage?.name || 'Unknown',
+          garage_name: a.myGarage?.name || 'Unknown',
           cost: a.final_cost,
           date: a.completed_at || a.created_at,
           mileage: a.mileage_out || a.mileage_in,
@@ -247,7 +247,7 @@ export default function CustomerPortalScreen() {
     }
     try {
       const { error } = await supabase.from('garage_reviews').insert({
-        garage_id: selectedAppointment.garage_id,
+        garage_id: selectedAppointment.myGarage_id,
         customer_id: user?.id,
         rating: reviewForm.rating,
         title: reviewForm.title || null,
@@ -258,7 +258,7 @@ export default function CustomerPortalScreen() {
       if (error) throw error;
 
       // Update garage rating
-      await supabase.rpc('recalculate_garage_rating', { garage_uuid: selectedAppointment.garage_id });
+      await supabase.rpc('recalculate_garage_rating', { garage_uuid: selectedAppointment.myGarage_id });
 
       setShowReviewModal(false);
       setSelectedAppointment(null);
@@ -289,7 +289,7 @@ export default function CustomerPortalScreen() {
   const renderAppointmentCard = ({ item }: { item: CustomerAppointment }) => {
     const status = STATUS_CONFIG[item.status];
     const needsApproval = item.status === 'awaiting_approval';
-    const canReview = item.status === 'completed' && !reviews.find((r) => r.garage_id === item.garage_id);
+    const canReview = item.status === 'completed' && !reviews.find((r) => r.myGarage_id === item.myGarage_id);
 
     return (
       <View style={styles.card}>
@@ -310,11 +310,11 @@ export default function CustomerPortalScreen() {
         <View style={styles.cardBody}>
           <View style={styles.infoRow}>
             <Shield size={14} color="#6b7280" />
-            <Text style={styles.infoText}>{item.garage?.name || 'Unknown Garage'}</Text>
+            <Text style={styles.infoText}>{item.myGarage?.name || 'Unknown Garage'}</Text>
           </View>
           <View style={styles.infoRow}>
             <MapPin size={14} color="#6b7280" />
-            <Text style={styles.infoText}>{item.garage?.address || '—'}</Text>
+            <Text style={styles.infoText}>{item.myGarage?.address || '—'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Wrench size={14} color="#6b7280" />
@@ -352,7 +352,7 @@ export default function CustomerPortalScreen() {
           {item.status === 'ready_for_pickup' && (
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: '#dcfce7' }]}
-              onPress={() => handleCallGarage(item.garage?.phone || '')}
+              onPress={() => handleCallGarage(item.myGarage?.phone || '')}
             >
               <Phone size={16} color="#16a34a" />
               <Text style={[styles.actionBtnText, { color: '#16a34a' }]}>Call Garage</Text>
@@ -385,7 +385,7 @@ export default function CustomerPortalScreen() {
       <View style={styles.cardBody}>
         <View style={styles.infoRow}>
           <Shield size={14} color="#6b7280" />
-          <Text style={styles.infoText}>{item.garage_name}</Text>
+          <Text style={styles.infoText}>{item.myGarage_name}</Text>
         </View>
         <View style={styles.infoRow}>
           <Calendar size={14} color="#6b7280" />
@@ -406,7 +406,7 @@ export default function CustomerPortalScreen() {
       <View style={styles.cardHeader}>
         <View style={styles.cardTitleRow}>
           <Star size={18} color="#f59e0b" fill="#f59e0b" />
-          <Text style={styles.cardTitle}>{item.garage?.name || 'Unknown Garage'}</Text>
+          <Text style={styles.cardTitle}>{item.myGarage?.name || 'Unknown Garage'}</Text>
         </View>
         {renderStars(item.rating, 14)}
       </View>
@@ -425,10 +425,10 @@ export default function CustomerPortalScreen() {
             </View>
           )}
         </View>
-        {item.garage_response && (
-          <View style={styles.garageResponse}>
-            <Text style={styles.garageResponseLabel}>Garage Response:</Text>
-            <Text style={styles.garageResponseText}>{item.garage_response}</Text>
+        {item.myGarage_response && (
+          <View style={styles.myGarageResponse}>
+            <Text style={styles.myGarageResponseLabel}>Garage Response:</Text>
+            <Text style={styles.myGarageResponseText}>{item.myGarage_response}</Text>
           </View>
         )}
       </View>
@@ -439,7 +439,7 @@ export default function CustomerPortalScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading your garage portal...</Text>
+        <Text style={styles.isLoadingText}>Loading your garage portal...</Text>
       </View>
     );
   }
@@ -525,7 +525,7 @@ export default function CustomerPortalScreen() {
           <View style={styles.approvalModal}>
             <Text style={styles.approvalTitle}>Service Quote Approval</Text>
             <Text style={styles.approvalSubtitle}>
-              {selectedAppointment?.garage?.name} has quoted KES {selectedAppointment?.estimated_cost?.toLocaleString()} for {selectedAppointment?.service_type}.
+              {selectedAppointment?.myGarage?.name} has quoted KES {selectedAppointment?.estimated_cost?.toLocaleString()} for {selectedAppointment?.service_type}.
             </Text>
             {selectedAppointment?.description && (
               <View style={styles.quoteBox}>
@@ -557,7 +557,7 @@ export default function CustomerPortalScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalBody}>
-            <Text style={styles.sectionLabel}>How was your service at {selectedAppointment?.garage?.name}?</Text>
+            <Text style={styles.sectionLabel}>How was your service at {selectedAppointment?.myGarage?.name}?</Text>
             <View style={styles.ratingRow}>
               {renderStars(reviewForm.rating, 32, true, (r) => setReviewForm((p) => ({ ...p, rating: r })))}
               <Text style={styles.ratingLabel}>{reviewForm.rating}/5</Text>

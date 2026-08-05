@@ -12,7 +12,7 @@ export async function optimizeRoute(
     .eq("truck_id", truck_id)
     .order("timestamp", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const baseDistance =
     Math.sqrt(

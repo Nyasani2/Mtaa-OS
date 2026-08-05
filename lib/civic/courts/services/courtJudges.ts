@@ -11,7 +11,7 @@ export class CourtJudgesService {
   }
 
   static async getJudgeById(id: string): Promise<CourtJudge | null> {
-    const { data, error } = await supabase.from('court_judges').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('court_judges').select('*').eq('id', id).maybeSingle();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }

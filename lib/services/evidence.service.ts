@@ -36,7 +36,7 @@ export async function createEvidence(evidence: Omit<Evidence, 'id' | 'created_at
     .from('evidence')
     .insert({ ...evidence, download_count: 0 })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -81,7 +81,7 @@ export async function getEvidenceById(id: string) {
       locker:locked_by(id, full_name)
     `)
     .eq('id', id)
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -98,7 +98,7 @@ export async function lockEvidence(id: string, reason: string) {
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -115,7 +115,7 @@ export async function unlockEvidence(id: string) {
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -131,7 +131,7 @@ export async function reviewEvidence(id: string, notes: string) {
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -145,7 +145,7 @@ export async function linkEvidenceToCase(id: string, caseData: { case_number?: s
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -163,7 +163,7 @@ export async function generateShareToken(id: string, expiresInHours: number = 24
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return { token, expiresAt, evidence: data };
 }
@@ -178,7 +178,7 @@ export async function revokeShareToken(id: string) {
     })
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -187,13 +187,13 @@ export async function incrementDownloadCount(id: string) {
   const { data, error } = await supabase.rpc('increment_evidence_download', { evidence_id: id });
   if (error) {
     // Fallback if RPC doesn't exist
-    const { data: current } = await supabase.from('evidence').select('download_count').eq('id', id).single();
+    const { data: current } = await supabase.from('evidence').select('download_count').eq('id', id).maybeSingle();
     const { data: updated, error: updateError } = await supabase
       .from('evidence')
       .update({ download_count: (current?.download_count || 0) + 1 })
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
     if (updateError) throw updateError;
     return updated;
   }
@@ -201,7 +201,7 @@ export async function incrementDownloadCount(id: string) {
 }
 
 export async function deleteEvidence(id: string) {
-  const { data: ev } = await supabase.from('evidence').select('is_locked').eq('id', id).single();
+  const { data: ev } = await supabase.from('evidence').select('is_locked').eq('id', id).maybeSingle();
   if (ev?.is_locked) {
     throw new Error('Cannot delete locked evidence');
   }

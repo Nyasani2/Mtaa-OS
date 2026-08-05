@@ -30,7 +30,7 @@ export class PrisonVisitorsService {
       .from("prison_visitors")
       .select("*")
       .eq("id", id)
-      .single();
+      .maybeSingle();
     if (error) return null;
     return data ? this.mapRow(data) : null;
   }
@@ -50,7 +50,7 @@ export class PrisonVisitorsService {
         notes: data.notes,
       })
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return this.mapRow(result);
   }
@@ -69,7 +69,7 @@ export class PrisonVisitorsService {
       })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return this.mapRow(result);
   }

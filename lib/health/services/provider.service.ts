@@ -9,7 +9,7 @@ export class ProviderService {
     if (error) throw error; return data || [];
   }
   static async getProvider(id: string): Promise<HealthProvider | null> {
-    const { data, error } = await supabase.from("health_providers").select("*").eq("id", id).single();
+    const { data, error } = await supabase.from("health_providers").select("*").eq("id", id).maybeSingle();
     if (error) return null; return data;
   }
   static async getFacilities(filters?: any): Promise<any[]> {

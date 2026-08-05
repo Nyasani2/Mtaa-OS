@@ -9,7 +9,7 @@ export async function isHookupAdmin(
       .from("hookup_moderators")
       .select("role")
       .eq("user_id", user_id)
-      .single();
+      .maybeSingle();
 
   if (error || !data) {
     return false;

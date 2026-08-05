@@ -23,7 +23,7 @@ export async function getFleetByOwner(ownerId: string): Promise<MtruckFleet | nu
     .from(TABLE_FLEET)
     .select('*')
     .eq('owner_id', ownerId)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -53,7 +53,7 @@ export async function createFleet(payload: {
       verified: false,
     })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Create fleet failed: ${error.message}`);
   return data;
 }
@@ -64,7 +64,7 @@ export async function updateFleet(fleetId: string, updates: Partial<MtruckFleet>
     .update(updates)
     .eq('id', fleetId)
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Update fleet failed: ${error.message}`);
   return data;
 }
@@ -99,19 +99,19 @@ export async function getTrucks(fleetId?: string): Promise<Truck[]> {
 }
 
 export async function getTruckById(truckId: string): Promise<Truck | null> {
-  const { data, error } = await supabase.from(TABLE_TRUCKS).select("*").eq("id", truckId).single();
+  const { data, error } = await supabase.from(TABLE_TRUCKS).select("*").eq("id", truckId).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
 export async function createTruck(payload: Omit<Truck, 'id' | 'created_at' | 'updated_at'>): Promise<Truck> {
-  const { data, error } = await supabase.from(TABLE_TRUCKS).insert(payload).select().single();
+  const { data, error } = await supabase.from(TABLE_TRUCKS).insert(payload).select().maybeSingle();
   if (error) throw new Error(`Create truck failed: ${error.message}`);
   return data;
 }
 
 export async function updateTruck(truckId: string, updates: Partial<Truck>): Promise<Truck> {
-  const { data, error } = await supabase.from(TABLE_TRUCKS).update(updates).eq("id", truckId).select().single();
+  const { data, error } = await supabase.from(TABLE_TRUCKS).update(updates).eq("id", truckId).select().maybeSingle();
   if (error) throw new Error(`Update truck failed: ${error.message}`);
   return data;
 }
@@ -127,19 +127,19 @@ export async function getDrivers(fleetId?: string): Promise<Driver[]> {
 }
 
 export async function getDriverById(driverId: string): Promise<Driver | null> {
-  const { data, error } = await supabase.from(TABLE_DRIVERS).select("*").eq("id", driverId).single();
+  const { data, error } = await supabase.from(TABLE_DRIVERS).select("*").eq("id", driverId).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
 export async function createDriver(payload: Omit<Driver, 'id' | 'created_at' | 'updated_at'>): Promise<Driver> {
-  const { data, error } = await supabase.from(TABLE_DRIVERS).insert(payload).select().single();
+  const { data, error } = await supabase.from(TABLE_DRIVERS).insert(payload).select().maybeSingle();
   if (error) throw new Error(`Create driver failed: ${error.message}`);
   return data;
 }
 
 export async function updateDriver(driverId: string, updates: Partial<Driver>): Promise<Driver> {
-  const { data, error } = await supabase.from(TABLE_DRIVERS).update(updates).eq("id", driverId).select().single();
+  const { data, error } = await supabase.from(TABLE_DRIVERS).update(updates).eq("id", driverId).select().maybeSingle();
   if (error) throw new Error(`Update driver failed: ${error.message}`);
   return data;
 }
@@ -155,13 +155,13 @@ export async function getLoads(status?: Load['status']): Promise<Load[]> {
 }
 
 export async function getLoadById(loadId: string): Promise<Load | null> {
-  const { data, error } = await supabase.from(TABLE_LOADS).select("*").eq("id", loadId).single();
+  const { data, error } = await supabase.from(TABLE_LOADS).select("*").eq("id", loadId).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
 
 export async function createLoad(payload: Omit<Load, 'id' | 'created_at' | 'updated_at'>): Promise<Load> {
-  const { data, error } = await supabase.from(TABLE_LOADS).insert(payload).select().single();
+  const { data, error } = await supabase.from(TABLE_LOADS).insert(payload).select().maybeSingle();
   if (error) throw new Error(`Create load failed: ${error.message}`);
   return data;
 }
@@ -179,7 +179,7 @@ export async function getAlerts(resolved = false): Promise<FleetAlert[]> {
 }
 
 export async function createAlert(payload: Omit<FleetAlert, 'id' | 'created_at'>): Promise<FleetAlert> {
-  const { data, error } = await supabase.from(TABLE_ALERTS).insert(payload).select().single();
+  const { data, error } = await supabase.from(TABLE_ALERTS).insert(payload).select().maybeSingle();
   if (error) throw new Error(`Create alert failed: ${error.message}`);
   return data;
 }
@@ -212,7 +212,7 @@ export async function getLatestFleetSnapshot(fleetId: string): Promise<MtruckFle
     .eq('fleet_id', fleetId)
     .order('snapshot_time', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
   return data;
 }
@@ -230,7 +230,7 @@ export async function sendFleetCommand(payload: {
     .from(TABLE_COMMANDS)
     .insert({ ...payload, status: 'pending' })
     .select()
-    .single();
+    .maybeSingle();
   if (error) throw new Error(`Send command failed: ${error.message}`);
   return data;
 }

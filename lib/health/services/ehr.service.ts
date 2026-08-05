@@ -9,13 +9,13 @@ export class EHRService {
   }
 
   static async getRecordById(id: string) {
-    const { data, error } = await supabase.from('health_ehr_records').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('health_ehr_records').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as HealthEHRRecord;
   }
 
   static async createRecord(record: Omit<HealthEHRRecord, 'id' | 'created_at' | 'updated_at'>) {
-    const { data, error } = await supabase.from('health_ehr_records').insert(record).select().single();
+    const { data, error } = await supabase.from('health_ehr_records').insert(record).select().maybeSingle();
     if (error) throw error;
     return data as HealthEHRRecord;
   }

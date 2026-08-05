@@ -24,19 +24,19 @@ export class IncidentService {
   }
 
   async getIncidentById(id: string) {
-    const { data, error } = await supabase.from('police_incidents').select('*').eq('id', id).single();
+    const { data, error } = await supabase.from('police_incidents').select('*').eq('id', id).maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }
 
   async createIncident(incident: Omit<EmergencyCall, 'id' | 'created_at'>) {
-    const { data, error } = await supabase.from('police_incidents').insert(incident).select().single();
+    const { data, error } = await supabase.from('police_incidents').insert(incident).select().maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }
 
   async updateIncident(id: string, updates: Partial<EmergencyCall>) {
-    const { data, error } = await supabase.from('police_incidents').update(updates).eq('id', id).select().single();
+    const { data, error } = await supabase.from('police_incidents').update(updates).eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }
@@ -49,7 +49,7 @@ export class IncidentService {
   async updateIncidentStatus(id: string, status: string, notes?: string, updatedBy?: string) {
     const { data, error } = await supabase.from('police_incidents')
       .update({ dispatch_status: status, status_notes: notes, status_updated_by: updatedBy, status_updated_at: new Date().toISOString() })
-      .eq('id', id).select().single();
+      .eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }
@@ -64,7 +64,7 @@ export class IncidentService {
       }
     }
     const { data, error } = await supabase.from('police_incidents')
-      .update(updates).eq('id', incidentId).select().single();
+      .update(updates).eq('id', incidentId).select().maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }
@@ -72,7 +72,7 @@ export class IncidentService {
   async assignIncident(id: string, officerId: string, assignedBy?: string) {
     const { data, error } = await supabase.from('police_incidents')
       .update({ assigned_officer_id: officerId, assigned_by: assignedBy || 'system', assigned_at: new Date().toISOString() })
-      .eq('id', id).select().single();
+      .eq('id', id).select().maybeSingle();
     if (error) throw error;
     return data as EmergencyCall;
   }

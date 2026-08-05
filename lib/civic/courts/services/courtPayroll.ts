@@ -12,7 +12,7 @@ export class CourtPayrollService {
   }
 
   static async createPayroll(data: Partial<CourtPayroll>): Promise<CourtPayroll> {
-    const { data: result, error } = await supabase.from('court_payroll').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_payroll').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

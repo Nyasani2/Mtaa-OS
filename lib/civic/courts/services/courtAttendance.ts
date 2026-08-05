@@ -11,7 +11,7 @@ export class CourtAttendanceService {
   }
 
   static async markAttendance(data: Partial<CourtStaffAttendance>): Promise<CourtStaffAttendance> {
-    const { data: result, error } = await supabase.from('court_staff_attendance').insert(data).select().single();
+    const { data: result, error } = await supabase.from('court_staff_attendance').insert(data).select().maybeSingle();
     if (error) throw error;
     return result;
   }

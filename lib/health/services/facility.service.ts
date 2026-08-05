@@ -9,7 +9,7 @@ export async function getFacilities(filter: string, range: { from: number; to: n
 }
 
 export async function createFacility(payload: any) {
-  const { data, error } = await supabase.from("health_facilities").insert([payload]).select().single();
+  const { data, error } = await supabase.from("health_facilities").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }
