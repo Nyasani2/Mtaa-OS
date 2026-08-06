@@ -93,7 +93,7 @@ export default function HomeScreen() {
     { key: 'FINANCE', label: 'Finance', color: '#f97316' },
     { key: 'HEALTH', label: 'Health', color: '#06b6d4' },
     { key: 'COMMERCE', label: 'Commerce', color: '#ec4899' },
-    { key: 'CIVIC', label: 'Civic', color: '#3b82f6' },
+    // { key: 'CIVIC', label: 'Civic', color: '#3b82f6' },
     { key: 'TRANSPORT', label: 'Transport', color: '#10b981' },
     { key: 'SOCIAL', label: 'Social', color: '#d946ef' },
     { key: 'MEDIA', label: 'Media', color: '#6366f1' },

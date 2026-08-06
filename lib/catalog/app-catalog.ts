@@ -26,7 +26,7 @@ export const APP_CATEGORIES = {
   OS: 'Operating System',
   FINANCE: 'Finance',
   COMMERCE: 'Commerce',
-  CIVIC: 'Civic Services',
+  // CIVIC: 'Civic Services',
   HEALTH: 'Health',
   EDUCATION: 'Education',
   WORK: 'Work & Jobs',
@@ -83,14 +83,14 @@ export const ALL_APPS: AppTile[] = [
   { id: 'restaurant', name: 'Restaurant', icon: 'restaurant', iconSet: 'Ionicons', route: '/(os)/restaurant', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'shop', name: 'Shop', icon: 'storefront', iconSet: 'Ionicons', route: '/(commerce)/shop', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'COMMERCE', status: 'live' },
 
-  // ─── CIVIC (7 apps) ───
-  { id: 'civic', name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'missing' },
-  { id: 'courts', name: 'Courts', icon: 'scale', iconSet: 'MaterialCommunityIcons', route: '/(civic)/courts', color: '#fff', bgColor: '#7c3aed', ownerOnly: false, category: 'CIVIC', status: 'live' },
-  { id: 'immigration', name: 'Immigration', icon: 'airplane', iconSet: 'Ionicons', route: '/(civic)/immigration', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'live' },
-  { id: 'land', name: 'Land', icon: 'map', iconSet: 'Ionicons', route: '/(civic)/land', color: '#fff', bgColor: '#84cc16', ownerOnly: false, category: 'CIVIC', status: 'missing' },
-  { id: 'police', name: 'Police', icon: 'shield', iconSet: 'Ionicons', route: '/(civic)/police', color: '#fff', bgColor: '#1e40af', ownerOnly: false, category: 'CIVIC', status: 'live' },
-  { id: 'prisons', name: 'Prisons', icon: 'lock-closed', iconSet: 'Ionicons', route: '/(civic)/prisons', color: '#fff', bgColor: '#7c2d12', ownerOnly: false, category: 'CIVIC', status: 'live' },
-  { id: 'transport', name: 'Transport', icon: 'bus', iconSet: 'Ionicons', route: '/(civic)/transport', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'CIVIC', status: 'live' },
+  // ─── CIVIC ARCHIVED ───
+  // { id: 'civic', name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'missing' },
+  // { id: 'courts', name: 'Courts', icon: 'scale', iconSet: 'MaterialCommunityIcons', route: '/(civic)/courts', color: '#fff', bgColor: '#7c3aed', ownerOnly: false, category: 'CIVIC', status: 'live' },
+  // { id: 'immigration', name: 'Immigration', icon: 'airplane', iconSet: 'Ionicons', route: '/(civic)/immigration', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'live' },
+  // { id: 'land', name: 'Land', icon: 'map', iconSet: 'Ionicons', route: '/(civic)/land', color: '#fff', bgColor: '#84cc16', ownerOnly: false, category: 'CIVIC', status: 'missing' },
+  // { id: 'police', name: 'Police', icon: 'shield', iconSet: 'Ionicons', route: '/(civic)/police', color: '#fff', bgColor: '#1e40af', ownerOnly: false, category: 'CIVIC', status: 'live' },
+  // { id: 'prisons', name: 'Prisons', icon: 'lock-closed', iconSet: 'Ionicons', route: '/(civic)/prisons', color: '#fff', bgColor: '#7c2d12', ownerOnly: false, category: 'CIVIC', status: 'live' },
+  // { id: 'transport', name: 'Transport', icon: 'bus', iconSet: 'Ionicons', route: '/(civic)/transport', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'CIVIC', status: 'live' },
 
   // ─── TRANSPORT (4 apps) ───
   { id: 'boda', name: 'Boda', icon: 'bicycle', iconSet: 'Ionicons', route: '/(boda)', color: '#fff', bgColor: '#22c55e', ownerOnly: false, category: 'TRANSPORT', status: 'live' },
