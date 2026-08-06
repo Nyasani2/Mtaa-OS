@@ -1,318 +1,190 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Image,
+  TextInput,
   ScrollView,
-  Alert,
+  Switch,
   ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { createPost, uploadMedia, StreetsError } from '@/lib/services/streets-service';
-import { compressMedia, formatBytes } from '@/lib/utils/media-compressor';
+import { X, Image as ImageIcon, Video, Plus, Trash2 } from 'lucide-react-native';
+import { useStreets } from '@/domains/streets/hooks/useStreets';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-
-export default function CreatePostScreen() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [content, setContent] = useState('');
-  const [caption, setCaption] = useState('');
-  const [mediaUri, setMediaUri] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<'image' | 'video' | 'text'>('text');
-  const [mediaSize, setMediaSize] = useState(0);
-  const [compressedSize, setCompressedSize] = useState(0);
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [hashtagInput, setHashtagInput] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
-  const [allowComments, setAllowComments] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  // ─── PICK IMAGE ────────────────────────────────────
-  const pickImage = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 5],
-      quality: 1, // We compress manually
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setMediaUri(asset.uri);
-      setMediaType('image');
-      setMediaSize(asset.fileSize || 0);
-
-      // Show compression preview
-      try {
-        const compressed = await compressMedia(asset.uri, 'image/jpeg');
-        setCompressedSize(compressed.size);
-      } catch (e) {
-        console.warn('Compression preview failed:', e);
-      }
-    }
-  }, []);
-
-  // ─── PICK VIDEO ────────────────────────────────────
-  const pickVideo = useCallback(async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      const asset = result.assets[0];
-      setMediaUri(asset.uri);
-      setMediaType('video');
-      setMediaSize(asset.fileSize || 0);
-
-      try {
-        const compressed = await compressMedia(asset.uri, 'video/mp4');
-        setCompressedSize(compressed.size);
-      } catch (e) {
-        console.warn('Compression preview failed:', e);
-      }
-    }
-  }, []);
-
-  // ─── ADD HASHTAG ───────────────────────────────────
-  const addHashtag = useCallback(() => {
-    const tag = hashtagInput.trim().replace(/^#/, '');
-    if (tag && !hashtags.includes(tag)) {
-      setHashtags(prev => [...prev, tag]);
-      setHashtagInput('');
-    }
-  }, [hashtagInput, hashtags]);
-
-  const removeHashtag = useCallback((tag: string) => {
-    setHashtags(prev => prev.filter(t => t !== tag));
-  }, []);
-
-  // ─── SUBMIT ──────────────────────────────────────────
-  const handleSubmit = useCallback(async () => {
-    if (!content.trim() && !mediaUri) {
-      Alert.alert('Error', 'Please add some content or media');
-      return;
-    }
-
-    setSubmitting(true);
-    setUploadProgress(0);
-
-    try {
-      let mediaUrl: string | null = null;
-      let thumbnailUrl: string | null = null;
-
-      if (mediaUri) {
-        const fileName = mediaUri.split('/').pop() || 'media';
-        const mimeType = mediaType === 'image' ? 'image/jpeg' : 'video/mp4';
-
-        const result = await uploadMedia(
-          mediaUri,
-          fileName,
-          mimeType,
-          (progress) => setUploadProgress(progress.percentage)
-        );
-
-        mediaUrl = result.mediaUrl;
-        thumbnailUrl = result.thumbnailUrl || null;
-      }
-
-      await createPost({
-        content: content.trim(),
-        caption: caption.trim() || content.trim(),
-        media_url: mediaUrl,
-        media_type: mediaType,
-        hashtags,
-        is_public: isPublic,
-        allow_comments: allowComments,
-        thumbnail_url: thumbnailUrl,
-      });
-
-      router.back();
-    } catch (e: any) {
-      const message = (e && typeof e === 'object' && 'message' in e) ? (e as any).message : 'Failed to create post';
-      Alert.alert('Error', message);
-      console.error('Create post error:', e);
-    } finally {
-      setSubmitting(false);
-    }
-  }, [content, caption, mediaUri, mediaType, hashtags, isPublic, allowComments, router]);
+function VideoPreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [duration, setDuration] = useState(0);
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="close" size={26} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Post</Text>
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={submitting}
-          style={[styles.postBtn, submitting && styles.postBtnDisabled]}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.postBtnText}>Post</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Media Preview */}
-      {mediaUri ? (
-        <View style={styles.mediaPreview}>
-          <Image source={{ uri: mediaUri }} style={styles.mediaImage} resizeMode="cover" />
-          <TouchableOpacity style={styles.removeMediaBtn} onPress={() => { setMediaUri(null); setMediaType('text'); }}>
-            <Ionicons name="close-circle" size={28} color="#fff" />
-          </TouchableOpacity>
-          {mediaSize > 0 && (
-            <View style={styles.sizeBadge}>
-              <Text style={styles.sizeText}>
-                {formatBytes(mediaSize)} → {formatBytes(compressedSize || mediaSize)}
-              </Text>
-            </View>
-          )}
-        </View>
-      ) : (
-        <View style={styles.mediaButtons}>
-          <TouchableOpacity style={styles.mediaBtn} onPress={pickImage}>
-            <Ionicons name="image-outline" size={32} color="#E91E63" />
-            <Text style={styles.mediaBtnText}>Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.mediaBtn} onPress={pickVideo}>
-            <Ionicons name="videocam-outline" size={32} color="#E91E63" />
-            <Text style={styles.mediaBtnText}>Video</Text>
-          </TouchableOpacity>
-        </View>
+    <div style={{ position: 'relative', marginBottom: 16 }}>
+      <video
+        ref={videoRef}
+        src={URL.createObjectURL(file)}
+        controls
+        preload="metadata"
+        onLoadedMetadata={(e) => { const v = e.currentTarget; setDuration(Math.round(v.duration)); URL.revokeObjectURL(v.src); }}
+        style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', borderRadius: 12, backgroundColor: '#000' }}
+      />
+      <button onClick={onRemove} style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 16, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <Trash2 size={16} color="#fff" />
+      </button>
+      {duration > 0 && (
+        <div style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 8, padding: '4px 10px' }}>
+          <Text style={{ color: '#fff', fontSize: 12 }}>{Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}</Text>
+        </div>
       )}
-
-      {/* Content Input */}
-      <View style={styles.inputSection}>
-        <TextInput
-          style={styles.contentInput}
-          placeholder="What's on your mind?"
-          placeholderTextColor="#666"
-          multiline
-          value={content}
-          onChangeText={setContent}
-          maxLength={500}
-        />
-        <Text style={styles.charCount}>{content.length}/500</Text>
-      </View>
-
-      {/* Caption (optional) */}
-      <View style={styles.inputSection}>
-        <TextInput
-          style={styles.captionInput}
-          placeholder="Add a caption (optional)"
-          placeholderTextColor="#666"
-          value={caption}
-          onChangeText={setCaption}
-          maxLength={100}
-        />
-      </View>
-
-      {/* Hashtags */}
-      <View style={styles.inputSection}>
-        <View style={styles.hashtagInputRow}>
-          <TextInput
-            style={styles.hashtagInput}
-            placeholder="Add hashtag"
-            placeholderTextColor="#666"
-            value={hashtagInput}
-            onChangeText={setHashtagInput}
-            onSubmitEditing={addHashtag}
-          />
-          <TouchableOpacity onPress={addHashtag} style={styles.addTagBtn}>
-            <Ionicons name="add" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.hashtagList}>
-          {hashtags.map(tag => (
-            <TouchableOpacity key={tag} style={styles.hashtagChip} onPress={() => removeHashtag(tag)}>
-              <Text style={styles.hashtagChipText}>#{tag}</Text>
-              <Ionicons name="close" size={12} color="#E91E63" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Options */}
-      <View style={styles.optionsSection}>
-        <TouchableOpacity style={styles.optionRow} onPress={() => setIsPublic(!isPublic)}>
-          <Ionicons name={isPublic ? "globe-outline" : "lock-closed-outline"} size={22} color="#888" />
-          <Text style={styles.optionText}>{isPublic ? 'Public' : 'Private'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.optionRow} onPress={() => setAllowComments(!allowComments)}>
-          <Ionicons name={allowComments ? "chatbubble-outline" : "chatbubble-off-outline"} size={22} color="#888" />
-          <Text style={styles.optionText}>{allowComments ? 'Comments on' : 'Comments off'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Upload Progress */}
-      {submitting && uploadProgress > 0 && (
-        <View style={styles.progressSection}>
-          <Text style={styles.progressText}>Uploading... {Math.round(uploadProgress)}%</Text>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${uploadProgress}%` }]} />
-          </View>
-        </View>
-      )}
-    </ScrollView>
+    </div>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: '#222',
-  },
-  backBtn: { padding: 8 },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  postBtn: { backgroundColor: '#E91E63', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  postBtnDisabled: { opacity: 0.5 },
-  postBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+  const [url] = useState(() => URL.createObjectURL(file));
+  return (
+    <div style={{ position: 'relative', marginBottom: 16 }}>
+      <img src={url} alt="Preview" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 12 }} />
+      <button onClick={onRemove} style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 16, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <Trash2 size={16} color="#fff" />
+      </button>
+    </div>
+  );
+}
 
-  mediaPreview: { position: 'relative', margin: 16, borderRadius: 12, overflow: 'hidden' },
-  mediaImage: { width: SCREEN_W - 32, height: (SCREEN_W - 32) * 1.25, borderRadius: 12 },
-  removeMediaBtn: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 14 },
-  sizeBadge: { position: 'absolute', bottom: 8, left: 8, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  sizeText: { color: '#fff', fontSize: 11 },
+export default function CreatePostScreen() {
+  const router = useRouter();
+  const { publishPost, isPosting, uploadProgress, postError } = useStreets();
 
-  mediaButtons: { flexDirection: 'row', gap: 16, padding: 16 },
-  mediaBtn: { flex: 1, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#333' },
-  mediaBtnText: { color: '#fff', marginTop: 8, fontSize: 14 },
+  const [content, setContent] = useState('');
+  const [caption, setCaption] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [hashtagInput, setHashtagInput] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | undefined>();
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  inputSection: { paddingHorizontal: 16, paddingVertical: 8 },
-  contentInput: { color: '#fff', fontSize: 16, minHeight: 100, textAlignVertical: 'top' },
-  captionInput: { color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 8 },
-  charCount: { color: '#666', fontSize: 12, textAlign: 'right', marginTop: 4 },
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  hashtagInputRow: { flexDirection: 'row', gap: 8 },
-  hashtagInput: { flex: 1, color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 8 },
-  addTagBtn: { backgroundColor: '#E91E63', width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  hashtagList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  hashtagChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1a1a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: '#E91E63' },
-  hashtagChipText: { color: '#E91E63', fontSize: 13 },
+  const pickFile = useCallback((type: 'image' | 'video') => {
+    setMediaType(type);
+    setLocalError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*';
+      fileInputRef.current.click();
+    }
+  }, []);
 
-  optionsSection: { paddingHorizontal: 16, paddingVertical: 8 },
-  optionRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' },
-  optionText: { color: '#fff', fontSize: 14 },
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { setLocalError('File too large. Max 50MB.'); return; }
 
-  progressSection: { padding: 16 },
-  progressText: { color: '#E91E63', fontSize: 14, marginBottom: 8 },
-  progressBar: { height: 4, backgroundColor: '#1a1a1a', borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: '#E91E63', borderRadius: 2 },
-});
+    if (mediaType === 'video' && file.type.startsWith('video/')) {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.src = URL.createObjectURL(file);
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(video.src);
+        if (video.duration > 300) { setLocalError('Video must be 5 minutes or less.'); setSelectedFile(null); }
+        else { setSelectedFile(file); setLocalError(null); }
+      };
+    } else {
+      setSelectedFile(file);
+      setLocalError(null);
+    }
+    e.target.value = '';
+  }, [mediaType]);
+
+  const addHashtag = useCallback(() => {
+    const tag = hashtagInput.trim().replace(/^#/, '');
+    if (tag && !hashtags.includes(tag)) { setHashtags((prev) => [...prev, tag]); setHashtagInput(''); }
+  }, [hashtagInput, hashtags]);
+
+  const removeHashtag = useCallback((tag: string) => { setHashtags((prev) => prev.filter((t) => t !== tag)); }, []);
+
+  const handlePost = useCallback(async () => {
+    setLocalError(null);
+    if (!content.trim() && !selectedFile) { setLocalError('Please add text or select media.'); return; }
+
+    const result = await publishPost({
+      content: content.trim(),
+      caption: caption.trim() || undefined,
+      file: selectedFile,
+      mediaType,
+      hashtags,
+      isPublic,
+    });
+
+    if (result) router.back();
+  }, [content, caption, selectedFile, mediaType, hashtags, isPublic, publishPost, router]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+      <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={handleFileChange} />
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#0a0a0a' }}>
+        <TouchableOpacity onPress={() => router.back()}><X size={24} color="#fff" /></TouchableOpacity>
+        <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>New Post</Text>
+        <TouchableOpacity onPress={handlePost} disabled={isPosting} style={{ backgroundColor: isPosting ? '#666' : '#e91e63', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 }}>
+          {isPosting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Post</Text>}
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
+        {(localError || postError) && (
+          <View style={{ backgroundColor: '#3a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+            <Text style={{ color: '#ff6b6b', fontSize: 13 }}>{localError || postError}</Text>
+          </View>
+        )}
+
+        {!selectedFile && (
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+            <TouchableOpacity onPress={() => pickFile('image')} style={{ flex: 1, aspectRatio: 1, backgroundColor: '#1a1a1a', borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center', justifyContent: 'center' }}>
+              <ImageIcon size={32} color="#e91e63" />
+              <Text style={{ color: '#fff', marginTop: 8, fontSize: 13 }}>Photo</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => pickFile('video')} style={{ flex: 1, aspectRatio: 1, backgroundColor: '#1a1a1a', borderRadius: 12, borderWidth: 1, borderColor: '#333', alignItems: 'center', justifyContent: 'center' }}>
+              <Video size={32} color="#e91e63" />
+              <Text style={{ color: '#fff', marginTop: 8, fontSize: 13 }}>Video</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {selectedFile && mediaType === 'video' && <VideoPreview file={selectedFile} onRemove={() => { setSelectedFile(null); setMediaType(undefined); }} />}
+        {selectedFile && mediaType === 'image' && <ImagePreview file={selectedFile} onRemove={() => { setSelectedFile(null); setMediaType(undefined); }} />}
+
+        {isPosting && uploadProgress > 0 && (
+          <View style={{ marginBottom: 16 }}>
+            <View style={{ height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' }}>
+              <View style={{ height: 4, backgroundColor: '#e91e63', borderRadius: 2, width: `${uploadProgress}%` }} />
+            </View>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 4, textAlign: 'center' }}>{uploadProgress < 100 ? 'Uploading...' : 'Processing...'}</Text>
+          </View>
+        )}
+
+        <TextInput value={content} onChangeText={setContent} placeholder="What's on your mind?" placeholderTextColor="#666" multiline maxLength={500} style={{ color: '#fff', fontSize: 15, minHeight: 80, textAlignVertical: 'top', marginBottom: 8 }} />
+        <Text style={{ color: '#666', fontSize: 12, textAlign: 'right', marginBottom: 16 }}>{content.length}/500</Text>
+
+        <TextInput value={caption} onChangeText={setCaption} placeholder="Add a caption (optional)" placeholderTextColor="#666" style={{ color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 10, marginBottom: 16 }} />
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+          <TextInput value={hashtagInput} onChangeText={setHashtagInput} placeholder="Add hashtag" placeholderTextColor="#666" onSubmitEditing={addHashtag} style={{ flex: 1, color: '#fff', fontSize: 14, borderBottomWidth: 1, borderBottomColor: '#333', paddingVertical: 10 }} />
+          <TouchableOpacity onPress={addHashtag} style={{ marginLeft: 8, padding: 8 }}><Plus size={20} color="#e91e63" /></TouchableOpacity>
+        </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+          {hashtags.map((tag) => (
+            <View key={tag} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#e91e63', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text style={{ color: '#fff', fontSize: 13 }}>#{tag}</Text>
+              <TouchableOpacity onPress={() => removeHashtag(tag)} style={{ marginLeft: 6 }}><X size={14} color="#fff" /></TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 30 }}>
+          <Text style={{ color: '#fff', fontSize: 14 }}>Public</Text>
+          <Switch value={isPublic} onValueChange={setIsPublic} trackColor={{ false: '#333', true: '#e91e63' }} thumbColor="#fff" />
+        </View>
+      </ScrollView>
+    </View>
+  );
+}

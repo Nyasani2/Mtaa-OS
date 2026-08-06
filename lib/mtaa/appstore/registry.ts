@@ -239,6 +239,7 @@ export const APP_REGISTRY: Record<string, AppManifest> = {
 export function getAppById(id: string): AppManifest | undefined {
   return APP_REGISTRY[id];
 }
+}
 
 export function getAllApps(): AppManifest[] {
   return Object.values(APP_REGISTRY);
@@ -272,4 +273,3 @@ export function getInstalledAppIds(): string[] {
 
 export function isAppInstalled(id: string): boolean {
   return id in APP_REGISTRY;
-}

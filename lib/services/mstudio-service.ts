@@ -44,8 +44,11 @@ export async function getStudioByHandle(handle: string): Promise<MStudioStudio |
 }
 
 export async function createStudio(studio: Partial<MStudioStudio>): Promise<MStudioStudio> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_studios').insert(studio).select().single(), TIMEOUT, 'createStudio'
+    supabase.from('studio_studios').insert({ ...studio, owner_id: user.id }).select().single(), TIMEOUT, 'createStudio'
   );
   if (error) throw error;
   return data as MStudioStudio;
@@ -89,8 +92,12 @@ export async function getVideoById(id: string): Promise<any> {
 }
 
 export async function createVideo(video: Partial<MStudioVideo>): Promise<MStudioVideo> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await withTimeout(
-    supabase.from('studio_videos').insert(video).select().single(), TIMEOUT, 'createVideo'
+    supabase.from('studio_videos').insert({ ...video, creator_id: user.id }).select().single(), TIMEOUT, 'createVideo'
   );
   if (error) throw error;
   return data as MStudioVideo;
@@ -133,8 +140,11 @@ export async function getLiveStreamById(id: string): Promise<any> {
 }
 
 export async function createLiveStream(stream: Partial<MStudioLiveStream>): Promise<MStudioLiveStream> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_live_streams').insert(stream).select().single(), TIMEOUT, 'createLiveStream'
+    supabase.from('studio_live_streams').insert({ ...stream, user_id: user.id }).select().single(), TIMEOUT, 'createLiveStream'
   );
   if (error) throw error;
   return data as MStudioLiveStream;
@@ -161,8 +171,11 @@ export async function getLiveChatMessages(streamId: string, limit = 100): Promis
 }
 
 export async function sendLiveChatMessage(msg: Partial<MStudioLiveChatMessage>): Promise<MStudioLiveChatMessage> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_live_chat').insert(msg).select().single(), TIMEOUT, 'sendChat'
+    supabase.from('studio_live_chat').insert({ ...msg, user_id: user.id }).select().single(), TIMEOUT, 'sendChat'
   );
   if (error) throw error;
   return data as MStudioLiveChatMessage;
@@ -198,8 +211,11 @@ export async function getProjectById(id: string): Promise<any> {
 }
 
 export async function createProject(project: Partial<MStudioProject>): Promise<MStudioProject> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_projects').insert(project).select().single(), TIMEOUT, 'createProject'
+    supabase.from('studio_projects').insert({ ...project, user_id: user.id }).select().single(), TIMEOUT, 'createProject'
   );
   if (error) throw error;
   return data as MStudioProject;
@@ -234,8 +250,11 @@ export async function getComments(videoId: string, parentId?: string): Promise<M
 }
 
 export async function createComment(comment: Partial<MStudioComment>): Promise<MStudioComment> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_comments').insert(comment).select().single(), TIMEOUT, 'createComment'
+    supabase.from('studio_comments').insert({ ...comment, user_id: user.id }).select().single(), TIMEOUT, 'createComment'
   );
   if (error) throw error;
   return data as MStudioComment;
@@ -271,6 +290,12 @@ export async function subscribeToStudio(
   subscriberId: string,
   tier = 'free'
 ): Promise<MStudioSubscription> {
+  // Verify session user matches subscriberId
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
+  if (user.id !== subscriberId) throw new Error('Subscriber ID mismatch');
+
   // 1. Validate tier exists and get pricing
   const { data: tierData, error: tierError } = await withTimeout(
     supabase.from('studio_membership_tiers')
@@ -445,6 +470,9 @@ export async function getPlaylists(studioId: string): Promise<MStudioPlaylist[]>
 }
 
 export async function createPlaylist(playlist: Partial<MStudioPlaylist>): Promise<MStudioPlaylist> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
     supabase.from('studio_playlists').insert(playlist).select().single(), TIMEOUT, 'createPlaylist'
   );
@@ -507,10 +535,13 @@ export async function markNotificationRead(id: string): Promise<void> {
 
 // ─── PAIRING ───
 export async function createPairingSession(directorId: string, title?: string): Promise<MStudioPairingSession> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const code = Math.random().toString(36).substring(2, 8).toUpperCase();
   const { data, error } = await withTimeout(
     supabase.from('studio_pairing_sessions').insert({
-      director_id: directorId, session_code: code, title: title || 'Multi-Cam Session', status: 'active',
+      director_id: user.id, session_code: code, title: title || 'Multi-Cam Session', status: 'active',
     }).select().single(), TIMEOUT, 'createPairing'
   );
   if (error) throw error;
@@ -550,8 +581,11 @@ export async function getDrafts(userId: string): Promise<MStudioDraft[]> {
 }
 
 export async function createDraft(draft: Partial<MStudioDraft>): Promise<MStudioDraft> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_drafts').insert(draft).select().single(), TIMEOUT, 'createDraft'
+    supabase.from('studio_drafts').insert({ ...draft, user_id: user.id }).select().single(), TIMEOUT, 'createDraft'
   );
   if (error) throw error;
   return data as MStudioDraft;
@@ -575,8 +609,11 @@ export async function getRecordings(userId: string): Promise<MStudioRecording[]>
 }
 
 export async function createRecording(rec: Partial<MStudioRecording>): Promise<MStudioRecording> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_recordings').insert(rec).select().single(), TIMEOUT, 'createRecording'
+    supabase.from('studio_recordings').insert({ ...rec, user_id: user.id }).select().single(), TIMEOUT, 'createRecording'
   );
   if (error) throw error;
   return data as MStudioRecording;
@@ -592,8 +629,12 @@ export async function getCommunityPosts(studioId: string, limit = 20): Promise<M
 }
 
 export async function createCommunityPost(post: Partial<MStudioCommunityPost>): Promise<MStudioCommunityPost> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await withTimeout(
-    supabase.from('studio_community_posts').insert(post).select().single(), TIMEOUT, 'createCommunityPost'
+    supabase.from('studio_community_posts').insert({ ...post, creator_id: user.id }).select().single(), TIMEOUT, 'createCommunityPost'
   );
   if (error) throw error;
   return data as MStudioCommunityPost;
@@ -773,8 +814,11 @@ export async function getASISContent(userId: string, limit = 20): Promise<MStudi
 }
 
 export async function createASISContent(content: Partial<MStudioASISContent>): Promise<MStudioASISContent> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
-    supabase.from('studio_asis_content').insert(content).select().single(), TIMEOUT, 'createASIS'
+    supabase.from('studio_asis_content').insert({ ...content, user_id: user.id }).select().single(), TIMEOUT, 'createASIS'
   );
   if (error) throw error;
   return data as MStudioASISContent;
@@ -801,6 +845,9 @@ export async function getThumbnails(videoId: string): Promise<MStudioThumbnail[]
 }
 
 export async function createThumbnail(thumb: Partial<MStudioThumbnail>): Promise<MStudioThumbnail> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await withTimeout(
     supabase.from('studio_thumbnails').insert(thumb).select().single(), TIMEOUT, 'createThumbnail'
   );

@@ -15,3 +15,4 @@ export * from './mtruck-service';
 export * from './tribes-service';
 export * from './pulse-service';
 export * from './studio-service';
+export * from './family-service';
