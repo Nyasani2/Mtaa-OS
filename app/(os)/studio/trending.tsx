@@ -1,147 +1,96 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Flame } from 'lucide-react-native';
+import { VideoCard } from '@/domains/studio/components/video-card';
 import { supabase } from '@/lib/supabase';
-
-interface TrendingItem {
-  id: string;
-  title: string;
-  thumbnail_url: string;
-  view_count: number;
-  creator_name: string;
-  trend_score: number;
-  rank: number;
-  type: 'video' | 'music' | 'livestream';
-}
 
 export default function TrendingScreen() {
   const router = useRouter();
-  const [items, setItems] = useState<TrendingItem[]>([]);
+  const [period, setPeriod] = useState<'Today'|'Week'|'Month'>('Today');
+  const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [timeFilter, setTimeFilter] = useState<'today' | 'week' | 'month'>('today');
 
-  const fetchTrending = async () => {
+  useEffect(() => { fetchTrending(); }, [period]);
+
+  async function fetchTrending() {
     setLoading(true);
-    const now = new Date();
-    const startDate = new Date();
-    if (timeFilter === 'today') startDate.setHours(0, 0, 0, 0);
-    else if (timeFilter === 'week') startDate.setDate(now.getDate() - 7);
-    else startDate.setDate(now.getDate() - 30);
+    try {
+      const now = new Date();
+      let fromDate = new Date();
+      if (period === 'Today') fromDate.setDate(now.getDate() - 1);
+      else if (period === 'Week') fromDate.setDate(now.getDate() - 7);
+      else fromDate.setDate(now.getDate() - 30);
 
-    const { data, error } = await supabase
-      .from('studio_videos_with_creator')
-      .select('id, title, thumbnail_url, view_count, creator_name, type, created_at')
-      .gte('created_at', startDate.toISOString())
-      .eq('status', 'published')
-      .order('view_count', { ascending: false })
-      .limit(50);
+      const { data, error } = await supabase
+        .from('studio_videos_with_creator')
+        .select('id, title, thumbnail_url, video_url, view_count, duration_seconds, created_at, creator_name, creator_avatar')
+        .eq('status', 'published')
+        .gte('created_at', fromDate.toISOString())
+        .order('view_count', { ascending: false })
+        .limit(20);
+      if (error) throw error;
 
-    if (!error) {
-      const mapped = (data || []).map((v: any, idx: number) => ({
-        id: v.id,
-        title: v.title,
-        thumbnail_url: v.thumbnail_url,
-        view_count: v.view_count || 0,
-        creator_name: v.creator?.full_name || 'Unknown',
-        trend_score: Math.floor((v.view_count || 0) * (1 + Math.random())),
-        rank: idx + 1,
-        type: v.type || 'video',
-      }));
-      setItems(mapped);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchTrending(); }, [timeFilter]);
-
-  const formatViews = (count: number) => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return `${count}`;
-  };
-
-  const getRankColor = (rank: number) => {
-    if (rank === 1) return '#FFD700';
-    if (rank === 2) return '#C0C0C0';
-    if (rank === 3) return '#CD7F32';
-    return '#666';
-  };
-
-  const renderItem = ({ item }: { item: TrendingItem }) => (
-    <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
-      style={{ flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a', alignItems: 'center' }}
-    >
-      <Text style={{ color: getRankColor(item.rank), fontSize: 18, fontWeight: 'bold', width: 32 }}>{item.rank}</Text>
-      <View style={{ width: 120, height: 68, borderRadius: 6, overflow: 'hidden', backgroundColor: '#1a1a1a', marginRight: 12 }}>
-        {item.thumbnail_url ? (
-          <Image source={{ uri: item.thumbnail_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-        ) : (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Feather name="film" size={20} color="#444" />
-          </View>
-        )}
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }} numberOfLines={2}>{item.title}</Text>
-        <Text style={{ color: '#888', fontSize: 11, marginTop: 2 }}>{item.creator_name}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-          <Feather name="eye" size={10} color="#666" />
-          <Text style={{ color: '#666', fontSize: 11, marginLeft: 4 }}>{formatViews(item.view_count)} views</Text>
-          <MaterialCommunityIcons name="fire" size={12} color="#ff6b6b" style={{ marginLeft: 8 }} />
-          <Text style={{ color: '#ff6b6b', fontSize: 11, marginLeft: 2 }}>Trending</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      setVideos(data || []);
+    } catch (e: any) { console.error(e); }
+    finally { setLoading(false); }
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Trending</Text>
-        <View style={{ width: 24 }} />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={{ color: '#fff', fontSize: 22 }}>←</Text>
+        </Pressable>
+        <Text style={styles.title}>Trending</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Time Filter */}
-      <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 8 }}>
-        {(['today', 'week', 'month'] as const).map(f => (
-          <TouchableOpacity
-            key={f}
-            onPress={() => setTimeFilter(f)}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 16,
-              marginRight: 8,
-              backgroundColor: timeFilter === f ? '#ff0000' : '#1a1a1a',
-            }}
-          >
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '500', textTransform: 'capitalize' }}>{f}</Text>
-          </TouchableOpacity>
+      <View style={styles.filterRow}>
+        {(['Today','Week','Month'] as const).map(p => (
+          <Pressable key={p} onPress={() => setPeriod(p)}
+            style={[styles.filterBtn, period === p && styles.filterActive]}>
+            <Text style={[styles.filterText, period === p && styles.filterTextActive]}>{p}</Text>
+          </Pressable>
         ))}
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchTrending().then(() => setRefreshing(false)); }} tintColor="#ff0000" />}
-        renderItem={renderItem}
-        ListEmptyComponent={
-          <View style={{ padding: 60, alignItems: 'center' }}>
-            <MaterialCommunityIcons name="fire-off" size={48} color="#333" />
-            <Text style={{ color: '#666', marginTop: 16 }}>No trending content yet</Text>
-          </View>
-        }
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+      {loading ? (
+        <ActivityIndicator style={{ marginTop: 40 }} color="#dc143c" />
+      ) : videos.length === 0 ? (
+        <View style={styles.empty}>
+          <Flame size={40} color="#333" />
+          <Text style={styles.emptyText}>No trending content yet</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.grid}>
+          {videos.map(v => (
+            <VideoCard key={v.id} id={v.id} title={v.title}
+              thumbnail_url={v.thumbnail_url} video_url={v.video_url}
+              creator_name={v.creator_name || 'Unknown'}
+              creator_avatar={v.creator_avatar}
+              view_count={v.view_count}
+              duration_seconds={v.duration_seconds}
+              created_at={v.created_at} />
+          ))}
+        </ScrollView>
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  filterRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginBottom: 12 },
+  filterBtn: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#1a1a1a', borderRadius: 20 },
+  filterActive: { backgroundColor: '#dc143c' },
+  filterText: { color: '#aaa', fontSize: 13 },
+  filterTextActive: { color: '#fff', fontWeight: '600' },
+  empty: { alignItems: 'center', marginTop: 80 },
+  emptyText: { color: '#555', marginTop: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, paddingBottom: 40 },
+});
