@@ -1,358 +1,320 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Image,
-  FlatList, Alert, ActivityIndicator, Platform
+  View, Text, Pressable, StyleSheet, TextInput, ScrollView,
+  ActivityIndicator, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { ArrowLeft, Upload, X, Film } from 'lucide-react-native';
+import { useStudio } from '@/domains/studio/hooks/useStudio';
 import { supabase } from '@/lib/supabase';
 
+const CATEGORIES = ['Music', 'Gaming', 'Education', 'News', 'Sports', 'Comedy', 'Tech', 'Entertainment', 'Podcast', 'Other'];
+
 interface UploadFile {
-  id: string;
-  uri: string;
-  name: string;
-  size: number;
-  type: string;
+  file: File;
   title: string;
   description: string;
   category: string;
-  visibility: 'public' | 'unlisted' | 'private' | 'members_only';
-  tags: string;
   progress: number;
-  status: 'pending' | 'uploading' | 'processing' | 'done' | 'error';
+  done: boolean;
   error?: string;
 }
 
-const CATEGORIES = ['Music', 'Gaming', 'Education', 'News', 'Sports', 'Comedy', 'Tech', 'Entertainment', 'Podcast', 'Other'];
-const VISIBILITY_OPTIONS = [
-  { key: 'public', label: 'Public', desc: 'Everyone can see' },
-  { key: 'unlisted', label: 'Unlisted', desc: 'Only with link' },
-  { key: 'private', label: 'Private', desc: 'Only you' },
-  { key: 'members_only', label: 'Members Only', desc: 'Subscribers only' },
-];
-
 export default function UploadCenterScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { insertVideoRecord } = useStudio();
   const [files, setFiles] = useState<UploadFile[]>([]);
-  const [activeFileId, setActiveFileId] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  const pickFiles = async () => {
-    const remainingSlots = 5 - files.length;
-    if (remainingSlots <= 0) {
-      Alert.alert('Limit reached', 'You can upload up to 5 videos at a time.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      allowsMultipleSelection: true,
-      selectionLimit: remainingSlots,
-    });
-
-    if (!result.canceled && result.assets) {
-      const newFiles: UploadFile[] = result.assets.map((asset, idx) => ({
-        id: `upload-${Date.now()}-${idx}`,
-        uri: asset.uri,
-        name: asset.fileName || `video-${idx + 1}.mp4`,
-        size: asset.fileSize || 0,
-        type: asset.mimeType || 'video/mp4',
-        title: asset.fileName?.replace(/\.[^/.]+$/, '') || `Untitled ${idx + 1}`,
+  const pickFiles = useCallback(() => {
+    if (Platform.OS !== 'web') return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'video/mp4,video/mov,video/avi';
+    input.multiple = true;
+    input.onchange = (e: any) => {
+      const selected = Array.from(e.target.files || []) as File[];
+      const mapped = selected.map((f) => ({
+        file: f,
+        title: f.name.replace(/\.[^/.]+$/, ''),
         description: '',
         category: 'Other',
-        visibility: 'public',
-        tags: '',
         progress: 0,
-        status: 'pending',
+        done: false,
       }));
+      setFiles((prev) => [...prev, ...mapped].slice(0, 5));
+    };
+    input.click();
+  }, []);
 
-      setFiles(prev => [...prev, ...newFiles]);
-      if (!activeFileId) setActiveFileId(newFiles[0].id);
-    }
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const updateFile = (id: string, updates: Partial<UploadFile>) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
+  const updateFile = (idx: number, patch: Partial<UploadFile>) => {
+    setFiles((prev) => prev.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
   };
 
-  const removeFile = (id: string) => {
-    setFiles(prev => {
-      const filtered = prev.filter(f => f.id !== id);
-      if (activeFileId === id && filtered.length > 0) setActiveFileId(filtered[0].id);
-      if (filtered.length === 0) setActiveFileId(null);
-      return filtered;
-    });
-  };
+  const uploadAll = async () => {
+    if (files.length === 0 || uploading) return;
+    setUploading(true);
 
-  const uploadFile = async (file: UploadFile) => {
-    if (!user?.id) return;
-    updateFile(file.id, { status: 'uploading', progress: 0 });
+    for (let i = 0; i < files.length; i++) {
+      const item = files[i];
+      if (item.done) continue;
 
-    try {
-      // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop() || 'mp4';
-      const filePath = `${user.id}/${Date.now()}-${file.id}.${fileExt}`;
+      try {
+        // Simulate progress
+        for (let p = 0; p <= 90; p += 10) {
+          updateFile(i, { progress: p });
+          await new Promise((r) => setTimeout(r, 200));
+        }
 
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
+        // Upload to Supabase Storage
+        const filePath = `videos/${Date.now()}_${item.file.name}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('studio-videos')
+          .upload(filePath, item.file, { cacheControl: '3600', upsert: false });
 
-      const { error: uploadError } = await supabase.storage
-        .from('mstudio-videos')
-        .upload(filePath, blob, {
-          contentType: file.type,
-          upsert: false,
+        if (uploadErr) throw uploadErr;
+
+        // Get public URL
+        const { data: urlData } = supabase.storage.from('studio-videos').getPublicUrl(filePath);
+        const videoUrl = urlData?.publicUrl || '';
+
+        updateFile(i, { progress: 95 });
+
+        // Insert into studio_videos
+        const record = await insertVideoRecord({
+          title: item.title,
+          description: item.description,
+          video_url: videoUrl,
+          thumbnail_url: null, // TODO: generate thumbnail
+          category: item.category,
+          duration_seconds: 0, // TODO: extract duration
         });
 
-      if (uploadError) throw uploadError;
+        if (!record) throw new Error('Failed to create video record');
 
-      updateFile(file.id, { progress: 60 });
-
-      // Get public URL
-      const { data: urlData } = supabase.storage.from('mstudio-videos').getPublicUrl(filePath);
-      const videoUrl = urlData?.publicUrl || '';
-
-      updateFile(file.id, { progress: 80 });
-
-      // Insert into database
-      // FIXED 2026-07-18: was writing storage_path, file_size, mime_type —
-      // none of these columns exist on studio_videos, so this insert would
-      // have failed with a "column does not exist" error even after the
-      // (also confirmed missing) mstudio-videos storage bucket was created.
-      const { error: dbError } = await supabase.from('studio_videos').insert({
-        creator_id: user.id,
-        title: file.title,
-        description: file.description,
-        video_url: videoUrl,
-        category: file.category.toLowerCase(),
-        visibility: file.visibility,
-        tags: file.tags.split(',').map(t => t.trim()).filter(Boolean),
-        status: file.visibility === 'private' ? 'private' : 'published',
-      });
-
-      if (dbError) throw dbError;
-
-      updateFile(file.id, { progress: 100, status: 'done' });
-    } catch (err: any) {
-      updateFile(file.id, { status: 'error', error: err.message });
-    }
-  };
-
-  const startUpload = async () => {
-    if (files.length === 0) return;
-    setIsUploading(true);
-
-    for (const file of files) {
-      if (file.status === 'pending' || file.status === 'error') {
-        await uploadFile(file);
+        updateFile(i, { progress: 100, done: true });
+      } catch (e: any) {
+        updateFile(i, { progress: 0, done: false, error: e.message });
       }
     }
 
-    setIsUploading(false);
-    Alert.alert('Upload Complete', 'Your videos have been uploaded.', [
-      { text: 'Go to Studio', onPress: () => router.push('/(os)/studio/creator-profile') },
-      { text: 'Upload More', onPress: () => { setFiles([]); setActiveFileId(null); } },
-    ]);
+    setUploading(false);
+    // Redirect after short delay
+    setTimeout(() => router.push('/(os)/studio'), 800);
   };
 
-  const activeFile = files.find(f => f.id === activeFileId);
-  const pendingCount = files.filter(f => f.status === 'pending' || f.status === 'error').length;
-  const doneCount = files.filter(f => f.status === 'done').length;
+  const doneCount = files.filter((f) => f.done).length;
+  const totalCount = files.length;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
-      {/* Header */}
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Upload Center</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()}>
+          <ArrowLeft size={24} color="#fff" />
+        </Pressable>
+        <Text style={styles.headerTitle}>Upload</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* File List */}
-        {files.length > 0 && (
-          <View style={{ padding: 16 }}>
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>{files.length}/5 files • {doneCount} done • {pendingCount} pending</Text>
-            <FlatList
-              data={files}
-              keyExtractor={item => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => setActiveFileId(item.id)}
-                  style={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: 8,
-                    marginRight: 8,
-                    backgroundColor: activeFileId === item.id ? '#ff0000' : '#1a1a1a',
-                    borderWidth: 2,
-                    borderColor: activeFileId === item.id ? '#ff0000' : item.status === 'done' ? '#00ff00' : item.status === 'error' ? '#ff0000' : '#333',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {item.status === 'done' ? (
-                    <MaterialIcons name="check-circle" size={32} color="#00ff00" />
-                  ) : item.status === 'error' ? (
-                    <MaterialIcons name="error" size={32} color="#ff0000" />
-                  ) : item.status === 'uploading' ? (
-                    <View style={{ alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold' }}>{item.progress}%</Text>
-                    </View>
-                  ) : (
-                    <Feather name="film" size={28} color="#666" />
-                  )}
-                  <TouchableOpacity
-                    onPress={() => removeFile(item.id)}
-                    style={{ position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}
-                  >
-                    <Feather name="x" size={12} color="#fff" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        )}
+      <Text style={styles.counter}>{doneCount}/{totalCount} files • {doneCount} done</Text>
 
-        {/* Add Files Button */}
-        {files.length < 5 && (
-          <TouchableOpacity
-            onPress={pickFiles}
-            style={{ margin: 16, borderWidth: 2, borderColor: '#333', borderStyle: 'dashed', borderRadius: 12, padding: 30, alignItems: 'center', backgroundColor: '#111' }}
-          >
-            <Feather name="plus" size={32} color="#666" />
-            <Text style={{ color: '#888', marginTop: 8, fontSize: 14 }}>Add Videos</Text>
-            <Text style={{ color: '#555', marginTop: 4, fontSize: 12 }}>Up to 5 files • MP4, MOV, AVI</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Metadata Form */}
-        {activeFile && (
-          <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#1a1a1a' }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 16 }}>Details: {activeFile.name}</Text>
-
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Title</Text>
-            <TextInput
-              value={activeFile.title}
-              onChangeText={text => updateFile(activeFile.id, { title: text })}
-              style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, color: '#fff', fontSize: 14, marginBottom: 12 }}
-              placeholderTextColor="#555"
-            />
-
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Description</Text>
-            <TextInput
-              value={activeFile.description}
-              onChangeText={text => updateFile(activeFile.id, { description: text })}
-              multiline
-              numberOfLines={3}
-              style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, color: '#fff', fontSize: 14, marginBottom: 12, textAlignVertical: 'top', minHeight: 80 }}
-              placeholderTextColor="#555"
-              placeholder="Tell viewers about your video..."
-            />
-
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Category</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-              {CATEGORIES.map(cat => (
-                <TouchableOpacity
-                  key={cat}
-                  onPress={() => updateFile(activeFile.id, { category: cat })}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 8,
-                    borderRadius: 16,
-                    backgroundColor: activeFile.category === cat ? '#ff0000' : '#1a1a1a',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 12 }}>{cat}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Visibility</Text>
-            {VISIBILITY_OPTIONS.map(opt => (
-              <TouchableOpacity
-                key={opt.key}
-                onPress={() => updateFile(activeFile.id, { visibility: opt.key as any })}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 12,
-                  borderRadius: 8,
-                  backgroundColor: activeFile.visibility === opt.key ? '#1a1a1a' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: activeFile.visibility === opt.key ? '#ff0000' : '#333',
-                  marginBottom: 8,
-                }}
-              >
-                <View style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 10,
-                  borderWidth: 2,
-                  borderColor: activeFile.visibility === opt.key ? '#ff0000' : '#555',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginRight: 12,
-                }}>
-                  {activeFile.visibility === opt.key && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#ff0000' }} />}
-                </View>
-                <View>
-                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }}>{opt.label}</Text>
-                  <Text style={{ color: '#666', fontSize: 11 }}>{opt.desc}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, marginTop: 8 }}>Tags (comma separated)</Text>
-            <TextInput
-              value={activeFile.tags}
-              onChangeText={text => updateFile(activeFile.id, { tags: text })}
-              style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, color: '#fff', fontSize: 14, marginBottom: 16 }}
-              placeholderTextColor="#555"
-              placeholder="music, tutorial, vlog..."
-            />
-          </View>
-        )}
-
-        {/* Spacer */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
-
-      {/* Bottom Action Bar */}
-      {files.length > 0 && (
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: '#0a0a0a', borderTopWidth: 1, borderTopColor: '#1a1a1a' }}>
-          <TouchableOpacity
-            onPress={startUpload}
-            disabled={isUploading || pendingCount === 0}
-            style={{
-              backgroundColor: isUploading || pendingCount === 0 ? '#333' : '#ff0000',
-              borderRadius: 12,
-              padding: 16,
-              alignItems: 'center',
-              flexDirection: 'row',
-              justifyContent: 'center',
-              gap: 8,
-            }}
-          >
-            {isUploading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Feather name="upload-cloud" size={18} color="#fff" />
-            )}
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-              {isUploading ? 'Uploading...' : `Upload ${pendingCount} Video${pendingCount !== 1 ? 's' : ''}`}
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {/* Drop zone */}
+      {files.length < 5 && (
+        <Pressable style={styles.dropZone} onPress={pickFiles}>
+          <Upload size={32} color="#666" />
+          <Text style={styles.dropTitle}>Add Videos</Text>
+          <Text style={styles.dropSub}>Up to 5 files • MP4, MOV, AVI</Text>
+        </Pressable>
       )}
-    </SafeAreaView>
+
+      {/* File list */}
+      {files.map((f, idx) => (
+        <View key={idx} style={styles.fileCard}>
+          <View style={styles.fileTop}>
+            <View style={styles.fileThumb}>
+              <Film size={20} color="#fff" />
+            </View>
+            <Pressable onPress={() => removeFile(idx)} style={styles.removeBtn}>
+              <X size={14} color="#fff" />
+            </Pressable>
+          </View>
+
+          <Text style={styles.label}>Title</Text>
+          <TextInput
+            style={styles.input}
+            value={f.title}
+            onChangeText={(t) => updateFile(idx, { title: t })}
+            placeholder="Enter title..."
+            placeholderTextColor="#555"
+          />
+
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, { height: 60 }]}
+            value={f.description}
+            onChangeText={(t) => updateFile(idx, { description: t })}
+            placeholder="Tell viewers about your video..."
+            placeholderTextColor="#555"
+            multiline
+          />
+
+          <Text style={styles.label}>Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+            {CATEGORIES.map((cat) => (
+              <Pressable
+                key={cat}
+                style={[styles.catChip, f.category === cat && styles.catChipActive]}
+                onPress={() => updateFile(idx, { category: cat })}
+              >
+                <Text style={[styles.catText, f.category === cat && styles.catTextActive]}>{cat}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+
+          {/* Progress */}
+          {f.progress > 0 && !f.done && (
+            <View style={styles.progressWrap}>
+              <View style={[styles.progressBar, { width: `${f.progress}%` }]} />
+              <Text style={styles.progressText}>{f.progress}%</Text>
+            </View>
+          )}
+          {f.done && <Text style={styles.doneText}>✓ Uploaded</Text>}
+          {f.error && <Text style={styles.errorText}>✗ {f.error}</Text>}
+        </View>
+      ))}
+
+      {/* Upload button */}
+      {files.length > 0 && (
+        <Pressable
+          style={[styles.uploadBtn, uploading && styles.uploadBtnDisabled]}
+          onPress={uploadAll}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Upload size={16} color="#fff" />
+              <Text style={styles.uploadBtnText}>
+                {doneCount === totalCount ? 'Upload Complete' : `Upload ${totalCount - doneCount} Video${totalCount - doneCount > 1 ? 's' : ''}`}
+              </Text>
+            </>
+          )}
+        </Pressable>
+      )}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  counter: { color: '#888', fontSize: 11, paddingHorizontal: 16, marginBottom: 8 },
+  dropZone: {
+    marginHorizontal: 16,
+    borderWidth: 2,
+    borderColor: '#333',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    alignItems: 'center',
+    paddingVertical: 40,
+    marginBottom: 16,
+  },
+  dropTitle: { color: '#888', fontSize: 16, fontWeight: '600', marginTop: 10 },
+  dropSub: { color: '#555', fontSize: 12, marginTop: 4 },
+  fileCard: {
+    backgroundColor: '#111',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  fileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  fileThumb: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#ff0040',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  label: { color: '#888', fontSize: 11, marginBottom: 4, marginTop: 8 },
+  input: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+  },
+  catScroll: { marginTop: 6, maxHeight: 36 },
+  catChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: '#1a1a1a',
+    marginRight: 6,
+    height: 28,
+  },
+  catChipActive: { backgroundColor: '#ff0040' },
+  catText: { color: '#aaa', fontSize: 11, fontWeight: '600' },
+  catTextActive: { color: '#fff' },
+  progressWrap: {
+    marginTop: 10,
+    height: 20,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  progressBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#ff0040',
+    borderRadius: 10,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+    zIndex: 1,
+  },
+  doneText: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 8 },
+  errorText: { color: '#ef4444', fontSize: 12, marginTop: 8 },
+  uploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ff0040',
+    marginHorizontal: 16,
+    marginVertical: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  uploadBtnDisabled: { opacity: 0.6 },
+  uploadBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+});

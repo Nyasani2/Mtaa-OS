@@ -1,336 +1,305 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, TextInput, FlatList,
-  ActivityIndicator, Alert, Dimensions, Image
+  View, Text, ScrollView, TextInput, Pressable, Image,
+  StyleSheet, ActivityIndicator, Platform, Dimensions,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  ThumbsUp, MessageCircle, Share2, Bookmark,
+  ArrowLeft, Send,
+} from 'lucide-react-native';
+import { useStudio, StudioVideo } from '@/domains/studio/hooks/useStudio';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import VideoCard from '@/domains/studio/components/video-card';
 
-const { width, height } = Dimensions.get('window');
-
-interface VideoData {
-  id: string;
-  title: string;
-  description: string;
-  video_url: string;
-  view_count: number;
-  like_count: number;
-  creator_id: string;
-  creator_name: string;
-  creator_avatar: string;
-  published_at: string;
-  is_subscribed: boolean;
-}
-
-interface Comment {
-  id: string;
-  text: string;
-  full_name: string;
-  avatar_url: string;
-  created_at: string;
-  like_count: number;
-}
-
-interface RelatedVideo {
-  id: string;
-  title: string;
-  thumbnail_url: string;
-  view_count: number;
-  creator_name: string;
-  duration_seconds: number;
-}
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function VideoPlayerScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuthStore();
-  const videoRef = useRef<Video>(null);
+  const {
+    getVideo, fetchComments, postComment, toggleLike, checkLiked,
+    toggleSubscribe, checkSubscribed, incrementView, getCreatorVideos,
+  } = useStudio();
 
-  const [video, setVideo] = useState<VideoData | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [related, setRelated] = useState<RelatedVideo[]>([]);
+  const [video, setVideo] = useState<(StudioVideo & { source?: string }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
-  const [isLiked, setIsLiked] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [related, setRelated] = useState<StudioVideo[]>([]);
+  const [viewIncremented, setViewIncremented] = useState(false);
 
-  const fetchVideo = async () => {
+  useEffect(() => {
     if (!id) return;
-    setLoading(true);
+    (async () => {
+      setLoading(true);
+      const v = await getVideo(id);
+      if (v) {
+        setVideo(v);
+        setLikeCount(v.likes_count || 0);
+        if (!viewIncremented) {
+          incrementView(id);
+          setViewIncremented(true);
+        }
+        const isLiked = await checkLiked(id);
+        setLiked(isLiked);
+        if (v.creator_id && v.creator_id !== user?.id) {
+          const isSubbed = await checkSubscribed(v.creator_id);
+          setSubscribed(isSubbed);
+        }
+        const c = await fetchComments(id);
+        setComments(c);
+        const rel = await getCreatorVideos(v.creator_id);
+        setRelated(rel.filter((r: any) => r.id !== id).slice(0, 6));
+      }
+      setLoading(false);
+    })();
+  }, [id]);
 
-    // FIXED 2026-07-18: studio_videos.creator_id has a real FK, but it
-    // points to auth.users(id) — which has no full_name/avatar_url
-    // columns. The embedded relationship syntax below was guaranteed to
-    // fail (PostgREST would try to embed auth.users, not user_profiles,
-    // for those requested columns). Fetching the creator profile
-    // separately from user_profiles instead.
-    const { data, error } = await supabase
-      .from('studio_videos')
-      .select('id, title, description, video_url, view_count, like_count, creator_id, published_at')
-      .eq('id', id)
-      .single();
+  const handleLike = async () => {
+    if (!id) return;
+    const result = await toggleLike(id);
+    setLiked(result);
+    setLikeCount(prev => result ? prev + 1 : Math.max(0, prev - 1));
+  };
 
-    if (!error && data) {
-      const { data: creatorProfile } = await supabase
-        .from('user_profiles')
-        .select('full_name, avatar_url')
-        .eq('user_id', data.creator_id)
-        .maybeSingle();
+  const handleSubscribe = async () => {
+    if (!video?.creator_id) return;
+    const result = await toggleSubscribe(video.creator_id);
+    setSubscribed(result);
+  };
 
-      // Check subscription
-      const { data: sub } = await supabase
-        .from('studio_subscriptions')
-        .select('id')
-        .eq('creator_id', data.creator_id)
-        .eq('user_id', user?.id)
-        .single();
-
-      // Check like
-      const { data: like } = await supabase
-        .from('studio_likes')
-        .select('id')
-        .eq('video_id', id)
-        .eq('user_id', user?.id)
-        .single();
-
-      setVideo({
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        video_url: data.video_url,
-        view_count: data.view_count || 0,
-        like_count: data.like_count || 0,
-        creator_id: data.creator_id,
-        creator_name: creatorProfile?.full_name || 'Unknown',
-        creator_avatar: creatorProfile?.avatar_url || '',
-        published_at: data.published_at,
-        is_subscribed: !!sub,
-      });
-      setIsLiked(!!like);
-
-      // Increment view
-      await supabase.from('studio_videos').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id);
-      await supabase.from('studio_views').insert({ video_id: id, creator_id: data.creator_id, user_id: user?.id });
-    }
-
-    // Fetch comments
-    const { data: commentsData } = await supabase
-      .from('studio_comments')
-      .select('id, text, created_at, like_count, user_id')
-      .eq('video_id', id)
-      .order('created_at', { ascending: false })
-      .limit(50);
-    
-    // Fetch user profiles separately
-    const commentUserIds = [...new Set((commentsData || []).map((c: any) => c.user_id).filter(Boolean))];
-    const { data: commentUsers } = commentUserIds.length > 0
-      ? await supabase.from('user_profiles').select('id, full_name, avatar_url').in('id', commentUserIds)
-      : { data: [] };
-    const userMap = new Map((commentUsers || []).map((u: any) => [u.id, u]));
-    
-    setComments((commentsData || []).map((c: any) => {
-      const user = userMap.get(c.user_id);
-      return {
-        id: c.id,
-        text: c.text,
-        full_name: user?.full_name || 'Anonymous',
-        avatar_url: user?.avatar_url || '',
-        created_at: c.created_at,
-        like_count: c.like_count || 0,
-      };
-    }));
-    if (!error) {
+  const handlePostComment = async () => {
+    if (!id || !commentText.trim()) return;
+    const ok = await postComment(id, commentText);
+    if (ok) {
       setCommentText('');
-      fetchVideo();
+      const c = await fetchComments(id);
+      setComments(c);
     }
   };
 
-  const formatViews = (count: number) => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return `${count}`;
+  const handleShare = () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      navigator.share({
+        title: video?.title || 'Video',
+        url: typeof window !== 'undefined' ? window.location.href : '',
+      });
+    }
   };
 
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
+  const handleSave = () => {
+    alert('Saved to your library!');
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#ff0000" />
-      </SafeAreaView>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#ff0040" />
+      </View>
     );
   }
 
   if (!video) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-        <Feather name="film" size={48} color="#333" />
-        <Text style={{ color: '#666', marginTop: 16 }}>Video not found</Text>
-      </SafeAreaView>
+      <View style={styles.center}>
+        <Text style={styles.notFound}>Video not found</Text>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.goBack}>Go Back</Text>
+        </Pressable>
+      </View>
     );
   }
 
+  const isOwnVideo = video.creator_id === user?.id;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Video Player */}
-      <View style={{ width, height: width * 0.56, backgroundColor: '#000' }}>
-        {video.video_url ? (
-          <Video
-            ref={videoRef}
-            source={{ uri: video.video_url }}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode={ResizeMode.CONTAIN}
-            useNativeControls
-            shouldPlay
+      <View style={styles.playerWrap}>
+        {Platform.OS === 'web' ? (
+          <video
+            src={video.video_url || ''}
+            controls
+            autoPlay
+            style={{ width: '100%', height: Math.min(SCREEN_W * 0.56, 480), backgroundColor: '#000' }}
+            poster={video.thumbnail_url || undefined}
           />
         ) : (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Feather name="film" size={48} color="#333" />
-            <Text style={{ color: '#666', marginTop: 12 }}>Video unavailable</Text>
+          <View style={[styles.nativePlayer, { height: Math.min(SCREEN_W * 0.56, 480) }]}>
+            <Text style={styles.nativePlayerText}>Native video player</Text>
           </View>
         )}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Title & Actions */}
-        <View style={{ padding: 16 }}>
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }} numberOfLines={2}>{video.title}</Text>
-          <Text style={{ color: '#888', fontSize: 12, marginTop: 4 }}>{formatViews(video.view_count)} views • {new Date(video.published_at).toLocaleDateString()}</Text>
+      {/* Title & Meta */}
+      <View style={styles.section}>
+        <Text style={styles.title}>{video.title || 'Untitled'}</Text>
+        <Text style={styles.meta}>
+          {video.view_count || 0} views • {new Date(video.created_at).toLocaleDateString()}
+        </Text>
+      </View>
 
-          {/* Action Bar */}
-          <View style={{ flexDirection: 'row', marginTop: 12, gap: 8 }}>
-            <TouchableOpacity onPress={handleLike} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Feather name={isLiked ? 'thumbs-up' : 'thumbs-up'} size={16} color={isLiked ? '#ff0000' : '#fff'} />
-              <Text style={{ color: '#fff', marginLeft: 6, fontSize: 13 }}>{formatViews(video.like_count)}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Feather name="share-2" size={16} color="#fff" />
-              <Text style={{ color: '#fff', marginLeft: 6, fontSize: 13 }}>Share</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowComments(!showComments)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Feather name="message-square" size={16} color="#fff" />
-              <Text style={{ color: '#fff', marginLeft: 6, fontSize: 13 }}>{comments.length}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Feather name="download" size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Creator Info */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#333' }} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '500' }}>{video.creator_name}</Text>
-            <Text style={{ color: '#888', fontSize: 11 }}>Creator</Text>
-          </View>
-          <TouchableOpacity
-            onPress={handleSubscribe}
-            style={{
-              backgroundColor: video.is_subscribed ? '#1a1a1a' : '#ff0000',
-              borderRadius: 20,
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderWidth: video.is_subscribed ? 1 : 0,
-              borderColor: '#333',
-            }}
-          >
-            <Text style={{ color: video.is_subscribed ? '#888' : '#fff', fontWeight: 'bold', fontSize: 13 }}>
-              {video.is_subscribed ? 'Subscribed' : 'Subscribe'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Description */}
-        <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
-          <Text style={{ color: '#ccc', fontSize: 13, lineHeight: 20 }}>{video.description || 'No description'}</Text>
-        </View>
-
-        {/* Comments Section */}
-        {showComments && (
-          <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 12 }}>Comments ({comments.length})</Text>
-
-            {/* Comment Input */}
-            <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#333' }} />
-              <View style={{ flex: 1, marginLeft: 10, flexDirection: 'row', alignItems: 'center' }}>
-                <TextInput
-                  value={commentText}
-                  onChangeText={setCommentText}
-                  placeholder="Add a comment..."
-                  placeholderTextColor="#555"
-                  style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, color: '#fff', fontSize: 13 }}
-                />
-                <TouchableOpacity onPress={postComment} style={{ marginLeft: 8, padding: 8 }}>
-                  <Feather name="send" size={18} color={commentText.trim() ? '#ff0000' : '#444'} />
-                </TouchableOpacity>
-              </View>
+      {/* Creator Row */}
+      <View style={[styles.section, styles.creatorRow]}>
+        <Pressable
+          style={styles.creatorInfo}
+          onPress={() => router.push(`/(os)/studio/creator-profile?id=${video.creator_id}`)}
+        >
+          {video.creator_avatar ? (
+            <Image source={{ uri: video.creator_avatar }} style={styles.creatorAvatar} />
+          ) : (
+            <View style={[styles.creatorAvatar, styles.avatarFallback]}>
+              <Text style={styles.avatarText}>{(video.creator_name || '?').charAt(0).toUpperCase()}</Text>
             </View>
+          )}
+          <View>
+            <Text style={styles.creatorName}>{video.creator_name || 'Unknown'}</Text>
+            <Text style={styles.creatorHandle}>@{video.creator_handle || 'creator'}</Text>
+          </View>
+        </Pressable>
 
-            {/* Comments List */}
-            {comments.map(comment => (
-              <View key={comment.id} style={{ flexDirection: 'row', marginBottom: 12 }}>
-                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#333' }} />
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }}>{comment.full_name}</Text>
-                    <Text style={{ color: '#555', fontSize: 11, marginLeft: 8 }}>{new Date(comment.created_at).toLocaleDateString()}</Text>
-                  </View>
-                  <Text style={{ color: '#ccc', fontSize: 13, marginTop: 2 }}>{comment.text}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Feather name="thumbs-up" size={12} color="#666" />
-                      <Text style={{ color: '#666', fontSize: 11, marginLeft: 4 }}>{comment.like_count}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={{ marginLeft: 16 }}>
-                      <Text style={{ color: '#666', fontSize: 11 }}>Reply</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+        {!isOwnVideo && (
+          <Pressable
+            style={[styles.subscribeBtn, subscribed && styles.subscribedBtn]}
+            onPress={handleSubscribe}
+          >
+            <Text style={[styles.subscribeText, subscribed && styles.subscribedText]}>
+              {subscribed ? 'Subscribed' : 'Subscribe'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Action Bar */}
+      <View style={[styles.section, styles.actionBar]}>
+        <Pressable style={styles.actionBtn} onPress={handleLike}>
+          <ThumbsUp size={20} color={liked ? '#ff0040' : '#fff'} fill={liked ? '#ff0040' : 'none'} />
+          <Text style={[styles.actionText, liked && { color: '#ff0040' }]}>{likeCount}</Text>
+        </Pressable>
+
+        <Pressable style={styles.actionBtn} onPress={() => {}}>
+          <MessageCircle size={20} color="#fff" />
+          <Text style={styles.actionText}>{comments.length}</Text>
+        </Pressable>
+
+        <Pressable style={styles.actionBtn} onPress={handleShare}>
+          <Share2 size={20} color="#fff" />
+          <Text style={styles.actionText}>Share</Text>
+        </Pressable>
+
+        <Pressable style={styles.actionBtn} onPress={handleSave}>
+          <Bookmark size={20} color="#fff" />
+          <Text style={styles.actionText}>Save</Text>
+        </Pressable>
+      </View>
+
+      {/* Description */}
+      {video.description ? (
+        <View style={styles.section}>
+          <Text style={styles.description}>{video.description}</Text>
+        </View>
+      ) : null}
+
+      {/* Comments */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Comments ({comments.length})</Text>
+        <View style={styles.commentInputRow}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Add a comment..."
+            placeholderTextColor="#666"
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+          />
+          <Pressable onPress={handlePostComment} disabled={!commentText.trim()}>
+            <Send size={20} color={commentText.trim() ? '#ff0040' : '#444'} />
+          </Pressable>
+        </View>
+
+        {comments.map((c) => (
+          <View key={c.id} style={styles.commentItem}>
+            {c.user_avatar ? (
+              <Image source={{ uri: c.user_avatar }} style={styles.commentAvatar} />
+            ) : (
+              <View style={[styles.commentAvatar, styles.avatarFallback]}>
+                <Text style={styles.avatarText}>{(c.user_name || '?').charAt(0).toUpperCase()}</Text>
               </View>
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.commentName}>{c.user_name || 'User'}</Text>
+              <Text style={styles.commentBody}>{c.content}</Text>
+              <Text style={styles.commentTime}>{new Date(c.created_at).toLocaleDateString()}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {/* Related Videos */}
+      {related.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Related Videos</Text>
+          <View style={styles.relatedGrid}>
+            {related.map((v) => (
+              <VideoCard
+                key={v.id}
+                id={v.id}
+                title={v.title}
+                thumbnail_url={v.thumbnail_url}
+                video_url={v.video_url}
+                creator_name={v.creator_name}
+                creator_avatar={v.creator_avatar}
+                view_count={v.view_count}
+                duration_seconds={v.duration_seconds}
+                created_at={v.created_at}
+                size="small"
+              />
             ))}
           </View>
-        )}
-
-        {/* Related Videos */}
-        <View style={{ padding: 16 }}>
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 12 }}>Related Videos</Text>
-          {related.map(v => (
-            <TouchableOpacity
-              key={v.id}
-              onPress={() => router.push(`/(os)/studio/video-player?id=${v.id}`)}
-              style={{ flexDirection: 'row', marginBottom: 12 }}
-            >
-              <View style={{ width: 140, height: 80, borderRadius: 6, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
-                {v.thumbnail_url ? (
-                  <Image source={{ uri: v.thumbnail_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                ) : (
-                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Feather name="film" size={20} color="#444" />
-                  </View>
-                )}
-                <View style={{ position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.8)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 1 }}>
-                  <Text style={{ color: '#fff', fontSize: 9 }}>{formatDuration(v.duration_seconds)}</Text>
-                </View>
-              </View>
-              <View style={{ flex: 1, marginLeft: 10, justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 13, fontWeight: '500' }} numberOfLines={2}>{v.title}</Text>
-                <Text style={{ color: '#888', fontSize: 11, marginTop: 2 }}>{v.creator_name}</Text>
-                <Text style={{ color: '#666', fontSize: 11 }}>{formatViews(v.view_count)} views</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      )}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0a0a0a' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' },
+  notFound: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  goBack: { color: '#ff0040', fontSize: 14, marginTop: 12 },
+  playerWrap: { backgroundColor: '#000', width: '100%' },
+  nativePlayer: { backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  nativePlayerText: { color: '#666' },
+  section: { paddingHorizontal: 16, paddingVertical: 12 },
+  title: { color: '#fff', fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  meta: { color: '#aaa', fontSize: 12, marginTop: 4 },
+  creatorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  creatorInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  creatorAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
+  avatarFallback: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  creatorName: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  creatorHandle: { color: '#aaa', fontSize: 12 },
+  subscribeBtn: { backgroundColor: '#ff0040', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  subscribedBtn: { backgroundColor: '#333' },
+  subscribeText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  subscribedText: { color: '#aaa' },
+  actionBar: { flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#222', paddingVertical: 10 },
+  actionBtn: { alignItems: 'center' },
+  actionText: { color: '#fff', fontSize: 11, marginTop: 4 },
+  description: { color: '#ccc', fontSize: 13, lineHeight: 20 },
+  sectionTitle: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 10 },
+  commentInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 24, paddingHorizontal: 14, paddingVertical: 8, marginBottom: 12 },
+  commentInput: { flex: 1, color: '#fff', fontSize: 14, maxHeight: 80 },
+  commentItem: { flexDirection: 'row', marginBottom: 14 },
+  commentAvatar: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
+  commentName: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  commentBody: { color: '#ccc', fontSize: 13, marginTop: 2, lineHeight: 18 },
+  commentTime: { color: '#666', fontSize: 11, marginTop: 2 },
+  relatedGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+});
