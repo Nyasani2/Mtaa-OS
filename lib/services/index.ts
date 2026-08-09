@@ -1,18 +1,7 @@
-// MTAA Services Barrel
-export * from './wallet-service';
-export * from './health-service';
-export * from './education-service';
-export * from './shop-service';
-export * from './voting-service';
-export * from './messenger-service';
-export * from './profile-service';
-export * from './property-service';
-export * from './streets-service';
-export * from './restaurant-service';
-export * from './jobs-service';
-export * from './mtaxi-service';
-export * from './mtruck-service';
-export * from './tribes-service';
-export * from './pulse-service';
-export * from './studio-service';
-export * from './family-service';
+// MTAA Services Barrel Export
+// Add this line to your existing lib/services/index.ts:
+// export * from "./education-service";
+//
+// If your index.ts does not exist yet, use this as the base:
+
+export * from "./education-service";

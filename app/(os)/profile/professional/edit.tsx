@@ -1,365 +1,228 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
-const INDUSTRIES = [
-  'Technology', 'Finance', 'Healthcare', 'Education', 'Agriculture',
-  'Manufacturing', 'Retail', 'Transport', 'Other'
-];
-
-interface ProfessionalProfile {
-  id: string;
-  user_id: string;
+interface ProfessionalForm {
   job_title: string;
   company: string;
   industry: string;
-  years_experience: number;
-  skills: string[];
-  bio: string;
+  experience_years: string;
+  skills: string;
+  certifications: string;
   linkedin_url: string;
   portfolio_url: string;
+  bio: string;
+  availability: string;
+  expected_salary: string;
 }
 
-export default function EditProfessionalScreen() {
+const INDUSTRIES = ['Technology', 'Healthcare', 'Finance', 'Education', 'Manufacturing', 'Retail', 'Construction', 'Agriculture', 'Transport', 'Other'];
+const AVAILABILITY_OPTIONS = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Open to offers'];
+
+export default function ProfessionalEditScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [existingId, setExistingId] = useState<string | null>(null);
-  const [tableExists, setTableExists] = useState(true);
-  const [form, setForm] = useState({
-    job_title: '',
-    company: '',
-    industry: '',
-    years_experience: '',
-    skills: '',
-    bio: '',
-    linkedin_url: '',
-    portfolio_url: '',
+  const [form, setForm] = useState<ProfessionalForm>({
+    job_title: '', company: '', industry: '', experience_years: '', skills: '', certifications: '', linkedin_url: '', portfolio_url: '', bio: '', availability: '', expected_salary: '',
   });
 
-  const updateField = useCallback((field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  }, []);
+  useEffect(() => { fetchProfile(); }, [user?.id]);
 
-  useEffect(() => {
-    const fetchExisting = async () => {
-      if (!user?.id) return;
-      try {
-        const { data, error } = await supabase
-          .from('professional_profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+  const fetchProfile = async () => {
+    if (!user?.id) { setLoading(false); return; }
+    try {
+      const { data, error } = await supabase
+        .from('professional_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-        if (error) {
-          if (error.message?.includes('does not exist') || error.code === '42P01') {
-            setTableExists(false);
-          }
-          return;
-        }
-
-        if (data) {
-          setExistingId(data.id);
-          setForm({
-            job_title: data.job_title || '',
-            company: data.company || '',
-            industry: data.industry || '',
-            years_experience: data.years_experience?.toString() || '',
-            skills: Array.isArray(data.skills) ? data.skills.join(', ') : data.skills || '',
-            bio: data.bio || '',
-            linkedin_url: data.linkedin_url || '',
-            portfolio_url: data.portfolio_url || '',
-          });
-        }
-      } catch (err) {
-        console.error('Fetch existing error:', err);
-      } finally {
-        setLoading(false);
+      if (data) {
+        setForm({
+          job_title: data.job_title || '',
+          company: data.company || '',
+          industry: data.industry || '',
+          experience_years: data.experience_years?.toString() || '',
+          skills: (data.skills || []).join(', '),
+          certifications: (data.certifications || []).join(', '),
+          linkedin_url: data.linkedin_url || '',
+          portfolio_url: data.portfolio_url || '',
+          bio: data.bio || '',
+          availability: data.availability || '',
+          expected_salary: data.expected_salary?.toString() || '',
+        });
       }
-    };
+      if (error && error.code !== 'PGRST116') console.error(error);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
 
-    fetchExisting();
-  }, [user?.id]);
+  const validateForm = (): string | null => {
+    if (form.job_title.length > 100) return 'Job title must be under 100 characters';
+    if (form.company.length > 100) return 'Company name must be under 100 characters';
+    if (form.bio.length > 500) return 'Bio must be under 500 characters';
+    if (form.linkedin_url && !form.linkedin_url.match(/^https?:\/\/.*linkedin\.com/i)) return 'LinkedIn URL must be a valid LinkedIn link';
+    if (form.portfolio_url && !form.portfolio_url.match(/^https?:\/\//i)) return 'Portfolio URL must start with http:// or https://';
+    if (form.experience_years && (isNaN(Number(form.experience_years)) || Number(form.experience_years) < 0 || Number(form.experience_years) > 80)) return 'Experience years must be 0-80';
+    if (form.expected_salary && (isNaN(Number(form.expected_salary)) || Number(form.expected_salary) < 0)) return 'Expected salary must be a positive number';
+    return null;
+  };
 
-  const validate = useCallback(() => {
-    if (!form.job_title.trim()) {
-      Alert.alert('Validation Error', 'Job title is required');
-      return false;
-    }
-    if (form.linkedin_url && !form.linkedin_url.match(/^https?:\/\/.+/)) {
-      Alert.alert('Validation Error', 'LinkedIn URL must start with http:// or https://');
-      return false;
-    }
-    if (form.portfolio_url && !form.portfolio_url.match(/^https?:\/\/.+/)) {
-      Alert.alert('Validation Error', 'Portfolio URL must start with http:// or https://');
-      return false;
-    }
-    const years = parseInt(form.years_experience);
-    if (form.years_experience && (isNaN(years) || years < 0 || years > 60)) {
-      Alert.alert('Validation Error', 'Years of experience must be between 0 and 60');
-      return false;
-    }
-    return true;
-  }, [form]);
-
-  const handleSave = useCallback(async () => {
-    if (!validate()) return;
-    if (!user?.id) {
-      Alert.alert('Error', 'You must be logged in');
-      return;
-    }
-    if (!tableExists) {
-      Alert.alert('Error', 'Professional profiles table does not exist. Run the SQL migration first.');
-      return;
-    }
+  const saveProfile = async () => {
+    if (!user?.id) { Alert.alert('Error', 'Not authenticated'); return; }
+    const error = validateForm();
+    if (error) { Alert.alert('Validation Error', error); return; }
 
     setSaving(true);
     try {
-      const skillsArray = form.skills
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-
       const payload = {
         user_id: user.id,
-        job_title: form.job_title.trim(),
+        job_title: form.job_title.trim() || null,
         company: form.company.trim() || null,
         industry: form.industry || null,
-        years_experience: form.years_experience ? parseInt(form.years_experience) : null,
-        skills: skillsArray.length > 0 ? skillsArray : null,
-        bio: form.bio.trim() || null,
+        experience_years: form.experience_years ? parseInt(form.experience_years) : null,
+        skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
+        certifications: form.certifications.split(',').map(s => s.trim()).filter(Boolean),
         linkedin_url: form.linkedin_url.trim() || null,
         portfolio_url: form.portfolio_url.trim() || null,
+        bio: form.bio.trim() || null,
+        availability: form.availability || null,
+        expected_salary: form.expected_salary ? parseFloat(form.expected_salary) : null,
         updated_at: new Date().toISOString(),
       };
 
-      let error;
-      if (existingId) {
-        const result = await supabase
-          .from('professional_profiles')
-          .update(payload)
-          .eq('id', existingId);
-        error = result.error;
-      } else {
-        const result = await supabase
-          .from('professional_profiles')
-          .insert({ ...payload, created_at: new Date().toISOString() });
-        error = result.error;
-      }
+      const { error: upsertErr } = await supabase
+        .from('professional_profiles')
+        .upsert(payload, { onConflict: 'user_id' });
 
-      if (error) {
-        console.error('Save professional error:', error);
-        Alert.alert('Save Failed', error.message);
-        setSaving(false);
-        return;
-      }
-
+      if (upsertErr) throw upsertErr;
+      Alert.alert('Success', 'Professional profile updated');
       router.back();
     } catch (err: any) {
-      console.error('Save error:', err);
-      Alert.alert('Error', err.message || 'Failed to save');
+      console.error(err);
+      Alert.alert('Error', err.message || 'Failed to save profile');
     } finally {
       setSaving(false);
     }
-  }, [form, user?.id, existingId, tableExists, validate, router]);
+  };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color="#3b82f6" />
-      </SafeAreaView>
-    );
-  }
+  const renderInput = (label: string, key: keyof ProfessionalForm, placeholder: string, props?: any) => (
+    <View style={styles.inputGroup}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TextInput
+        style={styles.input}
+        placeholder={placeholder}
+        placeholderTextColor="#64748b"
+        value={form[key]}
+        onChangeText={(text) => setForm(prev => ({ ...prev, [key]: text }))}
+        {...props}
+      />
+    </View>
+  );
 
-  if (!tableExists) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>Edit Professional Profile</Text>
-        </View>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <Ionicons name="warning-outline" size={48} color="#f59e0b" />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 16, textAlign: 'center' }}>
-            professional_profiles table does not exist
-          </Text>
-          <Text style={{ color: '#666', fontSize: 14, textAlign: 'center', marginTop: 8 }}>
-            Run the SQL migration to create this table before editing.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (loading) return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <Text style={styles.headerTitle}>Edit Professional</Text>
+        <View style={{ width: 24 }} />
+      </View>
+      <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', flex: 1 }}>
-            {existingId ? 'Edit' : 'Create'} Professional Profile
-          </Text>
-          <TouchableOpacity onPress={handleSave} disabled={saving}>
-            {saving ? (
-              <ActivityIndicator color="#3b82f6" size="small" />
-            ) : (
-              <Text style={{ color: '#3b82f6', fontSize: 16, fontWeight: '600' }}>Save</Text>
-            )}
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Professional</Text>
+          <TouchableOpacity onPress={saveProfile} disabled={saving}>
+            {saving ? <ActivityIndicator size="small" color="#3b82f6" /> : <Ionicons name="checkmark" size={24} color="#3b82f6" />}
           </TouchableOpacity>
         </View>
 
-        {/* Job Title */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Job Title *
-          </Text>
-          <TextInput
-            value={form.job_title}
-            onChangeText={(text) => updateField('job_title', text)}
-            placeholder="e.g. Software Engineer"
-            placeholderTextColor="#444"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
+        <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
+          {renderInput('Job Title', 'job_title', 'e.g. Software Engineer')}
+          {renderInput('Company', 'company', 'e.g. MTAA Technologies')}
 
-        {/* Company */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Company
-          </Text>
-          <TextInput
-            value={form.company}
-            onChangeText={(text) => updateField('company', text)}
-            placeholder="Company name"
-            placeholderTextColor="#444"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
-
-        {/* Industry */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Industry
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {INDUSTRIES.map((ind) => (
-              <TouchableOpacity
-                key={ind}
-                onPress={() => updateField('industry', ind)}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: form.industry === ind ? '#3b82f6' : '#1a1a1a',
-                  borderWidth: 1,
-                  borderColor: form.industry === ind ? '#3b82f6' : '#333',
-                }}
-              >
-                <Text style={{ color: form.industry === ind ? '#fff' : '#888', fontSize: 12 }}>{ind}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Industry Picker */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Industry</Text>
+            <View style={styles.chipRow}>
+              {INDUSTRIES.map(ind => (
+                <TouchableOpacity key={ind} style={[styles.chip, form.industry === ind && styles.chipActive]} onPress={() => setForm(prev => ({ ...prev, industry: ind }))}>
+                  <Text style={[styles.chipText, form.industry === ind && styles.chipTextActive]}>{ind}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
 
-        {/* Years of Experience */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Years of Experience
-          </Text>
-          <TextInput
-            value={form.years_experience}
-            onChangeText={(text) => updateField('years_experience', text)}
-            placeholder="5"
-            placeholderTextColor="#444"
-            keyboardType="numeric"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
+          {renderInput('Experience (years)', 'experience_years', 'e.g. 5', { keyboardType: 'number-pad', maxLength: 2 })}
+          {renderInput('Skills (comma separated)', 'skills', 'e.g. React, Node.js, Python')}
+          {renderInput('Certifications', 'certifications', 'e.g. AWS Certified, PMP')}
+          {renderInput('LinkedIn URL', 'linkedin_url', 'https://linkedin.com/in/...', { autoCapitalize: 'none', keyboardType: 'url' })}
+          {renderInput('Portfolio URL', 'portfolio_url', 'https://...', { autoCapitalize: 'none', keyboardType: 'url' })}
 
-        {/* Skills */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Skills (comma separated)
-          </Text>
-          <TextInput
-            value={form.skills}
-            onChangeText={(text) => updateField('skills', text)}
-            placeholder="React, Node.js, Python, Design"
-            placeholderTextColor="#444"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Bio</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Tell us about your professional background..."
+              placeholderTextColor="#64748b"
+              value={form.bio}
+              onChangeText={(text) => setForm(prev => ({ ...prev, bio: text }))}
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+            />
+            <Text style={styles.charCount}>{form.bio.length}/500</Text>
+          </View>
 
-        {/* Bio */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Bio
-          </Text>
-          <TextInput
-            value={form.bio}
-            onChangeText={(text) => updateField('bio', text)}
-            placeholder="Tell us about your career"
-            placeholderTextColor="#444"
-            multiline
-            numberOfLines={4}
-            maxLength={1000}
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14, height: 100, textAlignVertical: 'top' }}
-          />
-          <Text style={{ color: '#444', fontSize: 11, textAlign: 'right', marginTop: 4 }}>
-            {form.bio.length}/1000
-          </Text>
-        </View>
+          {/* Availability */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Availability</Text>
+            <View style={styles.chipRow}>
+              {AVAILABILITY_OPTIONS.map(opt => (
+                <TouchableOpacity key={opt} style={[styles.chip, form.availability === opt && styles.chipActive]} onPress={() => setForm(prev => ({ ...prev, availability: opt }))}>
+                  <Text style={[styles.chipText, form.availability === opt && styles.chipTextActive]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        {/* LinkedIn URL */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            LinkedIn URL
-          </Text>
-          <TextInput
-            value={form.linkedin_url}
-            onChangeText={(text) => updateField('linkedin_url', text)}
-            placeholder="https://linkedin.com/in/..."
-            placeholderTextColor="#444"
-            autoCapitalize="none"
-            keyboardType="url"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
+          {renderInput('Expected Salary (monthly)', 'expected_salary', 'e.g. 5000', { keyboardType: 'number-pad' })}
 
-        {/* Portfolio URL */}
-        <View style={{ marginBottom: 24 }}>
-          <Text style={{ color: '#888', fontSize: 12, marginBottom: 6, textTransform: 'uppercase' }}>
-            Portfolio URL
-          </Text>
-          <TextInput
-            value={form.portfolio_url}
-            onChangeText={(text) => updateField('portfolio_url', text)}
-            placeholder="https://..."
-            placeholderTextColor="#444"
-            autoCapitalize="none"
-            keyboardType="url"
-            style={{ backgroundColor: '#1a1a1a', color: '#fff', padding: 12, borderRadius: 8, fontSize: 14 }}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <TouchableOpacity style={styles.saveBtn} onPress={saveProfile} disabled={saving}>
+            <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Profile'}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  form: { padding: 16 },
+  inputGroup: { marginBottom: 20 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#94a3b8', marginBottom: 8 },
+  input: { backgroundColor: '#1e293b', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12, color: '#f1f5f9', fontSize: 15, borderWidth: 1, borderColor: '#334155' },
+  textArea: { height: 100, textAlignVertical: 'top', paddingTop: 12 },
+  charCount: { fontSize: 12, color: '#64748b', textAlign: 'right', marginTop: 4 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { backgroundColor: '#1e293b', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#334155' },
+  chipActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
+  chipText: { fontSize: 13, color: '#94a3b8' },
+  chipTextActive: { color: '#fff', fontWeight: '600' },
+  saveBtn: { backgroundColor: '#3b82f6', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 8, marginBottom: 32 },
+  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+});

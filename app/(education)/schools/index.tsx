@@ -1,4 +1,4 @@
-// app/(education)/schools.tsx
+// app/(education)/schools/index.tsx
 // Route file — re-exports the domain page
 
 export { default } from '@/domains/education/pages/schools';

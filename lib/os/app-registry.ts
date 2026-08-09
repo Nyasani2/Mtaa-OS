@@ -156,3 +156,4 @@ export function isSystemApp(id: string): boolean {
 
 export function getAppRoute(id: string): string | undefined {
   return OS_APP_REGISTRY[id]?.route;
+}

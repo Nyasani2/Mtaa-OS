@@ -32,7 +32,11 @@ export default function ProfessionalDashboardScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats>({
-    profileViews: 0, jobApplications: 0, interviews: 0, offers: 0, profile: null,
+    profileViews: 0,
+    jobApplications: 0,
+    interviews: 0,
+    offers: 0,
+    profile: null,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,12 +46,12 @@ export default function ProfessionalDashboardScreen() {
   const fetchStats = async () => {
     if (!user?.id) { setLoading(false); return; }
     try {
-      // Profile views via analytics_events metadata
-      const { count: profileViews, error: pvErr } = await supabase
+      // Profile views: count from analytics_events where event='profile_view' and target_id=user.id
+      const { count: profileViews, error: viewsErr } = await supabase
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('event', 'profile_view')
-        .filter('metadata->>target_id', 'eq', user.id);
+        .eq('target_id', user.id);
 
       // Job applications by this user
       const { count: jobApplications, error: appsErr } = await supabase
@@ -55,14 +59,14 @@ export default function ProfessionalDashboardScreen() {
         .select('*', { count: 'exact', head: true })
         .eq('applicant_id', user.id);
 
-      // Interviews
+      // Interviews scheduled for this user (status = 'interview_scheduled' or 'interviewed')
       const { count: interviews, error: intErr } = await supabase
         .from('job_applications')
         .select('*', { count: 'exact', head: true })
         .eq('applicant_id', user.id)
         .in('status', ['interview_scheduled', 'interviewed']);
 
-      // Offers
+      // Offers received (status = 'offered' or 'accepted')
       const { count: offers, error: offErr } = await supabase
         .from('job_applications')
         .select('*', { count: 'exact', head: true })
@@ -76,7 +80,7 @@ export default function ProfessionalDashboardScreen() {
         .eq('user_id', user.id)
         .single();
 
-      if (pvErr) console.error('Profile views error:', pvErr);
+      if (viewsErr) console.error('Profile views error:', viewsErr);
       if (appsErr) console.error('Applications error:', appsErr);
       if (intErr) console.error('Interviews error:', intErr);
       if (offErr) console.error('Offers error:', offErr);
@@ -89,8 +93,12 @@ export default function ProfessionalDashboardScreen() {
         offers: offers || 0,
         profile: profile || null,
       });
-    } catch (err) { console.error('Dashboard error:', err); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch (err) {
+      console.error('Dashboard error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const onRefresh = () => { setRefreshing(true); fetchStats(); };
@@ -111,7 +119,9 @@ export default function ProfessionalDashboardScreen() {
   if (loading) return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Professional Dashboard</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -122,16 +132,21 @@ export default function ProfessionalDashboardScreen() {
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Professional Dashboard</Text>
         <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit')}>
           <Ionicons name="create-outline" size={22} color="#3b82f6" />
         </TouchableOpacity>
       </View>
 
+      {/* Profile Completion */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Profile Completion</Text>
-        <View style={styles.progressBar}><View style={[styles.progressFill, { width: `${getCompletion()}%` }]} /></View>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${getCompletion()}%` }]} />
+        </View>
         <Text style={styles.progressText}>{getCompletion()}% Complete</Text>
         {getCompletion() < 100 && (
           <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/professional/edit')}>
@@ -140,6 +155,7 @@ export default function ProfessionalDashboardScreen() {
         )}
       </View>
 
+      {/* Stats Grid */}
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
           <Ionicons name="eye-outline" size={24} color="#3b82f6" />
@@ -163,6 +179,7 @@ export default function ProfessionalDashboardScreen() {
         </View>
       </View>
 
+      {/* Quick Actions */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Quick Actions</Text>
         <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/jobs')}>
@@ -182,12 +199,15 @@ export default function ProfessionalDashboardScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Skills Preview */}
       {stats.profile?.skills && stats.profile.skills.length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Skills</Text>
           <View style={styles.skillsRow}>
             {stats.profile.skills.slice(0, 6).map((skill, i) => (
-              <View key={i} style={styles.skillTag}><Text style={styles.skillText}>{skill}</Text></View>
+              <View key={i} style={styles.skillTag}>
+                <Text style={styles.skillText}>{skill}</Text>
+              </View>
             ))}
           </View>
         </View>

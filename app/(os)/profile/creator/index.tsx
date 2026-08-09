@@ -34,10 +34,16 @@ export default function CreatorProfileScreen() {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') console.error('Creator profile error:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Creator profile error:', error);
+      }
       setProfile(data);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); setRefreshing(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const onRefresh = () => { setRefreshing(true); fetchProfile(); };
@@ -45,7 +51,9 @@ export default function CreatorProfileScreen() {
   if (loading) return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Creator Profile</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -56,15 +64,20 @@ export default function CreatorProfileScreen() {
   return (
     <ScrollView style={styles.container} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Creator Profile</Text>
         <TouchableOpacity onPress={() => router.push('/(os)/profile/creator/edit')}>
           <Ionicons name="create-outline" size={22} color="#3b82f6" />
         </TouchableOpacity>
       </View>
 
+      {/* Profile Card */}
       <View style={styles.profileCard}>
-        <View style={styles.avatar}><Ionicons name="person" size={40} color="#94a3b8" /></View>
+        <View style={styles.avatar}>
+          <Ionicons name="person" size={40} color="#94a3b8" />
+        </View>
         <Text style={styles.name}>{profile?.display_name || user?.user_metadata?.display_name || 'Creator'}</Text>
         {profile?.is_verified && (
           <View style={styles.verifiedBadge}>
@@ -76,6 +89,7 @@ export default function CreatorProfileScreen() {
         {profile?.niche && <Text style={styles.niche}>{profile.niche}</Text>}
       </View>
 
+      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{profile?.follower_count || 0}</Text>
@@ -91,6 +105,7 @@ export default function CreatorProfileScreen() {
         </View>
       </View>
 
+      {/* Actions */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Creator Tools</Text>
         <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/earnings')}>
@@ -115,6 +130,7 @@ export default function CreatorProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Monetization */}
       {!profile?.monetization_enabled && (
         <View style={[styles.card, { borderColor: '#f59e0b', borderWidth: 1 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>

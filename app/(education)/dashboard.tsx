@@ -31,28 +31,28 @@ export default function EducationDashboard() {
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
-      if (teacher) { setRole('teacher'); router.replace('/education/teacher-dashboard'); return; }
+      if (teacher) { setRole('teacher'); router.replace('/(education)/teacher-dashboard'); return; }
 
       const { data: student } = await supabase
         .from('education_students')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
-      if (student) { setRole('student'); router.replace('/education/student-dashboard'); return; }
+      if (student) { setRole('student'); router.replace('/(education)/student-dashboard'); return; }
 
       const { data: parent } = await supabase
         .from('education_parent_connections')
         .select('id')
         .eq('parent_id', userId)
         .maybeSingle();
-      if (parent) { setRole('parent'); router.replace('/education/parent-dashboard'); return; }
+      if (parent) { setRole('parent'); router.replace('/(education)/parent-dashboard'); return; }
 
       setRole('student');
-      router.replace('/education/student-dashboard');
+      router.replace('/(education)/student-dashboard');
     } catch (err: any) {
       console.error('Role detection error:', err);
       setError(err.message || 'Failed to detect role');
-      router.replace('/education/student-dashboard');
+      router.replace('/(education)/student-dashboard');
     } finally {
       setLoading(false);
     }

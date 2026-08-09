@@ -1,8 +1,191 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useTeachers}from'../hooks/useIdentity';import{Ionicons}from'@expo/vector-icons';
-export default function TeacherListScreen({institutionId}:{institutionId:string}){const[tm,setTm]=useState(false);const[rf,setRf]=useState(false);const{teachers,loading,error,refresh,create}=useTeachers(institutionId);
-const[n,setN]=useState('');const[e,setE]=useState('');const[phone,setP]=useState('');const[sub,setS]=useState('');const[sv,setSv]=useState(false);
-const ra=async()=>{setRf(true);await refresh();setRf(false);};
-const save=async()=>{if(!n||!e)return;setSv(true);try{await create({institution_id:institutionId,user_id:e,full_name:n,phone:phone||null,subject_specialization:sub||null,employment_status:'active',verification_status:'pending'});setTm(false);setN('');setE('');setP('');setS('');}catch(err){}finally{setSv(false);}};
-if(loading&&!teachers.length)return<View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator size="large"color="#3B82F6"/></View>;
-if(error&&!teachers.length)return<View style={{flex:1,justifyContent:'center',alignItems:'center',padding:20}}><Ionicons name="warning"size={40}color="#EF4444"/><Text style={{marginTop:12,color:'#EF4444'}}>{error}</Text><TouchableOpacity onPress={ra}style={{marginTop:16,backgroundColor:'#3B82F6',paddingHorizontal:20,paddingVertical:10,borderRadius:20}}><Text style={{color:'#fff',fontWeight:'600'}}>Retry</Text></TouchableOpacity></View>;
-return(<View style={{flex:1,backgroundColor:'#F9FAFB'}}><View style={{backgroundColor:'#fff',paddingHorizontal:16,paddingTop:50,paddingBottom:12}}><Text style={{fontSize:20,fontWeight:'800',color:'#111827'}}>Teachers</Text><Text style={{fontSize:13,color:'#6B7280',marginTop:2}}>{institutionId}</Text></View><TouchableOpacity onPress={()=>setTm(true)}style={{backgroundColor:'#3B82F6',borderRadius:14,padding:14,alignItems:'center',margin:12}}><Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>+ Add Teacher</Text></TouchableOpacity><ScrollView refreshControl={<RefreshControl refreshing={rf}onRefresh={ra}/>}contentContainerStyle={{padding:12}}>{teachers.map(t=><View key={t.id}style={{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:8}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:15}}>{t.full_name||t.user?.full_name||'Unknown'}</Text><View style={{backgroundColor:t.verification_status==='verified'?'#D1FAE5':'#FEF3C7',paddingHorizontal:8,paddingVertical:3,borderRadius:10}}><Text style={{fontSize:11,fontWeight:'600',color:t.verification_status==='verified'?'#059669':'#D97706'}}>{t.verification_status}</Text></View></View><Text style={{fontSize:12,color:'#6B7280',marginTop:4}}>{t.subject_specialization||'No subject'} · {t.employment_status}</Text><Text style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>{t.phone||t.user?.phone||'No phone'}</Text></View>)}{teachers.length===0&&!loading&&<Text style={{textAlign:'center',color:'#9CA3AF',marginVertical:20}}>No teachers yet</Text>}</ScrollView><Modal visible={tm}animationType="slide"transparent onRequestClose={()=>setTm(false)}><View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'}}><View style={{backgroundColor:'#fff',borderTopLeftRadius:20,borderTopRightRadius:20,padding:20}}><Text style={{fontSize:18,fontWeight:'700',marginBottom:14}}>New Teacher</Text><TextInput placeholder="Full Name"value={n}onChangeText={setN}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:10,fontSize:14}}/><TextInput placeholder="User ID (email/auth)"value={e}onChangeText={setE}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:10,fontSize:14}}/><TextInput placeholder="Phone"keyboardType="phone-pad"value={phone}onChangeText={setP}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:10,fontSize:14}}/><TextInput placeholder="Subject Specialization"value={sub}onChangeText={setS}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:16,fontSize:14}}/><TouchableOpacity onPress={save}disabled={sv}style={{backgroundColor:sv?'#D1D5DB':'#3B82F6',borderRadius:14,padding:14,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>{sv?'Saving...':'Add Teacher'}</Text></TouchableOpacity></View></View></Modal></View>);}
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, TouchableOpacity, ActivityIndicator, RefreshControl,
+  ScrollView, Modal, TextInput, StyleSheet, FlatList,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTeachers } from '../hooks/useTeachers';
+import { TeacherCard } from '../components/TeacherCard';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/hooks/useTheme';
+
+function CreateModal({ visible, onClose, institutionId }: { visible: boolean; onClose: () => void; institutionId: string }) {
+  const { colors } = useTheme();
+  const { createTeacher } = useTeachers(institutionId);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [subjects, setSubjects] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!name || !email) return;
+    setSaving(true);
+    try {
+      await createTeacher({
+        institution_id: institutionId,
+        full_name: name,
+        email,
+        phone: phone || null,
+        subjects_taught: subjects.split(',').map(s => s.trim()).filter(Boolean),
+        employment_status: 'active',
+        verification_status: 'pending',
+      });
+      onClose();
+      setName(''); setEmail(''); setPhone(''); setSubjects('');
+    } catch (e) {
+      // handled by hook
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.modalTitle, { color: colors.text }]}>Add Teacher</Text>
+          <TextInput
+            placeholder="Full Name"
+            placeholderTextColor={colors.textSecondary}
+            value={name}
+            onChangeText={setName}
+            style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+          />
+          <TextInput
+            placeholder="Email"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+          />
+          <TextInput
+            placeholder="Phone"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+            style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+          />
+          <TextInput
+            placeholder="Subjects (comma separated)"
+            placeholderTextColor={colors.textSecondary}
+            value={subjects}
+            onChangeText={setSubjects}
+            style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+          />
+          <TouchableOpacity onPress={save} disabled={saving} style={[styles.saveBtn, { backgroundColor: colors.primary, opacity: saving ? 0.6 : 1 }]}>
+            <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Add Teacher'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
+            <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export default function TeacherListScreen({ institutionId }: { institutionId: string }) {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const { teachers, loading, error, refresh, loadMore, hasMore } = useTeachers(institutionId, { search: search || undefined });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
+
+  const renderItem = useCallback(({ item }: { item: any }) => (
+    <TeacherCard teacher={item} />
+  ), []);
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Teachers</Text>
+        <Text style={[styles.headerSub, { color: colors.textSecondary }]}>
+          {teachers.length} educators
+        </Text>
+      </View>
+
+      <View style={styles.searchRow}>
+        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={18} color={colors.textSecondary} />
+          <TextInput
+            placeholder="Search teachers..."
+            placeholderTextColor={colors.textSecondary}
+            value={search}
+            onChangeText={setSearch}
+            style={[styles.searchInput, { color: colors.text }]}
+          />
+        </View>
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={[styles.addBtn, { backgroundColor: colors.primary }]}>
+          <Ionicons name="add" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {loading && !teachers.length ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error && !teachers.length ? (
+        <View style={styles.center}>
+          <Ionicons name="warning" size={40} color={colors.error} />
+          <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+          <TouchableOpacity onPress={refresh} style={[styles.retryBtn, { backgroundColor: colors.primary }]}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={teachers}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 20 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={hasMore ? <ActivityIndicator style={{ marginVertical: 16 }} color={colors.primary} /> : null}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Ionicons name="people-outline" size={48} color={colors.textSecondary} />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No teachers found</Text>
+            </View>
+          }
+        />
+      )}
+
+      <CreateModal visible={modalVisible} onClose={() => setModalVisible(false)} institutionId={institutionId} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 22, fontWeight: '800' },
+  headerSub: { fontSize: 13, marginTop: 2 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, gap: 8 },
+  searchInput: { flex: 1, fontSize: 14 },
+  addBtn: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { marginTop: 12, fontSize: 14, textAlign: 'center' },
+  retryBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  retryText: { color: '#fff', fontWeight: '600' },
+  emptyText: { marginTop: 12, fontSize: 14 },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16 },
+  input: { borderRadius: 12, padding: 14, marginBottom: 12, fontSize: 14 },
+  saveBtn: { borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  saveBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  cancelBtn: { alignItems: 'center', marginTop: 12, paddingVertical: 8 },
+  cancelText: { fontSize: 14, fontWeight: '600' },
+});

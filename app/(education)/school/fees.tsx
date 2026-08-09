@@ -1,199 +1,216 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import EducationService from "@/lib/services/education-service";
+import { Ionicons } from "@expo/vector-icons";
 
-interface FeeRecord {
-  id: string; student_name: string; grade: string; amount: number;
-  paid: number; balance: number; term: string; status: string; student_id?: string;
-}
-
-export default function FeesScreen() {
+export default function SchoolFeesScreen() {
+  const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const schoolId = typeof id === "string" ? id : "";
+  const [fees, setFees] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [fees, setFees] = useState<FeeRecord[]>([]);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [payModalVisible, setPayModalVisible] = useState(false);
-  const [selectedFee, setSelectedFee] = useState<FeeRecord | null>(null);
-  const [payAmount, setPayAmount] = useState('');
-  const [paying, setPaying] = useState(false);
-  const [stats, setStats] = useState({ total: 0, collected: 0, outstanding: 0 });
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [studentId, setStudentId] = useState("");
+  const [feeType, setFeeType] = useState("Tuition");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [dueDate, setDueDate] = useState("");
+  const [creating, setCreating] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const load = async () => {
     try {
-      const { data: feeData, error: feeError } = await supabase
-        .from('education_fees').select('*').eq('guardian_id', user?.id).order('created_at', { ascending: false });
-      if (feeError) throw feeError;
-      const mappedFees: FeeRecord[] = (feeData || []).map((f: any) => ({
-        id: f.id, student_name: f.student_name || 'Unknown', grade: f.grade || '',
-        amount: Number(f.amount) || 0, paid: Number(f.paid) || 0, balance: Number(f.balance) || 0,
-        term: f.term || '', status: f.status || 'unpaid', student_id: f.student_id,
-      }));
-      setFees(mappedFees);
-      const total = mappedFees.reduce((s, f) => s + f.amount, 0);
-      const collected = mappedFees.reduce((s, f) => s + f.paid, 0);
-      setStats({ total, collected, outstanding: total - collected });
-      const { data: wallet } = await supabase.from('wallet_accounts')
-        .select('balance').eq('user_id', user?.id).eq('currency', 'KES').eq('is_default', true).single();
-      setWalletBalance(Number(wallet?.balance) || 0);
-    } catch (e: any) { console.error('Failed to load fees:', e); }
-    finally { setLoading(false); }
-  }, [user?.id]);
-
-  useEffect(() => { if (user?.id) loadData(); }, [user?.id, loadData]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) { case 'paid': return '#10b981'; case 'partial': return '#f59e0b'; case 'unpaid': return '#ef4444'; default: return '#94a3b8'; }
+      setError(null);
+      const [f, s] = await Promise.all([
+        EducationService.getFees(),
+        EducationService.getStudents(schoolId),
+      ]);
+      // Filter fees for this school's students
+      const studentIds = new Set(s.map((st: any) => st.id));
+      const schoolFees = f.filter((fee: any) => studentIds.has(fee.student_id) || fee.institution_id === schoolId);
+      setFees(schoolFees);
+      setStudents(s);
+    } catch (err: any) {
+      setError(err.message || "Failed to load school fees");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  async function handlePayFee(fee: FeeRecord) {
-    if (fee.balance <= 0) { Alert.alert('Already Paid', 'This fee has been fully paid.'); return; }
-    setSelectedFee(fee); setPayAmount(fee.balance.toString()); setPayModalVisible(true);
-  }
+  useEffect(() => { if (schoolId) load(); }, [schoolId]);
 
-  async function confirmPayment() {
-    if (!selectedFee || !user?.id) return;
-    const amount = Number(payAmount);
-    if (!amount || amount <= 0) { Alert.alert('Error', 'Please enter a valid amount'); return; }
-    if (amount > selectedFee.balance) { Alert.alert('Error', `Amount exceeds balance of KES ${selectedFee.balance.toLocaleString()}`); return; }
-    if (amount > walletBalance) { Alert.alert('Insufficient Balance', `Your wallet has KES ${walletBalance.toLocaleString()}. Please deposit first.`); return; }
-    setPaying(true);
+  const handleCreate = async () => {
+    if (!studentId.trim() || !amount.trim() || !feeType.trim()) {
+      Alert.alert("Error", "Student, fee type, and amount are required");
+      return;
+    }
     try {
-      const { error: transferError } = await supabase.rpc('execute_p2p_transfer', {
-        p_sender_id: user.id, p_receiver_id: selectedFee.student_id || 'school_account',
-        p_amount: amount, p_currency: 'KES',
-        p_description: `School fee payment for ${selectedFee.student_name} - ${selectedFee.term}`,
-        p_reference_type: 'education_fee', p_reference_id: selectedFee.id, p_platform_fee: 0,
+      setCreating(true);
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from("education_fees").insert({
+        student_id: studentId.trim(),
+        institution_id: schoolId,
+        fee_type: feeType.trim(),
+        amount: parseFloat(amount),
+        currency: currency.trim() || "USD",
+        due_date: dueDate.trim() || undefined,
+        paid_amount: 0,
+        status: "pending",
       });
-      if (transferError) throw transferError;
-      const newPaid = selectedFee.paid + amount;
-      const newBalance = selectedFee.amount - newPaid;
-      const newStatus = newBalance <= 0 ? 'paid' : 'partial';
-      await supabase.from('education_fees').update({ paid: newPaid, balance: newBalance, status: newStatus, updated_at: new Date().toISOString() }).eq('id', selectedFee.id);
-      await supabase.from('education_fee_payments').insert({
-        fee_id: selectedFee.id, guardian_id: user.id, student_id: selectedFee.student_id,
-        amount, term: selectedFee.term, status: 'completed', payment_method: 'wallet',
-      });
-      Alert.alert('Payment Successful', `KES ${amount.toLocaleString()} paid for ${selectedFee.student_name}`);
-      setPayModalVisible(false); setPayAmount(''); setSelectedFee(null); loadData();
-    } catch (e: any) { Alert.alert('Payment Failed', e.message); }
-    finally { setPaying(false); }
+      if (error) throw error;
+      Alert.alert("Success", "Fee record created");
+      setShowCreate(false);
+      setStudentId(""); setAmount(""); setDueDate("");
+      load();
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to create fee");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case "paid": return { bg: "#064e3b", text: "#6ee7b7" };
+      case "partial": return { bg: "#451a03", text: "#fcd34d" };
+      case "overdue": return { bg: "#450a0a", text: "#fca5a5" };
+      default: return { bg: "#1e3a5f", text: "#7dd3fc" };
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#38bdf8" />
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Fee Structure</Text>
-        <TouchableOpacity onPress={() => router.push('/(wallet)/deposit')}><Ionicons name="wallet-outline" size={24} color="#fff" /></TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: "#0f172a" }}>
+      <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: "#0f172a", borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          <Ionicons name="arrow-back" size={20} color="#94a3b8" />
+          <Text style={{ color: "#94a3b8", marginLeft: 4, fontSize: 14 }}>Back</Text>
+        </TouchableOpacity>
+        <Text style={{ color: "#f8fafc", fontSize: 22, fontWeight: "800" }}>School Fees</Text>
+        <Text style={{ color: "#94a3b8", fontSize: 13, marginTop: 2 }}>Manage fee records for this institution</Text>
       </View>
-      <View style={styles.walletBanner}>
-        <Ionicons name="wallet-outline" size={20} color="#3b82f6" />
-        <Text style={styles.walletText}>Wallet: KES {walletBalance.toLocaleString()}</Text>
-        <TouchableOpacity style={styles.topUpBtn} onPress={() => router.push('/(wallet)/deposit')}><Text style={styles.topUpText}>Top Up</Text></TouchableOpacity>
-      </View>
-      <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { backgroundColor: '#10b98115' }]}>
-          <Text style={[styles.summaryValue, { color: '#10b981' }]}>KES {(stats.collected / 1000).toFixed(0)}K</Text>
-          <Text style={styles.summaryLabel}>Total Collected</Text>
+
+      {error && (
+        <View style={{ backgroundColor: "#7f1d1d", marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 8 }}>
+          <Text style={{ color: "#fecaca" }}>{error}</Text>
         </View>
-        <View style={[styles.summaryCard, { backgroundColor: '#ef444415' }]}>
-          <Text style={[styles.summaryValue, { color: '#ef4444' }]}>KES {(stats.outstanding / 1000).toFixed(0)}K</Text>
-          <Text style={styles.summaryLabel}>Outstanding</Text>
-        </View>
-      </View>
-      {loading ? <ActivityIndicator style={{ marginTop: 40 }} color="#3b82f6" /> : (
-        <ScrollView style={styles.content}>
-          {fees.length === 0 ? (
-            <View style={styles.emptyState}><Ionicons name="school-outline" size={48} color="#94a3b8" /><Text style={styles.emptyText}>No fee records found</Text></View>
-          ) : (
-            fees.map((fee) => (
-              <View key={fee.id} style={styles.feeCard}>
-                <View style={styles.feeHeader}>
-                  <View><Text style={styles.feeName}>{fee.student_name}</Text><Text style={styles.feeGrade}>{fee.grade} · {fee.term}</Text></View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(fee.status) + '20' }]}>
-                    <Text style={[styles.statusText, { color: getStatusColor(fee.status) }]}>{fee.status}</Text>
-                  </View>
-                </View>
-                <View style={styles.feeDetails}>
-                  <View style={styles.feeItem}><Text style={styles.feeLabel}>Amount</Text><Text style={styles.feeValue}>KES {fee.amount.toLocaleString()}</Text></View>
-                  <View style={styles.feeItem}><Text style={styles.feeLabel}>Paid</Text><Text style={[styles.feeValue, { color: '#10b981' }]}>KES {fee.paid.toLocaleString()}</Text></View>
-                  <View style={styles.feeItem}><Text style={styles.feeLabel}>Balance</Text><Text style={[styles.feeValue, { color: '#ef4444' }]}>KES {fee.balance.toLocaleString()}</Text></View>
-                </View>
-                {fee.balance > 0 ? (
-                  <TouchableOpacity style={styles.payBtn} onPress={() => handlePayFee(fee)}><Text style={styles.payBtnText}>Pay KES {fee.balance.toLocaleString()}</Text></TouchableOpacity>
-                ) : (
-                  <View style={styles.paidBadge}><Ionicons name="checkmark-circle" size={16} color="#10b981" /><Text style={styles.paidText}>Fully Paid</Text></View>
-                )}
-              </View>
-            ))
-          )}
-        </ScrollView>
       )}
-      <Modal visible={payModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Pay School Fee</Text>
-            <Text style={styles.modalSubtitle}>{selectedFee?.student_name} — {selectedFee?.term}</Text>
-            <Text style={styles.modalBalance}>Balance: KES {selectedFee?.balance.toLocaleString()}</Text>
-            <Text style={styles.modalLabel}>Amount to Pay (KES)</Text>
-            <TextInput style={styles.modalInput} keyboardType="numeric" value={payAmount} onChangeText={setPayAmount} placeholder="Enter amount" placeholderTextColor="#64748b" />
-            <Text style={styles.modalWallet}>Wallet Balance: KES {walletBalance.toLocaleString()}</Text>
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => { setPayModalVisible(false); setPayAmount(''); }}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.modalConfirm, paying && styles.modalConfirmDisabled]} onPress={confirmPayment} disabled={paying}><Text style={styles.modalConfirmText}>{paying ? 'Processing...' : 'Confirm Payment'}</Text></TouchableOpacity>
+
+      {showCreate && (
+        <View style={{ marginHorizontal: 16, marginTop: 12, backgroundColor: "#1e293b", borderRadius: 12, padding: 16 }}>
+          <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "700", marginBottom: 12 }}>Create Fee Record</Text>
+          <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, textTransform: "uppercase" }}>Student</Text>
+          <TextInput
+            value={studentId}
+            onChangeText={setStudentId}
+            placeholder="Student UUID"
+            placeholderTextColor="#475569"
+            style={{ backgroundColor: "#0f172a", borderRadius: 8, padding: 10, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155", marginBottom: 10 }}
+          />
+          <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, textTransform: "uppercase" }}>Fee Type</Text>
+          <TextInput
+            value={feeType}
+            onChangeText={setFeeType}
+            placeholder="e.g. Tuition, Exam Fee"
+            placeholderTextColor="#475569"
+            style={{ backgroundColor: "#0f172a", borderRadius: 8, padding: 10, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155", marginBottom: 10 }}
+          />
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ flex: 1, marginRight: 6 }}>
+              <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, textTransform: "uppercase" }}>Amount</Text>
+              <TextInput
+                value={amount}
+                onChangeText={setAmount}
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                placeholderTextColor="#475569"
+                style={{ backgroundColor: "#0f172a", borderRadius: 8, padding: 10, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155" }}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 6 }}>
+              <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, textTransform: "uppercase" }}>Currency</Text>
+              <TextInput
+                value={currency}
+                onChangeText={setCurrency}
+                placeholder="USD"
+                placeholderTextColor="#475569"
+                style={{ backgroundColor: "#0f172a", borderRadius: 8, padding: 10, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155" }}
+              />
             </View>
           </View>
+          <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, marginTop: 10, textTransform: "uppercase" }}>Due Date (YYYY-MM-DD)</Text>
+          <TextInput
+            value={dueDate}
+            onChangeText={setDueDate}
+            placeholder="2026-08-31"
+            placeholderTextColor="#475569"
+            style={{ backgroundColor: "#0f172a", borderRadius: 8, padding: 10, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155", marginBottom: 12 }}
+          />
+          <View style={{ flexDirection: "row" }}>
+            <TouchableOpacity onPress={() => setShowCreate(false)} style={{ flex: 1, backgroundColor: "#334155", borderRadius: 8, padding: 12, alignItems: "center", marginRight: 6 }}>
+              <Text style={{ color: "#cbd5e1", fontWeight: "600" }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleCreate} disabled={creating} style={{ flex: 1, backgroundColor: creating ? "#1e3a5f" : "#0ea5e9", borderRadius: 8, padding: 12, alignItems: "center", marginLeft: 6 }}>
+              {creating ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Create</Text>}
+            </TouchableOpacity>
+          </View>
         </View>
-      </Modal>
+      )}
+
+      <FlatList
+        data={fees}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#38bdf8" />}
+        renderItem={({ item }) => {
+          const sc = statusColor(item.status);
+          const remaining = (item.amount || 0) - (item.paid_amount || 0);
+          return (
+            <View style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "700" }}>{item.fee_type}</Text>
+                <View style={{ backgroundColor: sc.bg, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
+                  <Text style={{ color: sc.text, fontSize: 11, fontWeight: "700", textTransform: "uppercase" }}>{item.status}</Text>
+                </View>
+              </View>
+              <Text style={{ color: "#94a3b8", fontSize: 13, marginBottom: 4 }}>Student: {item.student_id.slice(0, 8)}...</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+                <Text style={{ color: "#64748b" }}>Amount: {item.currency || "$"}{item.amount?.toLocaleString()}</Text>
+                <Text style={{ color: remaining > 0 ? "#f87171" : "#6ee7b7", fontWeight: "600" }}>Due: {item.currency || "$"}{remaining.toLocaleString()}</Text>
+              </View>
+              {item.due_date && (
+                <Text style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>Due: {new Date(item.due_date).toLocaleDateString()}</Text>
+              )}
+            </View>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={{ alignItems: "center", marginTop: 60 }}>
+            <Ionicons name="receipt-outline" size={48} color="#334155" />
+            <Text style={{ color: "#64748b", marginTop: 12 }}>No fee records for this school</Text>
+          </View>
+        }
+      />
+
+      {!showCreate && (
+        <TouchableOpacity
+          onPress={() => setShowCreate(true)}
+          style={{ position: "absolute", right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: "#0ea5e9", justifyContent: "center", alignItems: "center", elevation: 6 }}
+        >
+          <Ionicons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e3a5f', paddingTop: 50, paddingHorizontal: 16, paddingBottom: 16 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  walletBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e3a5f', paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
-  walletText: { color: '#fff', fontSize: 14, flex: 1 },
-  topUpBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
-  topUpText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  summaryRow: { flexDirection: 'row', padding: 16, gap: 12 },
-  summaryCard: { flex: 1, borderRadius: 12, padding: 16, alignItems: 'center' },
-  summaryValue: { fontSize: 20, fontWeight: 'bold' },
-  summaryLabel: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  content: { paddingHorizontal: 16 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 14, color: '#94a3b8', marginTop: 12 },
-  feeCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
-  feeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  feeName: { fontSize: 16, fontWeight: '600', color: '#1e293b' },
-  feeGrade: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
-  feeDetails: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-  feeItem: { alignItems: 'center' },
-  feeLabel: { fontSize: 11, color: '#94a3b8', marginBottom: 2 },
-  feeValue: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
-  payBtn: { backgroundColor: '#3b82f6', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 },
-  payBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  paidBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8, padding: 10 },
-  paidText: { color: '#10b981', fontSize: 13, fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: '#00000088', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b' },
-  modalSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
-  modalBalance: { fontSize: 16, color: '#ef4444', fontWeight: '600', marginTop: 8 },
-  modalLabel: { fontSize: 13, color: '#64748b', marginTop: 16, marginBottom: 6 },
-  modalInput: { backgroundColor: '#f1f5f9', borderRadius: 10, padding: 12, fontSize: 16, color: '#1e293b' },
-  modalWallet: { fontSize: 13, color: '#3b82f6', marginTop: 8 },
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  modalCancel: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#f1f5f9', alignItems: 'center' },
-  modalCancelText: { color: '#64748b', fontWeight: '600' },
-  modalConfirm: { flex: 1, padding: 14, borderRadius: 10, backgroundColor: '#3b82f6', alignItems: 'center' },
-  modalConfirmDisabled: { backgroundColor: '#93c5fd' },
-  modalConfirmText: { color: '#fff', fontWeight: '600' },
-});

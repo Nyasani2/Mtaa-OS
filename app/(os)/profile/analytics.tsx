@@ -13,6 +13,7 @@ interface AnalyticsData {
   followerGrowth: number;
   engagementRate: number;
   topPosts: Array<{ id: string; title: string; views: number; likes: number; comments: number }>;
+  period: Period;
 }
 
 export default function AnalyticsScreen() {
@@ -38,54 +39,22 @@ export default function AnalyticsScreen() {
     const since = getPeriodDate(period);
 
     try {
-      // Profile views: analytics_events where event='profile_view' and user_id=current user
-      // NOTE: analytics_events.user_id = the VIEWER, not the target. We use metadata->>'target_id' for target.
+      // Profile views from analytics_events
       let profileQuery = supabase
         .from('analytics_events')
         .select('*', { count: 'exact', head: true })
         .eq('event', 'profile_view')
-        .filter('metadata->>target_id', 'eq', user.id);
+        .eq('target_id', user.id);
       if (since) profileQuery = profileQuery.gte('created_at', since);
       const { count: profileViews, error: pvErr } = await profileQuery;
 
-      // Post views: sum of views from post_stats for user's posts
-      // First get user's post IDs from streets_posts
-      let postsQuery = supabase
-        .from('streets_posts')
-        .select('id, title')
-        .eq('creator_id', user.id);
-      if (since) postsQuery = postsQuery.gte('created_at', since);
-      const { data: userPosts, error: postsErr } = await postsQuery;
-
-      let postViews = 0;
-      let topPosts: any[] = [];
-
-      if (userPosts && userPosts.length > 0) {
-        const postIds = userPosts.map(p => p.id);
-
-        // Get stats for these posts
-        const { data: statsData, error: statsErr } = await supabase
-          .from('post_stats')
-          .select('post_id, views, likes_count, comments_count')
-          .in('post_id', postIds)
-          .order('views', { ascending: false })
-          .limit(5);
-
-        if (statsData) {
-          postViews = statsData.reduce((sum, s) => sum + (Number(s.views) || 0), 0);
-          topPosts = statsData.map(s => {
-            const post = userPosts.find(p => p.id === s.post_id);
-            return {
-              id: s.post_id,
-              title: post?.title || 'Untitled',
-              views: Number(s.views) || 0,
-              likes: s.likes_count || 0,
-              comments: s.comments_count || 0,
-            };
-          });
-        }
-        if (statsErr) console.error('Post stats error:', statsErr);
-      }
+      // Post views — count post_views where viewer_id != user.id (others viewing user's posts)
+      let postViewsQuery = supabase
+        .from('post_views')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id); // user_id in post_views = the post owner
+      if (since) postViewsQuery = postViewsQuery.gte('created_at', since);
+      const { count: postViews, error: postErr } = await postViewsQuery;
 
       // Follower growth
       let followerQuery = supabase
@@ -95,30 +64,52 @@ export default function AnalyticsScreen() {
       if (since) followerQuery = followerQuery.gte('created_at', since);
       const { count: followerGrowth, error: flwErr } = await followerQuery;
 
-      // Engagement rate: (likes + comments) / views * 100
+      // Post stats with user_id filter
+      let postStatsQuery = supabase
+        .from('post_stats')
+        .select('post_id, views, likes, comments, posts(title)')
+        .eq('user_id', user.id) // CRITICAL: filter by current user
+        .order('views', { ascending: false })
+        .limit(5);
+      if (since) postStatsQuery = postStatsQuery.gte('created_at', since);
+      const { data: postStats, error: statsErr } = await postStatsQuery;
+
+      // Engagement rate: (total likes + comments) / total views * 100
+      let engagementQuery = supabase
+        .from('post_stats')
+        .select('views, likes, comments')
+        .eq('user_id', user.id);
+      if (since) engagementQuery = engagementQuery.gte('created_at', since);
+      const { data: engagementData, error: engErr } = await engagementQuery;
+
       let engagementRate = 0;
-      if (userPosts && userPosts.length > 0) {
-        const { data: allStats } = await supabase
-          .from('post_stats')
-          .select('views, likes_count, comments_count')
-          .in('post_id', userPosts.map(p => p.id));
-        if (allStats && allStats.length > 0) {
-          const totalViews = allStats.reduce((s, p) => s + (Number(p.views) || 0), 0);
-          const totalEngagement = allStats.reduce((s, p) => s + (p.likes_count || 0) + (p.comments_count || 0), 0);
-          engagementRate = totalViews > 0 ? Math.round((totalEngagement / totalViews) * 100) : 0;
-        }
+      if (engagementData && engagementData.length > 0) {
+        const totalViews = engagementData.reduce((s, p) => s + (p.views || 0), 0);
+        const totalEngagement = engagementData.reduce((s, p) => s + (p.likes || 0) + (p.comments || 0), 0);
+        engagementRate = totalViews > 0 ? Math.round((totalEngagement / totalViews) * 100) : 0;
       }
 
       if (pvErr) console.error('Profile views error:', pvErr);
-      if (postsErr) console.error('Posts error:', postsErr);
+      if (postErr) console.error('Post views error:', postErr);
       if (flwErr) console.error('Follower error:', flwErr);
+      if (statsErr) console.error('Post stats error:', statsErr);
+      if (engErr) console.error('Engagement error:', engErr);
+
+      const topPosts = (postStats || []).map((p: any) => ({
+        id: p.post_id,
+        title: p.posts?.title || 'Untitled Post',
+        views: p.views || 0,
+        likes: p.likes || 0,
+        comments: p.comments || 0,
+      }));
 
       setData({
         profileViews: profileViews || 0,
-        postViews,
+        postViews: postViews || 0,
         followerGrowth: followerGrowth || 0,
         engagementRate,
         topPosts,
+        period,
       });
     } catch (err) {
       console.error('Analytics error:', err);
@@ -129,6 +120,7 @@ export default function AnalyticsScreen() {
   };
 
   const onRefresh = () => { setRefreshing(true); fetchAnalytics(); };
+
   const periodLabel = { '7d': 'Last 7 Days', '30d': 'Last 30 Days', '90d': 'Last 90 Days', 'all': 'All Time' };
 
   if (loading) return (
@@ -150,6 +142,7 @@ export default function AnalyticsScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Period Selector */}
       <View style={styles.periodRow}>
         {(['7d', '30d', '90d', 'all'] as Period[]).map((p) => (
           <TouchableOpacity key={p} style={[styles.periodBtn, period === p && styles.periodBtnActive]} onPress={() => setPeriod(p)}>
@@ -158,6 +151,7 @@ export default function AnalyticsScreen() {
         ))}
       </View>
 
+      {/* Stats Grid */}
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
           <Ionicons name="eye-outline" size={24} color="#3b82f6" />
@@ -181,6 +175,7 @@ export default function AnalyticsScreen() {
         </View>
       </View>
 
+      {/* Top Posts */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Top Performing Posts</Text>
         {data?.topPosts && data.topPosts.length > 0 ? (

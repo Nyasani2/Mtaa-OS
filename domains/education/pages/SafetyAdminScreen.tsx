@@ -1,20 +1,293 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useGeofences,useSOSLogs,useIncidents,useSafetyDashboard}from'../hooks/useSafety';import{useAuthStore}from'@/hooks/useAuthStore';import{Ionicons}from'@expo/vector-icons';
-function SC({l,v,c,i}:{l:string;v:string|number;c:string;i:string}){return(<View style={{flex:1,backgroundColor:'#fff',borderRadius:16,padding:14,marginHorizontal:4,alignItems:'center'}}><View style={{width:40,height:40,borderRadius:20,backgroundColor:c+'15',justifyContent:'center',alignItems:'center',marginBottom:8}}><Ionicons name={i}size={20}color={c}/></View><Text style={{fontSize:20,fontWeight:'800',color:'#111827'}}>{v}</Text><Text style={{fontSize:11,color:'#6B7280',marginTop:2}}>{l}</Text></View>);}
-function GM({v,o,s}:{v:boolean;o:()=>void;s:string}){const{user}=useAuthStore();const{create}=useGeofences(s);const[name,setN]=useState('');const[type,setT]=useState('school');const[lat,setLa]=useState('');const[lng,setLn]=useState('');const[rad,setR]=useState('200');const[sv,setS]=useState(false);const types=['school','home','route','custom'];
-const save=async()=>{if(!name||!lat||!lng)return;setS(true);try{await create({institution_id:s,name,geofence_type:type,center_lat:parseFloat(lat),center_lng:parseFloat(lng),radius_meters:parseInt(rad),created_by:user?.id});o();}catch(e){}finally{setS(false);}};
-return(<Modal visible={v}animationType="slide"transparent onRequestClose={o}><View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'}}><View style={{backgroundColor:'#fff',borderTopLeftRadius:20,borderTopRightRadius:20,padding:20}}><Text style={{fontSize:18,fontWeight:'700',marginBottom:14}}>New Geofence</Text><TextInput placeholder="Name"value={name}onChangeText={setN}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:10,fontSize:14}}/><View style={{flexDirection:'row',flexWrap:'wrap',marginBottom:10}}>{types.map(t=><TouchableOpacity key={t}onPress={()=>setT(t)}style={{backgroundColor:type===t?'#3B82F6':'#F3F4F6',paddingHorizontal:12,paddingVertical:6,borderRadius:16,marginRight:8,marginBottom:8}}><Text style={{fontSize:12,fontWeight:'600',color:type===t?'#fff':'#374151',textTransform:'capitalize'}}>{t}</Text></TouchableOpacity>)}</View><View style={{flexDirection:'row',marginBottom:10}}><TextInput placeholder="Lat"keyboardType="numeric"value={lat}onChangeText={setLa}style={{flex:1,backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginRight:8,fontSize:14}}/><TextInput placeholder="Lng"keyboardType="numeric"value={lng}onChangeText={setLn}style={{flex:1,backgroundColor:'#F3F4F6',borderRadius:12,padding:12,fontSize:14}}/></View><TextInput placeholder="Radius (m)"keyboardType="numeric"value={rad}onChangeText={setR}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:16,fontSize:14}}/><TouchableOpacity onPress={save}disabled={sv}style={{backgroundColor:sv?'#D1D5DB':'#3B82F6',borderRadius:14,padding:14,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>{sv?'Saving...':'Create'}</Text></TouchableOpacity></View></View></Modal>);}
-function IM({v,o,s}:{v:boolean;o:()=>void;s:string}){const{user}=useAuthStore();const{create}=useIncidents(s);const[type,setT]=useState('injury');const[sev,setS]=useState('medium');const[desc,setD]=useState('');const[sv,setSv]=useState(false);const types=['bullying','injury','missing','unauthorized_exit','stranger','medical','fire','other'];const sevs=['low','medium','high','critical'];
-const save=async()=>{if(!desc)return;setSv(true);try{await create({institution_id:s,incident_type:type,severity:sev,description:desc,reported_by:user?.id,reporter_role:'admin'});o();}catch(e){}finally{setSv(false);}};
-return(<Modal visible={v}animationType="slide"transparent onRequestClose={o}><View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'}}><View style={{backgroundColor:'#fff',borderTopLeftRadius:20,borderTopRightRadius:20,padding:20,maxHeight:'90%'}}><Text style={{fontSize:18,fontWeight:'700',marginBottom:14}}>Report Incident</Text><Text style={{fontSize:13,color:'#6B7280',marginBottom:8}}>Type</Text><View style={{flexDirection:'row',flexWrap:'wrap',marginBottom:10}}>{types.map(t=><TouchableOpacity key={t}onPress={()=>setT(t)}style={{backgroundColor:type===t?'#EF4444':'#F3F4F6',paddingHorizontal:10,paddingVertical:5,borderRadius:12,marginRight:6,marginBottom:6}}><Text style={{fontSize:11,fontWeight:'600',color:type===t?'#fff':'#374151',textTransform:'capitalize'}}>{t.replace('_',' ')}</Text></TouchableOpacity>)}</View><Text style={{fontSize:13,color:'#6B7280',marginBottom:8}}>Severity</Text><View style={{flexDirection:'row',marginBottom:12}}>{sevs.map(s=><TouchableOpacity key={s}onPress={()=>setS(s)}style={{flex:1,backgroundColor:sev===s?(s==='critical'?'#EF4444':s==='high'?'#F59E0B':'#3B82F6'):'#F3F4F6',paddingVertical:8,borderRadius:10,marginRight:6,alignItems:'center'}}><Text style={{fontSize:12,fontWeight:'600',color:sev===s?'#fff':'#374151',textTransform:'capitalize'}}>{s}</Text></TouchableOpacity>)}</View><TextInput placeholder="Describe..."multiline numberOfLines={4}value={desc}onChangeText={setD}style={{backgroundColor:'#F3F4F6',borderRadius:12,padding:12,marginBottom:16,fontSize:14,textAlignVertical:'top'}}/></View></View></Modal>);}
-export default function SafetyAdminScreen({institutionId}:{institutionId:string}){const[tab,setTab]=useState<'dashboard'|'geofences'|'sos'|'incidents'>('dashboard');const[rf,setRf]=useState(false);const[gm,setGm]=useState(false);const[im,setIm]=useState(false);const{dash,dl,de,rd}=useSafetyDashboard(institutionId);const{geofences,gl,ge,rg}=useGeofences(institutionId);const{logs,sl,se,rs,resolve}=useSOSLogs(institutionId);const{incidents,il,ie,ri,update}=useIncidents(institutionId);
-const ra=async()=>{setRf(true);await Promise.all([rd(),rg(),rs(),ri()]);setRf(false);};
-const tabs=[{k:'dashboard',l:'Dashboard',i:'shield'},{k:'geofences',l:'Geofences',i:'location'},{k:'sos',l:'SOS',i:'alert-circle'},{k:'incidents',l:'Incidents',i:'warning'}];
-if(dl&&!dash)return<View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator size="large"color="#EF4444"/></View>;
-if(de&&!dash)return<View style={{flex:1,justifyContent:'center',alignItems:'center',padding:20}}><Ionicons name="warning"size={40}color="#EF4444"/><Text style={{marginTop:12,color:'#EF4444'}}>{de}</Text><TouchableOpacity onPress={ra}style={{marginTop:16,backgroundColor:'#EF4444',paddingHorizontal:20,paddingVertical:10,borderRadius:20}}><Text style={{color:'#fff',fontWeight:'600'}}>Retry</Text></TouchableOpacity></View>;
-return(<View style={{flex:1,backgroundColor:'#F9FAFB'}}><View style={{backgroundColor:'#fff',paddingHorizontal:16,paddingTop:50,paddingBottom:12}}><Text style={{fontSize:20,fontWeight:'800',color:'#111827'}}>Child Safety</Text><Text style={{fontSize:13,color:'#6B7280',marginTop:2}}>Admin Control</Text></View><View style={{flexDirection:'row',backgroundColor:'#fff',paddingHorizontal:8,paddingBottom:8}}>{tabs.map(t=><TouchableOpacity key={t.k}onPress={()=>setTab(t.k as any)}style={{flex:1,alignItems:'center',paddingVertical:8,borderBottomWidth:2,borderColor:tab===t.k?'#EF4444':'transparent'}}><Ionicons name={t.i}size={18}color={tab===t.k?'#EF4444':'#9CA3AF'}/><Text style={{fontSize:11,fontWeight:'600',color:tab===t.k?'#EF4444':'#9CA3AF',marginTop:2}}>{t.l}</Text></TouchableOpacity>)}</View>
-<ScrollView refreshControl={<RefreshControl refreshing={rf}onRefresh={ra}/>}contentContainerStyle={{padding:12}}>
-{tab==='dashboard'&&dash&&<><View style={{flexDirection:'row',marginBottom:16}}><SC l="Active SOS"v={dash.activeSOS}c="#EF4444"i="alert-circle"/><SC l="Open"v={dash.openIncidents}c="#F59E0B"i="warning"/><SC l="Critical"v={dash.criticalIncidents}c="#DC2626"i="flame"/></View><View style={{backgroundColor:'#fff',borderRadius:16,padding:16,marginBottom:12}}><Text style={{fontWeight:'700',fontSize:14,color:'#111827'}}>Today's SOS</Text><Text style={{fontSize:28,fontWeight:'800',color:dash.todaySOS>0?'#EF4444':'#10B981',marginTop:6}}>{dash.todaySOS}</Text></View></>}
-{tab==='geofences'&&<><TouchableOpacity onPress={()=>setGm(true)}style={{backgroundColor:'#3B82F6',borderRadius:14,padding:14,alignItems:'center',marginBottom:12}}><Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>+ Add Geofence</Text></TouchableOpacity>{gl&&geofences.length===0&&<ActivityIndicator style={{marginVertical:20}}/>}{ge&&<Text style={{color:'#EF4444',textAlign:'center'}}>{ge}</Text>}{geofences.map(g=><View key={g.id}style={{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:8}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:14}}>{g.name}</Text><View style={{backgroundColor:g.is_active?'#D1FAE5':'#FEE2E2',paddingHorizontal:8,paddingVertical:3,borderRadius:10}}><Text style={{fontSize:11,fontWeight:'600',color:g.is_active?'#059669':'#DC2626'}}>{g.is_active?'Active':'Inactive'}</Text></View></View><Text style={{fontSize:12,color:'#6B7280',marginTop:4}}>{g.geofence_type} · {g.radius_meters}m · {g.center_lat?.toFixed(4)},{g.center_lng?.toFixed(4)}</Text></View>)}{geofences.length===0&&!gl&&<Text style={{textAlign:'center',color:'#9CA3AF',marginVertical:20}}>No geofences</Text>}</>}
-{tab==='sos'&&<>{sl&&logs.length===0&&<ActivityIndicator style={{marginVertical:20}}/>}{se&&<Text style={{color:'#EF4444',textAlign:'center'}}>{se}</Text>}{logs.map(s=><View key={s.id}style={{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:8,borderLeftWidth:4,borderColor:s.status==='active'?'#EF4444':'#10B981'}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:14}}>{s.child?.full_name||'Unknown'}</Text><View style={{backgroundColor:s.status==='active'?'#FEE2E2':'#D1FAE5',paddingHorizontal:8,paddingVertical:3,borderRadius:10}}><Text style={{fontSize:11,fontWeight:'700',color:s.status==='active'?'#DC2626':'#059669'}}>{s.status.toUpperCase()}</Text></View></View><Text style={{fontSize:12,color:'#6B7280',marginTop:4}}>{s.reason||'No reason'} · {new Date(s.created_at).toLocaleString()}</Text>{s.status==='active'&&<TouchableOpacity onPress={()=>resolve(s.id,'Resolved','admin')}style={{marginTop:10,backgroundColor:'#10B981',borderRadius:10,padding:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700',fontSize:13}}>Resolve</Text></TouchableOpacity>}</View>)}{logs.length===0&&!sl&&<Text style={{textAlign:'center',color:'#9CA3AF',marginVertical:20}}>No SOS alerts</Text>}</>}
-{tab==='incidents'&&<><TouchableOpacity onPress={()=>setIm(true)}style={{backgroundColor:'#EF4444',borderRadius:14,padding:14,alignItems:'center',marginBottom:12}}><Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>+ Report Incident</Text></TouchableOpacity>{il&&incidents.length===0&&<ActivityIndicator style={{marginVertical:20}}/>}{ie&&<Text style={{color:'#EF4444',textAlign:'center'}}>{ie}</Text>}{incidents.map(i=><View key={i.id}style={{backgroundColor:'#fff',borderRadius:12,padding:14,marginBottom:8,borderLeftWidth:4,borderColor:i.severity==='critical'?'#DC2626':i.severity==='high'?'#F59E0B':'#3B82F6'}}><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={{fontWeight:'700',fontSize:14,textTransform:'capitalize'}}>{i.incident_type.replace('_',' ')}</Text><View style={{backgroundColor:i.status==='open'?'#FEE2E2':'#D1FAE5',paddingHorizontal:8,paddingVertical:3,borderRadius:10}}><Text style={{fontSize:11,fontWeight:'700',color:i.status==='open'?'#DC2626':'#059669'}}>{i.status.toUpperCase()}</Text></View></View><Text style={{fontSize:12,color:'#6B7280',marginTop:4}}>{i.description}</Text><Text style={{fontSize:11,color:'#9CA3AF',marginTop:2}}>{i.severity} · {new Date(i.created_at).toLocaleDateString()}</Text>{i.status==='open'&&<TouchableOpacity onPress={()=>update(i.id,{status:'resolved'})}style={{marginTop:10,backgroundColor:'#10B981',borderRadius:10,padding:10,alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700',fontSize:13}}>Resolve</Text></TouchableOpacity>}</View>)}{incidents.length===0&&!il&&<Text style={{textAlign:'center',color:'#9CA3AF',marginVertical:20}}>No incidents</Text>}</>}
-</ScrollView><GM v={gm}o={()=>setGm(false)}s={institutionId}/><IM v={im}o={()=>setIm(false)}s={institutionId}/></View>);}
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Alert,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
+import { supabase } from '@/lib/supabase';
+
+interface SafetyAlert {
+  id: string;
+  type: string;
+  status: string;
+  created_at: string;
+  description?: string;
+  reporter_name: string;
+}
+
+interface VerificationRequest {
+  id: string;
+  teacher_name: string;
+  verification_status: string;
+  submitted_at: string;
+  document_count: number;
+}
+
+export default function SafetyAdminScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
+  const [verifications, setVerifications] = useState<VerificationRequest[]>([]);
+  const [activeTab, setActiveTab] = useState<'alerts' | 'verifications'>('alerts');
+
+  const fetchData = useCallback(async () => {
+    try {
+      // Verify admin access
+      const { data: teacherData } = await supabase
+        .from('education_teachers')
+        .select('id, institution_id, role')
+        .eq('user_id', user?.id)
+        .single();
+
+      const adminRoles = ['admin', 'principal', 'headteacher'];
+      if (!adminRoles.includes(teacherData?.role)) {
+        setIsAdmin(false);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      setIsAdmin(true);
+
+      const institutionId = teacherData?.institution_id;
+
+      // Fetch transport alerts
+      const { data: alertData } = await supabase
+        .from('education_transport_alerts')
+        .select(`
+          id, type, status, created_at, description,
+          parent:parent_id(full_name)
+        `)
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      setAlerts((alertData || []).map((a: any) => ({
+        id: a.id,
+        type: a.type,
+        status: a.status,
+        created_at: a.created_at,
+        description: a.description,
+        reporter_name: a.parent?.full_name || 'Unknown',
+      })));
+
+      // Fetch pending verifications
+      const { data: verifyData } = await supabase
+        .from('education_teachers')
+        .select('id, full_name, verification_status, verification_submitted_at')
+        .eq('institution_id', institutionId)
+        .eq('verification_status', 'pending');
+
+      // Get document counts
+      const teacherIds = (verifyData || []).map((t: any) => t.id);
+      const { data: docData } = await supabase
+        .from('education_teacher_documents')
+        .select('teacher_id')
+        .in('teacher_id', teacherIds);
+
+      const docCountMap = new Map();
+      (docData || []).forEach((d: any) => {
+        docCountMap.set(d.teacher_id, (docCountMap.get(d.teacher_id) || 0) + 1);
+      });
+
+      setVerifications((verifyData || []).map((t: any) => ({
+        id: t.id,
+        teacher_name: t.full_name,
+        verification_status: t.verification_status,
+        submitted_at: t.verification_submitted_at,
+        document_count: docCountMap.get(t.id) || 0,
+      })));
+    } catch (e) {
+      console.error('[SafetyAdmin]', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  const handleResolveAlert = async (alertId: string) => {
+    try {
+      const { error } = await supabase
+        .from('education_transport_alerts')
+        .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+        .eq('id', alertId);
+
+      if (error) throw error;
+      fetchData();
+      Alert.alert('Resolved', 'Alert has been marked as resolved');
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to resolve alert');
+    }
+  };
+
+  const handleVerifyTeacher = async (teacherId: string, approve: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('education_teachers')
+        .update({
+          verification_status: approve ? 'verified' : 'rejected',
+          verification_reviewed_at: new Date().toISOString(),
+        })
+        .eq('id', teacherId);
+
+      if (error) throw error;
+      fetchData();
+      Alert.alert(approve ? 'Approved' : 'Rejected', `Teacher has been ${approve ? 'verified' : 'rejected'}.`);
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to update verification');
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <Ionicons name="lock-closed" size={48} color={colors.error} />
+        <Text style={[styles.errorText, { color: colors.error }]}>Admin Access Required</Text>
+        <Text style={[styles.errorSub, { color: colors.textSecondary }]}>You do not have permission to access this screen.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Safety & Admin</Text>
+        <Text style={[styles.headerSub, { color: colors.textSecondary }]}>Manage alerts & verifications</Text>
+      </View>
+
+      {/* Tab Switcher */}
+      <View style={[styles.tabBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'alerts' && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+          onPress={() => setActiveTab('alerts')}
+        >
+          <Text style={[styles.tabText, { color: activeTab === 'alerts' ? colors.primary : colors.textSecondary }]}>
+            Alerts ({alerts.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'verifications' && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
+          onPress={() => setActiveTab('verifications')}
+        >
+          <Text style={[styles.tabText, { color: activeTab === 'verifications' ? colors.primary : colors.textSecondary }]}>
+            Verifications ({verifications.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
+        {activeTab === 'alerts' ? (
+          alerts.length === 0 ? (
+            <View style={styles.center}>
+              <Ionicons name="shield-checkmark" size={48} color="#059669" />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No open alerts</Text>
+            </View>
+          ) : (
+            alerts.map(a => (
+              <View key={a.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.alertIcon, { backgroundColor: a.type === 'emergency' ? '#FEE2E2' : '#FEF3C7' }]}>
+                    <Ionicons name={a.type === 'emergency' ? 'warning' : 'alert-circle'} size={18} color={a.type === 'emergency' ? '#DC2626' : '#D97706'} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>
+                      {a.type.replace(/_/g, ' ').toUpperCase()}
+                    </Text>
+                    <Text style={[styles.cardMeta, { color: colors.textSecondary }]}>
+                      {a.reporter_name} · {new Date(a.created_at).toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+                {a.description && <Text style={[styles.cardContent, { color: colors.textSecondary }]}>{a.description}</Text>}
+                <TouchableOpacity style={[styles.resolveBtn, { backgroundColor: '#059669' }]} onPress={() => handleResolveAlert(a.id)}>
+                  <Text style={styles.resolveText}>Mark Resolved</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )
+        ) : (
+          verifications.length === 0 ? (
+            <View style={styles.center}>
+              <Ionicons name="checkmark-circle" size={48} color="#059669" />
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No pending verifications</Text>
+            </View>
+          ) : (
+            verifications.map(v => (
+              <View key={v.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.cardHeader}>
+                  <View style={[styles.alertIcon, { backgroundColor: '#DBEAFE' }]}>
+                    <Ionicons name="person" size={18} color="#2563EB" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>{v.teacher_name}</Text>
+                    <Text style={[styles.cardMeta, { color: colors.textSecondary }]}>
+                      {v.document_count} documents · Submitted {new Date(v.submitted_at).toLocaleDateString()}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.actionRow}>
+                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#059669' }]} onPress={() => handleVerifyTeacher(v.id, true)}>
+                    <Text style={styles.actionText}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#DC2626' }]} onPress={() => handleVerifyTeacher(v.id, false)}>
+                    <Text style={styles.actionText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  header: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 22, fontWeight: '800' },
+  headerSub: { fontSize: 13, marginTop: 2 },
+  tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
+  tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
+  tabText: { fontSize: 14, fontWeight: '600' },
+  errorText: { marginTop: 12, fontSize: 16, fontWeight: '700', color: '#DC2626' },
+  errorSub: { marginTop: 4, fontSize: 13, textAlign: 'center' },
+  card: { borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 12 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  alertIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  cardTitle: { fontSize: 15, fontWeight: '700' },
+  cardMeta: { fontSize: 12, marginTop: 2 },
+  cardContent: { fontSize: 13, lineHeight: 18, marginTop: 8, marginBottom: 10 },
+  resolveBtn: { paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  resolveText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  actionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  actionText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  emptyText: { marginTop: 12, fontSize: 14 },
+});
