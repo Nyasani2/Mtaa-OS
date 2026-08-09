@@ -1,226 +1,466 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, StatusBar, Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { getSchools, getTeachers, getStudents, getFeeds, getEvents } from '@/lib/services/education-service';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function EducationLanding() {
+const { width } = Dimensions.get('window');
+
+const CAPABILITY_PILLARS = [
+  {
+    id: 'student-family',
+    title: 'Student & Family',
+    subtitle: 'Enrollment, grades, attendance, and communication in one place.',
+    color: ['#FF6B35', '#F7931E'],
+    icon: 'people',
+    features: ['Student Enrollment', 'Parent Portal', 'Grade Tracking', 'Attendance Alerts'],
+  },
+  {
+    id: 'teaching-learning',
+    title: 'Teaching & Learning',
+    subtitle: 'Lesson plans, assignments, assessments, and progress tracking.',
+    color: ['#10B981', '#059669'],
+    icon: 'school',
+    features: ['Lesson Planning', 'Assignment Management', 'Online Assessments', 'Progress Reports'],
+  },
+  {
+    id: 'institution-ops',
+    title: 'Institution & Operations',
+    subtitle: 'Staff management, payroll, facilities, and compliance reporting.',
+    color: ['#8B5CF6', '#7C3AED'],
+    icon: 'business',
+    features: ['Staff Directory', 'Payroll Integration', 'Facility Booking', 'Compliance Reports'],
+  },
+];
+
+const HOW_IT_WORKS = [
+  {
+    step: '01',
+    title: 'Register Your School',
+    desc: 'Head teachers register their institution in minutes. Verify identity, set capacity, and configure programs.',
+  },
+  {
+    step: '02',
+    title: 'Enroll Students & Staff',
+    desc: 'Add students, parents, and teachers. Each gets a secure MTAA identity with role-based access.',
+  },
+  {
+    step: '03',
+    title: 'Teach, Track, Thrive',
+    desc: 'Manage lessons, track grades, communicate with families, and run your institution from one dashboard.',
+  },
+];
+
+const CONNECTED_APPS = [
+  { name: 'Wallet', icon: 'wallet', color: '#F59E0B', desc: 'Fee payments & stipends' },
+  { name: 'Health', icon: 'medical', color: '#EF4444', desc: 'Student health records' },
+  { name: 'Messenger', icon: 'chatbubbles', color: '#3B82F6', desc: 'Parent-teacher chat' },
+  { name: 'Tribes', icon: 'globe', color: '#10B981', desc: 'School communities' },
+];
+
+const STATS = [
+  { value: '200+', label: 'Schools' },
+  { value: '50K+', label: 'Students' },
+  { value: '12', label: 'Countries' },
+  { value: '4.9', label: 'Rating' },
+];
+
+const PULSE_ITEMS = [
+  { tag: 'New Feature', tagColor: '#10B981', title: 'AI-Powered Lesson Planner', time: '2h ago' },
+  { tag: 'Update', tagColor: '#3B82F6', title: 'Report Cards Now Export to PDF', time: '5h ago' },
+  { tag: 'Event', tagColor: '#F59E0B', title: 'Annual Education Summit — Nairobi', time: '1d ago' },
+];
+
+export default function EducationLandingPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'feed'|'events'|'admin'>('feed');
-  const [schools, setSchools] = useState<any[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
-  const [feeds, setFeeds] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+  const [activePillar, setActivePillar] = useState<string | null>(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
-  useEffect(() => { loadData(); }, []);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
-  const loadData = async () => {
-    try {
-      const [s, t, st, f, ev] = await Promise.all([
-        getSchools().catch(() => []),
-        getTeachers('').catch(() => []),
-        getStudents('').catch(() => []),
-        getFeeds('').catch(() => []),
-        getEvents('').catch(() => []),
-      ]);
-      setSchools(s || []); setTeachers(t || []); setStudents(st || []);
-      setFeeds(f || []); setEvents(ev || []);
-    } catch (e) { console.log('Education load error:', e); }
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const navigateToRegister = (type?: string) => {
+    if (type) {
+      router.push(`/register/${type}` as any);
+    } else {
+      router.push('/register' as any);
+    }
   };
-
-  const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
-
-  const QuickAccess = ({ icon, label, color, onPress }: any) => (
-    <TouchableOpacity style={[styles.quickBtn, { backgroundColor: color + '20' }]} onPress={onPress}>
-      <Ionicons name={icon} size={22} color={color} />
-      <Text style={[styles.quickLabel, { color }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-
-  const AdminCard = ({ icon, label, color, onPress }: any) => (
-    <TouchableOpacity style={styles.adminCard} onPress={onPress}>
-      <View style={[styles.adminIcon, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <Text style={styles.adminLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.headerTitle}>Education OS</Text>
-            <Text style={styles.headerSub}>{schools.length} Schools · {teachers.length} Teachers · {students.length} Students</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/(education)/messages')}>
-            <Ionicons name="mail-outline" size={24} color="#fff" />
-            <View style={styles.badge}><Text style={styles.badgeText}>3</Text></View>
-          </TouchableOpacity>
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow}>
-          <QuickAccess icon="school-outline" label="Schools" color="#60a5fa" onPress={() => router.push('/(education)/schools')} />
-          <QuickAccess icon="people-outline" label="Teachers" color="#34d399" onPress={() => router.push('/(education)/teachers')} />
-          <QuickAccess icon="calendar-outline" label="Calendar" color="#fbbf24" onPress={() => router.push('/(education)/timetable')} />
-          <QuickAccess icon="shield-checkmark-outline" label="Command" color="#f87171" onPress={() => router.push('/(education)/ict/command-center')} />
-          <QuickAccess icon="person-outline" label="Head Teacher" color="#a78bfa" onPress={() => router.push('/(education)/school/head-teacher')} />
-          <QuickAccess icon="warning-outline" label="Emergency" color="#ef4444" onPress={() => router.push('/(education)/emergency')} />
-        </ScrollView>
-      </View>
+      <StatusBar barStyle="light-content" />
 
-      <View style={styles.tabBar}>
-        {['feed', 'events', 'admin'].map((tab) => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab as any)}>
-            <Ionicons name={tab === 'feed' ? 'newspaper-outline' : tab === 'events' ? 'calendar-outline' : 'grid-outline'} size={16} color={activeTab === tab ? '#3b82f6' : '#94a3b8'} />
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
+      <Animated.View style={[styles.floatingHeader, { opacity: headerOpacity }]}>
+        <LinearGradient colors={['#1E1B4B', '#312E81']} style={styles.headerGradient}>
+          <Text style={styles.headerTitle}>MTAA Education</Text>
+          <TouchableOpacity onPress={() => router.push('/register' as any)}>
+            <Text style={styles.headerCta}>Get Started</Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        </LinearGradient>
+      </Animated.View>
 
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ paddingBottom: 40 }}>
-        {activeTab === 'feed' && (
-          <View>
-            <TouchableOpacity style={styles.createPost} onPress={() => router.push('/(education)/announcements/create')}>
-              <View style={styles.avatar}><Text style={styles.avatarText}>N</Text></View>
-              <Text style={styles.createPostText}>Share an announcement, update, or achievement...</Text>
-              <Ionicons name="image-outline" size={20} color="#94a3b8" />
-            </TouchableOpacity>
-            {feeds.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="document-text-outline" size={48} color="#cbd5e1" />
-                <Text style={styles.emptyTitle}>No posts yet</Text>
-                <Text style={styles.emptySub}>Be the first to share something!</Text>
-              </View>
-            ) : feeds.map((feed: any) => (
-              <View key={feed.id} style={styles.postCard}>
-                <View style={styles.postHeader}>
-                  <View style={[styles.avatar, { backgroundColor: '#3b82f6' }]}>
-                    <Text style={styles.avatarText}>{feed.author?.charAt(0) || 'A'}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.postAuthor}>{feed.author || 'Anonymous'}</Text>
-                    <Text style={styles.postTime}>{new Date(feed.created_at).toLocaleDateString()}</Text>
-                  </View>
-                </View>
-                <Text style={styles.postContent}>{feed.content}</Text>
-                <View style={styles.postActions}>
-                  <TouchableOpacity style={styles.postAction}><Ionicons name="heart-outline" size={18} color="#94a3b8" /><Text style={styles.postActionText}>{feed.likes || 0}</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.postAction}><Ionicons name="chatbubble-outline" size={18} color="#94a3b8" /><Text style={styles.postActionText}>{feed.comments || 0}</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.postAction}><Ionicons name="share-outline" size={18} color="#94a3b8" /></TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+        scrollEventThrottle={16}
+      >
+        <LinearGradient colors={['#1E1B4B', '#312E81', '#4338CA']} style={styles.hero}>
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <View style={styles.heroBadge}>
+              <Ionicons name="star" size={14} color="#FBBF24" />
+              <Text style={styles.heroBadgeText}>Trusted by 200+ Schools</Text>
+            </View>
 
-        {activeTab === 'events' && (
-          <View style={{ padding: 16 }}>
-            {events.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="calendar-outline" size={48} color="#cbd5e1" />
-                <Text style={styles.emptyTitle}>No upcoming events</Text>
+            <Text style={styles.heroTitle}>Education That Connects Every Learner</Text>
+            <Text style={styles.heroSubtitle}>
+              The complete school management platform built on MTAA. Enroll, teach, track, and grow — all in one connected ecosystem.
+            </Text>
+
+            <View style={styles.heroButtons}>
+              <TouchableOpacity style={styles.heroBtnPrimary} onPress={() => navigateToRegister()}>
+                <LinearGradient colors={['#FF6B35', '#F7931E']} style={styles.heroBtnPrimaryGradient}>
+                  <Text style={styles.heroBtnPrimaryText}>Start Registration</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.heroBtnSecondary} onPress={() => {}}>
+                <Text style={styles.heroBtnSecondaryText}>Watch Demo</Text>
+              </TouchableOpacity>
+            </View>
+
+            {isAuthenticated && user && (
+              <View style={styles.welcomeBack}>
+                <Ionicons name="person-circle" size={18} color="#A5B4FC" />
+                <Text style={styles.welcomeBackText}>Welcome back, {user.email?.split('@')[0] || 'Learner'}</Text>
               </View>
-            ) : events.map((event: any) => (
-              <TouchableOpacity key={event.id} style={styles.eventCard} onPress={() => router.push(`/(education)/events/${event.id}`)}>
-                <View style={styles.eventDate}>
-                  <Text style={styles.eventMonth}>{new Date(event.date).toLocaleString('default', { month: 'short' })}</Text>
-                  <Text style={styles.eventDay}>{new Date(event.date).getDate()}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <Text style={styles.eventMeta}>{event.location} · {event.time}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
+            )}
+          </Animated.View>
+        </LinearGradient>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Join the Campus</Text>
+          <Text style={styles.sectionSubtitle}>Register as a school, student, parent, or teacher</Text>
+
+          <View style={styles.regGrid}>
+            {[
+              { type: 'school', label: 'School', icon: 'business', colors: ['#FF6B35', '#F7931E'], desc: 'Register your institution' },
+              { type: 'student', label: 'Student', icon: 'school', colors: ['#3B82F6', '#2563EB'], desc: 'Enroll in a school' },
+              { type: 'parent', label: 'Parent', icon: 'people', colors: ['#10B981', '#059669'], desc: 'Link to your child' },
+              { type: 'teacher', label: 'Teacher', icon: 'person', colors: ['#8B5CF6', '#7C3AED'], desc: 'Join as educator' },
+            ].map((card) => (
+              <TouchableOpacity
+                key={card.type}
+                style={styles.regCard}
+                onPress={() => navigateToRegister(card.type)}
+                activeOpacity={0.85}
+              >
+                <LinearGradient colors={card.colors} style={styles.regCardGradient}>
+                  <Ionicons name={card.icon as any} size={28} color="#fff" />
+                  <Text style={styles.regCardLabel}>{card.label}</Text>
+                  <Text style={styles.regCardDesc}>{card.desc}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
-        )}
+        </View>
 
-        {activeTab === 'admin' && (
-          <View style={{ padding: 16 }}>
-            <Text style={styles.sectionTitle}>School Management</Text>
-            <View style={styles.adminGrid}>
-              <AdminCard icon="school-outline" label="Create School" color="#3b82f6" onPress={() => router.push('/(education)/schools/create')} />
-              <AdminCard icon="person-add-outline" label="Invite Teachers" color="#10b981" onPress={() => router.push('/(education)/schools/invite-teacher')} />
-              <AdminCard icon="cash-outline" label="Fee Structure" color="#f59e0b" onPress={() => router.push('/(education)/school/fees')} />
-              <AdminCard icon="wallet-outline" label="Payroll" color="#8b5cf6" onPress={() => router.push('/(education)/payroll')} />
-            </View>
-            <Text style={styles.sectionTitle}>Operations</Text>
-            <View style={styles.adminGrid}>
-              <AdminCard icon="videocam-outline" label="CCTV Monitor" color="#ef4444" onPress={() => router.push('/(education)/ict/cctv')} />
-              <AdminCard icon="map-outline" label="School Map" color="#059669" onPress={() => router.push('/(education)/ict/school-map')} />
-              <AdminCard icon="bus-outline" label="Transport" color="#0ea5e9" onPress={() => router.push('/(education)/ict/transport')} />
-              <AdminCard icon="finger-print-outline" label="Biometrics" color="#6366f1" onPress={() => router.push('/(education)/ict/biometrics')} />
-            </View>
-            <Text style={styles.sectionTitle}>Emergency & Security</Text>
-            <View style={styles.adminGrid}>
-              <AdminCard icon="warning-outline" label="Emergency" color="#dc2626" onPress={() => router.push('/(education)/emergency')} />
-              <AdminCard icon="shield-checkmark-outline" label="Command Center" color="#1e3a5f" onPress={() => router.push('/(education)/ict/command-center')} />
-              <AdminCard icon="people-outline" label="Visitors" color="#64748b" onPress={() => router.push('/(education)/ict/visitors')} />
-              <AdminCard icon="qr-code-outline" label="QR System" color="#8b5cf6" onPress={() => router.push('/(education)/ict/qr-system')} />
-            </View>
-            <Text style={styles.sectionTitle}>Academic</Text>
-            <View style={styles.adminGrid}>
-              <AdminCard icon="book-outline" label="Assignments" color="#3b82f6" onPress={() => router.push('/(education)/assignments')} />
-              <AdminCard icon="trophy-outline" label="Grades" color="#f59e0b" onPress={() => router.push('/(education)/grades')} />
-              <AdminCard icon="checkbox-outline" label="Attendance" color="#10b981" onPress={() => router.push('/(education)/attendance')} />
-              <AdminCard icon="time-outline" label="Timetable" color="#8b5cf6" onPress={() => router.push('/(education)/timetable')} />
-            </View>
+        <View style={[styles.section, { backgroundColor: '#F8FAFC' }]}>
+          <Text style={styles.sectionTitle}>Built for Every Role</Text>
+          <Text style={styles.sectionSubtitle}>Three powerful pillars that run your entire institution</Text>
+
+          {CAPABILITY_PILLARS.map((pillar) => (
+            <TouchableOpacity
+              key={pillar.id}
+              style={styles.pillarCard}
+              onPress={() => setActivePillar(activePillar === pillar.id ? null : pillar.id)}
+              activeOpacity={0.9}
+            >
+              <LinearGradient colors={pillar.color} style={styles.pillarHeader} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                <View style={styles.pillarIconWrap}>
+                  <Ionicons name={pillar.icon as any} size={24} color="#fff" />
+                </View>
+                <View style={styles.pillarTextWrap}>
+                  <Text style={styles.pillarTitle}>{pillar.title}</Text>
+                  <Text style={styles.pillarSubtitle}>{pillar.subtitle}</Text>
+                </View>
+                <Ionicons
+                  name={activePillar === pillar.id ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#fff"
+                />
+              </LinearGradient>
+
+              {activePillar === pillar.id && (
+                <View style={styles.pillarBody}>
+                  {pillar.features.map((feat, idx) => (
+                    <View key={idx} style={styles.pillarFeature}>
+                      <Ionicons name="checkmark-circle" size={18} color={pillar.color[0]} />
+                      <Text style={styles.pillarFeatureText}>{feat}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>How It Works</Text>
+          <Text style={styles.sectionSubtitle}>From registration to results in three simple steps</Text>
+
+          <View style={styles.howItWorksContainer}>
+            {HOW_IT_WORKS.map((item, idx) => (
+              <View key={idx} style={styles.howStep}>
+                <View style={styles.howStepNumber}>
+                  <Text style={styles.howStepNumberText}>{item.step}</Text>
+                </View>
+                <View style={styles.howStepContent}>
+                  <Text style={styles.howStepTitle}>{item.title}</Text>
+                  <Text style={styles.howStepDesc}>{item.desc}</Text>
+                </View>
+                {idx < HOW_IT_WORKS.length - 1 && <View style={styles.howConnector} />}
+              </View>
+            ))}
           </View>
-        )}
+        </View>
+
+        <LinearGradient colors={['#0F172A', '#1E293B']} style={styles.connectedSection}>
+          <Text style={[styles.sectionTitle, { color: '#fff' }]}>Connected Campus</Text>
+          <Text style={[styles.sectionSubtitle, { color: '#94A3B8' }]}>Education works better when everything is connected</Text>
+
+          <View style={styles.connectedGrid}>
+            {CONNECTED_APPS.map((app) => (
+              <View key={app.name} style={styles.connectedCard}>
+                <View style={[styles.connectedIcon, { backgroundColor: app.color + '20' }]}>
+                  <Ionicons name={app.icon as any} size={24} color={app.color} />
+                </View>
+                <Text style={styles.connectedName}>{app.name}</Text>
+                <Text style={styles.connectedDesc}>{app.desc}</Text>
+              </View>
+            ))}
+          </View>
+        </LinearGradient>
+
+        <View style={styles.statsSection}>
+          <View style={styles.statsRow}>
+            {STATS.map((stat, idx) => (
+              <View key={idx} style={styles.statItem}>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: '#F8FAFC', paddingBottom: 40 }]}>
+          <Text style={styles.sectionTitle}>Education Pulse</Text>
+          <Text style={styles.sectionSubtitle}>Latest updates from the MTAA Education network</Text>
+
+          {PULSE_ITEMS.map((item, idx) => (
+            <View key={idx} style={styles.pulseCard}>
+              <View style={[styles.pulseTag, { backgroundColor: item.tagColor + '15' }]}>
+                <Text style={[styles.pulseTagText, { color: item.tagColor }]}>{item.tag}</Text>
+              </View>
+              <Text style={styles.pulseTitle}>{item.title}</Text>
+              <Text style={styles.pulseTime}>{item.time}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f1f5f9' },
-  header: { backgroundColor: '#1e3a5f', paddingTop: 50, paddingBottom: 12 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
-  badge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#ef4444', borderRadius: 10, width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  quickRow: { paddingHorizontal: 12 },
-  quickBtn: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, marginHorizontal: 4, minWidth: 70 },
-  quickLabel: { fontSize: 11, fontWeight: '600', marginTop: 4 },
-  tabBar: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: '#3b82f6' },
-  tabText: { fontSize: 13, color: '#94a3b8', marginLeft: 6 },
-  tabTextActive: { color: '#3b82f6', fontWeight: '600' },
-  createPost: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', margin: 12, padding: 12, borderRadius: 12 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#3b82f6', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  createPostText: { flex: 1, marginLeft: 10, color: '#94a3b8', fontSize: 14 },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, color: '#94a3b8', marginTop: 12 },
-  emptySub: { fontSize: 13, color: '#cbd5e1', marginTop: 4 },
-  postCard: { backgroundColor: '#fff', marginHorizontal: 12, marginBottom: 8, padding: 14, borderRadius: 12 },
-  postHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  postAuthor: { fontWeight: '600', fontSize: 14, color: '#1e293b' },
-  postTime: { fontSize: 12, color: '#94a3b8', marginTop: 1 },
-  postContent: { fontSize: 14, color: '#334155', lineHeight: 20 },
-  postActions: { flexDirection: 'row', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-  postAction: { flexDirection: 'row', alignItems: 'center', marginRight: 20 },
-  postActionText: { fontSize: 13, color: '#94a3b8', marginLeft: 4 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1e293b', marginTop: 16, marginBottom: 10 },
-  adminGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  adminCard: { width: '23%', backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center' },
-  adminIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  adminLabel: { fontSize: 11, color: '#475569', textAlign: 'center', fontWeight: '500' },
-  eventCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 14, borderRadius: 12, marginBottom: 8 },
-  eventDate: { width: 50, height: 50, backgroundColor: '#3b82f6', borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  eventMonth: { fontSize: 10, color: '#fff', textTransform: 'uppercase', fontWeight: '600' },
-  eventDay: { fontSize: 18, color: '#fff', fontWeight: 'bold' },
-  eventTitle: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
-  eventMeta: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#fff' },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    ...Platform.select({ ios: { paddingTop: 50 }, android: { paddingTop: 40 } }),
+  },
+  headerGradient: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  headerCta: { color: '#FBBF24', fontSize: 14, fontWeight: '600' },
+
+  hero: {
+    paddingHorizontal: 24,
+    paddingTop: Platform.select({ ios: 100, android: 80 }),
+    paddingBottom: 60,
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginBottom: 20,
+    gap: 6,
+  },
+  heroBadgeText: { color: '#FDE68A', fontSize: 13, fontWeight: '600' },
+  heroTitle: { color: '#fff', fontSize: 34, fontWeight: '800', lineHeight: 42, marginBottom: 14 },
+  heroSubtitle: { color: '#C7D2FE', fontSize: 16, lineHeight: 24, marginBottom: 28 },
+  heroButtons: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  heroBtnPrimary: { borderRadius: 14, overflow: 'hidden', flex: 1 },
+  heroBtnPrimaryGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  heroBtnPrimaryText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  heroBtnSecondary: {
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
+  heroBtnSecondaryText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  welcomeBack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  welcomeBackText: { color: '#A5B4FC', fontSize: 14, fontWeight: '500' },
+
+  section: { paddingHorizontal: 20, paddingVertical: 36 },
+  sectionTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
+  sectionSubtitle: { fontSize: 15, color: '#64748B', marginBottom: 24, lineHeight: 22 },
+
+  regGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  regCard: { width: (width - 52) / 2, borderRadius: 16, overflow: 'hidden' },
+  regCardGradient: { padding: 18, alignItems: 'center', minHeight: 140, justifyContent: 'center' },
+  regCardLabel: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 10 },
+  regCardDesc: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 4, textAlign: 'center' },
+
+  pillarCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  pillarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    gap: 14,
+  },
+  pillarIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillarTextWrap: { flex: 1 },
+  pillarTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  pillarSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 13, marginTop: 2 },
+  pillarBody: { padding: 18, paddingTop: 8 },
+  pillarFeature: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  pillarFeatureText: { fontSize: 14, color: '#334155', fontWeight: '500' },
+
+  howItWorksContainer: { marginTop: 8 },
+  howStep: { flexDirection: 'row', marginBottom: 24 },
+  howStepNumber: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#4338CA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  howStepNumberText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  howStepContent: { flex: 1 },
+  howStepTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
+  howStepDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  howConnector: {
+    position: 'absolute',
+    left: 21,
+    top: 48,
+    width: 2,
+    height: 32,
+    backgroundColor: '#E2E8F0',
+  },
+
+  connectedSection: { paddingHorizontal: 20, paddingVertical: 40 },
+  connectedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },
+  connectedCard: {
+    width: (width - 52) / 2,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  connectedIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  connectedName: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  connectedDesc: { color: '#94A3B8', fontSize: 12, lineHeight: 18 },
+
+  statsSection: { backgroundColor: '#1E1B4B', paddingVertical: 28 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statItem: { alignItems: 'center' },
+  statValue: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  statLabel: { color: '#A5B4FC', fontSize: 13, marginTop: 4, fontWeight: '500' },
+
+  pulseCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  pulseTag: { alignSelf: 'flex-start', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8 },
+  pulseTagText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
+  pulseTitle: { fontSize: 15, fontWeight: '600', color: '#0F172A', marginBottom: 4 },
+  pulseTime: { fontSize: 12, color: '#94A3B8' },
 });
