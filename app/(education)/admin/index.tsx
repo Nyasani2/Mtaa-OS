@@ -7,43 +7,43 @@ const ADMIN_SECTIONS = [
   {
     title: 'People',
     items: [
-      { label: 'Participants', icon: 'people', color: '#3b82f6', route: '/education/participants', desc: 'Students, Teachers, Parents, Staff, Admins' },
-      { label: 'Invite Teachers', icon: 'person-add', color: '#8b5cf6', route: '/schools/invite-teacher', desc: 'Send invitations to new teachers' },
+      { label: 'Participants', icon: 'people', color: '#3b82f6', route: '/(education)/participants', desc: 'Students, Teachers, Parents, Staff, Admins' },
+      { label: 'Invite Teachers', icon: 'person-add', color: '#8b5cf6', route: '/(education)/schools/invite-teacher', desc: 'Send invitations to new teachers' },
     ],
   },
   {
     title: 'School',
     items: [
-      { label: 'Create School', icon: 'business', color: '#10b981', route: '/schools/create', desc: 'Register a new institution' },
-      { label: 'Fee Structure', icon: 'cash', color: '#f59e0b', route: '/school/fees', desc: 'Manage fee payments & structure' },
-      { label: 'Payroll', icon: 'card', color: '#06b6d4', route: '/payroll', desc: 'Teacher & staff salaries' },
+      { label: 'Create School', icon: 'business', color: '#10b981', route: '/(education)/schools/create', desc: 'Register a new institution' },
+      { label: 'Fee Structure', icon: 'cash', color: '#f59e0b', route: '/(education)/school/fees', desc: 'Manage fee payments & structure' },
+      { label: 'Payroll', icon: 'card', color: '#06b6d4', route: '/(education)/payroll', desc: 'Teacher & staff salaries' },
     ],
   },
   {
     title: 'Operations',
     items: [
-      { label: 'CCTV Monitor', icon: 'videocam', color: '#ef4444', route: '/ict/cctv', desc: 'Security camera feeds' },
-      { label: 'School Map', icon: 'map', color: '#14b8a6', route: '/ict/school-map', desc: 'Campus layout & rooms' },
-      { label: 'Transport', icon: 'bus', color: '#f97316', route: '/ict/transport', desc: 'Bus routes & student transport' },
-      { label: 'Biometrics', icon: 'finger-print', color: '#6366f1', route: '/ict/biometrics', desc: 'Fingerprint & attendance sync' },
+      { label: 'CCTV Monitor', icon: 'videocam', color: '#ef4444', route: '/(education)/ict/cctv', desc: 'Security camera feeds' },
+      { label: 'School Map', icon: 'map', color: '#14b8a6', route: '/(education)/ict/school-map', desc: 'Campus layout & rooms' },
+      { label: 'Transport', icon: 'bus', color: '#f97316', route: '/(education)/ict/transport', desc: 'Bus routes & student transport' },
+      { label: 'Biometrics', icon: 'finger-print', color: '#6366f1', route: '/(education)/ict/biometrics', desc: 'Fingerprint & attendance sync' },
     ],
   },
   {
     title: 'Emergency & Security',
     items: [
-      { label: 'Emergency', icon: 'warning', color: '#dc2626', route: '/emergency', desc: 'Fire, Medical, Intruder alerts' },
-      { label: 'Command Center', icon: 'shield', color: '#7c3aed', route: '/command', desc: 'Central operations dashboard' },
-      { label: 'Visitors', icon: 'walk', color: '#0ea5e9', route: '/visitors', desc: 'Visitor check-in management' },
-      { label: 'QR System', icon: 'qr-code', color: '#84cc16', route: '/qr-system', desc: 'QR-based access control' },
+      { label: 'Emergency', icon: 'warning', color: '#dc2626', route: '/(education)/emergency', desc: 'Fire, Medical, Intruder alerts' },
+      { label: 'Command Center', icon: 'shield', color: '#7c3aed', route: '/(education)/ict/command-center', desc: 'Central operations dashboard' },
+      { label: 'Visitors', icon: 'walk', color: '#0ea5e9', route: '/(education)/ict/visitors', desc: 'Visitor check-in management' },
+      { label: 'QR System', icon: 'qr-code', color: '#84cc16', route: '/(education)/ict/qr-system', desc: 'QR-based access control' },
     ],
   },
   {
     title: 'Academic',
     items: [
-      { label: 'Assignments', icon: 'document-text', color: '#3b82f6', route: '/assignments', desc: 'Homework & class assignments' },
-      { label: 'Grades', icon: 'trophy', color: '#eab308', route: '/grades', desc: 'Student marks & reports' },
-      { label: 'Attendance', icon: 'checkbox', color: '#22c55e', route: '/attendance', desc: 'Daily attendance tracking' },
-      { label: 'Timetable', icon: 'time', color: '#a855f7', route: '/timetable', desc: 'Class schedules' },
+      { label: 'Assignments', icon: 'document-text', color: '#3b82f6', route: '/(education)/assignments', desc: 'Homework & class assignments' },
+      { label: 'Grades', icon: 'trophy', color: '#eab308', route: '/(education)/grades', desc: 'Student marks & reports' },
+      { label: 'Attendance', icon: 'checkbox', color: '#22c55e', route: '/(education)/attendance', desc: 'Daily attendance tracking' },
+      { label: 'Timetable', icon: 'time', color: '#a855f7', route: '/(education)/timetable', desc: 'Class schedules' },
     ],
   },
 ];

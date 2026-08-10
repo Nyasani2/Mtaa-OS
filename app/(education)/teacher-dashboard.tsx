@@ -55,7 +55,7 @@ export default function TeacherDashboard() {
           <Text style={styles.emptyText}>No classes assigned yet</Text>
         ) : (
           classes.map((cls, i) => (
-            <TouchableOpacity key={i} style={styles.classRow} onPress={() => router.push(`/(education)/classes/${cls.id}`)}>
+            <TouchableOpacity key={i} style={styles.classRow} onPress={() => router.push(`/(education)/class/${cls.id}`)}>
               <View style={styles.classIcon}>
                 <Text style={styles.classIconText}>{cls.name?.charAt(0)}</Text>
               </View>
@@ -69,18 +69,18 @@ export default function TeacherDashboard() {
         )}
       </Section>
 
-      <Section title="Pending Submissions" icon="alert-circle-outline" action="Grade All" onAction={() => router.push('/(education)/submissions')}>
+      <Section title="Pending Submissions" icon="alert-circle-outline" action="Grade All" onAction={() => router.push('/(education)/assignments')}>
         {submissions.length === 0 ? (
           <Text style={styles.emptyText}>All caught up! 🎉</Text>
         ) : (
           submissions.slice(0, 5).map((sub, i) => (
-            <TouchableOpacity key={i} style={styles.submissionRow} onPress={() => router.push(`/(education)/submissions/${sub.id}`)}>
+            <View key={i} style={styles.submissionRow}>
               <View>
                 <Text style={styles.subStudent}>{sub.student?.full_name}</Text>
                 <Text style={styles.subAssignment}>{sub.assignment?.title}</Text>
               </View>
               <Text style={styles.subDate}>{formatDate(sub.submitted_at)}</Text>
-            </TouchableOpacity>
+            </View>
           ))
         )}
       </Section>

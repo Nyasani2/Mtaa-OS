@@ -1,67 +1,79 @@
-# MTAA Education Redesign V2
+# Teacher Feed + 4-Camera Content Creation
 
-## What's Inside
+## Files Included
 
-| File | Purpose |
-|------|---------|
-| `app/(education)/index.tsx` | Modern landing page — hero, 3-pillar grid, registration hub, How It Works, Connected Campus, stats, Education Pulse |
-| `app/(education)/register/index.tsx` | Registration hub — 4 gradient cards (School / Student / Parent / Teacher) |
-| `app/(education)/register/school.tsx` | 3-step school registration — School Info -> Head Teacher -> Capacity |
-| `app/(education)/register/student.tsx` | 3-step student enrollment — Personal -> School -> Guardian |
-| `app/(education)/register/parent.tsx` | 3-step parent registration — Personal -> Child Link -> Verification |
-| `app/(education)/register/teacher.tsx` | 3-step teacher onboarding — Personal -> School Assignment -> Qualifications |
+| File | Route | Description |
+|------|-------|-------------|
+| app/(education)/feed/index.tsx | /(education)/feed | Teacher social feed with stories, subject filters, posts, likes, comments |
+| app/(education)/feed/create.tsx | /(education)/feed/create | 4-mode content creation: Camera, Gallery, Document Scan, Text |
 
-## Auth Integration
+## Prerequisites
 
-All registration forms integrate with MTAA single auth:
-- Pre-fill user data from `useAuthStore` (name, email, phone from `user.user_metadata`)
-- Check `isAuthenticated` before submission — redirect to login if not signed in
-- Attach `user_id` to every registration payload for database linkage
-- Each form has a `// TODO: Wire to education_service.createX(payload)` comment where you hook your real API
+Before extracting, rename your old feed file if it exists:
 
-## Design
+```bash
+cd ~/MTAA_OS_V10/app/\(education\)
+mv feed.tsx feed-old.tsx 2>/dev/null || true
+mkdir -p feed
+```
 
-- Zero emojis — clean text + gradient colors only (no encoding corruption)
-- Expo LinearGradient for all hero/header backgrounds
-- Ionicons from `@expo/vector-icons` for icons
-- Collapsible 3-pillar capability grid on landing page
-- Floating header that appears on scroll
-- Stepper indicators on all multi-step forms
-- Chip selectors for options (ownership, gender, programs, subjects, etc.)
-- Summary review on final step before submission
+## Install Dependencies
 
-## Installation
+```bash
+cd ~/MTAA_OS_V10
+npx expo install expo-camera expo-image-picker
+```
+
+## Extract ZIP
 
 ```bash
 cd ~/Downloads
-# Download the ZIP from the sandbox link provided
-
-# Extract to your project
-unzip -o education_redesign_v2.zip -d ~/MTAA_OS_V10/
-
-# Ensure the register directory exists
-mkdir -p ~/MTAA_OS_V10/app/\(education\)/register
+unzip -o teacher_feed_camera_v1.zip -d ~/MTAA_OS_V10/
 ```
 
-## Wiring Your Services
+## Features
 
-Each form has a `handleSubmit` function with a payload object. Replace the `setTimeout` mock with your actual service call:
+### Teacher Feed (index.tsx)
+- Gradient header with auth-aware welcome
+- Horizontal stories bar
+- Subject filter chips (All, Mathematics, Science, etc.)
+- Post cards with author info, content, media grids (1-4 images)
+- Like, comment, share actions
+- Pull-to-refresh
+- Floating action button to create post
+- Auth gate: redirects to login if not authenticated
 
-```typescript
-// In school.tsx, student.tsx, parent.tsx, teacher.tsx
-// Replace:
-setTimeout(() => { ... }, 1500);
+### Create Content (create.tsx)
+- 4-mode selector: Camera / Gallery / Document / Text
+- **Camera Mode**: Live preview with flip, flash, shutter capture
+- **Gallery Mode**: Multi-select from device photos via expo-image-picker
+- **Document Mode**: Camera with corner frame overlay for document scanning
+- **Text Mode**: Clean text-only composer
+- Photo preview strip with remove capability
+- Caption input
+- Subject tag multi-select chips
+- Auth-aware posting with user_id attachment
+- Loading state on publish
 
-// With:
-await educationService.createSchool(payload);
-// or educationService.enrollStudent(payload)
-// or educationService.registerParent(payload)
-// or educationService.registerTeacher(payload)
+## MTAA Auth Integration
+- Pre-fills author info from useAuthStore
+- Checks isAuthenticated before create/post actions
+- Shows Alert with Sign In button if not authenticated
+- Attaches user.id to all payloads
+
+## Service Integration Points
+
+Search for these TODO comments in the code:
+
+```
+// TODO: Wire to education_service.getFeed({ subject: activeSubject })
+// TODO: Wire to education_service.toggleLike(postId)
+// TODO: Wire to education_service.createPost(payload)
+// TODO: Upload photos to Supabase storage first, then store URLs
 ```
 
-## Dependencies
-
-- `expo-linear-gradient`
-- `@expo/vector-icons`
-- `expo-router`
-- `@/lib/auth/store/auth.store` (your existing auth store)
+## Notes
+- Zero emojis, clean encoding
+- Ionicons + Expo LinearGradient
+- Document scan uses camera with visual frame overlay (no OCR)
+- Camera permissions handled gracefully with fallback UI

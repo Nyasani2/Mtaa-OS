@@ -1,186 +1,211 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, TextInput } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function ExamTakeScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(true);
-  const [exam, setExam] = useState(null);
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+  const examId = typeof id === "string" ? id : "";
+
+  const [exam, setExam] = useState<any>(null);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(0);
-  const [currentQ, setCurrentQ] = useState(0);
-
-  const loadExam = useCallback(async () => {
-    if (!id) return;
-    try {
-      setLoading(true);
-      const { data: e } = await supabase.from("education_exams").select("*").eq("id", id).maybeSingle();
-      setExam(e);
-      if (e?.duration_minutes) setTimeLeft(e.duration_minutes * 60);
-
-      const { data: qs } = await supabase.from("education_exam_questions").select("*").eq("exam_id", id).order("order_index", { ascending: true });
-      setQuestions(qs || []);
-
-      const { data: sub } = await supabase.from("education_exam_submissions").select("id, score").eq("exam_id", id).eq("student_id", user?.id).maybeSingle();
-      if (sub) { setSubmitted(true); setScore(sub.score || 0); }
-    } catch (err) { console.error("[ExamTake] load error:", err); }
-    finally { setLoading(false); }
-  }, [id, user?.id]);
-
-  useEffect(() => { loadExam(); }, [loadExam]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSubmitRef = useRef(false);
 
   useEffect(() => {
-    if (timeLeft <= 0 || submitted) return;
-    const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, submitted]);
+    if (!examId) return;
+    const load = async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data: ev, error: ee } = await supabase.from("education_exams").select("*").eq("id", examId).single();
+        if (ee) throw ee;
+        setExam(ev);
 
-  const setAnswer = (questionId, value) => {
-    if (submitted) return;
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  };
+        const { data: q } = await supabase.from("education_exam_questions").select("*").eq("exam_id", examId).order("order_index");
+        setQuestions(q || []);
 
-  const submitExam = async () => {
-    if (!exam || !user?.id) return;
-    let correct = 0;
-    let total = 0;
-    questions.forEach((q) => {
-      if (q.question_type === "multiple_choice") {
-        total++;
-        if (answers[q.id] === q.correct_option_index) correct++;
-      } else if (q.question_type === "true_false") {
-        total++;
-        if (answers[q.id] === q.correct_answer) correct++;
-      } else {
-        total += q.points || 1;
+        if (ev.duration_minutes) {
+          setTimeLeft(ev.duration_minutes * 60);
+        }
+      } catch (err: any) {
+        Alert.alert("Error", err.message || "Failed to load exam");
+      } finally {
+        setLoading(false);
       }
-    });
-    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    };
+    load();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [examId]);
 
-    try {
-      await supabase.from("education_exam_submissions").insert({
-        exam_id: exam.id, student_id: user.id, answers: answers,
-        score: pct, correct_count: correct, total_count: total,
-        submitted_at: new Date().toISOString(),
-        time_spent_seconds: exam.duration_minutes * 60 - timeLeft,
-        status: "submitted",
+  useEffect(() => {
+    if (timeLeft <= 0 || submitted || loading) return;
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          if (!autoSubmitRef.current) {
+            autoSubmitRef.current = true;
+            handleAutoSubmit();
+          }
+          return 0;
+        }
+        return prev - 1;
       });
-      setScore(pct); setSubmitted(true);
-      Alert.alert("Submitted", `You scored ${pct}%`);
-    } catch (err) { Alert.alert("Error", err.message || "Failed to submit"); }
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timeLeft, submitted, loading]);
+
+  const handleAutoSubmit = async () => {
+    if (submitting || submitted) return;
+    setSubmitting(true);
+    try {
+      await submitToDatabase(true);
+      Alert.alert("Time's Up!", "Your exam has been automatically submitted.", [{ text: "OK", onPress: () => router.replace("/(education)/student-dashboard") }]);
+    } catch (err: any) {
+      Alert.alert("Auto-Submit Failed", err.message || "Please contact your teacher.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const formatTime = (s) => { const m = Math.floor(s / 60); const sec = s % 60; return `${m}:${sec.toString().padStart(2, "0")}`; };
+  const handleManualSubmit = () => {
+    const answered = Object.keys(answers).length;
+    const total = questions.length;
+    Alert.alert(
+      "Submit Exam?",
+      `You have answered ${answered} of ${total} questions. ${answered < total ? "Some questions are unanswered." : ""}`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Submit",
+          onPress: async () => {
+            setSubmitting(true);
+            try {
+              await submitToDatabase(false);
+              setSubmitted(true);
+              if (timerRef.current) clearInterval(timerRef.current);
+              Alert.alert("Submitted!", "Your exam has been submitted successfully.", [{ text: "OK", onPress: () => router.replace("/(education)/student-dashboard") }]);
+            } catch (err: any) {
+              Alert.alert("Submit Failed", err.message);
+            } finally {
+              setSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const submitToDatabase = async (isAuto: boolean) => {
+    if (!user?.id || !examId) throw new Error("Missing user or exam");
+    const { supabase } = await import("@/lib/supabase");
+    const score = calculateScore();
+    const timeSpent = exam?.duration_minutes ? (exam.duration_minutes * 60) - timeLeft : 0;
+
+    const { error } = await supabase.from("education_exam_submissions").insert({
+      exam_id: examId,
+      student_id: user.id,
+      answers: answers,
+      score: score,
+      total_possible: questions.length,
+      time_spent_seconds: timeSpent,
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+      is_auto_submitted: isAuto,
+    });
+    if (error) throw error;
+  };
+
+  const calculateScore = () => {
+    let correct = 0;
+    questions.forEach((q) => {
+      if (answers[q.id] === q.correct_option_index) correct++;
+    });
+    return correct;
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const selectAnswer = (questionId: string, optionIndex: number) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
+  };
 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#38bdf8" />
-        <Text style={{ color: "#94a3b8", marginTop: 12 }}>Loading exam...</Text>
       </View>
     );
   }
 
-  const q = questions[currentQ];
+  const timerColor = timeLeft < 60 ? "#ef4444" : timeLeft < 300 ? "#f59e0b" : "#22c55e";
 
   return (
     <View style={{ flex: 1, backgroundColor: "#0f172a" }}>
-      <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="arrow-back" size={22} color="#94a3b8" />
-          </TouchableOpacity>
-          <Text style={{ color: "#f8fafc", fontSize: 18, fontWeight: "800", flex: 1 }} numberOfLines={1}>{exam?.title || "Exam"}</Text>
-          {!submitted && (
-            <View style={{ backgroundColor: timeLeft < 300 ? "#7f1d1d" : "#1e3a5f", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-              <Text style={{ color: timeLeft < 300 ? "#fca5a5" : "#7dd3fc", fontSize: 12, fontWeight: "700", fontFamily: "monospace" }}>{formatTime(Math.max(0, timeLeft))}</Text>
-            </View>
-          )}
+      <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1e293b", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View>
+          <Text style={{ color: "#f8fafc", fontSize: 18, fontWeight: "800" }}>{exam?.title || "Exam"}</Text>
+          <Text style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{questions.length} questions</Text>
         </View>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={{ color: "#94a3b8", fontSize: 13 }}>Q{currentQ + 1} of {questions.length}</Text>
-          <Text style={{ color: "#94a3b8", fontSize: 13 }}>{exam?.subject || "General"}</Text>
+        <View style={{ backgroundColor: timerColor + "20", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: timerColor + "40" }}>
+          <Text style={{ color: timerColor, fontSize: 16, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{formatTime(timeLeft)}</Text>
         </View>
       </View>
 
-      {submitted ? (
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-          <View style={{ backgroundColor: score >= 70 ? "#064e3b" : score >= 50 ? "#451a03" : "#7f1d1d", borderRadius: 12, padding: 20, marginBottom: 20, alignItems: "center" }}>
-            <Text style={{ color: "#fff", fontSize: 32, fontWeight: "800" }}>{score}%</Text>
-            <Text style={{ color: "#94a3b8", fontSize: 14, marginTop: 4 }}>{score >= 70 ? "Passed" : score >= 50 ? "Average" : "Failed"}</Text>
-          </View>
-          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 12, textTransform: "uppercase" }}>Answer Review</Text>
-          {questions.map((ques, idx) => (
-            <View key={ques.id} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, marginBottom: 10 }}>
-              <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{idx + 1}. {ques.question_text}</Text>
-              <Text style={{ color: "#94a3b8", fontSize: 13, marginTop: 6 }}>Your answer: {JSON.stringify(answers[ques.id]) || "No answer"}</Text>
-              {ques.correct_answer && <Text style={{ color: "#10b981", fontSize: 13, marginTop: 4 }}>Correct: {JSON.stringify(ques.correct_answer)}</Text>}
-            </View>
-          ))}
-        </ScrollView>
-      ) : (
-        <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
-            {q ? (
-              <View style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16 }}>
-                <Text style={{ color: "#f8fafc", fontSize: 16, fontWeight: "600", marginBottom: 16 }}>{currentQ + 1}. {q.question_text}</Text>
-                {q.question_type === "multiple_choice" && (q.options || []).map((opt, idx) => (
-                  <TouchableOpacity key={idx} onPress={() => setAnswer(q.id, idx)} style={{ backgroundColor: answers[q.id] === idx ? "#1e3a5f" : "#0f172a", borderRadius: 10, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: answers[q.id] === idx ? "#3b82f6" : "#334155", flexDirection: "row", alignItems: "center" }}>
-                    <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: answers[q.id] === idx ? "#3b82f6" : "#334155", justifyContent: "center", alignItems: "center", marginRight: 10 }}>
-                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>{String.fromCharCode(65 + idx)}</Text>
-                    </View>
-                    <Text style={{ color: "#f8fafc", fontSize: 14, flex: 1 }}>{opt}</Text>
-                  </TouchableOpacity>
-                ))}
-                {q.question_type === "true_false" && (
-                  <View style={{ flexDirection: "row", gap: 10 }}>
-                    {["true", "false"].map((val) => (
-                      <TouchableOpacity key={val} onPress={() => setAnswer(q.id, val === "true")} style={{ flex: 1, backgroundColor: answers[q.id] === (val === "true") ? "#1e3a5f" : "#0f172a", borderRadius: 10, padding: 14, alignItems: "center", borderWidth: 1, borderColor: answers[q.id] === (val === "true") ? "#3b82f6" : "#334155" }}>
-                        <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600", textTransform: "capitalize" }}>{val}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-                {(q.question_type === "short_answer" || q.question_type === "essay") && (
-                  <TextInput
-                    value={answers[q.id] || ""} onChangeText={(t) => setAnswer(q.id, t)}
-                    placeholder="Type your answer..." placeholderTextColor="#475569"
-                    multiline numberOfLines={q.question_type === "essay" ? 6 : 3}
-                    style={{ backgroundColor: "#0f172a", borderRadius: 10, padding: 14, color: "#f8fafc", fontSize: 14, borderWidth: 1, borderColor: "#334155", textAlignVertical: "top" }}
-                  />
-                )}
-              </View>
-            ) : (
-              <Text style={{ color: "#64748b", textAlign: "center", paddingVertical: 40 }}>No questions available</Text>
-            )}
-          </ScrollView>
-
-          <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: "#1e293b", backgroundColor: "#0f172a" }}>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity onPress={() => setCurrentQ((p) => Math.max(0, p - 1))} disabled={currentQ === 0} style={{ flex: 1, backgroundColor: currentQ === 0 ? "#1e293b" : "#334155", borderRadius: 10, padding: 14, alignItems: "center" }}>
-                <Text style={{ color: currentQ === 0 ? "#64748b" : "#f8fafc", fontWeight: "600" }}>Previous</Text>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        {questions.map((q, idx) => (
+          <View key={q.id} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 8 }}>Question {idx + 1}</Text>
+            <Text style={{ color: "#f8fafc", fontSize: 15, lineHeight: 22, marginBottom: 12 }}>{q.question_text}</Text>
+            {q.options?.map((opt: string, optIdx: number) => (
+              <TouchableOpacity
+                key={optIdx}
+                onPress={() => selectAnswer(q.id, optIdx)}
+                style={{
+                  backgroundColor: answers[q.id] === optIdx ? "#0ea5e920" : "#0f172a",
+                  borderRadius: 10,
+                  padding: 12,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: answers[q.id] === optIdx ? "#0ea5e9" : "#334155",
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: answers[q.id] === optIdx ? "#0ea5e9" : "#475569", justifyContent: "center", alignItems: "center", marginRight: 10 }}>
+                  {answers[q.id] === optIdx && <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: "#0ea5e9" }} />}
+                </View>
+                <Text style={{ color: "#f8fafc", fontSize: 14, flex: 1 }}>{opt}</Text>
               </TouchableOpacity>
-              {currentQ < questions.length - 1 ? (
-                <TouchableOpacity onPress={() => setCurrentQ((p) => Math.min(questions.length - 1, p + 1))} style={{ flex: 1, backgroundColor: "#3b82f6", borderRadius: 10, padding: 14, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", fontWeight: "600" }}>Next</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity onPress={submitExam} style={{ flex: 1, backgroundColor: "#059669", borderRadius: 10, padding: 14, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Submit Exam</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            ))}
           </View>
-        </View>
-      )}
+        ))}
+      </ScrollView>
+
+      <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: "#1e293b", backgroundColor: "#0f172a" }}>
+        <TouchableOpacity
+          onPress={handleManualSubmit}
+          disabled={submitting || submitted}
+          style={{ backgroundColor: "#0ea5e9", paddingVertical: 14, borderRadius: 12, alignItems: "center", opacity: submitting || submitted ? 0.6 : 1 }}
+        >
+          {submitting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>Submit Exam</Text>}
+        </TouchableOpacity>
+        <Text style={{ color: "#64748b", fontSize: 11, textAlign: "center", marginTop: 8 }}>
+          {Object.keys(answers).length} of {questions.length} answered
+        </Text>
+      </View>
     </View>
   );
 }

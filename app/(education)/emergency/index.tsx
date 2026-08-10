@@ -1,242 +1,245 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Vibration } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/lib/hooks/useEducation';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { Ionicons } from "@expo/vector-icons";
 
-export default function EmergencyConsole() {
+const EMERGENCY_TYPES = [
+  { id: "fire", label: "Fire", icon: "flame", color: "#ef4444" },
+  { id: "medical", label: "Medical", icon: "medical", color: "#22c55e" },
+  { id: "intruder", label: "Intruder", icon: "warning", color: "#f59e0b" },
+  { id: "lockdown", label: "Lockdown", icon: "lock-closed", color: "#6366f1" },
+  { id: "evacuation", label: "Evacuation", icon: "exit", color: "#0ea5e9" },
+  { id: "other", label: "Other", icon: "alert-circle", color: "#6b7280" },
+];
+
+export default function EmergencyScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { getInstitutionById, getTeacherByUserId, getStudents, getAllEvents } = useEducation();
   const [active, setActive] = useState(false);
-  const [timer, setTimer] = useState(0);
-  const [selectedType, setSelectedType] = useState(null);
+  const [type, setType] = useState<string | null>(null);
   const [stats, setStats] = useState({ present: 0, missing: 0, injured: 0, buses: 0 });
+  const [loading, setLoading] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<any[]>([]);
+  const [blocked, setBlocked] = useState<any[]>([]);
+  const [timeline, setTimeline] = useState<any[]>([]);
 
-  useEffect(() => {
-    let interval;
-    if (active) {
-      interval = setInterval(() => setTimer(t => t + 1), 1000);
-      Vibration.vibrate([500, 500, 500]);
+  const loadEmergencyData = async () => {
+    if (!user?.id) return;
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: activeEmergency } = await supabase
+        .from("education_emergencies")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (activeEmergency) {
+        setActive(true);
+        setType(activeEmergency.type);
+        setStats({
+          present: activeEmergency.present_count || 0,
+          missing: activeEmergency.missing_count || 0,
+          injured: activeEmergency.injured_count || 0,
+          buses: activeEmergency.buses_count || 0,
+        });
+
+        const [c, r, b, t] = await Promise.all([
+          supabase.from("education_emergency_contacts").select("*").eq("institution_id", activeEmergency.institution_id),
+          supabase.from("education_safe_routes").select("*").eq("emergency_id", activeEmergency.id),
+          supabase.from("education_blocked_areas").select("*").eq("emergency_id", activeEmergency.id),
+          supabase.from("education_emergency_timeline").select("*").eq("emergency_id", activeEmergency.id).order("created_at", { ascending: false }),
+        ]);
+        setContacts(c.data || []);
+        setRoutes(r.data || []);
+        setBlocked(b.data || []);
+        setTimeline(t.data || []);
+      }
+    } catch (err) {
+      console.error("Emergency load error:", err);
     }
-    return () => clearInterval(interval);
-  }, [active]);
-
-  const activateEmergency = (type) => {
-    setSelectedType(type);
-    setActive(true);
-    Alert.alert(
-      `EMERGENCY: ${type}`,
-      'Emergency mode activated. All staff and parents have been notified.',
-      [{ text: 'OK' }]
-    );
   };
 
-  const deactivateEmergency = () => {
-    Alert.alert('Deactivate Emergency?', 'This will return the school to normal operations.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Deactivate', onPress: () => { setActive(false); setTimer(0); setSelectedType(null); } },
+  useEffect(() => { loadEmergencyData(); }, [user?.id]);
+
+  const activate = async (emergencyType: string) => {
+    if (!user?.id) { Alert.alert("Error", "Not authenticated"); return; }
+    setLoading(true);
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data: staff } = await supabase.from("education_staff").select("institution_id").eq("user_id", user.id).single();
+      const institutionId = staff?.institution_id;
+      if (!institutionId) { Alert.alert("Error", "No institution assigned"); return; }
+
+      const { error } = await supabase.from("education_emergencies").insert({
+        type: emergencyType,
+        status: "active",
+        institution_id: institutionId,
+        activated_by: user.id,
+        present_count: 0,
+        missing_count: 0,
+        injured_count: 0,
+        buses_count: 0,
+      });
+      if (error) throw error;
+
+      setActive(true);
+      setType(emergencyType);
+      Alert.alert("Emergency Activated", `${emergencyType.toUpperCase()} emergency has been activated. All staff have been notified.`);
+      loadEmergencyData();
+    } catch (err: any) {
+      Alert.alert("Activation Failed", err.message || "Could not activate emergency");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deactivate = async () => {
+    if (!active) return;
+    Alert.alert("Deactivate Emergency?", "Confirm the situation is resolved.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Resolve",
+        style: "destructive",
+        onPress: async () => {
+          setLoading(true);
+          try {
+            const { supabase } = await import("@/lib/supabase");
+            const { data: activeEmergency } = await supabase
+              .from("education_emergencies")
+              .select("id")
+              .eq("status", "active")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
+            if (activeEmergency) {
+              await supabase.from("education_emergencies").update({ status: "resolved", resolved_at: new Date().toISOString() }).eq("id", activeEmergency.id);
+            }
+            setActive(false);
+            setType(null);
+            setStats({ present: 0, missing: 0, injured: 0, buses: 0 });
+            setContacts([]);
+            setRoutes([]);
+            setBlocked([]);
+            setTimeline([]);
+          } catch (err: any) {
+            Alert.alert("Error", err.message);
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
     ]);
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={active ? ['#dc2626', '#991b1b'] : ['#1e293b', '#0f172a']} style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Emergency Console</Text>
-          <View style={[styles.statusDot, { backgroundColor: active ? '#ef4444' : '#10b981' }]} />
+  if (!active) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: "#0f172a" }} contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
+        <Text style={{ color: "#f8fafc", fontSize: 24, fontWeight: "800", marginBottom: 8 }}>Emergency Console</Text>
+        <Text style={{ color: "#94a3b8", fontSize: 14, marginBottom: 24 }}>Select emergency type to activate</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          {EMERGENCY_TYPES.map((et) => (
+            <TouchableOpacity
+              key={et.id}
+              onPress={() => activate(et.id)}
+              disabled={loading}
+              style={{ width: "47%", backgroundColor: "#1e293b", borderRadius: 14, padding: 20, alignItems: "center", borderWidth: 1, borderColor: "#334155" }}
+            >
+              <Ionicons name={et.icon as any} size={32} color={et.color} />
+              <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600", marginTop: 10 }}>{et.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </ScrollView>
+    );
+  }
 
-        {active && (
-          <View style={styles.emergencyBanner}>
-            <Ionicons name="warning" size={32} color="#fff" />
-            <View style={styles.emergencyInfo}>
-              <Text style={styles.emergencyType}>{selectedType?.toUpperCase()}</Text>
-              <Text style={styles.emergencyTimer}>Active: {formatTime(timer)}</Text>
-            </View>
-          </View>
-        )}
-      </LinearGradient>
-
-      {!active ? (
-        <ScrollView style={styles.content}>
-          <Text style={styles.sectionTitle}>Activate Emergency</Text>
-          <View style={styles.emergencyGrid}>
-            <EmergencyButton icon="flame-outline" label="Fire" color="#dc2626" onPress={() => activateEmergency('Fire')} />
-            <EmergencyButton icon="medical-outline" label="Medical" color="#ef4444" onPress={() => activateEmergency('Medical Emergency')} />
-            <EmergencyButton icon="shield-outline" label="Intruder" color="#f59e0b" onPress={() => activateEmergency('Intruder')} />
-            <EmergencyButton icon="water-outline" label="Flood" color="#3b82f6" onPress={() => activateEmergency('Flood')} />
-            <EmergencyButton icon="earth-outline" label="Earthquake" color="#8b5cf6" onPress={() => activateEmergency('Earthquake')} />
-            <EmergencyButton icon="alert-circle-outline" label="Other" color="#64748b" onPress={() => activateEmergency('General Emergency')} />
-          </View>
-
-          <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-          <ContactCard name="Police" number="999" icon="shield-checkmark-outline" />
-          <ContactCard name="Ambulance" number="999" icon="medical-outline" />
-          <ContactCard name="Fire Brigade" number="999" icon="flame-outline" />
-          <ContactCard name="County Emergency" number="0722-000-000" icon="call-outline" />
-          <ContactCard name="School Nurse" number="0711-000-000" icon="heart-outline" />
-        </ScrollView>
-      ) : (
-        <ScrollView style={styles.content}>
-          {/* Live Status */}
-          <View style={styles.statusGrid}>
-            <StatusBox label="Present" value={stats.present} color="#10b981" icon="people-outline" />
-            <StatusBox label="Missing" value={stats.missing} color="#ef4444" icon="help-circle-outline" />
-            <StatusBox label="Injured" value={stats.injured} color="#f59e0b" icon="medical-outline" />
-            <StatusBox label="Buses" value={stats.buses} color="#3b82f6" icon="bus-outline" />
-          </View>
-
-          {/* Safe Routes */}
-          <Text style={styles.sectionTitle}>Safe Routes</Text>
-          <View style={styles.routeCard}>
-            <Ionicons name="navigate-circle-outline" size={24} color="#10b981" />
-            <View style={styles.routeInfo}>
-              <Text style={styles.routeTitle}>Assembly Point A</Text>
-              <Text style={styles.routeDesc}>Main playground • 120m • Clear path</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#64748b" />
-          </View>
-          <View style={styles.routeCard}>
-            <Ionicons name="navigate-circle-outline" size={24} color="#f59e0b" />
-            <View style={styles.routeInfo}>
-              <Text style={styles.routeTitle}>Assembly Point B</Text>
-              <Text style={styles.routeDesc}>Parking area • 80m • Caution: stairs</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#64748b" />
-          </View>
-
-          {/* Blocked Areas */}
-          <Text style={styles.sectionTitle}>Blocked Areas</Text>
-          <View style={styles.blockedCard}>
-            <Ionicons name="close-circle" size={20} color="#ef4444" />
-            <Text style={styles.blockedText}>Class Block B - {selectedType === 'Fire' ? 'Smoke detected' : 'Unsafe'}</Text>
-          </View>
-
-          {/* Roll Call */}
-          <Text style={styles.sectionTitle}>Roll Call</Text>
-          <TouchableOpacity style={styles.rollCallBtn} onPress={() => router.push('/(education)/emergency/roll-call')}>
-            <Ionicons name="checkbox-outline" size={20} color="#fff" />
-            <Text style={styles.rollCallText}>Start Roll Call</Text>
-          </TouchableOpacity>
-
-          {/* Incident Timeline */}
-          <Text style={styles.sectionTitle}>Incident Timeline</Text>
-          <TimelineEntry time="Now" event={`${selectedType} detected`} type="alert" />
-          <TimelineEntry time="Now" event="Emergency mode activated" type="system" />
-          <TimelineEntry time="Now" event="Notifications sent to all staff" type="system" />
-          <TimelineEntry time="Now" event="CCTV switched to emergency recording" type="system" />
-
-          {/* Deactivate */}
-          <TouchableOpacity style={styles.deactivateBtn} onPress={deactivateEmergency}>
-            <Ionicons name="shield-checkmark-outline" size={20} color="#fff" />
-            <Text style={styles.deactivateText}>DEACTIVATE EMERGENCY MODE</Text>
-          </TouchableOpacity>
-
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      )}
-    </View>
-  );
-}
-
-function EmergencyButton({ icon, label, color, onPress }) {
   return (
-    <TouchableOpacity style={[styles.emergencyBtn, { borderColor: color }]} onPress={onPress}>
-      <View style={[styles.emergencyIcon, { backgroundColor: color + '20' }]}>
-        <Ionicons name={icon} size={28} color={color} />
-      </View>
-      <Text style={[styles.emergencyLabel, { color }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function ContactCard({ name, number, icon }) {
-  return (
-    <TouchableOpacity style={styles.contactCard}>
-      <View style={styles.contactLeft}>
-        <Ionicons name={icon} size={20} color="#3b82f6" />
+    <ScrollView style={{ flex: 1, backgroundColor: "#0f172a" }} contentContainerStyle={{ padding: 16, paddingTop: 48, paddingBottom: 40 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <View>
-          <Text style={styles.contactName}>{name}</Text>
-          <Text style={styles.contactNumber}>{number}</Text>
+          <Text style={{ color: "#ef4444", fontSize: 12, fontWeight: "700", textTransform: "uppercase" }}>ACTIVE EMERGENCY</Text>
+          <Text style={{ color: "#f8fafc", fontSize: 22, fontWeight: "800", marginTop: 4 }}>{type?.toUpperCase()}</Text>
         </View>
+        <TouchableOpacity onPress={deactivate} disabled={loading} style={{ backgroundColor: "#dc2626", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}>
+          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>RESOLVE</Text>
+        </TouchableOpacity>
       </View>
-      <Ionicons name="call-outline" size={20} color="#10b981" />
-    </TouchableOpacity>
+
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
+        <StatBox label="Present" value={stats.present} color="#22c55e" />
+        <StatBox label="Missing" value={stats.missing} color="#f59e0b" />
+        <StatBox label="Injured" value={stats.injured} color="#ef4444" />
+        <StatBox label="Buses" value={stats.buses} color="#0ea5e9" />
+      </View>
+
+      <TouchableOpacity onPress={() => router.push("/(education)/emergency/roll-call")} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 16, borderWidth: 1, borderColor: "#334155" }}>
+        <Ionicons name="people" size={22} color="#38bdf8" />
+        <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "600", marginLeft: 12, flex: 1 }}>Roll Call</Text>
+        <Ionicons name="chevron-forward" size={18} color="#64748b" />
+      </TouchableOpacity>
+
+      {routes.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", textTransform: "uppercase", marginBottom: 10 }}>Safe Routes</Text>
+          {routes.map((r) => (
+            <View key={r.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="navigate" size={18} color="#22c55e" />
+              <Text style={{ color: "#f8fafc", marginLeft: 10, flex: 1 }}>{r.name}</Text>
+              <Text style={{ color: "#64748b", fontSize: 12 }}>{r.capacity || 0} people</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {blocked.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", textTransform: "uppercase", marginBottom: 10 }}>Blocked Areas</Text>
+          {blocked.map((b) => (
+            <View key={b.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="close-circle" size={18} color="#ef4444" />
+              <Text style={{ color: "#f8fafc", marginLeft: 10 }}>{b.name}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {contacts.length > 0 && (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", textTransform: "uppercase", marginBottom: 10 }}>Emergency Contacts</Text>
+          {contacts.map((c) => (
+            <View key={c.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8 }}>
+              <Text style={{ color: "#f8fafc", fontWeight: "600" }}>{c.name}</Text>
+              <Text style={{ color: "#94a3b8", fontSize: 13, marginTop: 2 }}>{c.role} &bull; {c.phone}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {timeline.length > 0 && (
+        <View>
+          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", textTransform: "uppercase", marginBottom: 10 }}>Timeline</Text>
+          {timeline.map((t) => (
+            <View key={t.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: t.severity === "critical" ? "#ef4444" : t.severity === "warning" ? "#f59e0b" : "#0ea5e9" }}>
+              <Text style={{ color: "#f8fafc", fontWeight: "600" }}>{t.title}</Text>
+              <Text style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{t.description}</Text>
+              <Text style={{ color: "#64748b", fontSize: 11, marginTop: 4 }}>{new Date(t.created_at).toLocaleTimeString()}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
-function StatusBox({ label, value, color, icon }) {
+function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <View style={[styles.statusBox, { borderTopColor: color }]}>
-      <Ionicons name={icon} size={20} color={color} />
-      <Text style={[styles.statusValue, { color }]}>{value}</Text>
-      <Text style={styles.statusLabel}>{label}</Text>
+    <View style={{ flex: 1, backgroundColor: "#1e293b", borderRadius: 10, padding: 12, alignItems: "center", borderTopWidth: 3, borderTopColor: color }}>
+      <Text style={{ color, fontSize: 20, fontWeight: "800" }}>{value}</Text>
+      <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
-
-function TimelineEntry({ time, event, type }) {
-  return (
-    <View style={styles.timelineEntry}>
-      <View style={[styles.timelineDot, { backgroundColor: type === 'alert' ? '#ef4444' : '#3b82f6' }]} />
-      <View style={styles.timelineInfo}>
-        <Text style={styles.timelineEvent}>{event}</Text>
-        <Text style={styles.timelineTime}>{time}</Text>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { padding: 20, paddingTop: 60 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  statusDot: { width: 10, height: 10, borderRadius: 5 },
-  emergencyBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(239,68,68,0.3)', padding: 16, borderRadius: 12, gap: 12 },
-  emergencyInfo: { flex: 1 },
-  emergencyType: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  emergencyTimer: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
-  content: { flex: 1 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginHorizontal: 16, marginTop: 20, marginBottom: 12 },
-  emergencyGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12, gap: 10 },
-  emergencyBtn: { width: '30%', backgroundColor: '#1e293b', borderRadius: 12, padding: 16, alignItems: 'center', borderWidth: 1.5 },
-  emergencyIcon: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emergencyLabel: { fontSize: 12, fontWeight: '700' },
-  contactCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e293b', marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 14 },
-  contactLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  contactName: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  contactNumber: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  statusGrid: { flexDirection: 'row', paddingHorizontal: 12, gap: 10 },
-  statusBox: { flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 14, alignItems: 'center', borderTopWidth: 3 },
-  statusValue: { fontSize: 24, fontWeight: '800', marginTop: 6 },
-  statusLabel: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
-  routeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 14, gap: 12 },
-  routeInfo: { flex: 1 },
-  routeTitle: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  routeDesc: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  blockedCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#451a1a', marginHorizontal: 16, marginBottom: 8, borderRadius: 12, padding: 14, gap: 10, borderWidth: 1, borderColor: '#ef4444' },
-  blockedText: { fontSize: 14, color: '#fca5a5' },
-  rollCallBtn: { backgroundColor: '#3b82f6', marginHorizontal: 16, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  rollCallText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  timelineEntry: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 12 },
-  timelineDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12, marginTop: 4 },
-  timelineInfo: { flex: 1 },
-  timelineEvent: { fontSize: 14, color: '#e2e8f0' },
-  timelineTime: { fontSize: 12, color: '#64748b', marginTop: 2 },
-  deactivateBtn: { backgroundColor: '#059669', marginHorizontal: 16, marginTop: 20, borderRadius: 12, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  deactivateText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-});

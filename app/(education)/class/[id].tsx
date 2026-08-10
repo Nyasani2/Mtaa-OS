@@ -24,7 +24,6 @@ export default function ClassDetailScreen() {
         const { data: c, error: ce } = await supabase.from("education_classes").select("*").eq("id", classId).single();
         if (ce) throw ce;
         setCls(c);
-
         const [s, t, allStudents, allTimetable] = await Promise.all([
           c?.institution_id ? EducationService.getInstitutionById(c.institution_id) : Promise.resolve(null),
           c?.teacher_id ? supabase.from("education_teachers").select("*").eq("id", c.teacher_id).single().then((r: any) => r.data) : Promise.resolve(null),
@@ -33,7 +32,6 @@ export default function ClassDetailScreen() {
         ]);
         setSchool(s);
         setTeacher(t);
-        // Filter students by class_id if available, otherwise show institution students
         setStudents(allStudents.slice(0, 8));
         setTimetable(allTimetable.filter((x: any) => x.class_id === classId).slice(0, 5));
       } catch (err: any) {
@@ -45,25 +43,16 @@ export default function ClassDetailScreen() {
     load();
   }, [classId]);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#38bdf8" />
-      </View>
-    );
-  }
-
-  if (error || !cls) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center", padding: 24 }}>
-        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-        <Text style={{ color: "#f87171", marginTop: 12, fontSize: 16 }}>{error || "Class not found"}</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, backgroundColor: "#1e293b", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}>
-          <Text style={{ color: "#38bdf8", fontWeight: "600" }}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (loading) return <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}><ActivityIndicator size="large" color="#38bdf8" /></View>;
+  if (error || !cls) return (
+    <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center", padding: 24 }}>
+      <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+      <Text style={{ color: "#f87171", marginTop: 12, fontSize: 16 }}>{error || "Class not found"}</Text>
+      <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20, backgroundColor: "#1e293b", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}>
+        <Text style={{ color: "#38bdf8", fontWeight: "600" }}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -83,23 +72,16 @@ export default function ClassDetailScreen() {
         </View>
       </View>
 
-      {/* School & Teacher */}
       <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
         {school && (
-          <TouchableOpacity
-            onPress={() => router.push(`/school/${school.id}`)}
-            style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}
-          >
+          <TouchableOpacity onPress={() => router.push(`/(education)/school/${school.id}`)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
             <Ionicons name="school" size={20} color="#0ea5e9" />
             <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "600", marginLeft: 10, flex: 1 }}>{school.name}</Text>
             <Ionicons name="chevron-forward" size={18} color="#64748b" />
           </TouchableOpacity>
         )}
         {teacher && (
-          <TouchableOpacity
-            onPress={() => router.push(`/teacher/${teacher.id}`)}
-            style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" }}
-          >
+          <TouchableOpacity onPress={() => router.push(`/(education)/teacher/${teacher.id}`)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" }}>
             <Ionicons name="person" size={20} color="#8b5cf6" />
             <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "600", marginLeft: 10, flex: 1 }}>{teacher.department || "Teacher"}</Text>
             <Ionicons name="chevron-forward" size={18} color="#64748b" />
@@ -107,46 +89,31 @@ export default function ClassDetailScreen() {
         )}
       </View>
 
-      {/* Timetable */}
       {timetable.length > 0 && (
         <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
           <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 10, textTransform: "uppercase" }}>Schedule</Text>
           {timetable.map((t) => (
-            <View key={t.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: "#38bdf8", fontSize: 12, fontWeight: "700" }}>{DAYS[t.day_of_week] || "?"}</Text>
-              </View>
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{t.subject || "Subject"}</Text>
-                <Text style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>{t.start_time} - {t.end_time} &bull; {t.room || "No room"}</Text>
-              </View>
+            <View key={t.id} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8 }}>
+              <Text style={{ color: "#f8fafc", fontWeight: "600" }}>{t.subject?.name || "Subject"}</Text>
+              <Text style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{DAYS[new Date(t.date).getDay()]} &bull; {t.start_time} - {t.end_time}</Text>
             </View>
           ))}
         </View>
       )}
 
-      {/* Students */}
-      {students.length > 0 && (
-        <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-          <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 10, textTransform: "uppercase" }}>Students ({students.length})</Text>
+      <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+        <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 10, textTransform: "uppercase" }}>Students ({students.length})</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {students.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              onPress={() => router.push(`/student/${s.id}`)}
-              style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center" }}
-            >
-              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#10b981", justifyContent: "center", alignItems: "center" }}>
-                <Ionicons name="person" size={16} color="#fff" />
+            <TouchableOpacity key={s.id} onPress={() => router.push(`/(education)/student/${s.id}`)} style={{ width: "47%", backgroundColor: "#1e293b", borderRadius: 10, padding: 12, flexDirection: "row", alignItems: "center" }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
+                <Text style={{ color: "#38bdf8", fontWeight: "700" }}>{(s.full_name || "S").charAt(0)}</Text>
               </View>
-              <View style={{ marginLeft: 10, flex: 1 }}>
-                <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{s.enrollment_number || "Student"}</Text>
-                <Text style={{ color: "#64748b", fontSize: 12, marginTop: 1 }}>Grade: {s.grade_level || "N/A"}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#64748b" />
+              <Text style={{ color: "#f8fafc", fontSize: 13, fontWeight: "500", marginLeft: 8, flex: 1 }} numberOfLines={1}>{s.full_name}</Text>
             </TouchableOpacity>
           ))}
         </View>
-      )}
+      </View>
     </ScrollView>
   );
 }

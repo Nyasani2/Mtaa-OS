@@ -91,8 +91,6 @@ export const OS_APP_REGISTRY: Record<string, OSAppEntry> = {
     route: '/(os)/studio', category: 'work', requiresAuth: true,
     isSystemApp: true, permissions: ['camera', 'microphone', 'wallet_read', 'wallet_write'],
   },
-    isSystemApp: true, permissions: ['identity', 'wallet_read', 'wallet_write'],
-  },
   binance: {
     id: 'binance', name: 'Binance', icon: 'trending-up-outline', color: '#F0B90B',
     route: '/(finance)/binance', category: 'finance', requiresAuth: true,

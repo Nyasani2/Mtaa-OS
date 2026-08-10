@@ -77,7 +77,7 @@ export default function QRCheckinScreen() {
         }
       />
       <TouchableOpacity
-        onPress={() => router.push("/qr-scan")}
+        onPress={() => router.push("/(education)/qr-scan")}
         style={{ position: "absolute", right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: "#0ea5e9", justifyContent: "center", alignItems: "center", elevation: 6 }}
       >
         <Ionicons name="scan" size={28} color="#fff" />

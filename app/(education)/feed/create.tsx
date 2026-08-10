@@ -1,64 +1,83 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function FeedCreateScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(false);
   const [content, setContent] = useState("");
-  const [postType, setPostType] = useState("general");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [postType, setPostType] = useState<"general" | "announcement" | "achievement">("general");
+  const [loading, setLoading] = useState(false);
 
-  const postTypes = ["general", "announcement", "achievement", "question", "resource"];
+  const handleSubmit = async () => {
+    if (!content.trim()) { Alert.alert("Required", "Please write something before posting."); return; }
+    if (!user?.id) { Alert.alert("Error", "You must be logged in to post."); return; }
 
-  const createPost = async () => {
-    if (!content.trim()) { Alert.alert("Missing", "Write something first"); return; }
+    setLoading(true);
     try {
-      setLoading(true);
-      const { error } = await supabase.from("education_feed_posts").insert({
-        content: content.trim(), post_type: postType,
-        author_id: user?.id, created_at: new Date().toISOString(),
-        likes_count: 0, comments_count: 0,
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from("education_posts").insert({
+        content: content.trim(),
+        media_url: mediaUrl.trim() || null,
+        post_type: postType,
+        author_id: user.id,
+        institution_id: null,
       });
       if (error) throw error;
-      Alert.alert("Posted", "Your post is live");
+      Alert.alert("Posted!", "Your update has been shared with the community.");
       router.back();
-    } catch (err) { Alert.alert("Error", err.message || "Failed to post"); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      Alert.alert("Post Failed", err.message || "Could not create post. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0f172a" }}>
-      <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="arrow-back" size={22} color="#94a3b8" />
-          </TouchableOpacity>
-          <Text style={{ color: "#f8fafc", fontSize: 22, fontWeight: "800", flex: 1 }}>New Post</Text>
-        </View>
+    <ScrollView style={{ flex: 1, backgroundColor: "#000" }} contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700", marginLeft: 12, flex: 1 }}>New Post</Text>
+        <TouchableOpacity onPress={handleSubmit} disabled={loading} style={{ backgroundColor: "#0ea5e9", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, opacity: loading ? 0.6 : 1 }}>
+          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: "#fff", fontWeight: "700" }}>Post</Text>}
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-        <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 8, textTransform: "uppercase" }}>Post Type</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-          {postTypes.map((t) => (
-            <TouchableOpacity key={t} onPress={() => setPostType(t)} style={{ backgroundColor: postType === t ? "#3b82f6" : "#1e293b", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: postType === t ? "#3b82f6" : "#334155" }}>
-              <Text style={{ color: postType === t ? "#fff" : "#94a3b8", fontSize: 13, fontWeight: "600", textTransform: "capitalize" }}>{t}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+        {(["general", "announcement", "achievement"] as const).map((t) => (
+          <TouchableOpacity key={t} onPress={() => setPostType(t)} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: postType === t ? "#0ea5e9" : "#1e293b", borderWidth: 1, borderColor: postType === t ? "#0ea5e9" : "#334155" }}>
+            <Text style={{ color: postType === t ? "#fff" : "#94a3b8", fontSize: 12, fontWeight: "600", textTransform: "capitalize" }}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6, textTransform: "uppercase" }}>Content</Text>
-        <TextInput value={content} onChangeText={setContent} placeholder="What's on your mind?" placeholderTextColor="#475569" multiline numberOfLines={8} style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 14, color: "#f8fafc", fontSize: 15, borderWidth: 1, borderColor: "#334155", marginBottom: 20, textAlignVertical: "top", minHeight: 150 }} />
+      <TextInput
+        value={content}
+        onChangeText={setContent}
+        placeholder="What's happening in your school?"
+        placeholderTextColor="#475569"
+        multiline
+        style={{ color: "#fff", fontSize: 16, lineHeight: 22, minHeight: 120, textAlignVertical: "top", marginBottom: 16 }}
+      />
 
-        <TouchableOpacity onPress={createPost} disabled={loading} style={{ backgroundColor: "#3b82f6", borderRadius: 12, padding: 16, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8 }}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Ionicons name="paper-plane" size={18} color="#fff" />}
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>{loading ? "Posting..." : "Post to Feed"}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+      <Text style={{ color: "#64748b", fontSize: 12, fontWeight: "600", marginBottom: 8, textTransform: "uppercase" }}>Media URL (optional)</Text>
+      <TextInput
+        value={mediaUrl}
+        onChangeText={setMediaUrl}
+        placeholder="https://..."
+        placeholderTextColor="#475569"
+        style={{ color: "#fff", fontSize: 14, backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 16 }}
+        autoCapitalize="none"
+        keyboardType="url"
+      />
+      {mediaUrl ? (
+        <Image source={{ uri: mediaUrl }} style={{ width: "100%", height: 200, borderRadius: 12, marginBottom: 16 }} resizeMode="cover" />
+      ) : null}
+    </ScrollView>
   );
 }
