@@ -24,7 +24,7 @@ export default function MessageDetailScreen() {
           .from("education_messages")
           .select("*")
           .eq("id", messageId)
-          .single();
+          .maybeSingle();
         if (err) throw err;
         setMessage(data);
         // Mark as read if receiver

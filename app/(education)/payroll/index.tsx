@@ -1,204 +1,146 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
-
-interface PayrollRecord {
-  id: string;
-  teacher_id: string;
-  month: string;
-  year: number;
-  basic_salary: number;
-  allowances: number;
-  deductions: number;
-  net_pay: number;
-  currency: string;
-  status: string;
-  paid_at: string | null;
-  created_at: string;
-}
+import { DollarSign, Users, Calendar, ChevronRight, Plus, Wallet } from 'lucide-react-native';
 
 export default function PayrollScreen() {
   const router = useRouter();
-  const { user, session } = useAuthStore();
-  const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
+  const { user } = useAuthStore();
+  const [payrolls, setPayrolls] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [summary, setSummary] = useState({ totalPaid: 0, totalPending: 0, count: 0 });
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [totals, setTotals] = useState({ total: 0, paid: 0, pending: 0 });
 
-  const fetchPayroll = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
+  const load = useCallback(async () => {
+    if (!user?.id) { setLoading(false); return; }
     try {
-      const { data, error } = await supabase
-        .from('education_payroll')
-        .select('*')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      const { supabase } = await import("@/lib/supabase");
+      const { data: staffData } = await supabase
+        .from("education_staff").select("institution_id").eq("user_id", user.id).maybeSingle();
+      const instId = staffData?.institution_id;
+      setInstitutionId(instId);
+      if (!instId) { setLoading(false); return; }
 
+      const { data: payrollData } = await supabase
+        .from("education_payroll")
+        .select("*, education_staff(name, role)")
+        .eq("institution_id", instId)
+        .order("pay_period_end", { ascending: false }).limit(50);
+
+      const { data: staffList } = await supabase
+        .from("education_staff")
+        .select("id, name, role, salary")
+        .eq("institution_id", instId).eq("status", "active");
+
+      setPayrolls(payrollData || []);
+      setStaff(staffList || []);
+
+      const total = (payrollData || []).reduce((s: number, x: any) => s + (Number(x.net_salary) || 0), 0);
+      const paid = (payrollData || []).filter((x: any) => x.status === 'paid').reduce((s: number, x: any) => s + (Number(x.net_salary) || 0), 0);
+      setTotals({ total, paid, pending: total - paid });
+    } catch (e: any) {
+      console.error('[Payroll]', e);
+      Alert.alert('Error', e.message || 'Failed to load payroll');
+    } finally { setLoading(false); }
+  }, [user?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const generatePayroll = async (staffId: string) => {
+    if (!institutionId) return;
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const now = new Date();
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      const { error } = await supabase.from("education_payroll").insert({
+        staff_id: staffId, institution_id: institutionId,
+        pay_period_start: periodStart, pay_period_end: periodEnd,
+        status: 'pending', created_by: user?.id,
+      });
       if (error) throw error;
-      setPayrolls(data || []);
-
-      // Calculate summary
-      const paid = (data || []).filter((p: PayrollRecord) => p.status === 'paid').reduce((s: number, p: PayrollRecord) => s + p.net_pay, 0);
-      const pending = (data || []).filter((p: PayrollRecord) => p.status === 'pending').reduce((s: number, p: PayrollRecord) => s + p.net_pay, 0);
-      setSummary({ totalPaid: paid, totalPending: pending, count: data?.length || 0 });
-    } catch (err: any) {
-      console.error('Fetch payroll error:', err);
-      Alert.alert('Error', err.message || 'Failed to load payroll records');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user]);
-
-
-  useEffect(() => {
-    fetchPayroll();
-  }, [fetchPayroll]);
-
-  // Auth guard
-  if (!user || !session) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Sign In Required</Text>
-        <Text style={styles.subtitle}>Please sign in to view payroll.</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth')}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchPayroll();
+      Alert.alert('Success', 'Payroll entry created'); load();
+    } catch (e: any) { Alert.alert('Error', e.message || 'Failed to create payroll'); }
   };
 
-  const renderItem = ({ item }: { item: PayrollRecord }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.month} {item.year}</Text>
-        <View style={[styles.badge, item.status === 'paid' ? styles.paidBadge : styles.pendingBadge]}>
-          <Text style={styles.badgeText}>{item.status.toUpperCase()}</Text>
-        </View>
-      </View>
-      <Text style={styles.cardAmount}>
-        {item.currency} {item.net_pay.toLocaleString()}
-      </Text>
-      <View style={styles.cardDetails}>
-        <Text style={styles.cardDetail}>Basic: {item.currency} {item.basic_salary.toLocaleString()}</Text>
-        <Text style={styles.cardDetail}>Allowances: {item.currency} {item.allowances.toLocaleString()}</Text>
-        <Text style={styles.cardDetail}>Deductions: {item.currency} {item.deductions.toLocaleString()}</Text>
-      </View>
-      {item.paid_at && (
-        <Text style={styles.paidDate}>Paid on {new Date(item.paid_at).toLocaleDateString()}</Text>
-      )}
-    </View>
-  );
-
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
-    );
-  }
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Payroll</Text>
-
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{summary.count}</Text>
-          <Text style={styles.summaryLabel}>Records</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Payroll</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(education)/payroll/create')}>
+          <Plus size={18} color="#fff" /><Text style={styles.addBtnText}>Generate</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, { backgroundColor: '#6366f120' }]}>
+          <Wallet size={20} color="#6366f1" />
+          <Text style={styles.statValue}>{totals.total.toLocaleString()}</Text>
+          <Text style={styles.statLabel}>Total Payroll</Text>
         </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{summary.totalPaid.toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Total Paid</Text>
+        <View style={[styles.statCard, { backgroundColor: '#22c55e20' }]}>
+          <DollarSign size={20} color="#22c55e" />
+          <Text style={styles.statValue}>{totals.paid.toLocaleString()}</Text>
+          <Text style={styles.statLabel}>Paid</Text>
         </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{summary.totalPending.toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Pending</Text>
+        <View style={[styles.statCard, { backgroundColor: '#f59e0b20' }]}>
+          <Calendar size={20} color="#f59e0b" />
+          <Text style={styles.statValue}>{totals.pending.toLocaleString()}</Text>
+          <Text style={styles.statLabel}>Pending</Text>
         </View>
       </View>
-
-      <FlatList
-        data={payrolls}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No payroll records</Text>
-            <Text style={styles.emptySubtext}>Your payroll history will appear here.</Text>
+      <Text style={styles.sectionTitle}>Recent Payroll Entries</Text>
+      {(payrolls || []).map((p: any) => (
+        <TouchableOpacity key={p.id} style={styles.card} onPress={() => router.push(`/(education)/payroll/${p.id}`)}>
+          <View style={styles.cardRow}>
+            <Users size={18} color="#6366f1" />
+            <Text style={styles.cardTitle}>{p.education_staff?.name || 'Unknown'}</Text>
+            <Text style={[styles.badge, p.status === 'paid' ? styles.badgePaid : styles.badgePending]}>{p.status}</Text>
           </View>
-        }
-      />
-    </View>
+          <Text style={styles.cardSub}>{p.education_staff?.role || 'Staff'} · {p.pay_period_start} to {p.pay_period_end}</Text>
+          <Text style={styles.cardAmount}>Net: {Number(p.net_salary || 0).toLocaleString()}</Text>
+          <ChevronRight size={16} color="#9ca3af" style={styles.chevron} />
+        </TouchableOpacity>
+      ))}
+      <Text style={styles.sectionTitle}>Active Staff</Text>
+      {(staff || []).map((s: any) => (
+        <TouchableOpacity key={s.id} style={styles.card} onPress={() => generatePayroll(s.id)}>
+          <View style={styles.cardRow}>
+            <Users size={18} color="#6366f1" />
+            <Text style={styles.cardTitle}>{s.name}</Text>
+            <Text style={styles.cardRole}>{s.role}</Text>
+          </View>
+          <Text style={styles.cardSub}>Salary: {Number(s.salary || 0).toLocaleString()}</Text>
+          <ChevronRight size={16} color="#9ca3af" style={styles.chevron} />
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' },
-  header: { fontSize: 24, fontWeight: '700', color: '#fff', padding: 20, paddingBottom: 10 },
-  title: { fontSize: 20, fontWeight: '600', color: '#fff', textAlign: 'center', marginTop: 40 },
-  subtitle: { fontSize: 14, color: '#888', textAlign: 'center', marginTop: 8, marginBottom: 24 },
-  summaryRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginBottom: 16 },
-  summaryCard: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-  },
-  summaryValue: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  summaryLabel: { fontSize: 11, color: '#888', marginTop: 4 },
-  list: { padding: 20, paddingTop: 0, paddingBottom: 40 },
-  card: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  paidBadge: { backgroundColor: '#22c55e' },
-  pendingBadge: { backgroundColor: '#f59e0b' },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  cardAmount: { fontSize: 20, fontWeight: '700', color: '#2563eb', marginBottom: 8 },
-  cardDetails: { gap: 2 },
-  cardDetail: { fontSize: 13, color: '#aaa' },
-  paidDate: { fontSize: 12, color: '#22c55e', marginTop: 8 },
-  empty: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 16, color: '#888', fontWeight: '600' },
-  emptySubtext: { fontSize: 13, color: '#666', marginTop: 4 },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 40,
-    marginTop: 24,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#f8fafc', padding: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '700', color: '#1e293b' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#6366f1', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, gap: 6 },
+  addBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
+  statValue: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginTop: 6 },
+  statLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 10, marginTop: 8 },
+  card: { backgroundColor: '#fff', padding: 14, borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1e293b' },
+  cardSub: { fontSize: 12, color: '#64748b', marginTop: 4 },
+  cardAmount: { fontSize: 14, fontWeight: '600', color: '#6366f1', marginTop: 4 },
+  cardRole: { fontSize: 12, color: '#64748b', backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  badge: { fontSize: 11, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, overflow: 'hidden' },
+  badgePaid: { backgroundColor: '#22c55e20', color: '#22c55e' },
+  badgePending: { backgroundColor: '#f59e0b20', color: '#f59e0b' },
+  chevron: { position: 'absolute', right: 14, top: '50%', marginTop: -8 },
 });

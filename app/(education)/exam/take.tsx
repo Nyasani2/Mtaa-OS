@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,7 +26,7 @@ export default function ExamTakeScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: ev, error: ee } = await supabase.from("education_exams").select("*").eq("id", examId).single();
+        const { data: ev, error: ee } = await supabase.from("education_exams").select("*").eq("id", examId).maybeSingle();
         if (ee) throw ee;
         setExam(ev);
 
@@ -209,3 +210,4 @@ export default function ExamTakeScreen() {
     </View>
   );
 }
+

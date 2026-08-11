@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
@@ -16,7 +17,7 @@ export default function RollCallScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: staff } = await supabase.from("education_staff").select("institution_id").eq("user_id", user?.id).single();
+        const { data: staff } = await supabase.from("education_staff").select("institution_id").eq("user_id", user?.id).maybeSingle();
         if (!staff?.institution_id) { setStudents([]); setLoading(false); return; }
 
         const { data: s } = await supabase
@@ -54,7 +55,7 @@ export default function RollCallScreen() {
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!emergency) { Alert.alert("Error", "No active emergency found."); return; }
 
@@ -142,3 +143,4 @@ export default function RollCallScreen() {
     </View>
   );
 }
+

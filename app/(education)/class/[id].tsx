@@ -21,12 +21,13 @@ export default function ClassDetailScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: c, error: ce } = await supabase.from("education_classes").select("*").eq("id", classId).single();
+        const { data: c, error: ce } = await supabase.from("education_classes").select("*").eq("id", classId).maybeSingle();
         if (ce) throw ce;
+        if (!c) { setError("Class not found"); setLoading(false); return; }
         setCls(c);
         const [s, t, allStudents, allTimetable] = await Promise.all([
           c?.institution_id ? EducationService.getInstitutionById(c.institution_id) : Promise.resolve(null),
-          c?.teacher_id ? supabase.from("education_teachers").select("*").eq("id", c.teacher_id).single().then((r: any) => r.data) : Promise.resolve(null),
+          c?.teacher_id ? supabase.from("education_teachers").select("*").eq("id", c.teacher_id).maybeSingle().then((r: any) => r.data) : Promise.resolve(null),
           EducationService.getStudents(c?.institution_id),
           EducationService.getTimetable(c?.institution_id),
         ]);

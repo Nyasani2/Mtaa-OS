@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -84,7 +85,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         </View>
       </View>
 
-      <Section icon={CreditCard} title="Fee Records" color="#38bdf8" onPress={() => router.push('/education/fees')}>
+      <Section icon={CreditCard} title="Fee Records" color="#38bdf8" onPress={() => router.push('/(education)/fees')}>
         {fees.length === 0 ? (
           <Text style={styles.empty}>No fee records</Text>
         ) : (
@@ -97,7 +98,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={FileText} title="Recent Payments" color="#34d399" onPress={() => router.push('/education/fees')}>
+      <Section icon={FileText} title="Recent Payments" color="#34d399" onPress={() => router.push('/(education)/fees')}>
         {payments.length === 0 ? (
           <Text style={styles.empty}>No payments recorded</Text>
         ) : (
@@ -110,7 +111,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={BarChart3} title="Payroll" color="#a78bfa" onPress={() => router.push('/education/payroll')}>
+      <Section icon={BarChart3} title="Payroll" color="#a78bfa" onPress={() => router.push('/(education)/payroll')}>
         {payroll.length === 0 ? (
           <Text style={styles.empty}>No payroll records</Text>
         ) : (
@@ -145,3 +146,4 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
   empty: { padding: 14, fontSize: 13, color: '#475569', fontStyle: 'italic' },
 });
+

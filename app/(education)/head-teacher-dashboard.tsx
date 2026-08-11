@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -218,3 +219,4 @@ const styles = StyleSheet.create({
   activityDesc: { color: '#D1D5DB', fontSize: 13 },
   activityTime: { color: '#6B7280', fontSize: 11, marginTop: 2 },
 });
+

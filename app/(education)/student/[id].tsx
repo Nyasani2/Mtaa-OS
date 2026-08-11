@@ -20,7 +20,7 @@ export default function StudentDetailScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: s, error: se } = await supabase.from("education_students").select("*").eq("id", studentId).single();
+        const { data: s, error: se } = await supabase.from("education_students").select("*").eq("id", studentId).maybeSingle();
         if (se) throw se;
         setStudent(s);
 

@@ -1,10 +1,12 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useEducation } from '@/domains/education/hooks/useEducation';
 import {
-  Users, School, Shield, AlertTriangle, CreditCard, BookOpen, Bus, ChevronRight, BarChart3, Settings
+  Users, School, Shield, AlertTriangle, CreditCard, BookOpen, Bus, ChevronRight, BarChart3, Settings, Bell
 } from 'lucide-react-native';
 
 interface Props { institutionId: string | null; }
@@ -67,28 +69,28 @@ export default function AdminDashboard({ institutionId }: Props) {
       </View>
 
       <View style={styles.statsRow}>
-        <StatCard icon={Users} label="Teachers" value={stats.teachers} color="#38bdf8" onPress={() => router.push('/education/participants')} />
-        <StatCard icon={School} label="Students" value={stats.students} color="#34d399" onPress={() => router.push('/education/participants')} />
-        <StatCard icon={BookOpen} label="Classes" value={stats.classes} color="#fbbf24" onPress={() => router.push('/education/classes')} />
-        <StatCard icon={Shield} label="Staff" value={stats.staff} color="#a78bfa" onPress={() => router.push('/education/participants')} />
+        <StatCard icon={Users} label="Teachers" value={stats.teachers} color="#38bdf8" onPress={() => router.push('/(education)/participants')} />
+        <StatCard icon={School} label="Students" value={stats.students} color="#34d399" onPress={() => router.push('/(education)/participants')} />
+        <StatCard icon={BookOpen} label="Classes" value={stats.classes} color="#fbbf24" onPress={() => router.push('/(education)/classes')} />
+        <StatCard icon={Shield} label="Staff" value={stats.staff} color="#a78bfa" onPress={() => router.push('/(education)/participants')} />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickGrid}>
-          <QuickAction icon={Users} label="Participants" color="#38bdf8" onPress={() => router.push('/education/participants')} />
-          <QuickAction icon={School} label="Schools" color="#34d399" onPress={() => router.push('/education/schools')} />
-          <QuickAction icon={BookOpen} label="Classes" color="#fbbf24" onPress={() => router.push('/education/classes')} />
-          <QuickAction icon={CreditCard} label="Fees" color="#fbbf24" onPress={() => router.push('/education/fees')} />
-          <QuickAction icon={BarChart3} label="Payroll" color="#a78bfa" onPress={() => router.push('/education/payroll')} />
-          <QuickAction icon={Bus} label="Transport" color="#34d399" onPress={() => router.push('/education/transport')} />
-          <QuickAction icon={AlertTriangle} label="Emergency" color="#ef4444" onPress={() => router.push('/education/emergency')} />
-          <QuickAction icon={Settings} label="Settings" color="#94a3b8" onPress={() => router.push('/education/settings')} />
+          <QuickAction icon={Users} label="Participants" color="#38bdf8" onPress={() => router.push('/(education)/participants')} />
+          <QuickAction icon={School} label="Schools" color="#34d399" onPress={() => router.push('/(education)/schools')} />
+          <QuickAction icon={BookOpen} label="Classes" color="#fbbf24" onPress={() => router.push('/(education)/classes')} />
+          <QuickAction icon={CreditCard} label="Fees" color="#fbbf24" onPress={() => router.push('/(education)/fees')} />
+          <QuickAction icon={BarChart3} label="Payroll" color="#a78bfa" onPress={() => router.push('/(education)/payroll')} />
+          <QuickAction icon={Bus} label="Transport" color="#34d399" onPress={() => router.push('/(education)/transport')} />
+          <QuickAction icon={AlertTriangle} label="Emergency" color="#ef4444" onPress={() => router.push('/(education)/emergency')} />
+          <QuickAction icon={Settings} label="Settings" color="#94a3b8" onPress={() => router.push('/(education)/settings')} />
         </View>
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.sectionHeader} onPress={() => router.push('/education/announcements')}>
+        <TouchableOpacity style={styles.sectionHeader} onPress={() => router.push('/(education)/announcements')}>
           <Bell size={18} color="#f87171" />
           <Text style={[styles.sectionTitle, { marginLeft: 10, flex: 1 }]}>Announcements</Text>
           <ChevronRight size={16} color="#475569" />
@@ -131,3 +133,5 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
   empty: { paddingVertical: 10, fontSize: 13, color: '#475569', fontStyle: 'italic' },
 });
+
+

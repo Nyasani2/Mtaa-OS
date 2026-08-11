@@ -96,7 +96,7 @@ export default function EducationLibraryScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Library</Text>
-        <TouchableOpacity onPress={() => router.push('/education/library/upload')}>
+        <TouchableOpacity onPress={() => router.push('/(education)/library/upload')}>
           <Ionicons name="cloud-upload" size={24} color="#00d4ff" />
         </TouchableOpacity>
       </View>

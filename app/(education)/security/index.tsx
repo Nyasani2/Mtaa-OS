@@ -1,131 +1,139 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Shield, AlertTriangle, Eye, Plus, ChevronRight, Clock } from 'lucide-react-native';
 
-export default function SecurityDashboard() {
+export default function SecurityScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [accessLogs, setAccessLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [visitors, setVisitors] = useState([]);
-  const [incidents, setIncidents] = useState([]);
-  const [checkins, setCheckins] = useState([]);
-  const [stats, setStats] = useState({ visitors: 0, incidents: 0, checkins: 0 });
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [stats, setStats] = useState({ incidents: 0, resolved: 0, open: 0 });
 
-  const loadData = useCallback(async () => {
+  const load = useCallback(async () => {
+    if (!user?.id) { setLoading(false); return; }
     try {
-      setLoading(true);
-      const today = new Date().toISOString().split("T")[0];
-      const [v, i, c] = await Promise.all([
-        supabase.from("education_visitors").select("*").gte("visit_date", today).order("created_at", { ascending: false }).limit(20).then(r => r.data || []),
-        supabase.from("education_security_incidents").select("*").order("created_at", { ascending: false }).limit(20).then(r => r.data || []),
-        supabase.from("education_qr_checkins").select("*").gte("created_at", today).order("created_at", { ascending: false }).limit(20).then(r => r.data || []),
-      ]);
-      setVisitors(v); setIncidents(i); setCheckins(c);
-      setStats({ visitors: v.length, incidents: i.filter((x) => !x.resolved).length, checkins: c.length });
-    } catch (err) { console.error("[Security] load error:", err); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, []);
+      const { supabase } = await import("@/lib/supabase");
+      const { data: staffData } = await supabase
+        .from("education_staff").select("institution_id").eq("user_id", user.id).maybeSingle();
+      const instId = staffData?.institution_id;
+      setInstitutionId(instId);
+      if (!instId) { setLoading(false); return; }
 
-  useEffect(() => { loadData(); }, [loadData]);
+      const { data: incidentData } = await supabase
+        .from("education_security_incidents").select("*").eq("institution_id", instId).order("created_at", { ascending: false }).limit(50);
+      const { data: logData } = await supabase
+        .from("education_access_logs").select("*").eq("institution_id", instId).order("created_at", { ascending: false }).limit(20);
 
-  const resolveIncident = async (id) => {
-    try { await supabase.from("education_security_incidents").update({ resolved: true, resolved_at: new Date().toISOString() }).eq("id", id); loadData(); }
-    catch (err) { Alert.alert("Error", err.message); }
+      setIncidents(incidentData || []);
+      setAccessLogs(logData || []);
+      setStats({
+        incidents: incidentData?.length || 0,
+        resolved: (incidentData || []).filter((x: any) => x.status === 'resolved').length,
+        open: (incidentData || []).filter((x: any) => x.status === 'open').length,
+      });
+    } catch (e: any) {
+      console.error('[Security]', e);
+      Alert.alert('Error', e.message || 'Failed to load security');
+    } finally { setLoading(false); }
+  }, [user?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resolveIncident = async (id: string) => {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { error } = await supabase.from("education_security_incidents").update({ status: 'resolved', resolved_at: new Date().toISOString(), resolved_by: user?.id }).eq("id", id);
+      if (error) throw error;
+      Alert.alert('Resolved', 'Incident marked as resolved'); load();
+    } catch (e: any) { Alert.alert('Error', e.message || 'Failed to resolve'); }
   };
 
-  const signOutVisitor = async (id) => {
-    try { await supabase.from("education_visitors").update({ sign_out_time: new Date().toISOString(), status: "completed" }).eq("id", id); loadData(); }
-    catch (err) { Alert.alert("Error", err.message); }
-  };
-
-  if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#38bdf8" />
-        <Text style={{ color: "#94a3b8", marginTop: 12 }}>Loading security console...</Text>
-      </View>
-    );
-  }
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#0f172a" }}>
-      <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1e293b" }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
-            <Ionicons name="arrow-back" size={22} color="#94a3b8" />
-          </TouchableOpacity>
-          <Text style={{ color: "#f8fafc", fontSize: 22, fontWeight: "800", flex: 1 }}>Security</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Security</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(education)/security/create')}>
+          <Plus size={18} color="#fff" /><Text style={styles.addBtnText}>Report</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.statsRow}>
+        <View style={[styles.statCard, { backgroundColor: '#ef444420' }]}>
+          <AlertTriangle size={20} color="#ef4444" />
+          <Text style={styles.statValue}>{stats.incidents}</Text>
+          <Text style={styles.statLabel}>Incidents</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: '#f59e0b20' }]}>
+          <Clock size={20} color="#f59e0b" />
+          <Text style={styles.statValue}>{stats.open}</Text>
+          <Text style={styles.statLabel}>Open</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: '#22c55e20' }]}>
+          <Shield size={20} color="#22c55e" />
+          <Text style={styles.statValue}>{stats.resolved}</Text>
+          <Text style={styles.statLabel}>Resolved</Text>
         </View>
       </View>
-
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#38bdf8" />} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-        <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
-          <View style={{ flex: 1, backgroundColor: "#1e293b", borderRadius: 12, padding: 14, alignItems: "center", borderTopWidth: 3, borderTopColor: "#3b82f6" }}>
-            <Text style={{ color: "#3b82f6", fontSize: 20, fontWeight: "800" }}>{stats.visitors}</Text>
-            <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>Visitors</Text>
+      <Text style={styles.sectionTitle}>Security Incidents</Text>
+      {(incidents || []).map((i: any) => (
+        <TouchableOpacity key={i.id} style={styles.card} onPress={() => router.push(`/(education)/security/${i.id}`)}>
+          <View style={styles.cardRow}>
+            <AlertTriangle size={18} color="#ef4444" />
+            <Text style={styles.cardTitle}>{i.title || 'Incident'}</Text>
+            <Text style={[styles.badge, i.severity === 'critical' ? styles.badgeCritical : i.severity === 'high' ? styles.badgeHigh : styles.badgeLow]}>{i.severity}</Text>
           </View>
-          <View style={{ flex: 1, backgroundColor: "#1e293b", borderRadius: 12, padding: 14, alignItems: "center", borderTopWidth: 3, borderTopColor: "#ef4444" }}>
-            <Text style={{ color: "#ef4444", fontSize: 20, fontWeight: "800" }}>{stats.incidents}</Text>
-            <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>Active Alerts</Text>
+          <Text style={styles.cardSub}>{i.description || 'No description'}</Text>
+          <Text style={styles.cardSub}>Location: {i.location || 'N/A'} · {new Date(i.created_at).toLocaleDateString()}</Text>
+          {i.status === 'open' && (
+            <TouchableOpacity style={styles.resolveBtn} onPress={() => resolveIncident(i.id)}>
+              <Text style={styles.resolveBtnText}>Mark Resolved</Text>
+            </TouchableOpacity>
+          )}
+          <ChevronRight size={16} color="#9ca3af" style={styles.chevron} />
+        </TouchableOpacity>
+      ))}
+      <Text style={styles.sectionTitle}>Recent Access Logs</Text>
+      {(accessLogs || []).map((l: any) => (
+        <View key={l.id} style={styles.card}>
+          <View style={styles.cardRow}>
+            <Eye size={18} color="#6366f1" />
+            <Text style={styles.cardTitle}>{l.action || 'Access'}</Text>
+            <Text style={styles.cardRole}>{l.user_type}</Text>
           </View>
-          <View style={{ flex: 1, backgroundColor: "#1e293b", borderRadius: 12, padding: 14, alignItems: "center", borderTopWidth: 3, borderTopColor: "#10b981" }}>
-            <Text style={{ color: "#10b981", fontSize: 20, fontWeight: "800" }}>{stats.checkins}</Text>
-            <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }}>Check-ins</Text>
-          </View>
+          <Text style={styles.cardSub}>{l.details || 'No details'} · {new Date(l.created_at).toLocaleString()}</Text>
         </View>
-
-        <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 10, textTransform: "uppercase" }}>Today's Visitors</Text>
-        {visitors.length === 0 ? (
-          <Text style={{ color: "#64748b", paddingVertical: 12, marginBottom: 16 }}>No visitors today</Text>
-        ) : (
-          visitors.map((v) => (
-            <View key={v.id} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center", marginRight: 12 }}>
-                <Text style={{ color: "#fff", fontWeight: "700" }}>{v.full_name?.charAt(0) || "?"}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{v.full_name}</Text>
-                <Text style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>{v.purpose} &middot; {v.phone}</Text>
-              </View>
-              {!v.sign_out_time ? (
-                <TouchableOpacity onPress={() => signOutVisitor(v.id)} style={{ backgroundColor: "#dc2626", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "600" }}>Sign Out</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={{ backgroundColor: "#064e3b", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 }}>
-                  <Text style={{ color: "#6ee7b7", fontSize: 11, fontWeight: "600" }}>Out</Text>
-                </View>
-              )}
-            </View>
-          ))
-        )}
-
-        <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 10, textTransform: "uppercase" }}>Security Incidents</Text>
-        {incidents.length === 0 ? (
-          <Text style={{ color: "#64748b", paddingVertical: 12 }}>No incidents reported</Text>
-        ) : (
-          incidents.map((inc) => (
-            <View key={inc.id} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: inc.severity === "critical" ? "#ef4444" : "#f59e0b" }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{inc.type}</Text>
-                <View style={{ backgroundColor: inc.severity === "critical" ? "#7f1d1d" : "#451a03", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 }}>
-                  <Text style={{ color: inc.severity === "critical" ? "#fca5a5" : "#fcd34d", fontSize: 11, fontWeight: "600", textTransform: "uppercase" }}>{inc.severity}</Text>
-                </View>
-              </View>
-              <Text style={{ color: "#94a3b8", fontSize: 13, marginBottom: 8 }}>{inc.description}</Text>
-              {!inc.resolved && (
-                <TouchableOpacity onPress={() => resolveIncident(inc.id)} style={{ backgroundColor: "#059669", borderRadius: 8, padding: 10, alignItems: "center" }}>
-                  <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>Mark Resolved</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          ))
-        )}
-      </ScrollView>
-    </View>
+      ))}
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc', padding: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  title: { fontSize: 24, fontWeight: '700', color: '#1e293b' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#6366f1', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, gap: 6 },
+  addBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
+  statValue: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginTop: 6 },
+  statLabel: { fontSize: 11, color: '#64748b', marginTop: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 10, marginTop: 8 },
+  card: { backgroundColor: '#fff', padding: 14, borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1e293b' },
+  cardSub: { fontSize: 12, color: '#64748b', marginTop: 4 },
+  badge: { fontSize: 11, fontWeight: '600', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, overflow: 'hidden' },
+  badgeCritical: { backgroundColor: '#ef444420', color: '#ef4444' },
+  badgeHigh: { backgroundColor: '#f59e0b20', color: '#f59e0b' },
+  badgeLow: { backgroundColor: '#22c55e20', color: '#22c55e' },
+  cardRole: { fontSize: 12, color: '#64748b', backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  resolveBtn: { marginTop: 8, backgroundColor: '#22c55e', paddingVertical: 6, borderRadius: 6, alignItems: 'center' },
+  resolveBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  chevron: { position: 'absolute', right: 14, top: '50%', marginTop: -8 },
+});

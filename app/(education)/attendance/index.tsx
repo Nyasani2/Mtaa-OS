@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/lib/hooks/useEducation';
+import { useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function MarkAttendance() {
@@ -172,3 +173,4 @@ const styles = StyleSheet.create({
   statusBtnAbsent: { backgroundColor: '#ef4444', borderColor: '#ef4444' },
   statusBtnLate: { backgroundColor: '#f59e0b', borderColor: '#f59e0b' },
 });
+

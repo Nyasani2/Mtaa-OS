@@ -52,11 +52,11 @@ export default function CreateExamScreen() {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       Alert.alert('Success', 'Exam created successfully');
-      router.push(`/education/exams/${data.id}`);
+      router.push(`/(education)/exams/${data.id}`);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {

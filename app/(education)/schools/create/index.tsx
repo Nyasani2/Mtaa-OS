@@ -33,7 +33,7 @@ export default function CreateSchoolScreen() {
           status: "active",
         })
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
       Alert.alert("Success", `"${name}" created successfully`, [
         { text: "OK", onPress: () => router.replace(`/school/${data.id}`) },

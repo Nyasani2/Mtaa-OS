@@ -1,8 +1,10 @@
+
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/lib/hooks/useEducation';
+import { useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -161,3 +163,5 @@ const styles = StyleSheet.create({
   quickAction: { width: '47%', backgroundColor: '#fff', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', gap: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
   quickActionLabel: { fontSize: 13, fontWeight: '600' },
 });
+
+

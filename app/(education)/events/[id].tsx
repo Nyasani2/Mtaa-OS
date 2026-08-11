@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,7 +19,7 @@ export default function EventDetailScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: ev, error: ee } = await supabase.from("education_events").select("*").eq("id", eventId).single();
+        const { data: ev, error: ee } = await supabase.from("education_events").select("*").eq("id", eventId).maybeSingle();
         if (ee) throw ee;
         setEvent(ev);
         const { data: parts } = await supabase.from("education_event_participants").select("*, student:student_id(full_name)").eq("event_id", eventId);
@@ -107,3 +108,4 @@ export default function EventDetailScreen() {
     </ScrollView>
   );
 }
+

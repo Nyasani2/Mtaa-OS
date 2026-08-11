@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/lib/hooks/useEducation';
+import { useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudentAssignments() {
@@ -137,3 +138,4 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80 },
   emptyText: { color: '#9ca3af', marginTop: 16, fontSize: 16 },
 });
+

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -66,7 +67,7 @@ export default function MessagesScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Sign In Required</Text>
         <Text style={styles.subtitle}>Please sign in to view messages.</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/(os)/auth')}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
@@ -100,7 +101,7 @@ export default function MessagesScreen() {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setMessages(prev => [data, ...prev]);

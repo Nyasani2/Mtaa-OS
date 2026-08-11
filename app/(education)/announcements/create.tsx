@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, Alert,
@@ -12,6 +12,19 @@ export default function CreateAnnouncementScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('education_staff')
+      .select('institution_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data?.institution_id) setInstitutionId(data.institution_id);
+      });
+  }, [user?.id]);
   const [form, setForm] = useState({
     title: '',
     content: '',
@@ -39,7 +52,7 @@ export default function CreateAnnouncementScreen() {
         target_roles: form.target_audience ? [form.target_audience] : null,
         expiry_date: form.expires_at || null,
         staff_id: user.id,
-        institution_id: user?.institution_id || null,
+        institution_id: institutionId,
         visibility_scope: 'public',
         is_pinned: false,
         read_count: 0,

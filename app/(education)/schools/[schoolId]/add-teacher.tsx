@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/lib/hooks/useEducation';
+import { useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function AddTeacher() {
@@ -182,3 +183,4 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: '#c7d2fe' },
   submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
+

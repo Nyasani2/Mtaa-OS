@@ -27,7 +27,7 @@ export default function GradeSubmissionScreen() {
           .from("education_assignment_submissions")
           .select("*, student:student_id(full_name), assignment:assignment_id(*)")
           .eq("id", submissionId)
-          .single();
+          .maybeSingle();
         if (se) throw se;
         setSubmission(sub);
         setAssignment(sub?.assignment);

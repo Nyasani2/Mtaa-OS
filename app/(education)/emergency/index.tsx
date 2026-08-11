@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
@@ -35,7 +36,7 @@ export default function EmergencyScreen() {
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (activeEmergency) {
         setActive(true);
@@ -70,7 +71,7 @@ export default function EmergencyScreen() {
     setLoading(true);
     try {
       const { supabase } = await import("@/lib/supabase");
-      const { data: staff } = await supabase.from("education_staff").select("institution_id").eq("user_id", user.id).single();
+      const { data: staff } = await supabase.from("education_staff").select("institution_id").eq("user_id", user.id).maybeSingle();
       const institutionId = staff?.institution_id;
       if (!institutionId) { Alert.alert("Error", "No institution assigned"); return; }
 
@@ -114,7 +115,7 @@ export default function EmergencyScreen() {
               .eq("status", "active")
               .order("created_at", { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
             if (activeEmergency) {
               await supabase.from("education_emergencies").update({ status: "resolved", resolved_at: new Date().toISOString() }).eq("id", activeEmergency.id);
             }
@@ -243,3 +244,4 @@ function StatBox({ label, value, color }: { label: string; value: number; color:
     </View>
   );
 }
+

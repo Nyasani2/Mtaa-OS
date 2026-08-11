@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -146,3 +147,4 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 11, color: '#D1D5DB', marginTop: 6, textAlign: 'center' },
 });
+

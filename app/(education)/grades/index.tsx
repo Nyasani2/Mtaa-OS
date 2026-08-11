@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
@@ -46,7 +47,7 @@ export default function EnterGradesScreen() {
       .from('education_exams')
       .select('class_id')
       .eq('id', selectedExam)
-      .single();
+      .maybeSingle();
 
     if (!exam) { setLoading(false); return; }
 
@@ -250,3 +251,4 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: '#666', fontSize: 16, marginTop: 12 },
 });
+

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -75,7 +76,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         <Text style={styles.headerSub}>{user?.email?.split('@')[0] || 'Parent'}</Text>
       </View>
 
-      <Section icon={Baby} title="My Children" color="#38bdf8" onPress={() => router.push('/education/participants')}>
+      <Section icon={Baby} title="My Children" color="#38bdf8" onPress={() => router.push('/(education)/participants')}>
         {children.length === 0 ? (
           <Text style={styles.empty}>No children linked to your account</Text>
         ) : (
@@ -88,7 +89,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={CreditCard} title="Fee Payments" color="#fbbf24" onPress={() => router.push('/education/fees')}>
+      <Section icon={CreditCard} title="Fee Payments" color="#fbbf24" onPress={() => router.push('/(education)/fees')}>
         {fees.length === 0 ? (
           <Text style={styles.empty}>No fee records</Text>
         ) : (
@@ -103,7 +104,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/education/announcements')}>
+      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/(education)/announcements')}>
         {announcements.length === 0 ? (
           <Text style={styles.empty}>No announcements</Text>
         ) : (
@@ -116,7 +117,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Bus} title="Transport" color="#34d399" onPress={() => router.push('/education/transport')}>
+      <Section icon={Bus} title="Transport" color="#34d399" onPress={() => router.push('/(education)/transport')}>
         <Text style={styles.empty}>View transport routes and pickup schedules.</Text>
       </Section>
     </ScrollView>
@@ -138,3 +139,4 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
   empty: { padding: 14, fontSize: 13, color: '#475569', fontStyle: 'italic' },
 });
+

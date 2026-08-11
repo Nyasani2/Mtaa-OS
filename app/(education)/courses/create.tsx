@@ -68,12 +68,12 @@ export default function CreateCourseScreen() {
           created_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
       Alert.alert('Success', 'Course created successfully!');
-      router.push(`/education/courses/${data.id}`);
+      router.push(`/(education)/courses/${data.id}`);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {

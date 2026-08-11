@@ -20,7 +20,7 @@ export default function TeacherDetailScreen() {
     const load = async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
-        const { data: t, error: te } = await supabase.from("education_teachers").select("*").eq("id", teacherId).single();
+        const { data: t, error: te } = await supabase.from("education_teachers").select("*").eq("id", teacherId).maybeSingle();
         if (te) throw te;
         setTeacher(t);
 
