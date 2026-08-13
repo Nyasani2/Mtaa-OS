@@ -112,7 +112,7 @@ export default function CreatorRevenueScreen() {
           </View>
         ))}
 
-        <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push("/wallet")}>
+        <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push("/wallet" as any)}>
           <Text style={styles.btnPrimaryText}>View Wallet</Text>
         </TouchableOpacity>
       </ScrollView>

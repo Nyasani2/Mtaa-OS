@@ -18,7 +18,7 @@ export default function LiveFleetMap() {
         longitudeDelta: 0.4,
       }}
     >
-      {vehicles.map(v => (
+      {vehicles.map((v: any) => (
         <Marker
           key={v.id}
           coordinate={{ latitude: v.lat, longitude: v.lng }}

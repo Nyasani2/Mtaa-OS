@@ -134,7 +134,7 @@ export default function CreditRegulatoryView() {
         {loanProducts.length === 0 ? (
           <Text style={styles.emptyText}>No loan products configured</Text>
         ) : (
-          loanProducts.map(product => (
+          loanProducts.map((product: any) => (
             <View key={product.id} style={styles.productCard}>
               <View style={styles.productHeader}>
                 <Ionicons name="cash-outline" size={20} color="#00d4ff" />
@@ -160,7 +160,7 @@ export default function CreditRegulatoryView() {
         {creditScores.length === 0 ? (
           <Text style={styles.emptyText}>No credit data available</Text>
         ) : (
-          creditScores.map(score => (
+          creditScores.map((score: any) => (
             <View key={score.id} style={styles.scoreCard}>
               <View style={[styles.scoreCircle, { borderColor: getScoreColor(score.score) }]}>
                 <Text style={[styles.scoreNumber, { color: getScoreColor(score.score) }]}>{score.score}</Text>

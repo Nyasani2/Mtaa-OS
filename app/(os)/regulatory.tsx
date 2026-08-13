@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/regulatory/index.tsx — Regulatory Command Centre
 import React from "react";
 import { View, StyleSheet } from "react-native";

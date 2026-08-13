@@ -97,7 +97,7 @@ export default function StudentDetailScreen() {
       {school && (
         <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
           <TouchableOpacity
-            onPress={() => router.push(`/school/${school.id}`)}
+            onPress={() => router.push(`/school/${school.id}` as any)}
             style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" }}
           >
             <Ionicons name="school" size={20} color="#0ea5e9" />

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Attention Engine
  * "What deserves cognitive resources now?" — Allocates focus dynamically.

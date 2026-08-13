@@ -36,4 +36,5 @@ export const TRIBES_APP = {
     recommendations: "asis.recommendTribes",
     searchEnrichment: "asis.enrichSearch",
   },
+  screens: [] as any,
 };

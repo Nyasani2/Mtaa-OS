@@ -109,7 +109,7 @@ export default function SchoolFeedScreen() {
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
   const onRefresh = () => { setRefreshing(true); fetchFeed(); };
 
-  const filtered = filter === 'all' ? items : items.filter(i => i.type === filter);
+  const filtered = filter === 'all' ? items : items.filter((i: any) => i.type === filter);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -148,7 +148,7 @@ export default function SchoolFeedScreen() {
 
       {/* Filter Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {['all', 'announcement', 'homework'].map(f => (
+        {['all', 'announcement', 'homework'].map((f: any) => (
           <TouchableOpacity key={f} style={[styles.filterChip, filter === f && { backgroundColor: colors.primary }]} onPress={() => setFilter(f)}>
             <Text style={[styles.filterText, { color: filter === f ? '#fff' : colors.textSecondary }]}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -158,9 +158,9 @@ export default function SchoolFeedScreen() {
       </ScrollView>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
-        {filtered.map(item => (
+        {filtered.map((item: any) => (
           <TouchableOpacity key={item.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => {
-            if (item.type === 'homework') router.push(`/(education)/homework?id=${item.id.replace('hw-', '')}`);
+            if (item.type === 'homework') router.push(`/(education)/homework?id=${item.id.replace('hw-', '')}` as any);
           }}>
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: getColor(item.type) + '15' }]}>

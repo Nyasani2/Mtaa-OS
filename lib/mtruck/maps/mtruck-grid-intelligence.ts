@@ -87,7 +87,7 @@ export async function getHotspots() {
   const grid = await buildDemandGrid();
 
   return grid
-    .filter(c => c.imbalance > 2)
+    .filter((c: any) => c.imbalance > 2)
     .sort((a, b) => b.imbalance - a.imbalance)
     .slice(0, 10);
 }

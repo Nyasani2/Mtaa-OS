@@ -77,10 +77,10 @@ export default function DocumentsScreen() {
   };
 
   const filteredDocs = selectedType
-    ? docs.filter(d => d.type === selectedType)
+    ? docs.filter((d: any) => d.type === selectedType)
     : docs;
 
-  const getTypeCount = (type: string) => docs.filter(d => d.type === type).length;
+  const getTypeCount = (type: string) => docs.filter((d: any) => d.type === type).length;
 
   const handleDocPress = (doc: Document) => {
     const options = [
@@ -151,7 +151,7 @@ export default function DocumentsScreen() {
       const { error } = await supabase.from('documents').delete().eq('id', doc.id);
       if (error) throw error;
 
-      setDocs(prev => prev.filter(d => d.id !== doc.id));
+      setDocs(prev => prev.filter((d: any) => d.id !== doc.id));
       Alert.alert('Deleted', 'Document removed successfully');
     } catch (err) {
       Alert.alert('Error', 'Failed to delete document');
@@ -186,7 +186,7 @@ export default function DocumentsScreen() {
       <View style={[styles.container, styles.center]}>
         <Ionicons name="document-text-outline" size={64} color="#333" />
         <Text style={styles.emptyTitle}>Sign in to view Documents</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/login')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/login' as any)}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
@@ -200,7 +200,7 @@ export default function DocumentsScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Documents</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/documents/upload')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/documents/upload' as any)}>
           <Ionicons name="add-circle" size={26} color="#00d4ff" />
         </TouchableOpacity>
       </View>
@@ -239,7 +239,7 @@ export default function DocumentsScreen() {
           {selectedType && (
             <View style={styles.filterBar}>
               <Text style={styles.filterText}>
-                Showing: {DOC_TYPES.find(t => t.type === selectedType)?.label}
+                Showing: {DOC_TYPES.find((t: any) => t.type === selectedType)?.label}
               </Text>
               <TouchableOpacity onPress={() => setSelectedType(null)}>
                 <Ionicons name="close-circle" size={18} color="#ff4444" />
@@ -260,7 +260,7 @@ export default function DocumentsScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.uploadBtn}
-                onPress={() => router.push('/(os)/profile/documents/upload')}
+                onPress={() => router.push('/(os)/profile/documents/upload' as any)}
               >
                 <Text style={styles.uploadBtnText}>Upload Document</Text>
               </TouchableOpacity>

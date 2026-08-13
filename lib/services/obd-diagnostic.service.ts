@@ -196,7 +196,7 @@ export async function compareBeforeAfter(diagnosticId: string) {
   const { data: after } = await supabase
     .from('obd_diagnostics')
     .select('fault_codes, live_data, scan_date')
-    .eq('vehicle_id', before?.vehicle_id)
+    .eq('vehicle_id', (before as any)?.vehicle_id)
     .gt('scan_date', before?.scan_date)
     .order('scan_date', { ascending: true })
     .limit(1)

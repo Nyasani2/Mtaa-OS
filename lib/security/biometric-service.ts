@@ -80,7 +80,7 @@ export async function getBiometricStatus(userId: string): Promise<{
 
   const devices: BiometricDevice[] = data?.biometric_devices || [];
   const deviceId = getDeviceId();
-  const thisDeviceEnrolled = devices.some(d => d.deviceId === deviceId);
+  const thisDeviceEnrolled = devices.some((d: any) => d.deviceId === deviceId);
 
   return {
     enrolledAnywhere: data?.biometric_enrolled || false,
@@ -131,7 +131,7 @@ export async function enrollBiometric(userId: string): Promise<{
       lastUsed: new Date().toISOString(),
     };
 
-    const updatedDevices = [...devices.filter(d => d.deviceId !== deviceId), newDevice];
+    const updatedDevices = [...devices.filter((d: any) => d.deviceId !== deviceId), newDevice];
 
     // 5. Update profile
     const { error } = await supabase

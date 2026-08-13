@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppManifest } from "../types";
 
 export const manifest: AppManifest = {

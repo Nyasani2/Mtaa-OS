@@ -114,7 +114,7 @@ export default function GarageScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.empty}>No garage registered.</Text>
-        <TouchableOpacity style={styles.btn} onPress={() => router.push('/(garage)/register')}>
+        <TouchableOpacity style={styles.btn} onPress={() => router.push('/(garage)/register' as any)}>
           <Text style={styles.btnText}>Register Garage</Text>
         </TouchableOpacity>
       </View>

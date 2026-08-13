@@ -94,7 +94,7 @@ export default function CreatorTransparencyScreen() {
 
         {/* Withdrawal History */}
         <Text style={styles.sectionTitle}>Withdrawal History</Text>
-        <TouchableOpacity style={styles.linkRow} onPress={() => router.push("/wallet/transactions")}>
+        <TouchableOpacity style={styles.linkRow} onPress={() => router.push("/wallet/transactions" as any)}>
           <Text style={styles.linkText}>View All Transactions</Text>
           <Feather name="chevron-right" size={18} color="#E53935" />
         </TouchableOpacity>

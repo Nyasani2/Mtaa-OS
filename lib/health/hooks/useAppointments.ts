@@ -103,11 +103,11 @@ export function useAppointments(userId: string | undefined) {
         .maybeSingle();
       if (err) throw err;
       await fetchAppointments();
-      return { success: true, id: data.id };
+      return { success: true, id: data?.id };
     } catch (err: any) {
       return { success: false, error: err.message };
     }
   }, [userId, fetchAppointments]);
 
-  return { appointments, loading, error, refreshing, refresh, cancelAppointment, bookAppointment };
+  return { data: appointments, isLoading: loading, appointments, loading, error, refreshing, refresh, cancelAppointment, bookAppointment };
 }

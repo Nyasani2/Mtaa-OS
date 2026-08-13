@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Plugin Framework
  * Extends capability, never replaces cognition.

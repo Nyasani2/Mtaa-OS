@@ -17,7 +17,7 @@ export function useFollow(targetProfileId: string) {
     followingCount: 0,
   });
   const [loading, setLoading] = useState(false);
-  const { profile } = useAuthStore();
+  const { profile } = useAuthStore() as any;
 
   const myProfileId = profile?.id;
 

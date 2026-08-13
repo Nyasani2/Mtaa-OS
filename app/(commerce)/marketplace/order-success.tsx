@@ -47,14 +47,14 @@ export default function OrderSuccessScreen() {
 
         <TouchableOpacity
           style={styles.primaryBtn}
-          onPress={() => router.push('/(os)/marketplace/orders')}
+          onPress={() => router.push('/marketplace/orders' as any)}
         >
           <Text style={styles.primaryBtnText}>View My Orders</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.secondaryBtn}
-          onPress={() => router.push('/(os)/marketplace')}
+          onPress={() => router.push('/marketplace' as any)}
         >
           <Text style={styles.secondaryBtnText}>Continue Shopping</Text>
         </TouchableOpacity>

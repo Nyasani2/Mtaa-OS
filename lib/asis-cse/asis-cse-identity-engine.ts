@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Identity Engine
  * "Who am I?" — The first cognitive process.

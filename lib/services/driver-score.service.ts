@@ -56,11 +56,11 @@ export async function calculateDriverScore(
     .gte('started_at', periodStart)
     .lte('started_at', periodEnd);
 
-  const harshBraking = (incidents || []).filter(i => i.incident_type === 'harsh_braking').length;
-  const harshAccel = (incidents || []).filter(i => i.incident_type === 'harsh_acceleration').length;
-  const harshCorner = (incidents || []).filter(i => i.incident_type === 'harsh_cornering').length;
-  const overspeed = (incidents || []).filter(i => i.incident_type === 'overspeed').length;
-  const fatigue = (incidents || []).filter(i => i.incident_type === 'driver_fatigue').length;
+  const harshBraking = (incidents || []).filter((i: any) => i.incident_type === 'harsh_braking').length;
+  const harshAccel = (incidents || []).filter((i: any) => i.incident_type === 'harsh_acceleration').length;
+  const harshCorner = (incidents || []).filter((i: any) => i.incident_type === 'harsh_cornering').length;
+  const overspeed = (incidents || []).filter((i: any) => i.incident_type === 'overspeed').length;
+  const fatigue = (incidents || []).filter((i: any) => i.incident_type === 'driver_fatigue').length;
   const totalIncidents = (incidents || []).length;
 
   const totalDistance = (recordings || []).reduce((sum: number, r: any) => sum + (r.avg_speed_kmh || 0) * ((r.duration_seconds || 0) / 3600), 0);

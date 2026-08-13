@@ -9,4 +9,5 @@ export const MTAXI_APP = {
   category: "transport",
   installable: true,
   isSystem: false,
+  screens: [] as any,
 };

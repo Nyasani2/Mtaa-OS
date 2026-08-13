@@ -44,7 +44,7 @@ export default function LiveSetupScreen() {
       setStream(s);
       // Redirect to live stream player
       setTimeout(() => {
-        router.push(`/(os)/studio/live-stream?id=${s.id}`);
+        router.push(`/(os)/studio/live-stream?id=${s.id}` as any);
       }, 500);
     }
     setGoingLive(false);

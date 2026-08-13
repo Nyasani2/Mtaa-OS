@@ -25,13 +25,13 @@ export const APP_STORE_REGISTRY: AppManifest[] = [
 export const UNIFIED_REGISTRY: AppManifest[] = [...SYSTEM_APPS, ...APP_STORE_REGISTRY];
 
 export function getAppById(id: string): AppManifest | undefined {
-  return UNIFIED_REGISTRY.find(a => a.id === id);
+  return UNIFIED_REGISTRY.find((a: any) => a.id === id);
 }
 
 export function getInstallableApps(): AppManifest[] {
-  return UNIFIED_REGISTRY.filter(a => a.installable && !a.system_app);
+  return UNIFIED_REGISTRY.filter((a: any) => a.installable && !a.system_app);
 }
 
 export function getSystemApps(): AppManifest[] {
-  return UNIFIED_REGISTRY.filter(a => a.system_app);
+  return UNIFIED_REGISTRY.filter((a: any) => a.system_app);
 }

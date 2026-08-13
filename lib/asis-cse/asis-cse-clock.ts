@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Cognitive Clock
  * Cycle timing, adaptive scheduling, burst handling

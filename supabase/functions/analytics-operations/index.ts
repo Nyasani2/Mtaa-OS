@@ -195,7 +195,7 @@ async function analyticsRealtime(supabaseAdmin, userId, params) {
   const { data: recentEvents } = await query;
 
   // Unique active users
-  const activeUsers = new Set((recentEvents || []).map(e => e.user_id)).size;
+  const activeUsers = new Set((recentEvents || []).map((e: any) => e.user_id)).size;
 
   // Events in last 5 minutes
   const eventCount = (recentEvents || []).length;

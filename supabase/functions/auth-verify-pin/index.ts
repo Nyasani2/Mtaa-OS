@@ -54,7 +54,7 @@ serve(async (req) => {
       console.error('Rate limit check failed:', attemptError);
     }
 
-    const failedAttempts = recentAttempts?.filter(a => !a.success) || [];
+    const failedAttempts = recentAttempts?.filter((a: any) => !a.success) || [];
 
     if (failedAttempts.length >= MAX_ATTEMPTS) {
       const lastAttempt = failedAttempts[0];
@@ -156,7 +156,7 @@ serve(async (req) => {
     );
 
     const computedHashHex = Array.from(new Uint8Array(computedHash))
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b: any) => b.toString(16).padStart(2, '0'))
       .join('');
 
     const valid = computedHashHex === pinRecord.pin_hash;

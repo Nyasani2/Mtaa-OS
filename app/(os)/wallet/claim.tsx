@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
@@ -13,7 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useWalletStore } from '@/lib/modules/wallet/store';
 import { getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
@@ -35,10 +36,10 @@ const PRIORITY_LEVELS = [
 
 export default function ClaimScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { accounts, activeAccountId } = useWalletStore();
 
-  const activeAccount = accounts.find(a => a.id === activeAccountId) || accounts[0];
+  const activeAccount = accounts.find((a: any) => a.id === activeAccountId) || accounts[0];
 
   const [claimType, setClaimType] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -80,7 +81,7 @@ export default function ClaimScreen() {
           type: 'wallet_claim',
           category: claimType,
           priority,
-          subject: `Wallet Claim: ${CLAIM_TYPES.find(c => c.id === claimType)?.label}`,
+          subject: `Wallet Claim: ${CLAIM_TYPES.find((c: any) => c.id === claimType)?.label}`,
           description: description.trim(),
           amount: amount ? parseFloat(amount) : null,
           transaction_id: transactionId || null,

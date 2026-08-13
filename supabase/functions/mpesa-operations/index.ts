@@ -241,9 +241,9 @@ async function callbackHandler(supabaseAdmin, params) {
 
   if (resultCode === 0) {
     // Success - credit wallet
-    const amount = callback.CallbackMetadata?.Item?.find(i => i.Name === "Amount")?.Value || transaction.amount;
-    const mpesaReceipt = callback.CallbackMetadata?.Item?.find(i => i.Name === "MpesaReceiptNumber")?.Value;
-    const phone = callback.CallbackMetadata?.Item?.find(i => i.Name === "PhoneNumber")?.Value;
+    const amount = callback.CallbackMetadata?.Item?.find((i: any) => i.Name === "Amount")?.Value || transaction.amount;
+    const mpesaReceipt = callback.CallbackMetadata?.Item?.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value;
+    const phone = callback.CallbackMetadata?.Item?.find((i: any) => i.Name === "PhoneNumber")?.Value;
 
     // Get wallet
     const { data: wallet } = await supabaseAdmin

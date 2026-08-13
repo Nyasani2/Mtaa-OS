@@ -61,72 +61,13 @@ export interface GeoLocation {
   name?: string;
 }
 
-export interface GeoPoint {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  speed?: number;
-  heading?: number;
-  altitude?: number;
-}
 
 // ============================================================
 // EXISTING: CORE TRUCKING TYPES (12 tables)
 // ============================================================
 
-export interface Truck {
-  id: string;
-  plate_number: string;
-  make: string;
-  model: string;
-  year: number;
-  capacity_kg: number;
-  fuel_type: string;
-  status: TruckStatus;
-  current_location?: GeoPoint;
-  driver_id?: string;
-  fleet_id?: string;
-  last_updated?: string;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface Driver {
-  id: string;
-  user_id: string;
-  license_number: string;
-  license_class: string;
-  experience_years: number;
-  rating: number;
-  status: DriverStatus;
-  current_truck_id?: string;
-  phone: string;
-  emergency_contact?: string;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface Load {
-  id: string;
-  title: string;
-  description?: string;
-  cargo_type: string;
-  weight_kg: number;
-  volume_cbm?: number;
-  origin: GeoLocation;
-  destination: GeoLocation;
-  distance_km?: number;
-  pickup_date: string;
-  delivery_deadline: string;
-  budget?: number;
-  currency: string;
-  status: LoadStatus;
-  shipper_id: string;
-  assigned_truck_id?: string;
-  assigned_driver_id?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface FleetAlert {
   id: string;
@@ -149,21 +90,6 @@ export interface FleetMetrics {
   utilizationRate: number;
 }
 
-export interface FreightListing {
-  id: string;
-  shipper_id: string;
-  title: string;
-  description?: string;
-  origin: string;
-  destination: string;
-  cargo_type: string;
-  weight_kg: number;
-  budget: number;
-  currency: string;
-  expires_at: string;
-  status: string;
-  created_at: string;
-}
 
 export interface FreightBid {
   id: string;
@@ -287,15 +213,6 @@ export interface EquipmentBooking {
   created_at: string;
 }
 
-export interface TruckDocument {
-  id: string;
-  type: 'manifest' | 'permit' | 'invoice' | 'insurance' | 'inspection' | 'customs' | 'other';
-  name: string;
-  url: string;
-  uploaded_at: string;
-  expiry_date?: string;
-  job_id?: string;
-}
 
 export interface MaintenanceRecord {
   id: string;
@@ -309,28 +226,7 @@ export interface MaintenanceRecord {
   notes?: string;
 }
 
-export interface Route {
-  id: string;
-  origin: string;
-  destination: string;
-  distance: number;
-  duration: number;
-  fuel_estimate: number;
-  tolls: number;
-  optimized: boolean;
-  waypoints?: GeoLocation[];
-}
 
-export interface FuelStation {
-  id: string;
-  name: string;
-  location: GeoPoint;
-  price: number;
-  currency: string;
-  distance: number;
-  amenities: string[];
-  fuel_types?: string[];
-}
 
 // ============================================================
 // NEW: CORE TRUCKING TYPES (9 tables)
@@ -845,3 +741,19 @@ export interface PaginatedResult<T> {
 }
 
 export type RealtimeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
+
+// === MTAA OS V10: MTruck type declarations ===
+export interface TruckDocument { full_name: string; }
+export interface Driver { full_name: string; trips_completed: number; rating: number; }
+export interface FreightListing {
+  urgency_level: 'low' | 'medium' | 'high';
+  cargo_description: string; weight_kg: number; distance_km?: number;
+  rate_amount: number; bid_count: number;
+}
+export interface FuelStation { full_name: string; }
+export interface Load {
+  status: string; rate_amount: number; cargo_description: string; weight_kg: number; distance_km?: number; }
+export interface Route { distance_km?: number; }
+export interface Truck {
+  status: string; registration_number: string; }
+export interface GeoPoint { lat: number; lng: number; }

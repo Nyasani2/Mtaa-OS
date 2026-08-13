@@ -286,7 +286,7 @@ export default function TransportMapScreen() {
         {/* Route Polyline */}
         {stops.length > 1 && (
           <Polyline
-            coordinates={stops.map(s => ({ latitude: s.latitude, longitude: s.longitude }))}
+            coordinates={stops.map((s: any) => ({ latitude: s.latitude, longitude: s.longitude }))}
             strokeColor={colors.primary}
             strokeWidth={3}
           />

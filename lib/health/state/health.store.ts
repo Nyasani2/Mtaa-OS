@@ -14,5 +14,5 @@ export const useHealthStore = create<HealthState>()(persist((set, get) => ({
   activeTab: 'dashboard', selectedProviderId: null, selectedAppointmentId: null, selectedRecordId: null, cart: [],
   setActiveTab: (tab) => set({ activeTab: tab }), setSelectedProvider: (id) => set({ selectedProviderId: id }),
   setSelectedAppointment: (id) => set({ selectedAppointmentId: id }), setSelectedRecord: (id) => set({ selectedRecordId: id }),
-  addToCart: (item) => set({ cart: [...get().cart, item] }), removeFromCart: (mid) => set({ cart: get().cart.filter(i => i.medicationId !== mid) }), clearCart: () => set({ cart: [] }),
+  addToCart: (item) => set({ cart: [...get().cart, item] }), removeFromCart: (mid) => set({ cart: get().cart.filter((i: any) => i.medicationId !== mid) }), clearCart: () => set({ cart: [] }),
 }), { name: 'health-store' }));

@@ -70,7 +70,7 @@ export default function ParentRegistration() {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please sign in to register as a parent.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login' as any) },
+        { text: 'Sign In', onPress: () => router.push('/login' as any as any) },
       ]);
       return;
     }
@@ -106,7 +106,7 @@ export default function ParentRegistration() {
         Alert.alert(
           'Registration Complete',
           `You are now registered as a parent. You can access your child records through the parent portal.`,
-          [{ text: 'OK', onPress: () => router.push('/(education)' as any) }]
+          [{ text: 'OK', onPress: () => router.push('/(education as any)' as any) }]
         );
       }, 1500);
     } catch (err: any) {

@@ -54,7 +54,7 @@ export default function TeacherDashboardScreen() {
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>Teacher Workspace</Text>
           <Text style={[styles.name, { color: colors.text }]}>{user?.email?.split('@')[0] || 'Teacher'}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(education)/notifications')} style={styles.notifBtn}>
+        <TouchableOpacity onPress={() => router.push('/(education)/notifications' as any)} style={styles.notifBtn}>
           <Ionicons name="notifications-outline" size={24} color={colors.text} />
           {unreadMessages > 0 && (
             <View style={styles.notifBadge}>
@@ -68,7 +68,7 @@ export default function TeacherDashboardScreen() {
       {attendancePending.length > 0 && (
         <TouchableOpacity
           style={[styles.alertBanner, { backgroundColor: '#f59e0b20', borderColor: '#f59e0b40' }]}
-          onPress={() => router.push('/(education)/attendance-marking')}
+          onPress={() => router.push('/(education)/attendance-marking' as any)}
         >
           <Ionicons name="alert-circle" size={20} color="#f59e0b" />
           <Text style={[styles.alertText, { color: '#f59e0b' }]}>
@@ -133,7 +133,7 @@ export default function TeacherDashboardScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Classes</Text>
-          <TouchableOpacity onPress={() => router.push('/(education)/class-manager')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/class-manager' as any)}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>Manage</Text>
           </TouchableOpacity>
         </View>
@@ -160,7 +160,7 @@ export default function TeacherDashboardScreen() {
                 {!cls.attendance_taken && (
                   <TouchableOpacity
                     style={[styles.actionPill, { backgroundColor: '#22c55e' }]}
-                    onPress={() => router.push(`/(education)/attendance-marking?class_id=${cls.id}`)}
+                    onPress={() => router.push(`/(education)/attendance-marking?class_id=${cls.id}` as any)}
                   >
                     <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Take</Text>
                   </TouchableOpacity>
@@ -180,7 +180,7 @@ export default function TeacherDashboardScreen() {
       <View style={[styles.section, { paddingBottom: insets.bottom + 20 }]}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Pending Grading</Text>
-          <TouchableOpacity onPress={() => router.push('/(education)/grade-book')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/grade-book' as any)}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>Grade Book</Text>
           </TouchableOpacity>
         </View>
@@ -194,7 +194,7 @@ export default function TeacherDashboardScreen() {
             <TouchableOpacity
               key={item.id}
               style={[styles.gradeCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push(`/(education)/student-submission?id=${item.id}`)}
+              onPress={() => router.push(`/(education)/student-submission?id=${item.id}` as any)}
             >
               <View style={styles.gradeLeft}>
                 <Text style={[styles.gradeStudent, { color: colors.text }]}>{item.student_name}</Text>

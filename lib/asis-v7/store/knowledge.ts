@@ -111,7 +111,7 @@ export class KnowledgeStore {
   async clearAll(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const asisKeys = keys.filter(k => k.startsWith('asis_v7_'));
+      const asisKeys = keys.filter((k: any) => k.startsWith('asis_v7_'));
       await AsyncStorage.multiRemove(asisKeys);
     } catch (error) {
       console.warn('[ASIS Store] Failed to clear data:', error);
@@ -126,7 +126,7 @@ export class KnowledgeStore {
   }> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const asisKeys = keys.filter(k => k.startsWith('asis_v7_'));
+      const asisKeys = keys.filter((k: any) => k.startsWith('asis_v7_'));
       const items = await AsyncStorage.multiGet(asisKeys);
       let totalSize = 0;
       let knowledgeGraphSize = 0;

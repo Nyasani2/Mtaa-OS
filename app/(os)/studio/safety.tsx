@@ -211,7 +211,7 @@ export default function SafetyScreen() {
           { name: 'Child Safety', desc: 'Protect minors from harmful content', value: childSafety, setter: setChildSafety, icon: 'smile', color: '#10b981' },
           { name: 'Hate Speech Filter', desc: 'Detect and block discriminatory language', value: hateSpeechFilter, setter: setHateSpeechFilter, icon: 'flag', color: '#ec4899' },
           { name: 'Harassment Filter', desc: 'Identify bullying and targeted abuse', value: harassmentFilter, setter: setHarassmentFilter, icon: 'shield-off', color: '#8b5cf6' },
-        ].map(tool => (
+        ].map((tool: any) => (
           <View key={tool.name} style={styles.toolRow}>
             <View style={styles.toolLeft}>
               <Feather name={tool.icon as any} size={18} color={tool.color} />
@@ -283,7 +283,7 @@ export default function SafetyScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>Your Appeals</Text>
-      {appeals.map(item => (
+      {appeals.map((item: any) => (
         <View key={item.id} style={styles.appealCard}>
           <View style={styles.appealHeader}>
             <Text style={styles.appealAction}>{item.original_action}</Text>
@@ -321,7 +321,7 @@ export default function SafetyScreen() {
           { id: 'tools' as SafetyTab, label: 'Tools', icon: 'sliders' },
           { id: 'audit' as SafetyTab, label: 'Audit Log', icon: 'clipboard' },
           { id: 'appeals' as SafetyTab, label: 'Appeals', icon: 'git-pull-request' },
-        ].map(t => (
+        ].map((t: any) => (
           <TouchableOpacity key={t.id} onPress={() => setActiveTab(t.id)} style={[styles.tabBtn, activeTab === t.id && styles.tabBtnActive]}>
             <Feather name={t.icon as any} size={14} color={activeTab === t.id ? '#6366f1' : '#666'} />
             <Text style={[styles.tabText, activeTab === t.id && styles.tabTextActive]}>{t.label}</Text>

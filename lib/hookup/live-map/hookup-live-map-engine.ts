@@ -1,6 +1,6 @@
 export function buildLiveMap(users: any[]) {
 
-  return users.map(user => {
+  return users.map((user: any) => {
 
     return {
       id: user.user_id,

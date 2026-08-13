@@ -32,7 +32,7 @@ export default function WalletScreen() {
   const [balance, setBalance] = useState(127.50);
 
   const openWallet = useCallback(() => {
-    router.push('/(os)/wallet');
+    router.push('/(os)/wallet' as any);
   }, [router]);
 
   const renderTxn = (txn: Transaction) => (

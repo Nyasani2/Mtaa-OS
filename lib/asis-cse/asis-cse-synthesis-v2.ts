@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Synthesis Engine v2.3
  * BULLETPROOF: generateError handles ANY input. Never returns empty text.

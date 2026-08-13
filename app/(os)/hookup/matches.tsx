@@ -71,7 +71,7 @@ export default function MatchesScreen() {
   };
 
   const openConversation = (matchId: string) => {
-    router.push(`/(os)/messages?recipientId=${matchId}`);
+    router.push(`/(os)/messages?recipientId=${matchId}` as any);
   };
 
   if (loading) {
@@ -98,7 +98,7 @@ export default function MatchesScreen() {
             <Feather name="heart" size={48} color="#333" />
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 16 }}>No Matches Yet</Text>
             <Text style={{ color: '#888', fontSize: 14, marginTop: 8, textAlign: 'center' }}>Start swiping in Discover to find your matches!</Text>
-            <TouchableOpacity onPress={() => router.push('/(os)/hookup/discovery')} style={{ backgroundColor: '#ff3366', borderRadius: 16, paddingHorizontal: 24, paddingVertical: 12, marginTop: 20 }}>
+            <TouchableOpacity onPress={() => router.push('/(os)/hookup/discovery' as any)} style={{ backgroundColor: '#ff3366', borderRadius: 16, paddingHorizontal: 24, paddingVertical: 12, marginTop: 20 }}>
               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go to Discover</Text>
             </TouchableOpacity>
           </View>

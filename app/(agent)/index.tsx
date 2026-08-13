@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 interface Agent {
@@ -20,7 +20,7 @@ interface Agent {
 
 export default function AgentScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [myAgent, setMyAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,7 +91,7 @@ export default function AgentScreen() {
             </View>
           </View>
           <View style={styles.myAgentServices}>
-            {myAgent.services?.slice(0, 4).map(s => (
+            {myAgent.services?.slice(0, 4).map((s: any) => (
               <View key={s} style={styles.serviceTag}>
                 <Ionicons name={serviceIcons[s] as any || 'checkmark-circle'} size={12} color="#10B981" />
                 <Text style={styles.serviceText}>{s}</Text>
@@ -121,7 +121,7 @@ export default function AgentScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          {agents.map(agent => (
+          {agents.map((agent: any) => (
             <TouchableOpacity key={agent.id} style={styles.agentCard} onPress={() => router.push({ pathname: '/(agent)/detail', params: { id: agent.id } } as any)}>
               <View style={styles.agentHeader}>
                 <View style={styles.agentAvatar}>
@@ -134,7 +134,7 @@ export default function AgentScreen() {
                 <Text style={styles.agentRating}>⭐ {agent.rating || 'New'}</Text>
               </View>
               <View style={styles.agentServices}>
-                {agent.services?.slice(0, 3).map(s => (
+                {agent.services?.slice(0, 3).map((s: any) => (
                   <View key={s} style={styles.serviceTagSmall}>
                     <Text style={styles.serviceTextSmall}>{s}</Text>
                   </View>

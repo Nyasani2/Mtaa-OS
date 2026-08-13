@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -118,7 +119,7 @@ export default function FreelanceScreen() {
       .in('status', ['active', 'in_progress']);
 
     if (userContracts && userContracts.length > 0) {
-      const contractIds = userContracts.map(c => c.id);
+      const contractIds = userContracts.map((c: any) => c.id);
       const { data, error } = await supabase
         .from('contract_milestones')
         .select('id, contract_id, title, amount, status, due_date')

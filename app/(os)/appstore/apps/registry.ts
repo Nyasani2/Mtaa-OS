@@ -6,10 +6,10 @@ export const appRegistry = [
 ];
 
 export function getEnabledApps() {
-  return appRegistry.filter(app => app.enabled);
+  return appRegistry.filter((app: any) => app.enabled);
 }
 
 export function getAppsByCategory(category: string) {
-  return appRegistry.filter(app => app.category === category);
+  return appRegistry.filter((app: any) => app.category === category);
 }
 export default function Registry() { return null; }

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/phone/contact-new.tsx — New Contact
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';

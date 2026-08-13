@@ -124,7 +124,7 @@ export default function ResourceDetailScreen() {
     if (resource?.content_url) {
       Linking.openURL(resource.content_url);
     } else if (resource?.mstudio_content_id) {
-      router.push(`/(studio)/content/${resource.mstudio_content_id}`);
+      router.push(`/(studio)/content/${resource.mstudio_content_id}` as any);
     } else {
       Alert.alert('No Content', 'This resource does not have an attached file or link.');
     }

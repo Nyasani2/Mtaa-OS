@@ -1,53 +1,72 @@
-import { Stack } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
 import { IdentityProvider } from '@/lib/auth/identity-provider';
-import { OSShellProvider } from '@/lib/shell/os-shell-provider';
-import { AsisProviderV4 } from '@/lib/kernel/ai/asis-provider-v4';
-import { AppLockProvider } from '@/lib/security/app-lock-provider';
-import { useASISBoot } from '@/lib/system/hooks/asis-boot-hook';
+import { OSGate } from '@/lib/auth/os-gate';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { LockScreen } from '@/components/os/LockScreen';
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 5 * 60 * 1000 } },
-});
+const AUTO_LOCK_SECONDS = 30;
 
 export default function RootLayout() {
-  useASISBoot(); // Activate fraud monitoring on boot
+  const router = useRouter();
+  const segments = useSegments();
+  const appState = useRef(AppState.currentState);
+  const backgroundTime = useRef<number | null>(null);
+  const { initialize, lockApp, updateLastActive, isAuthenticated, pinSet } = useAuthStore();
+
+  // Initialize auth on boot
+  useEffect(() => {
+    initialize();
+  }, []);
+
+  // Track last active time for auto-lock
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      const current = appState.current;
+
+      if (current === 'active' && nextAppState.match(/inactive|background/)) {
+        // Going to background — record time
+        backgroundTime.current = Date.now();
+        updateLastActive();
+      }
+
+      if (current.match(/inactive|background/) && nextAppState === 'active') {
+        // Coming to foreground — check if we should lock
+        if (backgroundTime.current && isAuthenticated && pinSet) {
+          const elapsed = (Date.now() - backgroundTime.current) / 1000;
+          if (elapsed > AUTO_LOCK_SECONDS) {
+            lockApp();
+          }
+        }
+        backgroundTime.current = null;
+        updateLastActive();
+      }
+
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isAuthenticated, pinSet, lockApp, updateLastActive]);
+
+  // Update last active on navigation
+  useEffect(() => {
+    updateLastActive();
+  }, [segments]);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <SafeAreaProvider>
       <IdentityProvider>
-        <OSShellProvider>
-          <AppLockProvider>
-            <AsisProviderV4>
-              <StatusBar style="light" />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(os)" />
-                <Stack.Screen name="(boda)" />
-                <Stack.Screen name="(commerce)" />
-                <Stack.Screen name="(communication)" />
-                <Stack.Screen name="(education)" />
-                <Stack.Screen name="(finance)" />
-                <Stack.Screen name="(local)" />
-                <Stack.Screen name="(media)" />
-                <Stack.Screen name="(mtaxi)" />
-                <Stack.Screen name="(mtruck)" />
-                <Stack.Screen name="(productivity)" />
-                <Stack.Screen name="(social)" />
-                <Stack.Screen name="(system)" />
-                <Stack.Screen name="(transport)" />
-                <Stack.Screen name="(tribes)" />
-                <Stack.Screen name="(utility)" />
-                <Stack.Screen name="(work)" />
-                <Stack.Screen name="(business)" />
-                <Stack.Screen name="auth" />
-                <Stack.Screen name="os" />
-                <Stack.Screen name="regulatory" />
-              </Stack>
-            </AsisProviderV4>
-          </AppLockProvider>
-        </OSShellProvider>
+        <OSGate>
+          <Slot />
+        </OSGate>
       </IdentityProvider>
-    </QueryClientProvider>
+      <StatusBar style="light" />
+      <LockScreen />
+    </SafeAreaProvider>
   );
 }

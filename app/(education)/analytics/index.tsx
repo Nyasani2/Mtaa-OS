@@ -77,7 +77,7 @@ export default function AnalyticsScreen() {
       </View>
       <Text style={styles.sectionTitle}>Recent Performance</Text>
       {(performance || []).slice(0, 20).map((p: any) => (
-        <TouchableOpacity key={p.id} style={styles.card} onPress={() => router.push(`/(education)/exam-results/${p.id}`)}>
+        <TouchableOpacity key={p.id} style={styles.card} onPress={() => router.push(`/education/exam-results/${p.id}` as any)}>
           <View style={styles.cardRow}>
             <Users size={18} color="#6366f1" />
             <Text style={styles.cardTitle}>{p.education_students?.name || 'Unknown'}</Text>

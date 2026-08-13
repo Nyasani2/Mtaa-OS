@@ -78,7 +78,7 @@ serve(async (req) => {
       .or(`buyer_id.eq.${user_id},seller_id.eq.${user_id}`)
 
     const totalEscrows = escrows?.length ?? 0
-    const completedEscrows = escrows?.filter(e => e.status === 'released').length ?? 0
+    const completedEscrows = escrows?.filter((e: any) => e.status === 'released').length ?? 0
     const escrowRate = totalEscrows > 0 ? completedEscrows / totalEscrows : 0
 
     // Calculate scores (0-1000 scale)

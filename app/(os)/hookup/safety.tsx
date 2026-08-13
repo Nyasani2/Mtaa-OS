@@ -120,7 +120,7 @@ export default function SafetyScreen() {
         await supabase.from('hookup_blocks').delete()
           .eq('blocker_id', user.id)
           .eq('blocked_id', blockedId);
-        setBlockedUsers(prev => prev.filter(b => b.blocked_id !== blockedId));
+        setBlockedUsers(prev => prev.filter((b: any) => b.blocked_id !== blockedId));
       }},
     ]);
   };
@@ -336,7 +336,7 @@ function BlockedPanel({ users, onUnblock }: { users: BlockedUser[]; onUnblock: (
   return (
     <View>
       <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Blocked Users</Text>
-      {users.map(u => (
+      {users.map((u: any) => (
         <View key={u.blocked_id} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#1a1a1a', borderRadius: 12, marginBottom: 8 }}>
           <Image source={{ uri: u.avatar_url || undefined }} style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#2a2a2a' }} />
           <View style={{ flex: 1, marginLeft: 12 }}>
@@ -372,7 +372,7 @@ function ReportsPanel({ reports }: { reports: ReportItem[] }) {
   return (
     <View>
       <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>My Reports</Text>
-      {reports.map(r => (
+      {reports.map((r: any) => (
         <View key={r.id} style={{ padding: 14, backgroundColor: '#1a1a1a', borderRadius: 12, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>{r.reported_name}</Text>

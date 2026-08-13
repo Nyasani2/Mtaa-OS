@@ -37,8 +37,8 @@ export default function AppStoreScreen() {
   const filteredApps = searchQuery.trim()
     ? searchApps(searchQuery)
     : activeCategory === 'all'
-      ? ALL_APPS.filter(a => !a.devOnly || isDeveloper)
-      : ALL_APPS.filter(a => a.category === activeCategory && (!a.devOnly || isDeveloper));
+      ? ALL_APPS.filter((a: any) => !a.devOnly || isDeveloper)
+      : ALL_APPS.filter((a: any) => a.category === activeCategory && (!a.devOnly || isDeveloper));
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -51,7 +51,7 @@ export default function AppStoreScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(os)')} style={styles.homeBtn}>
+        <TouchableOpacity onPress={() => router.push('/(os)' as any)} style={styles.homeBtn}>
           <Ionicons name="home-outline" size={22} color="#fff" />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: 12 }}>
@@ -98,7 +98,7 @@ export default function AppStoreScreen() {
         {/* Category Tabs */}
         {!searchQuery && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-            {categories.map(cat => (
+            {categories.map((cat: any) => (
               <TouchableOpacity
                 key={cat}
                 style={[styles.categoryTab, activeCategory === cat && styles.categoryTabActive]}
@@ -117,7 +117,7 @@ export default function AppStoreScreen() {
           <View style={styles.featuredSection}>
             <Text style={styles.sectionTitle}>Featured</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} pagingEnabled>
-              {featured.map(app => (
+              {featured.map((app: any) => (
                 <TouchableOpacity
                   key={app.id}
                   style={styles.featuredCard}
@@ -171,7 +171,7 @@ export default function AppStoreScreen() {
             {searchQuery ? `Results for "${searchQuery}"` : activeCategory === 'all' ? 'All Apps' : CATEGORY_LABELS[activeCategory]}
           </Text>
           <View style={styles.grid}>
-            {filteredApps.map(app => (
+            {filteredApps.map((app: any) => (
               <AppCard
                 key={app.id}
                 app={app}

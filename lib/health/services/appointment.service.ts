@@ -74,7 +74,7 @@ export const appointmentService = {
       .select("id")
       .maybeSingle();
     if (error) throw error;
-    return data.id as string;
+    return data?.id as string;
   },
 
   async cancel(id: string) {

@@ -135,7 +135,7 @@ async function mtaxiRequest(supabaseAdmin, riderId, params) {
     .not("current_lat", "is", null)
     .not("current_lng", "is", null);
 
-  const driversInRange = (nearbyDrivers || []).filter(driver => {
+  const driversInRange = (nearbyDrivers || []).filter((driver: any) => {
     const dist = calculateDistance(pickup_lat, pickup_lng, driver.current_lat, driver.current_lng);
     return dist <= 5;
   });

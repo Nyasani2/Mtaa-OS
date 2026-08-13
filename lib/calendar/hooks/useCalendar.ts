@@ -14,7 +14,7 @@ export function useCalendar() {
     setLoading(true);
     setError(null);
     try {
-      const data = await CalendarService.getEvents(user.id);
+      const data = await CalendarService.getEvents(user.id, new Date().toISOString(), new Date().toISOString());
       setEvents(data);
     } catch (e: any) {
       console.error('[useCalendar] fetchEvents error:', e);

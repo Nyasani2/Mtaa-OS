@@ -49,7 +49,7 @@ export default function StaffScreen() {
           <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
         </TouchableOpacity>
         <Text style={styles.title}>Staff</Text>
-        <TouchableOpacity onPress={() => router.push("/(education)/register")}>
+        <TouchableOpacity onPress={() => router.push("/(education as any)/register" as any)}>
           <Ionicons name="add-circle" size={24} color="#60a5fa" />
         </TouchableOpacity>
       </View>

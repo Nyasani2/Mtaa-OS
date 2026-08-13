@@ -13,7 +13,7 @@ export default function VisitorsScreen() {
     { id: '4', name: 'Vendor Ltd', purpose: 'Delivery', checkIn: '11:00 AM', checkOut: '11:45 AM', status: 'checked-out', phone: '+254 745 678 901' },
   ]);
 
-  const filtered = visitors.filter(v => v.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = visitors.filter((v: any) => v.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <View style={styles.container}>

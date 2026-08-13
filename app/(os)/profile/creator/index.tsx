@@ -68,7 +68,7 @@ export default function CreatorProfileScreen() {
           <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Creator Profile</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/creator/edit')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/creator/edit' as any)}>
           <Ionicons name="create-outline" size={22} color="#3b82f6" />
         </TouchableOpacity>
       </View>
@@ -108,22 +108,22 @@ export default function CreatorProfileScreen() {
       {/* Actions */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Creator Tools</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/earnings')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/earnings' as any)}>
           <Ionicons name="cash-outline" size={20} color="#10b981" />
           <Text style={styles.actionText}>Earnings</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/dashboard')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/dashboard' as any)}>
           <Ionicons name="analytics-outline" size={20} color="#3b82f6" />
           <Text style={styles.actionText}>Analytics Dashboard</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/streets/create')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/streets/create' as any)}>
           <Ionicons name="add-circle-outline" size={20} color="#f59e0b" />
           <Text style={styles.actionText}>Create Post</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/edit')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/creator/edit' as any)}>
           <Ionicons name="create-outline" size={20} color="#8b5cf6" />
           <Text style={styles.actionText}>Edit Profile</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
@@ -138,7 +138,7 @@ export default function CreatorProfileScreen() {
             <Text style={[styles.cardTitle, { marginBottom: 0, marginLeft: 8 }]}>Enable Monetization</Text>
           </View>
           <Text style={styles.hintText}>Turn on monetization to start earning from your content.</Text>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#f59e0b' }]} onPress={() => router.push('/(os)/profile/creator/earnings')}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#f59e0b' }]} onPress={() => router.push('/(os)/profile/creator/earnings' as any)}>
             <Text style={styles.actionBtnText}>Get Started</Text>
           </TouchableOpacity>
         </View>

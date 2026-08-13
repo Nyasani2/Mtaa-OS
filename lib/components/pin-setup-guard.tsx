@@ -1,38 +1,39 @@
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
-import { hasPin } from '@/lib/security/pin-engine';
+import { pinEngine } from '@/lib/security/pin-engine';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-/**
- * PIN Setup Guard
- * Place this in your OS home screen or layout.
- * If user is authenticated but has no PIN, redirects to set-pin.
- * After setting PIN, user returns to OS home.
- */
-export function usePinSetupGuard() {
+export const PinSetupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuthStore();
   const router = useRouter();
   const segments = useSegments();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const [checking, setChecking] = useState(true);
+  const [hasPinSet, setHasPinSet] = useState(false);
 
   useEffect(() => {
-    if (isLoading || !isAuthenticated) return;
-
-    // Only check if we're in the OS area
-    const isInOS = segments[0] === '(os)';
-    if (!isInOS) return;
-
     const checkPin = async () => {
-      const pinSet = await hasPin();
-      if (!pinSet) {
-        // Redirect to set-pin, but only if not already there
-        const currentPath = segments.join('/');
-        if (!currentPath.includes('set-pin')) {
-          router.push('/auth/set-pin');
-        }
+      let exists = false;
+      if (user?.id) {
+        exists = await pinEngine.hasPin(user.id);
+        setHasPinSet(exists);
+      }
+      setChecking(false);
+      // Redirect to set-pin if authenticated but no PIN (and not already there)
+      if (!exists && segments[0] !== '(auth)' && segments[1] !== ('set-pin' as any)) {
+        router.replace('/set-pin' as any);
       }
     };
-
     checkPin();
-  }, [isAuthenticated, isLoading, segments, router]);
-}
+  }, [user?.id, JSON.stringify(segments)]);  
+
+  if (isLoading || checking) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+        <ActivityIndicator size="large" color="#00d4ff" />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+};

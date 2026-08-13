@@ -46,7 +46,7 @@ export async function createShop(payload: Partial<Shop>): Promise<ServiceResult<
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -56,7 +56,7 @@ export async function getShopById(shopId: string): Promise<ServiceResult<Shop>> 
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -66,7 +66,7 @@ export async function getShopsByOwner(ownerId: string): Promise<ServiceResult<Sh
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -76,7 +76,7 @@ export async function updateShop(shopId: string, updates: Partial<Shop>): Promis
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -86,7 +86,7 @@ export async function deleteShop(shopId: string): Promise<ServiceResult<null>> {
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -96,7 +96,7 @@ export async function getShopStaff(shopId: string): Promise<ServiceResult<ShopSt
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -106,7 +106,7 @@ export async function addShopStaff(shopId: string, staffData: Partial<ShopStaff>
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -116,7 +116,7 @@ export async function removeShopStaff(staffId: string): Promise<ServiceResult<nu
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -126,7 +126,7 @@ export async function getShopSuppliers(shopId: string): Promise<ServiceResult<Sh
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -136,7 +136,7 @@ export async function addShopSupplier(shopId: string, supplierData: Partial<Shop
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -146,7 +146,7 @@ export async function updateShopSupplier(supplierId: string, updates: Partial<Sh
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -156,7 +156,7 @@ export async function getShopDocuments(shopId: string): Promise<ServiceResult<Bu
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -166,7 +166,7 @@ export async function uploadShopDocument(shopId: string, docData: Partial<Busine
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -176,6 +176,6 @@ export async function deleteShopDocument(docId: string): Promise<ServiceResult<n
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }

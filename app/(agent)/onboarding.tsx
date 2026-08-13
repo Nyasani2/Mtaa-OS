@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,7 +12,7 @@ const STEPS = ['Personal Info', 'Business Details', 'Services', 'Review'];
 
 export default function AgentOnboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +42,7 @@ export default function AgentOnboarding() {
   ];
 
   const toggleService = (service: string) => {
-    setServices(prev => prev.includes(service) ? prev.filter(s => s !== service) : [...prev, service]);
+    setServices(prev => prev.includes(service) ? prev.filter((s: any) => s !== service) : [...prev, service]);
   };
 
   const validateStep = () => {
@@ -182,7 +182,7 @@ export default function AgentOnboarding() {
             <Text style={styles.sectionTitle}>Services & CashPoint</Text>
             <Text style={styles.label}>Services Offered *</Text>
             <View style={styles.chipContainer}>
-              {serviceOptions.map(service => (
+              {serviceOptions.map((service: any) => (
                 <TouchableOpacity key={service} style={[styles.chip, services.includes(service) && styles.chipActive]} onPress={() => toggleService(service)}>
                   <Text style={[styles.chipText, services.includes(service) && styles.chipTextActive]}>{service}</Text>
                 </TouchableOpacity>

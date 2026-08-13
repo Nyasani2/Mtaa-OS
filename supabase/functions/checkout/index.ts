@@ -132,7 +132,7 @@ serve(async (req) => {
       if (orderError) throw new Error(`Order creation failed: ${orderError.message}`)
 
       // Create order items
-      const orderItems = sellerItems.map(item => ({
+      const orderItems = sellerItems.map((item: any) => ({
         order_id: orderId,
         product_id: item.product_id,
         quantity: item.quantity,

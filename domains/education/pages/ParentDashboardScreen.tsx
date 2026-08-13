@@ -56,7 +56,7 @@ export default function ParentDashboardScreen() {
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>Parent Portal</Text>
           <Text style={[styles.name, { color: colors.text }]}>{user?.email?.split('@')[0] || 'Parent'}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(education)/notifications')} style={styles.notifBtn}>
+        <TouchableOpacity onPress={() => router.push('/(education)/notifications' as any)} style={styles.notifBtn}>
           <Ionicons name="notifications-outline" size={24} color={colors.text} />
           {unreadMessages > 0 && (
             <View style={styles.notifBadge}>
@@ -69,7 +69,7 @@ export default function ParentDashboardScreen() {
       {/* Child Selector */}
       {children.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.childRow}>
-          {children.map(child => (
+          {children.map((child: any) => (
             <TouchableOpacity
               key={child.id}
               style={[
@@ -122,7 +122,7 @@ export default function ParentDashboardScreen() {
       {busETA && (
         <TouchableOpacity
           style={[styles.busCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => router.push('/(education)/parent-transport')}
+          onPress={() => router.push('/(education)/parent-transport' as any)}
         >
           <View style={styles.busHeader}>
             <View style={[styles.busIcon, { backgroundColor: '#06b6d420' }]}>
@@ -214,7 +214,7 @@ export default function ParentDashboardScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Grades</Text>
-          <TouchableOpacity onPress={() => router.push('/(education)/report-card')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/report-card' as any)}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>

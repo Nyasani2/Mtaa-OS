@@ -25,7 +25,7 @@ export default function StaySavedScreen() {
         emptyMessage="Tap the heart on any stay to save it here"
         savedIds={savedIds}
         onToggleSave={toggleSaved}
-        onSelect={(id) => router.push(`/(os)/stay/${id}`)}
+        onSelect={(id) => router.push(`/(os)/stay/${id}` as any)}
       />
     </ScrollView>
   );

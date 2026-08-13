@@ -26,19 +26,19 @@ export default function CustomsScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/entries')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/entries' as any)}>
             <Ionicons name="document-text-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Entries</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/inspections')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/inspections' as any)}>
             <Ionicons name="search-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Inspections</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/warehouses')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/warehouses' as any)}>
             <Ionicons name="cube-outline" size={28} color="#F59E0B" />
             <Text style={styles.actionText}>Warehouses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/tariffs')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/customs/tariffs' as any)}>
             <Ionicons name="list-outline" size={28} color="#8B5CF6" />
             <Text style={styles.actionText}>Tariffs</Text>
           </TouchableOpacity>

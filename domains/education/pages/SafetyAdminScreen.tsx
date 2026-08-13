@@ -209,7 +209,7 @@ export default function SafetyAdminScreen() {
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No open alerts</Text>
             </View>
           ) : (
-            alerts.map(a => (
+            alerts.map((a: any) => (
               <View key={a.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.alertIcon, { backgroundColor: a.type === 'emergency' ? '#FEE2E2' : '#FEF3C7' }]}>
@@ -238,7 +238,7 @@ export default function SafetyAdminScreen() {
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No pending verifications</Text>
             </View>
           ) : (
-            verifications.map(v => (
+            verifications.map((v: any) => (
               <View key={v.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.alertIcon, { backgroundColor: '#DBEAFE' }]}>

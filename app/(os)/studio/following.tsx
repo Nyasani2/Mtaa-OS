@@ -43,7 +43,7 @@ export default function FollowingScreen() {
       .select('following_id')
       .eq('follower_id', user.id);
 
-    const followingIds = follows?.map(f => f.following_id) || [];
+    const followingIds = follows?.map((f: any) => f.following_id) || [];
     if (followingIds.length === 0) {
       setVideos([]);
       setLoading(false);
@@ -101,7 +101,7 @@ export default function FollowingScreen() {
 
   const renderVideo = ({ item }: { item: Video }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}` as any)}
       style={{ width: THUMB_WIDTH, marginBottom: 16 }}
     >
       <View style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT, borderRadius: 8, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
@@ -166,7 +166,7 @@ export default function FollowingScreen() {
             <Text style={{ color: '#666', marginTop: 16, fontSize: 16 }}>No content from people you follow</Text>
             <Text style={{ color: '#444', marginTop: 4, fontSize: 13 }}>Follow creators to see their content here</Text>
             <TouchableOpacity
-              onPress={() => router.push('/(os)/studio/feed')}
+              onPress={() => router.push('/(os)/studio/feed' as any)}
               style={{ marginTop: 20, backgroundColor: '#ff0000', borderRadius: 20, paddingHorizontal: 24, paddingVertical: 12 }}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Discover Creators</Text>

@@ -29,7 +29,7 @@ function RecentActivityPanel() {
     <View style={styles.panel}>
       <View style={styles.panelHeader}>
         <Text style={styles.panelTitle}>Recent Activity</Text>
-        <TouchableOpacity onPress={() => router.push('/activity')}>
+        <TouchableOpacity onPress={() => router.push('/activity' as any)}>
           <Text style={styles.panelLink}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -60,7 +60,7 @@ function CivicAlertsPanel() {
     <View style={styles.panel}>
       <View style={styles.panelHeader}>
         <Text style={styles.panelTitle}>Civic Alerts</Text>
-        <TouchableOpacity onPress={() => router.push('/civic/alerts')}>
+        <TouchableOpacity onPress={() => router.push('/civic/alerts' as any)}>
           <Text style={styles.panelLink}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -91,7 +91,7 @@ function TransactionPanel() {
     <View style={styles.panel}>
       <View style={styles.panelHeader}>
         <Text style={styles.panelTitle}>Transactions</Text>
-        <TouchableOpacity onPress={() => router.push('/wallet/transactions')}>
+        <TouchableOpacity onPress={() => router.push('/wallet/transactions' as any)}>
           <Text style={styles.panelLink}>View All</Text>
         </TouchableOpacity>
       </View>

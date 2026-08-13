@@ -24,12 +24,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const toast: Toast = { id, message, type, duration };
     setToasts(prev => [...prev, toast]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      setToasts(prev => prev.filter((t: any) => t.id !== id));
     }, duration);
   }, []);
 
   const hideToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    setToasts(prev => prev.filter((t: any) => t.id !== id));
   }, []);
 
   return (

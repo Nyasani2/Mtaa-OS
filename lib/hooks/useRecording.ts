@@ -128,7 +128,7 @@ export function useRecording() {
       const data = await withTimeout(updateRecordingUploadStatus(recordingId, 'uploaded', storagePath), QUERY_TIMEOUT, 'markUploaded');
       setState(prev => ({
         ...prev,
-        recordings: prev.recordings.map(r => r.id === recordingId ? data : r),
+        recordings: prev.recordings.map((r: any) => r.id === recordingId ? data : r),
         currentRecording: prev.currentRecording?.id === recordingId ? data : prev.currentRecording,
       }));
       return data;
@@ -144,7 +144,7 @@ export function useRecording() {
       await withTimeout(deleteRecording(recordingId), QUERY_TIMEOUT, 'removeRecording');
       setState(prev => ({
         ...prev,
-        recordings: prev.recordings.filter(r => r.id !== recordingId),
+        recordings: prev.recordings.filter((r: any) => r.id !== recordingId),
         isLoading: false,
       }));
     } catch (err: any) {

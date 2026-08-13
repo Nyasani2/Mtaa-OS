@@ -67,7 +67,7 @@ export default function NearbyScreen() {
 
   const renderItem = ({ item }: { item: NearbyItem }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}` as any)}
       style={{ marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
     >
       <View style={{ width: '100%', aspectRatio: 16 / 9 }}>
@@ -114,7 +114,7 @@ export default function NearbyScreen() {
 
       {/* Radius Filter */}
       <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12 }}>
-        {[5, 10, 25, 50, 100].map(km => (
+        {[5, 10, 25, 50, 100].map((km: any) => (
           <TouchableOpacity
             key={km}
             onPress={() => setRadius(km)}

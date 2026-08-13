@@ -31,7 +31,7 @@ export default function AgentMapScreen() {
     setLoading(false);
   };
 
-  const filtered = agents.filter(a =>
+  const filtered = agents.filter((a: any) =>
     a.business_name.toLowerCase().includes(search.toLowerCase()) ||
     a.agent_type.toLowerCase().includes(search.toLowerCase())
   );

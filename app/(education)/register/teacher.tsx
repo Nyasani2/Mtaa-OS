@@ -49,7 +49,7 @@ export default function TeacherRegistration() {
   }, [user]);
 
   const toggleSubject = (subj: string) => {
-    setSubjects(prev => prev.includes(subj) ? prev.filter(s => s !== subj) : [...prev, subj]);
+    setSubjects(prev => prev.includes(subj) ? prev.filter((s: any) => s !== subj) : [...prev, subj]);
   };
 
   const validateStep = () => {
@@ -79,7 +79,7 @@ export default function TeacherRegistration() {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please sign in to register as a teacher.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login' as any) },
+        { text: 'Sign In', onPress: () => router.push('/login' as any as any) },
       ]);
       return;
     }
@@ -119,7 +119,7 @@ export default function TeacherRegistration() {
         Alert.alert(
           'Application Submitted',
           'Your teacher application has been submitted. The school administration will review and approve your profile.',
-          [{ text: 'OK', onPress: () => router.push('/(education)' as any) }]
+          [{ text: 'OK', onPress: () => router.push('/(education as any)' as any) }]
         );
       }, 1500);
     } catch (err: any) {

@@ -96,7 +96,7 @@ class KnowledgeGraphManager {
   getRelevantFacts(subject: string): KnowledgeFact[] {
     const subjectLower = subject.toLowerCase();
     return this.graph.facts
-      .filter(f => 
+      .filter((f: any) => 
         f.subject.toLowerCase().includes(subjectLower) ||
         f.object.toLowerCase().includes(subjectLower)
       )
@@ -187,7 +187,7 @@ class CollectivePatternManager {
   findPatterns(intent: string, query: string): CollectivePattern[] {
     const queryLower = query.toLowerCase();
     return this.patterns
-      .filter(p => {
+      .filter((p: any) => {
         if (p.intent !== intent) return false;
         try {
           const regex = new RegExp(p.queryPattern, 'i');
@@ -383,17 +383,17 @@ export class KamosEngine {
 
     // Replication: based on collective pattern strength
     const patterns = this.patternManager.findPatterns(intent.category, query);
-    const replication = patterns.length > 0 ? Math.max(...patterns.map(p => p.successRate)) : 0.3;
+    const replication = patterns.length > 0 ? Math.max(...patterns.map((p: any) => p.successRate)) : 0.3;
 
     // Interaction: based on context relevance
     const context = this.contextManager.getContext();
-    const recentSimilar = context.recentQueries.filter(q =>
+    const recentSimilar = context.recentQueries.filter((q: any) =>
       this.calculateSimilarity(q, query) > 0.5
     ).length;
     const interaction = Math.min(recentSimilar / 3, 1.0);
 
     // Observation: based on tool output quality
-    const successfulTools = toolOutputs.filter(t => t.success).length;
+    const successfulTools = toolOutputs.filter((t: any) => t.success).length;
     const observation = toolOutputs.length > 0 ? successfulTools / toolOutputs.length : 0.5;
 
     return { growth, replication, interaction, observation };
@@ -408,7 +408,7 @@ export class KamosEngine {
     if (relevantFacts.length > 0) {
       const factText = relevantFacts
         .slice(0, 3)
-        .map(f => `${f.subject} ${f.predicate} ${f.object}`)
+        .map((f: any) => `${f.subject} ${f.predicate} ${f.object}`)
         .join(', ');
 
       response.details.push(`Based on your history: ${factText}`);
@@ -590,7 +590,7 @@ export class KamosEngine {
   private calculateSimilarity(a: string, b: string): number {
     const aWords = new Set(a.toLowerCase().split(/\s+/));
     const bWords = new Set(b.toLowerCase().split(/\s+/));
-    const intersection = new Set([...aWords].filter(x => bWords.has(x)));
+    const intersection = new Set([...aWords].filter((x: any) => bWords.has(x)));
     const union = new Set([...aWords, ...bWords]);
     return intersection.size / union.size;
   }

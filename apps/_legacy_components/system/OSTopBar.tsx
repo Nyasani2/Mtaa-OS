@@ -20,7 +20,7 @@ export function OSTopBar() {
   return (
     <View style={styles.container}>
       {/* Left: Profile */}
-      <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileBtn}>
+      <TouchableOpacity onPress={() => router.push('/profile' as any)} style={styles.profileBtn}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{profile?.full_name?.[0] || user?.email?.[0] || '?'}</Text>
         </View>
@@ -38,11 +38,11 @@ export function OSTopBar() {
 
       {/* Right: Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.iconBtn}>
+        <TouchableOpacity onPress={() => router.push('/notifications' as any)} style={styles.iconBtn}>
           <Text style={styles.iconText}>🔔</Text>
           <View style={styles.badge} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/system-status')} style={styles.iconBtn}>
+        <TouchableOpacity onPress={() => router.push('/system-status' as any)} style={styles.iconBtn}>
           <Text style={styles.iconText}>📊</Text>
         </TouchableOpacity>
       </View>

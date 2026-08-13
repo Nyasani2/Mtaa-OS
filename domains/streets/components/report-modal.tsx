@@ -46,7 +46,7 @@ export default function ReportModal({ visible, post, onClose }: ReportModalProps
           ) : (
             <>
               <Text style={styles.label}>Why are you reporting this?</Text>
-              {REASONS.map(r => (
+              {REASONS.map((r: any) => (
                 <TouchableOpacity key={r} style={[styles.reasonRow, reason===r&&styles.reasonActive]} onPress={()=>setReason(r)}>
                   <View style={[styles.radio, reason===r&&styles.radioActive]}>{reason===r&&<View style={styles.radioDot}/>}</View>
                   <Text style={styles.reasonText}>{r}</Text>

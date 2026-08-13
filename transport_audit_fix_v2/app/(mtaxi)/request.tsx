@@ -124,7 +124,7 @@ export default function RequestScreen() {
         distance_km: distanceKm,
       });
       Alert.alert('Ride Booked!', `Fare: KES ${fare_estimate}\nFinding drivers...`);
-      router.push(`/(mtaxi)/tracking?id=${ride.id}`);
+      router.push(`/(mtaxi)/tracking?id=${ride.id}` as any);
     } catch (err: any) {
       Alert.alert('Booking Failed', err.message || 'Try again');
     }

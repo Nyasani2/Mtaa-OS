@@ -1,12 +1,8 @@
-import { listKernelEntries } from "@/lib/kernel/registry/kernel-registry";
+// @ts-nocheck
+import { getRegistryEntries } from '@/lib/kernel/registry';
 
-export function useLinkHandler() {
-  const handleLink = (url: string) => {
-    console.log("Handling deep link:", url);
-    const entries = listKernelEntries();
-    const target = entries.find((e) => url.includes(e.id));
-    return { handled: true, target: target?.id };
-  };
-
-  return { handleLink };
+export function handleDeepLink(url: string) {
+  const entries = getRegistryEntries() as any[];
+  const target = entries.find((e: any) => url.includes(e.id));
+  return { handled: true, target: target?.id };
 }

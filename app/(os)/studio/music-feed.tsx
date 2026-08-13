@@ -78,7 +78,7 @@ export default function MusicFeedScreen() {
 
   const renderRelease = ({ item }: { item: MusicRelease }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/music-player?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/music-player?id=${item.id}` as any)}
       style={{ width: 150, marginRight: 12 }}
     >
       <View style={{ width: 150, height: 150, borderRadius: 8, overflow: 'hidden', backgroundColor: '#1a1a1a' }}>
@@ -123,7 +123,7 @@ export default function MusicFeedScreen() {
           <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Music</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/studio/music-upload')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/studio/music-upload' as any)}>
           <Feather name="plus" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -131,7 +131,7 @@ export default function MusicFeedScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Genre Filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, marginBottom: 16 }}>
-          {GENRES.map(g => (
+          {GENRES.map((g: any) => (
             <TouchableOpacity
               key={g}
               onPress={() => setSelectedGenre(g)}

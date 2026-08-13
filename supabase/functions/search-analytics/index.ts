@@ -31,7 +31,7 @@ const corsHeaders = {
         totalQueries: total?.length || 0,
         avgResults: avg || 0,
         topQueries: top || [],
-        zeroResultQueries: zero?.map(z => z.query) || [],
+        zeroResultQueries: zero?.map((z: any) => z.query) || [],
       }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

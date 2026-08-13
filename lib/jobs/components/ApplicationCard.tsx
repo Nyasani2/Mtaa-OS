@@ -11,7 +11,7 @@ export function ApplicationCard({ app }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.jobTitle}>{(app).jobs?.title || "Job"}</Text>
+        <Text style={styles.jobTitle}>{(app as any).jobs?.title || "Job"}</Text>
         <View style={[styles.badge, { backgroundColor: statusColors[app.status] + "20" }]}>
           <Text style={[styles.badgeText, { color: statusColors[app.status] }]}>{app.status.toUpperCase()}</Text>
         </View>

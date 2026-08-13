@@ -1,4 +1,4 @@
-export default {
+const _manifest = {
   id: 'civic-courts',
   name: 'Courts',
   category: 'civic',
@@ -11,3 +11,5 @@ export default {
   permissions: ['notifications', 'storage'],
   isOSApp: false,
 };
+
+export default _manifest as any;

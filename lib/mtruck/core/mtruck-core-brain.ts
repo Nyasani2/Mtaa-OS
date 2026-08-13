@@ -19,10 +19,10 @@ export async function computeSystemState(): Promise<MTruckSystemState> {
     .select("*");
 
   const activeShipments =
-    (shipments || []).filter(s => s.status === "ACTIVE").length;
+    (shipments || []).filter((s: any) => s.status === "ACTIVE").length;
 
   const delayedShipments =
-    (shipments || []).filter(s => s.status === "DELAYED").length;
+    (shipments || []).filter((s: any) => s.status === "DELAYED").length;
 
   const avgEta =
     (shipments || []).length > 0

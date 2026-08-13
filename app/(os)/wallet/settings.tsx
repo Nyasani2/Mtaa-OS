@@ -14,7 +14,7 @@ export default function WalletSettingsScreen() {
 
   const settingsItems = [
     { icon: Bell, label: "Notifications", value: notifications, onToggle: setNotifications },
-    { icon: Shield, label: "Security & PIN", action: () => router.push("/(os)/settings/security") },
+    { icon: Shield, label: "Security & PIN", action: () => router.push("/(os)/settings/security" as any) },
     { icon: Eye, label: "Hide Balance", value: hideBalance, onToggle: setHideBalance },
     { icon: Fingerprint, label: "Biometric Auth", value: biometric, onToggle: setBiometric },
     { icon: Moon, label: "Dark Mode", value: darkMode, onToggle: setDarkMode },

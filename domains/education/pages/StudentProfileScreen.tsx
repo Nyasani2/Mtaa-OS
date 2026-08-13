@@ -105,7 +105,7 @@ export default function StudentProfileScreen() {
         {(isOwner || isGuardian) && (
           <TouchableOpacity
             style={styles.qrButton}
-            onPress={() => router.push(`/education/identity-card?studentId=${studentId}`)}
+            onPress={() => router.push(`/education/identity-card?studentId=${studentId}` as any)}
           >
             <Ionicons name="qr-code" size={24} color="#2563EB" />
             <Text style={styles.qrButtonText}>ID Card</Text>
@@ -141,7 +141,7 @@ export default function StudentProfileScreen() {
 
       {/* ─── TABS ─── */}
       <View style={styles.tabBar}>
-        {(['overview', 'academic', 'safety', 'guardians'] as const).map(tab => (
+        {(['overview', 'academic', 'safety', 'guardians'] as const).map((tab: any) => (
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -164,7 +164,7 @@ export default function StudentProfileScreen() {
       <View style={styles.actionSection}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => router.push(`/education/messages?to=${identity.primary_guardian_id || student?.user_id}`)}
+          onPress={() => router.push(`/education/messages?to=${identity.primary_guardian_id || student?.user_id}` as any)}
         >
           <Ionicons name="chatbubble-outline" size={20} color="#2563EB" />
           <Text style={styles.actionButtonText}>Send Message</Text>
@@ -173,7 +173,7 @@ export default function StudentProfileScreen() {
         {(isOwner || isGuardian) && (
           <TouchableOpacity
             style={[styles.actionButton, styles.actionButtonSecondary]}
-            onPress={() => router.push(`/education/identity-card?studentId=${studentId}`)}
+            onPress={() => router.push(`/education/identity-card?studentId=${studentId}` as any)}
           >
             <Ionicons name="id-card-outline" size={20} color="#7C3AED" />
             <Text style={[styles.actionButtonText, { color: '#7C3AED' }]}>View ID Card</Text>

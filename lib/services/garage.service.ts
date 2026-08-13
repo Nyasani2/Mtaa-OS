@@ -329,21 +329,21 @@ export async function getGarageStats(garageId: string): Promise<GarageStats> {
 
   if (fleetError) throw fleetError;
 
-  const completed = appointments?.filter(a => a.status === 'completed') || [];
-  const pending = appointments?.filter(a => ['pending', 'confirmed', 'vehicle_received', 'diagnosing', 'awaiting_approval'].includes(a.status)) || [];
-  const active = appointments?.filter(a => ['in_progress', 'waiting_parts', 'quality_check'].includes(a.status)) || [];
-  const cancelled = appointments?.filter(a => a.status === 'cancelled') || [];
+  const completed = appointments?.filter((a: any) => a.status === 'completed') || [];
+  const pending = appointments?.filter((a: any) => ['pending', 'confirmed', 'vehicle_received', 'diagnosing', 'awaiting_approval'].includes(a.status)) || [];
+  const active = appointments?.filter((a: any) => ['in_progress', 'waiting_parts', 'quality_check'].includes(a.status)) || [];
+  const cancelled = appointments?.filter((a: any) => a.status === 'cancelled') || [];
 
   const revenueToday = completed
-    .filter(a => a.created_at?.startsWith(today))
+    .filter((a: any) => a.created_at?.startsWith(today))
     .reduce((sum, a) => sum + (a.final_cost || a.estimated_cost || 0), 0);
 
   const revenueWeek = completed
-    .filter(a => a.created_at && a.created_at >= weekAgo)
+    .filter((a: any) => a.created_at && a.created_at >= weekAgo)
     .reduce((sum, a) => sum + (a.final_cost || a.estimated_cost || 0), 0);
 
   const revenueMonth = completed
-    .filter(a => a.created_at && a.created_at >= monthAgo)
+    .filter((a: any) => a.created_at && a.created_at >= monthAgo)
     .reduce((sum, a) => sum + (a.final_cost || a.estimated_cost || 0), 0);
 
   return {
@@ -359,8 +359,8 @@ export async function getGarageStats(garageId: string): Promise<GarageStats> {
       ? reviews.reduce((sum, r) => sum + (r.overall_rating || 0), 0) / reviews.length
       : 0,
     totalReviews: reviews?.length || 0,
-    lowStockItems: inventory?.filter(i => i.status === 'low_stock').length || 0,
-    outOfStockItems: inventory?.filter(i => i.status === 'out_of_stock').length || 0,
+    lowStockItems: inventory?.filter((i: any) => i.status === 'low_stock').length || 0,
+    outOfStockItems: inventory?.filter((i: any) => i.status === 'out_of_stock').length || 0,
     mechanicsCount: mechanicsCount || 0,
     fleetContracts: fleetCount || 0,
   };
@@ -416,7 +416,7 @@ export const GARAGE_SUBSCRIPTION_PLANS = [
 ] as const;
 
 export async function subscribeGarage(garageId: string, planId: string) {
-  const plan = GARAGE_SUBSCRIPTION_PLANS.find(p => p.id === planId);
+  const plan = GARAGE_SUBSCRIPTION_PLANS.find((p: any) => p.id === planId);
   if (!plan) throw new Error('Invalid subscription plan');
 
   const now = new Date();

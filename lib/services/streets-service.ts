@@ -151,12 +151,12 @@ export async function fetchAuthorProfiles(userIds: string[]): Promise<Record<str
   const profileMap: Record<string, AuthorProfile> = {};
 
   for (const row of (data || [])) {
-    const name = row.full_name || row.display_name || row.name || row.username || 'Anonymous';
-    const username = row.username || row.name || 'user';
-    const avatar = row.avatar_url || row.photo_url || row.profile_image || undefined;
+    const name = (row as any).full_name || (row as any).display_name || (row as any).name || (row as any).username || 'Anonymous';
+    const username = (row as any).username || (row as any).name || 'user';
+    const avatar = (row as any).avatar_url || (row as any).photo_url || (row as any).profile_image || undefined;
 
-    profileMap[row.user_id] = {
-      user_id: row.user_id,
+    profileMap[(row as any).user_id] = {
+      user_id: (row as any).user_id,
       full_name: name,
       username: username,
       avatar_url: avatar,

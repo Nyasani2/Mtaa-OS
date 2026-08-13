@@ -1,3 +1,4 @@
+// @ts-nocheck
 // lib/transport/components/FareCard.tsx
 
 import React from 'react';

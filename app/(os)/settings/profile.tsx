@@ -25,7 +25,7 @@ export default function SettingsProfileScreen() {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: async () => { setSigningOut(true); try { await signOut(); router.replace('/auth'); } catch { Alert.alert('Error', 'Failed to sign out'); } finally { setSigningOut(false); } } },
+      { text: 'Sign Out', style: 'destructive', onPress: async () => { setSigningOut(true); try { await signOut(); router.replace('/login'); } catch { Alert.alert('Error', 'Failed to sign out'); } finally { setSigningOut(false); } } },
     ]);
   };
 
@@ -46,7 +46,7 @@ export default function SettingsProfileScreen() {
             if (rpcError) throw rpcError;
 
             await signOut(); 
-            router.replace('/auth'); 
+            router.replace('/login'); 
           } catch (err: any) { 
             // FIXED: Removed .catch(() => {}) — now shows actual error
             Alert.alert('Error', err?.message || 'Failed to delete account. Please try again.'); 
@@ -91,7 +91,7 @@ export default function SettingsProfileScreen() {
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          {settings.map(s => <TouchableOpacity key={s.label} style={styles.row} onPress={() => router.push(s.route as any)}><Ionicons name={s.icon as any} size={20} color={s.color} /><Text style={styles.rowText}>{s.label}</Text><Ionicons name="chevron-forward" size={16} color="#cbd5e1" /></TouchableOpacity>)}
+          {settings.map((s: any) => <TouchableOpacity key={s.label} style={styles.row} onPress={() => router.push(s.route as any)}><Ionicons name={s.icon as any} size={20} color={s.color} /><Text style={styles.rowText}>{s.label}</Text><Ionicons name="chevron-forward" size={16} color="#cbd5e1" /></TouchableOpacity>)}
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Danger Zone</Text>

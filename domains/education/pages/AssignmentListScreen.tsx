@@ -36,7 +36,7 @@ export default function AssignmentListScreen() {
     max_score: 100, passing_score: 50, due_date: '',
   });
 
-  const filtered = filterStatus === 'all' ? assignments : assignments.filter(a => a.status === filterStatus);
+  const filtered = filterStatus === 'all' ? assignments : assignments.filter((a: any) => a.status === filterStatus);
 
   const handleCreate = async () => {
     if (!newAssignment.title.trim()) { Alert.alert('Error', 'Title is required'); return; }
@@ -146,7 +146,7 @@ export default function AssignmentListScreen() {
 
       {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {['all', 'draft', 'published', 'closed', 'archived'].map(status => (
+        {['all', 'draft', 'published', 'closed', 'archived'].map((status: any) => (
           <TouchableOpacity key={status} style={[styles.filterChip, filterStatus === status && { backgroundColor: colors.primary }]} onPress={() => setFilterStatus(status)}>
             <Text style={[styles.filterText, filterStatus === status && { color: '#fff' }]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Text>
           </TouchableOpacity>
@@ -161,7 +161,7 @@ export default function AssignmentListScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => router.push(`/(education)/assignment-detail?id=${item.id}`)}
+            onPress={() => router.push(`/(education)/assignment-detail?id=${item.id}` as any)}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.typeIcon, { backgroundColor: (TYPE_COLORS[item.assignment_type] || '#6b7280') + '20' }]}>

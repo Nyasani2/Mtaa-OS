@@ -352,7 +352,7 @@ Deno.serve(async (req) => {
       const hashInput = `${election_id}:${profile_id}:${secretSalt}`;
       const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(hashInput));
       const voterHash = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, "0"))
+        .map((b: any) => b.toString(16).padStart(2, "0"))
         .join("");
 
       // Insert votes
@@ -504,7 +504,7 @@ Deno.serve(async (req) => {
       const hashInput = `${election_id}:${profile_id}:${secretSalt}`;
       const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(hashInput));
       const voterHash = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, "0"))
+        .map((b: any) => b.toString(16).padStart(2, "0"))
         .join("");
 
       const { data: votes, error } = await supabase

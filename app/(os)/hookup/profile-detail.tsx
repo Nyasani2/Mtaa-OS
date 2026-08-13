@@ -114,7 +114,7 @@ export default function ProfileDetailScreen() {
       await supabase.from('hookup_matches').insert({ user_a: uA, user_b: uB });
       Alert.alert("It's a Match!", "You liked each other!", [
         { text: 'Keep Browsing', style: 'cancel' },
-        { text: 'Message', onPress: () => router.push(`/(os)/messages?recipientId=${profile.user_id}`) },
+        { text: 'Message', onPress: () => router.push(`/(os)/messages?recipientId=${profile.user_id}` as any) },
       ]);
       setProfile(prev => prev ? { ...prev, is_match: true } : null);
     }
@@ -217,7 +217,7 @@ export default function ProfileDetailScreen() {
 
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 28, marginBottom: 20 }}>
             {profile.is_match ? (
-              <TouchableOpacity onPress={() => router.push(`/(os)/messages?recipientId=${profile.user_id}`)}
+              <TouchableOpacity onPress={() => router.push(`/(os)/messages?recipientId=${profile.user_id}` as any)}
                 style={{ flex: 1, backgroundColor: '#ff3366', borderRadius: 16, padding: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
                 <Feather name="message-circle" size={20} color="#fff" />
                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 8 }}>Message</Text>

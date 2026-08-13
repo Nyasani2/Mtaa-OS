@@ -72,7 +72,7 @@ export default function SearchResultsScreen() {
 
   const renderResult = ({ item }: { item: SearchResult }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}` as any)}
       style={{ flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#1a1a1a', alignItems: 'center' }}
     >
       <View style={{ width: 120, height: 68, borderRadius: 6, overflow: 'hidden', backgroundColor: '#1a1a1a', marginRight: 12 }}>
@@ -123,7 +123,7 @@ export default function SearchResultsScreen() {
 
       {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, marginBottom: 8 }}>
-        {FILTERS.map(f => (
+        {FILTERS.map((f: any) => (
           <TouchableOpacity
             key={f}
             onPress={() => { setActiveFilter(f); if (query.trim()) search(query); }}

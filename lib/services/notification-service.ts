@@ -10,7 +10,7 @@ export async function getNotifications(userId: string, limit = 50): Promise<Serv
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -20,7 +20,7 @@ export async function markNotificationRead(notificationId: string): Promise<Serv
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -30,7 +30,7 @@ export async function markAllNotificationsRead(userId: string): Promise<ServiceR
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -40,7 +40,7 @@ export async function deleteNotification(notificationId: string): Promise<Servic
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -50,6 +50,6 @@ export async function createNotification(payload: any): Promise<ServiceResult<an
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }

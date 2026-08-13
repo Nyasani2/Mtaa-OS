@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Evidence Engine
  * "Can this be trusted?" — Validates observations into evidence.

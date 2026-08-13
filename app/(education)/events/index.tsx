@@ -55,7 +55,7 @@ export default function EventsScreen() {
           const end = item.end_date ? new Date(item.end_date) : null;
           return (
             <TouchableOpacity
-              onPress={() => router.push(`/events/${item.id}`)}
+              onPress={() => router.push(`/events/${item.id}` as any)}
               style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 12 }}
             >
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>

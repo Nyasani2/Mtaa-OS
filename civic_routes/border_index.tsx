@@ -26,19 +26,19 @@ export default function BorderScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/posts')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/posts' as any)}>
             <Ionicons name="location-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Border Posts</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/inspections')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/inspections' as any)}>
             <Ionicons name="search-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Inspections</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/cargo')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/cargo' as any)}>
             <Ionicons name="cube-outline" size={28} color="#F59E0B" />
             <Text style={styles.actionText}>Cargo Manifests</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/transit')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/border/transit' as any)}>
             <Ionicons name="airplane-outline" size={28} color="#8B5CF6" />
             <Text style={styles.actionText}>Transit</Text>
           </TouchableOpacity>

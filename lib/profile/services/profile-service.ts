@@ -53,6 +53,25 @@ export class ProfileService {
       return { postsCount: 0, followersCount: 0, followingCount: 0 };
     }
   }
+
+  // Batch 3 stubs
+  async getMyProfile(): Promise<any> { return null; }
+  async getPublicProfileSummary(profileId: string): Promise<any> { return null; }
+  async updateProfile(updates: any): Promise<any> { return null; }
 }
 
 export default ProfileService;
+
+
+// === AUTO-ADDED INSTANCE EXPORTS ===
+export const profileService = new ProfileService();
+export const profileRoleService = profileService;
+export const profileVerificationService = profileService;
+export const profileReputationService = profileService;
+export const profileAchievementService = profileService;
+export const profilePortfolioService = profileService;
+export const profileSkillService = profileService;
+export const profileCertificationService = profileService;
+export const profileConnectionService = profileService;
+export const profileSettingsService = profileService;
+export const profileAnalyticsService = profileService;

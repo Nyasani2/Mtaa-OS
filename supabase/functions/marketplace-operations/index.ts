@@ -132,7 +132,7 @@ async function marketplaceCheckout(supabaseAdmin, buyerId, params) {
     .single();
 
   // Create order items
-  const orderItems = items.map(item => ({
+  const orderItems = items.map((item: any) => ({
     order_id: order.id,
     product_id: item.product_id,
     seller_id: item.seller_id,

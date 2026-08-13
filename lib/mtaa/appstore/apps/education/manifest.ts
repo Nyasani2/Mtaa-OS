@@ -1,5 +1,5 @@
 
-export default {
+const _manifest = {
   id: 'education',
   name: 'Education',
   category: 'education',
@@ -13,3 +13,5 @@ export default {
   isOSApp: false,
   minAge: 0, // All ages, but junior feed for under 14
 };
+
+export default _manifest as any;

@@ -92,7 +92,7 @@ export default function PostDetailScreen() {
             </View>
 
             <View style={styles.creatorBox}>
-              <TouchableOpacity style={styles.creatorRow} onPress={()=>router.push(`/streets/user/${post.creator_id}`)}>
+              <TouchableOpacity style={styles.creatorRow} onPress={()=>router.push(`/streets/user/${post.creator_id}` as any)}>
                 <Image source={{uri:creator.avatar_url||'https://i.pravatar.cc/150?u='+post.creator_id}} style={styles.avatar}/>
                 <View><Text style={styles.username}>@{creator.username||'user'}</Text><Text style={styles.caption}>{post.caption||post.content}</Text></View>
               </TouchableOpacity>

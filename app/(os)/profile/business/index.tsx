@@ -40,7 +40,7 @@ export default function BusinessIndexScreen() {
           <Ionicons name="business" size={48} color="#334155" />
           <Text style={styles.emptyTitle}>No Business Profile</Text>
           <Text style={styles.emptySub}>Set up your business profile to attract customers</Text>
-          <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/profile/business/edit')}><Text style={styles.createBtnText}>Create Profile</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.createBtn} onPress={() => router.push('/(os)/profile/business/edit' as any)}><Text style={styles.createBtnText}>Create Profile</Text></TouchableOpacity>
         </View>
       </View>
     );
@@ -51,7 +51,7 @@ export default function BusinessIndexScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
         <Text style={styles.headerTitle}>{profile.name}</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/business/edit')}><Ionicons name="create-outline" size={22} color="#3b82f6" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/business/edit' as any)}><Ionicons name="create-outline" size={22} color="#3b82f6" /></TouchableOpacity>
       </View>
       <View style={styles.card}>
         <Text style={styles.bizName}>{profile.name}</Text>
@@ -66,7 +66,7 @@ export default function BusinessIndexScreen() {
         {profile.website && <View style={styles.infoRow}><Ionicons name="globe-outline" size={18} color="#64748b" /><Text style={styles.infoText}>{profile.website}</Text></View>}
       </View>
       <View style={styles.section}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/business/dashboard')}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/business/dashboard' as any)}>
           <Ionicons name="stats-chart" size={20} color="#3b82f6" /><Text style={styles.actionText}>Business Dashboard</Text><Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
       </View>

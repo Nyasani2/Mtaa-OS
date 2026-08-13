@@ -88,7 +88,7 @@ export function isVideoUrl(url: string): boolean {
   if (!url) return false;
   const videoExts = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v'];
   const lower = url.toLowerCase();
-  return videoExts.some(ext => lower.includes(ext)) || lower.includes('video');
+  return videoExts.some((ext: any) => lower.includes(ext)) || lower.includes('video');
 }
 
 /**

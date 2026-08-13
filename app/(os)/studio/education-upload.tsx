@@ -55,7 +55,7 @@ export default function EducationUploadScreen() {
     }
   };
 
-  const removeFile = (id: string) => updateContent({ files: content.files.filter(f => f.id !== id) });
+  const removeFile = (id: string) => updateContent({ files: content.files.filter((f: any) => f.id !== id) });
 
   const addQuestion = () => {
     updateContent({ questions: [...content.questions, { question: '', options: ['', '', '', ''], correct: 0 }] });
@@ -114,7 +114,7 @@ export default function EducationUploadScreen() {
       if (error) throw error;
       setProgress(100);
       Alert.alert('Success', `"${content.title}" published!`, [
-        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile') },
+        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile' as any) },
       ]);
     } catch (err: any) {
       Alert.alert('Upload Failed', err.message);
@@ -138,7 +138,7 @@ export default function EducationUploadScreen() {
         <View style={{ padding: 16 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>Content Type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(['lesson', 'course', 'quiz', 'exam', 'assignment', 'pdf', 'slides', 'worksheet'] as const).map(t => (
+            {(['lesson', 'course', 'quiz', 'exam', 'assignment', 'pdf', 'slides', 'worksheet'] as const).map((t: any) => (
               <TouchableOpacity key={t} onPress={() => updateContent({ type: t })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: content.type === t ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 12, textTransform: 'capitalize' }}>{t}</Text>
               </TouchableOpacity>
@@ -156,7 +156,7 @@ export default function EducationUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Subject</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {SUBJECTS.map(s => (
+            {SUBJECTS.map((s: any) => (
               <TouchableOpacity key={s} onPress={() => updateContent({ subject: s })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: content.subject === s ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 12 }}>{s}</Text>
               </TouchableOpacity>
@@ -167,7 +167,7 @@ export default function EducationUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Grade Level</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {GRADES.map(g => (
+            {GRADES.map((g: any) => (
               <TouchableOpacity key={g} onPress={() => updateContent({ grade: g })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: content.grade === g ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 11 }}>{g}</Text>
               </TouchableOpacity>
@@ -178,7 +178,7 @@ export default function EducationUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Language</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {LANGUAGES.map(l => (
+            {LANGUAGES.map((l: any) => (
               <TouchableOpacity key={l} onPress={() => updateContent({ language: l })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: content.language === l ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 12 }}>{l}</Text>
               </TouchableOpacity>
@@ -207,7 +207,7 @@ export default function EducationUploadScreen() {
         {/* Files */}
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>Files ({content.files.length})</Text>
-          {content.files.map(file => (
+          {content.files.map((file: any) => (
             <View key={file.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 6 }}>
               <Feather name="file" size={16} color="#888" />
               <Text style={{ color: '#fff', fontSize: 12, flex: 1, marginLeft: 8 }} numberOfLines={1}>{file.name}</Text>

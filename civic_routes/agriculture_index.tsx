@@ -20,19 +20,19 @@ export default function AgricultureScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/licenses')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/licenses' as any)}>
             <Ionicons name="leaf-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Seed Licenses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/certificates')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/certificates' as any)}>
             <Ionicons name="document-text-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Certificates</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/pest-reports')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/pest-reports' as any)}>
             <Ionicons name="bug-outline" size={28} color="#EF4444" />
             <Text style={styles.actionText}>Pest Reports</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/prices')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/agriculture/prices' as any)}>
             <Ionicons name="trending-up-outline" size={28} color="#F59E0B" />
             <Text style={styles.actionText}>Market Prices</Text>
           </TouchableOpacity>

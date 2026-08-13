@@ -163,13 +163,13 @@ export default function ClockScreen() {
   };
 
   const toggleAlarm = (id: string) => {
-    setAlarms(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
+    setAlarms(prev => prev.map((a: any) => a.id === id ? { ...a, enabled: !a.enabled } : a));
   };
 
   const deleteAlarm = (id: string) => {
     Alert.alert('Delete Alarm', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => setAlarms(prev => prev.filter(a => a.id !== id)) },
+      { text: 'Delete', style: 'destructive', onPress: () => setAlarms(prev => prev.filter((a: any) => a.id !== id)) },
     ]);
   };
 
@@ -254,7 +254,7 @@ export default function ClockScreen() {
             </View>
           ) : (
             <ScrollView showsVerticalScrollIndicator={false}>
-              {alarms.map(alarm => (
+              {alarms.map((alarm: any) => (
                 <View key={alarm.id} style={styles.alarmItem}>
                   <View style={styles.alarmInfo}>
                     <Text style={[styles.alarmTime, !alarm.enabled && styles.alarmTimeDisabled]}>{alarm.time}</Text>
@@ -289,7 +289,7 @@ export default function ClockScreen() {
             </View>
           </View>
           <View style={styles.timerPresets}>
-            {[60, 180, 300, 600, 900, 1800].map(sec => (
+            {[60, 180, 300, 600, 900, 1800].map((sec: any) => (
               <TouchableOpacity key={sec} style={[styles.presetBtn, timerDuration === sec && styles.presetBtnActive]}
                 onPress={() => { setTimerDuration(sec); setTimerRemaining(sec); setTimerRunning(false); }}>
                 <Text style={[styles.presetText, timerDuration === sec && styles.presetTextActive]}>{sec >= 60 ? `${sec / 60}m` : `${sec}s`}</Text>
@@ -339,7 +339,7 @@ export default function ClockScreen() {
                 <Text style={styles.lapHeaderText}>Split</Text>
                 <Text style={styles.lapHeaderText}>Total</Text>
               </View>
-              {laps.map(lap => (
+              {laps.map((lap: any) => (
                 <View key={lap.id} style={styles.lapRow}>
                   <Text style={styles.lapCell}>{lap.id}</Text>
                   <Text style={styles.lapCell}>{lap.split}</Text>
@@ -369,9 +369,9 @@ export default function ClockScreen() {
               placeholder="Label (e.g., Morning Workout)" placeholderTextColor="#555" />
             <Text style={styles.repeatLabel}>Repeat</Text>
             <View style={styles.repeatRow}>
-              {DAYS.map(day => (
+              {DAYS.map((day: any) => (
                 <TouchableOpacity key={day} style={[styles.repeatDay, alarmRepeat.includes(day) && styles.repeatDayActive]}
-                  onPress={() => setAlarmRepeat(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])}>
+                  onPress={() => setAlarmRepeat(prev => prev.includes(day) ? prev.filter((d: any) => d !== day) : [...prev, day])}>
                   <Text style={[styles.repeatDayText, alarmRepeat.includes(day) && styles.repeatDayTextActive]}>{day}</Text>
                 </TouchableOpacity>
               ))}

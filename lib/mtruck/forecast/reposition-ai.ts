@@ -16,7 +16,7 @@ export async function runRepositionAI() {
   if (!idleTrucks?.length) return [];
 
   const highDemandZones = forecast
-    .filter(f => f.predicted_demand > 5)
+    .filter((f: any) => f.predicted_demand > 5)
     .slice(0, idleTrucks.length);
 
   const actions = [];

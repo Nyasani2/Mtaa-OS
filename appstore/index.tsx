@@ -71,7 +71,7 @@ export default function AppStoreScreen() {
 
   const filteredApps = useMemo(() => {
     if (activeCategory === 'All') return apps;
-    return apps.filter(a => a.category === activeCategory);
+    return apps.filter((a: any) => a.category === activeCategory);
   }, [apps, activeCategory]);
 
   const handleInstall = useCallback(async (app: AppItem) => {
@@ -176,7 +176,7 @@ export default function AppStoreScreen() {
             style={styles.categoryScroll}
             contentContainerStyle={styles.categoryContent}
           >
-            {CATEGORIES.map(cat => (
+            {CATEGORIES.map((cat: any) => (
               <CategoryPill
                 key={cat}
                 label={cat}

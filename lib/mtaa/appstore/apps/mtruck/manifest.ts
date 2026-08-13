@@ -12,4 +12,5 @@ export const MTRUCK_APP = {
   permissions: ["supabase.read", "supabase.write", "realtime.tracking", "maps.access"],
   modules: ["dispatch", "tracking", "ai", "control", "os"],
   status: "stable",
+  screens: [] as any,
 };

@@ -83,7 +83,7 @@ export default function TestBuilderScreen() {
       question_type: newQuestion.question_type,
       points: newQuestion.points,
       order_index: questions.length,
-      options: newQuestion.question_type === 'multiple_choice' ? newQuestion.options.filter(o => o.text.trim()) : undefined,
+      options: newQuestion.question_type === 'multiple_choice' ? newQuestion.options.filter((o: any) => o.text.trim()) : undefined,
       correct_answer: newQuestion.correct_answer || null,
       explanation: newQuestion.explanation.trim() || undefined,
     });
@@ -314,7 +314,7 @@ export default function TestBuilderScreen() {
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Question Type</Text>
             <View style={styles.typeSelector}>
-              {QUESTION_TYPES.map(t => (
+              {QUESTION_TYPES.map((t: any) => (
                 <TouchableOpacity
                   key={t.value}
                   style={[styles.typeChip, newQuestion.question_type === t.value && { backgroundColor: colors.primary, borderColor: colors.primary }]}

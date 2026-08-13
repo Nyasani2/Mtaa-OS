@@ -153,9 +153,9 @@ class MTAASystemEventBus {
 
   getHistory(options?: { limit?: number; type?: MTAAEventType; namespace?: MTAAEventNamespace; since?: number }): MTAAEvent[] {
     let filtered = [...this.history]
-    if (options?.type) filtered = filtered.filter(e => e.type === options.type)
-    if (options?.namespace) filtered = filtered.filter(e => e.namespace === options.namespace)
-    if (options?.since) filtered = filtered.filter(e => e.timestamp >= options.since)
+    if (options?.type) filtered = filtered.filter((e: any) => e.type === options.type)
+    if (options?.namespace) filtered = filtered.filter((e: any) => e.namespace === options.namespace)
+    if (options?.since) filtered = filtered.filter((e: any) => e.timestamp >= (options.since || 0))
     return filtered.slice(-(options?.limit || 50))
   }
 

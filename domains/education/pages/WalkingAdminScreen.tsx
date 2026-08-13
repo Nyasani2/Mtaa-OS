@@ -125,7 +125,7 @@ function SquadsTab({ schoolId }: { schoolId?: string }) {
             <FormField label="Max Children" value={form.max_children} onChangeText={(t: string) => setForm({ ...form, max_children: t })} keyboardType="numeric" />
             <Text style={styles.formLabel}>Route Type</Text>
             <View style={styles.typePicker}>
-              {(['walk_to_school', 'walk_to_stage', 'mixed'] as const).map(type => (
+              {(['walk_to_school', 'walk_to_stage', 'mixed'] as const).map((type: any) => (
                 <TouchableOpacity key={type} style={[styles.typeOption, form.route_type === type && styles.typeOptionActive]} onPress={() => setForm({ ...form, route_type: type })}>
                   <Text style={[styles.typeOptionText, form.route_type === type && styles.typeOptionTextActive]}>{type.replace('_', ' ')}</Text>
                 </TouchableOpacity>
@@ -191,7 +191,7 @@ function RosterTab({ schoolId }: { schoolId?: string }) {
             <FormField label="Duty Date (YYYY-MM-DD)" value={form.duty_date} onChangeText={(t: string) => setForm({ ...form, duty_date: t })} />
             <Text style={styles.formLabel}>Duty Type</Text>
             <View style={styles.typePicker}>
-              {['morning', 'evening', 'both', 'backup'].map(type => (
+              {['morning', 'evening', 'both', 'backup'].map((type: any) => (
                 <TouchableOpacity key={type} style={[styles.typeOption, form.duty_type === type && styles.typeOptionActive]} onPress={() => setForm({ ...form, duty_type: type as any })}>
                   <Text style={[styles.typeOptionText, form.duty_type === type && styles.typeOptionTextActive]}>{type}</Text>
                 </TouchableOpacity>

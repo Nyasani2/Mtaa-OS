@@ -65,7 +65,7 @@ export default function StaySearchScreen() {
           listings={results}
           loading={loading}
           emptyMessage={query ? "No stays match your search" : "Search for stays to see results"}
-          onSelect={(id) => router.push(`/(os)/stay/${id}`)}
+          onSelect={(id) => router.push(`/(os)/stay/${id}` as any)}
         />
       )}
     </View>

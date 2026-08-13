@@ -17,7 +17,7 @@ export class Ledger {
 
   balance(user_id: string) {
     return this.entries
-      .filter(e => e.user_id === user_id)
+      .filter((e: any) => e.user_id === user_id)
       .reduce((acc, e) => {
         return e.type === "credit"
           ? acc + e.amount

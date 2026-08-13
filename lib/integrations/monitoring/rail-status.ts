@@ -28,7 +28,7 @@ class RailMonitor {
   }
 
   offline(): RailHealth[] {
-    return this.all().filter(r => r.status === 'offline');
+    return this.all().filter((r: any) => r.status === 'offline');
   }
 }
 

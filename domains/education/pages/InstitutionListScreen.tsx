@@ -57,7 +57,7 @@ function CreateModal({ visible, onClose }: { visible: boolean; onClose: () => vo
             style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
           />
           <View style={styles.typeRow}>
-            {types.map(t => (
+            {types.map((t: any) => (
               <TouchableOpacity
                 key={t}
                 onPress={() => setType(t)}

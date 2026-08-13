@@ -32,7 +32,7 @@ export class PhotoAccessEngine {
   private async initialize(): Promise<void> {
     try {
       // Dynamic import to avoid web crashes
-      const { MediaLibrary } = await import('expo-media-library');
+      const MediaLibrary = (await import('expo-media-library')).default;
       this.mediaLibrary = MediaLibrary;
 
       const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -257,11 +257,11 @@ export class DocumentAccessEngine {
   /**
    * Get document count and total size
    */
-  async getDocumentStats(): Promise<{ count: number; totalSize: number }> {
+  async getDocumentStats(): Promise<{ count: number; size: number }> {
     const docs = await this.getAllDocuments();
     return {
       count: docs.length,
-      totalSize: docs.reduce((sum, d) => sum + d.size, 0),
+      size: docs.reduce((sum, d) => sum + d.size, 0),
     };
   }
 }

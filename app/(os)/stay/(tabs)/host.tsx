@@ -21,7 +21,7 @@ export default function StayHostScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Host Dashboard</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/(os)/stay/list-property")}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/(os)/stay/list-property" as any)}>
           <Plus size={20} color="#1a5c4b" /><Text style={styles.addBtnText}>List Stay</Text>
         </TouchableOpacity>
       </View>
@@ -41,7 +41,7 @@ export default function StayHostScreen() {
           <Text style={styles.verifyTitle}>Complete your host profile</Text>
           <Text style={styles.verifySub}>Verify your identity to build trust with guests</Text>
         </View>
-        <TouchableOpacity style={styles.verifyBtn} onPress={() => router.push('/(os)/profile')}>
+        <TouchableOpacity style={styles.verifyBtn} onPress={() => router.push('/(os)/profile' as any)}>
           <Text style={styles.verifyBtnText}>Verify</Text>
         </TouchableOpacity>
       </View>
@@ -53,13 +53,13 @@ export default function StayHostScreen() {
           <View style={styles.empty}>
             <Building2 size={40} color="#d1d5db" />
             <Text style={styles.emptyText}>No listings yet</Text>
-            <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push("/(os)/stay/list-property")}>
+            <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push("/(os)/stay/list-property" as any)}>
               <Text style={styles.ctaBtnText}>List Your First Stay</Text>
             </TouchableOpacity>
           </View>
         ) : (
           myListings?.map((p) => (
-            <TouchableOpacity key={p.id} style={styles.listingRow} onPress={() => router.push(`/(os)/stay/${p.id}`)}>
+            <TouchableOpacity key={p.id} style={styles.listingRow} onPress={() => router.push(`/(os)/stay/${p.id}` as any)}>
               <View style={styles.listingInfo}>
                 <Text style={styles.listingTitle}>{p.title}</Text>
                 <Text style={styles.listingMeta}>{p.town} · {p.property_type}</Text>

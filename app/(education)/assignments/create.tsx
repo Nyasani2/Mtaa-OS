@@ -52,7 +52,7 @@ export default function CreateAssignmentScreen() {
           max_score: parseInt(form.max_score) || 100,
           type: form.assignment_type,
           instructions: form.instructions.trim() || null,
-          attachments: form.attachments ? form.attachments.split(',').map(a => a.trim()).filter(Boolean) : [],
+          attachments: form.attachments ? form.attachments.split(',').map((a: any) => a.trim()).filter(Boolean) : [],
           allow_late_submission: form.allow_late_submission,
           late_penalty_percent: parseInt(form.late_penalty_percent) || 0,
           teacher_id: user.id,
@@ -94,7 +94,7 @@ export default function CreateAssignmentScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Assignment Type</Text>
           <View style={styles.chipContainer}>
-            {assignmentTypes.map(t => (
+            {assignmentTypes.map((t: any) => (
               <TouchableOpacity key={t} style={[styles.chip, form.assignment_type === t && styles.chipActive]} onPress={() => handleChange('assignment_type', t)}>
                 <Text style={[styles.chipText, form.assignment_type === t && styles.chipTextActive]}>{t.replace('_', ' ')}</Text>
               </TouchableOpacity>

@@ -36,7 +36,7 @@ export const InstitutionCard = memo(function InstitutionCard({ institution, comp
   return (
     <TouchableOpacity
       style={[styles.card, compact && styles.compact, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => router.push(`/(education)/institutions/${institution.id}`)}
+      onPress={() => router.push(`/(education)/institutions/${institution.id}` as any)}
       activeOpacity={0.8}
     >
       <Image

@@ -1,5 +1,5 @@
 
-export default {
+const _manifest = {
   id: 'binance',
   name: 'Binance Bridge',
   category: 'finance',
@@ -13,3 +13,5 @@ export default {
   isOSApp: false,
   minAge: 18,
 };
+
+export default _manifest as any;

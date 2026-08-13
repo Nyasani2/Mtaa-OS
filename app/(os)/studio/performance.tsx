@@ -95,7 +95,7 @@ export default function PerformanceScreen() {
               { id: 'hd', label: 'HD', desc: '720p - 1080p' },
               { id: 'sd', label: 'SD', desc: '480p' },
               { id: 'data-saver', label: 'Data Saver', desc: '360p' },
-            ].map(q => (
+            ].map((q: any) => (
               <TouchableOpacity key={q.id} onPress={() => setQualityPreference(q.id as any)} style={[styles.qualityBtn, qualityPreference === q.id && styles.qualityBtnActive]}>
                 <Text style={[styles.qualityLabel, qualityPreference === q.id && styles.qualityLabelActive]}>{q.label}</Text>
                 <Text style={[styles.qualityDesc, qualityPreference === q.id && styles.qualityDescActive]}>{q.desc}</Text>

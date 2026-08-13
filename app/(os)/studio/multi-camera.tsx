@@ -34,11 +34,11 @@ export default function MultiCameraScreen() {
   }
 
   function toggleCamera(camId: string) {
-    setCameras(prev => prev.map(c => c.id === camId ? { ...c, status: c.status === "connected" ? "disconnected" : "connected" } : c));
+    setCameras(prev => prev.map((c: any) => c.id === camId ? { ...c, status: c.status === "connected" ? "disconnected" : "connected" } : c));
   }
 
   function startRecording() {
-    const connected = cameras.filter(c => c.status === "connected");
+    const connected = cameras.filter((c: any) => c.status === "connected");
     if (connected.length === 0) { Alert.alert("No Cameras", "Connect at least one camera to start recording."); return; }
     setRecording(true);
     Alert.alert("Recording Started", `${connected.length} camera(s) recording simultaneously.`);
@@ -49,7 +49,7 @@ export default function MultiCameraScreen() {
     Alert.alert("Recording Stopped", "All footage saved to your content library.");
   }
 
-  const connectedCount = cameras.filter(c => c.status === "connected").length;
+  const connectedCount = cameras.filter((c: any) => c.status === "connected").length;
   const maxCameras = isPremium ? 4 : 1;
 
   return (
@@ -68,7 +68,7 @@ export default function MultiCameraScreen() {
       )}
 
       <View style={styles.previewGrid}>
-        {cameras.slice(0, maxCameras).map(cam => (
+        {cameras.slice(0, maxCameras).map((cam: any) => (
           <TouchableOpacity key={cam.id} style={[styles.previewBox, activeCamera === cam.id && styles.previewActive, cam.status === "disconnected" && styles.previewOffline]} onPress={() => setActiveCamera(cam.id)}>
             {cam.status === "connected" ? (
               <>
@@ -110,7 +110,7 @@ export default function MultiCameraScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Camera List</Text>
-        {cameras.map(cam => (
+        {cameras.map((cam: any) => (
           <View key={cam.id} style={styles.camRow}>
             <View style={[styles.camDot, { backgroundColor: cam.status === "connected" ? "#4CAF50" : "#666" }]} />
             <View style={{ flex: 1 }}>

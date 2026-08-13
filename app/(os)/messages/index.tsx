@@ -1,222 +1,142 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl
+  View, Text, FlatList, TouchableOpacity, ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ChevronLeft, Search, Plus } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
-import { ArrowLeft, MessageCircle, Search, Plus } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase/client';
 
-interface Conversation {
+type Conversation = {
   id: string;
-  participant_id: string;
-  participant_name: string;
-  participant_avatar: string | null;
-  last_message: string;
-  last_message_at: string;
-  unread_count: number;
-}
+  user1_id: string;
+  user2_id: string;
+  created_at: string;
+  other_user?: { full_name: string; avatar_url?: string; username?: string };
+  last_message?: string;
+};
 
 export default function MessagesScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  // FIXED: Inline fetch, no useCallback dependency loop
   useEffect(() => {
-    if (!user?.id) { setLoading(false); return; }
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        // FIXED: Safe query — use .in() instead of string interpolation in .or()
-        const { data } = await supabase
-          .from('messages')
-          .select('*')
-          .in('sender_id', [user.id])
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        // Also fetch as recipient
-        const { data: received } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('recipient_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        if (cancelled) return;
-
-        const allMsgs = [...(data || []), ...(received || [])]
-          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 50);
-
-        // Group by conversation partner
-        const convoMap = new Map<string, Conversation>();
-        allMsgs.forEach((msg: any) => {
-          const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
-          if (!convoMap.has(partnerId)) {
-            convoMap.set(partnerId, {
-              id: msg.id,
-              participant_id: partnerId,
-              participant_name: 'User',
-              participant_avatar: null,
-              last_message: msg.content,
-              last_message_at: msg.created_at,
-              unread_count: msg.sender_id !== user.id && !msg.read ? 1 : 0,
-            });
-          } else {
-            const existing = convoMap.get(partnerId)!;
-            if (msg.sender_id !== user.id && !msg.read) {
-              existing.unread_count += 1;
-            }
-          }
-        });
-
-        setConversations(Array.from(convoMap.values()));
-      } catch (err) {
-        console.error('Messages load error:', err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => { cancelled = true; };
+    if (!user?.id) return;
+    loadConversations();
   }, [user?.id]);
 
-  const onRefresh = async () => {
-    if (!user?.id) return;
-    setRefreshing(true);
+  async function loadConversations() {
+    setLoading(true);
     try {
-      const { data } = await supabase
-        .from('messages')
+      const { data: convs } = await supabase
+        .from('conversations')
         .select('*')
-        .in('sender_id', [user.id])
-        .order('created_at', { ascending: false })
-        .limit(50);
-      const { data: received } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('recipient_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .or(`user1_id.eq.${user!.id},user2_id.eq.${user!.id}`)
+        .order('created_at', { ascending: false });
 
-      const allMsgs = [...(data || []), ...(received || [])]
-        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 50);
+      if (!convs || convs.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
 
-      const convoMap = new Map<string, Conversation>();
-      allMsgs.forEach((msg: any) => {
-        const partnerId = msg.sender_id === user.id ? msg.recipient_id : msg.sender_id;
-        if (!convoMap.has(partnerId)) {
-          convoMap.set(partnerId, {
-            id: msg.id,
-            participant_id: partnerId,
-            participant_name: 'User',
-            participant_avatar: null,
-            last_message: msg.content,
-            last_message_at: msg.created_at,
-            unread_count: msg.sender_id !== user.id && !msg.read ? 1 : 0,
-          });
-        } else {
-          const existing = convoMap.get(partnerId)!;
-          if (msg.sender_id !== user.id && !msg.read) {
-            existing.unread_count += 1;
-          }
-        }
-      });
+      // Enrich with other user info
+      const enriched = await Promise.all(
+        convs.map(async (conv) => {
+          const otherId = conv.user1_id === user!.id ? conv.user2_id : conv.user1_id;
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name, avatar_url, username')
+            .eq('user_id', otherId)
+            .single();
 
-      setConversations(Array.from(convoMap.values()));
+          const { data: lastMsg } = await supabase
+            .from('messages')
+            .select('content')
+            .eq('conversation_id', conv.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          return {
+            ...conv,
+            other_user: profile || { full_name: 'User', username: 'user' },
+            last_message: lastMsg?.content || 'No messages yet',
+          };
+        })
+      );
+
+      setConversations(enriched);
     } catch (err) {
-      console.error('Refresh error:', err);
+      console.error('Load conversations error:', err);
+      setConversations([]);
     } finally {
-      setRefreshing(false);
+      setLoading(false);
     }
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#f8fafc" />
+    <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#222' }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ padding: 6 }}>
+          <ChevronLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', flex: 1, textAlign: 'center' }}>Messages</Text>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TouchableOpacity onPress={() => Alert.alert("Search", "Message search coming soon.")}>
-            <Search size={22} color="#f8fafc" />
+          <TouchableOpacity onPress={() => router.push('/messages/new')}>
+            <Search size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push("/(os)/messages/new")}>
-            <Plus size={22} color="#f8fafc" />
+          <TouchableOpacity onPress={() => router.push('/messages/new')}>
+            <Plus size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 60 }} size="large" color="#38bdf8" />
-      ) : conversations.length === 0 ? (
-        <View style={styles.empty}>
-          <MessageCircle size={48} color="#475569" />
-          <Text style={styles.emptyText}>No messages yet</Text>
-          <Text style={styles.emptySub}>Start a conversation with someone</Text>
-          <TouchableOpacity style={styles.newChatBtn} onPress={() => router.push("/(os)/messages/new")}>
-            <Text style={styles.newChatText}>New Message</Text>
-          </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#e91e63" />
         </View>
       ) : (
         <FlatList
           data={conversations}
-          keyExtractor={item => item.participant_id}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#38bdf8" />}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ padding: 12 }}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.convo} onPress={() => router.push(`/(os)/messages/${item.participant_id}` as any)}>
-              <View style={styles.avatar}>
-                {item.participant_avatar ? (
-                  <Image source={{ uri: item.participant_avatar }} style={styles.avatarImg} />
+            <TouchableOpacity
+              onPress={() => router.push(`/messages/${item.id}`)}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: '#111', borderRadius: 12, marginBottom: 8 }}
+            >
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#333', overflow: 'hidden', marginRight: 12 }}>
+                {item.other_user?.avatar_url ? (
+                  <img src={item.other_user.avatar_url} alt="" style={{ width: 48, height: 48, borderRadius: 24, objectFit: 'cover' }} />
                 ) : (
-                  <Text style={styles.avatarText}>{item.participant_name.charAt(0).toUpperCase()}</Text>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{(item.other_user?.full_name || 'U').charAt(0)}</Text>
+                  </View>
                 )}
               </View>
-              <View style={styles.convoInfo}>
-                <View style={styles.convoTop}>
-                  <Text style={styles.convoName}>{item.participant_name}</Text>
-                  <Text style={styles.convoTime}>{new Date(item.last_message_at).toLocaleDateString('en-KE')}</Text>
-                </View>
-                <Text style={styles.convoPreview} numberOfLines={1}>{item.last_message}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>{item.other_user?.full_name || 'User'}</Text>
+                <Text style={{ color: '#888', fontSize: 13, marginTop: 2 }} numberOfLines={1}>{item.last_message}</Text>
               </View>
-              {item.unread_count > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{item.unread_count}</Text>
-                </View>
-              )}
             </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+              <Text style={{ color: '#666', fontSize: 16 }}>No messages yet</Text>
+              <Text style={{ color: '#555', fontSize: 13, marginTop: 8 }}>Start a conversation with someone</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/messages/new')}
+                style={{ marginTop: 16, backgroundColor: '#e91e63', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>New Message</Text>
+              </TouchableOpacity>
+            </View>
+          }
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 80 },
-  emptyText: { fontSize: 18, fontWeight: '600', color: '#94a3b8', marginTop: 16 },
-  emptySub: { fontSize: 14, color: '#64748b', marginTop: 4 },
-  newChatBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: '#38bdf8', borderRadius: 24 },
-  newChatText: { fontSize: 15, fontWeight: '600', color: '#0f172a' },
-  convo: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#334155', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarImg: { width: 48, height: 48, borderRadius: 24 },
-  avatarText: { fontSize: 18, fontWeight: '600', color: '#f8fafc' },
-  convoInfo: { flex: 1 },
-  convoTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  convoName: { fontSize: 15, fontWeight: '600', color: '#e2e8f0' },
-  convoTime: { fontSize: 12, color: '#64748b' },
-  convoPreview: { fontSize: 14, color: '#94a3b8' },
-  unreadBadge: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#38bdf8', justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
-  unreadText: { fontSize: 11, fontWeight: '700', color: '#0f172a' },
-});

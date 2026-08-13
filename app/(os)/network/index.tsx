@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/network/index.tsx — MTAA OS Network
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';

@@ -100,7 +100,7 @@ export default function UnifiedMap({
     const centerPixelX = size.w / 2;
     const centerPixelY = size.h / 2;
 
-    return markers.map(m => {
+    return markers.map((m: any) => {
       const mTile = latLngToTileXY(m.latitude, m.longitude, currentZoom);
       const dx = (mTile.x - centerTile.x) * TILE_SIZE;
       const dy = (mTile.y - centerTile.y) * TILE_SIZE;
@@ -154,8 +154,8 @@ export default function UnifiedMap({
   const handleZoomIn = () => setCurrentZoom(z => Math.min(z + 1, 19));
   const handleZoomOut = () => setCurrentZoom(z => Math.max(z - 1, 3));
 
-  const allLoaded = tiles.length > 0 && tiles.every(t => loadedTiles.has(t.key) || tileErrors.has(t.key));
-  const hasVisibleTiles = tiles.some(t => loadedTiles.has(t.key));
+  const allLoaded = tiles.length > 0 && tiles.every((t: any) => loadedTiles.has(t.key) || tileErrors.has(t.key));
+  const hasVisibleTiles = tiles.some((t: any) => loadedTiles.has(t.key));
 
   return (
     <View style={[styles.container, style]}>
@@ -182,7 +182,7 @@ export default function UnifiedMap({
           </div>
         )}
 
-        {tiles.map(tile => (
+        {tiles.map((tile: any) => (
           <img
             key={tile.key}
             src={`https://tile.openstreetmap.org/${tile.key}.png`}
@@ -202,7 +202,7 @@ export default function UnifiedMap({
         {route && route.length > 1 && (
           <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}>
             <polyline
-              points={route.map(coord => {
+              points={route.map((coord: any) => {
                 const mTile = latLngToTileXY(coord.latitude, coord.longitude, currentZoom);
                 const centerTile = latLngToTileXY(centerLat, centerLng, currentZoom);
                 const dx = (mTile.x - centerTile.x) * TILE_SIZE;
@@ -214,7 +214,7 @@ export default function UnifiedMap({
           </svg>
         )}
 
-        {markerPixels.map(m => (
+        {markerPixels.map((m: any) => (
           <div key={m.id} style={{ position: 'absolute', left: m.left - 15, top: m.top - 30, width: 30, height: 30, pointerEvents: 'none', zIndex: 3 }}>
             <svg width="30" height="30" viewBox="0 0 30 30">
               <path d="M15 2C8.925 2 4 6.925 4 13c0 7.75 11 15 11 15s11-7.25 11-15c0-6.075-4.925-11-11-11z"

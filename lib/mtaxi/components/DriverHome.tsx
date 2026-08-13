@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityI
 import { useRouter } from "expo-router";
 import { Power, DollarSign, List, TrendingUp, Star, Car, ChevronRight, UserPlus } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";
-import { useAuth } from "@/lib/auth/store/auth.store";
+import { useAuthStore as useAuth } from "@/lib/auth/store/auth.store";
 
 export default function DriverHome() {
   const router = useRouter();
@@ -34,11 +34,11 @@ export default function DriverHome() {
         <Text style={{ fontSize: 14, color: "#64748b", marginTop: 4, textAlign: "center", paddingHorizontal: 40 }}>
           Earn money by driving with MTaxi. Complete your application in minutes.
         </Text>
-        <TouchableOpacity style={styles.applyBtn} onPress={() => router.push("/(mtaxi)/driver/onboarding")}>
+        <TouchableOpacity style={styles.applyBtn} onPress={() => router.push("/(mtaxi)/driver/onboarding" as any)}>
           <UserPlus size={20} color="#fff" />
           <Text style={styles.applyBtnText}>Apply to Drive</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.learnMoreBtn} onPress={() => router.push("/(mtaxi)/driver-earnings")}>
+        <TouchableOpacity style={styles.learnMoreBtn} onPress={() => router.push("/(mtaxi)/driver-earnings" as any)}>
           <Text style={styles.learnMoreText}>Learn about driver earnings →</Text>
         </TouchableOpacity>
       </View>
@@ -73,7 +73,7 @@ export default function DriverHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-requests")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-requests" as any)}>
           <List size={20} color="#f59e0b" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Ride Requests</Text>
@@ -81,7 +81,7 @@ export default function DriverHome() {
           </View>
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-ride")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-ride" as any)}>
           <Car size={20} color="#3b82f6" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Current Ride</Text>
@@ -89,7 +89,7 @@ export default function DriverHome() {
           </View>
           <ChevronRight size={20} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-earnings")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/driver-earnings" as any)}>
           <TrendingUp size={20} color="#10b981" />
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.actionText}>Earnings Details</Text>

@@ -22,7 +22,7 @@ export default function CameraScreen() {
   };
 
   const handleGallery = () => {
-    router.push('/(media)/gallery');
+    router.push('/(media)/gallery' as any);
   };
 
   return (

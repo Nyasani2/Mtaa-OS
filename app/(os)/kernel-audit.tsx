@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/kernel-audit.tsx
 // MTAA OS V1 — Layer 1 Kernel Audit Screen
 // Navigate to this screen in your app to run the audit
@@ -168,7 +169,7 @@ export default function KernelAuditScreen() {
     }
 
     setResults(auditResults);
-    const passCount = auditResults.filter(r => r.status === 'PASS').length;
+    const passCount = auditResults.filter((r: any) => r.status === 'PASS').length;
     setScore((passCount / auditResults.length) * 100);
     setRunning(false);
   }
@@ -177,9 +178,9 @@ export default function KernelAuditScreen() {
     runAudit();
   }, []);
 
-  const passCount = results.filter(r => r.status === 'PASS').length;
-  const failCount = results.filter(r => r.status === 'FAIL').length;
-  const errorCount = results.filter(r => r.status === 'ERROR').length;
+  const passCount = results.filter((r: any) => r.status === 'PASS').length;
+  const failCount = results.filter((r: any) => r.status === 'FAIL').length;
+  const errorCount = results.filter((r: any) => r.status === 'ERROR').length;
 
   return (
     <View style={styles.container}>

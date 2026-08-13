@@ -83,14 +83,14 @@ export class Channel {
     existing.push(sub);
     this.subscriptions.set(key, existing);
     return () => {
-      const updated = (this.subscriptions.get(key) || []).filter(s => s.id !== subId);
+      const updated = (this.subscriptions.get(key) || []).filter((s: any) => s.id !== subId);
       this.subscriptions.set(key, updated);
     };
   }
 
   getLog(channel?: ChannelType, limit = 100): ChannelMessage[] {
     let logs = this.messageLog;
-    if (channel) logs = logs.filter(m => m.channel === channel);
+    if (channel) logs = logs.filter((m: any) => m.channel === channel);
     return logs.slice(-limit);
   }
 

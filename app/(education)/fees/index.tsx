@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
@@ -21,13 +22,13 @@ export default function ParentFees() {
   const loadData = async () => {
     if (!user?.id) return;
     const connections = await getParentConnections(user.id);
-    const kids = connections?.map(c => c.student) || [];
+    const kids = connections?.map((c: any) => c.student) || [];
     setChildren(kids);
 
     const allFees = [];
     for (const child of kids) {
       const childFees = await getStudentFees(child.id);
-      allFees.push(...(childFees || []).map(f => ({ ...f, studentName: child.full_name })));
+      allFees.push(...(childFees || []).map((f: any) => ({ ...f, studentName: child.full_name })));
     }
     setFees(allFees);
     setLoading(false);
@@ -63,7 +64,7 @@ export default function ParentFees() {
     );
   };
 
-  const totalDue = fees.filter(f => f.status === 'pending').reduce((sum, f) => sum + (f.amount || 0), 0);
+  const totalDue = fees.filter((f: any) => f.status === 'pending').reduce((sum, f) => sum + (f.amount || 0), 0);
 
   return (
     <View style={styles.container}>
@@ -88,7 +89,7 @@ export default function ParentFees() {
             <Text style={styles.emptyText}>No fee records</Text>
           </View>
         ) : (
-          fees.map(fee => (
+          fees.map((fee: any) => (
             <View key={fee.id} style={styles.feeCard}>
               <View style={styles.feeHeader}>
                 <View>

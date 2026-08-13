@@ -120,7 +120,7 @@ export default function AfricanFeedScreen() {
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
       onPress={() => {
         incrementView(item.id);
-        router.push(`/(education)/resource-detail?id=${item.id}`);
+        router.push(`/(education)/resource-detail?id=${item.id}` as any);
       }}
     >
       <View style={styles.cardHeader}>
@@ -186,7 +186,7 @@ export default function AfricanFeedScreen() {
         <View style={[styles.filterPanel, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.filterPanelTitle, { color: colors.text }]}>Filter By</Text>
           <View style={styles.filterGrid}>
-            {Object.keys(DEMO_FILTERS).map(k => (
+            {Object.keys(DEMO_FILTERS).map((k: any) => (
               <TouchableOpacity
                 key={k}
                 style={[styles.filterOption, filterKey === k && { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}
@@ -201,7 +201,7 @@ export default function AfricanFeedScreen() {
           {filterKey && (
             <View style={styles.valueList}>
               <Text style={[styles.valueLabel, { color: colors.textSecondary }]}>Select {filterKey}</Text>
-              {DEMO_FILTERS[filterKey].map(v => (
+              {DEMO_FILTERS[filterKey].map((v: any) => (
                 <TouchableOpacity key={v} style={styles.valueItem} onPress={() => { setFilterValues(prev => ({ ...prev, [filterKey]: v })); setFilterKey(null); }}>
                   <Text style={{ color: colors.text }}>{v}</Text>
                   {filterValues[filterKey] === v && <Ionicons name="checkmark" size={18} color={colors.primary} />}

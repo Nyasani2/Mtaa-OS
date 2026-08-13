@@ -72,7 +72,7 @@ export default function LiveScreen() {
 
   const renderStream = ({ item }: { item: LiveStream }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/live-active?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/live-active?id=${item.id}` as any)}
       style={{ marginHorizontal: 16, marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1a1a' }}
     >
       <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#222' }}>
@@ -129,7 +129,7 @@ export default function LiveScreen() {
 
       {/* Category Filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, marginBottom: 8 }}>
-        {CATEGORIES.map(c => (
+        {CATEGORIES.map((c: any) => (
           <TouchableOpacity
             key={c}
             onPress={() => setCategoryFilter(c)}
@@ -156,7 +156,7 @@ export default function LiveScreen() {
             <MaterialCommunityIcons name="broadcast-off" size={48} color="#333" />
             <Text style={{ color: '#666', marginTop: 16 }}>No live streams right now</Text>
             <TouchableOpacity
-              onPress={() => router.push('/(os)/studio/live-setup')}
+              onPress={() => router.push('/(os)/studio/live-setup' as any)}
               style={{ marginTop: 20, backgroundColor: '#ff0000', borderRadius: 20, paddingHorizontal: 24, paddingVertical: 12 }}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Streaming</Text>

@@ -59,7 +59,7 @@ export default function PrivacySettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Messaging</Text>
           <Text style={styles.subLabel}>Allow messages from:</Text>
-          {MESSAGE_OPTIONS.map(opt => (
+          {MESSAGE_OPTIONS.map((opt: any) => (
             <TouchableOpacity key={opt} style={[styles.optionBtn, settings?.allow_messages_from === opt && styles.optionBtnActive]} onPress={() => setSettings((prev: any) => ({ ...prev, allow_messages_from: opt }))}>
               <Text style={[styles.optionText, settings?.allow_messages_from === opt && styles.optionTextActive]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
             </TouchableOpacity>
@@ -67,7 +67,7 @@ export default function PrivacySettingsScreen() {
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Blocked Users</Text>
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/settings/blocked')}>
+          <TouchableOpacity style={styles.row} onPress={() => router.push('/settings/blocked' as any)}>
             <Ionicons name="ban-outline" size={20} color="#ff4444" />
             <Text style={styles.rowText}>Manage Blocked Users</Text>
             <Ionicons name="chevron-forward" size={16} color="#444" />

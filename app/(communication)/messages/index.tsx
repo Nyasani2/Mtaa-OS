@@ -46,7 +46,7 @@ export default function MessagesScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {MOCK_CHATS.map(chat => (
+        {MOCK_CHATS.map((chat: any) => (
           <TouchableOpacity key={chat.id} style={styles.chatRow}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color="#C7C7CC" />

@@ -64,7 +64,7 @@ export default function EducationAdmin() {
             {section.items.map((item) => (
               <TouchableOpacity
                 key={item.label}
-                onPress={() => router.push(item.route as any)}
+                onPress={() => router.push(item.route as any as any)}
                 style={{
                   width: '31%',
                   backgroundColor: '#1e293b',

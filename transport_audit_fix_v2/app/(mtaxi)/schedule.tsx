@@ -71,7 +71,7 @@ export default function ScheduleScreen() {
         distance_km: Number(distanceKm.toFixed(2)),
       });
       Alert.alert('Scheduled!', `Ride ID: ${ride.id}\nAt: ${scheduledDate.toLocaleString()}`);
-      router.push('/(mtaxi)/history');
+      router.push('/(mtaxi)/history' as any);
     } catch (err: any) {
       Alert.alert('Failed', err.message || 'Try again');
     }

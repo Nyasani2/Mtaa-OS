@@ -17,7 +17,7 @@ export function MaintenanceItem({ item, urgent }: Props) {
       </View>
       <View style={styles.info}>
         <Text style={styles.desc}>{item.description}</Text>
-        <Text style={styles.meta}>Truck {item.truckId} • {item.scheduledDate}</Text>
+        <Text style={styles.meta}>Truck {item.truck_id} • {item.scheduled_date}</Text>
       </View>
       <View style={[styles.badge, { backgroundColor: urgent ? "#EF4444" : "#F59E0B" }]}>
         <Text style={styles.badgeText}>{item.status.toUpperCase()}</Text>

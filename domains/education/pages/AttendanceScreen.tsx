@@ -76,10 +76,10 @@ export default function AttendanceScreen() {
       setRecords(mapped);
 
       const total = mapped.length;
-      const present = mapped.filter(r => r.status === 'present').length;
-      const absent = mapped.filter(r => r.status === 'absent').length;
-      const late = mapped.filter(r => r.status === 'late').length;
-      const excused = mapped.filter(r => r.status === 'excused').length;
+      const present = mapped.filter((r: any) => r.status === 'present').length;
+      const absent = mapped.filter((r: any) => r.status === 'absent').length;
+      const late = mapped.filter((r: any) => r.status === 'late').length;
+      const excused = mapped.filter((r: any) => r.status === 'excused').length;
 
       setSummary({
         total,
@@ -100,7 +100,7 @@ export default function AttendanceScreen() {
   useEffect(() => { fetchAttendance(); }, [fetchAttendance]);
   const onRefresh = () => { setRefreshing(true); fetchAttendance(); };
 
-  const filtered = filter === 'all' ? records : records.filter(r => r.status === filter);
+  const filtered = filter === 'all' ? records : records.filter((r: any) => r.status === filter);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -159,7 +159,7 @@ export default function AttendanceScreen() {
 
       {/* Filter Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {(['all', 'present', 'absent', 'late', 'excused'] as const).map(f => (
+        {(['all', 'present', 'absent', 'late', 'excused'] as const).map((f: any) => (
           <TouchableOpacity
             key={f}
             style={[styles.filterChip, filter === f && { backgroundColor: colors.primary }]}

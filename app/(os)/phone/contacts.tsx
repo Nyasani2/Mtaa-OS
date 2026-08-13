@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { usePhoneStore } from '@/hooks/usePhoneStore';

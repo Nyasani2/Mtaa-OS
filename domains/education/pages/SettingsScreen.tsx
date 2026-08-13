@@ -72,17 +72,17 @@ export default function SettingsScreen() {
         {
           icon: 'person',
           label: 'Profile',
-          onPress: () => router.push('/(os)/profile'),
+          onPress: () => router.push('/(os)/profile' as any),
         },
         {
           icon: 'shield-checkmark',
           label: 'Teacher Verification',
-          onPress: () => router.push('/(education)/verification'),
+          onPress: () => router.push('/(education)/verification' as any),
         },
         {
           icon: 'help-circle',
           label: 'Help & Support',
-          onPress: () => router.push('/(os)/help'),
+          onPress: () => router.push('/(os)/help' as any),
         },
       ],
     },

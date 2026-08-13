@@ -103,7 +103,7 @@ export function useGovernment(userId: string | undefined) {
       }).select("id").maybeSingle();
       if (err) throw err;
       await fetchAll();
-      return { success: true, id: data.id };
+      return { success: true, id: data?.id };
     } catch (err: any) { return { success: false, error: err.message }; }
   }, [userId, fetchAll]);
 

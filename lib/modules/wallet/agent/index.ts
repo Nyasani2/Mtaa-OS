@@ -375,7 +375,7 @@ export function FindAgentMapScreen() {
   const handleAgentSelect = (agent: Agent) => {
     setSelectedAgent(agent);
     // Navigate to QR scan screen with agent pre-selected
-    // router.push(`/wallet/agent-scan?agentId=${agent.id}`);
+    // router.push(`/wallet/agent-scan?agentId=${agent.id}` as any);
   };
 
   return {

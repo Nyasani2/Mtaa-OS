@@ -1,4 +1,4 @@
-export default {
+const _manifest = {
   id: 'civic-police',
   name: 'Police',
   category: 'civic',
@@ -11,3 +11,5 @@ export default {
   permissions: ['location', 'camera', 'notifications'],
   isOSApp: false,
 };
+
+export default _manifest as any;

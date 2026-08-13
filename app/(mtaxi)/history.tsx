@@ -40,7 +40,7 @@ export default function HistoryScreen() {
       ) : rides.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.empty}>No rides yet</Text>
-          <TouchableOpacity style={styles.btn} onPress={() => router.push('/(mtaxi)/request')}>
+          <TouchableOpacity style={styles.btn} onPress={() => router.push('/(mtaxi)/request' as any)}>
             <Text style={styles.btnText}>Book a Ride</Text>
           </TouchableOpacity>
         </View>
@@ -50,7 +50,7 @@ export default function HistoryScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 40 }}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => router.push(`/(mtaxi)/tracking?id=${item.id}`)}>
+            <TouchableOpacity style={styles.card} onPress={() => router.push(`/(mtaxi)/tracking?id=${item.id}` as any)}>
               <View style={styles.row}>
                 <Text style={styles.date}>{new Date(item.created_at).toLocaleDateString()}</Text>
                 <View style={[styles.badge, { backgroundColor: statusColor[item.status] || '#555' }]}>

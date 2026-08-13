@@ -8,5 +8,5 @@ export const forbiddenPatterns = [
 ];
 
 export function isCleanFile(file: string) {
-  return !forbiddenPatterns.some(p => file.includes(p));
+  return !forbiddenPatterns.some((p: any) => file.includes(p));
 }

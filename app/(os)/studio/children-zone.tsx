@@ -141,7 +141,7 @@ export default function ChildrenZoneScreen() {
     );
   }
 
-  const filteredVideos = VIDEOS.filter(v => v.type === activeCategory);
+  const filteredVideos = VIDEOS.filter((v: any) => v.type === activeCategory);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -178,7 +178,7 @@ export default function ChildrenZoneScreen() {
 
       {/* Category Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-        {CATEGORIES.map(cat => (
+        {CATEGORIES.map((cat: any) => (
           <TouchableOpacity key={cat.id} onPress={() => setActiveCategory(cat.id)} style={[styles.categoryBtn, activeCategory === cat.id && styles.categoryBtnActive]}>
             <View style={[styles.categoryIcon, { backgroundColor: `${cat.color}22` }]}>
               <Feather name={cat.icon as any} size={18} color={cat.color} />
@@ -207,7 +207,7 @@ export default function ChildrenZoneScreen() {
           <>
             <Text style={styles.sectionTitle}>Recommended for You</Text>
             <View style={styles.videoGrid}>
-              {filteredVideos.map(video => (
+              {filteredVideos.map((video: any) => (
                 <TouchableOpacity key={video.id} style={styles.videoCard}>
                   <View style={styles.videoThumb}>
                     <Feather name="play-circle" size={32} color="#fff" />
@@ -223,7 +223,7 @@ export default function ChildrenZoneScreen() {
         ) : (
           <>
             <Text style={styles.sectionTitle}>Learning Games</Text>
-            {GAMES.map(game => (
+            {GAMES.map((game: any) => (
               <TouchableOpacity key={game.id} style={styles.gameCard}>
                 <View style={[styles.gameIcon, { backgroundColor: game.level === 'Easy' ? '#10b98122' : game.level === 'Medium' ? '#f59e0b22' : '#ef444422' }]}>
                   <Feather name="grid" size={24} color={game.level === 'Easy' ? '#10b981' : game.level === 'Medium' ? '#f59e0b' : '#ef4444'} />

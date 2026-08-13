@@ -103,12 +103,12 @@ export default function CommunityScreen() {
   };
 
   const createPoll = async () => {
-    if (!pollQuestion.trim() || pollOptions.some(o => !o.trim()) || !user?.id) return;
+    if (!pollQuestion.trim() || pollOptions.some((o: any) => !o.trim()) || !user?.id) return;
     try {
       await supabase.from('studio_polls').insert({
         creator_id: user.id,
         question: pollQuestion,
-        options: pollOptions.map(text => ({ text, votes: 0 })),
+        options: pollOptions.map((text: any) => ({ text, votes: 0 })),
         total_votes: 0,
       });
       setPollQuestion('');
@@ -365,7 +365,7 @@ export default function CommunityScreen() {
           <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Community</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/studio/search')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/studio/search' as any)}>
           <Feather name="search" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -377,7 +377,7 @@ export default function CommunityScreen() {
           { id: 'stories' as CommunityTab, label: 'Stories', icon: 'aperture' },
           { id: 'announcements' as CommunityTab, label: 'News', icon: 'bell' },
           { id: 'groups' as CommunityTab, label: 'Groups', icon: 'users' },
-        ].map(t => (
+        ].map((t: any) => (
           <TouchableOpacity key={t.id} onPress={() => setActiveTab(t.id)} style={[styles.tabBtn, activeTab === t.id && styles.tabBtnActive]}>
             <Feather name={t.icon as any} size={14} color={activeTab === t.id ? '#6366f1' : '#666'} />
             <Text style={[styles.tabText, activeTab === t.id && styles.tabTextActive]}>{t.label}</Text>

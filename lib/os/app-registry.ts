@@ -137,15 +137,15 @@ export function getAllOSApps(): OSAppEntry[] {
 }
 
 export function getOSAppsByCategory(category: string): OSAppEntry[] {
-  return getAllOSApps().filter(a => a.category === category);
+  return getAllOSApps().filter((a: any) => a.category === category);
 }
 
 export function getSystemApps(): OSAppEntry[] {
-  return getAllOSApps().filter(a => a.isSystemApp);
+  return getAllOSApps().filter((a: any) => a.isSystemApp);
 }
 
 export function getThirdPartyApps(): OSAppEntry[] {
-  return getAllOSApps().filter(a => !a.isSystemApp);
+  return getAllOSApps().filter((a: any) => !a.isSystemApp);
 }
 
 export function isSystemApp(id: string): boolean {

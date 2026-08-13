@@ -121,7 +121,7 @@ export default function SchoolDetailScreen() {
         {statCards.map((s) => (
           <TouchableOpacity
             key={s.label}
-            onPress={() => router.push(s.route)}
+            onPress={() => router.push(s.route as any)}
             style={{ width: "50%", padding: 4 }}
           >
             <View style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, alignItems: "center" }}>
@@ -141,7 +141,7 @@ export default function SchoolDetailScreen() {
         {actions.map((a) => (
           <TouchableOpacity
             key={a.label}
-            onPress={() => router.push(a.route)}
+            onPress={() => router.push(a.route as any)}
             style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center" }}
           >
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: a.color + "22", justifyContent: "center", alignItems: "center" }}>

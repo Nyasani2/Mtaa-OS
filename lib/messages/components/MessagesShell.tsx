@@ -58,12 +58,12 @@ export default function MessagesShell() {
   );
 
   const handleNewMessage = () => {
-    router.push("/communication/new-message");
+    router.push("/communication/new-message" as any);
   };
 
   const handleContactPress = (contact: ContactItem) => {
     router.push({
-      pathname: "/communication/chat",
+      pathname: "/communication/chat" as any,
       params: { contactId: contact.id, name: contact.name, phone: contact.phone },
     });
   };

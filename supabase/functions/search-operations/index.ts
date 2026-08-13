@@ -196,7 +196,7 @@ async function searchAutocomplete(supabaseAdmin, userId, params) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  suggestions = (history || []).map(h => h.query);
+  suggestions = (history || []).map((h: any) => h.query);
 
   // If not enough, add from content titles
   if (suggestions.length < limit) {
@@ -207,7 +207,7 @@ async function searchAutocomplete(supabaseAdmin, userId, params) {
       .eq("visibility", "public")
       .limit(limit - suggestions.length);
 
-    suggestions = [...suggestions, ...(content || []).map(c => c.title)];
+    suggestions = [...suggestions, ...(content || []).map((c: any) => c.title)];
   }
 
   // Deduplicate

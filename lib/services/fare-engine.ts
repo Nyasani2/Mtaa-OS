@@ -310,7 +310,7 @@ export function calculateFare(
 }
 
 export function formatCurrency(amount: number, currency: string, locale?: string): string {
-  const country = Object.values(COUNTRY_RATES).find(c => c.currency === currency);
+  const country = Object.values(COUNTRY_RATES).find((c: any) => c.currency === currency);
   const useLocale = locale || country?.locale || 'en-KE';
 
   try {

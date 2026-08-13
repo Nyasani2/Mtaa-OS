@@ -75,12 +75,12 @@ export default function PodcastUploadScreen() {
   };
 
   const updateEpisode = (id: string, updates: Partial<PodcastEpisode>) => {
-    updatePodcast({ episodes: podcast.episodes.map(e => e.id === id ? { ...e, ...updates } : e) });
+    updatePodcast({ episodes: podcast.episodes.map((e: any) => e.id === id ? { ...e, ...updates } : e) });
   };
 
   const removeEpisode = (id: string) => {
     updatePodcast({
-      episodes: podcast.episodes.filter(e => e.id !== id).map((e, idx) => ({ ...e, episodeNumber: idx + 1 })),
+      episodes: podcast.episodes.filter((e: any) => e.id !== id).map((e, idx) => ({ ...e, episodeNumber: idx + 1 })),
     });
   };
 
@@ -141,7 +141,7 @@ export default function PodcastUploadScreen() {
           storage_path: path,
           episode_number: ep.episodeNumber,
           duration_seconds: ep.duration,
-          guests: ep.guests.split(',').map(g => g.trim()).filter(Boolean),
+          guests: ep.guests.split(',').map((g: any) => g.trim()).filter(Boolean),
           transcript: ep.transcript,
         });
 
@@ -150,7 +150,7 @@ export default function PodcastUploadScreen() {
 
       setProgress(100);
       Alert.alert('Success', `Podcast "${podcast.title}" published!`, [
-        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile') },
+        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile' as any) },
       ]);
     } catch (err: any) {
       Alert.alert('Upload Failed', err.message);
@@ -185,7 +185,7 @@ export default function PodcastUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {CATEGORIES.map(c => (
+            {CATEGORIES.map((c: any) => (
               <TouchableOpacity key={c} onPress={() => updatePodcast({ category: c })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: podcast.category === c ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 12 }}>{c}</Text>
               </TouchableOpacity>
@@ -196,7 +196,7 @@ export default function PodcastUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Language</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {LANGUAGES.map(l => (
+            {LANGUAGES.map((l: any) => (
               <TouchableOpacity key={l} onPress={() => updatePodcast({ language: l })} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, marginRight: 8, backgroundColor: podcast.language === l ? '#ff0000' : '#1a1a1a' }}>
                 <Text style={{ color: '#fff', fontSize: 12 }}>{l}</Text>
               </TouchableOpacity>
@@ -206,7 +206,7 @@ export default function PodcastUploadScreen() {
 
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>Episodes ({podcast.episodes.length})</Text>
-          {podcast.episodes.map(ep => (
+          {podcast.episodes.map((ep: any) => (
             <View key={ep.id} style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Text style={{ color: '#666', fontSize: 12, width: 28 }}>Ep {ep.episodeNumber}</Text>

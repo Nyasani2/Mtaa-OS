@@ -1,1 +1,96 @@
-{"extends":"expo/tsconfig.base","compilerOptions":{"strict":true,"paths":{"@/*":["./*"]},"baseUrl":".","jsx":"react-jsx","esModuleInterop":true,"skipLibCheck":true,"forceConsistentCasingInFileNames":true,"resolveJsonModule":true,"allowSyntheticDefaultImports":true,"moduleResolution":"bundler"},"include":["**/*.ts","**/*.tsx","env.d.ts","expo-env.d.ts",".expo/types/**/*.ts"],"exclude":["node_modules","babel.config.js","metro.config.js","jest.config.js","app.config.js","supabase/functions","edge_functions","android","ios","public","stubs","docs","infra","tools","assets","migrations","backend","schema","sql","modules_disabled","_orphaned_root_screens","_needs_review","backups",".expo","**/*.test.ts","**/*.spec.ts"]}
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "module": "esnext",
+    "target": "esnext",
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowJs": true,
+    "checkJs": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "archive/**/*",
+    "archive/*",
+    "mtaxi-operations/**/*",
+    "mtaxi-operations/*",
+    "mtaxi-complete/**/*",
+    "mtaxi-complete/*",
+    "transport_audit_fix_v2/**/*",
+    "transport_audit_fix_v2/*",
+    "apps/_legacy_components/**/*",
+    "apps/_legacy_components/*",
+    "apps/_disabled/**/*",
+    "apps/_disabled/*",
+    "appstore/**/*",
+    "appstore/*",
+    "civic_routes/**/*",
+    "civic_routes/*",
+    "manifests/**/*",
+    "manifests/*",
+    "supabase/functions/**/*",
+    "supabase/functions/*",
+    "edge_functions/**/*",
+    "edge_functions/*",
+    "_needs_review/**/*",
+    "_needs_review/*",
+    "backups/**/*",
+    "backups/*",
+    "stubs/**/*",
+    "stubs/*",
+    "domains/**/*",
+    "domains/*",
+    "lib/appstore/**/*",
+    "lib/appstore/*",
+    "lib/apps-store/**/*",
+    "lib/apps-store/*",
+    "hooks/useAuth.ts",
+    "hooks/useUser.ts",
+    "hooks/usePhoneStore.ts",
+    "index.tsx",
+    "replacements"
+  ]
+}

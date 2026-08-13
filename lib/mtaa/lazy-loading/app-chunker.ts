@@ -13,15 +13,15 @@ const APP_CHUNKS: AppChunk[] = [
 
 class AppChunker {
   private loadedChunks = new Set<string>();
-  getChunk(appId: string): AppChunk|undefined { return APP_CHUNKS.find(chunk => chunk.modules.includes(appId)); }
+  getChunk(appId: string): AppChunk|undefined { return APP_CHUNKS.find((chunk: any) => chunk.modules.includes(appId)); }
   async loadChunk(chunkId: string): Promise<void> {
     if (this.loadedChunks.has(chunkId)) return;
-    const chunk = APP_CHUNKS.find(c => c.id === chunkId);
+    const chunk = APP_CHUNKS.find((c: any) => c.id === chunkId);
     if (!chunk) throw new Error(`Chunk not found: ${chunkId}`);
     console.log(`[CHUNK] Loading ${chunkId} (${chunk.sizeEstimateKb}KB)`);
     this.loadedChunks.add(chunkId);
   }
-  preloadCritical(): void { APP_CHUNKS.filter(c => c.preloadPriority <= 2).forEach(chunk => this.loadChunk(chunk.id)); }
+  preloadCritical(): void { APP_CHUNKS.filter((c: any) => c.preloadPriority <= 2).forEach(chunk => this.loadChunk(chunk.id)); }
   isLoaded(chunkId: string): boolean { return this.loadedChunks.has(chunkId); }
   getLoadedChunks(): string[] { return Array.from(this.loadedChunks); }
 }

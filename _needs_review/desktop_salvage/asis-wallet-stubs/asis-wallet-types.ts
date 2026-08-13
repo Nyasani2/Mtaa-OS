@@ -267,7 +267,7 @@ export function buildUserContextVector(profile: any, behaviour: KamosBehaviourPr
 export function buildTransactionContextVector(tx: any, sender: KamosUserProfile, recipient: KamosRecipientIntelligence): number[] {
   return [
     Math.min(1, tx.amount / 10000),
-    sender.networkGraph.some(n => n.profileId === recipient.profileId) ? 1 : 0,
+    sender.networkGraph.some((n: any) => n.profileId === recipient.profileId) ? 1 : 0,
     sender.isVerified ? 1 : 0,
     recipient.isRegistered ? 1 : 0,
     Math.min(1, tx.amount / (sender.behaviourProfile.avgTransactionSize || 1)),

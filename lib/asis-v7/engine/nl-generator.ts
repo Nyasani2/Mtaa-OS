@@ -141,7 +141,7 @@ export class NLGenerator {
     const templates = RESPONSE_TEMPLATES[intentCategory] || RESPONSE_TEMPLATES.unknown;
     const template = this.selectTemplate(templates, synthesized.confidence);
 
-    let response = this.fillTemplate(template, synthesized.data);
+    let response = this.fillTemplate(template, (synthesized as any).data);
     response = this.applyPersonality(response, context);
 
     if (synthesized.sources && synthesized.sources.length > 0) {
@@ -196,7 +196,7 @@ export class NLGenerator {
 
   private applyPersonality(response: string, context: ContextVector): string {
     if (this.personality.verbosity === "concise") {
-      const sentences = response.split(".").filter(s => s.trim());
+      const sentences = response.split(".").filter((s: any) => s.trim());
       if (sentences.length > 2) {
         response = sentences.slice(0, 2).join(".") + ".";
       }

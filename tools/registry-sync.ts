@@ -12,10 +12,10 @@ const LOADER_FILE = path.resolve(__dirname, '../../apps/_loader.ts')
 
 function getApps() {
   const dirs = fs.readdirSync(APPS_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name)
+    .filter((d: any) => d.isDirectory())
+    .map((d: any) => d.name)
 
-  return dirs.map(id => ({
+  return dirs.map((id: any) => ({
     id,
     manifestPath: `./apps/${id}/mtaa.app`
   }))
@@ -26,11 +26,11 @@ function writeRegistry(apps: any[]) {
 }
 
 function writeLoader(apps: any[]) {
-  const imports = apps.map(a =>
+  const imports = apps.map((a: any) =>
     `import ${a.id} from './${a.id}/mtaa.app'`
   ).join('\n')
 
-  const mapEntries = apps.map(a =>
+  const mapEntries = apps.map((a: any) =>
     `  "${a.id}": ${a.id}`
   ).join(',\n')
 
@@ -57,7 +57,7 @@ export function resolveApp(id: string) {
 function sync() {
   const apps = getApps()
 
-  console.log('🔄 Syncing apps:', apps.map(a => a.id))
+  console.log('🔄 Syncing apps:', apps.map((a: any) => a.id))
 
   writeRegistry(apps)
   writeLoader(apps)

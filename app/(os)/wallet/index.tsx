@@ -77,7 +77,7 @@ export default function WalletScreen() {
         <Ionicons name="wallet-outline" size={64} color="#ccc" />
         <Text style={styles.emptyTitle}>Wallet Locked</Text>
         <Text style={styles.emptyText}>Sign in to access your wallet</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/auth/login')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/login' as any)}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -95,7 +95,7 @@ export default function WalletScreen() {
             <Text style={styles.greeting}>Good day,</Text>
             <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}</Text>
           </View>
-          <TouchableOpacity onPress={() => router.push('/(os)/settings')} style={styles.settingsBtn}>
+          <TouchableOpacity onPress={() => router.push('/(os)/settings' as any)} style={styles.settingsBtn}>
             <Ionicons name="settings-outline" size={22} color="#333" />
           </TouchableOpacity>
         </View>

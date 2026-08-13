@@ -30,7 +30,7 @@ export function useAppStoreInstaller() {
 
   const getInstallState = useCallback((appId: string) => {
     const app = installed.find((i: { manifest: AppManifest }) => i.manifest.id === appId);
-    return { installed: !!app, active: app?.isActive || false, progress: app ? 100 : 0 };
+    return { installed: !!app, active: (app as any)?.isActive || false, progress: app ? 100 : 0 };
   }, [installed]);
 
   return { install, uninstall, enable, disable, getInstallState, isInstalling, progress };

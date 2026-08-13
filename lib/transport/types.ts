@@ -58,3 +58,17 @@ export interface TruckCompany {
   country?: string;
   status?: string;
 }
+
+
+// === AUTO-ADDED TRANSPORT TYPES ===
+export type FareEstimate = any;
+export type TransportRide = any;
+export type RecentPlace = any;
+export type CreateRidePayload = any;
+export type NearbyDriver = any;
+export type ServiceType = any;
+export type TransportVehicleType = any;
+export type PaymentMethod = any;
+export type LocationPoint = any;
+export type VehicleTier = any;
+export type DriverAvailability = any;

@@ -10,4 +10,5 @@ export const JOBS_APP = {
   status: "stable",
   installable: true,
   entryPoints: { home: "/(os)/jobs", search: "/(os)/jobs/search", applications: "/(os)/jobs/applications", profile: "/(os)/jobs/profile" },
+  screens: [] as any,
 };

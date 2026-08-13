@@ -49,7 +49,7 @@ export default function CoursesScreen() {
           <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
         </TouchableOpacity>
         <Text style={styles.title}>Courses</Text>
-        <TouchableOpacity onPress={() => router.push("/(education)/courses/create")}>
+        <TouchableOpacity onPress={() => router.push("/(education as any)/courses/create" as any)}>
           <Ionicons name="add-circle" size={24} color="#60a5fa" />
         </TouchableOpacity>
       </View>

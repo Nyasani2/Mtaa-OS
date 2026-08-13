@@ -10,4 +10,5 @@ export const CREDIT_APP = {
   status: "stable",
   installable: true,
   entryPoints: { home: "/(os)/credit", loans: "/(os)/credit/loans", investments: "/(os)/credit/investments", history: "/(os)/credit/history" },
+  screens: [] as any,
 };

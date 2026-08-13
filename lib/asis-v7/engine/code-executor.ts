@@ -65,9 +65,9 @@ function createSandboxContext(): SandboxContext {
 
   return {
     console: {
-      log: (...args) => { logs.push(args.map(a => String(a)).join(' ')); },
-      error: (...args) => { logs.push(`[ERROR] ${args.map(a => String(a)).join(' ')}`); },
-      warn: (...args) => { logs.push(`[WARN] ${args.map(a => String(a)).join(' ')}`); },
+      log: (...args) => { logs.push(args.map((a: any) => String(a)).join(' ')); },
+      error: (...args) => { logs.push(`[ERROR] ${args.map((a: any) => String(a)).join(' ')}`); },
+      warn: (...args) => { logs.push(`[WARN] ${args.map((a: any) => String(a)).join(' ')}`); },
     },
     Math,
     Date,
@@ -179,18 +179,18 @@ export class CodeExecutionEngine {
       const originalConsole = { ...sandbox.console };
       sandbox.console = {
         log: (...args) => {
-          logs.push(args.map(a => {
+          logs.push(args.map((a: any) => {
             if (typeof a === 'object') return JSON.stringify(a, null, 2);
             return String(a);
           }).join(' '));
           originalConsole.log(...args);
         },
         error: (...args) => {
-          logs.push(`[ERROR] ${args.map(a => String(a)).join(' ')}`);
+          logs.push(`[ERROR] ${args.map((a: any) => String(a)).join(' ')}`);
           originalConsole.error(...args);
         },
         warn: (...args) => {
-          logs.push(`[WARN] ${args.map(a => String(a)).join(' ')}`);
+          logs.push(`[WARN] ${args.map((a: any) => String(a)).join(' ')}`);
           originalConsole.warn(...args);
         },
       };
@@ -362,7 +362,7 @@ export class CodeExecutionEngine {
         .filter(([_, freq]) => freq === maxFreq)
         .map(([val, _]) => parseFloat(val));
 
-      const variance = _utils.avg(data.map(x => Math.pow(x - mean, 2)));
+      const variance = _utils.avg(data.map((x: any) => Math.pow(x - mean, 2)));
       const stdDev = Math.sqrt(variance);
 
       return {

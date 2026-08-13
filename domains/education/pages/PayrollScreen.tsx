@@ -124,7 +124,7 @@ export default function PayrollScreen() {
       </View>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
-        {payslips.map(p => (
+        {payslips.map((p: any) => (
           <TouchableOpacity
             key={p.id}
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}

@@ -39,7 +39,7 @@ export default function TruckOnboardingScreen() {
         county,
       });
       Alert.alert('Company Registered!', `ID: ${company.id}\nStatus: Pending verification`);
-      router.push('/(mtruck)');
+      router.push('/(mtruck)' as any);
     } catch (err: any) {
       Alert.alert('Failed', err.message || 'Try again');
     } finally {

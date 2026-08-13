@@ -67,7 +67,7 @@ export default function AdvanceHubScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.requestButton} onPress={() => router.push('/(os)/wallet/advance/request')}>
+        <TouchableOpacity style={styles.requestButton} onPress={() => router.push('/(os)/wallet/advance/request' as any)}>
           <Text style={styles.requestButtonText}>Request Advance</Text>
         </TouchableOpacity>
       </View>

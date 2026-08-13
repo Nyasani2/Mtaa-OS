@@ -22,7 +22,7 @@ export default function JobsScreen() {
   const router = useRouter();
 
   const openJobs = useCallback(() => {
-    router.push('/(os)/jobs');
+    router.push('/(os)/jobs' as any);
   }, [router]);
 
   return (

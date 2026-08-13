@@ -13,11 +13,11 @@ export default function UpdatesScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(os)')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.push('/(os)' as any)} style={styles.backBtn}>
           <Ionicons name="home-outline" size={22} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Updates</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/appstore')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.push('/(os)/appstore' as any)} style={styles.backBtn}>
           <Ionicons name="apps-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -31,7 +31,7 @@ export default function UpdatesScreen() {
         ) : (
           <>
             <Text style={styles.sectionTitle}>{updates.length} update{updates.length > 1 ? 's' : ''} available</Text>
-            {updates.map(app => (
+            {updates.map((app: any) => (
               <View key={app.id} style={styles.updateCard}>
                 <View style={[styles.appIcon, { backgroundColor: app.color + '20' }]}>
                   <Ionicons name={app.icon as any} size={28} color={app.color} />

@@ -124,7 +124,7 @@ export function OSLauncherGrid() {
         <Text style={styles.title}>APPS</Text>
 
         <TouchableOpacity
-          onPress={() => router.push('/(os)/launcher')}
+          onPress={() => router.push('/(os)/launcher' as any)}
         >
           <Text style={styles.seeAll}>
             See All →
@@ -138,7 +138,7 @@ export function OSLauncherGrid() {
             key={app.id}
             app={app}
             onPress={() =>
-              router.push(`/${app.domain}`)
+              router.push(`/${app.domain}` as any)
             }
           />
         ))}

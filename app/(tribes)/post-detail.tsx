@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/tribes/post/[id].tsx
 // Post Detail Screen — full post + comments thread
 

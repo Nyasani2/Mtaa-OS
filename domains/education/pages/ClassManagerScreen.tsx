@@ -202,7 +202,7 @@ export default function ClassManagerScreen() {
           </TouchableOpacity>
         )}
 
-        {classes.map(c => (
+        {classes.map((c: any) => (
           <TouchableOpacity
             key={c.id}
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -256,7 +256,7 @@ export default function ClassManagerScreen() {
               {students.length} students enrolled
             </Text>
             <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-              {students.map(s => (
+              {students.map((s: any) => (
                 <View key={s.id} style={[styles.studentRow, { borderBottomColor: colors.border }]}>
                   <View style={[styles.studentAvatar, { backgroundColor: colors.primary + '20' }]}>
                     <Text style={[styles.studentAvatarText, { color: colors.primary }]}>{s.full_name.charAt(0)}</Text>
@@ -313,7 +313,7 @@ export default function ClassManagerScreen() {
               >
                 <Text style={[styles.subjectChipText, { color: !newSubjectId ? '#fff' : colors.text }]}>General</Text>
               </TouchableOpacity>
-              {subjects.map(s => (
+              {subjects.map((s: any) => (
                 <TouchableOpacity
                   key={s.id}
                   style={[styles.subjectChip, newSubjectId === s.id && { backgroundColor: colors.primary }]}

@@ -52,18 +52,18 @@ export default function StudioHomeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.push('/(os)/studio/feed')}>
+        <Pressable onPress={() => router.push('/(os)/studio/feed' as any)}>
           <Menu size={24} color="#fff" />
         </Pressable>
         <Text style={styles.logo}>MStudio</Text>
         <View style={styles.headerRight}>
-          <Pressable onPress={() => router.push('/(os)/studio/upload-center')} style={{ marginRight: 16 }}>
+          <Pressable onPress={() => router.push('/(os)/studio/upload-center' as any)} style={{ marginRight: 16 }}>
             <Upload size={22} color="#fff" />
           </Pressable>
           <Pressable style={{ marginRight: 16 }}>
             <Bell size={22} color="#fff" />
           </Pressable>
-          <Pressable onPress={() => router.push('/(os)/studio/creator-profile')}>
+          <Pressable onPress={() => router.push('/(os)/studio/creator-profile' as any)}>
             {user?.user_metadata?.avatar_url ? (
               <Image source={{ uri: user.user_metadata.avatar_url }} style={styles.headerAvatar} />
             ) : (
@@ -110,7 +110,7 @@ export default function StudioHomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Live Now</Text>
-              <Pressable onPress={() => router.push('/(os)/studio/live')}>
+              <Pressable onPress={() => router.push('/(os)/studio/live' as any)}>
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
@@ -119,7 +119,7 @@ export default function StudioHomeScreen() {
                 <Pressable
                   key={s.id}
                   style={styles.liveCard}
-                  onPress={() => router.push(`/(os)/studio/live-stream?id=${s.id}`)}
+                  onPress={() => router.push(`/(os)/studio/live-stream?id=${s.id}` as any)}
                 >
                   <View style={styles.liveThumb}>
                     <Text style={styles.liveBadge}>● LIVE</Text>
@@ -137,7 +137,7 @@ export default function StudioHomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>From Streets</Text>
-              <Pressable onPress={() => router.push('/(os)/streets')}>
+              <Pressable onPress={() => router.push('/(os)/streets' as any)}>
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
@@ -166,7 +166,7 @@ export default function StudioHomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recommended</Text>
-            <Pressable onPress={() => router.push('/(os)/studio/feed')}>
+            <Pressable onPress={() => router.push('/(os)/studio/feed' as any)}>
               <Text style={styles.seeAll}>See all</Text>
             </Pressable>
           </View>
@@ -201,7 +201,7 @@ export default function StudioHomeScreen() {
               <Text style={styles.emptyText}>No videos yet</Text>
               <Pressable
                 style={styles.uploadBtn}
-                onPress={() => router.push('/(os)/studio/upload-center')}
+                onPress={() => router.push('/(os)/studio/upload-center' as any)}
               >
                 <Text style={styles.uploadBtnText}>Upload First Video</Text>
               </Pressable>

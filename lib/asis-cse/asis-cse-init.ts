@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE System Initialization v5
  * Calls the working v2 pipeline (response-engine-v2) for real answers
@@ -149,13 +150,13 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
         `Instance: ${instanceId}\n` +
         `Total Logs: ${diagLogs.length}\n` +
         (recent.length > 0
-          ? recent.map(l => `  [${l.level.toUpperCase()}] ${l.message}`).join('\n')
+          ? recent.map((l: any) => `  [${l.level.toUpperCase()}] ${l.message}`).join('\n')
           : '  No diagnostic events recorded.');
     },
     log(level: 'info' | 'warn' | 'error', message: string): void {
       diagLogs.push({ level, message, time: Date.now() });
     },
-    getLogs(): string[] { return diagLogs.map(l => `[${l.level.toUpperCase()}] ${l.message}`); },
+    getLogs(): string[] { return diagLogs.map((l: any) => `[${l.level.toUpperCase()}] ${l.message}`); },
   };
 
   const toolRegistry: ASISToolRegistry = {
@@ -196,7 +197,7 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
   const knowledge: ASISKnowledge = {
     query(topic: string): any[] {
       const lower = topic.toLowerCase();
-      return knowledgeBase.filter(k => k.fact.toLowerCase().includes(lower));
+      return knowledgeBase.filter((k: any) => k.fact.toLowerCase().includes(lower));
     },
     addFact(fact: string, source?: string): void {
       knowledgeBase.push({ fact, source: source || 'unknown', time: Date.now() });

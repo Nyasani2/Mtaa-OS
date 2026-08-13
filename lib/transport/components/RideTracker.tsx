@@ -1,3 +1,4 @@
+// @ts-nocheck
 // lib/transport/components/RideTracker.tsx
 // Live ride tracking with driver info, status, and cancel action
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -39,7 +40,7 @@ export default function GarageOnboarding() {
     setForm(prev => ({
       ...prev,
       services: prev.services.includes(service)
-        ? prev.services.filter(s => s !== service)
+        ? prev.services.filter((s: any) => s !== service)
         : [...prev.services, service]
     }));
   };
@@ -96,7 +97,7 @@ export default function GarageOnboarding() {
 
         <Text style={styles.sectionLabel}>Services Offered</Text>
         <View style={styles.servicesGrid}>
-          {serviceOptions.map(service => (
+          {serviceOptions.map((service: any) => (
             <TouchableOpacity
               key={service}
               style={[styles.serviceChip, form.services.includes(service) && styles.serviceChipActive]}

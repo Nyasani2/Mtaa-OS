@@ -35,7 +35,7 @@ export default function AIStudioScreen() {
   const { user } = useAuthStore();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [tools, setTools] = useState<Record<string, AITool>>(() =>
-    Object.fromEntries(AI_TOOLS.map(t => [t.id, { ...t, status: 'ready' }]))
+    Object.fromEntries(AI_TOOLS.map((t: any) => [t.id, { ...t, status: 'ready' }]))
   );
   const [inputText, setInputText] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -154,7 +154,7 @@ export default function AIStudioScreen() {
         {/* Tools Grid */}
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginHorizontal: 16, marginBottom: 12 }}>AI Tools</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 12 }}>
-          {AI_TOOLS.map(t => (
+          {AI_TOOLS.map((t: any) => (
             <TouchableOpacity
               key={t.id}
               onPress={() => runTool(t.id)}

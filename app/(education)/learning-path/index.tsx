@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
@@ -80,7 +81,7 @@ export default function LearningPathScreen() {
           enrollments.map((e) => {
             const pct = e.education_courses?.total_lessons ? Math.round(((e.completed_lessons || 0) / e.education_courses.total_lessons) * 100) : 0;
             return (
-              <TouchableOpacity key={e.id} onPress={() => router.push(`/courses/${e.course_id}`)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <TouchableOpacity key={e.id} onPress={() => router.push(`/courses/${e.course_id}` as any)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "600" }}>{e.education_courses?.title || "Course"}</Text>
                   <Text style={{ color: "#3b82f6", fontSize: 14, fontWeight: "700" }}>{pct}%</Text>

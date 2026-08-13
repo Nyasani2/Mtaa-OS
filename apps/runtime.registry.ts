@@ -20,5 +20,5 @@ export const APP_REGISTRY = [
 ]
 
 export function getAppPath(id: string) {
-  return APP_REGISTRY.find(a => a.id === id)?.path
+  return APP_REGISTRY.find((a: any) => a.id === id)?.path
 }

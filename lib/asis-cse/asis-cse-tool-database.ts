@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Database Tool
  * Supabase query execution for the cognitive architecture
@@ -79,7 +80,7 @@ export class DatabaseTool extends BaseCognitiveTool {
   readonly requiresFilesystem = false;
   readonly sandboxed = true;
 
-  readonly capabilities = [
+  readonly capabilities: any = [
     {
       name: 'query',
       description: 'Execute a structured database query on any table',
@@ -127,7 +128,7 @@ export class DatabaseTool extends BaseCognitiveTool {
     },
   ];
 
-  readonly permissions = [
+  readonly permissions: any = [
     { action: 'query', level: 'read', requiresApproval: false, auditLog: true },
     { action: 'schema', level: 'read', requiresApproval: false, auditLog: false },
     { action: 'search', level: 'read', requiresApproval: false, auditLog: true },

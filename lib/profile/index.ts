@@ -7,25 +7,12 @@ export * from './types';
 
 // Services
 export {
-  profileService,
-  profileRoleService,
-  profileVerificationService,
-  profileReputationService,
-  profileAchievementService,
-  profilePortfolioService,
-  profileSkillService,
-  profileCertificationService,
-  profileConnectionService,
-  profileSettingsService,
-  profileAnalyticsService,
-} from './services/profile-service';
+  ProfileService,} from './services/profile-service';
 
 export {
   businessService,
   businessBranchService,
-  businessStaffService,
-  profileBusinessService,
-} from './services/business-service';
+  businessStaffService,} from './services/business-service';
 
 // State
 export { useProfileStore } from './state/profile-store';

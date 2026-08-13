@@ -254,7 +254,7 @@ class CartService {
       return { success: false, error: 'Cart is empty' };
     }
 
-    const listingIds = summary.items.map(i => i.listing_id);
+    const listingIds = summary.items.map((i: any) => i.listing_id);
     const { data: listings, error } = await supabase
       .from('listings')
       .select('id, status')
@@ -264,7 +264,7 @@ class CartService {
       return { success: false, error: 'Failed to verify listings' };
     }
 
-    const inactive = listings?.filter(l => l.status !== 'active') || [];
+    const inactive = listings?.filter((l: any) => l.status !== 'active') || [];
     if (inactive.length > 0) {
       return { success: false, error: `${inactive.length} item(s) are no longer available` };
     }

@@ -21,7 +21,7 @@ export default function RiderHome() {
         <Text style={styles.subGreeting}>Where are you going today?</Text>
       </View>
 
-      <TouchableOpacity style={styles.searchBox} onPress={() => router.push("/(mtaxi)/request")}>
+      <TouchableOpacity style={styles.searchBox} onPress={() => router.push("/(mtaxi)/request" as any)}>
         <MapPin size={20} color="#666" />
         <Text style={styles.searchText}>Enter destination</Text>
         <ChevronRight size={20} color="#999" />
@@ -72,7 +72,7 @@ export default function RiderHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Ride History</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/history")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/history" as any)}>
           <Clock size={18} color="#2563eb" />
           <Text style={styles.actionText}>View Past Rides</Text>
           <ChevronRight size={18} color="#999" />
@@ -81,7 +81,7 @@ export default function RiderHome() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment</Text>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/payment")}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(mtaxi)/payment" as any)}>
           <CreditCard size={18} color="#2563eb" />
           <Text style={styles.actionText}>Manage Payment Methods</Text>
           <ChevronRight size={18} color="#999" />

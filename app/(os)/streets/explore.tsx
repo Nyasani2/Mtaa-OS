@@ -43,7 +43,7 @@ export default function ExploreScreen() {
         <View style={styles.trendingBox}>
           <Text style={styles.trendingTitle}><TrendingUp size={14} color="#ff2d55"/> Trending</Text>
           <View style={styles.tagRow}>
-            {trending.map(t=><TouchableOpacity key={t} style={styles.tagChip} onPress={()=>{setQuery(`#${t}`);searchPosts(t);}}><Text style={styles.tagText}>#{t}</Text></TouchableOpacity>)}
+            {trending.map((t: any) =><TouchableOpacity key={t} style={styles.tagChip} onPress={()=>{setQuery(`#${t}`);searchPosts(t);}}><Text style={styles.tagText}>#{t}</Text></TouchableOpacity>)}
           </View>
         </View>
       )}
@@ -53,7 +53,7 @@ export default function ExploreScreen() {
         numColumns={cols}
         keyExtractor={p=>p.id}
         renderItem={({item})=> (
-          <TouchableOpacity onPress={()=>router.push(`/streets/post/${item.id}`)} style={[styles.gridItem,{width:itemW,height:itemW}]}>
+          <TouchableOpacity onPress={()=>router.push(`/streets/post/${item.id}` as any)} style={[styles.gridItem,{width:itemW,height:itemW}]}>
             <Image source={{uri:item.thumbnail_url||item.media_url}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
           </TouchableOpacity>
         )}

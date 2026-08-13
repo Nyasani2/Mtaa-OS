@@ -77,7 +77,7 @@ export default function HealthOnboardScreen() {
         setLoading(false);
       }
     } else if (roleKey === 'ambulance_driver') {
-      router.push('/health/onboard/driver');
+      router.push('/health/onboard/driver' as any);
     } else {
       // Staff roles — create pending staff record
       setLoading(true);
@@ -151,7 +151,7 @@ export default function HealthOnboardScreen() {
         ))}
       </View>
 
-      <TouchableOpacity style={s.browseLink} onPress={() => router.push('/health/find-care')}>
+      <TouchableOpacity style={s.browseLink} onPress={() => router.push('/health/find-care' as any)}>
         <Text style={s.browseText}>Just browsing? <Text style={s.browseBold}>Find care without onboarding →</Text></Text>
       </TouchableOpacity>
     </ScrollView>

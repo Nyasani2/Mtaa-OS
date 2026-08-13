@@ -75,7 +75,7 @@ export default function AdmissionsScreen() {
           <View style={styles.emptyState}><UserPlus size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No admissions match your search' : 'No admissions yet'}</Text></View>
         ) : (
           filteredAdmissions?.map((admission: any) => (
-            <TouchableOpacity key={admission.id} style={styles.admissionCard} onPress={() => router.push(`/(os)/health/hospital-admin/admissions?id=${admission.id}`)}>
+            <TouchableOpacity key={admission.id} style={styles.admissionCard} onPress={() => router.push(`/(os)/health/hospital-admin/admissions?id=${admission.id}` as any)}>
               <View style={styles.admissionHeader}>
                 <View style={styles.patientInfo}>
                   <View style={[styles.avatar, { backgroundColor: COLORS.primaryLight }]}>

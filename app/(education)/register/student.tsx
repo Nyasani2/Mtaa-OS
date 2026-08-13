@@ -71,7 +71,7 @@ export default function StudentRegistration() {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please sign in to enroll as a student.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login' as any) },
+        { text: 'Sign In', onPress: () => router.push('/login' as any as any) },
       ]);
       return;
     }
@@ -109,7 +109,7 @@ export default function StudentRegistration() {
         Alert.alert(
           'Enrollment Complete',
           'You have been successfully enrolled. Your school will be notified.',
-          [{ text: 'OK', onPress: () => router.push('/(education)' as any) }]
+          [{ text: 'OK', onPress: () => router.push('/(education as any)' as any) }]
         );
       }, 1500);
     } catch (err: any) {

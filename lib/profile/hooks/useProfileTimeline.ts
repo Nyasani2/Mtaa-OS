@@ -55,7 +55,7 @@ export function useProfileTimeline(userId: string) {
 
   const filteredTimeline = activeTab === 'all'
     ? timeline
-    : timeline.filter(t => t.source_app === activeTab);
+    : timeline.filter((t: any) => t.source_app === activeTab);
 
   return {
     timeline: filteredTimeline,

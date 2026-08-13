@@ -119,7 +119,7 @@ export default function WarningsScreen() {
             <Text style={styles.emptySub}>Your record is clean. Keep it that way.</Text>
           </View>
         ) : (
-          records.map(record => (
+          records.map((record: any) => (
             <View key={record.id} style={styles.recordCard}>
               <View style={styles.recordHeader}>
                 <View style={[styles.severityDot, { backgroundColor: getSeverityColor(record.severity) }]} />

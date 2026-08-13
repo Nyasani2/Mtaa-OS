@@ -464,7 +464,7 @@ export async function getDriverRides(driverId: string) {
 }
 
 export async function getDriverEarnings(driverId: string, period: 'today' | 'week' | 'month' = 'today') {
-  let startDate = new Date();
+  const startDate = new Date();
   if (period === 'today') startDate.setHours(0, 0, 0, 0);
   if (period === 'week') startDate.setDate(startDate.getDate() - 7);
   if (period === 'month') startDate.setMonth(startDate.getMonth() - 1);

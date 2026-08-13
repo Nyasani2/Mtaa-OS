@@ -41,7 +41,7 @@ export async function forecastDemand() {
 
   for (const cell of grid) {
     const historicalFactor =
-      (history || []).filter(h => {
+      (history || []).filter((h: any) => {
         const latMatch = Math.abs(h.pickup_lat - cell.lat) < 0.01;
         const lngMatch = Math.abs(h.pickup_lng - cell.lng) < 0.01;
         return latMatch && lngMatch;

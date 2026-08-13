@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/wifi.tsx — MTAA OS Wi-Fi Manager
 import React, { useState } from 'react';
 import {

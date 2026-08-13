@@ -90,7 +90,7 @@ export default function TestTakerScreen() {
 
   // Not started yet — show intro screen
   if (!attempt) {
-    const alreadyAttempted = results.some(r => r.test_id === test.id);
+    const alreadyAttempted = results.some((r: any) => r.test_id === test.id);
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView contentContainerStyle={{ padding: 24 }}>
@@ -268,7 +268,7 @@ export default function TestTakerScreen() {
           {/* True/False */}
           {currentQuestion.question_type === 'true_false' && (
             <View style={styles.tfContainer}>
-              {['true', 'false'].map(val => {
+              {['true', 'false'].map((val: any) => {
                 const isSelected = answers[currentQuestion.id]?.answer === val;
                 return (
                   <TouchableOpacity

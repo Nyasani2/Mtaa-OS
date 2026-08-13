@@ -115,7 +115,7 @@ export default function QRGeneratorScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Select QR Type</Text>
         <View style={styles.typeGrid}>
-          {QR_TYPES.map(type => (
+          {QR_TYPES.map((type: any) => (
             <TouchableOpacity
               key={type.value}
               style={[styles.typeCard, selectedType === type.value && styles.typeCardActive]}
@@ -181,7 +181,7 @@ export default function QRGeneratorScreen() {
         <View style={styles.qrDisplaySection}>
           <View style={styles.qrCard}>
             <Text style={styles.qrCardTitle}>Your QR Code</Text>
-            <Text style={styles.qrCardType}>{QR_TYPES.find(t => t.value === generatedSession.qr_type)?.label}</Text>
+            <Text style={styles.qrCardType}>{QR_TYPES.find((t: any) => t.value === generatedSession.qr_type)?.label}</Text>
 
             {generatedSession.qr_image_url ? (
               <Image source={{ uri: generatedSession.qr_image_url }} style={styles.qrImage} />
@@ -241,14 +241,14 @@ export default function QRGeneratorScreen() {
               <View key={session.id} style={[styles.historyItem, session.status !== 'active' && styles.historyItemInactive]}>
                 <View style={styles.historyIcon}>
                   <Ionicons
-                    name={QR_TYPES.find(t => t.value === session.qr_type)?.icon as any || 'qr-code'}
+                    name={QR_TYPES.find((t: any) => t.value === session.qr_type)?.icon as any || 'qr-code'}
                     size={20}
                     color={session.status === 'active' ? '#2563EB' : '#9CA3AF'}
                   />
                 </View>
                 <View style={styles.historyInfo}>
                   <Text style={styles.historyType}>
-                    {QR_TYPES.find(t => t.value === session.qr_type)?.label || session.qr_type}
+                    {QR_TYPES.find((t: any) => t.value === session.qr_type)?.label || session.qr_type}
                   </Text>
                   <Text style={styles.historyMeta}>
                     {session.scan_count} scans • {session.status}

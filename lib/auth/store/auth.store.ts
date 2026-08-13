@@ -1,314 +1,317 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { supabase } from '@/lib/supabase';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/lib/supabase/client';
+import { pinEngine } from '@/lib/security/pin-engine';
+import { biometricEngine } from '@/lib/security/biometric-engine';
 
 export interface User {
   id: string;
-  email?: string;
+  email: string;
   user_metadata?: Record<string, any>;
-  [key: string]: any;
 }
 
 export interface AuthState {
   user: User | null;
-  session: any | null;
   profile: any | null;
-  isAuthenticated: boolean;
+  session: any | null;
   isLoading: boolean;
-  initialized: boolean;
-  getDisplayName: () => string;
-  getAvatarUrl: () => string | null;
-  getUserInitials: () => string;
-  getUserRole: () => string;
-  getTrustScore: () => number;
+  isAuthenticated: boolean;
+  isEmailVerified: boolean;
+  pinSet: boolean;
+  biometricEnabled: boolean;
+  isAppLocked: boolean;
+  lockTimestamp: number | null;
+  lastActiveAt: number;
+
   initialize: () => Promise<void>;
   setUser: (user: User | null, session?: any) => void;
-  setSession: (session: any) => void;
-  setProfile: (profile: any) => void;
+  signIn: (email: string, password: string) => Promise<{ error?: any }>;
+  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ error?: any; data?: any }>;
   signOut: () => Promise<void>;
-  updateProfileField: (field: string, value: any) => void;
   refreshProfile: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<{ error?: string; data?: any }>;
-  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error?: string; success?: boolean; user?: User | null }>;
-  resetPassword: (email: string) => Promise<{ error?: string }>;
-  updateProfile: (data: Partial<User>) => Promise<{ error?: string }>;
+  verifyEmail: () => Promise<boolean>;
+  resendVerification: () => Promise<{ error?: any }>;
+  resetPassword: (email: string, redirectTo?: string) => Promise<{ error?: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error?: any }>;
+
+  setPin: (pin: string) => Promise<void>;
+  verifyPin: (pin: string) => Promise<boolean>;
+  clearPin: () => Promise<void>;
+  hasPin: () => Promise<boolean>;
+
+  setBiometricEnabled: (enabled: boolean) => Promise<void>;
+  isBiometricEnabled: () => Promise<boolean>;
+
+  lockApp: () => void;
+  unlockApp: () => void;
+  updateLastActive: () => void;
 }
 
-let authListenerUnsubscribe: (() => void) | null = null;
-
-function getRedirectOrigin(): string {
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin;
-  }
-  return 'https://mtaa.app';
-}
+const AUTH_STORAGE_KEY = 'mtaa-auth-storage';
+const LAST_ACTIVE_KEY = 'mtaa-last-active';
+const AUTO_LOCK_SECONDS = 30;
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      session: null,
       profile: null,
-      isAuthenticated: false,
+      session: null,
       isLoading: true,
-      initialized: false,
-
-      getDisplayName: () => {
-        const { profile, user } = get();
-        if (profile?.full_name?.trim()) return profile.full_name.trim();
-        if (profile?.display_name?.trim()) return profile.display_name.trim();
-        if (profile?.username?.trim()) return profile.username.trim();
-        if (user?.email) return user.email.split('@')[0];
-        return 'User';
-      },
-      getAvatarUrl: () => {
-        const { profile } = get();
-        return profile?.avatar_url || profile?.cover_photo_url || null;
-      },
-      getUserInitials: () => {
-        const name = get().getDisplayName();
-        return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-      },
-      getUserRole: () => {
-        const { profile } = get();
-        return profile?.role || 'user';
-      },
-      getTrustScore: () => {
-        const { profile } = get();
-        return profile?.trust_score || 0;
-      },
+      isAuthenticated: false,
+      isEmailVerified: false,
+      pinSet: false,
+      biometricEnabled: false,
+      isAppLocked: false,
+      lockTimestamp: null,
+      lastActiveAt: Date.now(),
 
       initialize: async () => {
-        const state = get();
-        if (state.initialized) return;
         set({ isLoading: true });
         try {
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError || !session) {
-            set({ isLoading: false, initialized: true });
-            return;
-          }
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          if (userError || !user) {
-            set({ isLoading: false, initialized: true });
-            return;
-          }
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const user = {
+              id: session.user.id,
+              email: session.user.email || '',
+              user_metadata: session.user.user_metadata,
+            };
 
-          let profile = null;
-          const { data: existingProfile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (profileError && profileError.code === 'PGRST116') {
-            // No profile found — auto-create one
-            const { data: newProfile, error: createError } = await supabase
+            const { data: profile } = await supabase
               .from('user_profiles')
-              .insert({
-                user_id: user.id,
-                email: user.email,
-                full_name: user.user_metadata?.full_name || '',
-                display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
-                username: user.user_metadata?.username || '',
-                role: 'user',
-                trust_score: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              })
-              .select()
-              .maybeSingle();
-            if (!createError) profile = newProfile;
-            else console.warn('[Auth] Auto-create profile failed:', createError.message);
-          } else if (!profileError) {
-            profile = existingProfile;
-          } else {
-            console.warn('[Auth] Profile fetch error:', profileError.message);
-          }
+              .select('email_verified, pin_set, biometric_enabled')
+              .eq('user_id', user.id)
+              .single();
 
-          set({
-            user,
-            session,
-            profile: profile || null,
-            isAuthenticated: true,
-            isLoading: false,
-            initialized: true,
-          });
+            const hasPin = await pinEngine.hasPin(user.id);
+            const bioEnabled = await biometricEngine.isBiometricEnabled(user.id);
 
-          // Clean up old listener before registering new one
-          if (authListenerUnsubscribe) {
-            try { authListenerUnsubscribe(); } catch (e) { /* noop */ }
-          }
+            set({
+              user,
+              session,
+              isAuthenticated: true,
+              isEmailVerified: profile?.email_verified ?? false,
+              pinSet: hasPin,
+              biometricEnabled: bioEnabled,
+              isLoading: false,
+            });
 
-          const { data: listener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-            if (event === 'SIGNED_IN' && newSession) {
-              const { data: { user: newUser } } = await supabase.auth.getUser();
-              let newProfile = null;
-              const { data: ep } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('user_id', newUser?.id)
-                .maybeSingle();
-              if (!ep) {
-                const { data: cp } = await supabase
-                  .from('user_profiles')
-                  .insert({
-                    user_id: newUser?.id,
-                    email: newUser?.email,
-                    full_name: newUser?.user_metadata?.full_name || '',
-                    display_name: newUser?.user_metadata?.display_name || newUser?.email?.split('@')[0] || '',
-                    role: 'user',
-                    trust_score: 0,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                  })
-                  .select()
-                  .maybeSingle();
-                newProfile = cp;
-              } else {
-                newProfile = ep;
+            const lastActive = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
+            if (lastActive) {
+              const elapsed = (Date.now() - parseInt(lastActive, 10)) / 1000;
+              if (elapsed > AUTO_LOCK_SECONDS && hasPin) {
+                set({ isAppLocked: true, lockTimestamp: Date.now() });
               }
-              set({
-                user: newUser,
-                session: newSession,
-                profile: newProfile || null,
-                isAuthenticated: true,
-                isLoading: false,
-              });
-            } else if (event === 'SIGNED_OUT') {
-              set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
-            } else if (event === 'USER_UPDATED' && newSession) {
-              const { data: { user: updatedUser } } = await supabase.auth.getUser();
-              set({ user: updatedUser, session: newSession });
             }
-          });
-          authListenerUnsubscribe = listener?.subscription?.unsubscribe ?? null;
-        } catch (error) {
-          console.error('[Auth] Initialization error:', error);
-          set({ isLoading: false, initialized: true });
-        }
-      },
-
-      setUser: (user, session) => set({ user, session, isAuthenticated: !!user }),
-      setSession: (session) => set({ session }),
-      setProfile: (profile) => set({ profile }),
-
-      signOut: async () => {
-        if (authListenerUnsubscribe) {
-          try { authListenerUnsubscribe(); } catch (e) { /* noop */ }
-          authListenerUnsubscribe = null;
-        }
-        await supabase.auth.signOut();
-        set({ user: null, session: null, profile: null, isAuthenticated: false, isLoading: false });
-      },
-
-      updateProfileField: (field, value) => {
-        const { profile } = get();
-        if (profile) set({ profile: { ...profile, [field]: value } });
-      },
-
-      refreshProfile: async () => {
-        const { user } = get();
-        if (!user) return;
-        try {
-          const { data: profile, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (error && error.code !== 'PGRST116') {
-            console.warn('[Auth] refreshProfile error:', error.message);
+          } else {
+            set({ isLoading: false });
           }
-          set({ profile: profile || null });
-        } catch (e) {
-          console.error('[Auth] refreshProfile failed:', e);
+        } catch (err) {
+          console.error('Auth init error:', err);
+          set({ isLoading: false });
         }
+      },
+
+      setUser: (user, session) => {
+        set({
+          user,
+          session: session || null,
+          isAuthenticated: !!user,
+          isLoading: false,
+        });
       },
 
       signIn: async (email, password) => {
-        try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) return { error: error.message };
-          set({ user: data.user, session: data.session, isAuthenticated: true });
-          return { data };
-        } catch (e: any) {
-          return { error: e.message || 'Sign in failed' };
-        }
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) return { error };
+
+        const user = data.user ? {
+          id: data.user.id,
+          email: data.user.email || '',
+          user_metadata: data.user.user_metadata,
+        } : null;
+
+        const hasPin = user ? await pinEngine.hasPin(user.id) : false;
+        const bioEnabled = user ? await biometricEngine.isBiometricEnabled(user.id) : false;
+
+        set({
+          user,
+          session: data.session,
+          isAuthenticated: true,
+          isEmailVerified: data.user?.email_confirmed_at != null,
+          pinSet: hasPin,
+          biometricEnabled: bioEnabled,
+          isAppLocked: false,
+        });
+        return {};
       },
 
-      signUp: async (email, password, metadata) => {
-        try {
-          const redirectUrl = `${getRedirectOrigin()}/auth/callback`;
-          const { data, error } = await supabase.auth.signUp({
+      signUp: async (email, password, metadata = {}) => {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: metadata },
+        });
+        if (error) return { error };
+
+        if (data.user) {
+          await supabase.from('user_profiles').insert({
+            user_id: data.user.id,
             email,
-            password,
-            options: {
-              data: metadata,
-              emailRedirectTo: redirectUrl,
-            },
+            email_verified: false,
+            pin_set: false,
+            biometric_enabled: false,
+            created_at: new Date().toISOString(),
           });
-          if (error) return { error: error.message, success: false };
-
-          // Auto-create profile on signUp
-          if (data.user) {
-            const { error: profileError } = await supabase
-              .from('user_profiles')
-              .upsert({
-                user_id: data.user.id,
-                email: data.user.email,
-                full_name: metadata?.full_name || '',
-                display_name: metadata?.display_name || email.split('@')[0],
-                username: metadata?.username || '',
-                role: 'user',
-                trust_score: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id' });
-            if (profileError) {
-              console.warn('[Auth] Auto-create profile on signUp failed:', profileError.message);
-            }
-          }
-
-          set({ user: data.user, session: data.session, isAuthenticated: !!data.session });
-          return { success: true, user: data.user };
-        } catch (e: any) {
-          return { error: e.message || 'Sign up failed', success: false };
         }
+        return { data };
       },
 
-      resetPassword: async (email) => {
-        try {
-          const redirectUrl = `${getRedirectOrigin()}/auth/reset-password`;
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: redirectUrl,
-          });
-          if (error) return { error: error.message };
-          return {};
-        } catch (e: any) {
-          return { error: e.message || 'Reset failed' };
-        }
+      signOut: async () => {
+        await supabase.auth.signOut();
+        await pinEngine.clearAll();
+        await biometricEngine.clearAll();
+        await AsyncStorage.multiRemove([
+          AUTH_STORAGE_KEY,
+          LAST_ACTIVE_KEY,
+          'supabase.auth.token',
+        ]);
+        set({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          isEmailVerified: false,
+          pinSet: false,
+          biometricEnabled: false,
+          isAppLocked: false,
+          lockTimestamp: null,
+        });
       },
 
-      updateProfile: async (data) => {
-        try {
-          const { user } = get();
-          if (!user) return { error: 'Not authenticated' };
-          const { error } = await supabase.auth.updateUser({ data });
-          if (error) return { error: error.message };
-          set({ user: { ...user, ...data } });
-          return {};
-        } catch (e: any) {
-          return { error: e.message || 'Update failed' };
+      verifyEmail: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email_confirmed_at) {
+          const userId = session.user.id;
+          await supabase
+            .from('user_profiles')
+            .update({ email_verified: true })
+            .eq('user_id', userId);
+          set({ isEmailVerified: true });
+          return true;
         }
+        return false;
+      },
+
+      resendVerification: async () => {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: get().user?.email || '',
+        });
+        return { error };
+      },
+
+      resetPassword: async (email, redirectTo) => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectTo || 'https://mtaa.app/update-password',
+        });
+        return { error };
+      },
+
+      updatePassword: async (newPassword) => {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+        return { error };
+      },
+
+      setPin: async (pin: string) => {
+        const userId = get().user?.id;
+        if (!userId) throw new Error('No user');
+        await pinEngine.setPin(userId, pin);
+        await supabase
+          .from('user_profiles')
+          .update({ pin_set: true })
+          .eq('user_id', userId);
+        set({ pinSet: true });
+      },
+
+      verifyPin: async (pin: string) => {
+        const userId = get().user?.id;
+        if (!userId) return false;
+        return await pinEngine.verifyPin(userId, pin);
+      },
+
+      clearPin: async () => {
+        const userId = get().user?.id;
+        if (!userId) return;
+        await pinEngine.clearPin(userId);
+        await supabase
+          .from('user_profiles')
+          .update({ pin_set: false })
+          .eq('user_id', userId);
+        set({ pinSet: false });
+      },
+
+      hasPin: async () => {
+        const userId = get().user?.id;
+        if (!userId) return false;
+        return await pinEngine.hasPin(userId);
+      },
+
+      setBiometricEnabled: async (enabled: boolean) => {
+        const userId = get().user?.id;
+        if (!userId) return;
+        await biometricEngine.setBiometricEnabled(userId, enabled);
+        await supabase
+          .from('user_profiles')
+          .update({ biometric_enabled: enabled })
+          .eq('user_id', userId);
+        set({ biometricEnabled: enabled });
+      },
+
+      isBiometricEnabled: async () => {
+        const userId = get().user?.id;
+        if (!userId) return false;
+        return await biometricEngine.isBiometricEnabled(userId);
+      },
+
+      lockApp: () => {
+        const state = get();
+        if (!state.isAuthenticated || !state.pinSet) return;
+        set({
+          isAppLocked: true,
+          lockTimestamp: Date.now(),
+        });
+      },
+
+      unlockApp: () => {
+        set({
+          isAppLocked: false,
+          lockTimestamp: null,
+        });
+      },
+
+      refreshProfile: async () => {},
+      updateLastActive: () => {
+        const now = Date.now();
+        AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+        set({ lastActiveAt: now });
       },
     }),
     {
-      name: 'mtaa-auth-storage',
+      name: AUTH_STORAGE_KEY,
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
         session: state.session,
-        profile: state.profile,
         isAuthenticated: state.isAuthenticated,
+        isEmailVerified: state.isEmailVerified,
+        pinSet: state.pinSet,
+        biometricEnabled: state.biometricEnabled,
       }),
     }
   )

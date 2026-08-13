@@ -5,7 +5,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 export function useTip(targetProfileId: string) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { profile } = useAuthStore();
+  const { profile } = useAuthStore() as any;
   const myProfileId = profile?.id;
 
   const sendTip = useCallback(async (amount: number, currency = 'USD', message?: string) => {

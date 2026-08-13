@@ -237,7 +237,7 @@ export default function MusicStudioScreen() {
 
       <Text style={styles.formLabel}>Genre</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.genreScroll}>
-        {genres.map(g => (
+        {genres.map((g: any) => (
           <TouchableOpacity key={g} onPress={() => setUploadGenre(g)} style={[styles.genreChip, uploadGenre === g && styles.genreChipActive]}>
             <Text style={[styles.genreChipText, uploadGenre === g && styles.genreChipTextActive]}>{g}</Text>
           </TouchableOpacity>
@@ -260,7 +260,7 @@ export default function MusicStudioScreen() {
         <>
           <Text style={styles.formLabel}>Select Album</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {albums.map(a => (
+            {albums.map((a: any) => (
               <TouchableOpacity key={a.id} onPress={() => setSelectedAlbum(a.id)} style={[styles.albumSelect, selectedAlbum === a.id && styles.albumSelectActive]}>
                 <Text style={styles.albumSelectText}>{a.title}</Text>
               </TouchableOpacity>
@@ -394,7 +394,7 @@ export default function MusicStudioScreen() {
         </View>
         <View style={styles.royaltyCard}>
           <Text style={styles.royaltyLabel}>Pending</Text>
-          <Text style={styles.royaltyAmount}>${royalties.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0).toFixed(2)}</Text>
+          <Text style={styles.royaltyAmount}>${royalties.filter((r: any) => r.status === 'pending').reduce((sum, r) => sum + r.amount, 0).toFixed(2)}</Text>
         </View>
       </View>
 
@@ -454,7 +454,7 @@ export default function MusicStudioScreen() {
           { id: 'beats' as MusicTab, label: 'Beats', icon: 'activity' },
           { id: 'collab' as MusicTab, label: 'Collab', icon: 'users' },
           { id: 'royalties' as MusicTab, label: 'Royalties', icon: 'dollar-sign' },
-        ].map(t => (
+        ].map((t: any) => (
           <TouchableOpacity key={t.id} onPress={() => setActiveTab(t.id)} style={[styles.tabBtn, activeTab === t.id && styles.tabBtnActive]}>
             <Feather name={t.icon as any} size={14} color={activeTab === t.id ? '#6366f1' : '#666'} />
             <Text style={[styles.tabText, activeTab === t.id && styles.tabTextActive]}>{t.label}</Text>

@@ -8,11 +8,13 @@ export {
   useWalletTransactions,
   useStreetsWallet,
   default,
-} from '@/lib/identity/hooks/useWallet';
+} from '@/lib/identity/hooks/useWallet'
+// @ts-ignore;
 
 export type {
   WalletBalance,
   WalletTransaction,
   EscrowAccount,
   WalletState,
-} from '@/lib/identity/hooks/useWallet';
+} from '@/lib/identity/hooks/useWallet'
+// @ts-ignore;

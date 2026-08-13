@@ -115,7 +115,7 @@ export default function TeacherWorkspaceScreen() {
       if (audience === 'my_subject' && subjectId) basePayload.subject_id = subjectId;
       if (audience === 'african_feed') basePayload.is_public = true;
 
-      let table = CONTENT_TYPES.find(t => t.value === type)?.table || 'education_announcements';
+      const table = CONTENT_TYPES.find((t: any) => t.value === type)?.table || 'education_announcements';
 
       if (type === 'homework' || type === 'assignment') {
         basePayload.assignment_type = type;
@@ -181,7 +181,7 @@ export default function TeacherWorkspaceScreen() {
         {!teacherVerified && (
           <View style={styles.verifyBanner}>
             <Ionicons name="warning" size={16} color="#D97706" />
-            <Text style={styles.verifyText}>Your teacher account is not yet verified. Publishing is restricted. <Text style={{ fontWeight: '700' }} onPress={() => router.push('/(education)/verification')}>Verify now</Text></Text>
+            <Text style={styles.verifyText}>Your teacher account is not yet verified. Publishing is restricted. <Text style={{ fontWeight: '700' }} onPress={() => router.push('/(education)/verification' as any)}>Verify now</Text></Text>
           </View>
         )}
       </View>
@@ -190,7 +190,7 @@ export default function TeacherWorkspaceScreen() {
       <View style={styles.section}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Content Type *</Text>
         <View style={styles.typeGrid}>
-          {CONTENT_TYPES.map(t => (
+          {CONTENT_TYPES.map((t: any) => (
             <TouchableOpacity
               key={t.value}
               style={[styles.typeCard, type === t.value && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]}
@@ -207,7 +207,7 @@ export default function TeacherWorkspaceScreen() {
       <View style={styles.section}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>Audience *</Text>
         <View style={styles.audienceList}>
-          {AUDIENCES.map(a => (
+          {AUDIENCES.map((a: any) => (
             <TouchableOpacity
               key={a.value}
               style={[styles.audienceItem, audience === a.value && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]}
@@ -269,7 +269,7 @@ export default function TeacherWorkspaceScreen() {
           <View style={styles.selector}>
             <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Select Class *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {classes.map(c => (
+              {classes.map((c: any) => (
                 <TouchableOpacity key={c.id} style={[styles.chip, classId === c.id && { backgroundColor: colors.primary }]} onPress={() => setClassId(c.id)}>
                   <Text style={[styles.chipText, { color: classId === c.id ? '#fff' : colors.text }]}>{c.name}</Text>
                 </TouchableOpacity>
@@ -284,7 +284,7 @@ export default function TeacherWorkspaceScreen() {
           <View style={styles.selector}>
             <Text style={[styles.selectorLabel, { color: colors.textSecondary }]}>Select Subject</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {subjects.map(s => (
+              {subjects.map((s: any) => (
                 <TouchableOpacity key={s.id} style={[styles.chip, subjectId === s.id && { backgroundColor: colors.primary }]} onPress={() => setSubjectId(s.id)}>
                   <Text style={[styles.chipText, { color: subjectId === s.id ? '#fff' : colors.text }]}>{s.name}</Text>
                 </TouchableOpacity>
@@ -305,7 +305,7 @@ export default function TeacherWorkspaceScreen() {
           {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.publishText}>Publish Content</Text>}
         </TouchableOpacity>
         {!teacherVerified && (
-          <TouchableOpacity style={[styles.verifyBtn, { borderColor: colors.primary }]} onPress={() => router.push('/(education)/verification')}>
+          <TouchableOpacity style={[styles.verifyBtn, { borderColor: colors.primary }]} onPress={() => router.push('/(education)/verification' as any)}>
             <Text style={[styles.verifyBtnText, { color: colors.primary }]}>Go to Verification</Text>
           </TouchableOpacity>
         )}

@@ -53,7 +53,7 @@ export function useWalletStoreHook() {
     id: tx.id,
     type: tx.type,
     amount: tx.amount,
-    to: tx.recipient_phone || tx.recipient_id,
+    to: (tx as any).recipient_phone || (tx as any).recipient_id,
     from: tx.metadata?.sender_id || null,
     created_at: tx.created_at,
     description: tx.description,

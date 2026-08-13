@@ -68,7 +68,7 @@ export default function CreatorProfileScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>Studio</Text>
         {isOwn && (
-          <Pressable onPress={() => router.push('/(os)/studio/settings')}>
+          <Pressable onPress={() => router.push('/(os)/studio/settings' as any)}>
             <Settings size={22} color="#fff" />
           </Pressable>
         )}
@@ -111,7 +111,7 @@ export default function CreatorProfileScreen() {
             <Text style={styles.revenueLabel}>Total Revenue</Text>
             <Text style={styles.revenueAmount}>KES {profile.total_revenue?.toLocaleString() || '0'}</Text>
           </View>
-          <Pressable onPress={() => router.push('/(os)/studio/analytics')}>
+          <Pressable onPress={() => router.push('/(os)/studio/analytics' as any)}>
             <Text style={styles.analyticsLink}>View Analytics</Text>
           </Pressable>
         </View>
@@ -121,14 +121,14 @@ export default function CreatorProfileScreen() {
           <View style={styles.actionRow}>
             <Pressable
               style={styles.uploadBtn}
-              onPress={() => router.push('/(os)/studio/upload-center')}
+              onPress={() => router.push('/(os)/studio/upload-center' as any)}
             >
               <Upload size={16} color="#fff" />
               <Text style={styles.uploadBtnText}>Upload</Text>
             </Pressable>
             <Pressable
               style={styles.liveBtn}
-              onPress={() => router.push('/(os)/studio/live-setup')}
+              onPress={() => router.push('/(os)/studio/live-setup' as any)}
             >
               <Radio size={16} color="#fff" />
               <Text style={styles.liveBtnText}>Go Live</Text>

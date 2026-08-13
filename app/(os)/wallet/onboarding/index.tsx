@@ -41,14 +41,14 @@ export default function OnboardingLanding() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.primaryButton}
-          onPress={() => router.push('/wallet/onboarding/phone-verify')}
+          onPress={() => router.push('/wallet/onboarding/phone-verify' as any)}
         >
           <Text style={styles.primaryButtonText}>Get Started</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.secondaryButton}
-          onPress={() => router.push('/auth/login')}
+          onPress={() => router.push('/login' as any)}
         >
           <Text style={styles.secondaryButtonText}>I Already Have an Account</Text>
         </TouchableOpacity>

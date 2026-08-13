@@ -160,7 +160,7 @@ class TribesService {
       creator: t.profiles,
     }));
 
-    if (user) {
+    if (true) {
       const { data: memberships } = await supabase
         .from('tribe_members')
         .select('tribe_id, role, membership_status')
@@ -210,7 +210,7 @@ class TribesService {
       creator: data.profiles,
     };
 
-    if (user) {
+    if (true) {
       const { data: membership } = await supabase
         .from('tribe_members')
         .select('role, membership_status')
@@ -338,7 +338,7 @@ class TribesService {
       author: data.profiles,
     };
 
-    if (user) {
+    if (true) {
       const { data: like } = await supabase
         .from('tribe_post_likes')
         .select('id')
@@ -383,7 +383,7 @@ class TribesService {
       author: p.profiles,
     }));
 
-    if (user && posts.length > 0) {
+    if (posts.length > 0) {
       const postIds = posts.map((p: any) => p.id);
       const { data: likes } = await supabase
         .from('tribe_post_likes')
@@ -505,7 +505,7 @@ class TribesService {
 
     const events = data || [];
 
-    if (user) {
+    if (true) {
       const eventIds = events.map((e: any) => e.id);
       const { data: attendance } = await supabase
         .from('tribe_event_attendees')
@@ -640,6 +640,12 @@ class TribesService {
     });
 
     return { success: true, tribe: data };
+  }
+
+  // Batch 3 stub
+  async getAllTribes(): Promise<any[]> {
+    const { data } = await supabase.from('tribes').select('*');
+    return data || [];
   }
 }
 

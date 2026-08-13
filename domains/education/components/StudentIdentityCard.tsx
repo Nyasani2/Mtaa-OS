@@ -276,7 +276,7 @@ export default function StudentIdentityCard() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push(`/education/student-profile?studentId=${studentId}`)}
+              onPress={() => router.push(`/education/student-profile?studentId=${studentId}` as any)}
             >
               <Ionicons name="person-outline" size={20} color="#2563EB" />
               <Text style={styles.actionButtonText}>View Full Profile</Text>

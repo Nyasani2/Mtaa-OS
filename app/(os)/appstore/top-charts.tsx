@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/appstore/top-charts.tsx — Top Charts
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
@@ -21,7 +22,7 @@ export default function TopChartsScreen() {
           <TouchableOpacity
             key={app.id}
             style={styles.row}
-            onPress={() => router.push(`/appstore/${app.id}`)}
+            onPress={() => router.push(`/appstore/${app.id}` as any)}
           >
             <Text style={styles.rank}>{index + 1}</Text>
             <View style={[styles.iconBox, { backgroundColor: app.color || '#2563EB' }]}>

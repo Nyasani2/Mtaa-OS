@@ -95,7 +95,7 @@ export function useDeviceManager() {
       const data = await withTimeout(updateDevice(id, updates), QUERY_TIMEOUT, 'editDevice');
       setState(prev => ({
         ...prev,
-        devices: prev.devices.map(d => d.id === id ? data : d),
+        devices: prev.devices.map((d: any) => d.id === id ? data : d),
         currentDevice: prev.currentDevice?.id === id ? data : prev.currentDevice,
         isLoading: false,
       }));
@@ -112,7 +112,7 @@ export function useDeviceManager() {
       await withTimeout(deleteDevice(id), QUERY_TIMEOUT, 'removeDevice');
       setState(prev => ({
         ...prev,
-        devices: prev.devices.filter(d => d.id !== id),
+        devices: prev.devices.filter((d: any) => d.id !== id),
         currentDevice: prev.currentDevice?.id === id ? null : prev.currentDevice,
         isLoading: false,
       }));
@@ -143,7 +143,7 @@ export function useDeviceManager() {
       const data = await withTimeout(unassignDevice(assignmentId), QUERY_TIMEOUT, 'unassign');
       setState(prev => ({
         ...prev,
-        assignments: prev.assignments.filter(a => a.id !== assignmentId),
+        assignments: prev.assignments.filter((a: any) => a.id !== assignmentId),
         isLoading: false,
       }));
       return data;
@@ -188,7 +188,7 @@ export function useDeviceManager() {
       const data = await withTimeout(updateDeviceHealth(deviceId, health), QUERY_TIMEOUT, 'setHealth');
       setState(prev => ({
         ...prev,
-        devices: prev.devices.map(d => d.id === deviceId ? data : d),
+        devices: prev.devices.map((d: any) => d.id === deviceId ? data : d),
         currentDevice: prev.currentDevice?.id === deviceId ? data : prev.currentDevice,
       }));
       return data;
@@ -203,7 +203,7 @@ export function useDeviceManager() {
       const data = await withTimeout(reconnectDevice(deviceId), QUERY_TIMEOUT, 'reconnect');
       setState(prev => ({
         ...prev,
-        devices: prev.devices.map(d => d.id === deviceId ? data : d),
+        devices: prev.devices.map((d: any) => d.id === deviceId ? data : d),
         currentDevice: prev.currentDevice?.id === deviceId ? data : prev.currentDevice,
       }));
       return data;

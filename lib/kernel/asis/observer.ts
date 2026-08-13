@@ -29,7 +29,7 @@ export class AsisObserver {
       const payload = message.payload as any;
       if (payload.amount > 100000) this.flagAnomaly('unusual_amount', message);
       const recent = this.getRecentEvents('business', 'payment_received', 60000);
-      const sameSender = recent.filter(e => (e.payload as any)?.senderPhone === payload.senderPhone);
+      const sameSender = recent.filter((e: any) => (e.payload as any)?.senderPhone === payload.senderPhone);
       if (sameSender.length > 5) this.flagAnomaly('rapid_transactions', message);
     }
   }
@@ -54,7 +54,7 @@ export class AsisObserver {
 
   getRecentEvents(channel: ChannelType, topic: string, ms: number): ChannelMessage[] {
     const cutoff = Date.now() - ms;
-    return this.observedEvents.filter(e => e.channel === channel && e.topic === topic && e.timestamp > cutoff);
+    return this.observedEvents.filter((e: any) => e.channel === channel && e.topic === topic && e.timestamp > cutoff);
   }
 
   getObservedEvents(limit = 100): ChannelMessage[] {

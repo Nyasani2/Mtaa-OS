@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 interface Restaurant {
@@ -23,7 +23,7 @@ interface Restaurant {
 
 export default function RestaurantScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [myRestaurant, setMyRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ export default function RestaurantScreen() {
     }
   };
 
-  const filtered = restaurants.filter(r => {
+  const filtered = restaurants.filter((r: any) => {
     const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) ||
       r.cuisine_type.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = activeFilter === 'all' ||
@@ -101,7 +101,7 @@ export default function RestaurantScreen() {
 
       {/* Filters */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-        {filters.map(f => (
+        {filters.map((f: any) => (
           <TouchableOpacity
             key={f.key}
             style={[styles.filterChip, activeFilter === f.key && styles.filterChipActive]}
@@ -156,7 +156,7 @@ export default function RestaurantScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          {filtered.map(r => (
+          {filtered.map((r: any) => (
             <TouchableOpacity key={r.id} style={styles.restCard} onPress={() => router.push({ pathname: '/(restaurant)/menu', params: { id: r.id } } as any)}>
               <View style={styles.restAvatar}>
                 <Ionicons name="restaurant" size={20} color="#F59E0B" />

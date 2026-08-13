@@ -1,82 +1,67 @@
-// lib/auth/identity-provider.tsx
-// v3.1: Thin compatibility wrapper — delegates to Zustand store
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuthStore } from './store/auth.store';
+import { supabase } from '@/lib/supabase';
 
-import React, { createContext, useContext, useEffect } from 'react';
-import { useAuthStore, type User } from './store/auth.store';
-
-export interface IdentityContextValue {
-  user: User | null;
-  session: any | null;
+interface IdentityContextValue {
+  identity: Record<string, unknown> | null;
+  user: any;
+  profile: Record<string, unknown> | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: Error }>;
-  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<{ error?: Error; user?: any }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error?: Error }>;
-  updateProfile: (data: Record<string, unknown>) => Promise<{ error?: Error }>;
-  refreshSession: () => Promise<void>;
 }
 
-export const IdentityContext = createContext<IdentityContextValue | undefined>(undefined);
+const IdentityContext = createContext<IdentityContextValue>({
+  identity: null,
+  user: null,
+  profile: null,
+  isLoading: true,
+  isAuthenticated: false,
+});
 
-export function useIdentity(): IdentityContextValue {
-  const store = useAuthStore();
-  const context = useContext(IdentityContext);
-  if (context === undefined) {
-    return {
-      user: store.user,
-      session: store.session,
-      isLoading: store.isLoading,
-      isAuthenticated: store.isAuthenticated,
-      signIn: async (email, password) => {
-        const r = await store.signIn(email, password);
-        return { error: r.error ? new Error(r.error) : undefined };
-      },
-      signUp: async (email, password, metadata) => {
-        const r = await store.signUp(email, password, metadata);
-        return { error: r.error ? new Error(r.error) : undefined, user: r.user };
-      },
-      signOut: store.signOut,
-      resetPassword: async (email) => {
-        const r = await store.resetPassword(email);
-        return { error: r.error ? new Error(r.error) : undefined };
-      },
-      updateProfile: async (data) => {
-        const r = await store.updateProfile(data as Partial<User>);
-        return { error: r.error ? new Error(r.error) : undefined };
-      },
-      refreshSession: async () => { await store.initialize(); },
+export const useIdentity = (): IdentityContextValue => {
+  const ctx = useContext(IdentityContext);
+  if (!ctx) throw new Error('useIdentity must be used within IdentityProvider');
+  return ctx;
+};
+
+export const IdentityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading, isAuthenticated } = useAuthStore();
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) { setProfile(null); return; }
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      if (!error && data) {
+        setProfile(data as Record<string, unknown>);
+      } else {
+        setProfile({
+          user_id: user.id,
+          email: user.email,
+          username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+          full_name: user.user_metadata?.full_name || 'User',
+          avatar_url: user.user_metadata?.avatar_url || null,
+        });
+      }
     };
-  }
-  return context;
-}
+    fetchProfile();
+  }, [user?.id]);
 
-export function IdentityProvider({ children }: { children: React.ReactNode }) {
-  const store = useAuthStore();
-  useEffect(() => { store.initialize(); }, []);
-  const value: IdentityContextValue = {
-    user: store.user,
-    session: store.session,
-    isLoading: store.isLoading,
-    isAuthenticated: store.isAuthenticated,
-    signIn: async (email, password) => {
-      const r = await store.signIn(email, password);
-      return { error: r.error ? new Error(r.error) : undefined };
-    },
-    signUp: async (email, password, metadata) => {
-      const r = await store.signUp(email, password, metadata);
-      return { error: r.error ? new Error(r.error) : undefined, user: r.user };
-    },
-    signOut: store.signOut,
-    resetPassword: async (email) => {
-      const r = await store.resetPassword(email);
-      return { error: r.error ? new Error(r.error) : undefined };
-    },
-    updateProfile: async (data) => {
-      const r = await store.updateProfile(data as Partial<User>);
-      return { error: r.error ? new Error(r.error) : undefined };
-    },
-    refreshSession: async () => { await store.initialize(); },
-  };
-  return <IdentityContext.Provider value={value}>{children}</IdentityContext.Provider>;
-}
+  const value = useMemo(() => ({
+    identity: (profile ?? user) as Record<string, unknown> | null,
+    user,
+    profile,
+    isLoading,
+    isAuthenticated,
+  }), [profile, user, isLoading, isAuthenticated]);
+
+  return (
+    <IdentityContext.Provider value={value}>
+      {children}
+    </IdentityContext.Provider>
+  );
+};

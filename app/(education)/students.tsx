@@ -52,7 +52,7 @@ export default function StudentsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#38bdf8" />}
         renderItem={({ item }) => (
           <TouchableOpacity
-            onPress={() => router.push(`/student/${item.id}`)}
+            onPress={() => router.push(`/student/${item.id}` as any)}
             style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 12, flexDirection: "row", alignItems: "center" }}
           >
             <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "#10b981", justifyContent: "center", alignItems: "center" }}>

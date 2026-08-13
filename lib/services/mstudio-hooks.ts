@@ -29,7 +29,7 @@ export function useMStudios() {
   const loadOne = useCallback(async (id: string) => { s.start(); try { s.done(await svc.getStudioById(id)); } catch (e) { s.fail(e); } }, []);
   const loadByHandle = useCallback(async (h: string) => { s.start(); try { s.done(await svc.getStudioByHandle(h)); } catch (e) { s.fail(e); } }, []);
   const create = useCallback(async (studio: Partial<MStudioStudio>) => { s.start(); try { const x = await svc.createStudio(studio); s.setList(p => [x, ...p]); s.done(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const update = useCallback(async (id: string, u: Partial<MStudioStudio>) => { try { const x = await svc.updateStudio(id, u); s.setList(p => p.map(y => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
+  const update = useCallback(async (id: string, u: Partial<MStudioStudio>) => { try { const x = await svc.updateStudio(id, u); s.setList(p => p.map((y: any) => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
   return { ...s, loadAll, loadOne, loadByHandle, create, update };
 }
 
@@ -47,8 +47,8 @@ export function useMVideos() {
   }, [offset]);
   const loadOne = useCallback(async (id: string) => { s.start(); try { s.done(await svc.getVideoById(id)); } catch (e) { s.fail(e); } }, []);
   const create = useCallback(async (v: Partial<MStudioVideo>) => { s.start(); try { const x = await svc.createVideo(v); s.setList(p => [x, ...p]); s.done(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const update = useCallback(async (id: string, u: Partial<MStudioVideo>) => { try { const x = await svc.updateVideo(id, u); s.setList(p => p.map(y => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const remove = useCallback(async (id: string) => { try { await svc.deleteVideo(id); s.setList(p => p.filter(y => y.id !== id)); if (s.data?.id === id) s.setData(null); } catch (e) { s.fail(e); } }, []);
+  const update = useCallback(async (id: string, u: Partial<MStudioVideo>) => { try { const x = await svc.updateVideo(id, u); s.setList(p => p.map((y: any) => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
+  const remove = useCallback(async (id: string) => { try { await svc.deleteVideo(id); s.setList(p => p.filter((y: any) => y.id !== id)); if (s.data?.id === id) s.setData(null); } catch (e) { s.fail(e); } }, []);
   const view = useCallback(async (id: string) => { try { await svc.incrementVideoView(id); } catch (e) {} }, []);
   return { ...s, hasMore, loadFeed, loadOne, create, update, remove, view };
 }
@@ -61,7 +61,7 @@ export function useMLiveStreams() {
   const loadAll = useCallback(async (status?: string) => { s.start(); try { s.done(null, await svc.getLiveStreams(status)); } catch (e) { s.fail(e); } }, []);
   const loadOne = useCallback(async (id: string) => { s.start(); try { const d = await svc.getLiveStreamById(id); s.done(d); if (d?.chat) setChat(d.chat); } catch (e) { s.fail(e); } }, []);
   const create = useCallback(async (stream: Partial<MStudioLiveStream>) => { s.start(); try { const x = await svc.createLiveStream(stream); s.setList(p => [x, ...p]); s.done(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const update = useCallback(async (id: string, u: Partial<MStudioLiveStream>) => { try { const x = await svc.updateLiveStream(id, u); s.setList(p => p.map(y => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
+  const update = useCallback(async (id: string, u: Partial<MStudioLiveStream>) => { try { const x = await svc.updateLiveStream(id, u); s.setList(p => p.map((y: any) => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
   const subscribeChat = useCallback((streamId: string) => {
     if (subRef.current) subRef.current.unsubscribe();
     subRef.current = svc.subscribeToLiveChat(streamId, (p) => setChat(prev => [p.new, ...prev].slice(0, 200)));
@@ -81,8 +81,8 @@ export function useMProjects() {
   const loadAll = useCallback(async (userId: string) => { s.start(); try { s.done(null, await svc.getProjects(userId)); } catch (e) { s.fail(e); } }, []);
   const loadOne = useCallback(async (id: string) => { s.start(); try { const d = await svc.getProjectById(id); s.done(d?.project || null); if (d?.scenes) setScenes(d.scenes); } catch (e) { s.fail(e); } }, []);
   const create = useCallback(async (p: Partial<MStudioProject>) => { s.start(); try { const x = await svc.createProject(p); s.setList(prev => [x, ...prev]); s.done(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const update = useCallback(async (id: string, u: Partial<MStudioProject>) => { try { const x = await svc.updateProject(id, u); s.setList(p => p.map(y => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
-  const remove = useCallback(async (id: string) => { try { await svc.deleteProject(id); s.setList(p => p.filter(y => y.id !== id)); if (s.data?.id === id) { s.setData(null); setScenes([]); } } catch (e) { s.fail(e); } }, []);
+  const update = useCallback(async (id: string, u: Partial<MStudioProject>) => { try { const x = await svc.updateProject(id, u); s.setList(p => p.map((y: any) => y.id === id ? x : y)); if (s.data?.id === id) s.setData(x); return x; } catch (e) { s.fail(e); return null; } }, []);
+  const remove = useCallback(async (id: string) => { try { await svc.deleteProject(id); s.setList(p => p.filter((y: any) => y.id !== id)); if (s.data?.id === id) { s.setData(null); setScenes([]); } } catch (e) { s.fail(e); } }, []);
   return { ...s, scenes, setScenes, loadAll, loadOne, create, update, remove };
 }
 
@@ -93,7 +93,7 @@ export function useMComments(videoId?: string) {
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async (id: string, parentId?: string) => { setLoading(true); setError(null); try { setComments(await svc.getComments(id, parentId)); } catch (e) { setError((e as any)?.message); } finally { setLoading(false); } }, []);
   const create = useCallback(async (c: Partial<MStudioComment>) => { try { const x = await svc.createComment(c); setComments(p => [x, ...p]); return x; } catch (e) { setError((e as any)?.message); return null; } }, []);
-  const remove = useCallback(async (id: string) => { try { await svc.deleteComment(id); setComments(p => p.filter(c => c.id !== id)); } catch (e) { setError((e as any)?.message); } }, []);
+  const remove = useCallback(async (id: string) => { try { await svc.deleteComment(id); setComments(p => p.filter((c: any) => c.id !== id)); } catch (e) { setError((e as any)?.message); } }, []);
   useEffect(() => { if (videoId) load(videoId); }, [videoId, load]);
   return { comments, loading, error, load, create, remove };
 }
@@ -161,8 +161,8 @@ export function useMNotifications(userId?: string) {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const subRef = useRef<any>(null);
-  const load = useCallback(async () => { if (!userId) return; setLoading(true); try { const d = await svc.getNotifications(userId); setNotifications(d); setUnread(d.filter(n => !n.is_read).length); } catch (e) {} finally { setLoading(false); } }, [userId]);
-  const markRead = useCallback(async (id: string) => { try { await svc.markNotificationRead(id); setNotifications(p => p.map(n => n.id === id ? { ...n, is_read: true } : n)); setUnread(p => Math.max(p - 1, 0)); } catch (e) {} }, []);
+  const load = useCallback(async () => { if (!userId) return; setLoading(true); try { const d = await svc.getNotifications(userId); setNotifications(d); setUnread(d.filter((n: any) => !n.is_read).length); } catch (e) {} finally { setLoading(false); } }, [userId]);
+  const markRead = useCallback(async (id: string) => { try { await svc.markNotificationRead(id); setNotifications(p => p.map((n: any) => n.id === id ? { ...n, is_read: true } : n)); setUnread(p => Math.max(p - 1, 0)); } catch (e) {} }, []);
   useEffect(() => { load(); if (userId) { subRef.current = svc.subscribeToNotifications(userId, (p) => { setNotifications(prev => [p.new, ...prev]); setUnread(prev => prev + 1); }); return () => subRef.current?.unsubscribe(); } }, [userId, load]);
   return { notifications, unread, loading, load, markRead };
 }
@@ -184,7 +184,7 @@ export function useMDrafts(userId?: string) {
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => { if (!userId) return; setLoading(true); try { setDrafts(await svc.getDrafts(userId)); } catch (e) {} finally { setLoading(false); } }, [userId]);
   const create = useCallback(async (d: Partial<MStudioDraft>) => { try { const x = await svc.createDraft(d); setDrafts(p => [x, ...p]); return x; } catch (e) { return null; } }, []);
-  const remove = useCallback(async (id: string) => { try { await svc.deleteDraft(id); setDrafts(p => p.filter(d => d.id !== id)); } catch (e) {} }, []);
+  const remove = useCallback(async (id: string) => { try { await svc.deleteDraft(id); setDrafts(p => p.filter((d: any) => d.id !== id)); } catch (e) {} }, []);
   useEffect(() => { load(); }, [load]);
   return { drafts, loading, load, create, remove };
 }
@@ -232,7 +232,7 @@ export function useMTips(studioId?: string) {
   const [tips, setTips] = useState<MStudioTip[]>([]);
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => { if (!studioId) return; setLoading(true); try { setTips(await svc.getTips(studioId)); } catch (e) {} finally { setLoading(false); } }, [studioId]);
-  const send = useCallback(async (sid: string, rid: string, amount: number, msg?: string) => { if (!studioId) return null; try { const t = await svc.sendTip(studioId, sid, rid, amount, msg); setTips(p => [t, ...p]); return t; } catch (e) { return null; } }, [studioId]);
+  const send = useCallback(async (sid: string, rid: string, amount: number, msg?: string) => { if (!studioId) return null; try { const t = await svc.sendTip(studioId, sid, rid, amount, msg); setTips(p => [t, ...p] as any); return t; } catch (e) { return null; } }, [studioId]);
   useEffect(() => { load(); }, [load]);
   return { tips, loading, load, send };
 }

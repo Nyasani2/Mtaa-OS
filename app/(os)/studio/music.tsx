@@ -10,7 +10,7 @@ export default function StudioMusicScreen() {
 
   useEffect(() => { load(); }, []);
 
-  const filteredTracks = tracks.filter(t => 
+  const filteredTracks = tracks.filter((t: any) => 
     t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.artist?.toLowerCase().includes(searchQuery.toLowerCase())
   );

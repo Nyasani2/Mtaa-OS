@@ -34,7 +34,7 @@ export default function PhoneVerifyScreen() {
 
     setTimeout(() => {
       setLoading(false);
-      router.push('/wallet/onboarding/pin-create');
+      router.push('/wallet/onboarding/pin-create' as any);
     }, 1500);
   };
 

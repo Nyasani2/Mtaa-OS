@@ -1,23 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  RefreshControl, Share
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
-interface Achievement {
-  type: string;
-  title: string;
-  desc: string;
-  icon: string;
-  color: string;
-  earned: boolean;
-  earnedAt: string | null;
-  progress: number; // 0-100
-}
+interface Achievement { type: string; title: string; desc: string; icon: string; color: string; earned: boolean; earnedAt: string | null; progress: number; }
 
 const ACHIEVEMENT_DEFS = [
   { type: 'first_post', title: 'First Post', desc: 'Published your first post', icon: 'create-outline', color: '#00d4ff' },
@@ -36,6 +24,10 @@ const ACHIEVEMENT_DEFS = [
   { type: 'marketplace_seller', title: 'Marketplace Seller', desc: 'Sold 5+ items', icon: 'cart-outline', color: '#ffaa00' },
 ];
 
+async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 4000): Promise<T> {
+  return Promise.race([promise.catch(() => fallback), new Promise<T>(r => setTimeout(() => r(fallback), ms))]);
+}
+
 export default function AchievementsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -47,214 +39,77 @@ export default function AchievementsScreen() {
   const loadAchievements = useCallback(async () => {
     if (!user?.id) { setLoading(false); return; }
     setLoading(true);
-
     try {
-      // Parallel queries for all achievement conditions
-      const [
-        { data: posts },
-        { data: followers },
-        { data: profile },
-        { data: content },
-        { data: agent },
-        { data: trust },
-        { data: walletTxs },
-        { data: marketplaceSales },
-      ] = await Promise.all([
-        supabase.from('streets_posts').select('id, created_at').eq('creator_id', user.id).limit(1),
-        supabase.from('user_follows').select('id, created_at').eq('following_id', user.id).limit(1),
-        // FIXED: user_profiles table, user_id column
-        supabase.from('user_profiles').select('is_verified, created_at, trust_score').eq('user_id', user.id).single(),
-        supabase.from('content').select('id').eq('user_id', user.id).limit(1),
-        supabase.from('cashpoint_agents').select('id, created_at').eq('user_id', user.id).single(),
-        supabase.from('marketplace_trust').select('rating').eq('user_id', user.id).gte('rating', 4.5).limit(1),
-        supabase.from('wallet_transactions').select('id').eq('user_id', user.id).limit(10),
-        supabase.from('marketplace_orders').select('id').eq('seller_id', user.id).eq('status', 'completed').limit(5),
+      const safeQuery = async <T,>(builder: any, fallback: T): Promise<T> => withTimeout(builder.then((r: any) => r.data ?? r.count ?? fallback).catch(() => fallback), fallback, 3500);
+      const [posts, followers, profile, content, agent, trust, walletTxs, marketplaceSales, followerCount, postCount, contentCount] = await Promise.all([
+        safeQuery(supabase.from('streets_posts').select('id, created_at').eq('creator_id', user.id).limit(1), []),
+        safeQuery(supabase.from('user_follows').select('id, created_at').eq('following_id', user.id).limit(1), []),
+        safeQuery(supabase.from('user_profiles').select('is_verified, created_at, trust_score').eq('user_id', user.id).single(), null),
+        safeQuery(supabase.from('content').select('id').eq('user_id', user.id).limit(1), []),
+        safeQuery(supabase.from('cashpoint_agents').select('id, created_at').eq('user_id', user.id).single(), null),
+        safeQuery(supabase.from('marketplace_trust').select('rating').eq('user_id', user.id).gte('rating', 4.5).limit(1), []),
+        safeQuery(supabase.from('wallet_transactions').select('id').eq('user_id', user.id).limit(10), []),
+        safeQuery(supabase.from('marketplace_orders').select('id').eq('seller_id', user.id).eq('status', 'completed').limit(5), []),
+        safeQuery(supabase.from('user_follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id), 0),
+        safeQuery(supabase.from('streets_posts').select('*', { count: 'exact', head: true }).eq('creator_id', user.id), 0),
+        safeQuery(supabase.from('content').select('*', { count: 'exact', head: true }).eq('user_id', user.id), 0),
       ]);
-
-      // Count followers for influencer
-      const { count: followerCount } = await supabase
-        .from('user_follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', user.id);
-
-      // Count posts for content_creator
-      const { count: postCount } = await supabase
-        .from('streets_posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('creator_id', user.id);
-
-      // Count content for creator
-      const { count: contentCount } = await supabase
-        .from('content')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
-
-      const now = new Date();
       const earlyAdopterCutoff = new Date('2025-06-01');
-
-      const computed: Achievement[] = ACHIEVEMENT_DEFS.map(def => {
-        let earned = false;
-        let earnedAt: string | null = null;
-        let progress = 0;
-
+      const computed: Achievement[] = ACHIEVEMENT_DEFS.map((def: any) => {
+        let earned = false, earnedAt: string | null = null, progress = 0;
         switch (def.type) {
-          case 'first_post':
-            earned = (posts && posts.length > 0) || false;
-            earnedAt = posts?.[0]?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'first_follower':
-            earned = (followers && followers.length > 0) || false;
-            earnedAt = followers?.[0]?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'verified':
-            earned = profile?.is_verified || false;
-            earnedAt = profile?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'creator':
-            earned = (content && content.length > 0) || (postCount || 0) > 0;
-            earnedAt = content?.[0]?.created_at || posts?.[0]?.created_at || null;
-            progress = earned ? 100 : Math.min(100, ((contentCount || 0) + (postCount || 0)) * 20);
-            break;
-          case 'business':
-            earned = !!agent;
-            earnedAt = agent?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'top_rated':
-            earned = (trust && trust.length > 0) || (profile?.trust_score || 0) >= 90;
-            earnedAt = null;
-            progress = Math.min(100, (profile?.trust_score || 0));
-            break;
-          case 'early_adopter':
-            earned = profile?.created_at ? new Date(profile.created_at) < earlyAdopterCutoff : false;
-            earnedAt = profile?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'influencer':
-            earned = (followerCount || 0) >= 1000;
-            earnedAt = null;
-            progress = Math.min(100, ((followerCount || 0) / 1000) * 100);
-            break;
-          case 'power_user': {
-            const engagement = (followerCount || 0) + (postCount || 0) + (contentCount || 0) + (walletTxs?.length || 0);
-            earned = engagement >= 100;
-            earnedAt = null;
-            progress = Math.min(100, engagement);
-            break;
-          }
-          case 'community_builder':
-            earned = (followerCount || 0) >= 500;
-            earnedAt = null;
-            progress = Math.min(100, ((followerCount || 0) / 500) * 100);
-            break;
-          case 'content_creator':
-            earned = (postCount || 0) >= 50 || (contentCount || 0) >= 50;
-            earnedAt = null;
-            progress = Math.min(100, (((postCount || 0) + (contentCount || 0)) / 50) * 100);
-            break;
-          case 'cashpoint_agent':
-            earned = !!agent;
-            earnedAt = agent?.created_at || null;
-            progress = earned ? 100 : 0;
-            break;
-          case 'wallet_user':
-            earned = (walletTxs?.length || 0) >= 10;
-            earnedAt = null;
-            progress = Math.min(100, ((walletTxs?.length || 0) / 10) * 100);
-            break;
-          case 'marketplace_seller':
-            earned = (marketplaceSales?.length || 0) >= 5;
-            earnedAt = null;
-            progress = Math.min(100, ((marketplaceSales?.length || 0) / 5) * 100);
-            break;
+          case 'first_post': earned = (posts && posts.length > 0) || false; earnedAt = (posts as any[])?.[0]?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'first_follower': earned = (followers && followers.length > 0) || false; earnedAt = (followers as any[])?.[0]?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'verified': earned = (profile as any)?.is_verified || false; earnedAt = (profile as any)?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'creator': earned = (content && content.length > 0) || (postCount || 0) > 0; earnedAt = (content as any[])?.[0]?.created_at || (posts as any[])?.[0]?.created_at || null; progress = earned ? 100 : Math.min(100, ((contentCount || 0) + (postCount || 0)) * 20); break;
+          case 'business': earned = !!agent; earnedAt = (agent as any)?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'top_rated': earned = ((trust as any[]) && (trust as any[]).length > 0) || ((profile as any)?.trust_score || 0) >= 90; progress = Math.min(100, ((profile as any)?.trust_score || 0)); break;
+          case 'early_adopter': earned = (profile as any)?.created_at ? new Date((profile as any)?.created_at) < earlyAdopterCutoff : false; earnedAt = (profile as any)?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'influencer': earned = (followerCount || 0) >= 1000; progress = Math.min(100, ((followerCount || 0) / 1000) * 100); break;
+          case 'power_user': { const engagement = (followerCount || 0) + (postCount || 0) + (contentCount || 0) + (walletTxs?.length || 0); earned = engagement >= 100; progress = Math.min(100, engagement); break; }
+          case 'community_builder': earned = (followerCount || 0) >= 500; progress = Math.min(100, ((followerCount || 0) / 500) * 100); break;
+          case 'content_creator': earned = (postCount || 0) >= 50 || (contentCount || 0) >= 50; progress = Math.min(100, (((postCount || 0) + (contentCount || 0)) / 50) * 100); break;
+          case 'cashpoint_agent': earned = !!agent; earnedAt = (agent as any)?.created_at || null; progress = earned ? 100 : 0; break;
+          case 'wallet_user': earned = (walletTxs?.length || 0) >= 10; progress = Math.min(100, ((walletTxs?.length || 0) / 10) * 100); break;
+          case 'marketplace_seller': earned = (marketplaceSales?.length || 0) >= 5; progress = Math.min(100, ((marketplaceSales?.length || 0) / 5) * 100); break;
         }
-
         return { ...def, earned, earnedAt, progress };
       });
-
-      const earnedCount = computed.filter(a => a.earned).length;
+      const earnedCount = computed.filter((a: any) => a.earned).length;
       const points = earnedCount * 100 + computed.reduce((sum, a) => sum + (a.earned ? Math.round(a.progress / 10) : 0), 0);
-
-      setAchievements(computed);
-      setStats({ earned: earnedCount, total: ACHIEVEMENT_DEFS.length, points });
-    } catch (err) {
-      console.error('Achievements load error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setAchievements(computed); setStats({ earned: earnedCount, total: ACHIEVEMENT_DEFS.length, points });
+    } catch (err) { console.error('Achievements load error:', err); }
+    finally { setLoading(false); setRefreshing(false); }
   }, [user?.id]);
 
   useEffect(() => { loadAchievements(); }, [loadAchievements]);
   const onRefresh = () => { setRefreshing(true); loadAchievements(); };
+  const shareAchievements = async () => { await Share.share({ message: `I have earned ${stats.earned}/${stats.total} achievements on MTAA! 🏆 Total Points: ${stats.points}` }); };
+  const formatDate = (dateStr: string | null) => { if (!dateStr) return ''; return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); };
 
-  const shareAchievements = async () => {
-    await Share.share({
-      message: `I have earned ${stats.earned}/${stats.total} achievements on MTAA! 🏆 Total Points: ${stats.points}`,
-    });
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#00d4ff" />
-      </View>
-    );
-  }
+  if (loading) return <View style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#00d4ff" /></View>;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Achievements</Text>
-        <TouchableOpacity onPress={shareAchievements}>
-          <Ionicons name="share-outline" size={22} color="#00d4ff" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={shareAchievements}><Ionicons name="share-outline" size={22} color="#00d4ff" /></TouchableOpacity>
       </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4ff" />}
-      >
-        {/* Stats Card */}
+      <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4ff" />}>
         <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.earned}</Text>
-            <Text style={styles.statLabel}>Earned</Text>
-          </View>
+          <View style={styles.statItem}><Text style={styles.statNumber}>{stats.earned}</Text><Text style={styles.statLabel}>Earned</Text></View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
+          <View style={styles.statItem}><Text style={styles.statNumber}>{stats.total}</Text><Text style={styles.statLabel}>Total</Text></View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.points}</Text>
-            <Text style={styles.statLabel}>Points</Text>
-          </View>
+          <View style={styles.statItem}><Text style={styles.statNumber}>{stats.points}</Text><Text style={styles.statLabel}>Points</Text></View>
         </View>
-
-        {/* Progress Bar */}
         <View style={styles.progressSection}>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${(stats.earned / stats.total) * 100}%` }]} />
-          </View>
+          <View style={styles.progressBarBg}><View style={[styles.progressBarFill, { width: `${(stats.earned / stats.total) * 100}%` }]} /></View>
           <Text style={styles.progressText}>{Math.round((stats.earned / stats.total) * 100)}% Complete</Text>
         </View>
-
-        {/* Achievements List */}
         <Text style={styles.sectionTitle}>All Achievements</Text>
-        {achievements.map(ach => (
+        {achievements.map((ach: any) => (
           <View key={ach.type} style={[styles.achievementCard, ach.earned && styles.earnedCard]}>
             <View style={[styles.achievementIcon, { backgroundColor: ach.earned ? ach.color + '22' : '#1a1a1a' }]}>
               <Ionicons name={ach.icon as any} size={24} color={ach.earned ? ach.color : '#444'} />
@@ -262,23 +117,10 @@ export default function AchievementsScreen() {
             <View style={styles.achievementInfo}>
               <Text style={[styles.achievementTitle, !ach.earned && styles.lockedTitle]}>{ach.title}</Text>
               <Text style={styles.achievementDesc}>{ach.desc}</Text>
-              {ach.earned && ach.earnedAt && (
-                <Text style={styles.earnedDate}>Earned {formatDate(ach.earnedAt)}</Text>
-              )}
-              {!ach.earned && ach.progress > 0 && (
-                <View style={styles.miniProgress}>
-                  <View style={[styles.miniProgressFill, { width: `${ach.progress}%`, backgroundColor: ach.color }]} />
-                  <Text style={styles.miniProgressText}>{Math.round(ach.progress)}%</Text>
-                </View>
-              )}
+              {ach.earned && ach.earnedAt && <Text style={styles.earnedDate}>Earned {formatDate(ach.earnedAt)}</Text>}
+              {!ach.earned && ach.progress > 0 && <View style={styles.miniProgress}><View style={[styles.miniProgressFill, { width: `${ach.progress}%`, backgroundColor: ach.color }]} /><Text style={styles.miniProgressText}>{Math.round(ach.progress)}%</Text></View>}
             </View>
-            {ach.earned ? (
-              <View style={styles.earnedBadge}>
-                <Ionicons name="checkmark-circle" size={22} color={ach.color} />
-              </View>
-            ) : (
-              <Ionicons name="lock-closed" size={18} color="#333" />
-            )}
+            {ach.earned ? <View style={styles.earnedBadge}><Ionicons name="checkmark-circle" size={22} color={ach.color} /></View> : <Ionicons name="lock-closed" size={18} color="#333" />}
           </View>
         ))}
       </ScrollView>

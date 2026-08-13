@@ -75,7 +75,7 @@ export function useEvidence() {
       const data = await lockEvidence(id, reason);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? data : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? data : e),
         currentEvidence: prev.currentEvidence?.id === id ? data : prev.currentEvidence,
         isLoading: false,
       }));
@@ -92,7 +92,7 @@ export function useEvidence() {
       const data = await unlockEvidence(id);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? data : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? data : e),
         currentEvidence: prev.currentEvidence?.id === id ? data : prev.currentEvidence,
         isLoading: false,
       }));
@@ -109,7 +109,7 @@ export function useEvidence() {
       const data = await reviewEvidence(id, notes);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? data : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? data : e),
         currentEvidence: prev.currentEvidence?.id === id ? data : prev.currentEvidence,
         isLoading: false,
       }));
@@ -126,7 +126,7 @@ export function useEvidence() {
       const data = await linkEvidenceToCase(id, caseData);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? data : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? data : e),
         currentEvidence: prev.currentEvidence?.id === id ? data : prev.currentEvidence,
         isLoading: false,
       }));
@@ -143,7 +143,7 @@ export function useEvidence() {
       const result = await generateShareToken(id, expiresInHours);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? result.evidence : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? result.evidence : e),
         currentEvidence: prev.currentEvidence?.id === id ? result.evidence : prev.currentEvidence,
         isLoading: false,
       }));
@@ -160,7 +160,7 @@ export function useEvidence() {
       const data = await revokeShareToken(id);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.map(e => e.id === id ? data : e),
+        evidence: prev.evidence.map((e: any) => e.id === id ? data : e),
         currentEvidence: prev.currentEvidence?.id === id ? data : prev.currentEvidence,
         isLoading: false,
       }));
@@ -177,7 +177,7 @@ export function useEvidence() {
       await deleteEvidence(id);
       setState(prev => ({
         ...prev,
-        evidence: prev.evidence.filter(e => e.id !== id),
+        evidence: prev.evidence.filter((e: any) => e.id !== id),
         currentEvidence: prev.currentEvidence?.id === id ? null : prev.currentEvidence,
         isLoading: false,
       }));

@@ -131,7 +131,7 @@ serve(async (req) => {
     const reportingPeriod = new Date().toISOString().slice(0, 7) // YYYY-MM
 
     // Store tax transactions using batch insert
-    const taxRecords = taxes.map(tax => ({
+    const taxRecords = taxes.map((tax: any) => ({
       wallet_transaction_id: transaction_id,
       user_id: txUserId,
       business_wallet_id,

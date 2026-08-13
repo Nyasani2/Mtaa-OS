@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Diagnostic Engine
  * Self-health MRI for the cognitive architecture

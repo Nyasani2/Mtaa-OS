@@ -173,7 +173,7 @@ export default function PreferencesScreen() {
           <ChipSelector
             options={GENDERS}
             selected={showMe}
-            onToggle={(g: string) => setShowMe(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])}
+            onToggle={(g: string) => setShowMe(prev => prev.includes(g) ? prev.filter((x: any) => x !== g) : [...prev, g])}
           />
         </Section>
 
@@ -181,7 +181,7 @@ export default function PreferencesScreen() {
           <ChipSelector
             options={RELATIONSHIP_INTENTS}
             selected={relationshipIntents}
-            onToggle={(intent: string) => setRelationshipIntents(prev => prev.includes(intent) ? prev.filter(x => x !== intent) : [...prev, intent])}
+            onToggle={(intent: string) => setRelationshipIntents(prev => prev.includes(intent) ? prev.filter((x: any) => x !== intent) : [...prev, intent])}
           />
         </Section>
 
@@ -237,7 +237,7 @@ export default function PreferencesScreen() {
         {/* Account Actions */}
         <Section title="Account">
           <TouchableOpacity
-            onPress={() => router.push('/(os)/hookup/profile-setup')}
+            onPress={() => router.push('/(os)/hookup/profile-setup' as any)}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -248,7 +248,7 @@ export default function PreferencesScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push('/(os)/hookup/safety')}
+            onPress={() => router.push('/(os)/hookup/safety' as any)}
             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1a1a1a' }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -272,7 +272,7 @@ export default function PreferencesScreen() {
                     await supabase.from('hookup_passes').delete().eq('passer_id', user.id);
                     await supabase.from('hookup_matches').delete().or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
                     Alert.alert('Deleted', 'Your Hookup profile has been removed.');
-                    router.push('/(os)/hookup/discovery');
+                    router.push('/(os)/hookup/discovery' as any);
                   }},
                 ]
               );

@@ -50,7 +50,7 @@ export default function VirtualProductionScreen() {
       </View>
 
       <View style={styles.tabRow}>
-        {(["video", "music", "broadcast"] as const).map(tab => (
+        {(["video", "music", "broadcast"] as const).map((tab: any) => (
           <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab, activeTab === tab && styles.tabActive]}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>

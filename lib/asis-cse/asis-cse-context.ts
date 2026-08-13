@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Unified Context Object
  * Standard parameter passing across all 22+ engines

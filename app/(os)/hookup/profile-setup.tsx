@@ -105,7 +105,7 @@ export default function ProfileSetupScreen() {
       Alert.alert('Error', 'Failed to save profile: ' + error.message);
     } else {
       Alert.alert('Success', 'Your Hookup profile has been saved!', [
-        { text: 'OK', onPress: () => router.push('/(os)/hookup/discovery') },
+        { text: 'OK', onPress: () => router.push('/(os)/hookup/discovery' as any) },
       ]);
     }
   };
@@ -166,7 +166,7 @@ export default function ProfileSetupScreen() {
 
   const toggleInterest = (interest: string) => {
     setInterests(prev =>
-      prev.includes(interest) ? prev.filter(i => i !== interest) : [...prev, interest]
+      prev.includes(interest) ? prev.filter((i: any) => i !== interest) : [...prev, interest]
     );
   };
 
@@ -278,7 +278,7 @@ export default function ProfileSetupScreen() {
           </TouchableOpacity>
           {interests.length > 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-              {interests.map(i => (
+              {interests.map((i: any) => (
                 <View key={i} style={{ backgroundColor: '#2a1a1a', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6, marginBottom: 6, borderWidth: 1, borderColor: '#ff336620' }}>
                   <Text style={{ color: '#ff3366', fontSize: 12 }}>{i}</Text>
                 </View>
@@ -301,7 +301,7 @@ export default function ProfileSetupScreen() {
           </View>
           <ScrollView style={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {INTERESTS_POOL.map(interest => {
+              {INTERESTS_POOL.map((interest: any) => {
                 const isSelected = interests.includes(interest);
                 return (
                   <TouchableOpacity key={interest} onPress={() => toggleInterest(interest)}

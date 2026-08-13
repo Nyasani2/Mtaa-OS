@@ -142,7 +142,7 @@ export function useIncident() {
       if (error) throw error;
       setState(prev => ({
         ...prev,
-        incidents: prev.incidents.map(i => i.id === id ? data : i),
+        incidents: prev.incidents.map((i: any) => i.id === id ? data : i),
         currentIncident: prev.currentIncident?.id === id ? data : prev.currentIncident,
         isLoading: false,
       }));
@@ -172,7 +172,7 @@ export function useIncident() {
       if (error) throw error;
       setState(prev => ({
         ...prev,
-        incidents: prev.incidents.map(i => i.id === id ? data : i),
+        incidents: prev.incidents.map((i: any) => i.id === id ? data : i),
         currentIncident: prev.currentIncident?.id === id ? data : prev.currentIncident,
         isLoading: false,
       }));
@@ -190,7 +190,7 @@ export function useIncident() {
       if (error) throw error;
       setState(prev => ({
         ...prev,
-        incidents: prev.incidents.filter(i => i.id !== id),
+        incidents: prev.incidents.filter((i: any) => i.id !== id),
         currentIncident: prev.currentIncident?.id === id ? null : prev.currentIncident,
         isLoading: false,
       }));

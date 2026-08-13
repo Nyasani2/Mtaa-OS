@@ -82,13 +82,13 @@ export default function MusicUploadScreen() {
 
   const updateTrack = (id: string, updates: Partial<Track>) => {
     updateRelease({
-      tracks: release.tracks.map(t => t.id === id ? { ...t, ...updates } : t),
+      tracks: release.tracks.map((t: any) => t.id === id ? { ...t, ...updates } : t),
     });
   };
 
   const removeTrack = (id: string) => {
     updateRelease({
-      tracks: release.tracks.filter(t => t.id !== id).map((t, idx) => ({ ...t, trackNumber: idx + 1 })),
+      tracks: release.tracks.filter((t: any) => t.id !== id).map((t, idx) => ({ ...t, trackNumber: idx + 1 })),
     });
   };
 
@@ -163,7 +163,7 @@ export default function MusicUploadScreen() {
 
       setUploadProgress(100);
       Alert.alert('Success', `${release.type.toUpperCase()} "${release.title}" published!`, [
-        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile') },
+        { text: 'View in Studio', onPress: () => router.push('/(os)/studio/creator-profile' as any) },
         { text: 'Upload More', onPress: () => {
           setRelease({
             title: '', type: 'single', coverArt: null, genre: 'Afrobeat',
@@ -196,7 +196,7 @@ export default function MusicUploadScreen() {
         <View style={{ padding: 16 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>Release Type</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            {(['single', 'ep', 'album', 'instrumental'] as const).map(type => (
+            {(['single', 'ep', 'album', 'instrumental'] as const).map((type: any) => (
               <TouchableOpacity
                 key={type}
                 onPress={() => updateRelease({ type })}
@@ -242,7 +242,7 @@ export default function MusicUploadScreen() {
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 6 }}>Genre</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {GENRES.map(g => (
+            {GENRES.map((g: any) => (
               <TouchableOpacity
                 key={g}
                 onPress={() => updateRelease({ genre: g })}
@@ -311,7 +311,7 @@ export default function MusicUploadScreen() {
         {/* Tracks */}
         <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
           <Text style={{ color: '#888', fontSize: 12, marginBottom: 8 }}>Tracks ({release.tracks.length})</Text>
-          {release.tracks.map(track => (
+          {release.tracks.map((track: any) => (
             <View key={track.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 8 }}>
               <Text style={{ color: '#666', fontSize: 12, width: 24 }}>{track.trackNumber}.</Text>
               <TextInput

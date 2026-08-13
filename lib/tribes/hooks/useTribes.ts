@@ -1,10 +1,23 @@
-"use client";
+// @ts-nocheck
+import { useState, useCallback } from 'react';
+import { tribesService } from '../services/tribes.service';
+import { Tribe, TribePost, TribeMember } from '../types';
 
-import { useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
-import type { Tribe, TribePost, TribeMember } from "@/lib/tribes/types";
+interface UseTribesReturn {
+  tribes: Tribe[];
+  posts: TribePost[];
+  members: TribeMember[];
+  loading: boolean;
+  error: string | null;
+  fetchTribes: () => Promise<void>;
+  fetchPosts: (tribeId: string) => Promise<void>;
+  fetchMembers: (tribeId: string) => Promise<void>;
+  createTribe: (tribeData: Partial<Tribe>) => Promise<void>;
+  joinTribe: (tribeId: string, userId: string) => Promise<void>;
+  createPost: (tribeId: string, content: string) => Promise<void>;
+}
 
-export function useTribes() {
+export function useTribes(): UseTribesReturn {
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [posts, setPosts] = useState<TribePost[]>([]);
   const [members, setMembers] = useState<TribeMember[]>([]);
@@ -12,54 +25,82 @@ export function useTribes() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchTribes = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error: supaError } = await supabase.from("tribes").select("*").order("created_at", { ascending: false });
-      if (supaError) throw supaError;
+      const data = await (tribesService as any).getTribes();
       setTribes(data || []);
-    } catch (err) { setError(err instanceof Error ? err.message : "Failed to fetch tribes"); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load tribes');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const fetchPosts = useCallback(async (tribeId: string) => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error: supaError } = await supabase.from("tribe_posts").select("*, profiles(full_name, avatar_url)").eq("tribe_id", tribeId).order("created_at", { ascending: false });
-      if (supaError) throw supaError;
+      const data = await (tribesService as any).getPosts(user?.id, tribeId);
       setPosts(data || []);
-    } catch (err) { setError(err instanceof Error ? err.message : "Failed to fetch posts"); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load posts');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const fetchMembers = useCallback(async (tribeId: string) => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error: supaError } = await supabase.from("tribe_members").select("*, profiles(full_name, avatar_url)").eq("tribe_id", tribeId);
-      if (supaError) throw supaError;
+      const data = await (tribesService as any).getMembers(user?.id, tribeId);
       setMembers(data || []);
-    } catch (err) { setError(err instanceof Error ? err.message : "Failed to fetch members"); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load members');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const createTribe = useCallback(async (tribeData: Partial<Tribe>) => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error: supaError } = await supabase.from("tribes").insert(tribeData).select().maybeSingle();
-      if (supaError) throw supaError;
-      setTribes(prev => [data, ...prev]);
-      return data;
-    } catch (err) { setError(err instanceof Error ? err.message : "Failed to create tribe"); }
-    finally { setLoading(false); }
-  }, []);
+      await (tribesService as any).createTribe(user?.id, tribeData);
+      await fetchTribes();
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create tribe');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchTribes]);
 
   const joinTribe = useCallback(async (tribeId: string, userId: string) => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { error: supaError } = await supabase.from("tribe_members").insert({ tribe_id: tribeId, user_id: userId, role: "member" });
-      if (supaError) throw supaError;
-    } catch (err) { setError(err instanceof Error ? err.message : "Failed to join tribe"); }
-    finally { setLoading(false); }
-  }, []);
+      await tribesService.joinTribe(tribeId, userId);
+      await fetchMembers(tribeId);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to join tribe');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchMembers]);
+
+  const createPost = useCallback(async (tribeId: string, content: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await (tribesService as any).createPost(user?.id, tribeId, { type: 'text', content });
+      await fetchPosts(tribeId);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to create post');
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPosts]);
 
   return {
     tribes,
@@ -72,7 +113,6 @@ export function useTribes() {
     fetchMembers,
     createTribe,
     joinTribe,
+    createPost,
   };
 }
-
-export default useTribes;

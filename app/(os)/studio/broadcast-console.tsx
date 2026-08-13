@@ -126,12 +126,12 @@ export default function BroadcastConsoleScreen() {
     loadDiscover();
   }
 
-  const filteredDiscover = discoverNetworks.filter(n =>
+  const filteredDiscover = discoverNetworks.filter((n: any) =>
     n.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     n.type.includes(searchQuery.toLowerCase())
   );
 
-  const typeIcon = (type: string) => BROADCASTER_TYPES.find(t => t.key === type)?.icon || "broadcast-tower";
+  const typeIcon = (type: string) => BROADCASTER_TYPES.find((t: any) => t.key === type)?.icon || "broadcast-tower";
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -142,7 +142,7 @@ export default function BroadcastConsoleScreen() {
       </View>
 
       <View style={styles.tabRow}>
-        {(["my-networks", "discover", "members", "create"] as const).map(tab => (
+        {(["my-networks", "discover", "members", "create"] as const).map((tab: any) => (
           <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab, activeTab === tab && styles.tabActive]}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
               {tab === "my-networks" ? "My Networks" : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -163,13 +163,13 @@ export default function BroadcastConsoleScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            myNetworks.map(net => (
+            myNetworks.map((net: any) => (
               <TouchableOpacity key={net.id} style={styles.networkCard} onPress={() => { setSelectedNetwork(net); setActiveTab("members"); }}>
                 <View style={styles.networkHeader}>
                   <FontAwesome5 name={typeIcon(net.type)} size={28} color="#E53935" />
                   <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text style={styles.networkName}>{net.name} {net.verified && <Feather name="check-circle" size={14} color="#4CAF50" />}</Text>
-                    <Text style={styles.networkMeta}>{BROADCASTER_TYPES.find(t => t.key === net.type)?.label} · {net.member_count} members · {net.stream_count} streams</Text>
+                    <Text style={styles.networkMeta}>{BROADCASTER_TYPES.find((t: any) => t.key === net.type)?.label} · {net.member_count} members · {net.stream_count} streams</Text>
                   </View>
                   <Feather name="chevron-right" size={20} color="#888" />
                 </View>
@@ -190,7 +190,7 @@ export default function BroadcastConsoleScreen() {
                   <FontAwesome5 name={typeIcon(item.type)} size={28} color="#E53935" />
                   <View style={{ marginLeft: 12, flex: 1 }}>
                     <Text style={styles.networkName}>{item.name} {item.verified && <Feather name="check-circle" size={14} color="#4CAF50" />}</Text>
-                    <Text style={styles.networkMeta}>{BROADCASTER_TYPES.find(t => t.key === item.type)?.label} · {item.member_count} members</Text>
+                    <Text style={styles.networkMeta}>{BROADCASTER_TYPES.find((t: any) => t.key === item.type)?.label} · {item.member_count} members</Text>
                     <Text style={styles.networkDesc} numberOfLines={2}>{item.description}</Text>
                   </View>
                 </View>
@@ -206,7 +206,7 @@ export default function BroadcastConsoleScreen() {
       {activeTab === "members" && selectedNetwork && (
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.sectionTitle}>{selectedNetwork.name} — Members</Text>
-          {members.map(m => (
+          {members.map((m: any) => (
             <View key={m.id} style={styles.memberRow}>
               <View style={styles.memberAvatar}>
                 <Text style={styles.memberInitial}>{m.full_name.charAt(0)}</Text>
@@ -228,7 +228,7 @@ export default function BroadcastConsoleScreen() {
           <TextInput style={styles.input} placeholder="e.g. Kenya Broadcasting Network" placeholderTextColor="#888" value={createForm.name} onChangeText={t => setCreateForm(p => ({ ...p, name: t }))} />
           <Text style={styles.label}>Type</Text>
           <View style={styles.typeGrid}>
-            {BROADCASTER_TYPES.map(t => (
+            {BROADCASTER_TYPES.map((t: any) => (
               <TouchableOpacity key={t.key} style={[styles.typeChip, createForm.type === t.key && styles.typeChipActive]} onPress={() => setCreateForm(p => ({ ...p, type: t.key }))}>
                 <FontAwesome5 name={t.icon} size={16} color={createForm.type === t.key ? "#fff" : "#ccc"} />
                 <Text style={[styles.typeChipText, createForm.type === t.key && styles.typeChipTextActive]}>{t.label}</Text>

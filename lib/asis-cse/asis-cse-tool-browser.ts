@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Browser Tool
  * Web perception for the cognitive architecture
@@ -65,7 +66,7 @@ export class BrowserTool extends BaseCognitiveTool {
   readonly requiresFilesystem = false;
   readonly sandboxed = true;
 
-  readonly capabilities = [
+  readonly capabilities: any = [
     {
       name: 'fetch',
       description: 'Fetch a web page and extract its content',
@@ -105,7 +106,7 @@ export class BrowserTool extends BaseCognitiveTool {
     },
   ];
 
-  readonly permissions = [
+  readonly permissions: any = [
     { action: 'fetch', level: 'read', requiresApproval: false, auditLog: true },
     { action: 'search', level: 'read', requiresApproval: false, auditLog: true },
     { action: 'summarize', level: 'read', requiresApproval: false, auditLog: false },

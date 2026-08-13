@@ -28,7 +28,7 @@ export const TeacherCard = memo(function TeacherCard({ teacher, compact }: Props
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => router.push(`/(education)/teachers/${teacher.id}`)}
+      onPress={() => router.push(`/(education)/teachers/${teacher.id}` as any)}
       activeOpacity={0.8}
     >
       <Image

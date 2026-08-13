@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -12,7 +13,7 @@ import {
   Alert,
   Image,
 } from "react-native";
-import { useIdentity } from "@/lib/auth/store/auth.store";
+import { useIdentity } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {

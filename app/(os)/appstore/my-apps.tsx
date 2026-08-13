@@ -18,11 +18,11 @@ export default function MyAppsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(os)')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.push('/(os)' as any)} style={styles.backBtn}>
           <Ionicons name="home-outline" size={22} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Apps</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/appstore')} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.push('/(os)/appstore' as any)} style={styles.backBtn}>
           <Ionicons name="apps-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -32,7 +32,7 @@ export default function MyAppsScreen() {
         {updates.length > 0 && (
           <View style={styles.updatesSection}>
             <Text style={styles.sectionTitle}>Updates Available</Text>
-            {updates.map(app => (
+            {updates.map((app: any) => (
               <View key={app.id} style={styles.updateCard}>
                 <View style={[styles.appIcon, { backgroundColor: app.color + '20' }]}>
                   <Ionicons name={app.icon as any} size={24} color={app.color} />
@@ -55,12 +55,12 @@ export default function MyAppsScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="apps-outline" size={48} color="#475569" />
             <Text style={styles.emptyText}>No apps installed yet</Text>
-            <TouchableOpacity style={styles.browseBtn} onPress={() => router.push('/(os)/appstore')}>
+            <TouchableOpacity style={styles.browseBtn} onPress={() => router.push('/(os)/appstore' as any)}>
               <Text style={styles.browseText}>Browse AppStore</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          installed.map(app => (
+          installed.map((app: any) => (
             <TouchableOpacity
               key={app.id}
               style={styles.appRow}
@@ -87,7 +87,7 @@ export default function MyAppsScreen() {
 
         {/* OS Apps (always available) */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>System Apps</Text>
-        {ALL_APPS.filter(a => a.isOSApp).map(app => (
+        {ALL_APPS.filter((a: any) => a.isOSApp).map((app: any) => (
           <TouchableOpacity
             key={app.id}
             style={styles.appRow}

@@ -125,7 +125,7 @@ export default function StudentAttendanceScreen() {
 
       {/* Date Range Selector */}
       <View style={[styles.rangeBar, { backgroundColor: colors.card }]}>
-        {(['week', 'month', 'term'] as const).map(range => (
+        {(['week', 'month', 'term'] as const).map((range: any) => (
           <TouchableOpacity
             key={range}
             style={[styles.rangeChip, dateRange === range && { backgroundColor: colors.primary }]}

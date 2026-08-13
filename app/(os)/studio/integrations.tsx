@@ -106,8 +106,8 @@ export default function IntegrationsScreen() {
     </TouchableOpacity>
   );
 
-  const connectedCount = INTEGRATIONS.filter(i => i.status === 'connected').length;
-  const pendingCount = INTEGRATIONS.filter(i => i.status === 'pending').length;
+  const connectedCount = INTEGRATIONS.filter((i: any) => i.status === 'connected').length;
+  const pendingCount = INTEGRATIONS.filter((i: any) => i.status === 'pending').length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,7 +156,7 @@ export default function IntegrationsScreen() {
             <Text style={styles.emptyLogsText}>No sync activity yet</Text>
           </View>
         ) : (
-          syncLogs.map(log => (
+          syncLogs.map((log: any) => (
             <View key={log.id} style={styles.logItem}>
               <View style={[styles.logDot, log.status === 'success' && styles.logSuccess, log.status === 'error' && styles.logError]} />
               <View style={styles.logInfo}>

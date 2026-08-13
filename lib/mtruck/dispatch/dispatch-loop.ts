@@ -9,7 +9,7 @@ export interface DispatchJob {
 }
 
 export async function runDispatchLoop(jobs: DispatchJob[], trucks: any[]): Promise<DispatchJob[]> {
-  const pending: DispatchJob[] = jobs.filter(j => j.status === "pending");
+  const pending: DispatchJob[] = jobs.filter((j: any) => j.status === "pending");
 
   for (const job of pending) {
     const availableTruck = trucks.find((t: any) => t.available && t.capacity >= (job.cargoType === "heavy" ? 20 : 5));

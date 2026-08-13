@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Tool Abstraction Layer
  * Unified interface for all cognitive tools

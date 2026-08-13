@@ -25,7 +25,7 @@ export async function analyzeTradeVolume() {
   return {
     total_flows: data?.length || 0,
     active_countries: new Set(
-      (data || []).map(d => d.origin_country)
+      (data || []).map((d: any) => d.origin_country)
     ).size,
   };
 }

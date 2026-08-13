@@ -102,7 +102,7 @@ export default function ReportCardScreen() {
   useEffect(() => { fetchGrades(); }, [fetchGrades]);
   const onRefresh = () => { setRefreshing(true); fetchGrades(); };
 
-  const filtered = selectedTerm === 'all' ? grades : grades.filter(g => g.term === selectedTerm);
+  const filtered = selectedTerm === 'all' ? grades : grades.filter((g: any) => g.term === selectedTerm);
 
   const getGradeColor = (grade: string) => {
     if (['A', 'A+', 'A-'].includes(grade)) return '#059669';
@@ -143,7 +143,7 @@ export default function ReportCardScreen() {
         >
           <Text style={[styles.termChipText, { color: selectedTerm === 'all' ? '#fff' : colors.text }]}>All Terms</Text>
         </TouchableOpacity>
-        {terms.map(t => (
+        {terms.map((t: any) => (
           <TouchableOpacity
             key={t.term}
             style={[styles.termChip, selectedTerm === t.term && { backgroundColor: colors.primary }]}
@@ -157,7 +157,7 @@ export default function ReportCardScreen() {
       </ScrollView>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
-        {filtered.map(g => (
+        {filtered.map((g: any) => (
           <View key={g.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
               <View style={{ flex: 1 }}>

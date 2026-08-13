@@ -15,9 +15,11 @@ export interface Shop {
   logo_url?: string;
   banner_url?: string;
   address?: string;
+  location?: string;
   phone?: string;
   email?: string;
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  status: 'active' | 'inactive' | 'suspended' | 'pending' | 'open';
+  tax_rate?: number;
   rating?: number;
   review_count?: number;
   created_at: string;
@@ -47,6 +49,7 @@ export interface ShopOrder {
   currency: string;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   shipping_address?: string;
+  location?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -346,3 +349,6 @@ export function useShop(shopId?: string) {
 }
 
 export default useShop;
+
+export function useShopOrders(shopId?: string) { const { orders, fetchOrders, loading, error, updateOrderStatus } = useShop(shopId); return { orders, fetchOrders, loading, error, updateOrderStatus }; }
+export function useShopProducts(shopId?: string) { const { products, fetchProducts, loading, error, addProduct, updateProduct, deleteProduct } = useShop(shopId); return { products, fetchProducts, loading, error, addProduct, updateProduct, deleteProduct }; }

@@ -59,7 +59,7 @@ export default function EnterGradesScreen() {
 
     if (!enrollments) { setLoading(false); return; }
 
-    const studentIds = enrollments.map(e => e.student_id);
+    const studentIds = enrollments.map((e: any) => e.student_id);
     const { data: profiles } = await supabase
       .from('user_profiles')
       .select('id, display_name')
@@ -70,9 +70,9 @@ export default function EnterGradesScreen() {
       .select('student_id, score, grade, remarks')
       .eq('exam_id', selectedExam);
 
-    const gradeMap = new Map(existingGrades?.map(g => [g.student_id, g]) || []);
+    const gradeMap = new Map(existingGrades?.map((g: any) => [g.student_id, g]) || []);
 
-    const merged = (profiles || []).map(p => ({
+    const merged = (profiles || []).map((p: any) => ({
       id: p.id,
       full_name: p.display_name || 'Student',
       admission_number: p.id.slice(0, 8).toUpperCase(),
@@ -89,7 +89,7 @@ export default function EnterGradesScreen() {
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
   const updateStudent = (id: string, field: string, value: string) => {
-    setStudents(prev => prev.map(s => {
+    setStudents(prev => prev.map((s: any) => {
       if (s.id !== id) return s;
       const updated = { ...s, [field]: value };
       if (field === 'score') {
@@ -122,8 +122,8 @@ export default function EnterGradesScreen() {
     setSaving(true);
     try {
       const records = students
-        .filter(s => s.score !== '')
-        .map(s => ({
+        .filter((s: any) => s.score !== '')
+        .map((s: any) => ({
           exam_id: selectedExam,
           student_id: s.id,
           teacher_id: user.id,
@@ -165,7 +165,7 @@ export default function EnterGradesScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.examScroll}>
-        {exams.map(e => (
+        {exams.map((e: any) => (
           <TouchableOpacity
             key={e.id}
             style={[styles.examChip, selectedExam === e.id && styles.examChipActive]}

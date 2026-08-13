@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 interface Job {
@@ -29,7 +29,7 @@ interface JobSeeker {
 
 export default function JobsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [myProfile, setMyProfile] = useState<JobSeeker | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,7 @@ export default function JobsScreen() {
     }
   };
 
-  const filtered = jobs.filter(j => {
+  const filtered = jobs.filter((j: any) => {
     const matchesSearch = j.title.toLowerCase().includes(search.toLowerCase()) ||
       j.company.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = activeFilter === 'all' ||
@@ -104,7 +104,7 @@ export default function JobsScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-        {filters.map(f => (
+        {filters.map((f: any) => (
           <TouchableOpacity
             key={f.key}
             style={[styles.filterChip, activeFilter === f.key && styles.filterChipActive]}
@@ -152,7 +152,7 @@ export default function JobsScreen() {
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
-          {filtered.map(job => (
+          {filtered.map((job: any) => (
             <TouchableOpacity key={job.id} style={styles.jobCard} onPress={() => router.push({ pathname: '/(jobs)/detail', params: { id: job.id } } as any)}>
               <View style={styles.jobHeader}>
                 <View style={styles.jobAvatar}>

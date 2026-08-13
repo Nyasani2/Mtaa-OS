@@ -54,7 +54,7 @@ export default function ParentTransportScreen() {
         return;
       }
 
-      const studentIds = students.map(s => s.id);
+      const studentIds = students.map((s: any) => s.id);
 
       // Get transport assignments
       const { data: transportData } = await supabase
@@ -162,7 +162,7 @@ export default function ParentTransportScreen() {
           {/* Assignment Selector */}
           {assignments.length > 1 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorBar} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-              {assignments.map(a => (
+              {assignments.map((a: any) => (
                 <TouchableOpacity
                   key={a.id}
                   style={[styles.assignmentChip, selectedAssignment?.id === a.id && { backgroundColor: colors.primary }]}

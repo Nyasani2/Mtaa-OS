@@ -42,7 +42,7 @@ export default function ProfileStreetsSection() {
       <View style={{ paddingVertical: 30, alignItems: 'center' }}>
         <Text style={{ color: '#666', fontSize: 14 }}>No Streets posts yet</Text>
         <TouchableOpacity
-          onPress={() => router.push('/streets/create')}
+          onPress={() => router.push('/streets/create' as any)}
           style={{ marginTop: 10, backgroundColor: '#e91e63', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16 }}
         >
           <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Create Post</Text>

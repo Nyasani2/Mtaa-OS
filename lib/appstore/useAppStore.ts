@@ -61,7 +61,7 @@ export function useAppStore() {
   }, [installedApps, installingApps]);
 
   const installApp = useCallback(async (appId: string): Promise<void> => {
-    const app = ALL_APPS.find(a => a.id === appId);
+    const app = ALL_APPS.find((a: any) => a.id === appId);
     if (!app) return;
 
     setInstallingApps(prev => new Set(prev).add(appId));
@@ -100,18 +100,18 @@ export function useAppStore() {
   }, [appVersions]);
 
   const getInstalledApps = useCallback((): AppManifest[] => {
-    return ALL_APPS.filter(a => installedApps.has(a.id));
+    return ALL_APPS.filter((a: any) => installedApps.has(a.id));
   }, [installedApps]);
 
   const getUpdateAvailable = useCallback((appId: string): boolean => {
-    const app = ALL_APPS.find(a => a.id === appId);
+    const app = ALL_APPS.find((a: any) => a.id === appId);
     if (!app || !installedApps.has(appId)) return false;
     const installedVersion = appVersions[appId];
     return installedVersion !== app.version;
   }, [installedApps, appVersions]);
 
   const getAppsWithUpdates = useCallback((): AppManifest[] => {
-    return ALL_APPS.filter(a => {
+    return ALL_APPS.filter((a: any) => {
       if (!installedApps.has(a.id)) return false;
       return appVersions[a.id] !== a.version;
     });

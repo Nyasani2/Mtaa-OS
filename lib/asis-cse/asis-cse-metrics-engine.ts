@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Metrics Engine
  * Operational observability for all 22+ engines

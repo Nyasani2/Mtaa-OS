@@ -5,7 +5,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 export function useBlock(targetProfileId: string) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { profile } = useAuthStore();
+  const { profile } = useAuthStore() as any;
   const myProfileId = profile?.id;
 
   const checkBlockStatus = useCallback(async () => {

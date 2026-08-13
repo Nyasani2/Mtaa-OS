@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
             .lte('created_at', dateEnd)
           if (sErr) throw sErr
 
-          const completedOrders = (sales || []).filter(o => o.status === 'completed')
+          const completedOrders = (sales || []).filter((o: any) => o.status === 'completed')
           const totalSales = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
           const totalTips = completedOrders.reduce((sum, o) => sum + (o.tip_amount || 0), 0)
           const orderCount = completedOrders.length
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
             .select('status')
           if (tErr) throw tErr
 
-          const occupiedTables = (tables || []).filter(t => t.status === 'occupied').length
+          const occupiedTables = (tables || []).filter((t: any) => t.status === 'occupied').length
           const totalTables = tables?.length || 0
 
           const { data: pending, error: pErr } = await supabase

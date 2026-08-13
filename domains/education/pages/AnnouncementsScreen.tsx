@@ -110,7 +110,7 @@ export default function AnnouncementsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ padding: 16 }}
       >
-        {announcements.map(a => (
+        {announcements.map((a: any) => (
           <View key={a.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
               <View style={[styles.iconBox, { backgroundColor: a.is_admin ? '#FEE2E2' : '#DBEAFE' }]}>

@@ -47,7 +47,7 @@ export function repositionFleet(trucks: Truck[] | null, demandZones: DemandZone[
 
   const topZone = demandZones.sort((a, b) => b.weight - a.weight)[0];
 
-  return trucks.map(truck => {
+  return trucks.map((truck: any) => {
     if (!truck.available) return truck;
     const newLat = truck.lat + (topZone.lat - truck.lat) * 0.1;
     const newLng = truck.lng + (topZone.lng - truck.lng) * 0.1;

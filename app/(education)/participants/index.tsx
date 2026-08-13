@@ -135,7 +135,7 @@ export default function ParticipantsHub() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>Participants</Text>
           <TouchableOpacity
-            onPress={() => router.push('/(education)/participants/create')}
+            onPress={() => router.push('/(education as any)/participants/create' as any)}
             style={{ backgroundColor: '#3b82f6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
           >
             <Ionicons name="add" size={16} color="#fff" />

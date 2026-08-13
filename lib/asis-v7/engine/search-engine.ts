@@ -171,7 +171,7 @@ async function rssNewsSearch(query: SearchQuery): Promise<SearchResult[]> {
 async function weatherParseSearch(query: SearchQuery): Promise<SearchResult[]> {
   if (query.intent !== 'weather') return [];
 
-  const location = query.entities.find(e => e.type === 'location')?.value || 'current location';
+  const location = query.entities.find((e: any) => e.type === 'location')?.value || 'current location';
 
   // Return structured weather placeholder
   // In production, parse from weather sites or use free weather API
@@ -220,11 +220,11 @@ class LocalKnowledgeStore {
     const words = normalizedQuery.split(/\s+/);
 
     return this.entries
-      .map(entry => {
-        const score = words.filter(word =>
+      .map((entry: any) => {
+        const score = words.filter((word: any) =>
           entry.topic.toLowerCase().includes(word) ||
           entry.content.toLowerCase().includes(word) ||
-          entry.tags.some(tag => tag.toLowerCase().includes(word))
+          entry.tags.some((tag: any) => tag.toLowerCase().includes(word))
         ).length / words.length;
 
         return { entry, score };
@@ -243,7 +243,7 @@ class LocalKnowledgeStore {
     return this.entries
       .sort((a, b) => b.accessCount - a.accessCount)
       .slice(0, limit)
-      .map(e => e.topic);
+      .map((e: any) => e.topic);
   }
 }
 
@@ -251,7 +251,7 @@ const localKnowledge = new LocalKnowledgeStore();
 
 async function localKnowledgeSearch(query: SearchQuery): Promise<SearchResult[]> {
   const entries = localKnowledge.search(query.query);
-  return entries.map(entry => ({
+  return entries.map((entry: any) => ({
     title: entry.topic,
     url: '',
     snippet: entry.content.substring(0, 200) + (entry.content.length > 200 ? '...' : ''),
@@ -281,8 +281,8 @@ class CommunityKnowledgeStore {
   search(query: string, intent: IntentCategory): CommunityQAPair[] {
     const normalizedQuery = query.toLowerCase();
     return this.qaPairs
-      .filter(qa => qa.intent === intent)
-      .map(qa => {
+      .filter((qa: any) => qa.intent === intent)
+      .map((qa: any) => {
         const similarity = this.calculateSimilarity(normalizedQuery, qa.question.toLowerCase());
         return { qa, similarity };
       })
@@ -295,7 +295,7 @@ class CommunityKnowledgeStore {
   private calculateSimilarity(a: string, b: string): number {
     const aWords = new Set(a.split(/\s+/));
     const bWords = new Set(b.split(/\s+/));
-    const intersection = new Set([...aWords].filter(x => bWords.has(x)));
+    const intersection = new Set([...aWords].filter((x: any) => bWords.has(x)));
     const union = new Set([...aWords, ...bWords]);
     return intersection.size / union.size;
   }
@@ -311,7 +311,7 @@ const communityKnowledge = new CommunityKnowledgeStore();
 
 async function communitySearch(query: SearchQuery): Promise<SearchResult[]> {
   const pairs = communityKnowledge.search(query.query, query.intent);
-  return pairs.map(qa => ({
+  return pairs.map((qa: any) => ({
     title: qa.question,
     url: '',
     snippet: qa.answer.substring(0, 200) + (qa.answer.length > 200 ? '...' : ''),
@@ -350,11 +350,11 @@ export class SearchEngine {
 
     // Execute all enabled sources in parallel
     const promises = this.sources
-      .filter(s => s.enabled)
+      .filter((s: any) => s.enabled)
       .map(async source => {
         try {
           const results = await source.search(query);
-          return results.map(r => ({ ...r, source: r.source || source.name }));
+          return results.map((r: any) => ({ ...r, source: r.source || source.name }));
         } catch (error) {
           console.warn(`[ASIS Search] ${source.name} failed:`, error);
           return [];
@@ -421,7 +421,7 @@ export class SearchEngine {
     return {
       localEntries: this.localKnowledge.getPopularTopics().length,
       communityQA: this.communityKnowledge.getTopQA().length,
-      sources: this.sources.filter(s => s.enabled).map(s => s.name),
+      sources: this.sources.filter((s: any) => s.enabled).map((s: any) => s.name),
     };
   }
 }

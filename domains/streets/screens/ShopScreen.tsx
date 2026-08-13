@@ -32,10 +32,10 @@ export default function ShopScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'merch' | 'digital' | 'affiliate'>('merch');
 
-  const filteredItems = MOCK_ITEMS.filter(i => i.type === activeTab);
+  const filteredItems = MOCK_ITEMS.filter((i: any) => i.type === activeTab);
 
   const openMarketplace = useCallback(() => {
-    router.push('/(os)/marketplace');
+    router.push('/(os)/marketplace' as any);
   }, [router]);
 
   return (
@@ -86,7 +86,7 @@ export default function ShopScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.grid}>
-        {filteredItems.map(item => (
+        {filteredItems.map((item: any) => (
           <TouchableOpacity key={item.id} style={styles.itemCard} onPress={openMarketplace}>
             <View style={styles.itemImage}>
               {item.image ? (

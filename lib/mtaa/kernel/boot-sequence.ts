@@ -33,11 +33,11 @@ class BootSequence {
         services.push({ name: serviceName, loaded: true });
       } catch (error) { services.push({ name: serviceName, loaded: false, error: error instanceof Error ? error.message : 'Unknown error' }); }
     }
-    const success = services.every(s => s.loaded);
+    const success = services.every((s: any) => s.loaded);
     return { phase: phase.name, success, services, durationMs: Date.now() - start };
   }
   getStatus(): { phase: string; state: 'ok'|'failed'|'pending' }[] {
-    return this.results.map(r => ({ phase: r.phase, state: r.success ? 'ok' : 'failed' }));
+    return this.results.map((r: any) => ({ phase: r.phase, state: r.success ? 'ok' : 'failed' }));
   }
 }
 export const bootSequence = new BootSequence();

@@ -28,11 +28,11 @@ export function useOS() {
   };
 
   const uninstallApp = async (appId: string) => {
-    setInstalledApps(prev => prev.filter(a => a.id !== appId));
+    setInstalledApps(prev => prev.filter((a: any) => a.id !== appId));
   };
 
   const toggleApp = async (appId: string) => {
-    setInstalledApps(prev => prev.map(a => a.id === appId ? { ...a, enabled: !a.enabled } : a));
+    setInstalledApps(prev => prev.map((a: any) => a.id === appId ? { ...a, enabled: !a.enabled } : a));
   };
 
   return { installedApps, loading, installApp, uninstallApp, toggleApp };

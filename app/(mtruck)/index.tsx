@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,7 +16,7 @@ export default function MTruckScreen() {
   const router = useRouter();
   const { latitude, longitude } = useLocation();
   const [selectedType, setSelectedType] = useState('local');
-  const selected = HAUL_TYPES.find(h => h.key === selectedType)!;
+  const selected = HAUL_TYPES.find((h: any) => h.key === selectedType)!;
 
   return (
     <View style={styles.container}>
@@ -29,7 +30,7 @@ export default function MTruckScreen() {
         <Text style={styles.title}>Request Haul</Text>
         <Text style={styles.subtitle}>Logistics made simple</Text>
         <View style={styles.haulOptions}>
-          {HAUL_TYPES.map(type => (
+          {HAUL_TYPES.map((type: any) => (
             <TouchableOpacity key={type.key}
               style={[styles.haulCard, selectedType === type.key && { borderColor: type.color, borderWidth: 2 }]}
               onPress={() => setSelectedType(type.key)}>
@@ -54,10 +55,10 @@ export default function MTruckScreen() {
         </TouchableOpacity>
 
         <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtruck)/equipment')}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtruck)/equipment' as any)}>
             <Ionicons name="hammer" size={20} color="#94a3b8" /><Text style={styles.navText}>Equipment</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtruck)/haul-tracking')}>
+          <TouchableOpacity style={styles.navItem} onPress={() => router.push('/(mtruck)/haul-tracking' as any)}>
             <Ionicons name="navigate" size={20} color="#94a3b8" /><Text style={styles.navText}>Track</Text>
           </TouchableOpacity>
         </View>

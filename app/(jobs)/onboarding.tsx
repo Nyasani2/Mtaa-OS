@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,7 +12,7 @@ const STEPS = ['Personal Info', 'Skills & Experience', 'Preferences', 'Review'];
 
 export default function JobsOnboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -42,11 +42,11 @@ export default function JobsOnboarding() {
   const jobTypeOptions = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
 
   const toggleSkill = (skill: string) => {
-    setSkills(prev => prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]);
+    setSkills(prev => prev.includes(skill) ? prev.filter((s: any) => s !== skill) : [...prev, skill]);
   };
 
   const toggleJobType = (type: string) => {
-    setJobTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
+    setJobTypes(prev => prev.includes(type) ? prev.filter((t: any) => t !== type) : [...prev, type]);
   };
 
   const validateStep = () => {
@@ -104,7 +104,7 @@ export default function JobsOnboarding() {
           expected_salary: parseFloat(expectedSalary) || null,
           is_open_to_remote: isOpenToRemote,
           is_open_to_relocation: isOpenToRelocation,
-          preferred_industries: preferredIndustries.split(',').map(i => i.trim()).filter(Boolean),
+          preferred_industries: preferredIndustries.split(',').map((i: any) => i.trim()).filter(Boolean),
           status: 'active',
           is_available: true,
           profile_views: 0,
@@ -161,7 +161,7 @@ export default function JobsOnboarding() {
             <Text style={styles.sectionTitle}>Skills & Experience</Text>
             <Text style={styles.label}>Skills *</Text>
             <View style={styles.chipContainer}>
-              {skillOptions.map(skill => (
+              {skillOptions.map((skill: any) => (
                 <TouchableOpacity key={skill} style={[styles.chip, skills.includes(skill) && styles.chipActive]} onPress={() => toggleSkill(skill)}>
                   <Text style={[styles.chipText, skills.includes(skill) && styles.chipTextActive]}>{skill}</Text>
                 </TouchableOpacity>
@@ -179,7 +179,7 @@ export default function JobsOnboarding() {
             <Text style={styles.sectionTitle}>Job Preferences</Text>
             <Text style={styles.label}>Job Types *</Text>
             <View style={styles.chipContainer}>
-              {jobTypeOptions.map(type => (
+              {jobTypeOptions.map((type: any) => (
                 <TouchableOpacity key={type} style={[styles.chip, jobTypes.includes(type) && styles.chipActive]} onPress={() => toggleJobType(type)}>
                   <Text style={[styles.chipText, jobTypes.includes(type) && styles.chipTextActive]}>{type}</Text>
                 </TouchableOpacity>

@@ -57,7 +57,7 @@ export default function ChatScreen() {
           <Text style={styles.headerName}>{name || "Unknown"}</Text>
           <Text style={styles.headerPhone}>{phone || ""}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push({ pathname: "/communication/call", params: { phone } })}>
+        <TouchableOpacity onPress={() => router.push({ pathname: "/communication/call" as any, params: { phone } })}>
           <Ionicons name="call-outline" size={22} color="#6366F1" />
         </TouchableOpacity>
       </View>

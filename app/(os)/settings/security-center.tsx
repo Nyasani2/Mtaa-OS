@@ -36,7 +36,7 @@ export default function SecurityCenterScreen() {
       const { data: mfaData } = await supabase.from('user_profiles').select('mfa_enabled').eq('id', user?.id).single();
       if (!mfaData?.mfa_enabled) issues.push('Two-factor auth not enabled');
       const { data: sessions } = await supabase.from('auth_sessions').select('created_at, ip_address').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5);
-      const uniqueIps = new Set(sessions?.map(s => s.ip_address) || []);
+      const uniqueIps = new Set(sessions?.map((s: any) => s.ip_address) || []);
       if (uniqueIps.size > 2) issues.push('Multiple login locations detected');
       const { data: failedLogins } = await supabase.from('auth_audit_logs').select('id').eq('user_id', user?.id).eq('event_type', 'failed_login').gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
       if ((failedLogins?.length || 0) > 3) issues.push('Multiple failed login attempts in last 24h');
@@ -55,15 +55,15 @@ export default function SecurityCenterScreen() {
     finally { setScanning(false); }
   }
 
-  function openPasswordManager() { router.push('/(os)/settings/password-manager'); }
+  function openPasswordManager() { router.push('/(os)/settings/password-manager' as any); }
 
   async function togglePIN(value: boolean) {
     if (!value) { Alert.alert('Disable PIN?', 'This will remove your PIN protection.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Disable', style: 'destructive', onPress: () => setPinEnabled(false) }]); return; }
-    router.push('/(auth)/set-pin');
+    router.push('/auth/set-pin' as any);
   }
 
   async function toggle2FA(value: boolean) {
-    if (value) { router.push('/(os)/settings/two-factor-setup'); }
+    if (value) { router.push('/(os)/settings/two-factor-setup' as any); }
     else { Alert.alert('Disable 2FA?', 'Your account will be less secure.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Disable', style: 'destructive', onPress: () => setTwoFactorEnabled(false) }]); }
   }
 

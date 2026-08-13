@@ -30,7 +30,7 @@ export class HealthCrypto {
     );
     const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
     return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
+      { name: 'PBKDF2', salt: salt as any, iterations: ITERATIONS, hash: 'SHA-256' },
       keyMaterial,
       { name: ALGO, length: KEY_LENGTH },
       false,
@@ -48,7 +48,7 @@ export class HealthCrypto {
       ['deriveBits', 'deriveKey']
     );
     return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
+      { name: 'PBKDF2', salt: salt as any, iterations: ITERATIONS, hash: 'SHA-256' },
       keyMaterial,
       { name: ALGO, length: KEY_LENGTH },
       false,

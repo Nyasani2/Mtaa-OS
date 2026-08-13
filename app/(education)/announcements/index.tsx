@@ -50,7 +50,7 @@ export default function AnnouncementsScreen() {
           <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
         </TouchableOpacity>
         <Text style={styles.title}>Announcements</Text>
-        <TouchableOpacity onPress={() => router.push("/(education)/announcements/create")}>
+        <TouchableOpacity onPress={() => router.push("/(education as any)/announcements/create" as any)}>
           <Ionicons name="add-circle" size={24} color="#60a5fa" />
         </TouchableOpacity>
       </View>

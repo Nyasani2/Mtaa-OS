@@ -89,12 +89,12 @@ export default function BoostModal({ visible, post, onClose }: BoostModalProps) 
           {step==='config' && (
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.label}>Budget (KES)</Text>
-              <View style={styles.chipRow}>{BUDGETS.map(b=><TouchableOpacity key={b} style={[styles.chip,budget===b&&styles.chipActive]} onPress={()=>setBudget(b)}><Text style={[styles.chipText,budget===b&&styles.chipTextActive]}>KES {b}</Text></TouchableOpacity>)}</View>
+              <View style={styles.chipRow}>{BUDGETS.map((b: any) =><TouchableOpacity key={b} style={[styles.chip,budget===b&&styles.chipActive]} onPress={()=>setBudget(b)}><Text style={[styles.chipText,budget===b&&styles.chipTextActive]}>KES {b}</Text></TouchableOpacity>)}</View>
               <Text style={styles.label}>Duration</Text>
-              <View style={styles.chipRow}>{DURATIONS.map(d=><TouchableOpacity key={d} style={[styles.chip,duration===d&&styles.chipActive]} onPress={()=>setDuration(d)}><Text style={[styles.chipText,duration===d&&styles.chipTextActive]}>{d} days</Text></TouchableOpacity>)}</View>
+              <View style={styles.chipRow}>{DURATIONS.map((d: any) =><TouchableOpacity key={d} style={[styles.chip,duration===d&&styles.chipActive]} onPress={()=>setDuration(d)}><Text style={[styles.chipText,duration===d&&styles.chipTextActive]}>{d} days</Text></TouchableOpacity>)}</View>
               <Text style={styles.label}>Target Region</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop:8}}>
-                {KENYA_COUNTIES.map(c=><TouchableOpacity key={c} style={[styles.chip,region===c&&styles.chipActive]} onPress={()=>setRegion(c)}><Text style={[styles.chipText,region===c&&styles.chipTextActive]}>{c}</Text></TouchableOpacity>)}
+                {KENYA_COUNTIES.map((c: any) =><TouchableOpacity key={c} style={[styles.chip,region===c&&styles.chipActive]} onPress={()=>setRegion(c)}><Text style={[styles.chipText,region===c&&styles.chipTextActive]}>{c}</Text></TouchableOpacity>)}
               </ScrollView>
               <View style={styles.estimateBox}><Users size={18} color="#3897f0"/><Text style={styles.estimateText}>Estimated reach: <Text style={styles.estimateBold}>{estimatedReach.toLocaleString()}</Text> people</Text></View>
               <TouchableOpacity style={styles.continueBtn} onPress={()=>setStep('pin')}><Text style={styles.continueText}>Continue — KES {budget}</Text><ChevronRight size={18} color="#fff"/></TouchableOpacity>

@@ -54,7 +54,7 @@ export default function StudioDashboardScreen() {
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity
-                onPress={() => router.push(`/(os)/studio/live-active?id=${item.id}`)}
+                onPress={() => router.push(`/(os)/studio/live-active?id=${item.id}` as any)}
                 style={{ width: 200, marginRight: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
               >
                 <Image source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/200x112' }} style={{ width: 200, height: 112 }} />
@@ -80,7 +80,7 @@ export default function StudioDashboardScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { loadStudios(10); loadVideos({ limit: 10 }); loadStreams('live'); if (studios[0]?.id) loadStats(); }} tintColor="#fff" />}
           renderItem={({ item }) => (
             <TouchableOpacity
-              onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}`)}
+              onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}` as any)}
               style={{ flexDirection: 'row', marginBottom: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
             >
               <Image source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/120x68' }} style={{ width: 120, height: 68 }} />
@@ -96,7 +96,7 @@ export default function StudioDashboardScreen() {
 
       {/* FAB */}
       <TouchableOpacity
-        onPress={() => router.push('/(os)/studio/recording')}
+        onPress={() => router.push('/(os)/studio/recording' as any)}
         style={{ position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#ff0000', alignItems: 'center', justifyContent: 'center', elevation: 8 }}
       >
         <Text style={{ color: '#fff', fontSize: 28 }}>+</Text>

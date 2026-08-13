@@ -119,8 +119,8 @@ export function useInventory(garageId?: string) {
       }
 
       const items = (data || []) as InventoryItem[];
-      const categories = [...new Set(items.map(i => i.category))];
-      const lowStockCount = items.filter(i => i.quantity <= i.reorder_level).length;
+      const categories = [...new Set(items.map((i: any) => i.category))];
+      const lowStockCount = items.filter((i: any) => i.quantity <= i.reorder_level).length;
       const totalValue = items.reduce((sum, i) => sum + (i.quantity * i.cost_price), 0);
 
       setState(prev => ({

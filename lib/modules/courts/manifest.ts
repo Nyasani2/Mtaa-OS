@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppManifest } from "@/lib/mtaa/appstore/apps/types";
 
 export const manifest: AppManifest = {

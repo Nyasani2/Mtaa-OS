@@ -49,7 +49,7 @@ export default function StudioRecordingScreen() {
         });
         await createRecording({ user_id: user.id, video_id: newVideo?.id, file_url: video.uri, duration: recordingDuration });
         Alert.alert('Saved', 'Recording saved to drafts');
-        router.push('/(os)/studio/dashboard');
+        router.push('/(os)/studio/dashboard' as any);
       }
     } catch (e) {
       clearInterval(timerRef.current);

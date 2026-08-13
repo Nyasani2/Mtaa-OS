@@ -1,0 +1,34 @@
+#!/bin/sh
+# MTAA OS V10 — Pre-Commit Gate
+echo "🔒 MTAA OS Pre-Commit Gate"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "[1/4] TypeScript check..."
+npx tsc --noEmit
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found. Commit BLOCKED."
+  exit 1
+fi
+echo "✅ TypeScript clean"
+echo "[2/4] Lint check..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Lint errors found. Commit BLOCKED."
+  exit 1
+fi
+echo "✅ Lint clean"
+echo "[3/4] Type consolidation check..."
+python3 tools/type-consolidation-audit.py --check-only
+if [ $? -ne 0 ]; then
+  echo "❌ Duplicate types found. Commit BLOCKED."
+  exit 1
+fi
+echo "✅ Types consolidated"
+echo "[4/4] Module isolation check..."
+python3 tools/module-isolation-guard.py
+if [ $? -ne 0 ]; then
+  echo "❌ Cross-domain imports found. Commit BLOCKED."
+  exit 1
+fi
+echo "✅ Module isolation clean"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🚀 All gates passed. Commit allowed."

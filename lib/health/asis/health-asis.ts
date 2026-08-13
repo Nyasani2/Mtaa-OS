@@ -83,7 +83,7 @@ class HealthASIS {
 
   async analyzeEmergency(symptoms: string[]): Promise<ASISHealthResponse> {
     const criticalSymptoms = ['chest pain', 'difficulty breathing', 'unconscious', 'severe bleeding', 'seizure', 'stroke'];
-    const foundCritical = symptoms.some(s => criticalSymptoms.some(c => s.toLowerCase().includes(c)));
+    const foundCritical = symptoms.some((s: any) => criticalSymptoms.some((c: any) => s.toLowerCase().includes(c)));
 
     if (foundCritical) {
       return {
@@ -117,8 +117,8 @@ class HealthASIS {
         const a = medications[i].name.toLowerCase();
         const b = medications[j].name.toLowerCase();
         for (const [drug, conflicts] of Object.entries(knownPairs)) {
-          if ((a.includes(drug) && conflicts.some(c => b.includes(c))) ||
-              (b.includes(drug) && conflicts.some(c => a.includes(c)))) {
+          if ((a.includes(drug) && conflicts.some((c: any) => b.includes(c))) ||
+              (b.includes(drug) && conflicts.some((c: any) => a.includes(c)))) {
             interactions.push(`Potential interaction: ${medications[i].name} + ${medications[j].name}`);
           }
         }

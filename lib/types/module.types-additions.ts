@@ -1,0 +1,5 @@
+// Append to lib/types/module.types.ts
+export interface AppManifest { id: string; name: string; version: string; description: string; shortDescription?: string; category: string; icon: string; route: string; developer: string; isOSApp: boolean; requiresAuth: boolean; permissions: string[]; screens: string[]; features: string[]; config?: Record<string, any>; tags: string[]; color?: string; author?: string; entry?: string; bannerImage?: string; is_system_app?: boolean; entry_route?: string; is_installed?: boolean; }
+export interface ModuleManifest { id: string; name: string; version: string; description: string; category: string; icon: string; route: string; developer: string; isOSApp: boolean; requiresAuth: boolean; permissions: string[]; screens: string[]; features: string[]; config?: Record<string, any>; tags: string[]; color?: string; author?: string; entry?: string; }
+export interface InstalledApp { id: string; manifest: AppManifest; installedAt: string; version: string; installDate?: string; isActive?: boolean; }
+export type AppPermission = string;

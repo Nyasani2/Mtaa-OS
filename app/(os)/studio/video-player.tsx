@@ -148,7 +148,7 @@ export default function VideoPlayerScreen() {
       <View style={[styles.section, styles.creatorRow]}>
         <Pressable
           style={styles.creatorInfo}
-          onPress={() => router.push(`/(os)/studio/creator-profile?id=${video.creator_id}`)}
+          onPress={() => router.push(`/(os)/studio/creator-profile?id=${video.creator_id}` as any)}
         >
           {video.creator_avatar ? (
             <Image source={{ uri: video.creator_avatar }} style={styles.creatorAvatar} />

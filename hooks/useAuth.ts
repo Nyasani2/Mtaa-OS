@@ -1,18 +1,14 @@
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-/**
- * Canonical auth hook wrapper for education screens.
- * All education screens import from @/hooks/useAuth — this is the bridge.
- */
-export function useAuth() {
+export const useAuth = () => {
   const store = useAuthStore();
   return {
     user: store.user,
+    session: store.session,
     profile: store.profile,
     isLoading: store.isLoading,
     isAuthenticated: store.isAuthenticated,
-    login: store.login,
-    logout: store.logout,
+    signOut: store.signOut,
     refreshSession: store.refreshSession,
   };
-}
+};

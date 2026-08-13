@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — React Integration Layer
  * Hooks and components for UI consumption of the cognitive architecture

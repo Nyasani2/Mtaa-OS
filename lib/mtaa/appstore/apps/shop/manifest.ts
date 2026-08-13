@@ -1,4 +1,4 @@
-export default {
+const _manifest = {
   id: 'shop',
   name: 'Shop',
   category: 'commerce',
@@ -11,3 +11,5 @@ export default {
   permissions: ['camera', 'location', 'notifications', 'storage'],
   isOSApp: false,
 };
+
+export default _manifest as any;

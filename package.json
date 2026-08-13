@@ -13,7 +13,12 @@
     "knip": "knip",
     "knip:fix": "knip --fix",
     "typecheck": "tsc --noEmit",
-    "lint:ci": "npm run lint:ox && npm run typecheck && npm run knip"
+    "lint:ci": "npm run lint:ox && npm run typecheck && npm run knip",
+    "type-check": "npx tsc --noEmit",
+    "type-check:watch": "npx tsc --noEmit --watch",
+    "governance:audit": "python3 tools/type-consolidation-audit.py --check-only && python3 tools/module-isolation-guard.py",
+    "governance:fix": "python3 tools/type-consolidation-audit.py --fix && python3 tools/barrel-generator.py",
+    "barrels": "python3 tools/barrel-generator.py"
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
@@ -80,7 +85,7 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.12.5",
-    "ws": "^8.21.0",
+    "ws": "^8.21.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -92,6 +97,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-native": "^5.0.0",
     "globals": "^15.15.0",
+    "husky": "^9.1.7",
     "knip": "^5.0.0",
     "lint-staged": "^15.0.0",
     "oxlint": "^0.6.0",

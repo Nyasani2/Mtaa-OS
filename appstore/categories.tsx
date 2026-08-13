@@ -60,7 +60,7 @@ export default function CategoriesScreen() {
 
   // Filter apps by active category — replaces broken getAppsByCategory
   useEffect(() => {
-    const filtered = apps.filter(a =>
+    const filtered = apps.filter((a: any) =>
       a.category?.toLowerCase() === activeCategory.toLowerCase()
     );
     setCategoryApps(filtered);
@@ -158,7 +158,7 @@ export default function CategoriesScreen() {
             <Text style={styles.emptyEmoji}>📭</Text>
             <Text style={styles.emptyTitle}>No apps yet</Text>
             <Text style={styles.emptySub}>
-              No apps available in {CATEGORIES.find(c => c.id === activeCategory)?.label}.
+              No apps available in {CATEGORIES.find((c: any) => c.id === activeCategory)?.label}.
             </Text>
           </View>
         }

@@ -108,7 +108,7 @@ export default function VideoCard({
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const handlePress = () => {
-    router.push(`/(os)/studio/video-player?id=${id}`);
+    router.push(`/(os)/studio/video-player?id=${id}` as any);
   };
 
   const dim = SIZES[size];

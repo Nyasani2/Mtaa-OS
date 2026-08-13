@@ -85,7 +85,7 @@ export default function BiometricScreen() {
       {devices.length>0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Enrolled Devices</Text>
-          {devices.map(device=>(
+          {devices.map((device: any) =>(
             <View key={device.deviceId} style={styles.deviceRow}>
               <Ionicons name={device.platform==='ios'?'phone-portrait':'phone-portrait-outline'} size={18} color="#64748b"/>
               <View style={styles.deviceInfo}>

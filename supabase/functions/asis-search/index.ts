@@ -194,9 +194,9 @@ serve(async (req) => {
         query,
         answer,
         results: unique.slice(0, limit),
-        images: unique.map(r => r.thumbnail).filter(Boolean).slice(0, 5),
+        images: unique.map((r: any) => r.thumbnail).filter(Boolean).slice(0, 5),
         relatedQuestions: generateRelated(query, unique),
-        sources: [...new Set(unique.map(r => r.source))],
+        sources: [...new Set(unique.map((r: any) => r.source))],
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -225,7 +225,7 @@ Source: ${best.source}`;
 
   if (q.includes('how to') || q.includes('how do')) {
     const steps = results.slice(0, 3).map((r, i) => `${i + 1}. ${r.title}: ${r.snippet.slice(0, 100)}...`).join('\n');
-    return `Here's how:\n\n${steps}\n\nSources: ${[...new Set(results.slice(0, 3).map(r => r.source))].join(', ')}`;
+    return `Here's how:\n\n${steps}\n\nSources: ${[...new Set(results.slice(0, 3).map((r: any) => r.source))].join(', ')}`;
   }
 
   let answer = best.snippet;

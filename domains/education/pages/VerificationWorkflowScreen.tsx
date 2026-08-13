@@ -109,7 +109,7 @@ export default function VerificationWorkflowScreen() {
 
   // ─── GET STEP STATUS ───
   const getStepStatus = (step: string) => {
-    const log = logs.find(l => l.step === step);
+    const log = logs.find((l: any) => l.step === step);
     if (!log) return 'not_started';
     return log.status;
   };
@@ -158,7 +158,7 @@ export default function VerificationWorkflowScreen() {
       <View style={styles.timelineContainer}>
         {VERIFICATION_STEPS.map((stepData, index) => {
           const status = getStepStatus(stepData.step);
-          const log = logs.find(l => l.step === stepData.step);
+          const log = logs.find((l: any) => l.step === stepData.step);
           const isCurrent = currentStep?.step === stepData.step;
 
           return (

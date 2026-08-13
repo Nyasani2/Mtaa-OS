@@ -49,7 +49,7 @@ export default function RegistrationHub() {
   const { user, isAuthenticated } = useAuthStore();
 
   const navigateToForm = (type: string) => {
-    router.push(`/register/${type}` as any);
+    router.push(`/register/${type}` as any as any);
   };
 
   return (

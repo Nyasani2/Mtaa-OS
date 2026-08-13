@@ -82,8 +82,8 @@ export default function TreasuryDashboard() {
         .limit(10);
       if (flows) setCashflows(flows);
 
-      const inflow = flows?.filter(f => f.flow_type === 'inflow').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
-      const outflow = flows?.filter(f => f.flow_type === 'outflow').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+      const inflow = flows?.filter((f: any) => f.flow_type === 'inflow').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
+      const outflow = flows?.filter((f: any) => f.flow_type === 'outflow').reduce((sum, f) => sum + (f.amount || 0), 0) || 0;
 
       // Get expenditures
       const { data: exps } = await supabase
@@ -144,10 +144,10 @@ export default function TreasuryDashboard() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickRow}>
-          <QuickAction icon="business-outline" label="Central Bank" onPress={() => router.push('/command-centre/treasury/central-bank')} />
-          <QuickAction icon="shield-checkmark-outline" label="Credit & Reg" onPress={() => router.push('/command-centre/treasury/credit-regulatory')} />
-          <QuickAction icon="cash-outline" label="Revenue" onPress={() => router.push('/command-centre/revenue')} />
-          <QuickAction icon="document-text-outline" label="Reports" onPress={() => router.push("/command-centre/reports")} />
+          <QuickAction icon="business-outline" label="Central Bank" onPress={() => router.push('/command-centre/treasury/central-bank' as any)} />
+          <QuickAction icon="shield-checkmark-outline" label="Credit & Reg" onPress={() => router.push('/command-centre/treasury/credit-regulatory' as any)} />
+          <QuickAction icon="cash-outline" label="Revenue" onPress={() => router.push('/command-centre/revenue' as any)} />
+          <QuickAction icon="document-text-outline" label="Reports" onPress={() => router.push("/command-centre/reports" as any)} />
         </View>
       </View>
 
@@ -157,7 +157,7 @@ export default function TreasuryDashboard() {
         {accounts.length === 0 ? (
           <Text style={styles.emptyText}>No accounts found</Text>
         ) : (
-          accounts.map(account => (
+          accounts.map((account: any) => (
             <View key={account.id} style={styles.accountCard}>
               <View style={styles.accountLeft}>
                 <View style={[styles.accountIcon, { backgroundColor: getAccountColor(account.account_type) + '22' }]}>
@@ -185,7 +185,7 @@ export default function TreasuryDashboard() {
         {revenues.length === 0 ? (
           <Text style={styles.emptyText}>No revenue recorded</Text>
         ) : (
-          revenues.map(rev => (
+          revenues.map((rev: any) => (
             <View key={rev.id} style={styles.revenueCard}>
               <View style={styles.revenueLeft}>
                 <View style={[styles.revenueIcon, { backgroundColor: getModuleColor(rev.source_module) + '22' }]}>

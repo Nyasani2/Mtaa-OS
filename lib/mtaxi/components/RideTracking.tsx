@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Lin
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Phone, MessageSquare, X, Navigation, Clock, Star, User } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";
-import { useAuth } from "@/lib/auth/store/auth.store";
+import { useAuthStore as useAuth } from "@/lib/auth/store/auth.store";
 
 export default function RideTracking() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function RideTracking() {
     return (
       <View style={styles.center}>
         <Text style={{ fontSize: 16, color: "#666" }}>Ride not found</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/(mtaxi)")}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.push("/(mtaxi)" as any)}>
           <Text style={styles.backBtnText}>Back to MTaxi</Text>
         </TouchableOpacity>
       </View>
@@ -127,7 +127,7 @@ export default function RideTracking() {
       )}
 
       {currentRide.status === "completed" && (
-        <TouchableOpacity style={styles.doneBtn} onPress={() => router.push("/(mtaxi)/history")}>
+        <TouchableOpacity style={styles.doneBtn} onPress={() => router.push("/(mtaxi)/history" as any)}>
           <Text style={styles.doneBtnText}>View Ride History</Text>
         </TouchableOpacity>
       )}

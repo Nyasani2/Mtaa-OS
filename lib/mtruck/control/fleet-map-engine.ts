@@ -10,14 +10,14 @@ export async function getFleetMapSnapshot() {
     .select("*");
 
   return {
-    trucks: (trucks || []).map(t => ({
+    trucks: (trucks || []).map((t: any) => ({
       id: t.truck_id,
       lat: t.lat,
       lng: t.lng,
       speed: t.speed_kmh,
       status: t.status || "ACTIVE"
     })),
-    requests: (requests || []).map(r => ({
+    requests: (requests || []).map((r: any) => ({
       id: r.id,
       lat: r.pickup_lat,
       lng: r.pickup_lng,

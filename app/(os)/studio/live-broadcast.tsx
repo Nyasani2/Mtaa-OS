@@ -58,7 +58,7 @@ export default function LiveBroadcastScreen() {
     if (!user) return;
     const { data, error } = await supabase.from("studio_live_streams").insert({
       creator_id: user.id,
-      title: `${MODES.find(m => m.key === mode)?.label} — ${new Date().toLocaleDateString()}`,
+      title: `${MODES.find((m: any) => m.key === mode)?.label} — ${new Date().toLocaleDateString()}`,
       mode, status: "scheduled",
       auto_reconnect: true, stream_redundancy: true, dvr_enabled: true, clip_generation: true,
     }).select().single();
@@ -82,7 +82,7 @@ export default function LiveBroadcastScreen() {
     loadStreams();
   }
 
-  const filtered = streams.filter(s => {
+  const filtered = streams.filter((s: any) => {
     if (activeTab === "active") return s.status === "live" || s.status === "paused";
     if (activeTab === "scheduled") return s.status === "scheduled";
     return s.status === "ended";
@@ -93,7 +93,7 @@ export default function LiveBroadcastScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Live Broadcast</Text>
-        <TouchableOpacity onPress={() => router.push("/studio/live-setup")}><Feather name="plus" size={24} color="#E53935" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push("/studio/live-setup" as any)}><Feather name="plus" size={24} color="#E53935" /></TouchableOpacity>
       </View>
 
       {healthCheck && activeTab === "active" && (
@@ -105,17 +105,17 @@ export default function LiveBroadcastScreen() {
       )}
 
       <View style={styles.tabRow}>
-        {(["active", "scheduled", "archives"] as const).map(tab => (
+        {(["active", "scheduled", "archives"] as const).map((tab: any) => (
           <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab, activeTab === tab && styles.tabActive]}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {activeTab === "active" && streams.filter(s => s.status === "live" || s.status === "paused").length === 0 && (
+      {activeTab === "active" && streams.filter((s: any) => s.status === "live" || s.status === "paused").length === 0 && (
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.sectionTitle}>Start a Long-Duration Stream</Text>
-          {MODES.map(m => (
+          {MODES.map((m: any) => (
             <TouchableOpacity key={m.key} style={styles.modeCard} onPress={() => createStream(m.key)}>
               <MaterialCommunityIcons name="broadcast" size={32} color="#E53935" />
               <View style={{ marginLeft: 14, flex: 1 }}>
@@ -130,12 +130,12 @@ export default function LiveBroadcastScreen() {
 
       {loading ? <ActivityIndicator style={{ marginTop: 40 }} color="#E53935" /> :
       <ScrollView contentContainerStyle={styles.scroll}>
-        {filtered.map(stream => (
+        {filtered.map((stream: any) => (
           <View key={stream.id} style={styles.streamCard}>
             <View style={styles.streamHeader}>
               <View style={[styles.statusDot, { backgroundColor: stream.status === "live" ? "#f44336" : stream.status === "paused" ? "#FF9800" : "#888" }]} />
               <Text style={styles.streamTitle}>{stream.title}</Text>
-              <Text style={styles.streamMode}>{MODES.find(m => m.key === stream.mode)?.label}</Text>
+              <Text style={styles.streamMode}>{MODES.find((m: any) => m.key === stream.mode)?.label}</Text>
             </View>
             {stream.status === "live" && (
               <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE · {stream.viewer_count} viewers</Text></View>

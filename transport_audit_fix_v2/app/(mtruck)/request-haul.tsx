@@ -66,7 +66,7 @@ export default function RequestHaulScreen() {
         fare_estimate: fareEstimate,
       });
       Alert.alert('Haul Requested!', `ID: ${haul.id}\nFare: KES ${fareEstimate}`);
-      router.push('/(mtruck)');
+      router.push('/(mtruck)' as any);
     } catch (err: any) {
       Alert.alert('Failed', err.message || 'Try again');
     } finally {

@@ -14,9 +14,9 @@ export async function getFleetAnalytics() {
       ? trips.length / trucks.length
       : 0;
 
-  const completed = (trips || []).filter(t => t.status === "COMPLETED").length;
+  const completed = (trips || []).filter((t: any) => t.status === "COMPLETED").length;
 
-  const cancelled = (trips || []).filter(t => t.status === "CANCELLED").length;
+  const cancelled = (trips || []).filter((t: any) => t.status === "CANCELLED").length;
 
   return {
     total_trucks: trucks?.length || 0,

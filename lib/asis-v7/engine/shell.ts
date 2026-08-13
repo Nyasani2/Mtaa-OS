@@ -83,7 +83,7 @@ export class ShellEngine {
 
     // Check if command is in allowlist
     const baseCommand = trimmed.split(/\s+/)[0];
-    const allowed = ALLOWED_COMMANDS.find(cmd => cmd.command === baseCommand);
+    const allowed = ALLOWED_COMMANDS.find((cmd: any) => cmd.command === baseCommand);
 
     if (!allowed) {
       return { safe: false, reason: `Command '${baseCommand}' is not in the safe command list` };

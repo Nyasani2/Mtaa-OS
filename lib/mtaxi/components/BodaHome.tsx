@@ -22,7 +22,7 @@ export default function BodaHome() {
   ];
 
   const handleBook = (option: RideOption) => {
-    router.push(`/mtaxi/book?type=${encodeURIComponent(option.type)}&price=${option.price}`);
+    router.push(`/mtaxi/book?type=${encodeURIComponent(option.type)}&price=${option.price}` as any);
   };
 
   return (

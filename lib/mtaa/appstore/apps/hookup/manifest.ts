@@ -39,5 +39,6 @@ export const HOOKUP_APP = {
     discover: "/(hookup)/discover",
     profile: "/(hookup)/profile",
     rooms: "/(hookup)/rooms",
-  }
+  },
+  screens: [] as any,
 };

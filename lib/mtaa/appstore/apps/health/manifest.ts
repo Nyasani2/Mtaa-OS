@@ -13,5 +13,6 @@ export const HEALTH_APP = {
     home: "/(health)",
     appointments: "/(health)/book-appointment",
     ambulance: "/(health)/ambulance",
-  }
+  },
+  screens: [] as any,
 };

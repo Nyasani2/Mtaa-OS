@@ -80,7 +80,7 @@ export default function RoutePicker({ visible, onClose, onSelect, title = 'Where
   const filtered = useMemo(() => {
     if (!query.trim()) return HARDCODED_PLACES;
     const q = query.toLowerCase();
-    return HARDCODED_PLACES.filter(p =>
+    return HARDCODED_PLACES.filter((p: any) =>
       p.name.toLowerCase().includes(q) || p.address.toLowerCase().includes(q)
     );
   }, [query]);

@@ -103,7 +103,7 @@ export default function ChannelScreen() {
   const renderVideo = ({ item }: { item: ChannelVideo }) => (
     <TouchableOpacity
       style={styles.videoCard}
-      onPress={() => router.push(`/(os)/studio/video-player?videoId=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/video-player?videoId=${item.id}` as any)}
     >
       <View style={styles.thumbBox}>
         {item.thumbnail_url ? (

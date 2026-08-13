@@ -115,7 +115,7 @@ export async function storeRecord(record: HealthRecord): Promise<void> {
   record.updatedAt = new Date().toISOString();
   const encrypted = await healthCrypto.encrypt(record.data, _vaultKey);
   await webStore.setItem(VAULT_PREFIX + record.id, JSON.stringify(encrypted));
-  _index.recordIds = _index.recordIds.filter(id => id !== record.id);
+  _index.recordIds = _index.recordIds.filter((id: any) => id !== record.id);
   _index.recordIds.unshift(record.id);
   const { data, ...meta } = record;
   _index.metadata[record.id] = meta;
@@ -161,7 +161,7 @@ export async function listRecords(filter?: RecordFilter): Promise<HealthRecord[]
 
 export async function deleteRecord(recordId: string): Promise<void> {
   await webStore.deleteItem(VAULT_PREFIX + recordId);
-  _index.recordIds = _index.recordIds.filter(id => id !== recordId);
+  _index.recordIds = _index.recordIds.filter((id: any) => id !== recordId);
   delete _index.metadata[recordId];
   await saveIndex();
 }

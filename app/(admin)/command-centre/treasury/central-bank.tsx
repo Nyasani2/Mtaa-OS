@@ -93,7 +93,7 @@ export default function CentralBankView() {
         >
           <Text style={[styles.countryText, selectedCountry === 'all' && styles.countryTextActive]}>All Countries</Text>
         </TouchableOpacity>
-        {countries.map(c => (
+        {countries.map((c: any) => (
           <TouchableOpacity
             key={c.id}
             style={[styles.countryBtn, selectedCountry === c.country_code && styles.countryBtnActive]}
@@ -112,7 +112,7 @@ export default function CentralBankView() {
         {countries.length === 0 ? (
           <Text style={styles.emptyText}>No countries configured</Text>
         ) : (
-          countries.map(country => (
+          countries.map((country: any) => (
             <View key={country.id} style={styles.countryCard}>
               <View style={styles.countryHeader}>
                 <View style={[styles.flag, { backgroundColor: getCountryColor(country.country_code) }]}>
@@ -141,7 +141,7 @@ export default function CentralBankView() {
         {officers.length === 0 ? (
           <Text style={styles.emptyText}>No officers found</Text>
         ) : (
-          officers.map(officer => (
+          officers.map((officer: any) => (
             <View key={officer.id} style={styles.officerCard}>
               <View style={styles.officerAvatar}>
                 <Text style={styles.officerInitial}>{officer.full_name.charAt(0)}</Text>

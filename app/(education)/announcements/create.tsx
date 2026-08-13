@@ -86,7 +86,7 @@ export default function CreateAnnouncementScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Priority</Text>
           <View style={styles.chipContainer}>
-            {priorities.map(p => (
+            {priorities.map((p: any) => (
               <TouchableOpacity key={p} style={[styles.chip, form.priority === p && styles.chipActive]} onPress={() => handleChange('priority', p)}>
                 <Ionicons name={p === 'urgent' ? 'alert-circle' : p === 'high' ? 'arrow-up-circle' : p === 'low' ? 'arrow-down-circle' : 'remove-circle'} size={14} color={form.priority === p ? '#00d4ff' : '#888'} />
                 <Text style={[styles.chipText, form.priority === p && styles.chipTextActive]}>{p}</Text>
@@ -97,7 +97,7 @@ export default function CreateAnnouncementScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Target Audience</Text>
           <View style={styles.chipContainer}>
-            {audiences.slice(0, 6).map(a => (
+            {audiences.slice(0, 6).map((a: any) => (
               <TouchableOpacity key={a} style={[styles.chip, form.target_audience === a && styles.chipActive]} onPress={() => handleChange('target_audience', a)}>
                 <Text style={[styles.chipText, form.target_audience === a && styles.chipTextActive]}>{a.replace('_', ' ')}</Text>
               </TouchableOpacity>

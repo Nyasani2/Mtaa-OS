@@ -33,7 +33,7 @@ export default function GalleryScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Gallery</Text>
-        <TouchableOpacity onPress={() => router.push('/(media)/camera')}>
+        <TouchableOpacity onPress={() => router.push('/(media)/camera' as any)}>
           <Ionicons name="camera" size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
@@ -56,7 +56,7 @@ export default function GalleryScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {activeTab === 'albums' ? (
           <View style={styles.albumsGrid}>
-            {MOCK_ALBUMS.map(album => (
+            {MOCK_ALBUMS.map((album: any) => (
               <TouchableOpacity key={album.id} style={styles.albumCard}>
                 <View style={styles.albumCover}>
                   <Ionicons name="images" size={32} color="#C7C7CC" />

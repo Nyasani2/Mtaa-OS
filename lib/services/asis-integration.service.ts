@@ -140,8 +140,8 @@ export async function getFleetRiskSummary(periodDays: number = 30) {
     analysis_count: scores.length,
   }));
 
-  const highRiskDrivers = driverSummaries.filter(d => d.avg_risk_score > 70);
-  const lowRiskDrivers = driverSummaries.filter(d => d.avg_risk_score < 40);
+  const highRiskDrivers = driverSummaries.filter((d: any) => d.avg_risk_score > 70);
+  const lowRiskDrivers = driverSummaries.filter((d: any) => d.avg_risk_score < 40);
 
   return {
     total_drivers_analyzed: driverSummaries.length,

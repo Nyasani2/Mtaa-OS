@@ -27,7 +27,7 @@ function CreateModal({ visible, onClose, institutionId }: { visible: boolean; on
         full_name: name,
         email,
         phone: phone || null,
-        subjects_taught: subjects.split(',').map(s => s.trim()).filter(Boolean),
+        subjects_taught: subjects.split(',').map((s: any) => s.trim()).filter(Boolean),
         employment_status: 'active',
         verification_status: 'pending',
       });

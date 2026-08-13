@@ -112,14 +112,14 @@ export function useHeavyEquipmentRealtime(requesterId?: string) {
 
     const eqCh = supabase
       .channel('mtruck:heavy-equipment', { config: { private: true } })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'mtruck_heavy_equipment' }, loadEquipment)
+      .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'mtruck_heavy_equipment' }, loadEquipment)
       .subscribe();
     channels.push(eqCh);
 
     if (requesterId) {
       const bookCh = supabase
         .channel(`mtruck:equipment-bookings:${requesterId}`, { config: { private: true } })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'mtruck_equipment_bookings', filter: `requester_id=eq.${requesterId}` }, () => loadBookings(requesterId))
+        .on('postgres_changes' as any, { event: '*', schema: 'public', table: 'mtruck_equipment_bookings', filter: `requester_id=eq.${requesterId}` }, () => loadBookings(requesterId))
         .subscribe();
       channels.push(bookCh);
     }

@@ -24,7 +24,7 @@ export default function SettingsShell() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.replace("/auth/login");
+    router.replace("/login" as any);
   };
 
   const sections: SettingsSection[] = [

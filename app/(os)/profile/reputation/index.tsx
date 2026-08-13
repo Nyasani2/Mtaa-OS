@@ -193,7 +193,7 @@ export default function ReputationScreen() {
     // Kamos Theory: 1×1 = 1 + f(growth, replication, interaction, observation)
     // Trust score is a proliferative, adaptive measure
     const base = 1;
-    const growth = ratings.filter(r => r.score !== null).length / ratings.length;
+    const growth = ratings.filter((r: any) => r.score !== null).length / ratings.length;
     const replication = ratings.reduce((sum, r) => sum + (r.count || 0), 0);
     const interaction = ratings.reduce((sum, r) => sum + (r.score || 0), 0);
     const observation = isVerified ? 1.5 : 1.0;
@@ -251,7 +251,7 @@ export default function ReputationScreen() {
         {/* Ratings by Role */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ratings by Role</Text>
-          {ratings.map(r => (
+          {ratings.map((r: any) => (
             <View key={r.label} style={styles.ratingRow}>
               <Ionicons name={r.icon as any} size={20} color={r.color} />
               <View style={styles.ratingInfo}>
@@ -259,7 +259,7 @@ export default function ReputationScreen() {
                 <Text style={styles.ratingCount}>{r.count > 0 ? `${r.count} reviews` : 'No reviews yet'}</Text>
               </View>
               <View style={styles.stars}>
-                {[1, 2, 3, 4, 5].map(star => (
+                {[1, 2, 3, 4, 5].map((star: any) => (
                   <Ionicons
                     key={star}
                     name={r.score !== null && star <= Math.round(r.score) ? 'star' : 'star-outline'}
@@ -280,7 +280,7 @@ export default function ReputationScreen() {
           <Text style={styles.sectionTitle}>History</Text>
           <TouchableOpacity
             style={styles.row}
-            onPress={() => router.push('/(os)/profile/reputation/verified-history')}
+            onPress={() => router.push('/(os)/profile/reputation/verified-history' as any)}
           >
             <Ionicons name="shield-checkmark-outline" size={20} color="#00d4ff" />
             <View style={styles.rowInfo}>
@@ -292,7 +292,7 @@ export default function ReputationScreen() {
 
           <TouchableOpacity
             style={styles.row}
-            onPress={() => router.push('/(os)/profile/reputation/warnings')}
+            onPress={() => router.push('/(os)/profile/reputation/warnings' as any)}
           >
             <Ionicons name="warning-outline" size={20} color="#ff4444" />
             <View style={styles.rowInfo}>

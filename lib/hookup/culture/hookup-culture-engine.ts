@@ -31,7 +31,7 @@ export function evaluateCultureMatch(
 
   // language overlap
   const sharedLang =
-    (a.language || []).filter(l =>
+    (a.language || []).filter((l: any) =>
       (b.language || []).includes(l)
     );
 

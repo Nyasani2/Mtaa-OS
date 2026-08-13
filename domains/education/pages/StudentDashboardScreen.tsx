@@ -229,7 +229,7 @@ export default function StudentDashboardScreen() {
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}</Text>
           <Text style={[styles.name, { color: colors.text }]}>{studentName}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(education)/notifications')} style={styles.notifBtn}>
+        <TouchableOpacity onPress={() => router.push('/(education)/notifications' as any)} style={styles.notifBtn}>
           <Ionicons name="notifications-outline" size={24} color={colors.text} />
           {stats.pending_count > 0 && (
             <View style={styles.notifBadge}>
@@ -287,7 +287,7 @@ export default function StudentDashboardScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Classes</Text>
-          <TouchableOpacity onPress={() => router.push('/(education)/student-classes')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/student-classes' as any)}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -297,7 +297,7 @@ export default function StudentDashboardScreen() {
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No classes scheduled today</Text>
           </View>
         ) : (
-          classes.map(cls => (
+          classes.map((cls: any) => (
             <View key={cls.id} style={[styles.classCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={[styles.statusDot, { backgroundColor: getStatusColor(cls.status) }]} />
               <View style={styles.classInfo}>
@@ -323,7 +323,7 @@ export default function StudentDashboardScreen() {
       <View style={[styles.section, { paddingBottom: insets.bottom + 20 }]}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Due Soon</Text>
-          <TouchableOpacity onPress={() => router.push('/(education)/homework')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/homework' as any)}>
             <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
           </TouchableOpacity>
         </View>
@@ -333,11 +333,11 @@ export default function StudentDashboardScreen() {
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>All caught up! No pending tasks.</Text>
           </View>
         ) : (
-          tasks.map(task => (
+          tasks.map((task: any) => (
             <TouchableOpacity
               key={task.id}
               style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => router.push(`/(education)/assignment-detail?id=${task.id}`)}
+              onPress={() => router.push(`/(education)/assignment-detail?id=${task.id}` as any)}
             >
               <View style={[styles.taskPriority, { backgroundColor: getPriorityColor(task.priority) + '20' }]}>
                 <Ionicons

@@ -27,14 +27,14 @@ export default function StoriesRow() {
   return (
     <View style={[styles.container,isWeb&&{maxWidth:600,alignSelf:'center',width:'100%'}]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <TouchableOpacity style={styles.storyItem} onPress={()=>router.push('/streets/create')}>
+        <TouchableOpacity style={styles.storyItem} onPress={()=>router.push('/streets/create' as any)}>
           <View style={[styles.ring,styles.myRing]}>
             {user?.avatar_url?<Image source={{uri:user.avatar_url}} style={styles.avatar}/>:<View style={[styles.avatar,styles.placeholder]}><Plus size={20} color="#fff"/></View>}
           </View>
           <Text style={styles.label} numberOfLines={1}>Your Story</Text>
         </TouchableOpacity>
-        {stories.map(story=> (
-          <TouchableOpacity key={story.id} style={styles.storyItem} onPress={()=>router.push(`/streets/post/${story.id}`)}>
+        {stories.map((story: any) => (
+          <TouchableOpacity key={story.id} style={styles.storyItem} onPress={()=>router.push(`/streets/post/${story.id}` as any)}>
             <View style={[styles.ring,!story.viewed&&styles.unviewedRing]}>
               <Image source={{uri:story.creator?.avatar_url||'https://i.pravatar.cc/150?u='+story.creator_id}} style={styles.avatar}/>
             </View>

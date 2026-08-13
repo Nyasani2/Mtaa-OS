@@ -165,7 +165,7 @@ export default function DiscoveryScreen() {
       await supabase.from('hookup_matches').insert({ user_a: uA, user_b: uB });
       Alert.alert("It's a Match!", `You and a user liked each other!`, [
         { text: 'Keep Browsing', style: 'cancel' },
-        { text: 'Message', onPress: () => router.push(`/(os)/messages?recipientId=${profile.user_id}`) },
+        { text: 'Message', onPress: () => router.push(`/(os)/messages?recipientId=${profile.user_id}` as any) },
       ]);
     }
 
@@ -225,7 +225,7 @@ export default function DiscoveryScreen() {
           Complete your Hookup profile to start discovering people nearby.
         </Text>
         <TouchableOpacity
-          onPress={() => router.push('/(os)/hookup/profile-setup')}
+          onPress={() => router.push('/(os)/hookup/profile-setup' as any)}
           style={{ backgroundColor: '#ff3366', borderRadius: 16, paddingHorizontal: 32, paddingVertical: 14, marginTop: 24 }}
         >
           <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Create Profile</Text>
@@ -238,15 +238,15 @@ export default function DiscoveryScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
-          <TouchableOpacity onPress={() => router.push('/(os)/hookup/profile-setup')}>
+          <TouchableOpacity onPress={() => router.push('/(os)/hookup/profile-setup' as any)}>
             <Feather name="user" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Discover</Text>
           <View style={{ flexDirection: 'row', gap: 16 }}>
-            <TouchableOpacity onPress={() => router.push('/(os)/hookup/likes')}>
+            <TouchableOpacity onPress={() => router.push('/(os)/hookup/likes' as any)}>
               <Feather name="heart" size={24} color="#ff3366" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/(os)/hookup/matches')}>
+            <TouchableOpacity onPress={() => router.push('/(os)/hookup/matches' as any)}>
               <Feather name="message-circle" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -265,15 +265,15 @@ export default function DiscoveryScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0a0a0a' }} edges={['top']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 }}>
-        <TouchableOpacity onPress={() => router.push('/(os)/hookup/profile-setup')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/hookup/profile-setup' as any)}>
           <Feather name="user" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Discover</Text>
         <View style={{ flexDirection: 'row', gap: 16 }}>
-          <TouchableOpacity onPress={() => router.push('/(os)/hookup/likes')}>
+          <TouchableOpacity onPress={() => router.push('/(os)/hookup/likes' as any)}>
             <Feather name="heart" size={24} color="#ff3366" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(os)/hookup/matches')}>
+          <TouchableOpacity onPress={() => router.push('/(os)/hookup/matches' as any)}>
             <Feather name="message-circle" size={24} color="#fff" />
           </TouchableOpacity>
         </View>

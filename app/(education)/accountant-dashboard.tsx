@@ -45,8 +45,8 @@ export default function AccountantDashboard() {
         .select('amount, status')
         .eq('institution_id', instId);
 
-      const collected = fees?.filter(f => f.status === 'paid').reduce((s, f) => s + (f.amount || 0), 0) || 0;
-      const pending = fees?.filter(f => f.status === 'pending').reduce((s, f) => s + (f.amount || 0), 0) || 0;
+      const collected = fees?.filter((f: any) => f.status === 'paid').reduce((s, f) => s + (f.amount || 0), 0) || 0;
+      const pending = fees?.filter((f: any) => f.status === 'pending').reduce((s, f) => s + (f.amount || 0), 0) || 0;
 
       const { count: students } = await supabase
         .from('education_students')
@@ -95,12 +95,12 @@ export default function AccountantDashboard() {
 
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.actionsGrid}>
-        <ActionButton icon="cash" label="Fee Collection" onPress={() => router.push('/(education)/fees')} />
-        <ActionButton icon="card" label="Payroll" onPress={() => router.push('/(education)/payroll')} />
-        <ActionButton icon="receipt" label="Expenses" onPress={() => router.push('/(education)/expenses')} />
-        <ActionButton icon="document-text" label="Reports" onPress={() => router.push('/(education)/reports')} />
-        <ActionButton icon="wallet" label="Budget" onPress={() => router.push('/(education)/budget')} />
-        <ActionButton icon="download" label="Export" onPress={() => router.push('/(education)/export')} />
+        <ActionButton icon="cash" label="Fee Collection" onPress={() => router.push('/(education as any)/fees' as any)} />
+        <ActionButton icon="card" label="Payroll" onPress={() => router.push('/(education as any)/payroll' as any)} />
+        <ActionButton icon="receipt" label="Expenses" onPress={() => router.push('/(education as any)/expenses' as any)} />
+        <ActionButton icon="document-text" label="Reports" onPress={() => router.push('/(education as any)/reports' as any)} />
+        <ActionButton icon="wallet" label="Budget" onPress={() => router.push('/(education as any)/budget' as any)} />
+        <ActionButton icon="download" label="Export" onPress={() => router.push('/(education as any)/export' as any)} />
       </View>
     </ScrollView>
   );

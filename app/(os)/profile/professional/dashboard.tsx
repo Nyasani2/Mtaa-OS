@@ -136,7 +136,7 @@ export default function ProfessionalDashboardScreen() {
           <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Professional Dashboard</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/professional/edit' as any)}>
           <Ionicons name="create-outline" size={22} color="#3b82f6" />
         </TouchableOpacity>
       </View>
@@ -149,7 +149,7 @@ export default function ProfessionalDashboardScreen() {
         </View>
         <Text style={styles.progressText}>{getCompletion()}% Complete</Text>
         {getCompletion() < 100 && (
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/professional/edit')}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(os)/profile/professional/edit' as any)}>
             <Text style={styles.actionBtnText}>Complete Your Profile</Text>
           </TouchableOpacity>
         )}
@@ -182,17 +182,17 @@ export default function ProfessionalDashboardScreen() {
       {/* Quick Actions */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Quick Actions</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/jobs')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/jobs' as any)}>
           <Ionicons name="search-outline" size={20} color="#3b82f6" />
           <Text style={styles.actionText}>Browse Jobs</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/professional/edit')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/professional/edit' as any)}>
           <Ionicons name="create-outline" size={20} color="#10b981" />
           <Text style={styles.actionText}>Edit Profile</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/analytics')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/analytics' as any)}>
           <Ionicons name="bar-chart-outline" size={20} color="#f59e0b" />
           <Text style={styles.actionText}>View Analytics</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />

@@ -23,19 +23,19 @@ export default function TransportScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/vehicles')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/vehicles' as any)}>
             <Ionicons name="car-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Vehicles</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/licenses')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/licenses' as any)}>
             <Ionicons name="card-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Licenses</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/offences')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/offences' as any)}>
             <Ionicons name="alert-circle-outline" size={28} color="#EF4444" />
             <Text style={styles.actionText}>Offences</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/incidents')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/transport/incidents' as any)}>
             <Ionicons name="warning-outline" size={28} color="#F59E0B" />
             <Text style={styles.actionText}>Incidents</Text>
           </TouchableOpacity>

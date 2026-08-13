@@ -107,7 +107,7 @@ export default function OnboardingScreen() {
           <TouchableOpacity
             style={[styles.continueBtn, { backgroundColor: colors.primary }]}
             onPress={() => {
-              const role = ROLES.find(r => r.id === selectedRole);
+              const role = ROLES.find((r: any) => r.id === selectedRole);
               if (role) router.push(role.route as any);
             }}
           >

@@ -109,7 +109,7 @@ export const heavyEquipmentService = {
       .from(TABLE_EQUIPMENT)
       .select('type, count')
       .eq('status', 'available')
-      .group('type');
+      .select('type');
 
     if (error) throw new Error(`Fetch summary failed: ${error.message}`);
     const summary: Record<string, number> = {};

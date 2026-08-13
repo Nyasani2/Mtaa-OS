@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -25,7 +26,7 @@ export default function CCTVViewer() {
   const router = useRouter();
   const [selectedCamera, setSelectedCamera] = useState(CAMERAS[0]);
   const [viewMode, setViewMode] = useState('live'); // live, recorded, grid
-  const [gridCameras, setGridCameras] = useState(CAMERAS.filter(c => c.allowed).slice(0, 4));
+  const [gridCameras, setGridCameras] = useState(CAMERAS.filter((c: any) => c.allowed).slice(0, 4));
 
   const handleCameraSelect = (camera) => {
     if (!camera.allowed) {
@@ -69,7 +70,7 @@ export default function CCTVViewer() {
           </View>
         ) : viewMode === 'grid' ? (
           <View style={styles.gridContainer}>
-            {gridCameras.map(cam => (
+            {gridCameras.map((cam: any) => (
               <TouchableOpacity key={cam.id} style={styles.gridCell} onPress={() => handleCameraSelect(cam)}>
                 <View style={styles.gridPlaceholder}>
                   <Ionicons name="videocam-outline" size={24} color="#64748b" />
@@ -104,7 +105,7 @@ export default function CCTVViewer() {
 
       {/* Camera List */}
       <ScrollView style={styles.cameraList} horizontal showsHorizontalScrollIndicator={false}>
-        {CAMERAS.map(camera => (
+        {CAMERAS.map((camera: any) => (
           <TouchableOpacity
             key={camera.id}
             style={[

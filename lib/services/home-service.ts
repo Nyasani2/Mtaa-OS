@@ -10,7 +10,7 @@ export async function getHomeFeed(userId: string): Promise<ServiceResult<any[]>>
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -20,7 +20,7 @@ export async function getHomeWidgets(userId: string): Promise<ServiceResult<any[
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -30,7 +30,7 @@ export async function updateWidgetOrder(userId: string, widgetIds: string[]): Pr
     if (error) throw error;
     return { data: null, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -40,7 +40,7 @@ export async function getRecommendedApps(userId: string): Promise<ServiceResult<
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -50,7 +50,7 @@ export async function getQuickActions(userId: string): Promise<ServiceResult<any
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -60,6 +60,6 @@ export async function getNotificationsPreview(userId: string): Promise<ServiceRe
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }

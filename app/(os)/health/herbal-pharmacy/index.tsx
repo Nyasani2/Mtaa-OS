@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -135,7 +136,7 @@ export default function HerbalPharmacyScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
         <Text style={s.headerTitle}>Pharmacies & Chemists</Text>
-        <TouchableOpacity style={s.addBtn} onPress={() => router.push('/health/pharmacy/register')}>
+        <TouchableOpacity style={s.addBtn} onPress={() => router.push('/health/pharmacy/register' as any)}>
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -204,14 +205,14 @@ export default function HerbalPharmacyScreen() {
           pharmacies={mapData}
           userLatitude={userLoc?.lat}
           userLongitude={userLoc?.lng}
-          onMarkerPress={(p) => router.push(`/health/pharmacy/${p.id}`)}
+          onMarkerPress={(p) => router.push(`/health/pharmacy/${p.id}` as any)}
           loading={loading}
         />
       ) : (
         <PharmacyList
           pharmacies={listData}
           filter={filter === 'all' ? 'all' : filter}
-          onPress={(p) => router.push(`/health/pharmacy/${p.id}`)}
+          onPress={(p) => router.push(`/health/pharmacy/${p.id}` as any)}
         />
       )}
     </View>

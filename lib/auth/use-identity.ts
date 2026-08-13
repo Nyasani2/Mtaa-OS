@@ -36,7 +36,7 @@ export function useIdentity() {
   }, [store.user?.id]);
 
   const refreshProfile = useCallback(async () => {
-    await store.refreshProfile();
+    if ((store as any).refreshProfile) await (store as any).refreshProfile();
   }, [store.refreshProfile]);
 
   const signOut = useCallback(async () => {
@@ -46,16 +46,16 @@ export function useIdentity() {
   return {
     user: store.user,
     session: store.session,
-    profile: store.profile,
+    profile: (store as any).profile,
     isAuthenticated: store.isAuthenticated,
     isLoading: store.isLoading,
-    initialized: store.initialized,
+    initialized: !!(store as any).user,
     isPinSet: pinState.isSet,
     isPinLocked: pinState.isLocked,
     pinAttemptsRemaining: pinState.attemptsRemaining,
-    displayName: store.getDisplayName?.() || store.user?.email?.split('@')[0] || 'User',
-    avatarUrl: store.getAvatarUrl?.() || null,
-    userRole: store.getUserRole?.() || 'user',
+    displayName: (store as any).getDisplayName?.() || store.user?.email?.split('@')[0] || 'User',
+    avatarUrl: (store as any).getAvatarUrl?.() || null,
+    userRole: (store as any).getUserRole?.() || 'user',
     refreshProfile,
     signOut,
   };

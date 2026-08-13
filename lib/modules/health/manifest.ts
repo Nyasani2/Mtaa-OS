@@ -13,4 +13,6 @@ export const manifest: AppManifest = {
   permissions: ['read'],
 };
 
-export default manifest;
+const _manifest = manifest;
+
+export default _manifest as any;

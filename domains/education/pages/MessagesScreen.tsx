@@ -159,7 +159,7 @@ export default function MessagesScreen() {
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>
-          {messages.map(m => (
+          {messages.map((m: any) => (
             <View key={m.id} style={[styles.messageBubble, m.sender_id === user?.id ? styles.myMessage : styles.theirMessage]}>
               <Text style={[styles.messageText, { color: m.sender_id === user?.id ? '#fff' : colors.text }]}>{m.content}</Text>
               <Text style={[styles.messageTime, { color: m.sender_id === user?.id ? '#fff' + '99' : colors.textSecondary }]}>
@@ -199,7 +199,7 @@ export default function MessagesScreen() {
       </View>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
-        {threads.map(t => (
+        {threads.map((t: any) => (
           <TouchableOpacity
             key={t.id}
             style={[styles.threadCard, { backgroundColor: colors.card, borderColor: colors.border }]}

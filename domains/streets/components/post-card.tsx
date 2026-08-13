@@ -52,7 +52,7 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
           <View style={styles.creatorOverlay}>
             <TouchableOpacity
               style={styles.creatorRow}
-              onPress={() => router.push(`/streets/user/${post.creator_id}`)}
+              onPress={() => router.push(`/streets/user/${post.creator_id}` as any)}
             >
               <Image
                 source={{ uri: creator.avatar_url || 'https://i.pravatar.cc/150?u=' + post.creator_id }}
@@ -66,7 +66,7 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
             <Text style={styles.caption} numberOfLines={3}>{post.caption || post.content}</Text>
             <View style={styles.hashtagRow}>
               {(post.hashtags || []).slice(0, 4).map((tag: string) => (
-                <TouchableOpacity key={tag} onPress={() => router.push(`/streets/explore?tag=${tag}`)}>
+                <TouchableOpacity key={tag} onPress={() => router.push(`/streets/explore?tag=${tag}` as any)}>
                   <Text style={styles.hashtag}>#{tag}</Text>
                 </TouchableOpacity>
               ))}
@@ -90,7 +90,7 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
           <ActionBtn
             icon={<MessageCircle size={28} color="#fff" />}
             count={post.comments_count || 0}
-            onPress={() => router.push(`/streets/post/${post.id}`)}
+            onPress={() => router.push(`/streets/post/${post.id}` as any)}
           />
           <ActionBtn
             icon={<Bookmark size={28} color={isSaved ? '#ffd700' : '#fff'} fill={isSaved ? '#ffd700' : 'none'} />}

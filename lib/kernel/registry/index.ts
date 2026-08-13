@@ -25,9 +25,9 @@ export const appRegistry: AppRegistryEntry[] = [
 ];
 
 export function getEnabledApps(): AppRegistryEntry[] {
-  return appRegistry.filter(app => app.enabled);
+  return appRegistry.filter((app: any) => app.enabled);
 }
 
 export function getAppById(id: string): AppRegistryEntry | undefined {
-  return appRegistry.find(app => app.id === id);
+  return appRegistry.find((app: any) => app.id === id);
 }

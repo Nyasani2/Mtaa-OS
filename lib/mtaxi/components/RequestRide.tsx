@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Activi
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, CreditCard, Wallet, Banknote, ChevronRight, Car, Star, Truck, Users } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";
-import { useAuth } from "@/lib/auth/store/auth.store";
+import { useAuthStore as useAuth } from "@/lib/auth/store/auth.store";
 import type { VehicleType, PaymentMethod } from "../types";
 
 const VEHICLE_TYPES: { type: VehicleType; label: string; base: string; icon: typeof Car; color: string }[] = [

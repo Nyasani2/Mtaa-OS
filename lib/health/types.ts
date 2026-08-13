@@ -247,3 +247,24 @@ export interface HealthAlert {
   created_at: string;
   expires_at?: string;
 }
+
+
+// === AUTO-ADDED HEALTH TYPES ===
+export type SHAClaim = any;
+export type SHAContributor = any;
+export type AmbulanceVehicle = any;
+export type AmbulanceRequest = any;
+export type AmbulanceDispatch = any;
+export type AmbulanceLog = any;
+export type PatientQueue = any;
+export type Queue = any;
+export type CheckIn = any;
+export type Facility = any;
+export type FacilityAdmin = any;
+export type Alert = any;
+export type AuditLog = any;
+export type Practitioner = any;
+export type WalletTransaction = any;
+export type HealthRole = any;
+export type StaffRecord = any;
+export type Appointment = any;

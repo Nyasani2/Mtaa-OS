@@ -57,7 +57,7 @@ export default function BusinessDashboardScreen() {
           revenue = orderData.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
           orders = orderData.length;
           // Distinct customers
-          const uniqueBuyers = new Set(orderData.map(o => o.buyer_id).filter(Boolean));
+          const uniqueBuyers = new Set(orderData.map((o: any) => o.buyer_id).filter(Boolean));
           customers = uniqueBuyers.size;
         }
         if (ordErr) console.error('Orders error:', ordErr);
@@ -92,7 +92,7 @@ export default function BusinessDashboardScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#f1f5f9" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Business Dashboard</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/business/edit')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/business/edit' as any)}>
           <Ionicons name="create-outline" size={22} color="#3b82f6" />
         </TouchableOpacity>
       </View>
@@ -135,12 +135,12 @@ export default function BusinessDashboardScreen() {
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Quick Actions</Text>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/shop/orders')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/shop/orders' as any)}>
           <Ionicons name="list-outline" size={20} color="#3b82f6" />
           <Text style={styles.actionText}>View Orders</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/business/edit')}>
+        <TouchableOpacity style={styles.actionRow} onPress={() => router.push('/(os)/profile/business/edit' as any)}>
           <Ionicons name="create-outline" size={20} color="#10b981" />
           <Text style={styles.actionText}>Edit Business</Text>
           <Ionicons name="chevron-forward" size={18} color="#64748b" />

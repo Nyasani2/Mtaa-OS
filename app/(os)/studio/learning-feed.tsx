@@ -62,7 +62,7 @@ export default function LearningFeedScreen() {
 
   const renderCourse = ({ item }: { item: Course }) => (
     <TouchableOpacity
-      onPress={() => router.push(`/(os)/studio/education-player?id=${item.id}`)}
+      onPress={() => router.push(`/(os)/studio/education-player?id=${item.id}` as any)}
       style={{ marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a1a', borderRadius: 12, padding: 16 }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -98,14 +98,14 @@ export default function LearningFeedScreen() {
           <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>Learning</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/studio/education-upload')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/studio/education-upload' as any)}>
           <Feather name="plus" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
       {/* Subject Filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, marginBottom: 8 }}>
-        {SUBJECTS.map(s => (
+        {SUBJECTS.map((s: any) => (
           <TouchableOpacity
             key={s}
             onPress={() => setSelectedSubject(s)}
@@ -124,7 +124,7 @@ export default function LearningFeedScreen() {
 
       {/* Grade Filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 12, marginBottom: 12 }}>
-        {GRADES.map(g => (
+        {GRADES.map((g: any) => (
           <TouchableOpacity
             key={g}
             onPress={() => setSelectedGrade(g)}

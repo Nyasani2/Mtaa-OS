@@ -15,7 +15,7 @@ export function FleetAlertItem({ alert }: Props) {
       <Ionicons name={typeIcons[alert.type] || "alert"} size={20} color={severityColors[alert.severity]} />
       <View style={styles.content}>
         <Text style={styles.message}>{alert.message}</Text>
-        <Text style={styles.meta}>{alert.severity.toUpperCase()} • {alert.createdAt}</Text>
+        <Text style={styles.meta}>{alert.severity.toUpperCase()} • {alert.created_at}</Text>
       </View>
     </View>
   );

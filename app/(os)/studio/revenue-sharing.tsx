@@ -59,7 +59,7 @@ export default function RevenueSharingScreen() {
       </View>
 
       <View style={styles.tabRow}>
-        {(["overview", "history", "payouts"] as const).map(tab => (
+        {(["overview", "history", "payouts"] as const).map((tab: any) => (
           <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={[styles.tab, activeTab === tab && styles.tabActive]}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
@@ -105,10 +105,10 @@ export default function RevenueSharingScreen() {
             {shares.length === 0 ? (
               <Text style={styles.emptyText}>No revenue transactions yet.</Text>
             ) : (
-              shares.map(s => (
+              shares.map((s: any) => (
                 <View key={s.id} style={styles.txRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.txType}>{REVENUE_TYPES.find(r => r.key === s.type)?.label || s.type}</Text>
+                    <Text style={styles.txType}>{REVENUE_TYPES.find((r: any) => r.key === s.type)?.label || s.type}</Text>
                     <Text style={styles.txDate}>{new Date(s.created_at).toLocaleDateString()}</Text>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>

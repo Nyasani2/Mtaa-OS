@@ -10,7 +10,7 @@ export async function getDashboardStats(): Promise<ServiceResult<any>> {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -20,7 +20,7 @@ export async function getRecentUsers(limit = 10): Promise<ServiceResult<any[]>> 
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -30,7 +30,7 @@ export async function getSystemHealth(): Promise<ServiceResult<any>> {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -40,7 +40,7 @@ export async function getAnalyticsSummary(): Promise<ServiceResult<any>> {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -51,7 +51,7 @@ export async function getRevenueStats(): Promise<ServiceResult<any>> {
     const total = (data || []).reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
     return { data: { total, count: (data || []).length }, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -61,7 +61,7 @@ export async function getUserGrowth(): Promise<ServiceResult<any>> {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }
 
@@ -71,6 +71,6 @@ export async function getActiveSessions(): Promise<ServiceResult<any>> {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    return handleServiceError(err);
+    return handleServiceError(err) as any;
   }
 }

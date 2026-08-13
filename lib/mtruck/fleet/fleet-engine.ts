@@ -29,7 +29,7 @@ export async function getFleetOverview() {
     trucks: trucks || [],
     drivers: drivers || [],
     total_trucks: trucks?.length || 0,
-    active_drivers: drivers?.filter(d => d.status === "AVAILABLE").length || 0,
+    active_drivers: drivers?.filter((d: any) => d.status === "AVAILABLE").length || 0,
   };
 }
 

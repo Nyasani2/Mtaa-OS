@@ -34,13 +34,13 @@ export async function globalSearch(query: string, filters?: SearchFilters, page:
 export async function searchUsers(query: string, limit: number = 10): Promise<SearchResult[]> {
   const { data, error } = await supabase.from('user_profiles').select('id, display_name, username, avatar_url, bio').ilike('display_name', `%${query}%`).limit(limit);
   if (error) throw new Error(error.message);
-  return (data || []).map(u => ({ id: u.id, type: 'user', title: u.display_name || u.username || 'Unknown', subtitle: u.bio, image_url: u.avatar_url, score: 1 }));
+  return (data || []).map((u: any) => ({ id: u.id, type: 'user', title: u.display_name || u.username || 'Unknown', subtitle: u.bio, image_url: u.avatar_url, score: 1 }));
 }
 
 export async function searchPosts(query: string, limit: number = 20): Promise<SearchResult[]> {
   const { data, error } = await supabase.from('streets_posts').select('id, content, caption, media_url, media_type, creator_id, creator:creator_id(display_name, avatar_url)').or(`content.ilike.%${query}%,caption.ilike.%${query}%`).limit(limit);
   if (error) throw new Error(error.message);
-  return (data || []).map(p => ({ id: p.id, type: 'post', title: p.content || p.caption || 'Post', subtitle: p.creator?.display_name, image_url: p.media_url, score: 1 }));
+  return (data || []).map((p: any) => ({ id: p.id, type: 'post', title: p.content || p.caption || 'Post', subtitle: (p as any).creator?.display_name, image_url: p.media_url, score: 1 }));
 }
 
 export function useSearchHistory() {
@@ -48,7 +48,7 @@ export function useSearchHistory() {
   const getHistory = async (): Promise<string[]> => {
     if (!user) return [];
     const { data } = await supabase.from('search_history').select('query').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
-    return (data || []).map(h => h.query);
+    return (data || []).map((h: any) => h.query);
   };
   const saveQuery = async (query: string) => {
     if (!user || !query.trim()) return;

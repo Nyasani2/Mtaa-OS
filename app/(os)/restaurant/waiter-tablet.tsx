@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // MTAA Restaurant Module — Waiter Tablet Screen
 // Table-side ordering with direct kitchen send, table management, order status

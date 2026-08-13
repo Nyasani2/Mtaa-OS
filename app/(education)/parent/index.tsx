@@ -99,12 +99,12 @@ export default function ParentHome() {
         ) : (
           <>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 6 }}>
-              <QuickBtn icon="school-outline" label="Attendance" color="#3b82f6" onPress={() => router.push('/(education)/attendance')} />
-              <QuickBtn icon="trophy-outline" label="Grades" color="#10b981" onPress={() => router.push('/(education)/results')} />
-              <QuickBtn icon="clipboard-outline" label="Assignments" color="#f59e0b" onPress={() => router.push('/(education)/assignments')} />
-              <QuickBtn icon="time-outline" label="Timetable" color="#6366f1" onPress={() => router.push('/(education)/timetable')} />
-              <QuickBtn icon="bus-outline" label="Transport" color="#0ea5e9" onPress={() => router.push('/(education)/transport/track')} />
-              <QuickBtn icon="cash-outline" label="Fees" color="#8b5cf6" onPress={() => router.push('/(education)/school/fees')} />
+              <QuickBtn icon="school-outline" label="Attendance" color="#3b82f6" onPress={() => router.push('/(education as any)/attendance' as any)} />
+              <QuickBtn icon="trophy-outline" label="Grades" color="#10b981" onPress={() => router.push('/(education as any)/results' as any)} />
+              <QuickBtn icon="clipboard-outline" label="Assignments" color="#f59e0b" onPress={() => router.push('/(education as any)/assignments' as any)} />
+              <QuickBtn icon="time-outline" label="Timetable" color="#6366f1" onPress={() => router.push('/(education as any)/timetable' as any)} />
+              <QuickBtn icon="bus-outline" label="Transport" color="#0ea5e9" onPress={() => router.push('/(education as any)/transport/track' as any)} />
+              <QuickBtn icon="cash-outline" label="Fees" color="#8b5cf6" onPress={() => router.push('/(education as any)/school/fees' as any)} />
             </ScrollView>
 
             <Text style={styles.sectionTitle}>Recent Attendance</Text>

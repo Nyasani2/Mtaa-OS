@@ -126,7 +126,7 @@ export default function InstitutionProfileScreen() {
           style={[styles.verificationAlert, {
             backgroundColor: verificationStatus === 'rejected' ? '#FEE2E2' : '#FEF3C7'
           }]}
-          onPress={() => router.push(`/education/verification-workflow?institutionId=${institutionId}`)}
+          onPress={() => router.push(`/education/verification-workflow?institutionId=${institutionId}` as any)}
         >
           <Ionicons
             name={verificationStatus === 'rejected' ? 'close-circle' : 'time'}
@@ -152,7 +152,7 @@ export default function InstitutionProfileScreen() {
       {/* ─── TABS ─── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBarScroll}>
         <View style={styles.tabBar}>
-          {(['overview', 'facilities', 'staff', 'performance', 'safety'] as const).map(tab => (
+          {(['overview', 'facilities', 'staff', 'performance', 'safety'] as const).map((tab: any) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -201,21 +201,21 @@ export default function InstitutionProfileScreen() {
           <Text style={styles.adminTitle}>Administration</Text>
           <TouchableOpacity
             style={styles.adminButton}
-            onPress={() => router.push(`/education/verification-workflow?institutionId=${institutionId}`)}
+            onPress={() => router.push(`/education/verification-workflow?institutionId=${institutionId}` as any)}
           >
             <Ionicons name="shield-checkmark-outline" size={20} color="#7C3AED" />
             <Text style={styles.adminButtonText}>Verification Workflow</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.adminButton}
-            onPress={() => router.push(`/education/teachers?institutionId=${institutionId}`)}
+            onPress={() => router.push(`/education/teachers?institutionId=${institutionId}` as any)}
           >
             <Ionicons name="people-outline" size={20} color="#7C3AED" />
             <Text style={styles.adminButtonText}>Manage Teachers</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.adminButton}
-            onPress={() => router.push(`/education/payroll?institutionId=${institutionId}`)}
+            onPress={() => router.push(`/education/payroll?institutionId=${institutionId}` as any)}
           >
             <Ionicons name="cash-outline" size={20} color="#7C3AED" />
             <Text style={styles.adminButtonText}>Payroll</Text>

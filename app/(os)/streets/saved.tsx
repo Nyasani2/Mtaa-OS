@@ -33,7 +33,7 @@ export default function SavedScreen() {
         numColumns={cols}
         keyExtractor={p=>p.id}
         renderItem={({item})=> (
-          <TouchableOpacity onPress={()=>router.push(`/streets/post/${item.id}`)} style={[styles.gridItem,{width:itemW,height:itemW}]}>
+          <TouchableOpacity onPress={()=>router.push(`/streets/post/${item.id}` as any)} style={[styles.gridItem,{width:itemW,height:itemW}]}>
             <Image source={{uri:item.thumbnail_url||item.media_url}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
           </TouchableOpacity>
         )}

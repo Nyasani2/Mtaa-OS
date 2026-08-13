@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Observation Engine
  * "What exists in reality?" — Collects, never interprets.

@@ -130,7 +130,7 @@ export default function TrackingScreen() {
         <View style={styles.cancelledBox}>
           <Text style={styles.cancelledText}>This ride was cancelled.</Text>
           {ride.cancellation_reason && <Text style={styles.cancelledReason}>Reason: {ride.cancellation_reason}</Text>}
-          <TouchableOpacity style={styles.rebookBtn} onPress={() => router.push('/(mtaxi)/request')}>
+          <TouchableOpacity style={styles.rebookBtn} onPress={() => router.push('/(mtaxi)/request' as any)}>
             <Text style={styles.rebookText}>Rebook Ride</Text>
           </TouchableOpacity>
         </View>

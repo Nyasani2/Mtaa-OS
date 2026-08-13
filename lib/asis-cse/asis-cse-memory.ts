@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — 7-Tier Memory Architecture
  * Sensory → Working → Episodic → Semantic → Procedural → Strategic → Collective

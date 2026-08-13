@@ -67,7 +67,7 @@ export default function MessagesScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>Sign In Required</Text>
         <Text style={styles.subtitle}>Please sign in to view messages.</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/(os)/auth')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/(os as any)/auth' as any)}>
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
       </View>
@@ -120,13 +120,13 @@ export default function MessagesScreen() {
         .eq('id', messageId);
 
       if (error) throw error;
-      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, read: true } : m));
+      setMessages(prev => prev.map((m: any) => m.id === messageId ? { ...m, read: true } : m));
     } catch (err: any) {
       console.error('Mark read error:', err);
     }
   };
 
-  const filteredMessages = messages.filter(m =>
+  const filteredMessages = messages.filter((m: any) =>
     m.content.toLowerCase().includes(search.toLowerCase()) ||
     m.subject?.toLowerCase().includes(search.toLowerCase()) ||
     m.sender_name?.toLowerCase().includes(search.toLowerCase())
@@ -185,7 +185,7 @@ export default function MessagesScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(education)/messages/compose')}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(education as any)/messages/compose' as any)}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>

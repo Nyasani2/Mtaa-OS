@@ -6,6 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase/client';
 import { useStreets } from '@/lib/hooks/useStreets';
 
 type SearchTab = 'posts' | 'users' | 'hashtags';
@@ -20,7 +21,20 @@ const TRENDING = [
 export default function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { searchPosts, searchUsers, searchHashtags } = useStreets();
+  const { loadPosts } = useStreets();
+  const searchPosts = async (q: string) => {
+    const { data } = await supabase.from('streets_posts').select('*').ilike('content', `%${q}%`).limit(50);
+    return data || [];
+  };
+  const searchUsers = async (q: string) => {
+    const { data } = await supabase.from('user_profiles').select('*').ilike('full_name', `%${q}%`).limit(20);
+    return data || [];
+  };
+  const searchHashtags = async (q: string) => {
+    const clean = q.replace(/^#/, '');
+    const { data } = await supabase.from('streets_posts').select('*').contains('hashtags', [clean]).limit(50);
+    return data || [];
+  };
 
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('posts');

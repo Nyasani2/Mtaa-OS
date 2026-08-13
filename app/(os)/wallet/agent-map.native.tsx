@@ -78,7 +78,7 @@ export default function AgentMapScreen() {
 
   useEffect(() => {
     if (filterType === 'all') setFilteredAgents(agents);
-    else setFilteredAgents(agents.filter(a => a.type === filterType || a.type === 'both'));
+    else setFilteredAgents(agents.filter((a: any) => a.type === filterType || a.type === 'both'));
   }, [filterType, agents]);
 
   const handleTransaction = async () => {
@@ -122,7 +122,7 @@ export default function AgentMapScreen() {
       {!showHistory ? (
         <>
           <View style={styles.filterBar}>
-            {AGENT_TYPES.map(t => (
+            {AGENT_TYPES.map((t: any) => (
               <TouchableOpacity key={t.key} style={[styles.filterChip, filterType === t.key && styles.filterChipActive]} onPress={() => setFilterType(t.key as any)}>
                 <MaterialCommunityIcons name={t.icon as any} size={16} color={filterType === t.key ? '#fff' : '#8E8E93'} />
                 <Text style={[styles.filterText, filterType === t.key && styles.filterTextActive]}>{t.label}</Text>
@@ -134,7 +134,7 @@ export default function AgentMapScreen() {
             {filteredAgents.length === 0 ? (
               <View style={styles.empty}><Ionicons name="map-outline" size={48} color="#C7C7CC" /><Text style={styles.emptyText}>No agents found</Text></View>
             ) : (
-              filteredAgents.map(agent => (
+              filteredAgents.map((agent: any) => (
                 <TouchableOpacity key={agent.id} style={styles.agentCard} onPress={() => setSelectedAgent(agent)}>
                   <View style={styles.agentRow}>
                     <View style={[styles.agentIcon, { backgroundColor: agent.type === 'deposit' ? '#34C75920' : agent.type === 'withdrawal' ? '#FF950020' : '#007AFF20' }]}>
@@ -206,7 +206,7 @@ export default function AgentMapScreen() {
           {history.length === 0 ? (
             <View style={styles.empty}><Ionicons name="map-outline" size={48} color="#C7C7CC" /><Text style={styles.emptyText}>No agent transactions yet</Text></View>
           ) : (
-            history.map(tx => (
+            history.map((tx: any) => (
               <View key={tx.id} style={styles.historyCard}>
                 <View style={styles.historyRow}>
                   <View style={[styles.historyIcon, { backgroundColor: tx.type === 'deposit' ? '#34C75920' : '#FF950020' }]}>

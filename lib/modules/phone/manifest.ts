@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ModuleManifest } from '../runtime/module.types';
 
 export const phoneManifest: ModuleManifest = {

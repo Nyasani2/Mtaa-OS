@@ -8,7 +8,7 @@ interface Props { selected: string; onSelect: (c: string) => void; }
 export default function CategoryChips({ selected, onSelect }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={st.wrap} contentContainerStyle={st.inner}>
-      {CATS.map(cat => {
+      {CATS.map((cat: any) => {
         const active = selected === cat;
         return (
           <TouchableOpacity key={cat} onPress={() => onSelect(cat)} style={[st.chip, active && st.chipA]} activeOpacity={0.7}>

@@ -67,7 +67,7 @@ export class ASISWalletIntelligence {
       .from('user_sessions').select('device_id, created_at').eq('profile_id', profileId)
       .order('created_at', { ascending: false }).limit(10);
 
-    const deviceHistory = [...new Set(sessions?.map(s => s.device_id) || [])];
+    const deviceHistory = [...new Set(sessions?.map((s: any) => s.device_id) || [])];
     const behaviourProfile = await this.buildKamosBehaviourProfile(profileId);
     const networkGraph = await this.buildKamosNetworkGraph(profileId);
     const contextVector = buildUserContextVector(profile, behaviourProfile, networkGraph);
@@ -129,19 +129,19 @@ export class ASISWalletIntelligence {
       return this.getDefaultKamosBehaviourProfile();
     }
 
-    const amounts = transactions.map(t => t.amount);
+    const amounts = transactions.map((t: any) => t.amount);
     const avgTransactionSize = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-    const hours = transactions.map(t => new Date(t.created_at).getHours());
+    const hours = transactions.map((t: any) => new Date(t.created_at).getHours());
     const preferredTimes = [...new Set(hours)];
 
     const hourCounts = Array.from({length: 24}, () => 0);
     hours.forEach(h => hourCounts[h]++);
-    const temporalRhythm = hourCounts.map(c => c / (hours.length || 1));
+    const temporalRhythm = hourCounts.map((c: any) => c / (hours.length || 1));
 
-    const recipientIds = transactions.map(t => t.recipient_id);
+    const recipientIds = transactions.map((t: any) => t.recipient_id);
     const preferredRecipients = [...new Set(recipientIds)].filter(Boolean) as string[];
 
-    const deviceIds = transactions.map(t => t.device_id).filter(Boolean);
+    const deviceIds = transactions.map((t: any) => t.device_id).filter(Boolean);
     const uniqueDevices = [...new Set(deviceIds)];
     const deviceConsistency = deviceIds.length > 0 ? uniqueDevices.length / deviceIds.length : 1;
 
@@ -225,7 +225,7 @@ export class ASISWalletIntelligence {
 
     const { data: roles } = await this.supabase
       .from('profile_roles').select('role').eq('profile_id', profileId);
-    const roleList = roles?.map(r => r.role) || [];
+    const roleList = roles?.map((r: any) => r.role) || [];
     if (roleList.includes('government')) return 'government';
     if (roleList.includes('merchant')) return 'merchant';
     if (roleList.includes('driver')) return 'driver';
@@ -493,8 +493,8 @@ export class ASISWalletIntelligence {
     const { data: monthlyTxs } = await this.supabase.from('wallet_transactions').select('amount, created_at, type')
       .or(`sender_id.eq.${profileId},recipient_id.eq.${profileId}`).gte('created_at', monthStart);
 
-    const monthlySent = (monthlyTxs || []).filter(t => t.type === 'debit').reduce((sum, t) => sum + (t.amount || 0), 0);
-    const monthlyReceived = (monthlyTxs || []).filter(t => t.type === 'credit').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const monthlySent = (monthlyTxs || []).filter((t: any) => t.type === 'debit').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const monthlyReceived = (monthlyTxs || []).filter((t: any) => t.type === 'credit').reduce((sum, t) => sum + (t.amount || 0), 0);
 
     const { data: profile } = await this.supabase.from('profiles').select('trust_score, daily_limit, monthly_limit').eq('id', profileId).single();
     const dailyLimitTotal = profile?.daily_limit || (profile?.trust_score || 50) * 10;
@@ -639,7 +639,7 @@ export class ASISWalletIntelligence {
     if (request.location) locationRisk = 0.1;
     if (!senderIntel.isVerified && request.amount > 100) identityMismatch = 0.2;
 
-    const highRiskConnections = senderIntel.networkGraph.filter(n => n.resonanceScore < 0.3).length;
+    const highRiskConnections = senderIntel.networkGraph.filter((n: any) => n.resonanceScore < 0.3).length;
     if (highRiskConnections > 2) networkAbuse = 0.3;
 
     const kamosAnomalyScore = anomaly.anomalyScore;
@@ -1004,10 +1004,10 @@ export class ASISWalletIntelligence {
 
   registerPlugin(id: string, capability: KamosPluginCapability): void { this.plugins.set(id, capability); }
   getPlugin(id: string): KamosPluginCapability | undefined { return this.plugins.get(id); }
-  getPluginsByType(type: KamosPluginCapability['type']): KamosPluginCapability[] { return Array.from(this.plugins.values()).filter(p => p.type === type); }
+  getPluginsByType(type: KamosPluginCapability['type']): KamosPluginCapability[] { return Array.from(this.plugins.values()).filter((p: any) => p.type === type); }
 
   getBestPluginForTransfer(request: KamosTransferRequest): KamosPluginCapability | null {
-    const candidates = Array.from(this.plugins.values()).filter(p =>
+    const candidates = Array.from(this.plugins.values()).filter((p: any) =>
       p.supportedCurrencies.includes(request.currency) && request.amount >= p.minAmount && request.amount <= p.maxAmount
     );
     if (candidates.length === 0) return null;

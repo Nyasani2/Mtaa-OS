@@ -69,14 +69,14 @@ export default function TimetableScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Timetable</Text>
-        <TouchableOpacity onPress={() => router.push('/(education)/timetable/create')}>
+        <TouchableOpacity onPress={() => router.push('/(education as any)/timetable/create' as any)}>
           <Ionicons name="add-circle" size={24} color="#00d4ff" />
         </TouchableOpacity>
       </View>
 
       {/* Day Selector */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll}>
-        {DAYS.map(day => (
+        {DAYS.map((day: any) => (
           <TouchableOpacity
             key={day}
             style={[styles.dayChip, selectedDay === day && styles.dayChipActive]}
@@ -99,7 +99,7 @@ export default function TimetableScreen() {
               <Text style={styles.emptyText}>No classes scheduled</Text>
             </View>
           ) : (
-            slots.map(slot => (
+            slots.map((slot: any) => (
               <View key={slot.id} style={styles.slotCard}>
                 <View style={styles.timeColumn}>
                   <Text style={styles.timeText}>{slot.start_time}</Text>

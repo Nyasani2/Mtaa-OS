@@ -10,4 +10,5 @@ export const STREETS_APP = {
   status: "beta",
   installable: true,
   entryPoints: { home: "/(os)/streets", map: "/(os)/streets/map", report: "/(os)/streets/report", services: "/(os)/streets/services" },
+  screens: [] as any,
 };

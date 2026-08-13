@@ -87,7 +87,7 @@ export default function DischargesScreen() {
           <View style={styles.emptyState}><LogOut size={48} color={COLORS.textLight} /><Text style={styles.emptyText}>{searchQuery ? 'No discharges match your search' : 'No discharge records yet'}</Text></View>
         ) : (
           filteredDischarges?.map((discharge: any) => (
-            <TouchableOpacity key={discharge.id} style={styles.dischargeCard} onPress={() => router.push(`/(os)/health/hospital-admin/discharges?id=${discharge.id}`)}>
+            <TouchableOpacity key={discharge.id} style={styles.dischargeCard} onPress={() => router.push(`/(os)/health/hospital-admin/discharges?id=${discharge.id}` as any)}>
               <View style={styles.dischargeHeader}>
                 <View style={styles.patientInfo}>
                   <View style={[styles.avatar, { backgroundColor: COLORS.primaryLight }]}>

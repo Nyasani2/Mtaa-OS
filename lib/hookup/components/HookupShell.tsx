@@ -18,7 +18,7 @@ export function HookupShell() {
         </TouchableOpacity>
       </View>
       <Text style={styles.sectionTitle}>Nearby Matches</Text>
-      {matches.map(match => (
+      {matches.map((match: any) => (
         <TouchableOpacity key={match.id} style={styles.matchCard}>
           <View style={styles.avatar}>
             <Ionicons name="person" size={32} color="#6366F1" />

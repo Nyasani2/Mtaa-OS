@@ -55,7 +55,7 @@ async function mtaxiRequest(supabaseAdmin, riderId, params) {
     .eq("vehicle_type", vehicle_type).eq("is_available", true).eq("verified", true)
     .not("current_lat", "is", null).not("current_lng", "is", null);
 
-  const driversInRange = (nearbyDrivers || []).filter(d => calculateDistance(pickup_lat, pickup_lng, d.current_lat, d.current_lng) <= 5);
+  const driversInRange = (nearbyDrivers || []).filter((d: any) => calculateDistance(pickup_lat, pickup_lng, d.current_lat, d.current_lng) <= 5);
   return { success: true, ride: { id: ride.id, status: ride.status, estimated_fare: ride.estimated_fare, distance_km: ride.distance_km, pickup_address: ride.pickup_address, destination_address: ride.destination_address }, nearby_drivers: driversInRange.length, message: `Ride requested. Estimated fare: KES ${estimatedFare}. ${driversInRange.length} drivers nearby.` };
 }
 

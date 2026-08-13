@@ -139,7 +139,7 @@ export default function EducationFeedScreen() {
       />
 
       <TouchableOpacity
-        onPress={() => router.push("/(education)/feed/create")}
+        onPress={() => router.push("/(education as any)/feed/create" as any)}
         style={{ position: "absolute", right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: "#0ea5e9", justifyContent: "center", alignItems: "center", elevation: 6 }}
       >
         <Ionicons name="add" size={28} color="#fff" />

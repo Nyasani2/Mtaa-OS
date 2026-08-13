@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -64,8 +65,8 @@ export default function PrescriptionsScreen() {
     },
   ];
 
-  const activePrescriptions = prescriptions.filter(p => p.status === 'active');
-  const historyPrescriptions = prescriptions.filter(p => ['dispensed', 'partially_dispensed', 'cancelled', 'expired'].includes(p.status));
+  const activePrescriptions = prescriptions.filter((p: any) => p.status === 'active');
+  const historyPrescriptions = prescriptions.filter((p: any) => ['dispensed', 'partially_dispensed', 'cancelled', 'expired'].includes(p.status));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

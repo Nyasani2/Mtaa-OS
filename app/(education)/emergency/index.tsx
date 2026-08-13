@@ -177,7 +177,7 @@ export default function EmergencyScreen() {
         <StatBox label="Buses" value={stats.buses} color="#0ea5e9" />
       </View>
 
-      <TouchableOpacity onPress={() => router.push("/(education)/emergency/roll-call")} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 16, borderWidth: 1, borderColor: "#334155" }}>
+      <TouchableOpacity onPress={() => router.push("/(education as any)/emergency/roll-call" as any)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 16, borderWidth: 1, borderColor: "#334155" }}>
         <Ionicons name="people" size={22} color="#38bdf8" />
         <Text style={{ color: "#f8fafc", fontSize: 15, fontWeight: "600", marginLeft: 12, flex: 1 }}>Roll Call</Text>
         <Ionicons name="chevron-forward" size={18} color="#64748b" />

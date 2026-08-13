@@ -169,7 +169,7 @@ export default function DocumentUploadScreen() {
         {/* Document Type */}
         <Text style={styles.label}>Document Type *</Text>
         <View style={styles.typeGrid}>
-          {DOC_TYPES.map(dt => (
+          {DOC_TYPES.map((dt: any) => (
             <TouchableOpacity
               key={dt.type}
               style={[styles.typeBtn, selectedType === dt.type && styles.typeBtnActive]}

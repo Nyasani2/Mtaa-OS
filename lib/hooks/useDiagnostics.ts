@@ -126,7 +126,7 @@ export function useDiagnostics() {
       const data = await withTimeout(updateDiagnosticSession(id, updates), QUERY_TIMEOUT, 'updateSession');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === id ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === id ? data : s),
         currentSession: prev.currentSession?.id === id ? data : prev.currentSession,
         error: null,
       }));
@@ -144,7 +144,7 @@ export function useDiagnostics() {
       const data = await withTimeout(scanFaultCodes(sessionId, elmDeviceId), QUERY_TIMEOUT * 2, 'scanCodes');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isScanning: false,
         error: null,
@@ -163,7 +163,7 @@ export function useDiagnostics() {
       const data = await withTimeout(clearFaultCodes(sessionId), QUERY_TIMEOUT, 'clearCodes');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isLoading: false,
         error: null,
@@ -182,7 +182,7 @@ export function useDiagnostics() {
       const data = await withTimeout(readLiveData(sessionId, parameters), QUERY_TIMEOUT, 'readLive');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isLoading: false,
         error: null,
@@ -203,7 +203,7 @@ export function useDiagnostics() {
       const data = await withTimeout(getDiagnosticSession(sessionId), QUERY_TIMEOUT, 'refreshSession');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isAnalyzing: false,
         error: null,
@@ -222,7 +222,7 @@ export function useDiagnostics() {
       const data = await withTimeout(programVehicle(sessionId, operation, params), QUERY_TIMEOUT * 2, 'program');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isLoading: false,
         error: null,
@@ -241,7 +241,7 @@ export function useDiagnostics() {
       const data = await withTimeout(generateDiagnosticReport(sessionId), QUERY_TIMEOUT, 'generateReport');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         isLoading: false,
         error: null,
@@ -259,7 +259,7 @@ export function useDiagnostics() {
       const data = await withTimeout(shareDiagnosticWithCustomer(sessionId), QUERY_TIMEOUT, 'shareWithCustomer');
       setState(prev => ({
         ...prev,
-        sessions: prev.sessions.map(s => s.id === sessionId ? data : s),
+        sessions: prev.sessions.map((s: any) => s.id === sessionId ? data : s),
         currentSession: prev.currentSession?.id === sessionId ? data : prev.currentSession,
         error: null,
       }));

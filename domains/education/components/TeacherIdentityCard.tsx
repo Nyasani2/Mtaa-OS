@@ -282,7 +282,7 @@ export default function TeacherIdentityCard() {
 
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => router.push(`/education/teacher-profile?teacherId=${teacherId}`)}
+              onPress={() => router.push(`/education/teacher-profile?teacherId=${teacherId}` as any)}
             >
               <Ionicons name="person-outline" size={20} color="#2563EB" />
               <Text style={styles.actionButtonText}>View Full Profile</Text>

@@ -11,7 +11,7 @@ export async function matchFreightRequest(request: any) {
   }
 
   // simple scoring engine (upgrade later to ML)
-  const scored = trucks.map(t => {
+  const scored = trucks.map((t: any) => {
     const distance = Math.sqrt(
       Math.pow(t.lat - request.pickup_lat, 2) +
       Math.pow(t.lng - request.pickup_lng, 2)

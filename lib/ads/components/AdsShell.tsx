@@ -32,7 +32,7 @@ export function AdsShell() {
         </View>
       </View>
       <Text style={styles.sectionTitle}>Campaigns</Text>
-      {campaigns.map(c => (
+      {campaigns.map((c: any) => (
         <View key={c.id} style={styles.campaignCard}>
           <View style={styles.campaignHeader}>
             <Text style={styles.campaignName}>{c.name}</Text>

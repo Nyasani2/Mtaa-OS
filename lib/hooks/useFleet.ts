@@ -103,10 +103,10 @@ export function useFleet(garageId?: string) {
       }
 
       const contracts = (data || []) as FleetContract[];
-      const activeContracts = contracts.filter(c => c.status === 'active').length;
+      const activeContracts = contracts.filter((c: any) => c.status === 'active').length;
       const totalVehicles = contracts.reduce((sum, c) => sum + (c.vehicle_count || 0), 0);
       const monthlyRevenue = contracts
-        .filter(c => c.status === 'active')
+        .filter((c: any) => c.status === 'active')
         .reduce((sum, c) => sum + (c.contract_value || 0), 0);
 
       setState(prev => ({

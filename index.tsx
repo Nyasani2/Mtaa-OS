@@ -85,7 +85,7 @@ export default function EducationLanding() {
             <Text style={styles.headerTitle}>Education OS</Text>
             <Text style={styles.headerSub}>{schools.length} Schools · {teachers.length} Teachers · {students.length} Students</Text>
           </View>
-          <TouchableOpacity onPress={() => router.push('/(education)/messages')}>
+          <TouchableOpacity onPress={() => router.push('/(education)/messages' as any)}>
             <Ionicons name="mail-outline" size={24} color="#fff" />
             <View style={styles.badge}><Text style={styles.badgeText}>3</Text></View>
           </TouchableOpacity>
@@ -94,7 +94,7 @@ export default function EducationLanding() {
         {/* ====== MY PORTAL BANNER ====== */}
         <TouchableOpacity
           style={[styles.portalBanner, { backgroundColor: userRole ? '#3b82f6' : '#475569' }]}
-          onPress={() => router.push('/(education)/entry')}
+          onPress={() => router.push('/(education)/entry' as any)}
           activeOpacity={0.8}
         >
           <Ionicons name={userRole ? "person-circle-outline" : "log-in-outline"} size={26} color="#fff" />
@@ -110,12 +110,12 @@ export default function EducationLanding() {
         </TouchableOpacity>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow}>
-          <QuickAccess icon="school-outline" label="Schools" color="#60a5fa" onPress={() => router.push('/(education)/schools')} />
-          <QuickAccess icon="people-outline" label="Teachers" color="#34d399" onPress={() => router.push('/(education)/teachers')} />
-          <QuickAccess icon="calendar-outline" label="Calendar" color="#fbbf24" onPress={() => router.push('/(education)/timetable')} />
-          <QuickAccess icon="shield-checkmark-outline" label="Command" color="#f87171" onPress={() => router.push('/(education)/ict/command-center')} />
-          <QuickAccess icon="person-outline" label="Head Teacher" color="#a78bfa" onPress={() => router.push('/(education)/school/head-teacher')} />
-          <QuickAccess icon="warning-outline" label="Emergency" color="#ef4444" onPress={() => router.push('/(education)/emergency')} />
+          <QuickAccess icon="school-outline" label="Schools" color="#60a5fa" onPress={() => router.push('/(education)/schools' as any)} />
+          <QuickAccess icon="people-outline" label="Teachers" color="#34d399" onPress={() => router.push('/(education)/teachers' as any)} />
+          <QuickAccess icon="calendar-outline" label="Calendar" color="#fbbf24" onPress={() => router.push('/(education)/timetable' as any)} />
+          <QuickAccess icon="shield-checkmark-outline" label="Command" color="#f87171" onPress={() => router.push('/(education)/ict/command-center' as any)} />
+          <QuickAccess icon="person-outline" label="Head Teacher" color="#a78bfa" onPress={() => router.push('/(education)/school/head-teacher' as any)} />
+          <QuickAccess icon="warning-outline" label="Emergency" color="#ef4444" onPress={() => router.push('/(education)/emergency' as any)} />
         </ScrollView>
       </View>
 
@@ -131,7 +131,7 @@ export default function EducationLanding() {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ paddingBottom: 40 }}>
         {activeTab === 'feed' && (
           <View>
-            <TouchableOpacity style={styles.createPost} onPress={() => router.push('/(education)/announcements/create')}>
+            <TouchableOpacity style={styles.createPost} onPress={() => router.push('/(education)/announcements/create' as any)}>
               <View style={styles.avatar}><Text style={styles.avatarText}>N</Text></View>
               <Text style={styles.createPostText}>Share an announcement, update, or achievement...</Text>
               <Ionicons name="image-outline" size={20} color="#94a3b8" />
@@ -172,7 +172,7 @@ export default function EducationLanding() {
                 <Text style={styles.emptyTitle}>No upcoming events</Text>
               </View>
             ) : events.map((event: any) => (
-              <TouchableOpacity key={event.id} style={styles.eventCard} onPress={() => router.push(`/(education)/events/${event.id}`)}>
+              <TouchableOpacity key={event.id} style={styles.eventCard} onPress={() => router.push(`/(education)/events/${event.id}` as any)}>
                 <View style={styles.eventDate}>
                   <Text style={styles.eventMonth}>{new Date(event.date).toLocaleString('default', { month: 'short' })}</Text>
                   <Text style={styles.eventDay}>{new Date(event.date).getDate()}</Text>
@@ -191,31 +191,31 @@ export default function EducationLanding() {
           <View style={{ padding: 16 }}>
             <Text style={styles.sectionTitle}>School Management</Text>
             <View style={styles.adminGrid}>
-              <AdminCard icon="school-outline" label="Create School" color="#3b82f6" onPress={() => router.push('/(education)/schools/create')} />
-              <AdminCard icon="person-add-outline" label="Invite Teachers" color="#10b981" onPress={() => router.push('/(education)/schools/invite-teacher')} />
-              <AdminCard icon="cash-outline" label="Fee Structure" color="#f59e0b" onPress={() => router.push('/(education)/school/fees')} />
-              <AdminCard icon="wallet-outline" label="Payroll" color="#8b5cf6" onPress={() => router.push('/(education)/payroll')} />
+              <AdminCard icon="school-outline" label="Create School" color="#3b82f6" onPress={() => router.push('/(education)/schools/create' as any)} />
+              <AdminCard icon="person-add-outline" label="Invite Teachers" color="#10b981" onPress={() => router.push('/(education)/schools/invite-teacher' as any)} />
+              <AdminCard icon="cash-outline" label="Fee Structure" color="#f59e0b" onPress={() => router.push('/(education)/school/fees' as any)} />
+              <AdminCard icon="wallet-outline" label="Payroll" color="#8b5cf6" onPress={() => router.push('/(education)/payroll' as any)} />
             </View>
             <Text style={styles.sectionTitle}>Operations</Text>
             <View style={styles.adminGrid}>
-              <AdminCard icon="videocam-outline" label="CCTV Monitor" color="#ef4444" onPress={() => router.push('/(education)/ict/cctv')} />
-              <AdminCard icon="map-outline" label="School Map" color="#059669" onPress={() => router.push('/(education)/ict/school-map')} />
-              <AdminCard icon="bus-outline" label="Transport" color="#0ea5e9" onPress={() => router.push('/(education)/ict/transport')} />
-              <AdminCard icon="finger-print-outline" label="Biometrics" color="#6366f1" onPress={() => router.push('/(education)/ict/biometrics')} />
+              <AdminCard icon="videocam-outline" label="CCTV Monitor" color="#ef4444" onPress={() => router.push('/(education)/ict/cctv' as any)} />
+              <AdminCard icon="map-outline" label="School Map" color="#059669" onPress={() => router.push('/(education)/ict/school-map' as any)} />
+              <AdminCard icon="bus-outline" label="Transport" color="#0ea5e9" onPress={() => router.push('/(education)/ict/transport' as any)} />
+              <AdminCard icon="finger-print-outline" label="Biometrics" color="#6366f1" onPress={() => router.push('/(education)/ict/biometrics' as any)} />
             </View>
             <Text style={styles.sectionTitle}>Emergency & Security</Text>
             <View style={styles.adminGrid}>
-              <AdminCard icon="warning-outline" label="Emergency" color="#dc2626" onPress={() => router.push('/(education)/emergency')} />
-              <AdminCard icon="shield-checkmark-outline" label="Command Center" color="#1e3a5f" onPress={() => router.push('/(education)/ict/command-center')} />
-              <AdminCard icon="people-outline" label="Visitors" color="#64748b" onPress={() => router.push('/(education)/ict/visitors')} />
-              <AdminCard icon="qr-code-outline" label="QR System" color="#8b5cf6" onPress={() => router.push('/(education)/ict/qr-system')} />
+              <AdminCard icon="warning-outline" label="Emergency" color="#dc2626" onPress={() => router.push('/(education)/emergency' as any)} />
+              <AdminCard icon="shield-checkmark-outline" label="Command Center" color="#1e3a5f" onPress={() => router.push('/(education)/ict/command-center' as any)} />
+              <AdminCard icon="people-outline" label="Visitors" color="#64748b" onPress={() => router.push('/(education)/ict/visitors' as any)} />
+              <AdminCard icon="qr-code-outline" label="QR System" color="#8b5cf6" onPress={() => router.push('/(education)/ict/qr-system' as any)} />
             </View>
             <Text style={styles.sectionTitle}>Academic</Text>
             <View style={styles.adminGrid}>
-              <AdminCard icon="book-outline" label="Assignments" color="#3b82f6" onPress={() => router.push('/(education)/assignments')} />
-              <AdminCard icon="trophy-outline" label="Grades" color="#f59e0b" onPress={() => router.push('/(education)/grades')} />
-              <AdminCard icon="checkbox-outline" label="Attendance" color="#10b981" onPress={() => router.push('/(education)/attendance')} />
-              <AdminCard icon="time-outline" label="Timetable" color="#8b5cf6" onPress={() => router.push('/(education)/timetable')} />
+              <AdminCard icon="book-outline" label="Assignments" color="#3b82f6" onPress={() => router.push('/(education)/assignments' as any)} />
+              <AdminCard icon="trophy-outline" label="Grades" color="#f59e0b" onPress={() => router.push('/(education)/grades' as any)} />
+              <AdminCard icon="checkbox-outline" label="Attendance" color="#10b981" onPress={() => router.push('/(education)/attendance' as any)} />
+              <AdminCard icon="time-outline" label="Timetable" color="#8b5cf6" onPress={() => router.push('/(education)/timetable' as any)} />
             </View>
           </View>
         )}

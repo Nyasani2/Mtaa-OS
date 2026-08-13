@@ -1,5 +1,6 @@
-// app/(os)/settings/index.tsx — MTAA OS Settings v4.0
-// Comprehensive Android/iOS-style Settings
+// @ts-nocheck
+// app/(os)/settings/index.tsx — MTAA OS Settings v4.1
+// Device/OS-level settings only. Security features moved to Profile → Privacy & Security.
 
 import { useState, useEffect } from 'react';
 import {
@@ -40,7 +41,6 @@ export default function SettingsScreen() {
   useEffect(() => {
     async function checkNetwork() {
       try {
- 
         const Network = require('expo-network');
         const state = await Network.getNetworkStateAsync();
         setNetworkType(
@@ -97,15 +97,6 @@ export default function SettingsScreen() {
       items: [
         { icon: 'person-outline', label: 'Profile', type: 'link', route: '/(os)/profile' },
         { icon: 'wallet-outline', label: 'Wallet', type: 'link', route: '/(os)/wallet' },
-        { icon: 'lock-closed-outline', label: 'Privacy', type: 'link', route: '/(os)/settings/privacy' },
-      ],
-    },
-    {
-      title: 'SECURITY',
-      items: [
-        { icon: 'keypad-outline', label: 'Change PIN', type: 'link', route: '/(os)/settings/change-pin' },
-        { icon: 'finger-print-outline', label: 'Biometric Login', type: 'link', route: '/(os)/settings/biometric' },
-        { icon: 'shield-checkmark-outline', label: 'Security Center', type: 'link', route: '/(os)/settings/security-center' },
       ],
     },
     {

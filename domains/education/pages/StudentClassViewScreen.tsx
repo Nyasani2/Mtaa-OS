@@ -65,7 +65,7 @@ export default function StudentClassViewScreen() {
     );
   }
 
-  const activeClass = classes.find(c => c.id === selectedClass) || classes[0];
+  const activeClass = classes.find((c: any) => c.id === selectedClass) || classes[0];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -77,7 +77,7 @@ export default function StudentClassViewScreen() {
 
       {/* Class Selector */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.classSelector} contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}>
-        {classes.map(cls => (
+        {classes.map((cls: any) => (
           <TouchableOpacity
             key={cls.id}
             style={[
@@ -157,7 +157,7 @@ export default function StudentClassViewScreen() {
 
         {/* Tabs */}
         <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {(['overview', 'schedule', 'mates'] as const).map(tab => (
+          {(['overview', 'schedule', 'mates'] as const).map((tab: any) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}

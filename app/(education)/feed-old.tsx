@@ -43,7 +43,7 @@ export default function FeedScreen() {
 
   const renderItem = ({ item, section }: { item: any; section: string }) => (
     <TouchableOpacity
-      onPress={() => section === "events" && router.push(`/events/${item.id}`)}
+      onPress={() => section === "events" && router.push(`/events/${item.id}` as any)}
       style={{
         backgroundColor: "#1e293b",
         borderRadius: 12,

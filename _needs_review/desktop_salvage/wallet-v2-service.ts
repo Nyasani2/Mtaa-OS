@@ -121,7 +121,7 @@ export async function getSupportedCampaigns(contributorId: string) {
   if (contribError) throw contribError;
   if (!contributions || contributions.length === 0) return [];
 
-  const campaignIds = [...new Set(contributions.map(c => c.campaign_id))];
+  const campaignIds = [...new Set(contributions.map((c: any) => c.campaign_id))];
   const { data, error } = await supabase
     .from('wallet_gofund_campaigns')
     .select('*')

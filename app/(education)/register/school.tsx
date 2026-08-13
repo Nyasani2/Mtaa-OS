@@ -42,7 +42,7 @@ export default function SchoolRegistration() {
   }, [user]);
 
   const toggleProgram = (prog: string) => {
-    setPrograms(prev => prev.includes(prog) ? prev.filter(p => p !== prog) : [...prev, prog]);
+    setPrograms(prev => prev.includes(prog) ? prev.filter((p: any) => p !== prog) : [...prev, prog]);
   };
 
   const validateStep = () => {
@@ -75,7 +75,7 @@ export default function SchoolRegistration() {
     if (!isAuthenticated) {
       Alert.alert('Sign In Required', 'Please sign in to your MTAA account to register a school.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign In', onPress: () => router.push('/(auth)/login' as any) },
+        { text: 'Sign In', onPress: () => router.push('/login' as any as any) },
       ]);
       return;
     }
@@ -110,7 +110,7 @@ export default function SchoolRegistration() {
         Alert.alert(
           'Registration Submitted',
           'Your school registration has been received and is pending verification. You will be notified once approved.',
-          [{ text: 'OK', onPress: () => router.push('/(education)' as any) }]
+          [{ text: 'OK', onPress: () => router.push('/(education as any)' as any) }]
         );
       }, 1500);
     } catch (err: any) {

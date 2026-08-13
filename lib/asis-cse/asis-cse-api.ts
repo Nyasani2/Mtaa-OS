@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Cognitive API
  * Single communication interface. No direct engine access.

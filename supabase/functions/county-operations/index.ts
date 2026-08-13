@@ -193,7 +193,7 @@ async function countyCreate(supabaseAdmin, governorId, params) {
     { service_code: "CESS", service_name: "CESS Permit", category: "cess", base_cost: 1500, cost_type: "fixed", billing_cycle: "quarterly", description: "Quarry, sand, agricultural cess", required_documents: ["ID","business_reg"] }
   ];
 
-  const servicesWithCounty = defaultServices.map(s => ({
+  const servicesWithCounty = defaultServices.map((s: any) => ({
     ...s,
     county_id: county.id,
     is_active: true,
@@ -1291,9 +1291,9 @@ async function countyAnalyticsDashboard(supabaseAdmin, callerId, params) {
     .select("status")
     .eq("county_id", county_id);
 
-  const activeLicenses = licenseMetrics?.filter(l => l.status === "active").length || 0;
-  const expiredLicenses = licenseMetrics?.filter(l => l.status === "expired").length || 0;
-  const pendingRenewals = licenseMetrics?.filter(l => l.status === "pending_renewal").length || 0;
+  const activeLicenses = licenseMetrics?.filter((l: any) => l.status === "active").length || 0;
+  const expiredLicenses = licenseMetrics?.filter((l: any) => l.status === "expired").length || 0;
+  const pendingRenewals = licenseMetrics?.filter((l: any) => l.status === "pending_renewal").length || 0;
 
   // Bill metrics
   const { data: billMetrics } = await supabaseAdmin
@@ -1303,11 +1303,11 @@ async function countyAnalyticsDashboard(supabaseAdmin, callerId, params) {
     .gte("created_at", startDate.toISOString())
     .lt("created_at", endDate.toISOString());
 
-  const pendingBills = billMetrics?.filter(b => b.status === "pending").length || 0;
-  const overdueBills = billMetrics?.filter(b => b.status === "overdue").length || 0;
-  const paidBills = billMetrics?.filter(b => b.status === "paid").length || 0;
-  const pendingAmount = billMetrics?.filter(b => b.status === "pending").reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
-  const overdueAmount = billMetrics?.filter(b => b.status === "overdue").reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
+  const pendingBills = billMetrics?.filter((b: any) => b.status === "pending").length || 0;
+  const overdueBills = billMetrics?.filter((b: any) => b.status === "overdue").length || 0;
+  const paidBills = billMetrics?.filter((b: any) => b.status === "paid").length || 0;
+  const pendingAmount = billMetrics?.filter((b: any) => b.status === "pending").reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
+  const overdueAmount = billMetrics?.filter((b: any) => b.status === "overdue").reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0;
 
   // Citizen count
   const { count: citizenCount } = await supabaseAdmin
@@ -1332,7 +1332,7 @@ async function countyAnalyticsDashboard(supabaseAdmin, callerId, params) {
     .lt("created_at", endDate.toISOString());
 
   const enforcementActions = enforcementData?.length || 0;
-  const violationsFound = enforcementData?.filter(e => e.violation_found).length || 0;
+  const violationsFound = enforcementData?.filter((e: any) => e.violation_found).length || 0;
 
   // Revenue by service (from bills)
   const { data: serviceRevenue } = await supabaseAdmin

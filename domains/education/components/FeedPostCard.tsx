@@ -113,7 +113,7 @@ export const FeedPostCard = memo(function FeedPostCard({ post, onLike, onComment
             <Ionicons name="chatbubble-outline" size={18} color={colors.textSecondary} />
             <Text style={[styles.actionText, { color: colors.textSecondary }]}>{post.comments_count}</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push(`/(education)/feed/${post.id}`)} style={styles.actionBtn}>
+          <TouchableOpacity onPress={() => router.push(`/(education)/feed/${post.id}` as any)} style={styles.actionBtn}>
             <Ionicons name="arrow-redo-outline" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>

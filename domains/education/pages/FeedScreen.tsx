@@ -142,7 +142,7 @@ export default function FeedScreen() {
     );
   }
 
-  const pendingCount = homework.filter(h => h.status === 'pending').length;
+  const pendingCount = homework.filter((h: any) => h.status === 'pending').length;
 
   return (
     <ScrollView
@@ -166,20 +166,20 @@ export default function FeedScreen() {
         </View>
 
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/homework')}>
+          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/homework' as any)}>
             <View style={[styles.actionIcon, { backgroundColor: '#FEF3C7' }]}><Ionicons name="book" size={22} color="#D97706" /></View>
             <Text style={[styles.actionLabel, { color: colors.text }]}>Homework</Text>
             {pendingCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{pendingCount}</Text></View>}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/attendance')}>
+          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/attendance' as any)}>
             <View style={[styles.actionIcon, { backgroundColor: '#DBEAFE' }]}><Ionicons name="calendar" size={22} color="#2563EB" /></View>
             <Text style={[styles.actionLabel, { color: colors.text }]}>Attendance</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/report-card')}>
+          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/report-card' as any)}>
             <View style={[styles.actionIcon, { backgroundColor: '#ECFDF5' }]}><Ionicons name="trophy" size={22} color="#059669" /></View>
             <Text style={[styles.actionLabel, { color: colors.text }]}>Grades</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/student-classes')}>
+          <TouchableOpacity style={[styles.actionCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/student-classes' as any)}>
             <View style={[styles.actionIcon, { backgroundColor: '#EDE9FE' }]}><Ionicons name="people" size={22} color="#7C3AED" /></View>
             <Text style={[styles.actionLabel, { color: colors.text }]}>My Classes</Text>
           </TouchableOpacity>
@@ -189,12 +189,12 @@ export default function FeedScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.cardHeaderRow}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Announcements</Text>
-            <TouchableOpacity onPress={() => router.push('/(education)/school-feed')}><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(education)/school-feed' as any)}><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
           </View>
           {announcements.length === 0 ? (
             <Text style={[styles.empty, { color: colors.textSecondary }]}>No announcements yet</Text>
           ) : (
-            announcements.slice(0, 3).map(a => (
+            announcements.slice(0, 3).map((a: any) => (
               <View key={a.id} style={[styles.listRow, { borderBottomColor: colors.border }]}>
                 <Ionicons name="megaphone" size={18} color={colors.primary} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
@@ -210,13 +210,13 @@ export default function FeedScreen() {
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.cardHeaderRow}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>Upcoming Homework</Text>
-            <TouchableOpacity onPress={() => router.push('/(education)/homework')}><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(education)/homework' as any)}><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
           </View>
           {homework.length === 0 ? (
             <Text style={[styles.empty, { color: colors.textSecondary }]}>No upcoming homework</Text>
           ) : (
-            homework.slice(0, 3).map(h => (
-              <TouchableOpacity key={h.id} style={[styles.listRow, { borderBottomColor: colors.border }]} onPress={() => router.push(`/(education)/homework?id=${h.id}`)}>
+            homework.slice(0, 3).map((h: any) => (
+              <TouchableOpacity key={h.id} style={[styles.listRow, { borderBottomColor: colors.border }]} onPress={() => router.push(`/(education)/homework?id=${h.id}` as any)}>
                 <View style={[styles.statusDot, { backgroundColor: h.status === 'pending' ? '#EF4444' : h.status === 'submitted' ? '#3B82F6' : '#10B981' }]} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
                   <Text style={[styles.listTitle, { color: colors.text }]} numberOfLines={1}>{h.title}</Text>
@@ -237,12 +237,12 @@ export default function FeedScreen() {
           <Ionicons name="globe" size={20} color={colors.primary} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>African Education</Text>
         </View>
-        <TouchableOpacity style={[styles.discoveryCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/african-feed')}>
+        <TouchableOpacity style={[styles.discoveryCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push('/(education)/african-feed' as any)}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.discoveryTitle, { color: colors.text }]}>Discover Educational Content</Text>
             <Text style={[styles.discoverySub, { color: colors.textSecondary }]}>Lessons, videos, and resources from verified teachers.</Text>
             <View style={styles.tagRow}>
-              {['Mathematics', 'Science', 'Languages'].map(t => (
+              {['Mathematics', 'Science', 'Languages'].map((t: any) => (
                 <View key={t} style={[styles.tag, { backgroundColor: colors.primary + '15' }]}><Text style={[styles.tagText, { color: colors.primary }]}>{t}</Text></View>
               ))}
             </View>
@@ -254,7 +254,7 @@ export default function FeedScreen() {
       {/* Teacher CTA */}
       {isTeacher && (
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.teacherBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/(education)/teacher-workspace')}>
+          <TouchableOpacity style={[styles.teacherBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/(education)/teacher-workspace' as any)}>
             <Ionicons name="add-circle" size={24} color="#fff" />
             <Text style={styles.teacherBtnText}>Create Educational Content</Text>
           </TouchableOpacity>
@@ -264,7 +264,7 @@ export default function FeedScreen() {
       {/* Parent CTA */}
       {isParent && (
         <View style={styles.section}>
-          <TouchableOpacity style={[styles.parentBtn, { backgroundColor: '#7C3AED' }]} onPress={() => router.push('/(education)/parent-dashboard')}>
+          <TouchableOpacity style={[styles.parentBtn, { backgroundColor: '#7C3AED' }]} onPress={() => router.push('/(education)/parent-dashboard' as any)}>
             <Ionicons name="people" size={24} color="#fff" />
             <Text style={styles.teacherBtnText}>Parent Dashboard</Text>
           </TouchableOpacity>

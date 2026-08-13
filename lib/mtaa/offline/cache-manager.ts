@@ -32,10 +32,10 @@ class CacheManager {
   }
 
   async invalidatePattern(pattern: string): Promise<void> {
-    Array.from(this.memoryCache.keys()).filter(k => k.includes(pattern)).forEach(k => this.memoryCache.delete(k));
+    Array.from(this.memoryCache.keys()).filter((k: any) => k.includes(pattern)).forEach(k => this.memoryCache.delete(k));
     try {
       const allKeys = await AsyncStorage.getAllKeys();
-      await AsyncStorage.multiRemove(allKeys.filter(k => k.startsWith('cache:') && k.includes(pattern)));
+      await AsyncStorage.multiRemove(allKeys.filter((k: any) => k.startsWith('cache:') && k.includes(pattern)));
     } catch { /* ignore */ }
   }
 

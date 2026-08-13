@@ -117,7 +117,7 @@ export default function LikesScreen() {
         ) : (
           <View style={{ padding: 16 }}>
             {likes.map((like) => (
-              <TouchableOpacity key={like.id} onPress={() => router.push(`/(os)/hookup/profile-detail?id=${like.user_id}`)}
+              <TouchableOpacity key={like.id} onPress={() => router.push(`/(os)/hookup/profile-detail?id=${like.user_id}` as any)}
                 style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1a1a', borderRadius: 16, padding: 14, marginBottom: 12 }}>
                 <Image source={{ uri: like.photos[0] || undefined }} style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#2a2a2a' }} />
                 <View style={{ flex: 1, marginLeft: 14 }}>

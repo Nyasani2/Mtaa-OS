@@ -81,7 +81,7 @@ export default function MStudioVisionScreen() {
           <Text style={styles.badgeText}>
             All 30 sections built. Production-ready. Ready for Africa.
           </Text>
-          <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push("/studio/unified-studio")}>
+          <TouchableOpacity style={styles.btnPrimary} onPress={() => router.push("/studio/unified-studio" as any)}>
             <Text style={styles.btnPrimaryText}>Enter Creator Studio</Text>
           </TouchableOpacity>
         </View>

@@ -23,7 +23,7 @@ class StatePersistence {
   async remove(key: string): Promise<void> { await AsyncStorage.removeItem(`${this.PREFIX}${key}`); }
   async clearAll(): Promise<void> {
     const keys = await AsyncStorage.getAllKeys();
-    await AsyncStorage.multiRemove(keys.filter(k => k.startsWith(this.PREFIX)));
+    await AsyncStorage.multiRemove(keys.filter((k: any) => k.startsWith(this.PREFIX)));
   }
 }
 export const statePersistence = new StatePersistence();

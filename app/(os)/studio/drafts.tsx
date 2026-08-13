@@ -108,7 +108,7 @@ export default function DraftsScreen() {
 
   const renderDraft = ({ item }: { item: Draft }) => (
     <TouchableOpacity
-      onPress={() => selectionMode ? toggleSelection(item.id) : router.push(`/(os)/studio/editor?id=${item.id}`)}
+      onPress={() => selectionMode ? toggleSelection(item.id) : router.push(`/(os)/studio/editor?id=${item.id}` as any)}
       onLongPress={() => {
         setSelectionMode(true);
         toggleSelection(item.id);
@@ -210,7 +210,7 @@ export default function DraftsScreen() {
             <Text style={{ color: '#666', marginTop: 16, fontSize: 16 }}>No drafts yet</Text>
             <Text style={{ color: '#444', marginTop: 4, fontSize: 13 }}>Start creating content</Text>
             <TouchableOpacity
-              onPress={() => router.push('/(os)/studio/upload-center')}
+              onPress={() => router.push('/(os)/studio/upload-center' as any)}
               style={{ marginTop: 20, backgroundColor: '#ff0000', borderRadius: 20, paddingHorizontal: 24, paddingVertical: 12 }}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Create New</Text>

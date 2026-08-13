@@ -82,7 +82,7 @@ export default function EventDetailScreen() {
       <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", textTransform: "uppercase" }}>Participants ({participants.length})</Text>
-          <TouchableOpacity onPress={() => router.push("/(education)/participants/create")} style={{ backgroundColor: "#0ea5e9", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+          <TouchableOpacity onPress={() => router.push("/(education as any)/participants/create" as any)} style={{ backgroundColor: "#0ea5e9", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
             <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Add</Text>
           </TouchableOpacity>
         </View>

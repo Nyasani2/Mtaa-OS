@@ -77,7 +77,7 @@ export async function submitInspectionResults(
     weight_capacity_verified: results.weight_capacity_verified ?? false,
     emissions_passed: results.emissions_passed ?? false,
   };
-  const allPass = Object.values(checklist).every(v => v === true);
+  const allPass = Object.values(checklist).every((v: any) => v === true);
   const { data, error } = await supabase
     .from(TABLE_INSPECTIONS)
     .update({

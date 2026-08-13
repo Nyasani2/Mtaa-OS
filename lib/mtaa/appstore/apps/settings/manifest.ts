@@ -16,5 +16,6 @@ export const SETTINGS_APP = {
     notifications: "/(settings)/app-notifications",
     network: "/(settings)/network",
     apiKeys: "/(settings)/api-keys",
-  }
+  },
+  screens: [] as any,
 };

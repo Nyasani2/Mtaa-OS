@@ -86,8 +86,8 @@ export default function ProfessionalEditScreen() {
         company: form.company.trim() || null,
         industry: form.industry || null,
         experience_years: form.experience_years ? parseInt(form.experience_years) : null,
-        skills: form.skills.split(',').map(s => s.trim()).filter(Boolean),
-        certifications: form.certifications.split(',').map(s => s.trim()).filter(Boolean),
+        skills: form.skills.split(',').map((s: any) => s.trim()).filter(Boolean),
+        certifications: form.certifications.split(',').map((s: any) => s.trim()).filter(Boolean),
         linkedin_url: form.linkedin_url.trim() || null,
         portfolio_url: form.portfolio_url.trim() || null,
         bio: form.bio.trim() || null,
@@ -155,7 +155,7 @@ export default function ProfessionalEditScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Industry</Text>
             <View style={styles.chipRow}>
-              {INDUSTRIES.map(ind => (
+              {INDUSTRIES.map((ind: any) => (
                 <TouchableOpacity key={ind} style={[styles.chip, form.industry === ind && styles.chipActive]} onPress={() => setForm(prev => ({ ...prev, industry: ind }))}>
                   <Text style={[styles.chipText, form.industry === ind && styles.chipTextActive]}>{ind}</Text>
                 </TouchableOpacity>
@@ -188,7 +188,7 @@ export default function ProfessionalEditScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Availability</Text>
             <View style={styles.chipRow}>
-              {AVAILABILITY_OPTIONS.map(opt => (
+              {AVAILABILITY_OPTIONS.map((opt: any) => (
                 <TouchableOpacity key={opt} style={[styles.chip, form.availability === opt && styles.chipActive]} onPress={() => setForm(prev => ({ ...prev, availability: opt }))}>
                   <Text style={[styles.chipText, form.availability === opt && styles.chipTextActive]}>{opt}</Text>
                 </TouchableOpacity>

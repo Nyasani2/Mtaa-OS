@@ -207,9 +207,9 @@ export default function VerificationScreen() {
       {/* Required Documents */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Required Documents</Text>
-        {DOC_TYPES.map(doc => {
-          const uploaded = documents.filter(d => d.doc_type === doc.value);
-          const hasApproved = uploaded.some(d => d.status === 'approved');
+        {DOC_TYPES.map((doc: any) => {
+          const uploaded = documents.filter((d: any) => d.doc_type === doc.value);
+          const hasApproved = uploaded.some((d: any) => d.status === 'approved');
           return (
             <View key={doc.value} style={[styles.docItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.docHeader}>
@@ -218,7 +218,7 @@ export default function VerificationScreen() {
                 {hasApproved && <Ionicons name="checkmark-circle" size={18} color="#059669" />}
                 {uploaded.length > 0 && !hasApproved && <Ionicons name="time" size={18} color="#D97706" />}
               </View>
-              {uploaded.map(u => (
+              {uploaded.map((u: any) => (
                 <View key={u.id} style={styles.docUpload}>
                   <Text style={[styles.docUrl, { color: colors.textSecondary }]} numberOfLines={1}>{u.doc_url}</Text>
                   <View style={[styles.docStatus, { backgroundColor: getStatusBg(u.status) }]}>
@@ -237,7 +237,7 @@ export default function VerificationScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Upload Document</Text>
           <Text style={[styles.label, { color: colors.textSecondary }]}>Document Type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 12 }}>
-            {DOC_TYPES.map(doc => (
+            {DOC_TYPES.map((doc: any) => (
               <TouchableOpacity
                 key={doc.value}
                 style={[styles.typeChip, selectedDocType === doc.value && { backgroundColor: colors.primary }]}

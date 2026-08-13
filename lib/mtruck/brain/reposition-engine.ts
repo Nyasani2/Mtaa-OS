@@ -9,7 +9,7 @@ export async function generateRepositionSignals() {
   const zones = await forecastZoneDemand();
 
   const highDemandZones = zones
-    .filter(z => z.demand_score > 1.5);
+    .filter((z: any) => z.demand_score > 1.5);
 
   for (const zone of highDemandZones) {
 

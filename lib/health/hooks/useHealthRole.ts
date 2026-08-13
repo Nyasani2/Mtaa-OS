@@ -20,7 +20,7 @@ export function useHealthRole() {
         setRole(staff.role_type as HealthRole);
         setSelectedFacilityId(staff.health_facilities?.id || null);
         const { data: allStaff } = await supabase.from('health_staff').select('facility_id, health_facilities(id, name)').eq('user_id', user.id);
-        setFacilities(allStaff?.map(s => s.health_facilities).filter(Boolean) || []);
+        setFacilities(allStaff?.map((s: any) => s.health_facilities).filter(Boolean) || []);
         setIsLoading(false); return;
       }
       const { data: healer } = await supabase.from('health_traditional_healers').select('*').eq('user_id', user.id).maybeSingle();

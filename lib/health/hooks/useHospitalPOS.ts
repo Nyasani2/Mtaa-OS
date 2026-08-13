@@ -11,12 +11,12 @@ export function useHospitalPOS(facilityId: string | null) {
   const [loading, setLoading] = useState(false);
 
   const addToCart = useCallback((item: CartItem) => {
-    setCart(prev => { const existing = prev.find(i => i.id === item.id); if (existing) return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, item]; });
+    setCart(prev => { const existing = prev.find((i: any) => i.id === item.id); if (existing) return prev.map((i: any) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i); return [...prev, item]; });
   }, []);
 
-  const removeFromCart = useCallback((id: string) => { setCart(prev => prev.filter(i => i.id !== id)); }, []);
+  const removeFromCart = useCallback((id: string) => { setCart(prev => prev.filter((i: any) => i.id !== id)); }, []);
 
-  const updateQuantity = useCallback((id: string, qty: number) => { if (qty <= 0) { removeFromCart(id); return; } setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: qty } : i)); }, [removeFromCart]);
+  const updateQuantity = useCallback((id: string, qty: number) => { if (qty <= 0) { removeFromCart(id); return; } setCart(prev => prev.map((i: any) => i.id === id ? { ...i, quantity: qty } : i)); }, [removeFromCart]);
 
   const checkout = useCallback(async (payload: any) => {
     if (!facilityId || !user) return { success: false, error: 'No facility or user' };

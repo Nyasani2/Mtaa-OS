@@ -17,7 +17,7 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   error: null,
 
   addDocument: (doc) => set((s) => ({ documents: [doc, ...s.documents] })),
-  removeDocument: (docId) => set((s) => ({ documents: s.documents.filter(d => d.id !== docId) })),
+  removeDocument: (docId) => set((s) => ({ documents: s.documents.filter((d: any) => d.id !== docId) })),
 }));
 
 // ── REALTIME HOOK ──

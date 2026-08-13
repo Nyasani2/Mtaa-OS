@@ -44,8 +44,8 @@ export default function LiveScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const liveRooms = MOCK_LIVES.filter(r => !r.is_scheduled);
-  const scheduledRooms = MOCK_LIVES.filter(r => r.is_scheduled);
+  const liveRooms = MOCK_LIVES.filter((r: any) => !r.is_scheduled);
+  const scheduledRooms = MOCK_LIVES.filter((r: any) => r.is_scheduled);
 
   const handleCreateLive = useCallback(async () => {
     if (!liveTitle.trim()) {
@@ -62,11 +62,11 @@ export default function LiveScreen() {
   }, [liveTitle, isPrivate]);
 
   const openLive = useCallback((room: LiveRoom) => {
-    router.push(`/streets/live/${room.id}`);
+    router.push(`/streets/live/${room.id}` as any);
   }, [router]);
 
   const openProfile = useCallback((hostId: string) => {
-    router.push(`/(os)/profile/${hostId}`);
+    router.push(`/(os)/profile/${hostId}` as any);
   }, [router]);
 
   const renderRoom = useCallback(({ item }: { item: LiveRoom }) => (

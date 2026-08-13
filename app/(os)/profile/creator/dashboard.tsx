@@ -28,7 +28,7 @@ export default function CreatorDashboardScreen() {
     try {
       // Get post IDs first
       const { data: posts } = await supabase.from('streets_posts').select('id, title, created_at').eq('creator_id', user.id).order('created_at', { ascending: false });
-      const postIds = posts?.map(p => p.id) || [];
+      const postIds = posts?.map((p: any) => p.id) || [];
 
       // Get post stats
       let postStatsData: any[] = [];
@@ -52,7 +52,7 @@ export default function CreatorDashboardScreen() {
       let topPost = null;
       if (postStatsData.length > 0) {
         const top = postStatsData.reduce((max, p) => (p.views || 0) > (max.views || 0) ? p : max, postStatsData[0]);
-        const post = posts?.find(p => p.id === top.post_id);
+        const post = posts?.find((p: any) => p.id === top.post_id);
         if (post) topPost = { id: post.id, title: post.title || 'Untitled', views: top.views || 0 };
       }
 
@@ -89,7 +89,7 @@ export default function CreatorDashboardScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Creator Dashboard</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/profile/creator')}>
+        <TouchableOpacity onPress={() => router.push('/(os)/profile/creator' as any)}>
           <Ionicons name="settings-outline" size={24} color="#00d4ff" /></TouchableOpacity>
       </View>
 
@@ -145,19 +145,19 @@ export default function CreatorDashboardScreen() {
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/streets/create')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/streets/create' as any)}>
             <Ionicons name="add-circle-outline" size={28} color="#00d4ff" />
             <Text style={styles.actionText}>New Post</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/studio')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/studio' as any)}>
             <Ionicons name="videocam-outline" size={28} color="#ff00ff" />
             <Text style={styles.actionText}>Studio</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/profile/analytics')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/profile/analytics' as any)}>
             <Ionicons name="analytics-outline" size={28} color="#00ff88" />
             <Text style={styles.actionText}>Analytics</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/profile/creator/earnings')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(os)/profile/creator/earnings' as any)}>
             <Ionicons name="cash-outline" size={28} color="#ffaa00" />
             <Text style={styles.actionText}>Earnings</Text>
           </TouchableOpacity>

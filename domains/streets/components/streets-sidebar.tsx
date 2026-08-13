@@ -22,11 +22,11 @@ export default function StreetsSidebar() {
   return (
     <View style={styles.sidebar}>
       <Text style={styles.logo}>▶ Streets</Text>
-      <TouchableOpacity style={styles.createBtn} onPress={()=>router.push('/streets/create')}>
+      <TouchableOpacity style={styles.createBtn} onPress={()=>router.push('/streets/create' as any)}>
         <PlusSquare size={18} color="#fff"/><Text style={styles.createBtnText}>Create Post</Text>
       </TouchableOpacity>
       <View style={styles.nav}>
-        {NAV_ITEMS.map(item => {
+        {NAV_ITEMS.map((item: any) => {
           const isActive = pathname === item.path || pathname?.startsWith(item.path+'/');
           const Icon = item.icon;
           return (
@@ -38,7 +38,7 @@ export default function StreetsSidebar() {
         })}
       </View>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem} onPress={()=>router.push('/settings')}>
+        <TouchableOpacity style={styles.footerItem} onPress={()=>router.push('/settings' as any)}>
           <Settings size={18} color="#888"/><Text style={styles.footerLabel}>Settings</Text>
         </TouchableOpacity>
         <Text style={styles.copy}>© 2026 MTAA</Text>

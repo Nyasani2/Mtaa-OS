@@ -26,19 +26,19 @@ export default function ImmigrationScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/visas')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/visas' as any)}>
             <Ionicons name="card-outline" size={28} color="#3B82F6" />
             <Text style={styles.actionText}>Visas</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/passports')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/passports' as any)}>
             <Ionicons name="book-outline" size={28} color="#10B981" />
             <Text style={styles.actionText}>Passports</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/permits')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/permits' as any)}>
             <Ionicons name="document-outline" size={28} color="#F59E0B" />
             <Text style={styles.actionText}>Work Permits</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/alerts')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(civic)/immigration/alerts' as any)}>
             <Ionicons name="notifications-outline" size={28} color="#EF4444" />
             <Text style={styles.actionText}>Alerts</Text>
           </TouchableOpacity>

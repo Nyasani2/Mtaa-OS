@@ -89,7 +89,7 @@ export default function TeacherDetailScreen() {
       {school && (
         <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
           <TouchableOpacity
-            onPress={() => router.push(`/school/${school.id}`)}
+            onPress={() => router.push(`/school/${school.id}` as any)}
             style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" }}
           >
             <Ionicons name="school" size={20} color="#0ea5e9" />
@@ -129,7 +129,7 @@ export default function TeacherDetailScreen() {
           {assignments.map((a) => (
             <TouchableOpacity
               key={a.id}
-              onPress={() => router.push(`/assignments/${a.id}`)}
+              onPress={() => router.push(`/assignments/${a.id}` as any)}
               style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8 }}
             >
               <Text style={{ color: "#f8fafc", fontSize: 14, fontWeight: "600" }}>{a.title}</Text>
@@ -146,7 +146,7 @@ export default function TeacherDetailScreen() {
           {classes.map((c) => (
             <TouchableOpacity
               key={c.id}
-              onPress={() => router.push(`/class/${c.id}`)}
+              onPress={() => router.push(`/class/${c.id}` as any)}
               style={{ backgroundColor: "#1e293b", borderRadius: 10, padding: 12, marginBottom: 8, flexDirection: "row", alignItems: "center" }}
             >
               <Ionicons name="easel" size={18} color="#f59e0b" />

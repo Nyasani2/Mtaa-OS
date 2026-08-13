@@ -28,7 +28,7 @@ export default function RestaurantCustomers() {
     setRefreshing(false);
   };
 
-  const filteredCustomers = customers.filter(c =>
+  const filteredCustomers = customers.filter((c: any) =>
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.phone?.includes(searchQuery) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -106,7 +106,7 @@ export default function RestaurantCustomers() {
             <Text style={styles.loyaltySubtitle}>Redemption: 100 points = £1</Text>
           </View>
           <FlatList
-            data={customers.filter(c => (c.loyalty_points || 0) > 0)}
+            data={customers.filter((c: any) => (c.loyalty_points || 0) > 0)}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (

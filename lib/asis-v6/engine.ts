@@ -4,7 +4,7 @@
  * Original v6 engine was archived in Phase 0 cleanup
  */
 
-import { useAsis } from '@/lib/asis-v7/hooks/useAsis';
+import { useASIS as useAsis } from '@/lib/asis-v7/hooks/useAsis';
 
 export interface ASISResponse {
   id: string;

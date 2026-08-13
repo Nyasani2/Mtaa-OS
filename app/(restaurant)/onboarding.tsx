@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Alert, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -12,7 +12,7 @@ const STEPS = ['Restaurant Info', 'Location & Hours', 'Menu Setup', 'Review'];
 
 export default function RestaurantOnboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -123,7 +123,7 @@ export default function RestaurantOnboarding() {
       if (restError) throw restError;
 
       if (restaurant && menuItems.length > 0) {
-        const menuData = menuItems.map(item => ({
+        const menuData = menuItems.map((item: any) => ({
           restaurant_id: restaurant.id,
           name: item.name,
           price: parseFloat(item.price) || 0,
@@ -172,7 +172,7 @@ export default function RestaurantOnboarding() {
             <Input label="KRA PIN *" value={kraPin} onChangeText={setKraPin} icon="identifier" />
             <Text style={styles.label}>Cuisine Type *</Text>
             <View style={styles.chipContainer}>
-              {cuisineOptions.map(cuisine => (
+              {cuisineOptions.map((cuisine: any) => (
                 <TouchableOpacity key={cuisine} style={[styles.chip, cuisineType === cuisine && styles.chipActive]} onPress={() => setCuisineType(cuisine)}>
                   <Text style={[styles.chipText, cuisineType === cuisine && styles.chipTextActive]}>{cuisine}</Text>
                 </TouchableOpacity>

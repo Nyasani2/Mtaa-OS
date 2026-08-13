@@ -43,7 +43,7 @@ export default function StudioMonetizationScreen() {
 
         {/* Membership Tiers */}
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 10 }}>Membership Tiers</Text>
-        {tiers.map(tier => (
+        {tiers.map((tier: any) => (
           <View key={tier.id} style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{tier.name}</Text>
@@ -56,7 +56,7 @@ export default function StudioMonetizationScreen() {
 
         {/* Merch */}
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 10, marginTop: 8 }}>Merchandise</Text>
-        {items.map(item => (
+        {items.map((item: any) => (
           <View key={item.id} style={{ backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{item.name}</Text>
@@ -69,7 +69,7 @@ export default function StudioMonetizationScreen() {
 
         {/* Recent Tips */}
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 10, marginTop: 8 }}>Recent Tips</Text>
-        {tips.slice(0, 5).map(tip => (
+        {tips.slice(0, 5).map((tip: any) => (
           <View key={tip.id} style={{ backgroundColor: '#1a1a1a', borderRadius: 8, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between' }}>
             <Text style={{ color: '#fff', fontSize: 13 }}>{tip.sender_name || 'Anonymous'}</Text>
             <Text style={{ color: '#ff6b6b', fontWeight: '600' }}>KES {tip.amount}</Text>

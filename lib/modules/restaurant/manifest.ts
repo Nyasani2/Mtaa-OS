@@ -27,4 +27,6 @@ export const manifest: AppManifest = {
   permissions: ['camera', 'notifications', 'location', 'storage'],
 };
 
-export default manifest;
+const _manifest = manifest;
+
+export default _manifest as any;

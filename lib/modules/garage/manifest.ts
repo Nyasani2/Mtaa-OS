@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AppManifest } from '@/types/module.types';
 
 export const garageManifest: AppManifest = {

@@ -27,7 +27,7 @@ export default function HelpSettingsScreen() {
     { icon: 'school-outline', title: 'Education Features', color: '#8B5CF6' },
   ];
 
-  const filteredFaqs = faqs.filter(f => 
+  const filteredFaqs = faqs.filter((f: any) => 
     f.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
     f.a.toLowerCase().includes(searchQuery.toLowerCase())
   );

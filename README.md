@@ -1,79 +1,85 @@
-# Teacher Feed + 4-Camera Content Creation
+# MTAA Auth Unification — ALL Apps Recognize User
 
-## Files Included
+## The Problem
+200+ files import auth from 5+ different paths. Some paths are broken:
+- `useIdentity` from `@/lib/auth/store/auth.store` ← DOES NOT EXIST
+- `useAuth` from `@/lib/auth` ← Returns non-existent `profile`/`refreshSession`
+- `/auth/login`, `/auth/signup` routes ← 404 (route group doesn't appear in URL)
 
-| File | Route | Description |
-|------|-------|-------------|
-| app/(education)/feed/index.tsx | /(education)/feed | Teacher social feed with stories, subject filters, posts, likes, comments |
-| app/(education)/feed/create.tsx | /(education)/feed/create | 4-mode content creation: Camera, Gallery, Document Scan, Text |
+## The Solution
 
-## Prerequisites
+### ONE canonical import for ALL apps:
+```ts
+import { useCurrentUser } from '@/lib/auth';
 
-Before extracting, rename your old feed file if it exists:
+function MyAppScreen() {
+  const { user, userId, isAuthenticated, isLoading } = useCurrentUser();
 
-```bash
-cd ~/MTAA_OS_V10/app/\(education\)
-mv feed.tsx feed-old.tsx 2>/dev/null || true
-mkdir -p feed
+  if (isLoading) return <Loading />;
+  if (!isAuthenticated) return <LoginPrompt />;
+
+  // user.id, user.email available here
+}
 ```
 
-## Install Dependencies
+### Alternative: Direct store access (for selectors)
+```ts
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+
+const userId = useAuthStore((s) => s.user?.id);
+```
+
+## Install
 
 ```bash
 cd ~/MTAA_OS_V10
-npx expo install expo-camera expo-image-picker
+unzip -o ~/Downloads/mtaa-auth-unified.zip
+
+# Replace auth barrel
+cp lib/auth/index.ts.new lib/auth/index.ts
+
+# Add unified hook
+cp lib/auth/use-current-user.ts.new lib/auth/use-current-user.ts
+
+# Fix legacy hook redirect
+cp lib/hooks/useIdentity.ts.new lib/hooks/useIdentity.ts
+
+# Run mass fix across ALL files
+bash scripts/mtaa-auth-mass-fix.sh
+
+# Verify
+bash scripts/mtaa-auth-verify.sh
+
+# Clean and restart
+rm -rf .expo node_modules/.cache
+npx expo start --clear
 ```
 
-## Extract ZIP
+## What Changed
 
-```bash
-cd ~/Downloads
-unzip -o teacher_feed_camera_v1.zip -d ~/MTAA_OS_V10/
+| File | Change |
+|------|--------|
+| `lib/auth/index.ts` | Unified barrel: exports `useAuthStore`, `useAuth`, `useCurrentUser`, `useIdentity`, `IdentityProvider` |
+| `lib/auth/use-current-user.ts` | NEW — single hook every app uses to get user |
+| `lib/auth/useAuth.ts` | Fixed — removed `profile` and `refreshSession` |
+| `lib/hooks/useIdentity.ts` | Redirects to canonical `@/lib/auth/identity-provider` |
+| 200+ app files | Broken imports auto-fixed by mass script |
+
+## Rule for ALL Future Apps
+
+**ALWAYS** import user recognition from ONE of these two paths:
+
+```ts
+// Option A: Unified hook (recommended for screens)
+import { useCurrentUser } from '@/lib/auth';
+const { user, userId, isAuthenticated } = useCurrentUser();
+
+// Option B: Direct store (recommended for selectors/performance)
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+const userId = useAuthStore((s) => s.user?.id);
 ```
 
-## Features
-
-### Teacher Feed (index.tsx)
-- Gradient header with auth-aware welcome
-- Horizontal stories bar
-- Subject filter chips (All, Mathematics, Science, etc.)
-- Post cards with author info, content, media grids (1-4 images)
-- Like, comment, share actions
-- Pull-to-refresh
-- Floating action button to create post
-- Auth gate: redirects to login if not authenticated
-
-### Create Content (create.tsx)
-- 4-mode selector: Camera / Gallery / Document / Text
-- **Camera Mode**: Live preview with flip, flash, shutter capture
-- **Gallery Mode**: Multi-select from device photos via expo-image-picker
-- **Document Mode**: Camera with corner frame overlay for document scanning
-- **Text Mode**: Clean text-only composer
-- Photo preview strip with remove capability
-- Caption input
-- Subject tag multi-select chips
-- Auth-aware posting with user_id attachment
-- Loading state on publish
-
-## MTAA Auth Integration
-- Pre-fills author info from useAuthStore
-- Checks isAuthenticated before create/post actions
-- Shows Alert with Sign In button if not authenticated
-- Attaches user.id to all payloads
-
-## Service Integration Points
-
-Search for these TODO comments in the code:
-
-```
-// TODO: Wire to education_service.getFeed({ subject: activeSubject })
-// TODO: Wire to education_service.toggleLike(postId)
-// TODO: Wire to education_service.createPost(payload)
-// TODO: Upload photos to Supabase storage first, then store URLs
-```
-
-## Notes
-- Zero emojis, clean encoding
-- Ionicons + Expo LinearGradient
-- Document scan uses camera with visual frame overlay (no OCR)
-- Camera permissions handled gracefully with fallback UI
+**NEVER** import from:
+- `@/lib/auth/store/auth.store` for `useIdentity`
+- `@/lib/auth` for `useAuth` (unless you know it's fixed)
+- `@/lib/hooks/useIdentity` (legacy)

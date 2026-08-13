@@ -49,7 +49,7 @@ export default function MTruckHome() {
       </View>
 
       <View style={styles.grid}>
-        <TouchableOpacity style={styles.tile} onPress={() => router.push('/(mtruck)/request-haul')}>
+        <TouchableOpacity style={styles.tile} onPress={() => router.push('/(mtruck)/request-haul' as any)}>
           <Text style={styles.tileIcon}>📦</Text>
           <Text style={styles.tileText}>Request Haul</Text>
         </TouchableOpacity>

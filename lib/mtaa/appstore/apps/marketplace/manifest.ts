@@ -10,4 +10,5 @@ export const MARKETPLACE_APP = {
   status: "stable",
   installable: true,
   entryPoints: { home: "/(os)/marketplace", browse: "/(os)/marketplace/browse", orders: "/(os)/marketplace/orders", sell: "/(os)/marketplace/sell" },
+  screens: [] as any,
 };

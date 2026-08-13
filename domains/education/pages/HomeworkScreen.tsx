@@ -101,7 +101,7 @@ export default function HomeworkScreen() {
 
       // If id param provided, auto-open that homework
       if (id) {
-        const target = mapped.find(h => h.id === id);
+        const target = mapped.find((h: any) => h.id === id);
         if (target) setSelected(target);
       }
     } catch (e: any) {
@@ -155,11 +155,11 @@ export default function HomeworkScreen() {
     }
   };
 
-  const filtered = filter === 'all' ? homework : homework.filter(h => h.status === filter);
+  const filtered = filter === 'all' ? homework : homework.filter((h: any) => h.status === filter);
   const counts = {
-    pending: homework.filter(h => h.status === 'pending').length,
-    submitted: homework.filter(h => h.status === 'submitted').length,
-    graded: homework.filter(h => h.status === 'graded').length,
+    pending: homework.filter((h: any) => h.status === 'pending').length,
+    submitted: homework.filter((h: any) => h.status === 'submitted').length,
+    graded: homework.filter((h: any) => h.status === 'graded').length,
   };
 
   if (loading) {
@@ -180,7 +180,7 @@ export default function HomeworkScreen() {
 
       {/* Filter Tabs */}
       <View style={[styles.filterBar, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        {(['all', 'pending', 'submitted', 'graded'] as const).map(f => (
+        {(['all', 'pending', 'submitted', 'graded'] as const).map((f: any) => (
           <TouchableOpacity
             key={f}
             style={[styles.filterTab, filter === f && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]}
@@ -197,7 +197,7 @@ export default function HomeworkScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ padding: 16 }}
       >
-        {filtered.map(hw => (
+        {filtered.map((hw: any) => (
           <TouchableOpacity
             key={hw.id}
             style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}

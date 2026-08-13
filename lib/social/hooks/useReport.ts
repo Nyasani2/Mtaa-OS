@@ -7,7 +7,7 @@ export type ReportType = 'spam' | 'harassment' | 'fake' | 'inappropriate' | 'sca
 export function useReport() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { profile } = useAuthStore();
+  const { profile } = useAuthStore() as any;
   const myProfileId = profile?.id;
 
   const report = useCallback(async (targetProfileId: string, reportType: ReportType, description?: string) => {

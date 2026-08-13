@@ -634,11 +634,11 @@ async function agentDashboard(supabaseAdmin, userId, params) {
     .in("transaction_type", ["agent_deposit", "agent_withdrawal"]);
 
   const todayDeposits = (todayTransactions || [])
-    .filter(t => t.direction === "credit")
+    .filter((t: any) => t.direction === "credit")
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   const todayWithdrawals = (todayTransactions || [])
-    .filter(t => t.direction === "debit")
+    .filter((t: any) => t.direction === "debit")
     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   return {
@@ -726,10 +726,10 @@ async function agentNearby(supabaseAdmin, userId, params) {
   const { data: agents } = await query;
 
   // Filter by distance
-  const nearbyAgents = (agents || []).filter(agent => {
+  const nearbyAgents = (agents || []).filter((agent: any) => {
     const distance = calculateDistance(lat, lng, agent.location_lat, agent.location_lng);
     return distance <= radius_km;
-  }).map(agent => ({
+  }).map((agent: any) => ({
     ...agent,
     distance_km: Math.round(calculateDistance(lat, lng, agent.location_lat, agent.location_lng) * 100) / 100
   })).sort((a, b) => a.distance_km - b.distance_km);

@@ -27,7 +27,7 @@ export class HustlerFundClient {
    * Normalize external data into MTAA format
    */
   normalize(records: HustlerFundRecord[]) {
-    return records.map(r => ({
+    return records.map((r: any) => ({
       user_id: r.user_id,
       exposure: r.loan_amount,
       repayment_ratio: r.repaid_amount / (r.loan_amount || 1),

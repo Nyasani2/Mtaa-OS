@@ -619,26 +619,26 @@ export class IntentRouter {
       let score = 0;
 
       // Keyword matching
-      const keywordMatches = pattern.keywords.filter(kw =>
+      const keywordMatches = pattern.keywords.filter((kw: any) =>
         normalizedQuery.includes(kw.toLowerCase())
       ).length;
       score += keywordMatches * 0.15;
 
       // Phrase matching
-      const phraseMatches = pattern.phrases.filter(phrase => {
+      const phraseMatches = pattern.phrases.filter((phrase: any) => {
         const regex = new RegExp(phrase.replace(/\\b/g, '\b'), 'i');
         return regex.test(normalizedQuery);
       }).length;
       score += phraseMatches * 0.25;
 
       // Entity matching
-      const entityMatches = entities.filter(e =>
+      const entityMatches = entities.filter((e: any) =>
         pattern.entityTypes.includes(e.type)
       ).length;
       score += entityMatches * 0.2;
 
       // Context hints
-      const contextMatches = pattern.contextHints.filter(hint =>
+      const contextMatches = pattern.contextHints.filter((hint: any) =>
         this.checkContextHint(hint)
       ).length;
       score += contextMatches * 0.1;
@@ -650,7 +650,7 @@ export class IntentRouter {
 
       // Kamos Theory: historical pattern matching
       const historicalMatch = this.kamosState.userKnowledgeGraph.interactionHistory
-        .filter(h => h.intent === pattern.category)
+        .filter((h: any) => h.intent === pattern.category)
         .length;
       if (historicalMatch > 0) {
         score += Math.min(historicalMatch * 0.02, 0.1);
@@ -658,8 +658,8 @@ export class IntentRouter {
 
       // Collective pattern matching
       const collectiveMatch = this.kamosState.collectivePatterns
-        .filter(p => p.intent === pattern.category)
-        .some(p => {
+        .filter((p: any) => p.intent === pattern.category)
+        .some((p: any) => {
           try {
             const regex = new RegExp(p.queryPattern, 'i');
             return regex.test(normalizedQuery);
@@ -697,7 +697,7 @@ export class IntentRouter {
       }
     }
 
-    const bestPattern = INTENT_PATTERNS.find(p => p.category === bestCategory);
+    const bestPattern = INTENT_PATTERNS.find((p: any) => p.category === bestCategory);
     const requiredTools = bestPattern?.requiredTools || ['search'];
 
     // Build suggested actions based on intent
@@ -735,7 +735,7 @@ export class IntentRouter {
 
     // Deduplicate by position
     const seen = new Set<string>();
-    return entities.filter(e => {
+    return entities.filter((e: any) => {
       const key = `${e.type}:${e.position[0]}-${e.position[1]}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -794,7 +794,7 @@ export class IntentRouter {
 
     // Time-sensitive keywords
     const urgentWords = ['urgent', 'emergency', 'now', 'immediately', 'asap', 'quick', 'hurry'];
-    if (urgentWords.some(w => query.includes(w))) urgency += 0.4;
+    if (urgentWords.some((w: any) => query.includes(w))) urgency += 0.4;
 
     // Health emergencies
     if (category === 'health_query' && /emergency|hurt|pain|bleeding|unconscious|breathing/.test(query)) {
@@ -843,7 +843,7 @@ export class IntentRouter {
         actions.push('What can you do?');
         break;
       case 'app_navigation': {
-        const app = entities.find(e => e.type === 'app_name');
+        const app = entities.find((e: any) => e.type === 'app_name');
         if (app) actions.push(`Open ${app.value}`);
         break;
       }

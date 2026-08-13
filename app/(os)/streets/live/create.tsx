@@ -18,7 +18,7 @@ export default function LiveCreateScreen() {
       user_id: user.id, title: title.trim(), status: 'live', viewer_count: 0,
     }).select().single();
     setLoading(false);
-    if (data) router.push(`/streets/live/${data.id}`);
+    if (data) router.push(`/streets/live/${data.id}` as any);
   }
 
   return (

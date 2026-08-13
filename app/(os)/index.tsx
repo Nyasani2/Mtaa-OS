@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const isOwner = user?.role === 'owner' || user?.role === 'admin';
+  const isOwner = (user as any)?.role === 'owner' || (user as any)?.role === 'admin';
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 <View>
                   <Text style={styles.greeting}>Good Day</Text>
                   <Text style={styles.userName}>
-                    {user?.full_name || user?.email || 'User'}
+                    {(user as any)?.full_name || user?.email || 'User'}
                   </Text>
                 </View>
                 <TouchableOpacity

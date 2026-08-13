@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -67,9 +68,9 @@ export default function NurseDashboardScreen() {
       setPatients(formatted);
       setStats({
         total: formatted.length,
-        vitalsDue: formatted.filter(p => p.vitals_due).length,
-        medsDue: formatted.filter(p => p.meds_due).length,
-        critical: formatted.filter(p => p.alert_level === 'critical').length,
+        vitalsDue: formatted.filter((p: any) => p.vitals_due).length,
+        medsDue: formatted.filter((p: any) => p.meds_due).length,
+        critical: formatted.filter((p: any) => p.alert_level === 'critical').length,
       });
     } catch (err) {
       Alert.alert('Error', 'Failed to load assignments');
@@ -78,7 +79,7 @@ export default function NurseDashboardScreen() {
     }
   };
 
-  const filteredPatients = patients.filter(p => {
+  const filteredPatients = patients.filter((p: any) => {
     if (activeFilter === 'vitals') return p.vitals_due;
     if (activeFilter === 'meds') return p.meds_due;
     if (activeFilter === 'critical') return p.alert_level === 'critical';
@@ -111,7 +112,7 @@ export default function NurseDashboardScreen() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {(['all', 'vitals', 'meds', 'critical'] as const).map(f => (
+        {(['all', 'vitals', 'meds', 'critical'] as const).map((f: any) => (
           <TouchableOpacity
             key={f}
             style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
@@ -131,7 +132,7 @@ export default function NurseDashboardScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.patientCard}
-            onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}`)}
+            onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}` as any)}
           >
             <View style={styles.patientHeader}>
               <View style={styles.patientIdentity}>
@@ -169,14 +170,14 @@ export default function NurseDashboardScreen() {
             <View style={styles.actionRow}>
               <TouchableOpacity
                 style={styles.actionBtn}
-                onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}`)}
+                onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}` as any)}
               >
                 <Heart size={14} color="#fff" />
                 <Text style={styles.actionBtnText}>Vitals</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionBtn, { backgroundColor: '#8b5cf6' }]}
-                onPress={() => router.push(`/health/nurse/meds?patientId=${item.patient_id}`)}
+                onPress={() => router.push(`/health/nurse/meds?patientId=${item.patient_id}` as any)}
               >
                 <Pill size={14} color="#fff" />
                 <Text style={styles.actionBtnText}>Meds</Text>

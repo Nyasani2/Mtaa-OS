@@ -50,7 +50,7 @@ export default function NotificationsScreen() {
 
     if (!error) {
       setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        prev.map((n: any) => n.id === notificationId ? { ...n, read: true } : n)
       );
     }
   };

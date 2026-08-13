@@ -93,7 +93,7 @@ export default function StudentClassesScreen() {
       });
 
       const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-      setTimetable(days.map(day => ({
+      setTimetable(days.map((day: any) => ({
         day,
         entries: grouped[day] || [],
       })));
@@ -141,7 +141,7 @@ export default function StudentClassesScreen() {
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16 }}>
         {activeTab === 'classes' ? (
-          classes.map(c => (
+          classes.map((c: any) => (
             <View key={c.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.cardHeader}>
                 <View style={[styles.iconBox, { backgroundColor: colors.primary + '15' }]}>
@@ -171,7 +171,7 @@ export default function StudentClassesScreen() {
             </View>
           ))
         ) : (
-          timetable.map(day => (
+          timetable.map((day: any) => (
             <View key={day.day} style={[styles.dayCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.dayTitle, { color: colors.text }]}>{day.day}</Text>
               {day.entries.length === 0 ? (

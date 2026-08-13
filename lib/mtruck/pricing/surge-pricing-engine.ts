@@ -68,6 +68,6 @@ export async function getZoneMarketState(zone_id: string) {
   return {
     zone_id,
     active_orders: orders?.length || 0,
-    available_trucks: trucks?.filter(t => t.status === "IDLE").length || 0
+    available_trucks: trucks?.filter((t: any) => t.status === "IDLE").length || 0
   };
 }

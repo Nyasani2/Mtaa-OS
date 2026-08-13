@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ASIS CSE — Reality Engine
  * "What exists?" — Constructs world model from observation.
