@@ -21,7 +21,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useASIS, ASISMessage } from '@/lib/asis-cse/asis-cse-provider';
+import { useASIS, ASISMessage } from '@/lib/asis-cse/asis-cse-types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
