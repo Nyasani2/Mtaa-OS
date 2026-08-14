@@ -21,7 +21,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useASIS, ASISMessage } from '@/lib/asis-cse/asis-cse-types';
+import { ASISMessage } from '@/lib/asis-cse/asis-cse-types';
+import { useASIS } from '@/lib/asis-cse/asis-cse-provider';;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -83,7 +84,7 @@ export default function ASISScreen() {
   const renderMessage = (msg: ASISMessage) => {
     const isUser = msg.role === 'user';
     const isSystem = msg.role === 'system';
-    const isTool = msg.role === 'tool';
+    const isTool = (msg as ASISMessage).role === 'tool';
 
     return (
       <View
@@ -155,7 +156,7 @@ export default function ASISScreen() {
       {activeEngines.length > 0 && (
         <View style={styles.enginesBar}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {activeEngines.map((engine, idx) => (
+            {activeEngines.map((engine: any, idx: number) => (
               <View key={idx} style={styles.engineChip}>
                 <Text style={styles.engineChipText}>{engine}</Text>
               </View>
@@ -249,7 +250,7 @@ export default function ASISScreen() {
             </TouchableOpacity>
 
             <ScrollView style={styles.convList}>
-              {conversations.map((conv) => (
+              {conversations.map((conv: any) => (
                 <TouchableOpacity
                   key={conv.id}
                   onPress={() => {

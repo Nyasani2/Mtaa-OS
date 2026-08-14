@@ -181,7 +181,7 @@ export interface ReasoningChain {
 
 export interface ASISMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'asis' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: number;
 }
