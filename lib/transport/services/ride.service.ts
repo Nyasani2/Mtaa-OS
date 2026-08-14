@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { CreateRidePayload } from '../types';
 
 // ============================================================
 // REAL WORLD FARE RATES (Kenya market-aligned)
@@ -61,22 +62,6 @@ export function haversine(lat1: number, lng1: number, lat2: number, lng2: number
 // ============================================================
 // RIDE OPERATIONS
 // ============================================================
-export interface CreateRidePayload {
-  passenger_id: string;
-  pickup_lat: number;
-  pickup_lng: number;
-  dropoff_lat: number;
-  dropoff_lng: number;
-  pickup_address?: string;
-  dropoff_address?: string;
-  ride_type: string;
-  payment_method: string;
-  fare_estimate: number;
-  distance_km: number;
-  base_fare?: number;
-  time_fare?: number;
-  surge_multiplier?: number;
-}
 
 export interface NearbyDriver {
   id: string;

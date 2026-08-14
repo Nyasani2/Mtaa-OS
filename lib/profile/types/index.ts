@@ -240,3 +240,9 @@ export interface PrivacySettings {
   show_location: boolean;
   allow_messages: boolean;
 }
+
+
+// === MERGED FROM types-additions.ts ===
+export interface ProfileConnection { id: string; requester_id: string; recipient_id: string; type: ConnectionType; status: 'pending' | 'accepted' | 'rejected' | 'blocked'; created_at: string; }
+
+export interface ProfileAnalytics { id: string; profile_id: string; views_count: number; search_appearances: number; qr_scans: number; period_start: string; period_end: string; }

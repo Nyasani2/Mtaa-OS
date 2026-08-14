@@ -60,3 +60,7 @@ export interface ModuleManifest {
   isSystemApp?: boolean;
   isLocalApp?: boolean;
 }
+
+
+// === MERGED FROM module.types-additions.ts ===
+export type AppPermission = string;
