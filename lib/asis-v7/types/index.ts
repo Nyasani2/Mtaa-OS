@@ -9,7 +9,7 @@
 
 export type MessageRole = 'user' | 'asis' | 'system' | 'tool';
 
-export interface ASISMessage {
+export interface ASISv7Message {
   id: string;
   role: MessageRole;
   content: string;
@@ -305,7 +305,7 @@ export interface DocumentQuery {
 
 // ─── Response ───────────────────────────────────────────────────
 
-export interface SynthesizedResponse {
+export interface ASISv7SynthesizedResponse {
   text: string;
   facts: string[];
   details: string[];
@@ -334,7 +334,7 @@ export interface ASISPersonality {
 export interface ASISSession {
   id: string;
   userId: string;
-  messages: ASISMessage[];
+  messages: ASISv7Message[];
   context: ContextVector;
   kamosState: KamosState;
   createdAt: number;
