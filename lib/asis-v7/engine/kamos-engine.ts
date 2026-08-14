@@ -13,7 +13,7 @@
 import {
   KamosState, KnowledgeGraph, KnowledgeFact, UserPreference,
   InteractionRecord, CollectivePattern, ContextVector, Observation,
-  SynthesizedResponse, ToolOutput, IntentResult, ASISPersonality,
+  ASISv7SynthesizedResponse, ToolOutput, IntentResult, ASISPersonality,
 } from '../types';
 
 // ─── Kamos Math ─────────────────────────────────────────────────
@@ -305,7 +305,7 @@ export class KamosEngine {
     intent: IntentResult,
     toolOutputs: ToolOutput[],
     searchResults: any[]
-  ): SynthesizedResponse {
+  ): ASISv7SynthesizedResponse {
     // 1. Start with base truth (1×1 = 1)
     let response = this.buildFactualBase(toolOutputs, searchResults);
 
@@ -334,7 +334,7 @@ export class KamosEngine {
   /**
    * Build factual base from tool outputs
    */
-  private buildFactualBase(toolOutputs: ToolOutput[], searchResults: any[]): SynthesizedResponse {
+  private buildFactualBase(toolOutputs: ToolOutput[], searchResults: any[]): ASISv7SynthesizedResponse {
     const facts: string[] = [];
     const details: string[] = [];
     const sources: any[] = [];
@@ -402,7 +402,7 @@ export class KamosEngine {
   /**
    * Apply user-specific knowledge (growth)
    */
-  private applyGrowth(response: SynthesizedResponse, query: string, intent: IntentResult): SynthesizedResponse {
+  private applyGrowth(response: ASISv7SynthesizedResponse, query: string, intent: IntentResult): ASISv7SynthesizedResponse {
     const relevantFacts = this.knowledgeManager.getRelevantFacts(query);
 
     if (relevantFacts.length > 0) {
@@ -428,7 +428,7 @@ export class KamosEngine {
   /**
    * Apply collective wisdom (replication)
    */
-  private applyReplication(response: SynthesizedResponse, intent: IntentResult): SynthesizedResponse {
+  private applyReplication(response: ASISv7SynthesizedResponse, intent: IntentResult): ASISv7SynthesizedResponse {
     const patterns = this.patternManager.findPatterns(intent.category, '');
 
     if (patterns.length > 0 && patterns[0].successRate > 0.8) {
@@ -445,7 +445,7 @@ export class KamosEngine {
   /**
    * Apply current context (interaction)
    */
-  private applyInteraction(response: SynthesizedResponse): SynthesizedResponse {
+  private applyInteraction(response: ASISv7SynthesizedResponse): ASISv7SynthesizedResponse {
     const context = this.contextManager.getContext();
 
     // Time-appropriate greetings
@@ -483,7 +483,7 @@ export class KamosEngine {
     query: string,
     intent: IntentResult,
     toolOutputs: ToolOutput[],
-    response: SynthesizedResponse
+    response: ASISv7SynthesizedResponse
   ): void {
     // Record interaction
     this.knowledgeManager.addInteraction({

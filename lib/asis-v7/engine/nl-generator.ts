@@ -4,7 +4,7 @@
  * Kamos Theory: language = interaction pattern
  */
 
-import { SynthesizedResponse, ContextVector, ASISPersonality } from '../types';
+import { ASISv7SynthesizedResponse, ContextVector, ASISPersonality } from '../types';
 
 // ─── Response Templates ───────────────────────────────────────
 
@@ -134,7 +134,7 @@ export class NLGenerator {
   }
 
   generate(
-    synthesized: SynthesizedResponse,
+    synthesized: ASISv7SynthesizedResponse,
     intentCategory: string,
     context: ContextVector
   ): string {
