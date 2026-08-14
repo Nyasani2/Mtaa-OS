@@ -1,2 +1,0 @@
-// DEPRECATED: Import from @/lib/auth instead
-export { useIdentity } from '@/lib/auth/identity-provider';
