@@ -17,8 +17,8 @@ export const TribeMemberList: React.FC<Props> = ({ members }) => (
       <View style={styles.row}>
         <Image source={{ uri: item.profile?.avatar_url || DEFAULT_AVATAR_SMALL }} style={styles.avatar} />
         <View>
-          <Text style={styles.name}>{item.profile?.full_name || 'Member'}</Text>
-          <Text style={styles.role}>{item.role} • {item.membership_status}</Text>
+          <Text style={styles.name}>{`${item.profile?.first_name || ''} ${item.profile?.last_name || ''}`.trim() || 'Member'}</Text>
+          <Text style={styles.role}>{item.role} • {(item as any).membership_status || 'active'}</Text>
         </View>
       </View>
     )}

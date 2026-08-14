@@ -212,6 +212,65 @@ export interface KamosState {
 }
 
 
+
+// ─── ASIS UI Types (Canonical) ─────────────────────────────────
+
+export interface ASISHealth {
+  score: number;
+  status: string;
+}
+
+export interface ASISMessage {
+  id: string;
+  role: 'user' | 'asis' | 'assistant' | 'system' | 'tool';
+  content: string;
+  timestamp: number;
+  metadata?: {
+    engineName?: string;
+    confidence?: number;
+    explanation?: string;
+    sources?: string[];
+    toolUsed?: string;
+    executionTimeMs?: number;
+    cycleNumber?: number;
+    [key: string]: any;
+  };
+}
+
+export interface ASISConversation {
+  id: string;
+  title: string;
+  messages: ASISMessage[];
+  createdAt: number;
+  updatedAt: number;
+  contextId?: string;
+}
+
+export interface ASISState {
+  isInitialized: boolean;
+  isProcessing: boolean;
+  systemStatus: string;
+  activeEngines: string[];
+  toolHealth: string;
+  health: ASISHealth;
+  currentConversation: ASISConversation | null;
+  conversations: ASISConversation[];
+}
+
+export interface ASISActions {
+  sendMessage: (content: string) => Promise<void>;
+  clearConversation: () => void;
+  newConversation: () => void;
+  switchConversation: (id: string) => void;
+  deleteConversation: (id: string) => void;
+  getDiagnostics: () => string;
+  getMetrics: () => string;
+  getClockReport: () => string;
+  getToolHealth: () => string;
+  shutdown: () => void;
+}
+
+export interface ASISProviderValue extends ASISState, ASISActions {}
 // === MERGED FROM asis-cse-types-additions.ts ===
 export interface EngineContext { id: string; sessionId: string; userId?: string; intent?: string; entities: Record<string, any>; history: EngineResult[]; metadata?: Record<string, any>; timestamp: number; }
 

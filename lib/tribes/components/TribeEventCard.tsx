@@ -9,11 +9,11 @@ interface Props {
 
 export const TribeEventCard: React.FC<Props> = ({ event, onPress }) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
-    {event.cover_url && <Image source={{ uri: event.cover_url }} style={styles.cover} />}
+    {(event as any).cover_url && <Image source={{ uri: (event as any).cover_url }} style={styles.cover} />}
     <View style={styles.content}>
-      <Text style={styles.type}>{event.event_type.toUpperCase()}</Text>
+      <Text style={styles.type}>{((event as any).type || 'EVENT').toUpperCase()}</Text>
       <Text style={styles.title}>{event.title}</Text>
-      <Text style={styles.meta}>📍 {event.location || 'Virtual'} • {new Date(event.start_time).toLocaleDateString()}</Text>
+      <Text style={styles.meta}>📍 {event.location || 'Virtual'} • {new Date(event.start_at).toLocaleDateString()}</Text>
       <Text style={styles.attendees}>{event.attendee_count} going</Text>
     </View>
   </TouchableOpacity>

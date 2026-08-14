@@ -4,7 +4,7 @@
  * Calls the working v2 pipeline (response-engine-v2) for real answers
  */
 
-import type { CognitiveState } from './asis-cse-types';
+import type { CognitiveState, ASISMessage } from './asis-cse-types';
 import { processResponse, ResponseEngineInput } from './asis-cse-response-engine-v2';
 
 export interface ASISInitConfig {
@@ -18,13 +18,6 @@ export interface ASISInitConfig {
   };
 }
 
-export interface ASISMessage {
-  id: string;
-  role: 'user' | 'asis' | 'system';
-  content: string;
-  timestamp: number;
-  metadata?: Record<string, any>;
-}
 
 export interface ASISMetrics {
   generateReport(): string;

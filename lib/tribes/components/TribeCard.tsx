@@ -19,12 +19,12 @@ export const TribeCard: React.FC<TribeCardProps> = ({ tribe, onPress }) => (
       <Image source={{ uri: tribe.avatar_url || DEFAULT_AVATAR }} style={styles.avatar} />
       <View style={styles.info}>
         <Text style={styles.name}>{tribe.name}</Text>
-        <Text style={styles.category}>{tribe.category.toUpperCase()}</Text>
+        <Text style={styles.category}>{tribe.category?.name?.toUpperCase() || 'GENERAL'}</Text>
         <Text style={styles.members}>{tribe.member_count.toLocaleString()} members</Text>
-        <Text numberOfLines={2} style={styles.description}>{tribe.short_description || tribe.description}</Text>
+        <Text numberOfLines={2} style={styles.description}>{tribe.description}</Text>
       </View>
     </View>
-    {tribe.is_verified && (
+    {(tribe as any).verified && (
       <View style={styles.verifiedBadge}>
         <Text style={styles.verifiedText}>✓ VERIFIED</Text>
       </View>

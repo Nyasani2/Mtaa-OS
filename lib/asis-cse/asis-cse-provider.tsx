@@ -29,61 +29,14 @@ import {
 
 const STORAGE_KEY = 'asis_conversations_v1';
 
-// ─── Types ─────────────────────────────────
-
-export interface ASISMessage {
-  id: string;
-  role: 'user' | 'asis' | 'system' | 'tool';
-  content: string;
-  timestamp: number;
-  metadata?: {
-    engineName?: string;
-    confidence?: number;
-    explanation?: string;
-    sources?: string[];
-    executionTimeMs?: number;
-    cycleNumber?: number;
-  };
-}
-
-export interface ASISConversation {
-  id: string;
-  title: string;
-  messages: ASISMessage[];
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface ASISHealth {
-  score: number;
-  status: string;
-}
-
-export interface ASISState {
-  isInitialized: boolean;
-  isProcessing: boolean;
-  systemStatus: string;
-  activeEngines: string[];
-  toolHealth: string;
-  health: ASISHealth;
-}
-
-export interface ASISActions {
-  sendMessage: (content: string) => Promise<void>;
-  clearConversation: () => void;
-  newConversation: () => void;
-  switchConversation: (id: string) => void;
-  deleteConversation: (id: string) => void;
-  getDiagnostics: () => string;
-  getMetrics: () => string;
-  getClockReport: () => string;
-  getToolHealth: () => string;
-}
-
-export interface ASISProviderValue extends ASISState, ASISActions {
-  currentConversation: ASISConversation | null;
-  conversations: ASISConversation[];
-}
+import {
+  ASISMessage,
+  ASISConversation,
+  ASISState,
+  ASISActions,
+  ASISProviderValue,
+  ASISHealth,
+} from './asis-cse-types';
 
 // ─── Context ─────────────────────────────────
 
@@ -404,7 +357,6 @@ export function ASISCSEProvider({
     getMetrics,
     getClockReport,
     getToolHealth,
-    // @ts-ignore
     shutdown: () => {},
   };
 

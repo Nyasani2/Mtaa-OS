@@ -218,18 +218,6 @@ export interface ShopExpense {
   created_by?: string;
 }
 
-export interface AffiliateProgram {
-  id: string;
-  shop_id: string;
-  is_active: boolean;
-  commission_type: "percentage" | "fixed" | "tiered";
-  commission_value: number;
-  tier_rules: any[];
-  cookie_duration_days: number;
-  min_payout_amount: number;
-  payout_method: string;
-  terms?: string;
-}
 
 export interface ShopAffiliate {
   id: string;

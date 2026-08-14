@@ -14,57 +14,14 @@ import React, {
   ReactNode,
 } from 'react';
 
-// ─── Types ─────────────────────────────────
-
-export interface ASISMessage {
-  id: string;
-  role: 'user' | 'asis' | 'system' | 'tool';
-  content: string;
-  timestamp: number;
-  metadata?: {
-    engineName?: string;
-    confidence?: number;
-    explanation?: string;
-    toolUsed?: string;
-    executionTimeMs?: number;
-    cycleNumber?: number;
-  };
-}
-
-export interface ASISConversation {
-  id: string;
-  title: string;
-  messages: ASISMessage[];
-  createdAt: number;
-  updatedAt: number;
-  contextId?: string;
-}
-
-export interface ASISState {
-  isInitialized: boolean;
-  isProcessing: boolean;
-  health: { healthy: boolean; score: number; uptime: number };
-  currentConversation: ASISConversation | null;
-  conversations: ASISConversation[];
-  systemStatus: string;
-  activeEngines: string[];
-  toolHealth: string;
-}
-
-export interface ASISActions {
-  sendMessage: (content: string) => Promise<void>;
-  clearConversation: () => void;
-  newConversation: () => void;
-  switchConversation: (id: string) => void;
-  deleteConversation: (id: string) => void;
-  getDiagnostics: () => string;
-  getMetrics: () => string;
-  getClockReport: () => string;
-  getToolHealth: () => string;
-  shutdown: () => void;
-}
-
-export interface ASISProviderValue extends ASISState, ASISActions {}
+import {
+  ASISMessage,
+  ASISConversation,
+  ASISState,
+  ASISActions,
+  ASISProviderValue,
+  ASISHealth,
+} from './asis-cse-types';
 
 // ─── Context ─────────────────────────────────
 
@@ -93,7 +50,7 @@ export function ASISCSEProviderReact({
 }: ASISCSEProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [health, setHealth] = useState({ healthy: false, score: 0, uptime: 0 });
+  const [health, setHealth] = useState<ASISHealth>({ score: 0, status: 'Offline' });
   const [conversations, setConversations] = useState<ASISConversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<ASISConversation | null>(null);
   const [systemStatus, setSystemStatus] = useState('Standby');
@@ -107,7 +64,7 @@ export function ASISCSEProviderReact({
     if (!autoInitialize || isInitialized) return;
     setIsInitialized(true);
     setSystemStatus('Online');
-    setHealth({ healthy: true, score: 1.0, uptime: 0 });
+    setHealth({ score: 1.0, status: 'Healthy' });
     newConversation();
     return () => {
       if (healthIntervalRef.current) clearInterval(healthIntervalRef.current);
