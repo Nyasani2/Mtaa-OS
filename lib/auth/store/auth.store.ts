@@ -76,6 +76,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const { data: { session } } = await supabase.auth.getSession();
+          // SELF-HEAL: never show logged-in when Supabase has no live session
+          if (!session?.user) { set({ user: null, session: null, isAuthenticated: false }); }
           if (session?.user) {
             const user = {
               id: session.user.id,
