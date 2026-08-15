@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Plus, Trash2 } from 'lucide-react-native';
-import { useStreets } from '@/domains/streets/hooks/useStreets';
+import { useStreets } from '@/lib/hooks/useStreets';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { createPost } from '@/lib/services/streets-service';
 
 function VideoPreview({ file, onRemove }: { file: File; onRemove: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +54,7 @@ function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) 
 
 export default function CreatePostScreen() {
   const router = useRouter();
-  const { publishPost, isPosting, uploadProgress, postError } = useStreets();
+  const {  isPosting, uploadProgress, postError } = useStreets();
 
   const [content, setContent] = useState('');
   const [caption, setCaption] = useState('');
@@ -106,17 +108,19 @@ export default function CreatePostScreen() {
     setLocalError(null);
     if (!content.trim() && !selectedFile) { setLocalError('Please add text or select media.'); return; }
 
-    const result = await publishPost({
+    if (!user?.id) { setLocalError('You must be logged in to post.'); return; }
+    const result = await createPost({
+      creatorId: user.id,
       content: content.trim(),
       caption: caption.trim() || undefined,
-      file: selectedFile,
+      mediaUrl: selectedFile ? URL.createObjectURL(selectedFile) : undefined,
       mediaType,
       hashtags,
       isPublic,
     });
 
     if (result) router.back();
-  }, [content, caption, selectedFile, mediaType, hashtags, isPublic, publishPost, router]);
+  }, [content, caption, selectedFile, mediaType, hashtags, isPublic,  router]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
