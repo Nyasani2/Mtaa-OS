@@ -6,17 +6,15 @@ import {
   TextInput,
   ScrollView,
   Switch,
-  ActivityIndicator } from 'react-native';
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Plus, Trash2 } from 'lucide-react-native';
-import { useStreets } from '@/lib/hooks/useStreets';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { createPost } from '@/lib/services/streets-service';
+import { useStreets } from '@/domains/streets/hooks/useStreets';
 
 function VideoPreview({ file, onRemove }: { file: File; onRemove: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
-  const [isPosting, setIsPosting] = useState(false);
 
   return (
     <div style={{ position: 'relative', marginBottom: 16 }}>
@@ -53,9 +51,8 @@ function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) 
 }
 
 export default function CreatePostScreen() {
-  const user = useAuthStore((s) => s.user);
   const router = useRouter();
-  const {    localError } = useStreets();
+  const { publishPost, isPosting, uploadProgress, postError } = useStreets();
 
   const [content, setContent] = useState('');
   const [caption, setCaption] = useState('');
@@ -109,22 +106,17 @@ export default function CreatePostScreen() {
     setLocalError(null);
     if (!content.trim() && !selectedFile) { setLocalError('Please add text or select media.'); return; }
 
-    if (!user?.id) { setLocalError('You must be logged in to post.'); return; }
-    setIsPosting(true);
-    try {
-      const result = await createPost({
-      creatorId: user.id,
+    const result = await publishPost({
       content: content.trim(),
       caption: caption.trim() || undefined,
-      mediaUrl: selectedFile ? URL.createObjectURL(selectedFile) : undefined,
+      file: selectedFile,
       mediaType,
       hashtags,
-      isPublic });
+      isPublic,
+    });
 
     if (result) router.back();
-    } catch (e: any) { setLocalError(e.message || 'Failed to create post'); }
-    finally { setIsPosting(false); }
-  }, [content, caption, selectedFile, mediaType, hashtags, isPublic,  router]);
+  }, [content, caption, selectedFile, mediaType, hashtags, isPublic, publishPost, router]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
@@ -133,15 +125,15 @@ export default function CreatePostScreen() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#0a0a0a' }}>
         <TouchableOpacity onPress={() => router.back()}><X size={24} color="#fff" /></TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>New Post</Text>
-        <TouchableOpacity onPress={handlePost} disabled= style={{ backgroundColor:  ? '#666' : '#e91e63', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 }}>
-          { ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Post</Text>}
+        <TouchableOpacity onPress={handlePost} disabled={isPosting} style={{ backgroundColor: isPosting ? '#666' : '#e91e63', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 16 }}>
+          {isPosting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Post</Text>}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
-        {(localError || localError) && (
+        {(localError || postError) && (
           <View style={{ backgroundColor: '#3a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <Text style={{ color: '#ff6b6b', fontSize: 13 }}>{localError || localError}</Text>
+            <Text style={{ color: '#ff6b6b', fontSize: 13 }}>{localError || postError}</Text>
           </View>
         )}
 
@@ -161,12 +153,12 @@ export default function CreatePostScreen() {
         {selectedFile && mediaType === 'video' && <VideoPreview file={selectedFile} onRemove={() => { setSelectedFile(null); setMediaType(undefined); }} />}
         {selectedFile && mediaType === 'image' && <ImagePreview file={selectedFile} onRemove={() => { setSelectedFile(null); setMediaType(undefined); }} />}
 
-        { &&  > 0 && (
+        {isPosting && uploadProgress > 0 && (
           <View style={{ marginBottom: 16 }}>
             <View style={{ height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' }}>
-              <View style={{ height: 4, backgroundColor: '#e91e63', borderRadius: 2, width: `$%` }} />
+              <View style={{ height: 4, backgroundColor: '#e91e63', borderRadius: 2, width: `${uploadProgress}%` }} />
             </View>
-            <Text style={{ color: '#888', fontSize: 12, marginTop: 4, textAlign: 'center' }}>{ < 100 ? 'Uploading...' : 'Processing...'}</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 4, textAlign: 'center' }}>{uploadProgress < 100 ? 'Uploading...' : 'Processing...'}</Text>
           </View>
         )}
 
