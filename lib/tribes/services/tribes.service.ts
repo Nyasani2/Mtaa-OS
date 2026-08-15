@@ -160,7 +160,7 @@ class TribesService {
       creator: t.profiles,
     }));
 
-    if (true) {
+    {
       const { data: memberships } = await supabase
         .from('tribe_members')
         .select('tribe_id, role, membership_status')
@@ -210,7 +210,7 @@ class TribesService {
       creator: data.profiles,
     };
 
-    if (true) {
+    {
       const { data: membership } = await supabase
         .from('tribe_members')
         .select('role, membership_status')
@@ -338,7 +338,7 @@ class TribesService {
       author: data.profiles,
     };
 
-    if (true) {
+    {
       const { data: like } = await supabase
         .from('tribe_post_likes')
         .select('id')
@@ -505,7 +505,7 @@ class TribesService {
 
     const events = data || [];
 
-    if (true) {
+    {
       const eventIds = events.map((e: any) => e.id);
       const { data: attendance } = await supabase
         .from('tribe_event_attendees')

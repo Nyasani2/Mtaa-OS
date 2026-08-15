@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useIsFocused } from '@react-navigation/native';
 import type { StreetsPost } from '@/lib/services/streets-service';
 
 // ── Video Player ───────────────────────────────────────────
@@ -50,6 +51,11 @@ function VideoPlayer({
       setIsPlaying(false);
     }
   }, [isVisible, onView]);
+
+  useEffect(() => () => {
+    const v = videoRef.current;
+    if (v) { v.pause(); v.muted = true; }
+  }, []);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -480,6 +486,7 @@ function BoostModal({ visible, post, onClose, onBoost }: { visible: boolean; pos
 export default function StreetsFeedScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const isFocused = useIsFocused();
   const {
     posts,
     authors,
@@ -613,7 +620,7 @@ export default function StreetsFeedScreen() {
               onShare={handleSharePress}
               onRepost={handleRepostPress}
               onBoost={handleBoostPress}
-              isVisible={visiblePostId === item.id}
+              isVisible={isFocused && visiblePostId === item.id}
               onView={() => handleView(item.id)}
               onPrev={() => scrollToPost(-1)}
               onNext={() => scrollToPost(1)}

@@ -1,88 +1,76 @@
 // @ts-nocheck
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { useMLiveStreams, useMComments } from '@/lib/services/mstudio-hooks';
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Video } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function LiveActiveScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { user } = useAuthStore();
-  const { data: stream, loadOne, chat, subscribeChat, sendChat, loading } = useMLiveStreams();
-  const [message, setMessage] = useState('');
-  const [superChatAmount, setSuperChatAmount] = useState('');
-  const listRef = useRef<FlatList>(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [live, setLive] = useState(false);
+  const [camError, setCamError] = useState(null);
+  const [viewers, setViewers] = useState(0);
+  const [chat, setChat] = useState([]);
+  const [msg, setMsg] = useState('');
+  const [superChat, setSuperChat] = useState('');
+  const channelRef = useRef(null);
 
   useEffect(() => {
-    if (id) {
-      loadOne(id);
-      const unsub = subscribeChat(id);
-      return unsub;
-    }
-  }, [id]);
+    const ch = supabase.channel('mtaa-live-room-1');
+    channelRef.current = ch;
+    ch.on('presence', { event: 'sync' }, () => setViewers(Object.keys(ch.presenceState()).length))
+      .on('broadcast', { event: 'chat' }, (e) => setChat((c) => [...c, e.payload]))
+      .subscribe(async (status) => { if (status === 'SUBSCRIBED') await ch.track({ user: user?.id || 'anon' }); });
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        streamRef.current = stream;
+        if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+        setLive(true);
+      } catch (e) { setCamError('Camera unavailable - viewers can still chat.'); }
+    })();
+    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); supabase.removeChannel(ch); };
+  }, []);
 
-  const handleSend = async () => {
-    if (!message.trim() || !user?.id || !id) return;
-    const amount = parseFloat(superChatAmount);
-    await sendChat(id, user.id, message.trim(), amount > 0, amount);
-    setMessage('');
-    setSuperChatAmount('');
+  const send = (isSuper) => {
+    const text = isSuper ? ('💰 KES ' + (superChat || '0') + ': ' + msg) : msg;
+    if (!text.trim()) return;
+    const payload = { user: user?.email?.split('@')[0] || 'viewer', text };
+    channelRef.current?.send({ type: 'broadcast', event: 'chat', payload });
+    setChat((c) => [...c, payload]); setMsg(''); if (isSuper) setSuperChat('');
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#0a0a0a' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Stream Info */}
-      <View style={{ padding: 16, paddingTop: 48, borderBottomWidth: 1, borderBottomColor: '#222' }}>
-        <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }} numberOfLines={1}>{stream?.title || 'Live Stream'}</Text>
-        <Text style={{ color: '#888', fontSize: 13, marginTop: 4 }}>{stream?.current_viewers || 0} viewers • {stream?.studio_name || ''}</Text>
-      </View>
-
-      {/* Chat */}
-      <FlatList
-        ref={listRef}
-        data={chat}
-        keyExtractor={item => item.id}
-        inverted
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 12 }}
-        renderItem={({ item }) => (
-          <View style={{ marginBottom: 8, flexDirection: 'row', alignItems: 'flex-start' }}>
-            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: item.is_super_chat ? '#ff0000' : '#333', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-              <Text style={{ color: '#fff', fontSize: 10 }}>{item.full_name?.[0]?.toUpperCase() || '?'}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: item.is_super_chat ? '#ff6b6b' : '#888', fontSize: 11, fontWeight: '600' }}>
-                {item.full_name || 'Anonymous'} {item.is_super_chat && `• KES ${item.super_chat_amount}`}
-              </Text>
-              <Text style={{ color: '#fff', fontSize: 13, marginTop: 2 }}>{item.message}</Text>
-            </View>
-          </View>
-        )}
-      />
-
-      {/* Input */}
-      <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: '#222', backgroundColor: '#111' }}>
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-          <TextInput
-            value={superChatAmount}
-            onChangeText={setSuperChatAmount}
-            placeholder="Super Chat KES"
-            placeholderTextColor="#555"
-            keyboardType="numeric"
-            style={{ flex: 0.4, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, color: '#ff6b6b', fontSize: 13 }}
-          />
-          <TextInput
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Say something..."
-            placeholderTextColor="#555"
-            style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 8, padding: 10, color: '#fff', fontSize: 14 }}
-          />
-          <TouchableOpacity onPress={handleSend} style={{ backgroundColor: '#ff0000', borderRadius: 8, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send</Text>
-          </TouchableOpacity>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 48, paddingBottom: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#1f1f1f' }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}><ArrowLeft size={22} color="#fff" /></TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Live Stream {live && <Text style={{ color: '#ff3b30' }}>• LIVE</Text>}</Text>
+          <Text style={{ color: '#888', fontSize: 12 }}>{viewers} viewers</Text>
         </View>
       </View>
-    </KeyboardAvoidingView>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <video ref={videoRef} muted playsInline style={{ width: '100%', maxHeight: '60%' }} />
+        {camError && <Text style={{ color: '#888', fontSize: 13, marginTop: 8 }}>{camError}</Text>}
+      </View>
+      <ScrollView style={{ maxHeight: 160, paddingHorizontal: 16 }}>
+        {chat.map((c, i) => (
+          <Text key={i} style={{ color: '#ddd', fontSize: 13, marginBottom: 6 }}>
+            <Text style={{ color: '#e91e63', fontWeight: '600' }}>{c.user}: </Text>{c.text}
+          </Text>
+        ))}
+      </ScrollView>
+      <View style={{ flexDirection: 'row', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: '#1f1f1f' }}>
+        <TextInput value={superChat} onChangeText={setSuperChat} placeholder="Super Chat KES" placeholderTextColor="#666" keyboardType="numeric" style={{ width: 110, backgroundColor: '#1a1a1a', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 10, color: '#fff', fontSize: 13 }} />
+        <TextInput value={msg} onChangeText={setMsg} placeholder="Say something..." placeholderTextColor="#666" style={{ flex: 1, backgroundColor: '#1a1a1a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: '#fff', fontSize: 14 }} />
+        <TouchableOpacity onPress={() => send(false)} style={{ backgroundColor: '#e91e63', borderRadius: 10, paddingHorizontal: 14, justifyContent: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '600' }}>Send</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }

@@ -1,10 +1,14 @@
-// @ts-nocheck
+import os, re
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# ══ A. REWRITE PROFILE (crash-proof, real fetching, grid+analytics+delete+donut) ══
+NEW_PROFILE = '''// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, Alert, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { User, ChevronRight, MoreVertical, Trash2, Eye, Heart, Share2, Play, LogOut, X, Pencil } from 'lucide-react-native';
+import { User, ChevronRight, MoreVertical, Trash2, Eye, Heart, Share2, Play, LogOut, X } from 'lucide-react-native';
 
 const MENU_ITEMS = [
   { label: 'Edit Profile', route: '/profile/edit' },
@@ -81,22 +85,8 @@ export default function ProfileIndex() {
         'Likes: ' + (post.likes_count ?? 0),
         'Comments: ' + (post.comments_count ?? 0),
         'Shares: ' + (post.shares_count ?? 0),
-      ].join('\n'));
+      ].join('\\n'));
     } catch (e) { Alert.alert('Analytics', 'Unavailable right now'); }
-  };
-
-  const handleEdit = (post) => {
-    Alert.prompt ? null : null;
-    const next = window.prompt('Edit caption/content:', post.caption || post.content || '');
-    if (next === null) return;
-    (async () => {
-      try {
-        const svc = require('@/lib/services/streets-service');
-        const ok = await svc.updatePost(post.id, user?.id, { caption: next, content: next });
-        if (ok) setMyPosts((prev) => prev.map((x) => x.id === post.id ? { ...x, caption: next, content: next } : x));
-        else Alert.alert('Edit failed', 'Could not update post');
-      } catch (e) { Alert.alert('Edit failed', String(e?.message || e)); }
-    })();
   };
 
   const onRefresh = async () => { setRefreshing(true); await loadPosts(); setRefreshing(false); };
@@ -160,7 +150,6 @@ export default function ProfileIndex() {
                 <View style={st.cellStat}><Share2 size={9} color="#fff" /><Text style={st.cellStatT}>{post.shares_count || 0}</Text></View>
               </View>
               <View style={st.cellActions}>
-                <TouchableOpacity onPress={() => handleEdit(post)} style={st.cellBtn}><Pencil size={13} color="#fbbf24" /></TouchableOpacity>
                 <TouchableOpacity onPress={() => handleAnalytics(post)} style={st.cellBtn}><Eye size={13} color="#7dd3fc" /></TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(post)} style={st.cellBtn}><Trash2 size={13} color="#f87171" /></TouchableOpacity>
               </View>
@@ -209,3 +198,48 @@ const st = StyleSheet.create({
   cellActions: { position: 'absolute', right: 4, top: 4, flexDirection: 'row', gap: 4 },
   cellBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
 });
+'''
+open("app/(os)/profile/index.tsx", "w").write(NEW_PROFILE)
+print("✅ profile/index.tsx rewritten (no pinEngine import → crash gone; real fetch + grid)")
+
+# ══ B. MERGE DUPLICATE IMPORTS ══
+imp_re = re.compile(r"^import\s+\{([^}]*)\}\s+from\s+(['\"][^'\"]+['\"]);?\s*$")
+def merge(path):
+    if not os.path.exists(path): return
+    with open(path) as f: lines = f.readlines()
+    seen, out = {}, []
+    for ln in lines:
+        m = imp_re.match(ln)
+        if m:
+            mod = m.group(2)
+            names = [n.strip() for n in m.group(1).split(',') if n.strip()]
+            if mod in seen:
+                mo = imp_re.match(out[seen[mod]])
+                merged = list(dict.fromkeys([n.strip() for n in mo.group(1).split(',') if n.strip()] + names))
+                out[seen[mod]] = "import { " + ", ".join(merged) + " } from " + mod + ";\n"
+                continue
+            seen[mod] = len(out)
+        out.append(ln)
+    with open(path, "w") as f: f.writelines(out)
+    print("✅ deduped imports:", path)
+
+for p in ["domains/education/hooks/useEducation.ts","hooks/useEducation.ts","domains/education/pages/index.tsx",
+          "domains/education/services/attendanceService.ts","domains/education/services/classroomService.ts",
+          "domains/education/services/feedFinanceService.ts","domains/education/services/identityService.ts",
+          "domains/education/services/parentService.ts","domains/education/services/safetyService.ts",
+          "domains/education/services/teacherEconomyService.ts","domains/education/services/transportService.ts",
+          "domains/education/services/walkingService.ts","app/(os)/streets/explore.tsx"]:
+    merge(p)
+
+# ══ C. tribes if(true) + empty Database interface ══
+tp = "lib/tribes/services/tribes.service.ts"
+if os.path.exists(tp):
+    s = open(tp).read()
+    s = s.replace("if (true) {", "{")
+    open(tp, "w").write(s); print("✅ tribes.service.ts if(true) removed")
+dp = "types/database.ts"
+if os.path.exists(dp):
+    s = open(dp).read()
+    s = re.sub(r"export interface Database \{\}", "export type Database = Record<string, any>;", s)
+    open(dp, "w").write(s); print("✅ types/database.ts empty interface fixed")
+print("\nDONE — verify in browser, then commit below")

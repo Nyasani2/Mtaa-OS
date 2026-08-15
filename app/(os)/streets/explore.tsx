@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, useWindowDimensions, Platform, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Search, ArrowLeft, TrendingUp } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
@@ -63,7 +63,6 @@ export default function ExploreScreen() {
   );
 }
 
-import { TextInput } from 'react-native';
 
 const styles = StyleSheet.create({
   root:{flex:1,backgroundColor:'#000'},

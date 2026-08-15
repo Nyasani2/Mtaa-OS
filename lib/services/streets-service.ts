@@ -581,3 +581,12 @@ export async function deletePost(postId: string, userId: string): Promise<boolea
   }
   return true;
 }
+
+export async function updatePost(postId: string, userId: string, updates: { content?: string; caption?: string; hashtags?: string[] }): Promise<boolean> {
+  const { error } = await supabase
+    .from('streets_posts')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', postId)
+    .eq('creator_id', userId);
+  return !error;
+}
