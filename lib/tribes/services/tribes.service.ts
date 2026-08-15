@@ -143,3 +143,37 @@ async function notify(tribeId: string, userId: string, action: string) {
     await supabase.from('notifications').insert({ user_id: userId, type: 'tribe', title: 'Tribe activity', body: `A member ${action}.`, metadata: { tribe_id: tribeId } });
   } catch (e) { /* notifications table optional */ }
 }
+
+// ── Discovery + categories (consumed by app/(os)/tribes.tsx) ──
+export async function discoverTribes(filter?: { category?: string; search?: string; paid_only?: boolean }) {
+  try {
+    let q = supabase.from('tribes').select('*').order('created_at', { ascending: false }).limit(100);
+    if (filter?.category && filter.category !== 'all') q = q.eq('category', filter.category);
+    if (filter?.search) q = q.ilike('name', `%${filter.search}%`);
+    const { data, error } = await q;
+    if (error) return [];
+    let rows = data || [];
+    if (filter?.paid_only) rows = rows.filter((t: any) => t.membership_type === 'paid' || t.paid === true);
+    return rows;
+  } catch { return []; }
+}
+export async function getCategories() {
+  try {
+    const { data } = await supabase.from('tribes').select('category');
+    const set = Array.from(new Set((data || []).map((d: any) => d?.category).filter(Boolean))) as string[];
+    return set.length ? set : ['cultural', 'interest', 'professional', 'knowledge', 'civic', 'brand', 'sports', 'technology'];
+  } catch { return ['cultural', 'interest', 'professional', 'knowledge', 'civic', 'brand']; }
+}
+export const listCategories = getCategories;
+export const fetchTribes = getTribes;
+export const getTribeById = getTribe;
+export const fetchTribe = getTribe;
+
+const tribesService = {
+  getTribes, getTribe, getMyTribes, createTribe, joinTribe, leaveTribe, getMembers, setMemberRole,
+  getPosts, createPost, shareToStreets, getKnowledge, addKnowledge, verifyKnowledge, getArtifacts,
+  addArtifact, getInterviews, addInterview, getEvents, getElections, memberCount, myRole, canGovern,
+  createElection, castVote, getVotes, discoverTribes, getCategories, listCategories, fetchTribes,
+  getTribeById, fetchTribe,
+};
+export default tribesService;
