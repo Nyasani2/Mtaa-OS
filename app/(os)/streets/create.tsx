@@ -1,3 +1,5 @@
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { createPost, uploadMedia } from '@/lib/services/streets-service';
 import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
@@ -10,7 +12,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Plus, Trash2 } from 'lucide-react-native';
-import { useStreets } from '@/domains/streets/hooks/useStreets';
 
 function VideoPreview({ file, onRemove }: { file: File; onRemove: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,8 +53,7 @@ function ImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) 
 
 export default function CreatePostScreen() {
   const router = useRouter();
-  const { publishPost, isPosting, uploadProgress, postError } = useStreets();
-
+  
   const [content, setContent] = useState('');
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -62,6 +62,10 @@ export default function CreatePostScreen() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | undefined>();
   const [localError, setLocalError] = useState<string | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const [isPosting, setIsPosting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [postError, setPostError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
