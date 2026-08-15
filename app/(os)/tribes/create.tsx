@@ -18,6 +18,7 @@ export default function CreateTribeScreen() {
   const [visibility, setVisibility] = useState('public');
   const [paid, setPaid] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
 
   const submit = async () => {
     if (!name.trim()) { Alert.alert('Name required'); return; }
@@ -29,7 +30,7 @@ export default function CreateTribeScreen() {
         visibility, membership_type: paid ? 'paid' : 'free', creator_id: user.id,
       });
       router.replace(`/tribes/${tribe.id}`);
-    } catch (e) { Alert.alert('Create failed', e?.message || String(e)); }
+    } catch (e) { console.error('[CreateTribe]', e); setErr(e?.message || String(e)); }
     setBusy(false);
   };
 
@@ -57,6 +58,7 @@ export default function CreateTribeScreen() {
         <Text style={{ color: '#fff', fontSize: 14 }}>Paid membership</Text>
         <Switch value={paid} onValueChange={setPaid} trackColor={{ true: '#2196f3' }} />
       </View>
+      {err && <View style={{ backgroundColor: '#3a1a1a', borderRadius: 8, padding: 10, marginBottom: 10 }}><Text style={{ color: '#ff6b6b', fontSize: 13 }}>{err}</Text></View>}
       <TouchableOpacity onPress={submit} disabled={busy} style={{ backgroundColor: '#2196f3', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
         {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Create Tribe</Text>}
       </TouchableOpacity>
