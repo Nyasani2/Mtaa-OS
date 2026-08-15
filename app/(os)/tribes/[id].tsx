@@ -120,7 +120,7 @@ export default function TribeHome() {
       <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#101018', borderBottomWidth: 1, borderBottomColor: '#1f1f1f' }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>Tribe intelligence</Text>
-          <AskAsis tribeId={id} tribeName={tribe.name} context="tribe knowledge & campaigns" onInsert={setDraft} />
+          <AskAsis tribeId={id} tribeName={tribe.name} tribeDescription={tribe.description} context="tribe knowledge & campaigns" onInsert={setDraft} />
         </View>
         <Text style={{ color: '#9aa', fontSize: 12, marginTop: 4 }}>{tribe.description || 'No description yet.'}</Text>
         {knowledge.slice(0, 2).map((k) => <Text key={k.id} style={{ color: '#7dd3fc', fontSize: 12, marginTop: 4 }}>• {k.title}{k.summary ? ': ' + k.summary : ''}</Text>)}

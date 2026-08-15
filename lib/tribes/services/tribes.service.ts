@@ -41,9 +41,16 @@ export async function leaveTribe(tribeId: string, userId: string) {
   if (error) throw error;
 }
 export async function getMembers(tribeId: string) {
-  const { data, error } = await supabase.from('tribe_members').select('role, status, user_id, user_profiles:user_profiles(user_id, full_name, avatar_url, username)').eq('tribe_id', tribeId).eq('status', 'active').limit(200);
+  const { data, error } = await supabase.from('tribe_members').select('role, status, user_id').eq('tribe_id', tribeId).eq('status', 'active').limit(200);
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+  const ids = rows.map((r: any) => r.user_id).filter(Boolean);
+  const prof: any = {};
+  if (ids.length) {
+    const { data: p } = await supabase.from('user_profiles').select('user_id, full_name, avatar_url, username').in('user_id', ids);
+    (p || []).forEach((x: any) => { prof[x.user_id] = x; });
+  }
+  return rows.map((r: any) => ({ ...r, user_profiles: prof[r.user_id] || null }));
 }
 export async function setMemberRole(tribeId: string, targetId: string, role: string, actorId: string) {
   const { data: actor } = await supabase.from('tribe_members').select('role').eq('tribe_id', tribeId).eq('user_id', actorId).maybeSingle();
@@ -57,10 +64,17 @@ export async function getPosts(tribeId: string) {
   return data || [];
 }
 export async function createPost(input: any) {
-  const { data, error } = await supabase.from('tribe_posts').insert(input).select().single();
-  if (error) throw error;
+  const base = { tribe_id: input.tribe_id, author_id: input.author_id, content: input.content };
+  let r = await supabase.from('tribe_posts').insert({
+    ...base,
+    title: input.title || (input.content || '').slice(0, 80),
+    caption: input.caption, media_url: input.media_url, thumbnail_url: input.thumbnail_url,
+    media_type: input.media_type, hashtags: input.hashtags,
+  }).select().single();
+  if (r.error) r = await supabase.from('tribe_posts').insert(base).select().single();
+  if (r.error) throw r.error;
   await notify(input.tribe_id, input.author_id, 'posted in the tribe');
-  return data;
+  return r.data;
 }
 export async function shareToStreets(post: any, userId: string) {
   const { data, error } = await supabase.from('streets_posts').insert({

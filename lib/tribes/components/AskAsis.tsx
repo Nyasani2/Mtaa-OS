@@ -4,11 +4,24 @@ import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, ActivityInd
 import { Sparkles, X } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 
-export default function AskAsis({ tribeId, tribeName, context, onInsert }: { tribeId: string; tribeName: string; context?: string; onInsert?: (t: string) => void }) {
+export default function AskAsis({ tribeId, tribeName, context, tribeDescription, onInsert }: { tribeId: string; tribeName: string; context?: string; tribeDescription?: string; onInsert?: (t: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
   const [answer, setAnswer] = useState<any[] | null>(null);
+
+  const draft = async () => {
+    setBusy(true);
+    try {
+      const { data } = await supabase.from('tribe_knowledge_entries').select('title, summary').eq('tribe_id', tribeId).eq('status', 'approved').limit(5);
+      const k = data || [];
+      const body = k.length ? k.map((x: any) => '• ' + x.title + (x.summary ? ': ' + x.summary : '')).join('\n')
+        : (tribeDescription || tribeName + ' — join the conversation.');
+      const text = '📌 ' + tribeName + '\n' + body + '\n\n(AI-assisted draft — review before posting)';
+      if (onInsert) { onInsert(text); setOpen(false); } else { setAnswer([{ title: 'Draft ready', summary: text, verification: 'community', kind: 'draft' }]); }
+    } catch { setAnswer([]); }
+    setBusy(false);
+  };
 
   const ask = async () => {
     if (!q.trim()) return;
@@ -41,6 +54,9 @@ export default function AskAsis({ tribeId, tribeName, context, onInsert }: { tri
             {context && <Text style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>Context: {context}</Text>}
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TextInput value={q} onChangeText={setQ} placeholder={`Ask about ${tribeName}...`} placeholderTextColor="#666" style={{ flex: 1, backgroundColor: '#1e1e2e', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, color: '#fff' }} />
+              <TouchableOpacity onPress={draft} style={{ backgroundColor: '#1a1a2e', borderRadius: 12, paddingHorizontal: 12, justifyContent: 'center', borderWidth: 1, borderColor: '#7c3aed' }}>
+                <Text style={{ color: '#a78bfa', fontWeight: '700' }}>Draft</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={ask} style={{ backgroundColor: '#7c3aed', borderRadius: 12, paddingHorizontal: 14, justifyContent: 'center' }}>
                 {busy ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Ask</Text>}
               </TouchableOpacity>
