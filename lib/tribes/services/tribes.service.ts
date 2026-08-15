@@ -177,3 +177,4 @@ const tribesService = {
   getTribeById, fetchTribe,
 };
 export default tribesService;
+export { tribesService };
