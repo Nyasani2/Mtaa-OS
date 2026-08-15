@@ -59,6 +59,7 @@ export async function getPosts(tribeId: string) {
 export async function createPost(input: any) {
   const { data, error } = await supabase.from('tribe_posts').insert(input).select().single();
   if (error) throw error;
+  await notify(input.tribe_id, input.author_id, 'posted in the tribe');
   return data;
 }
 export async function shareToStreets(post: any, userId: string) {
@@ -185,3 +186,26 @@ const tribesService = {
 };
 export default tribesService;
 export { tribesService };
+
+export async function getTribeComments(postId: string) {
+  try {
+    const { data } = await supabase.from('tribe_comments').select('*').eq('post_id', postId).order('created_at');
+    return data || [];
+  } catch { return []; }
+}
+export async function addTribeComment(postId: string, userId: string, content: string) {
+  const { data, error } = await supabase.from('tribe_comments').insert({ post_id: postId, user_id: userId, content }).select().single();
+  if (error) throw error;
+  return data;
+}
+export async function createTribeEvent(input: any) {
+  const { data, error } = await supabase.from('tribe_events').insert(input).select().single();
+  if (error) throw error;
+  await notify(input.tribe_id, input.created_by, 'scheduled an event: ' + input.title);
+  return data;
+}
+export async function reportTribePost(postId: string, userId: string, reason: string) {
+  const { error } = await supabase.from('tribe_reports').insert({ post_id: postId, reporter_id: userId, reason });
+  if (error) throw error;
+  return true;
+}
