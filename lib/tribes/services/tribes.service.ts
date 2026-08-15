@@ -20,7 +20,14 @@ export async function getMyTribes(userId: string) {
   return (data || []).map((m: any) => ({ ...m.tribes, my_role: m.role }));
 }
 export async function createTribe(input: any) {
-  const { data, error } = await supabase.from('tribes').insert(input).select().single();
+  const slug = ((input.name || 'tribe').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tribe') + '-' + Date.now().toString(36);
+  const payload = {
+    ...input,
+    slug: input.slug || slug,
+    short_description: input.short_description || input.description || null,
+    status: input.status || 'active',
+  };
+  const { data, error } = await supabase.from('tribes').insert(payload).select().single();
   if (error) throw error;
   return data;
 }
