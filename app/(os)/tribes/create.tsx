@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import tribesService from '@/lib/tribes/services/tribes.service';
 
 const CATEGORIES = ['cultural', 'interest', 'professional', 'knowledge', 'civic', 'brand', 'sports', 'technology', 'agricultural', 'automotive', 'education', 'creative'];
@@ -24,6 +25,9 @@ export default function CreateTribeScreen() {
     if (!name.trim()) { Alert.alert('Name required'); return; }
     if (!user?.id) { Alert.alert('Log in first'); return; }
     setBusy(true);
+    let { data: { session } } = await supabase.auth.getSession();
+    if (!session) { const r = await supabase.auth.refreshSession(); session = r.data.session; }
+    if (!session) { setErr('Session expired. Log out and log back in, then retry.'); setBusy(false); return; }
     try {
       const tribe = await tribesService.createTribe({
         name: name.trim(), description, category, country: country || null, language: language || null,
