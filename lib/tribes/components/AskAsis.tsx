@@ -4,7 +4,7 @@ import { View, Text, Modal, TextInput, TouchableOpacity, ScrollView, ActivityInd
 import { Sparkles, X } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
 
-export default function AskAsis({ tribeId, tribeName, context }: { tribeId: string; tribeName: string; context?: string }) {
+export default function AskAsis({ tribeId, tribeName, context, onInsert }: { tribeId: string; tribeName: string; context?: string; onInsert?: (t: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -56,6 +56,11 @@ export default function AskAsis({ tribeId, tribeName, context }: { tribeId: stri
                   <Text style={{ color: a.verification === 'verified' ? '#4ade80' : '#fbbf24', fontSize: 11, marginTop: 6 }}>
                     {a.verification === 'verified' ? '✓ Verified' : a.verification === 'community' ? 'Community contribution' : 'Uncertain'} · {a.kind}
                   </Text>
+                  {onInsert ? (
+                    <TouchableOpacity onPress={() => { onInsert(((a.title || '') + '. ' + (a.summary || a.body || '')).trim()); setOpen(false); }} style={{ marginTop: 8, backgroundColor: '#2a2a3e', borderRadius: 8, paddingVertical: 6, alignItems: 'center' }}>
+                      <Text style={{ color: '#a78bfa', fontSize: 12, fontWeight: '700' }}>Use in post</Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               ))}
             </ScrollView>

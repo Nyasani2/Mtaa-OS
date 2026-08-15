@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import { Heart, MessageCircle, Share, UserPlus } from 'lucide-react-native';
 import * as T from '@/lib/tribes/services/tribes.service';
 import AskAsis from '@/lib/tribes/components/AskAsis';
@@ -25,12 +26,17 @@ export default function TribeHome() {
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [diag, setDiag] = useState(null);
 
   const load = useCallback(async () => {
     try {
       const [t, p, c, r] = await Promise.all([
         T.getTribe(id), T.getPosts(id), T.memberCount(id), user ? T.myRole(id, user.id) : 'none',
       ]);
+      if (!t) {
+        const { data, error } = await supabase.from('tribes').select('id,name,visibility,status').eq('id', id);
+        setDiag('tribe load null → ' + JSON.stringify({ rows: data, err: error?.message || null }));
+      }
       setTribe(t); setPosts(p); setCount(c); setRole(r || 'none');
       const [m, k, i, e, el] = await Promise.all([
         T.getMembers(id), T.getKnowledge(id), T.getInterviews(id), T.getEvents(id), T.getElections(id),
@@ -64,7 +70,12 @@ export default function TribeHome() {
   };
 
   if (loading) return <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator color="#2196f3" /></View>;
-  if (!tribe) return <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#888' }}>Tribe not found</Text></View>;
+  if (!tribe) return (
+    <View style={{ flex: 1, backgroundColor: '#0a0a0a', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <Text style={{ color: '#888', marginBottom: 12 }}>Tribe not found</Text>
+      {diag ? <Text style={{ color: '#ff6b6b', fontSize: 11, textAlign: 'center' }}>{diag}</Text> : null}
+    </View>
+  );
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#0a0a0a' }}>

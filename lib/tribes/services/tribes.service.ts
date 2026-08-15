@@ -10,9 +10,9 @@ export async function getTribes(filter?: { category?: string; q?: string }) {
   return data || [];
 }
 export async function getTribe(id: string) {
-  const { data, error } = await supabase.from('tribes').select('*').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('tribes').select('*').eq('id', id).limit(1);
   if (error) throw error;
-  return data;
+  return (data && data[0]) || null;
 }
 export async function getMyTribes(userId: string) {
   const { data, error } = await supabase.from('tribe_members').select('role, tribes(*)').eq('user_id', userId).eq('status', 'active');
