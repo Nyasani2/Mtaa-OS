@@ -161,9 +161,18 @@ export async function getVotes(electionId: string) {
   return data || [];
 }
 async function notify(tribeId: string, userId: string, action: string) {
-  try {
-    await supabase.from('notifications').insert({ user_id: userId, type: 'tribe', title: 'Tribe activity', body: `A member ${action}.`, metadata: { tribe_id: tribeId } });
-  } catch (e) { /* notifications table optional */ }
+  const body = `A member ${action}.`;
+  const attempts = [
+    { user_id: userId, type: 'tribe', title: 'Tribe activity', body, metadata: { tribe_id: tribeId } },
+    { user_id: userId, title: 'Tribe activity', body, metadata: { tribe_id: tribeId } },
+    { recipient_id: userId, type: 'tribe', title: 'Tribe activity', body },
+    { user_id: userId, message: body },
+  ];
+  for (const a of attempts) {
+    const { error } = await supabase.from('notifications').insert(a as any);
+    if (!error) return;
+  }
+  console.warn('[notify] notifications insert failed for all shapes');
 }
 
 // ── Discovery + categories (consumed by app/(os)/tribes.tsx) ──
