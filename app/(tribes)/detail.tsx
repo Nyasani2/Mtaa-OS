@@ -136,7 +136,7 @@ export default function TribeDetailScreen() {
     <View key={post.id} style={styles.postCard}>
       <View style={styles.postHeader}>
         <Image
-          source={{ uri: post.author?.avatar_url || 'https://via.placeholder.com/36' }}
+          source={{ uri: post.author?.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
           style={styles.postAvatar}
         />
         <View>
@@ -199,7 +199,7 @@ export default function TribeDetailScreen() {
   const renderMember = (member: TribeMember) => (
     <View key={member.id} style={styles.memberRow}>
       <Image
-        source={{ uri: member.profile?.avatar_url || 'https://via.placeholder.com/40' }}
+        source={{ uri: member.profile?.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
         style={styles.memberAvatar}
       />
       <View style={styles.memberInfo}>
@@ -237,12 +237,12 @@ export default function TribeDetailScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007AFF" />}
       >
         {/* Cover */}
-        <Image source={{ uri: tribe.cover_url || 'https://via.placeholder.com/400x150' }} style={styles.coverImage} />
+        <Image source={{ uri: tribe.cover_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.coverImage} />
 
         {/* Tribe Info */}
         <View style={styles.infoCard}>
           <View style={styles.infoHeader}>
-            <Image source={{ uri: tribe.avatar_url || 'https://via.placeholder.com/64' }} style={styles.infoAvatar} />
+            <Image source={{ uri: tribe.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.infoAvatar} />
             <View style={styles.infoText}>
               <Text style={styles.infoName}>{tribe.name}</Text>
               <Text style={styles.infoCategory}>{tribe.category?.icon} {tribe.category?.name}</Text>

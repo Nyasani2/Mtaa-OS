@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function StayCard({ listing, onPress, onToggleSave, isSaved, variant = 'full' }: Props) {
-  const imageUrl = listing?.cover_image || listing?.images?.[0] || 'https://via.placeholder.com/400x300';
+  const imageUrl = listing?.cover_image || listing?.images?.[0] || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
   const price = listing?.price_per_night || listing?.price || 0;
   const currency = listing?.currency || 'KES';
   const rating = listing?.average_rating || listing?.rating || 0;

@@ -26,7 +26,7 @@ export default function StayDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: listing.cover_image || 'https://via.placeholder.com/400x300' }} style={styles.heroImage} />
+          <Image source={{ uri: listing.cover_image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.heroImage} />
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <ChevronLeft size={24} color="#1a1a1a" />
           </TouchableOpacity>

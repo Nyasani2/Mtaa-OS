@@ -63,7 +63,7 @@ export default function PostDetailScreen() {
   const renderComment = (comment: any, depth = 0) => (
     <View key={comment.id} style={[styles.commentCard, { marginLeft: depth * 20 }]}>
       <View style={styles.commentHeader}>
-        <Image source={{ uri: comment.author?.avatar_url || 'https://via.placeholder.com/28' }} style={styles.commentAvatar} />
+        <Image source={{ uri: comment.author?.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.commentAvatar} />
         <Text style={styles.commentAuthor}>{comment.author?.first_name} {comment.author?.last_name}</Text>
         <Text style={styles.commentTime}>{new Date(comment.created_at).toLocaleDateString()}</Text>
       </View>
@@ -95,7 +95,7 @@ export default function PostDetailScreen() {
                 <View style={styles.postCard}>
                   <View style={styles.postHeader}>
                     <Image
-                      source={{ uri: post.author?.avatar_url || 'https://via.placeholder.com/36' }}
+                      source={{ uri: post.author?.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
                       style={styles.postAvatar}
                     />
                     <View>

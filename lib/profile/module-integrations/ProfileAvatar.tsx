@@ -11,7 +11,7 @@ export function ProfileAvatar({ uri, size = 40, verified = false }: ProfileAvata
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Image
-        source={{ uri: uri || 'https://via.placeholder.com/100' }}
+        source={{ uri: uri || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
         style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
       />
       {verified && <View style={[styles.badge, { bottom: 0, right: 0 }]}><Text style={styles.badgeText}>✓</Text></View>}

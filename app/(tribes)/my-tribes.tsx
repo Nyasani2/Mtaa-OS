@@ -86,7 +86,7 @@ export default function MyTribesScreen() {
               style={styles.tribeCard}
               onPress={() => router.push(`/(os)/tribes/${tribe.id}` as any)}
             >
-              <Image source={{ uri: tribe.avatar_url || 'https://via.placeholder.com/56' }} style={styles.tribeAvatar} />
+              <Image source={{ uri: tribe.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.tribeAvatar} />
               <View style={styles.tribeInfo}>
                 <Text style={styles.tribeName}>{tribe.name}</Text>
                 <Text style={styles.tribeMeta}>{tribe.category?.icon} {tribe.category?.name} • {tribe.my_role}</Text>

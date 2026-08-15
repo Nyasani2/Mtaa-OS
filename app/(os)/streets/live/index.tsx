@@ -28,7 +28,7 @@ export default function LiveListScreen() {
         keyExtractor={s=>s.id}
         renderItem={({item})=> (
           <TouchableOpacity style={styles.card} onPress={()=>router.push(`/streets/live/${item.id}`)}>
-            <Image source={{uri:item.thumbnail_url||'https://via.placeholder.com/400x225/111/333?text=LIVE'}} style={styles.thumb}/>
+            <Image source={{uri:item.thumbnail_url||'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='}} style={styles.thumb}/>
             <View style={styles.liveBadge}><Radio size={12} color="#fff"/><Text style={styles.liveText}>LIVE</Text></View>
             <View style={styles.info}>
               <Image source={{uri:item.creator?.avatar_url||'https://i.pravatar.cc/150?u='+item.user_id}} style={styles.avatar}/>

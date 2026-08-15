@@ -62,13 +62,13 @@ export default function TribesDiscoveryScreen() {
       onPress={() => router.push(`/(os)/tribes/${tribe.id}` as any)}
     >
       <Image
-        source={{ uri: tribe.cover_url || 'https://via.placeholder.com/300x120' }}
+        source={{ uri: tribe.cover_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
         style={styles.tribeCover}
       />
       <View style={styles.tribeContent}>
         <View style={styles.tribeHeader}>
           <Image
-            source={{ uri: tribe.avatar_url || 'https://via.placeholder.com/48' }}
+            source={{ uri: tribe.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
             style={styles.tribeAvatar}
           />
           <View style={styles.tribeInfo}>

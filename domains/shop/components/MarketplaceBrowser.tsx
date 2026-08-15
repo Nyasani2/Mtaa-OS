@@ -51,7 +51,7 @@ export default function MarketplaceBrowser({ items, onSelectItem, onSelectShop, 
   const renderItem = ({ item }: { item: MarketplaceItem }) => (
     <TouchableOpacity style={styles.itemCard} onPress={() => onSelectItem?.(item)}>
       <Image
-        source={{ uri: item.image || 'https://via.placeholder.com/120' }}
+        source={{ uri: item.image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
         style={styles.itemImage}
       />
       <View style={styles.itemInfo}>

@@ -18,7 +18,7 @@ export function ProfileCard({ profile, compact = false, showFollowButton = true 
       style={[styles.card, compact && styles.compact]}
       onPress={() => router.push(`/(os)/profile/${profile.id}` as any)}
     >
-      <Image source={{ uri: profile.avatar_url || 'https://via.placeholder.com/80' }} style={styles.avatar} />
+      <Image source={{ uri: profile.avatar_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={styles.avatar} />
       <View style={styles.info}>
     // @ts-ignore
         <Text style={styles.name}>{profile.display_name || profile.username || 'Anonymous'}</Text>

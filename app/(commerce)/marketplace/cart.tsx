@@ -119,7 +119,7 @@ export default function CartScreen() {
             <Image
     
     
-              source={{ uri: item.product_image || 'https://via.placeholder.com/80' }}
+              source={{ uri: item.product_image || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
               style={styles.itemImage}
             />
             <View style={styles.itemInfo}>

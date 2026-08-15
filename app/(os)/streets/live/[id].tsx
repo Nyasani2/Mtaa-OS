@@ -38,7 +38,7 @@ export default function LiveWatchScreen() {
   return (
     <View style={styles.root}>
       <View style={[styles.videoArea,{width,height:height*0.6}]}>
-        <Image source={{uri:stream.thumbnail_url||'https://via.placeholder.com/400x700/111/333?text=LIVE'}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
+        <Image source={{uri:stream.thumbnail_url||'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
         <View style={styles.overlay}>
           <TouchableOpacity onPress={()=>router.back()} style={styles.backBtn}><ArrowLeft size={22} color="#fff"/></TouchableOpacity>
           <View style={styles.liveBadge}><Radio size={12} color="#fff"/><Text style={styles.liveText}>LIVE</Text></View>

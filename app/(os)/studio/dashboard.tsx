@@ -57,7 +57,7 @@ export default function StudioDashboardScreen() {
                 onPress={() => router.push(`/(os)/studio/live-active?id=${item.id}` as any)}
                 style={{ width: 200, marginRight: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
               >
-                <Image source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/200x112' }} style={{ width: 200, height: 112 }} />
+                <Image source={{ uri: item.thumbnail_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={{ width: 200, height: 112 }} />
                 <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: '#ff0000', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 }}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>LIVE</Text>
                 </View>
@@ -83,7 +83,7 @@ export default function StudioDashboardScreen() {
               onPress={() => router.push(`/(os)/studio/video-player?id=${item.id}` as any)}
               style={{ flexDirection: 'row', marginBottom: 12, backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden' }}
             >
-              <Image source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/120x68' }} style={{ width: 120, height: 68 }} />
+              <Image source={{ uri: item.thumbnail_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }} style={{ width: 120, height: 68 }} />
               <View style={{ flex: 1, padding: 10, justifyContent: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }} numberOfLines={2}>{item.title}</Text>
                 <Text style={{ color: '#888', fontSize: 11, marginTop: 4 }}>{item.view_count?.toLocaleString()} views • {item.processing_status}</Text>

@@ -41,7 +41,7 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
           isWeb && { width: videoWidth, height: maxVideoHeight, borderRadius: 12, overflow: 'hidden' }
         ]}>
           <Image
-            source={{ uri: post.thumbnail_url || post.media_url || 'https://via.placeholder.com/400x700/111/333?text=No+Media' }}
+            source={{ uri: post.thumbnail_url || post.media_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
             style={{ width: '100%', height: '100%' }}
             resizeMode="cover"
           />
