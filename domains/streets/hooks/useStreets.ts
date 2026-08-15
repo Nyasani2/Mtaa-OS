@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   fetchStreetsPosts,
-  getPostsByUser,
+  fetchPostsByUser,
   fetchAuthorProfiles,
   toggleLikePost,
   checkUserLiked,
@@ -61,7 +61,7 @@ export function useStreets() {
     const id = targetUserId || userId;
     if (!id) return;
     try {
-      const data = await getPostsByUser(id, 50);
+      const data = await fetchPostsByUser(id, 50);
       setUserPosts(data);
 
       const creatorIds = data.map((p) => p.creator_id).filter(Boolean);
@@ -100,7 +100,7 @@ export function useStreets() {
     return checkUserLiked(postId, userId);
   }, [userId]);
 
-  const fetchComments = useCallback(async (postId: string): Promise<StreetsComment[]> => {
+  const getComments = useCallback(async (postId: string): Promise<StreetsComment[]> => {
     return fetchComments(postId);
   }, []);
 
@@ -269,7 +269,7 @@ export function useStreets() {
     loadUserPosts,
     likePost,
     isLiked,
-    fetchComments,
+    getComments,
     postComment,
     handleShare,
     handleRepost,

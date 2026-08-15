@@ -21,13 +21,13 @@ export default function LiveListScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={()=>router.back()} style={styles.backBtn}><ArrowLeft size={22} color="#fff"/></TouchableOpacity>
         <Text style={styles.headerTitle}>LIVE</Text>
-        <TouchableOpacity onPress={()=>router.push('/streets/live/create' as any)} style={styles.backBtn}><Plus size={22} color="#fff"/></TouchableOpacity>
+        <TouchableOpacity onPress={()=>router.push('/streets/live/create')} style={styles.backBtn}><Plus size={22} color="#fff"/></TouchableOpacity>
       </View>
       <FlatList
         data={streams}
         keyExtractor={s=>s.id}
         renderItem={({item})=> (
-          <TouchableOpacity style={styles.card} onPress={()=>router.push(`/streets/live/${item.id}` as any)}>
+          <TouchableOpacity style={styles.card} onPress={()=>router.push(`/streets/live/${item.id}`)}>
             <Image source={{uri:item.thumbnail_url||'https://via.placeholder.com/400x225/111/333?text=LIVE'}} style={styles.thumb}/>
             <View style={styles.liveBadge}><Radio size={12} color="#fff"/><Text style={styles.liveText}>LIVE</Text></View>
             <View style={styles.info}>
@@ -45,7 +45,7 @@ export default function LiveListScreen() {
             <Radio size={48} color="#333"/>
             <Text style={styles.emptyTitle}>No live streams</Text>
             <Text style={styles.emptySub}>Be the first to go live!</Text>
-            <TouchableOpacity style={styles.goLiveBtn} onPress={()=>router.push('/streets/live/create' as any)}>
+            <TouchableOpacity style={styles.goLiveBtn} onPress={()=>router.push('/streets/live/create')}>
               <Text style={styles.goLiveText}>Go Live</Text>
             </TouchableOpacity>
           </View>

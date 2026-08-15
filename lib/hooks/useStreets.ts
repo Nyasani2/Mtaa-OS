@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import {
   fetchStreetsPosts,
+  uploadMedia,
+  createPost,
   fetchAuthorProfiles,
   toggleLikePost,
   checkUserLiked,
@@ -87,7 +89,36 @@ export function useStreets() {
   };
   const searchUsers = async () => [];
   const searchHashtags = async () => [];
-  return { liked: false, count: 0 };
+  const publishPost = useCallback(async (params: {
+    content: string;
+    caption?: string;
+    file?: any;
+    mediaType?: 'image' | 'video';
+    hashtags?: string[];
+    isPublic?: boolean;
+  }) => {
+    if (!user?.id) throw new Error('You must be signed in to post.');
+    let mediaUrl: string | undefined;
+    let thumbnailUrl: string | undefined;
+    if (params.file) {
+      const up = await uploadMedia(params.file, user.id, () => {});
+      mediaUrl = up.url;
+      thumbnailUrl = up.thumbnailUrl;
+    }
+    return await createPost({
+      creatorId: user.id,
+      content: params.content,
+      caption: params.caption,
+      mediaUrl,
+      thumbnailUrl,
+      mediaType: params.mediaType,
+      hashtags: params.hashtags,
+      isPublic: params.isPublic,
+    });
+  }, [user?.id]);
+
+  return {
+    publishPost, liked: false, count: 0 };
     try {
       const result = await toggleLikePost(postId, user?.id || '');
       setPosts((prev) =>

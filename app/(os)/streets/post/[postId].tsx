@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -96,7 +95,7 @@ export default function PostDetailScreen() {
         )}
         <View style={styles.content}>
           <View style={styles.authorRow}>
-            <TouchableOpacity onPress={() => router.push(`/(os)/streets/creator/${post.creator_id}` as any)}>
+            <TouchableOpacity onPress={() => router.push(`/(os)/streets/creator/${post.creator_id}`)}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{post.creator?.display_name?.[0]?.toUpperCase() || 'U'}</Text>
               </View>
@@ -123,7 +122,7 @@ export default function PostDetailScreen() {
         </View>
         <View style={styles.commentsSection}>
           <Text style={styles.commentsTitle}>Comments</Text>
-          {comments.map((comment: any) => (
+          {comments.map(comment => (
             <View key={comment.id} style={styles.comment}>
               <View style={styles.commentAvatar}>
                 <Text style={styles.commentAvatarText}>{comment.author?.display_name?.[0]?.toUpperCase() || 'U'}</Text>
