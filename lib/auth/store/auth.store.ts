@@ -16,6 +16,7 @@ export interface AuthState {
   profile: any | null;
   session: any | null;
   isLoading: boolean;
+  initialized: boolean;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
   pinSet: boolean;
@@ -29,6 +30,9 @@ export interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ error?: any; data?: any }>;
   signOut: () => Promise<void>;
+  getUserRole: () => string | null;
+  getAvatarUrl: () => string | null;
+  getDisplayName: () => string | null;
   refreshProfile: () => Promise<void>;
   verifyEmail: () => Promise<boolean>;
   resendVerification: () => Promise<{ error?: any }>;
@@ -57,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       profile: null,
+      initialized: false,
       session: null,
       isLoading: true,
       isAuthenticated: false,
@@ -105,7 +110,7 @@ export const useAuthStore = create<AuthState>()(
               }
             }
           } else {
-            set({ isLoading: false });
+            set({ isLoading: false, initialized: true });
           }
         } catch (err) {
           console.error('Auth init error:', err);
@@ -296,6 +301,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshProfile: async () => {},
+      getDisplayName: () => {
+        const p = get().profile;
+        const u = get().user;
+        return (p as any)?.display_name || (p as any)?.full_name || u?.email?.split('@')[0] || 'User';
+      },
+      getAvatarUrl: () => {
+        return (get().profile as any)?.avatar_url || null;
+      },
+      getUserRole: () => {
+        return (get().profile as any)?.role || 'user';
+      },
       updateLastActive: () => {
         const now = Date.now();
         AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());

@@ -184,47 +184,6 @@ export interface ASISMessage {
   role: 'user' | 'asis' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: number;
-}
-
-export interface KAMOSValue {
-  value: number;
-  confidence: number;
-  timestamp: number;
-}
-
-export interface KamosState {
-  userKnowledgeGraph: any;
-  collectivePatterns: any;
-  contextVector: ContextVector;
-  newObservation: {
-    query: string;
-    parsedIntent: {
-      category: IntentCategory;
-      confidence: number;
-      entities: string[];
-      urgency: number;
-      requiresTools: string[];
-      suggestedActions: string[];
-    };
-    toolResults: any[];
-    timestamp: number;
-  };
-}
-
-
-
-// ─── ASIS UI Types (Canonical) ─────────────────────────────────
-
-export interface ASISHealth {
-  score: number;
-  status: string;
-}
-
-export interface ASISMessage {
-  id: string;
-  role: 'user' | 'asis' | 'assistant' | 'system' | 'tool';
-  content: string;
-  timestamp: number;
   metadata?: {
     engineName?: string;
     confidence?: number;

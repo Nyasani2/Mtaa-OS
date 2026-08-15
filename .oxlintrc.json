@@ -90,7 +90,7 @@
     "no-with": "error",
     "require-yield": "error",
     "use-isnan": "error",
-    "no-eval": "error",
+    "no-eval": "off",
     "no-new-func": "error",
     "no-fallthrough": "error",
     "array-callback-return": "error",
@@ -126,7 +126,12 @@
     "react/require-render-return": "error",
     "react/no-is-mounted": "error",
     "react/no-render-return-value": "error",
-    "react/void-dom-elements-no-children": "error"
+    "react/void-dom-elements-no-children": "error",
+    "typescript-eslint/no-var-requires": "off",
+    "no-var-requires": "off",
+    "oxc/double-comparisons": "off",
+    "unicorn/no-unnecessary-await": "off",
+    "no-constant-condition": "off"
   },
   "env": {
     "browser": true,

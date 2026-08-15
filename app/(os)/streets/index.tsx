@@ -251,7 +251,7 @@ export default function StreetsFeedScreen() {
 
   const handleLike = useCallback(async (postId: string) => {
     const result = await likePost(postId);
-    setLikedMap((prev) => ({ ...prev, [postId]: result.liked }));
+    setLikedMap((prev) => ({ ...prev, [postId]: (result as any).liked ?? false }));
   }, [likePost]);
 
   const handleBookmark = useCallback(async (post: StreetsPost) => {

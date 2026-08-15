@@ -79,9 +79,17 @@ export function useStreets() {
   }, [loadFeed]);
 
   const likePost = useCallback(async (postId: string) => {
-    if (!user?.id) return { liked: false, count: 0 };
+    if (!user?.id) return {
+    posts: [], authors: {}, loading: false, refreshing: false, error: null,
+    loadPosts: () => {}, likePost: () => {}, isLiked: () => false, handleShare: () => {},
+    handleRepost: () => {}, markViewed: () => {}, handleBoost: () => {},
+    postComment: () => Promise.resolve(null), searchPosts: () => [], searchUsers: () => [], searchHashtags: () => []
+  };
+  const searchUsers = async () => [];
+  const searchHashtags = async () => [];
+  return { liked: false, count: 0 };
     try {
-      const result = await toggleLikePost(postId, user.id);
+      const result = await toggleLikePost(postId, user?.id || '');
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, likes_count: result.count } : p))
       );
@@ -164,7 +172,13 @@ export function useStreets() {
     }
   }, [user?.id]);
 
-  return {
+    const searchPosts = async () => [];
+  const searchUsers = async () => [];
+  const searchHashtags = async () => [];
+
+return {
+
+    searchHashtags,
     posts,
     authors,
     loading,

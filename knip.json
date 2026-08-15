@@ -62,8 +62,6 @@
     "classMembers": "off",
     "dependencies": "warn",
     "devDependencies": "warn",
-    "optionalDependencies": "off",
-    "peerDependencies": "off",
     "unlisted": "warn",
     "unresolved": "warn",
     "exports": "warn",

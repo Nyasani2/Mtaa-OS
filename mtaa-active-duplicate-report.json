@@ -1,0 +1,1005 @@
+{
+  "summary": {
+    "same_file_duplicate": 0,
+    "type_alias": 43,
+    "cross_domain_same_shape": 0,
+    "cross_domain_different": 85,
+    "lib_vs_domain": 25
+  },
+  "total_duplicates": 153,
+  "details": {
+    "EducationRole": {
+      "files": [
+        "education-role-guard.ts",
+        "domains/education/pages/index.tsx",
+        "domains/education/pages/_layout.tsx",
+        "domains/education/services/education-role-guard.ts"
+      ]
+    },
+    "RolePermissions": {
+      "files": [
+        "education-role-guard.ts",
+        "domains/education/services/education-role-guard.ts"
+      ]
+    },
+    "FraudFlag": {
+      "files": [
+        "asis/wallet/fraud-monitor.ts",
+        "domains/regulatory/services/fraudService.ts"
+      ]
+    },
+    "Shop": {
+      "files": [
+        "domains/shop/types.ts",
+        "domains/shop/hooks/useShop.ts",
+        "domains/shop/services/shopService.ts",
+        "lib/services/business-service.ts"
+      ]
+    },
+    "ShopProduct": {
+      "files": [
+        "domains/shop/types.ts",
+        "domains/shop/hooks/useShop.ts",
+        "domains/shop/services/shopService.ts"
+      ]
+    },
+    "ShopOrder": {
+      "files": [
+        "domains/shop/types.ts",
+        "domains/shop/hooks/useShop.ts",
+        "domains/shop/components/OrderManager.tsx",
+        "domains/shop/services/shopService.ts"
+      ]
+    },
+    "CartItem": {
+      "files": [
+        "domains/shop/types.ts",
+        "domains/shop/components/POSScreen.tsx",
+        "domains/commerce/services/cartService.ts",
+        "domains/marketplace/services/cartService.ts",
+        "lib/marketplace/services/cart.service.ts"
+      ]
+    },
+    "DashboardStats": {
+      "files": [
+        "domains/shop/types.ts",
+        "domains/education/hooks/useStudentDashboard.ts"
+      ]
+    },
+    "ShopService": {
+      "files": [
+        "domains/shop/services/shopService.ts",
+        "lib/shop/services/shopService.ts"
+      ]
+    },
+    "Teacher": {
+      "files": [
+        "domains/education/pages/teachers.tsx",
+        "domains/education/types/education.types.ts",
+        "domains/education/hooks/useTeachers.ts",
+        "domains/education/components/TeacherCard.tsx",
+        "domains/education/services/teacherService.ts",
+        "domains/education/services/education-teachers-service.ts"
+      ]
+    },
+    "Institution": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "domains/education/hooks/useInstitutions.ts",
+        "domains/education/components/InstitutionCard.tsx",
+        "domains/education/services/education-schools-service.ts",
+        "domains/education/services/institutionService.ts"
+      ]
+    },
+    "Student": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "domains/education/services/education-students-service.ts"
+      ]
+    },
+    "Class": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "domains/education/services/education-classes-service.ts"
+      ]
+    },
+    "Lesson": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "domains/education/services/lessonService.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "FeedPost": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "domains/education/hooks/useEducationFeed.ts",
+        "domains/education/components/FeedPostCard.tsx",
+        "domains/education/services/education-feed-service.ts",
+        "domains/education/services/feedService.ts"
+      ]
+    },
+    "Message": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "lib/services/messenger-service.ts",
+        "lib/services/messaging-service.ts"
+      ]
+    },
+    "PayrollRecord": {
+      "files": [
+        "domains/education/types/education.types.ts",
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts",
+        "lib/restaurant/types.ts"
+      ]
+    },
+    "EducationMessage": {
+      "files": [
+        "domains/education/services/education-messages-service.ts",
+        "domains/education/services/messageService.ts",
+        "lib/services/education-service.ts"
+      ]
+    },
+    "Grade": {
+      "files": [
+        "domains/education/services/education-grades-service.ts",
+        "domains/education/services/assignmentEngineService.ts"
+      ]
+    },
+    "Assignment": {
+      "files": [
+        "domains/education/services/assignmentEngineService.ts",
+        "domains/education/services/education-assignments-service.ts"
+      ]
+    },
+    "AttendanceRecord": {
+      "files": [
+        "domains/education/services/education-attendance-service.ts",
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts",
+        "lib/restaurant/types.ts"
+      ]
+    },
+    "AuditLogEntry": {
+      "files": [
+        "domains/regulatory/services/auditService.ts",
+        "types/voting-types.ts"
+      ]
+    },
+    "TaxRecord": {
+      "files": [
+        "domains/regulatory/services/complianceService.ts",
+        "lib/services/tax-service.ts"
+      ]
+    },
+    "CreatorProfile": {
+      "files": [
+        "domains/studio/hooks/useStudio.ts",
+        "lib/services/creator-service.ts"
+      ]
+    },
+    "HealthAppointment": {
+      "files": [
+        "domains/health/types.ts",
+        "domains/health/services/healthService.ts"
+      ]
+    },
+    "HealthRecord": {
+      "files": [
+        "domains/health/types.ts",
+        "domains/health/services/healthService.ts",
+        "lib/health/security/health-vault.ts"
+      ]
+    },
+    "HealthFacility": {
+      "files": [
+        "domains/health/types.ts",
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts",
+        "hooks/useHealthMap.ts"
+      ]
+    },
+    "PatientService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/patient.service.ts"
+      ]
+    },
+    "NotificationService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/notification.service.ts"
+      ]
+    },
+    "ProviderService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/provider.service.ts"
+      ]
+    },
+    "RecordService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/record.service.ts"
+      ]
+    },
+    "SymptomService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/symptom.service.ts"
+      ]
+    },
+    "TelemedicineService": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/services/telemedicine.service.ts"
+      ]
+    },
+    "HealthController": {
+      "files": [
+        "domains/health/services/patient.service.ts",
+        "lib/health/controllers/health.controller.ts"
+      ]
+    },
+    "Tribe": {
+      "files": [
+        "domains/tribes/services/tribeService.ts",
+        "lib/tribes/services/tribes.service.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "TribeMember": {
+      "files": [
+        "domains/tribes/services/tribeService.ts",
+        "lib/tribes/services/tribes.service.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "TribePost": {
+      "files": [
+        "domains/tribes/services/tribeService.ts",
+        "lib/tribes/services/tribes.service.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "TribeEvent": {
+      "files": [
+        "domains/tribes/services/tribeService.ts",
+        "lib/tribes/services/tribes.service.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "TribeDonation": {
+      "files": [
+        "domains/tribes/services/tribeService.ts",
+        "lib/tribes/services/tribes.service.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "ShippingAddress": {
+      "files": [
+        "domains/commerce/services/cartService.ts",
+        "domains/marketplace/services/cartService.ts",
+        "lib/marketplace/services/cart.service.ts"
+      ]
+    },
+    "Order": {
+      "files": [
+        "domains/marketplace/services/cartService.ts",
+        "lib/restaurant/types.ts",
+        "lib/marketplace/types/index.ts"
+      ]
+    },
+    "Contact": {
+      "files": [
+        "domains/phone/state/contactStore.ts",
+        "domains/phone/types/phone.types.ts"
+      ]
+    },
+    "CallLog": {
+      "files": [
+        "domains/phone/state/contactStore.ts",
+        "domains/phone/types/phone.types.ts"
+      ]
+    },
+    "BookingStatus": {
+      "files": [
+        "domains/stay/types.ts",
+        "lib/mtruck/types.ts"
+      ]
+    },
+    "PaymentStatus": {
+      "files": [
+        "domains/stay/types.ts",
+        "domains/business/types/index.ts"
+      ]
+    },
+    "StaySearchFilters": {
+      "files": [
+        "domains/stay/types.ts",
+        "domains/stay/hooks/useStaySearch.ts"
+      ]
+    },
+    "BusinessType": {
+      "files": [
+        "domains/business/types/index.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "BusinessStatus": {
+      "files": [
+        "domains/business/types/index.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "BusinessDocument": {
+      "files": [
+        "domains/business/types/index.ts",
+        "domains/wallet/services/businessService.ts",
+        "lib/services/business-service.ts"
+      ]
+    },
+    "Business": {
+      "files": [
+        "domains/business/services/businessService.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "WalletBalance": {
+      "files": [
+        "domains/wallet/hooks/useWallet.ts",
+        "lib/identity/hooks/useWallet.ts"
+      ]
+    },
+    "WalletTransaction": {
+      "files": [
+        "domains/wallet/hooks/useWallet.ts",
+        "domains/wallet/services/walletService.ts",
+        "lib/stores/wallet-store.ts",
+        "lib/modules/wallet/types.ts",
+        "lib/identity/hooks/useWallet.ts",
+        "lib/services/wallet-service.ts"
+      ]
+    },
+    "WalletAccount": {
+      "files": [
+        "domains/wallet/hooks/useWallet.ts",
+        "lib/modules/wallet/types.ts"
+      ]
+    },
+    "Wallet": {
+      "files": [
+        "domains/wallet/services/walletService.ts",
+        "lib/modules/wallet/types.ts",
+        "lib/services/wallet-service.ts"
+      ]
+    },
+    "ModuleManifest": {
+      "files": [
+        "manifests/runtime/module.types.ts",
+        "types/module.types.ts",
+        "lib/modules/runtime/module.types.ts",
+        "lib/runtime/module.types.ts"
+      ]
+    },
+    "Database": {
+      "files": [
+        "types/database.ts",
+        "lib/types/database.ts",
+        "lib/types/supabase.ts"
+      ]
+    },
+    "Tables": {
+      "files": [
+        "types/database.ts",
+        "lib/types/supabase.ts"
+      ]
+    },
+    "Enums": {
+      "files": [
+        "types/database.ts",
+        "lib/types/database.ts",
+        "lib/types/supabase.ts"
+      ]
+    },
+    "AppItem": {
+      "files": [
+        "types/appstore.ts",
+        "lib/mtaa/appstore/apps/types.ts"
+      ]
+    },
+    "InstallStatus": {
+      "files": [
+        "types/appstore.ts",
+        "lib/appstore/types.ts"
+      ]
+    },
+    "StaffType": {
+      "files": [
+        "types/courts.ts",
+        "types/prisons.ts"
+      ]
+    },
+    "ProcurementCategory": {
+      "files": [
+        "types/courts.ts",
+        "types/prisons.ts"
+      ]
+    },
+    "ProcurementStatus": {
+      "files": [
+        "types/courts.ts",
+        "types/prisons.ts"
+      ]
+    },
+    "AppManifest": {
+      "files": [
+        "types/module.types.ts",
+        "lib/apps-store/types.ts",
+        "lib/mtaa/appstore/types.ts",
+        "lib/mtaa/appstore/apps/types.ts",
+        "lib/appstore/types.ts",
+        "lib/appstore/index.ts"
+      ]
+    },
+    "AppStatus": {
+      "files": [
+        "types/module.types.ts",
+        "lib/appstore/types.ts"
+      ]
+    },
+    "AppPermission": {
+      "files": [
+        "types/module.types.ts",
+        "lib/modules/runtime/module.types.ts",
+        "lib/mtaa/appstore/apps/types.ts"
+      ]
+    },
+    "HealthRole": {
+      "files": [
+        "types/health.ts",
+        "lib/health/hooks/useHealthRole.ts",
+        "lib/health/services/health-role.service.ts"
+      ]
+    },
+    "HealthStaffRecord": {
+      "files": [
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts"
+      ]
+    },
+    "StaffInvitation": {
+      "files": [
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts"
+      ]
+    },
+    "OnboardingStatus": {
+      "files": [
+        "types/health.ts",
+        "lib/health/services/health-role.service.ts"
+      ]
+    },
+    "VehicleType": {
+      "files": [
+        "types/transport.ts",
+        "lib/services/mtaxi-service.ts",
+        "lib/mtaxi/types/index.ts"
+      ]
+    },
+    "IncidentType": {
+      "files": [
+        "types/voting-types.ts",
+        "lib/mtruck/types.ts"
+      ]
+    },
+    "IncidentStatus": {
+      "files": [
+        "types/voting-types.ts",
+        "lib/mtruck/types.ts"
+      ]
+    },
+    "VotingResult": {
+      "files": [
+        "types/voting-types.ts",
+        "hooks/use-voting.ts"
+      ]
+    },
+    "IncidentReport": {
+      "files": [
+        "types/voting-types.ts",
+        "lib/services/incident.service.ts"
+      ]
+    },
+    "ServiceResult": {
+      "files": [
+        "lib/types.ts",
+        "lib/utils/service-helpers.ts",
+        "lib/services/transport-service.ts",
+        "lib/services/messaging-service.ts"
+      ]
+    },
+    "UserProfile": {
+      "files": [
+        "lib/types.ts",
+        "hooks/useUser.ts"
+      ]
+    },
+    "Evidence": {
+      "files": [
+        "lib/asis-cse/asis-cse-evidence-engine.ts",
+        "lib/services/evidence.service.ts"
+      ]
+    },
+    "ReasoningChain": {
+      "files": [
+        "lib/asis-cse/asis-cse-kamos.ts",
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-cse/asis-cse-reasoning-v2.ts"
+      ]
+    },
+    "ToolHealthReport": {
+      "files": [
+        "lib/asis-cse/asis-cse-tool-registry.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "ToolCapability": {
+      "files": [
+        "lib/asis-cse/asis-cse-tool-types.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "ToolParameter": {
+      "files": [
+        "lib/asis-cse/asis-cse-tool-types.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "ToolPermission": {
+      "files": [
+        "lib/asis-cse/asis-cse-tool-types.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "Fact": {
+      "files": [
+        "lib/asis-cse/asis-cse-web-research.ts",
+        "lib/asis-cse/asis-cse-types.ts"
+      ]
+    },
+    "IdentityProfile": {
+      "files": [
+        "lib/asis-cse/asis-cse-identity-engine.ts",
+        "lib/kernel/identity-engine.ts"
+      ]
+    },
+    "ContextVector": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-v7/types/index.ts"
+      ]
+    },
+    "IntentCategory": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-v7/types/index.ts"
+      ]
+    },
+    "CognitiveAPIClient": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-cse/asis-cse-api.ts"
+      ]
+    },
+    "CognitiveEngine": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-cse/asis-cse-kernel.ts"
+      ]
+    },
+    "KnowledgeGraph": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-v7/types/index.ts"
+      ]
+    },
+    "ReasoningStep": {
+      "files": [
+        "lib/asis-cse/asis-cse-types.ts",
+        "lib/asis-cse/asis-cse-reasoning-v2.ts"
+      ]
+    },
+    "Observation": {
+      "files": [
+        "lib/asis-cse/asis-cse-observation-engine.ts",
+        "lib/asis-v7/types/index.ts"
+      ]
+    },
+    "DeviceInfo": {
+      "files": [
+        "lib/asis-v7/engine/device-access.ts",
+        "lib/security/device-engine.ts"
+      ]
+    },
+    "SearchResult": {
+      "files": [
+        "lib/asis-v7/types/index.ts",
+        "lib/kernel/search-engine.ts"
+      ]
+    },
+    "SearchFilters": {
+      "files": [
+        "lib/asis-v7/types/index.ts",
+        "lib/kernel/search-engine.ts"
+      ]
+    },
+    "CalendarEvent": {
+      "files": [
+        "lib/calendar/hooks/calendar-service.ts",
+        "lib/calendar/services/calendar-service.ts",
+        "lib/services/calendar-service.ts"
+      ]
+    },
+    "Inspection": {
+      "files": [
+        "lib/domains/civic/border/hooks/useInspections.ts",
+        "lib/services/mtaxi-service.ts"
+      ]
+    },
+    "StaffMember": {
+      "files": [
+        "lib/domains/civic/border/hooks/useStaffOperations.ts",
+        "lib/restaurant/types.ts",
+        "hooks/useStaffManagement.ts"
+      ]
+    },
+    "EscrowTransaction": {
+      "files": [
+        "lib/modules/wallet/types.ts",
+        "lib/services/escrow-service.ts"
+      ]
+    },
+    "HealthAlert": {
+      "files": [
+        "lib/health/types.ts",
+        "lib/health/hooks/useGovernment.ts"
+      ]
+    },
+    "EmergencyContact": {
+      "files": [
+        "lib/health/security/emergency-card.ts",
+        "lib/health/types/health-profile.ts"
+      ]
+    },
+    "HealthRecordType": {
+      "files": [
+        "lib/health/security/health-vault.ts",
+        "lib/health/types/health-record.ts"
+      ]
+    },
+    "HealthProfile": {
+      "files": [
+        "lib/health/types/health-profile.ts",
+        "lib/health/hooks/useHealthProfile.ts"
+      ]
+    },
+    "Appointment": {
+      "files": [
+        "lib/health/hooks/useAppointments.ts",
+        "lib/hooks/useAppointments.ts"
+      ]
+    },
+    "StaffStatus": {
+      "files": [
+        "lib/health/services/health-role.service.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "RideStatus": {
+      "files": [
+        "lib/transport/types/index.ts",
+        "lib/mtaxi/types/index.ts"
+      ]
+    },
+    "PaymentMethod": {
+      "files": [
+        "lib/transport/types/index.ts",
+        "lib/restaurant/types.ts",
+        "lib/mtaxi/types/index.ts"
+      ]
+    },
+    "FareEstimate": {
+      "files": [
+        "lib/transport/types/index.ts",
+        "lib/services/fare-engine.ts",
+        "lib/services/mtaxi-service.ts",
+        "lib/mtaxi/types/index.ts",
+        "lib/mtaxi/services/rideService.ts"
+      ]
+    },
+    "FareBreakdown": {
+      "files": [
+        "lib/transport/types/index.ts",
+        "lib/services/fare-engine.ts"
+      ]
+    },
+    "NearbyDriver": {
+      "files": [
+        "lib/transport/types/index.ts",
+        "lib/transport/services/ride.service.ts",
+        "lib/services/mtaxi-service.ts",
+        "lib/mtaxi/types/index.ts"
+      ]
+    },
+    "Job": {
+      "files": [
+        "lib/jobs/types/index.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "JobApplication": {
+      "files": [
+        "lib/jobs/types/index.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "WorkProfile": {
+      "files": [
+        "lib/jobs/types/index.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "WorkExperience": {
+      "files": [
+        "lib/jobs/types/index.ts",
+        "lib/identity/types.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "Education": {
+      "files": [
+        "lib/jobs/types/index.ts",
+        "lib/identity/types.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "StaffRole": {
+      "files": [
+        "lib/restaurant/types.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "InventoryItem": {
+      "files": [
+        "lib/restaurant/types.ts",
+        "lib/hooks/useInventory.ts"
+      ]
+    },
+    "FleetAlert": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/services/fleet-camera.service.ts"
+      ]
+    },
+    "FreightBid": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "MaintenanceRecord": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/mtruck/fleet/maintenance-engine.ts"
+      ]
+    },
+    "TruckDocument": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "Driver": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/mtruck/fleet/fleet-engine.ts",
+        "lib/services/transport-service.ts",
+        "lib/services/mtaxi-service.ts"
+      ]
+    },
+    "FreightListing": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/mtruck/marketplace/freight-marketplace-engine.ts"
+      ]
+    },
+    "Load": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "Route": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "Truck": {
+      "files": [
+        "lib/mtruck/types.ts",
+        "lib/mtruck/fleet/fleet-engine.ts",
+        "lib/mtruck/os/fleet-reposition-engine.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "ETAInput": {
+      "files": [
+        "lib/mtruck/intelligence/eta-engine.ts",
+        "lib/mtruck/eta/eta-engine.ts"
+      ]
+    },
+    "MTAAEvent": {
+      "files": [
+        "lib/mtruck/bus/mtaa-interapp-bus.ts",
+        "lib/system/event-bus.ts"
+      ]
+    },
+    "FleetVehicle": {
+      "files": [
+        "lib/mtruck/fleet/live-fleet-map-engine.ts",
+        "lib/mtruck/maps/live-fleet-map-engine.ts",
+        "lib/hooks/useFleet.ts"
+      ]
+    },
+    "TruckTelemetry": {
+      "files": [
+        "lib/mtruck/telemetry/truck-telemetry-engine.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "Freight": {
+      "files": [
+        "lib/mtruck/ai/load-batching-engine.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "TruckLocation": {
+      "files": [
+        "lib/mtruck/tracking/live-tracking-engine.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "CustomsClearance": {
+      "files": [
+        "lib/mtruck/customs/customs-clearance-engine.ts",
+        "lib/services/mtruck-service.ts"
+      ]
+    },
+    "StreetsPost": {
+      "files": [
+        "lib/types/streets.ts",
+        "lib/services/streets-service.ts"
+      ]
+    },
+    "StreetsComment": {
+      "files": [
+        "lib/types/streets.ts",
+        "lib/services/streets-service.ts"
+      ]
+    },
+    "BootResult": {
+      "files": [
+        "lib/mtaa/kernel/boot-sequence.ts",
+        "lib/kernel/boot.ts"
+      ]
+    },
+    "AppRegistryEntry": {
+      "files": [
+        "lib/mtaa/appstore/apps/types.ts",
+        "lib/kernel/registry/index.ts"
+      ]
+    },
+    "PortfolioItem": {
+      "files": [
+        "lib/identity/types.ts",
+        "lib/services/jobs-service.ts"
+      ]
+    },
+    "QRAction": {
+      "files": [
+        "lib/identity/types.ts",
+        "lib/services/qr-service.ts"
+      ]
+    },
+    "EscrowAccount": {
+      "files": [
+        "lib/identity/hooks/useWallet.ts",
+        "lib/services/escrow-service.ts"
+      ]
+    },
+    "TribeMessage": {
+      "files": [
+        "lib/tribes/types.ts",
+        "lib/services/tribes-service.ts"
+      ]
+    },
+    "WalletEventType": {
+      "files": [
+        "lib/hookup/wallet-bridge/walletEventTypes.ts",
+        "lib/hookup/wallet-bridge/walletExecutionPipeline.ts"
+      ]
+    },
+    "WalletEvent": {
+      "files": [
+        "lib/hookup/wallet-bridge/walletEventTypes.ts",
+        "lib/hookup/wallet-bridge/walletEventBus.ts"
+      ]
+    },
+    "HookupProfile": {
+      "files": [
+        "lib/hookup/profile/hookup-profile-engine.ts",
+        "lib/services/hookup-service.ts"
+      ]
+    },
+    "DriverPayment": {
+      "files": [
+        "lib/services/mtruck-service.ts",
+        "lib/services/mtaxi-service.ts"
+      ]
+    },
+    "DriverEarning": {
+      "files": [
+        "lib/services/mtruck-service.ts",
+        "lib/services/mtaxi-service.ts"
+      ]
+    },
+    "FamilyMember": {
+      "files": [
+        "lib/services/family-service.ts",
+        "lib/profile/types/index.ts"
+      ]
+    },
+    "Garage": {
+      "files": [
+        "lib/services/garage.service.ts",
+        "lib/services/garage-service.ts",
+        "lib/garage/hooks/useGarage.ts"
+      ]
+    },
+    "Ride": {
+      "files": [
+        "lib/services/transport-service.ts",
+        "lib/services/mtaxi-service.ts",
+        "lib/mtaxi/types/index.ts"
+      ]
+    },
+    "ProfileData": {
+      "files": [
+        "lib/services/profile-service.ts",
+        "lib/profile/services/profile-os-service.ts"
+      ]
+    },
+    "ProfileStats": {
+      "files": [
+        "lib/profile/services/profile-os-service.ts",
+        "lib/profile/services/profile-timeline-service.ts"
+      ]
+    },
+    "TimelineItem": {
+      "files": [
+        "lib/profile/services/profile-os-service.ts",
+        "lib/profile/services/profile-timeline-service.ts"
+      ]
+    },
+    "PharmacyLocation": {
+      "files": [
+        "components/health/PharmacyMap.native.tsx",
+        "components/health/PharmacyMap.web.tsx",
+        "components/health/PharmacyMap.tsx"
+      ]
+    }
+  }
+}

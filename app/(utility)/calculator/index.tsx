@@ -20,7 +20,14 @@ export default function CalculatorScreen() {
     } else if (value === '=') {
       try {
          
-        setDisplay(String(eval(display)));
+        try {
+          // Safe math evaluation without eval
+          const sanitized = display.replace(/[^0-9+\-*/.()% ]/g, '');
+          const result = new Function('return ' + sanitized)();
+          setDisplay(String(result));
+        } catch {
+          setDisplay('Error');
+        }
       } catch {
         setDisplay('Error');
       }

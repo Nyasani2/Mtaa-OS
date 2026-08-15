@@ -37,7 +37,7 @@ export function useIdentity() {
 
   const refreshProfile = useCallback(async () => {
     if ((store as any).refreshProfile) await (store as any).refreshProfile();
-  }, [store.refreshProfile]);
+  }, []);
 
   const signOut = useCallback(async () => {
     await store.signOut();
