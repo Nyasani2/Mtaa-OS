@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList,
-  ActivityIndicator, RefreshControl, ScrollView,
+  ActivityIndicator, RefreshControl, Alert, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,6 +52,7 @@ export default function WalletScreen() {
   useEffect(() => { initialize(); }, []);
   useEffect(() => {
     if (isAuthenticated && user?.id) loadWalletData();
+    else { setIsLoading(false); setRefreshing(false); }
   }, [isAuthenticated, user?.id]);
 
   async function loadWalletData() {
@@ -59,7 +60,7 @@ export default function WalletScreen() {
     setIsLoading(true);
     try {
       const { data: account } = await supabase
-        .from('wallet_accounts').select('balance').eq('user_id', user.id).single();
+        .from('wallet_accounts').select('balance').eq('user_id', user.id).maybeSingle();
       const bal = account?.balance || 0;
       setBalance(bal);
 
@@ -67,7 +68,7 @@ export default function WalletScreen() {
         .from('wallet_transactions').select('*').eq('user_id', user.id)
         .order('created_at', { ascending: false }).limit(20);
       setTransactions(txs || []);
-    } catch (err) { console.error('[Wallet] Load error:', err); }
+    } catch (err: any) { console.error('[Wallet] Load error:', err); Alert.alert('Wallet load failed', err?.message || String(err)); }
     finally { setIsLoading(false); setRefreshing(false); }
   }
 
