@@ -223,3 +223,12 @@ export async function reportTribePost(postId: string, userId: string, reason: st
   if (error) throw error;
   return true;
 }
+
+export async function uploadTribeMedia(file: any, userId: string): Promise<{ url: string; thumbnailUrl?: string }> {
+  const ext = ((file.name || 'media').split('.').pop() || 'bin');
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from('tribe-media').upload(path, file, { contentType: file.type || undefined, upsert: false });
+  if (error) throw error;
+  const { data } = supabase.storage.from('tribe-media').getPublicUrl(path);
+  return { url: data.publicUrl };
+}

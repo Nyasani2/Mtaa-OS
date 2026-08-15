@@ -1,10 +1,10 @@
 // @ts-nocheck
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Heart, MessageCircle, Share, UserPlus, Flag, Radio, Send, MessageSquare } from 'lucide-react-native';
+import { Heart, MessageCircle, Share, UserPlus, Flag, Radio, Send, MessageSquare, Image as ImageIcon, Video as VideoIcon } from 'lucide-react-native';
 import * as T from '@/lib/tribes/services/tribes.service';
 import AskAsis from '@/lib/tribes/components/AskAsis';
 
@@ -31,6 +31,9 @@ export default function TribeHome() {
   const [commentsFor, setCommentsFor] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentDraft, setCommentDraft] = useState('');
+  const [media, setMedia] = useState(null);
+  const [mediaType, setMediaType] = useState('image');
+  const fileRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -54,11 +57,21 @@ export default function TribeHome() {
     try { if (isMember) await T.leaveTribe(id, user.id); else await T.joinTribe(id, user.id); load(); }
     catch (e) { Alert.alert('Failed', e?.message || String(e)); }
   };
+  const pickMedia = (type) => { setMediaType(type); if (fileRef.current) { fileRef.current.accept = type === 'video' ? 'video/*' : 'image/*'; fileRef.current.click(); } };
+  const onFile = (e) => { const f = e.target?.files?.[0]; if (f) setMedia(f); };
   const publish = async () => {
-    if (!draft.trim() || !user?.id) return;
+    if ((!draft.trim() && !media) || !user?.id) return;
     setPosting(true);
-    try { await T.createPost({ tribe_id: id, author_id: user.id, content: draft.trim() }); setDraft(''); load(); }
-    catch (e) { Alert.alert('Post failed', e?.message || String(e)); }
+    try {
+      let mediaUrl, thumbnailUrl, mtype;
+      if (media) {
+        const up = await T.uploadTribeMedia(media, user.id);
+        mediaUrl = up.url; thumbnailUrl = up.thumbnailUrl;
+        mtype = media.type && media.type.startsWith('video') ? 'video' : 'image';
+      }
+      await T.createPost({ tribe_id: id, author_id: user.id, content: draft.trim(), media_url: mediaUrl, thumbnail_url: thumbnailUrl, media_type: mtype });
+      setDraft(''); setMedia(null); load();
+    } catch (e) { Alert.alert('Post failed', e?.message || String(e)); }
     setPosting(false);
   };
   const share = async (p) => { try { await T.shareToStreets(p, user?.id); Alert.alert('Shared to Streets'); } catch (e) { Alert.alert('Share failed', e?.message || String(e)); } };
@@ -138,7 +151,24 @@ export default function TribeHome() {
         <View style={{ padding: 12 }}>
           {isMember && (
             <View style={{ backgroundColor: '#141414', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+              <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={onFile} />
               <TextInput value={draft} onChangeText={setDraft} placeholder="Write something..." placeholderTextColor="#666" multiline style={{ color: '#fff', fontSize: 14, minHeight: 60 }} />
+              {media ? (
+                <View style={{ marginTop: 8 }}>
+                  {media.type && media.type.startsWith('video')
+                    ? <video src={URL.createObjectURL(media)} controls muted style={{ width: '100%', maxHeight: 240, borderRadius: 10 }} />
+                    : <img src={URL.createObjectURL(media)} alt="" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 10 }} />}
+                  <TouchableOpacity onPress={() => setMedia(null)} style={{ marginTop: 6 }}><Text style={{ color: '#ff6b6b', fontSize: 12 }}>Remove media</Text></TouchableOpacity>
+                </View>
+              ) : null}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                <TouchableOpacity onPress={() => pickMedia('image')} style={{ backgroundColor: '#2a2a2a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <ImageIcon size={16} color="#4ade80" /><Text style={{ color: '#fff', fontSize: 12 }}>Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => pickMedia('video')} style={{ backgroundColor: '#2a2a2a', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <VideoIcon size={16} color="#60a5fa" /><Text style={{ color: '#fff', fontSize: 12 }}>Video</Text>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity onPress={publish} disabled={posting} style={{ backgroundColor: '#2196f3', borderRadius: 10, paddingVertical: 8, alignItems: 'center', marginTop: 8 }}>
                 {posting ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: '700' }}>Post</Text>}
               </TouchableOpacity>
@@ -148,7 +178,9 @@ export default function TribeHome() {
             <View key={p.id} style={{ backgroundColor: '#141414', borderRadius: 12, padding: 12, marginBottom: 10 }}>
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>{p.author_id === user?.id ? 'You' : 'Member'}</Text>
               <Text style={{ color: '#ddd', fontSize: 14, marginTop: 6 }}>{p.content}</Text>
-              {p.media_url ? <Image source={{ uri: p.media_url }} style={{ width: '100%', height: 220, borderRadius: 10, marginTop: 8 }} /> : null}
+              {p.media_url ? (p.media_type === 'video'
+                ? <video src={p.media_url} controls style={{ width: '100%', maxHeight: 320, borderRadius: 10, marginTop: 8 }} />
+                : <Image source={{ uri: p.media_url }} style={{ width: '100%', height: 220, borderRadius: 10, marginTop: 8 }} />) : null}
               <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Heart size={14} color="#e91e63" /><Text style={{ color: '#888', fontSize: 12 }}>{p.likes_count || 0}</Text></View>
                 <TouchableOpacity onPress={() => openComments(p.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><MessageCircle size={14} color="#888" /><Text style={{ color: '#888', fontSize: 12 }}>{p.comments_count || 0}</Text></TouchableOpacity>
