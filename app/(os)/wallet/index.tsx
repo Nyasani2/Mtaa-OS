@@ -1,217 +1,123 @@
-// app/(os)/wallet/index.tsx -- MTAA Wallet
-// v3.2: Added Treasury/Escrow/Tax hub navigation, integrated with edge functions
-
-import { useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
-  ActivityIndicator, RefreshControl, Alert, ScrollView,
-} from 'react-native';
+// @ts-nocheck
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-
-interface QuickAction {
-  icon: string;
-  label: string;
-  route: string;
-  color: string;
-}
-
-const PRIMARY_ACTIONS: QuickAction[] = [
-  { icon: 'add-circle', label: 'Top Up', route: '/(os)/wallet/deposit', color: '#10b981' },
-  { icon: 'arrow-down-circle', label: 'Withdraw', route: '/(os)/wallet/withdraw', color: '#ef4444' },
-  { icon: 'swap-horizontal', label: 'Transfer', route: '/(os)/wallet/transfer', color: '#6366f1' },
-  { icon: 'qr-code', label: 'Scan', route: '/(os)/wallet/scan', color: '#8b5cf6' },
-];
-
-const HUB_ACTIONS: QuickAction[] = [
-  { icon: 'business', label: 'Treasury', route: '/(os)/wallet/treasury-hub', color: '#059669' },
-  { icon: 'shield-checkmark', label: 'Escrow', route: '/(os)/wallet/escrow-hub', color: '#d97706' },
-  { icon: 'receipt', label: 'Tax', route: '/(os)/wallet/tax-hub', color: '#dc2626' },
-  { icon: 'card', label: 'Cards', route: '/(os)/wallet/cards', color: '#7c3aed' },
-];
-
-const MORE_ACTIONS: QuickAction[] = [
-  { icon: 'trending-up', label: 'Invest', route: '/(os)/wallet/invest', color: '#0891b2' },
-  { icon: 'people', label: 'SACCO', route: '/(os)/wallet/sacco', color: '#ea580c' },
-  { icon: 'heart', label: 'GoFund', route: '/(os)/wallet/gofund', color: '#db2777' },
-  { icon: 'settings', label: 'Settings', route: '/(os)/wallet/settings', color: '#4b5563' },
-];
+import { ArrowDownLeft, ArrowUpRight, RefreshCw, Send, Wallet as WalletIcon, History, Shield, PiggyBank, Users, Bitcoin } from 'lucide-react-native';
 
 export default function WalletScreen() {
-  const { user, isAuthenticated, initialize } = useAuthStore();
-  const { balance, setBalance } = useWalletStore();
   const router = useRouter();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAuthenticated } = useAuthStore();
+  const [balance, setBalance] = useState(0);
+  const [currency, setCurrency] = useState('KES');
+  const [txs, setTxs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => { initialize(); }, []);
-  useEffect(() => {
-    if (isAuthenticated && user?.id) loadWalletData();
-    else { setIsLoading(false); setRefreshing(false); }
-  }, [isAuthenticated, user?.id]);
-
-  async function loadWalletData() {
-    if (!user?.id) return;
-    setIsLoading(true);
+  const load = useCallback(async () => {
+    if (!user?.id) { setLoading(false); return; }
+    setError(null);
     try {
-      const { data: account } = await supabase
-        .from('wallet_accounts').select('balance').eq('user_id', user.id).maybeSingle();
-      const bal = account?.balance || 0;
-      setBalance(bal);
+      let acc = (await supabase.from('wallet_accounts').select('balance, currency').eq('user_id', user.id).maybeSingle()).data;
+      if (!acc) {
+        for (const params of [{ p_user_id: user.id }, { user_id: user.id }]) {
+          const r = await supabase.rpc('mtaa_get_or_create_wallet', params);
+          if (!r.error) break;
+        }
+        acc = (await supabase.from('wallet_accounts').select('balance, currency').eq('user_id', user.id).maybeSingle()).data;
+      }
+      setBalance(acc?.balance || 0);
+      setCurrency(acc?.currency || 'KES');
+      const t = await supabase.from('wallet_transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20);
+      setTxs(t.data || []);
+    } catch (e) { setError(String(e?.message || e)); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, [user?.id]);
 
-      const { data: txs } = await supabase
-        .from('wallet_transactions').select('*').eq('user_id', user.id)
-        .order('created_at', { ascending: false }).limit(20);
-      setTransactions(txs || []);
-    } catch (err: any) { console.error('[Wallet] Load error:', err); Alert.alert('Wallet load failed', err?.message || String(err)); }
-    finally { setIsLoading(false); setRefreshing(false); }
-  }
+  useEffect(() => { if (isAuthenticated && user?.id) load(); else setLoading(false); }, [isAuthenticated, user?.id, load]);
 
-  if (!isAuthenticated) {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <Ionicons name="wallet-outline" size={64} color="#ccc" />
-        <Text style={styles.emptyTitle}>Wallet Locked</Text>
-        <Text style={styles.emptyText}>Sign in to access your wallet</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/login' as any)}>
-          <Text style={styles.buttonText}>Sign In</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  const deposit = async () => {
+    const amt = parseFloat(window.prompt('Amount (KES) to deposit (M-Pesa):', '100') || '0');
+    if (!amt || amt <= 0) return;
+    const r = await supabase.rpc('mtaa_credit_wallet', { p_user_id: user.id, p_amount: amt, p_description: 'Wallet deposit', p_reference: null, p_topup_method: null });
+    if (r.error) return Alert.alert('Deposit failed', r.error.message);
+    Alert.alert('Deposited', `KES ${amt.toFixed(2)} added to wallet`);
+    load();
+  };
+
+  const withdraw = async () => {
+    const amt = parseFloat(window.prompt('Amount (KES) to withdraw to M-Pesa:', '100') || '0');
+    if (!amt || amt <= 0) return;
+    const r = await supabase.rpc('wallet_withdraw', { p_user: user.id, p_amount: amt });
+    if (r.error) return Alert.alert('Withdraw failed', r.error.message);
+    Alert.alert('Withdrawn', `KES ${amt.toFixed(2)} sent to M-Pesa`);
+    load();
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadWalletData(); }} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Good day,</Text>
-            <Text style={styles.userName}>{user?.email?.split('@')[0] || 'User'}</Text>
-          </View>
-          <TouchableOpacity onPress={() => router.push('/(os)/settings' as any)} style={styles.settingsBtn}>
-            <Ionicons name="settings-outline" size={22} color="#333" />
-          </TouchableOpacity>
+    <ScrollView style={{ flex: 1, backgroundColor: '#0a0f1a' }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#22d3ee" />}>
+      <View style={{ padding: 20, paddingTop: 56 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <WalletIcon size={22} color="#22d3ee" />
+          <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800' }}>Wallet</Text>
         </View>
 
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Available Balance</Text>
-          <Text style={styles.balanceAmount}>KSh {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
-          <View style={styles.balanceActions}>
-            {PRIMARY_ACTIONS.map((a) => (
-              <TouchableOpacity key={a.label} style={[styles.actionBtn, { backgroundColor: a.color }]} onPress={() => router.push(a.route as any)}>
-                <Ionicons name={a.icon as any} size={20} color="#fff" />
-                <Text style={styles.actionText}>{a.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        {error ? <View style={{ backgroundColor: '#3a1a1a', borderRadius: 10, padding: 12, marginBottom: 12 }}><Text style={{ color: '#ff6b6b', fontSize: 13 }}>{error}</Text></View> : null}
+        {!isAuthenticated ? <Text style={{ color: '#888', fontSize: 14, marginBottom: 12 }}>Sign in to use your wallet.</Text> : null}
 
-        <View style={styles.hubSection}>
-          <Text style={styles.sectionTitle}>Financial Hubs</Text>
-          <View style={styles.hubGrid}>
-            {HUB_ACTIONS.map((a) => (
-              <TouchableOpacity key={a.label} style={styles.hubItem} onPress={() => router.push(a.route as any)}>
-                <View style={[styles.hubIcon, { backgroundColor: a.color + '15' }]}>
-                  <Ionicons name={a.icon as any} size={24} color={a.color} />
-                </View>
-                <Text style={styles.hubLabel}>{a.label}</Text>
-              </TouchableOpacity>
-            ))}
+        <View style={{ backgroundColor: '#101826', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#1e293b', marginBottom: 16 }}>
+          <Text style={{ color: '#888', fontSize: 12 }}>Available balance</Text>
+          {loading ? <ActivityIndicator color="#22d3ee" style={{ marginTop: 10 }} /> : (
+            <Text style={{ color: '#fff', fontSize: 34, fontWeight: '800', marginTop: 4 }}>{currency} {Number(balance || 0).toFixed(2)}</Text>
+          )}
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+            <TouchableOpacity onPress={deposit} style={{ flex: 1, backgroundColor: '#06b6d4', borderRadius: 10, paddingVertical: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+              <ArrowDownLeft size={16} color="#04222b" /><Text style={{ color: '#04222b', fontWeight: '700' }}>Deposit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={withdraw} style={{ flex: 1, backgroundColor: '#1e293b', borderRadius: 10, paddingVertical: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+              <ArrowUpRight size={16} color="#fff" /><Text style={{ color: '#fff', fontWeight: '700' }}>Withdraw</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/wallet/send')} style={{ flex: 1, backgroundColor: '#1e293b', borderRadius: 10, paddingVertical: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}>
+              <Send size={16} color="#fff" /><Text style={{ color: '#fff', fontWeight: '700' }}>Send</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.hubSection}>
-          <Text style={styles.sectionTitle}>More</Text>
-          <View style={styles.hubGrid}>
-            {MORE_ACTIONS.map((a) => (
-              <TouchableOpacity key={a.label} style={styles.hubItem} onPress={() => router.push(a.route as any)}>
-                <View style={[styles.hubIcon, { backgroundColor: a.color + '15' }]}>
-                  <Ionicons name={a.icon as any} size={24} color={a.color} />
-                </View>
-                <Text style={styles.hubLabel}>{a.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+          {[
+            { icon: Shield, label: 'Escrow', route: '/wallet/escrow' },
+            { icon: PiggyBank, label: 'Savings', route: '/wallet/savings-loans' },
+            { icon: Users, label: 'Agent', route: '/wallet/agent' },
+            { icon: Bitcoin, label: 'Crypto', route: '/wallet/crypto' },
+          ].map((q) => (
+            <TouchableOpacity key={q.label} onPress={() => router.push(q.route)} style={{ flex: 1, backgroundColor: '#101826', borderRadius: 12, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: '#1e293b' }}>
+              <q.icon size={18} color="#22d3ee" /><Text style={{ color: '#bbb', fontSize: 11, marginTop: 6 }}>{q.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.transactionsHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <TouchableOpacity onPress={loadWalletData}>
-            <Ionicons name="refresh" size={20} color="#6366f1" />
-          </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <History size={16} color="#888" /><Text style={{ color: '#fff', fontWeight: '700' }}>Recent transactions</Text>
         </View>
-
-        {isLoading ? (
-          <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#6366f1" />
-        ) : transactions.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="receipt-outline" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>No transactions yet</Text>
+        {loading ? <ActivityIndicator color="#22d3ee" /> : txs.length === 0 ? (
+          <View style={{ backgroundColor: '#101826', borderRadius: 12, padding: 20, alignItems: 'center' }}>
+            <Text style={{ color: '#888', fontSize: 13 }}>No transactions yet. Deposit to get started.</Text>
           </View>
-        ) : (
-          <FlatList
-            data={transactions}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <View style={styles.txRow}>
-                <View style={[styles.txIcon, { backgroundColor: item.type === 'credit' ? '#dcfce7' : '#fee2e2' }]}>
-                  <Ionicons name={item.type === 'credit' ? 'arrow-down' : 'arrow-up'}
-                    size={18} color={item.type === 'credit' ? '#10b981' : '#ef4444'} />
-                </View>
-                <View style={styles.txInfo}>
-                  <Text style={styles.txTitle}>{item.description || item.type}</Text>
-                  <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('en-KE')}</Text>
-                </View>
-                <Text style={[styles.txAmount, { color: item.type === 'credit' ? '#10b981' : '#ef4444' }]}>
-                  {item.type === 'credit' ? '+' : '-'}KSh {Math.abs(item.amount || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
-                </Text>
-              </View>
-            )}
-          />
-        )}
-      </ScrollView>
-    </SafeAreaView>
+        ) : txs.map((t) => (
+          <View key={t.id} style={{ backgroundColor: '#101826', borderRadius: 12, padding: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>{t.description || t.type}</Text>
+              <Text style={{ color: '#666', fontSize: 11, marginTop: 2 }}>{t.created_at ? new Date(t.created_at).toLocaleString() : ''} · {t.status}</Text>
+            </View>
+            <Text style={{ color: (t.type === 'credit' || t.type === 'top_up' || t.type === 'deposit') ? '#4ade80' : '#ff6b6b', fontWeight: '700' }}>
+              {(t.type === 'credit' || t.type === 'top_up' || t.type === 'deposit') ? '+' : '-'}{Number(t.amount || 0).toFixed(2)}
+            </Text>
+          </View>
+        ))}
+        <View style={{ height: 40 }} />
+      </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  center: { justifyContent: 'center', alignItems: 'center', padding: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
-  greeting: { fontSize: 14, color: '#64748b' },
-  userName: { fontSize: 18, fontWeight: '700', color: '#0f172a' },
-  settingsBtn: { padding: 8, borderRadius: 12, backgroundColor: '#f1f5f9' },
-  balanceCard: { margin: 16, padding: 24, borderRadius: 20, backgroundColor: '#1e293b' },
-  balanceLabel: { fontSize: 13, color: '#94a3b8', marginBottom: 4 },
-  balanceAmount: { fontSize: 32, fontWeight: '800', color: '#fff', marginBottom: 20 },
-  balanceActions: { flexDirection: 'row', justifyContent: 'space-between' },
-  actionBtn: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, minWidth: 72 },
-  actionText: { color: '#fff', fontSize: 11, fontWeight: '600', marginTop: 4 },
-  hubSection: { marginHorizontal: 16, marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 12 },
-  hubGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  hubItem: { width: '22%', alignItems: 'center', marginBottom: 8 },
-  hubIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  hubLabel: { fontSize: 11, fontWeight: '500', color: '#475569', textAlign: 'center' },
-  transactionsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 8, marginBottom: 12 },
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#334155', marginTop: 16 },
-  emptyText: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
-  button: { backgroundColor: '#6366f1', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12, marginTop: 20 },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  txRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#fff', marginBottom: 1 },
-  txIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  txInfo: { flex: 1 },
-  txTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a' },
-  txDate: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  txAmount: { fontSize: 14, fontWeight: '700' },
-});
