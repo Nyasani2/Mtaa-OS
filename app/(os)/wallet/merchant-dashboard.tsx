@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,8 +9,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';
 
 interface Transaction {
@@ -115,7 +114,7 @@ export default function MerchantDashboardScreen() {
           <Text style={styles.headerTitle}>{business?.name || 'Dashboard'}</Text>
           <Text style={styles.headerSub}>{business?.type || 'Business'}</Text>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(os)/wallet/business-documents' as any)}>
+        <TouchableOpacity onPress={() => router.push('/(os)/wallet/business-documents')}>
           <Ionicons name="document-text" size={22} color="#60A5FA" />
         </TouchableOpacity>
       </View>
@@ -182,25 +181,25 @@ export default function MerchantDashboardScreen() {
         </View>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics" as any)}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
             <View style={[styles.actionIcon, { backgroundColor: '#1E3A5F' }]}>
               <Ionicons name="qr-code" size={20} color="#60A5FA" />
             </View>
             <Text style={styles.actionText}>Receive</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics" as any)}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
             <View style={[styles.actionIcon, { backgroundColor: '#064E3B' }]}>
               <Ionicons name="send" size={20} color="#34D399" />
             </View>
             <Text style={styles.actionText}>Send</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-analytics" as any)}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
             <View style={[styles.actionIcon, { backgroundColor: '#451A03' }]}>
               <Ionicons name="people" size={20} color="#FBBF24" />
             </View>
             <Text style={styles.actionText}>Customers</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/(os)/wallet/merchant-customers" as any)}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => {}}>
             <View style={[styles.actionIcon, { backgroundColor: '#312E81' }]}>
               <Ionicons name="settings" size={20} color="#A78BFA" />
             </View>
@@ -409,4 +408,3 @@ const styles = StyleSheet.create({
   },
   txStatusText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
 });
-

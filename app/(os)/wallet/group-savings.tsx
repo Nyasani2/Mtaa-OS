@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
@@ -6,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 
@@ -215,7 +214,7 @@ export default function GroupSavingsScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        {(['discover', 'my-groups'] as const).map((tab: any) => (
+        {(['discover', 'my-groups'] as const).map(tab => (
           <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab === 'discover' ? 'Discover' : 'My Groups'}</Text>
           </TouchableOpacity>
@@ -223,8 +222,8 @@ export default function GroupSavingsScreen() {
       </View>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={styles.scrollContent}>
-        {activeTab === 'discover' && groups.map((g: any) => renderGroupCard(g))}
-        {activeTab === 'my-groups' && myGroups.map((g: any) => renderGroupCard(g, true))}
+        {activeTab === 'discover' && groups.map(g => renderGroupCard(g))}
+        {activeTab === 'my-groups' && myGroups.map(g => renderGroupCard(g, true))}
         {activeTab === 'discover' && groups.length === 0 && (
           <View style={styles.empty}><Ionicons name="people-outline" size={48} color="#C7C7CC" /><Text style={styles.emptyText}>No active groups</Text>
             <TouchableOpacity style={styles.emptyBtn} onPress={() => setCreateModalVisible(true)}><Text style={styles.emptyBtnText}>Create One</Text></TouchableOpacity>
@@ -244,7 +243,7 @@ export default function GroupSavingsScreen() {
               <TextInput style={styles.input} placeholder="Contribution per Member (KES) *" keyboardType="numeric" value={newGroup.contribution_amount} onChangeText={t => setNewGroup(p => ({ ...p, contribution_amount: t }))} />
               <Text style={styles.label}>Frequency</Text>
               <View style={styles.freqRow}>
-                {(['daily', 'weekly', 'monthly'] as const).map((f: any) => (
+                {(['daily', 'weekly', 'monthly'] as const).map(f => (
                   <TouchableOpacity key={f} style={[styles.freqChip, newGroup.frequency === f && styles.freqChipActive]} onPress={() => setNewGroup(p => ({ ...p, frequency: f }))}>
                     <Text style={[styles.freqText, newGroup.frequency === f && styles.freqTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
                   </TouchableOpacity>
@@ -280,7 +279,7 @@ export default function GroupSavingsScreen() {
                   </View>
 
                   <Text style={styles.sectionTitle}>Members</Text>
-                  {members.map((m: any) => (
+                  {members.map(m => (
                     <View key={m.id} style={styles.memberRow}>
                       <View style={styles.memberAvatar}><Text style={styles.memberInitial}>{m.name.charAt(0).toUpperCase()}</Text></View>
                       <View style={{ flex: 1 }}>
@@ -293,7 +292,7 @@ export default function GroupSavingsScreen() {
                   ))}
 
                   <Text style={styles.sectionTitle}>Recent Contributions</Text>
-                  {contributions.map((c: any) => (
+                  {contributions.map(c => (
                     <View key={c.id} style={styles.contribRow}>
                       <Text style={styles.contribName}>{c.member_name}</Text>
                       <Text style={styles.contribAmount}>KES {c.amount.toLocaleString()}</Text>

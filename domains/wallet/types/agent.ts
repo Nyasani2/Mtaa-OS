@@ -47,7 +47,7 @@ export interface AgentDashboardData {
     id: string;
     change_type: string;
     amount: number;
-    balance_after: number;
+
     description: string;
     created_at: string;
   }[];

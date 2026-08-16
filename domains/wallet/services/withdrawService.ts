@@ -233,7 +233,9 @@ class WithdrawService {
       method: tx.method as WithdrawMethod,
       status: tx.status,
       destination: tx.destination || {},
-      created_at: tx.created_at: tx.metadata?.metadata: tx.metadata,
+      created_at: tx.created_at,
+
+      metadata: tx.metadata,
     }));
   }
 

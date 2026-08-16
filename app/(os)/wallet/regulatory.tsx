@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
@@ -6,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useAuthStore } from '@/hooks/useAuthStore';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 
@@ -15,7 +14,7 @@ interface ComplianceCheck {
   check_type: string;
   status: 'passed' | 'pending' | 'failed' | 'warning';
   description: string;
-  completed_at: string | null;
+
   expires_at: string | null;
   document_url: string | null;
 }
@@ -118,7 +117,7 @@ export default function RegulatoryScreen() {
     return map[status] || 'help-circle';
   };
 
-  const passedCount = compliance.filter((c: any) => c.status === 'passed').length;
+  const passedCount = compliance.filter(c => c.status === 'passed').length;
   const totalCount = COMPLIANCE_CHECKS.length;
 
   if (loading) return (
@@ -154,7 +153,7 @@ export default function RegulatoryScreen() {
       </View>
 
       <View style={styles.tabBar}>
-        {(['compliance', 'reports', 'audit'] as const).map((tab: any) => (
+        {(['compliance', 'reports', 'audit'] as const).map(tab => (
           <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
             <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
           </TouchableOpacity>
@@ -162,8 +161,8 @@ export default function RegulatoryScreen() {
       </View>
 
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={styles.scrollContent}>
-        {activeTab === 'compliance' && COMPLIANCE_CHECKS.map((check: any) => {
-          const status = compliance.find((c: any) => c.check_type === check.key)?.status || 'pending';
+        {activeTab === 'compliance' && COMPLIANCE_CHECKS.map(check => {
+          const status = compliance.find(c => c.check_type === check.key)?.status || 'pending';
           return (
             <View key={check.key} style={styles.checkCard}>
               <View style={[styles.checkIcon, { backgroundColor: getStatusColor(status) + '15' }]}>
@@ -183,7 +182,7 @@ export default function RegulatoryScreen() {
 
         {activeTab === 'reports' && (
           <>
-            {reports.map((r: any) => (
+            {reports.map(r => (
               <View key={r.id} style={styles.reportCard}>
                 <View style={styles.reportHeader}>
                   <Text style={styles.reportType}>{r.report_type}</Text>
@@ -202,7 +201,7 @@ export default function RegulatoryScreen() {
 
         {activeTab === 'audit' && (
           <>
-            {auditLogs.map((log: any) => (
+            {auditLogs.map(log => (
               <View key={log.id} style={styles.auditCard}>
                 <View style={styles.auditDot} />
                 <View style={{ flex: 1 }}>

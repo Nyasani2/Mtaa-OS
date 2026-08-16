@@ -12,7 +12,7 @@ export interface WalletTransaction {
   type: string;
   type: string | null;
   amount: number;
-  balance_after: number | null;
+
   currency: string;
   status: string;
   description: string | null;
@@ -23,8 +23,8 @@ export interface WalletTransaction {
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
-  completed_at: string | null;
-  failed_at: string | null;
+
+
 }
 
 export interface WalletAccount {

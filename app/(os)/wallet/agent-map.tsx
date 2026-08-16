@@ -1,16 +1,15 @@
-// app/(os)/wallet/agent-map.web.tsx — Web fallback for Agent Map
-// Shows agent list and transaction history. No map (requires native).
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
   Alert, Modal, TextInput, ScrollView
 } from 'react-native';
+import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';
+import * as Location from 'expo-location';
 import { BlurView } from 'expo-blur';
 
 interface Agent {
@@ -47,9 +46,11 @@ export default function AgentMapScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { balance } = useWalletStore();
+  const mapRef = useRef<MapView>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [filterType, setFilterType] = useState<'all' | 'deposit' | 'withdrawal'>('all');
   const [transactionModalVisible, setTransactionModalVisible] = useState(false);
@@ -72,13 +73,18 @@ export default function AgentMapScreen() {
 
   useEffect(() => {
     (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      }
       await fetchAgents(); await fetchHistory(); setLoading(false);
     })();
   }, [fetchAgents, fetchHistory]);
 
   useEffect(() => {
     if (filterType === 'all') setFilteredAgents(agents);
-    else setFilteredAgents(agents.filter((a: any) => a.type === filterType || a.type === 'both'));
+    else setFilteredAgents(agents.filter(a => a.type === filterType || a.type === 'both'));
   }, [filterType, agents]);
 
   const handleTransaction = async () => {
@@ -96,12 +102,22 @@ export default function AgentMapScreen() {
     setTransactionModalVisible(false); setTransactionAmount(''); fetchHistory();
   };
 
+  const centerOnUser = () => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({ latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.05, longitudeDelta: 0.05 }, 1000);
+    }
+  };
+
   if (loading) return (
     <View style={styles.center}>
       <ActivityIndicator size="large" color="#007AFF" />
       <Text style={styles.loadingText}>Loading agents...</Text>
     </View>
   );
+
+  const initialRegion = userLocation
+    ? { latitude: userLocation.lat, longitude: userLocation.lng, latitudeDelta: 0.1, longitudeDelta: 0.1 }
+    : { latitude: -1.2921, longitude: 36.8219, latitudeDelta: 0.5, longitudeDelta: 0.5 };
 
   return (
     <View style={styles.container}>
@@ -113,16 +129,10 @@ export default function AgentMapScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Web notice */}
-      <View style={styles.webNotice}>
-        <Ionicons name="phone-portrait" size={20} color="#FF9500" />
-        <Text style={styles.webNoticeText}>Agent map is mobile-only. Use the MTAA app to see agent locations on a map.</Text>
-      </View>
-
       {!showHistory ? (
         <>
           <View style={styles.filterBar}>
-            {AGENT_TYPES.map((t: any) => (
+            {AGENT_TYPES.map(t => (
               <TouchableOpacity key={t.key} style={[styles.filterChip, filterType === t.key && styles.filterChipActive]} onPress={() => setFilterType(t.key as any)}>
                 <MaterialCommunityIcons name={t.icon as any} size={16} color={filterType === t.key ? '#fff' : '#8E8E93'} />
                 <Text style={[styles.filterText, filterType === t.key && styles.filterTextActive]}>{t.label}</Text>
@@ -130,41 +140,24 @@ export default function AgentMapScreen() {
             ))}
           </View>
 
-          <ScrollView style={styles.agentList} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-            {filteredAgents.length === 0 ? (
-              <View style={styles.empty}><Ionicons name="map-outline" size={48} color="#C7C7CC" /><Text style={styles.emptyText}>No agents found</Text></View>
-            ) : (
-              filteredAgents.map((agent: any) => (
-                <TouchableOpacity key={agent.id} style={styles.agentCard} onPress={() => setSelectedAgent(agent)}>
-                  <View style={styles.agentRow}>
-                    <View style={[styles.agentIcon, { backgroundColor: agent.type === 'deposit' ? '#34C75920' : agent.type === 'withdrawal' ? '#FF950020' : '#007AFF20' }]}>
-                      <MaterialCommunityIcons name={agent.type === 'deposit' ? 'arrow-down' : agent.type === 'withdrawal' ? 'arrow-up' : 'swap-horizontal'} size={20} color={agent.type === 'deposit' ? '#34C759' : agent.type === 'withdrawal' ? '#FF9500' : '#007AFF'} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.agentName}>{agent.name}</Text>
-                      <Text style={styles.agentMeta}>{agent.type.toUpperCase()} • {agent.working_hours}</Text>
-                      <Text style={styles.agentRating}>Rating: {agent.rating.toFixed(1)} ({agent.total_transactions} txns)</Text>
-                    </View>
-                    <View style={styles.ratingBox}>
-                      <Text style={styles.ratingValue}>{agent.rating.toFixed(1)}</Text>
-                      <Text style={styles.ratingLabel}>{agent.total_transactions} txns</Text>
-                    </View>
+          <MapView ref={mapRef} style={styles.map} initialRegion={initialRegion} showsUserLocation showsMyLocationButton={false}>
+            {userLocation && <Circle center={{ latitude: userLocation.lat, longitude: userLocation.lng }} radius={5000} strokeColor="#007AFF40" fillColor="#007AFF10" />}
+            {filteredAgents.map(agent => (
+              <Marker key={agent.id} coordinate={{ latitude: agent.lat, longitude: agent.lng }} onPress={() => setSelectedAgent(agent)}>
+                <View style={[styles.marker, { backgroundColor: agent.type === 'deposit' ? '#34C759' : agent.type === 'withdrawal' ? '#FF9500' : '#007AFF' }]}>
+                  <MaterialCommunityIcons name={agent.type === 'deposit' ? 'arrow-down' : agent.type === 'withdrawal' ? 'arrow-up' : 'swap-horizontal'} size={14} color="#fff" />
+                </View>
+                <Callout onPress={() => { setSelectedAgent(agent); setTransactionModalVisible(true); }}>
+                  <View style={styles.callout}>
+                    <Text style={styles.calloutName}>{agent.name}</Text>
+                    <Text style={styles.calloutType}>{agent.type.toUpperCase()} • {agent.working_hours}</Text>
+                    <Text style={styles.calloutRating}>Rating: {agent.rating.toFixed(1)} ({agent.total_transactions} txns)</Text>
+                    <Text style={styles.calloutTap}>Tap to transact</Text>
                   </View>
-                  <View style={styles.agentActions}>
-                    <TouchableOpacity style={[styles.agentBtn, { backgroundColor: '#34C759' }]} onPress={() => { setSelectedAgent(agent); setTransactionType('deposit'); setTransactionModalVisible(true); }}>
-                      <Ionicons name="arrow-down" size={16} color="#fff" /><Text style={styles.agentBtnText}>Deposit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.agentBtn, { backgroundColor: '#FF9500' }]} onPress={() => { setSelectedAgent(agent); setTransactionType('withdrawal'); setTransactionModalVisible(true); }}>
-                      <Ionicons name="arrow-up" size={16} color="#fff" /><Text style={styles.agentBtnText}>Withdraw</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.agentBtn, { backgroundColor: '#2C2C2E' }]} onPress={() => Alert.alert('Call', `Call ${agent.phone}?`)}>
-                      <Ionicons name="call" size={16} color="#fff" /><Text style={styles.agentBtnText}>Call</Text>
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
+                </Callout>
+              </Marker>
+            ))}
+          </MapView>
 
           {selectedAgent && (
             <View style={styles.bottomSheet}>
@@ -199,6 +192,8 @@ export default function AgentMapScreen() {
               </View>
             </View>
           )}
+
+          <TouchableOpacity style={styles.centerBtn} onPress={centerOnUser}><Ionicons name="locate" size={22} color="#007AFF" /></TouchableOpacity>
         </>
       ) : (
         <ScrollView style={styles.historyContainer} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
@@ -206,7 +201,7 @@ export default function AgentMapScreen() {
           {history.length === 0 ? (
             <View style={styles.empty}><Ionicons name="map-outline" size={48} color="#C7C7CC" /><Text style={styles.emptyText}>No agent transactions yet</Text></View>
           ) : (
-            history.map((tx: any) => (
+            history.map(tx => (
               <View key={tx.id} style={styles.historyCard}>
                 <View style={styles.historyRow}>
                   <View style={[styles.historyIcon, { backgroundColor: tx.type === 'deposit' ? '#34C75920' : '#FF950020' }]}>
@@ -253,26 +248,18 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
   historyBtn: { padding: 4 },
-  webNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FF950020', paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
-  webNoticeText: { flex: 1, fontSize: 12, color: '#FF9500', fontWeight: '600' },
   filterBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#1C1C1E', gap: 8 },
   filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#2C2C2E', gap: 6 },
   filterChipActive: { backgroundColor: '#007AFF' },
   filterText: { fontSize: 13, color: '#8E8E93', fontWeight: '600' },
   filterTextActive: { color: '#fff' },
-  agentList: { flex: 1 },
-  agentCard: { backgroundColor: '#1C1C1E', borderRadius: 16, padding: 16, marginBottom: 12 },
-  agentRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  agentIcon: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  agentName: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  agentMeta: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  agentRating: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  agentActions: { flexDirection: 'row', gap: 10 },
-  agentBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10 },
-  agentBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  ratingBox: { alignItems: 'center' },
-  ratingValue: { fontSize: 20, fontWeight: '700', color: '#FF9500' },
-  ratingLabel: { fontSize: 11, color: '#8E8E93' },
+  map: { flex: 1 },
+  marker: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
+  callout: { width: 180, padding: 8 },
+  calloutName: { fontSize: 14, fontWeight: '700' },
+  calloutType: { fontSize: 11, color: '#666', marginTop: 2 },
+  calloutRating: { fontSize: 11, color: '#666', marginTop: 2 },
+  calloutTap: { fontSize: 11, color: '#007AFF', marginTop: 4, fontWeight: '600' },
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#1C1C1E', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 30 },
   sheetHandle: { width: 40, height: 4, backgroundColor: '#3A3A3C', borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 8 },
   sheetContent: { paddingHorizontal: 20, paddingBottom: 16 },
@@ -282,11 +269,15 @@ const styles = StyleSheet.create({
   sheetType: { fontSize: 12, color: '#8E8E93', fontWeight: '600' },
   onlineDot: { backgroundColor: '#34C759', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   onlineText: { fontSize: 9, color: '#fff', fontWeight: '800' },
+  ratingBox: { alignItems: 'center' },
+  ratingValue: { fontSize: 20, fontWeight: '700', color: '#FF9500' },
+  ratingLabel: { fontSize: 11, color: '#8E8E93' },
   sheetHours: { fontSize: 13, color: '#8E8E93', marginBottom: 4 },
   sheetCommission: { fontSize: 13, color: '#8E8E93', marginBottom: 12 },
   sheetActions: { flexDirection: 'row', gap: 10 },
   sheetBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 12 },
   sheetBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  centerBtn: { position: 'absolute', bottom: selectedAgent ? 280 : 30, right: 16, width: 48, height: 48, borderRadius: 24, backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
   historyContainer: { flex: 1, backgroundColor: '#0A0A0F' },
   historyTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 16 },
   empty: { alignItems: 'center', paddingVertical: 60 },
