@@ -109,7 +109,7 @@ export default function AgentRegistrationScreen() {
     return (
       <ScrollView style={{ flex: 1, padding: 20 }}>
         <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 5 }}>
-          {AGENT_TYPES.find((t: any) => t.key === form.agentType)?.label} Registration
+          {AGENT_TYPES.find(t => t.key === form.agentType)?.label} Registration
         </Text>
         <Text style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>KES 100,000 float required</Text>
 

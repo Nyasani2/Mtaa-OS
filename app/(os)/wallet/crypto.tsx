@@ -123,7 +123,7 @@ export default function CryptoScreen() {
       if (error) throw error;
 
       setTimeout(async () => {
-        await supabase.from('wallet_transactions').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', tx.id);
+        await supabase.from('wallet_transactions').update({ status: 'completed': new Date().toISOString() }).eq('id', tx.id);
         setCryptoBalances(prev => ({ ...prev, [selectedAsset]: (prev[selectedAsset] || 0) - numAmount }));
         addTransaction({
           id: tx.id,
@@ -180,8 +180,7 @@ export default function CryptoScreen() {
           description: `Swapped ${numAmount} ${fromAsset?.symbol} to ${receiveAmount.toFixed(6)} ${toAsset?.symbol}`,
           reference_type: 'crypto_swap',
           currency: fromAsset?.symbol,
-          metadata: { from_asset: swapFrom, to_asset: swapTo, from_amount: numAmount, to_amount: receiveAmount },
-          completed_at: new Date().toISOString(),
+          metadata: { from_asset: swapFrom, to_asset: swapTo, from_amount: numAmount, to_amount: receiveAmount }: new Date().toISOString(),
         })
         .select()
         .single();

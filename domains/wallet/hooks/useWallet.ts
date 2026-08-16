@@ -32,8 +32,8 @@ export interface WalletTransaction {
   failed_at?: string | null;
   provider?: string | null;
   reference?: string | null;
-  transaction_type?: string | null;
-  profile_id?: string | null;
+  type?: string | null;
+  user_id?: string | null;
   created_at: string;
   updated_at?: string | null;
 }

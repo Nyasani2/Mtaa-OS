@@ -1,32 +1,35 @@
-// @ts-nocheck
-import React, { useState, useEffect, useCallback } from "react";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  RefreshControl, TextInput, Modal, Alert
+  View, Text, TouchableOpacity, ScrollView, TextInput,
+  ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useIdentity } from "@/hooks/useAuthStore";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 import {
-  MapPin, Phone, Star, Search, X, CheckCircle, UserPlus, DollarSign, ArrowLeft
+  ArrowLeft, MapPin, Phone, Star, DollarSign, ArrowDownLeft,
+  ArrowUpRight, Shield, User, Search, ChevronRight,
 } from "lucide-react-native";
 
 interface Agent {
   id: string;
-  user_id: string;
   business_name: string;
+  agent_level: number;
   location: string;
+  lat: number | null;
+  lng: number | null;
+  services: string[];
   phone: string;
-  rating: number;
-  commission_rate: number;
   is_active: boolean;
-  latitude?: number;
-  longitude?: number;
+  rating: number;
+  cash_float: number;
 }
 
-export default function AgentScreen() {
+export default function AgentBankingScreen() {
+  const { user } = useIdentity();
   const router = useRouter();
-  const { user } = useAuthStore();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,236 +42,168 @@ export default function AgentScreen() {
   const fetchAgents = useCallback(async () => {
     setLoading(true);
     try {
-      // FIXED: agents -> cashpoint_agents (per schema)
       const { data, error } = await supabase
-        .from("cashpoint_agents")
+        .from("agents")
         .select("*")
         .eq("is_active", true)
         .order("rating", { ascending: false })
         .limit(50);
-
       if (error) throw error;
       setAgents(data || []);
-    } catch (err) {
-      console.error("Fetch agents error:", err);
-      Alert.alert("Error", "Failed to load agents");
+    } catch (err: any) {
+      Alert.alert("Error", err.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => { fetchAgents(); }, [fetchAgents]);
 
-  const onRefresh = () => { setRefreshing(true); fetchAgents(); };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAgents();
+    setRefreshing(false);
+  }, [fetchAgents]);
 
   const handleDeposit = async () => {
-    if (!selectedAgent || !depositAmount || !user?.id) return;
-    const amount = parseFloat(depositAmount);
-    if (isNaN(amount) || amount <= 0) {
-      Alert.alert("Invalid Amount", "Please enter a valid amount");
-      return;
-    }
-
+    if (!user?.id || !selectedAgent || !depositAmount.trim()) return;
     setDepositing(true);
     try {
-      // Create transaction
+      // Create wallet transaction
       const { error: txError } = await supabase.from("wallet_transactions").insert({
         user_id: user.id,
-        amount,
         type: "debit",
+        amount: parseFloat(depositAmount),
+        currency: "KES",
         status: "completed",
-        description: `Deposit via agent ${selectedAgent.business_name}`,
-        reference_type: "agent_deposit",
+        description: `Agent deposit at ${selectedAgent.business_name}`,
         reference_id: selectedAgent.id,
+        reference_type: "agent",
       });
-
       if (txError) throw txError;
 
-      // Update agent stats
-      await supabase.from("cashpoint_agents").update({
-        total_transactions: supabase.rpc("increment", { x: 1 }),
-        total_volume: supabase.rpc("increment", { x: amount }),
+      // Update agent float
+      await supabase.from("agents").update({
+        cash_float: selectedAgent.cash_float + parseFloat(depositAmount),
       }).eq("id", selectedAgent.id);
 
-      Alert.alert("Success", `KSh ${amount.toLocaleString()} deposited successfully`);
+      Alert.alert("Success", `Deposited KES ${depositAmount} via ${selectedAgent.business_name}`);
       setShowDeposit(false);
       setDepositAmount("");
       setSelectedAgent(null);
     } catch (err: any) {
-      Alert.alert("Deposit Failed", err.message || "Please try again");
+      Alert.alert("Error", err.message);
     } finally {
       setDepositing(false);
     }
   };
 
-  const filteredAgents = agents.filter((a: any) =>
-    a.business_name?.toLowerCase().includes(search.toLowerCase()) ||
-    a.location?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const renderAgent = (agent: Agent) => (
-    <TouchableOpacity
-      key={agent.id}
-      style={styles.agentCard}
-      onPress={() => { setSelectedAgent(agent); setShowDeposit(true); }}
-    >
-      <View style={styles.agentHeader}>
-        <View style={styles.agentIcon}>
-          <UserPlus size={20} color="#fff" />
-        </View>
-        <View style={styles.agentInfo}>
-          <Text style={styles.agentName}>{agent.business_name}</Text>
-          <View style={styles.agentMeta}>
-            <MapPin size={12} color="#64748b" />
-            <Text style={styles.agentLocation}>{agent.location}</Text>
-          </View>
-        </View>
-        <View style={styles.agentRating}>
-          <Star size={12} color="#f59e0b" fill="#f59e0b" />
-          <Text style={styles.ratingText}>{agent.rating?.toFixed(1) || "0.0"}</Text>
-        </View>
-      </View>
-      <View style={styles.agentFooter}>
-        <View style={styles.agentDetail}>
-          <Phone size={12} color="#64748b" />
-          <Text style={styles.detailText}>{agent.phone}</Text>
-        </View>
-        <View style={styles.agentDetail}>
-          <DollarSign size={12} color="#10b981" />
-          <Text style={styles.detailText}>{agent.commission_rate}% fee</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const filtered = agents.filter(a =>
+    a.business_name.toLowerCase().includes(search.toLowerCase()) ||
+    a.location.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={{ flex: 1, backgroundColor: "#0f172a" }}>
+      <View style={{ padding: 16, paddingTop: 24, backgroundColor: "#1e293b", flexDirection: "row", alignItems: "center", gap: 12 }}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#f8fafc" />
+          <ArrowLeft size={24} color="#94a3b8" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>CashPoint Agents</Text>
-        <View style={{ width: 24 }} />
+        <Text style={{ fontSize: 20, fontWeight: "700", color: "#f8fafc" }}>Agent Banking</Text>
       </View>
 
-      <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10b981" />}
-      >
-        <View style={styles.searchContainer}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />} contentContainerStyle={{ padding: 16 }}>
+        {/* Search */}
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#1e293b", borderRadius: 12, paddingHorizontal: 14, marginBottom: 16 }}>
           <Search size={18} color="#64748b" />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search agents by name or location..."
-            placeholderTextColor="#64748b"
             value={search}
             onChangeText={setSearch}
+            placeholder="Find agent by name or location"
+            placeholderTextColor="#475569"
+            style={{ flex: 1, padding: 14, color: "#f1f5f9", fontSize: 14 }}
           />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <X size={16} color="#64748b" />
-            </TouchableOpacity>
-          )}
         </View>
 
-        <View style={styles.becomeAgentCard}>
-          <Text style={styles.becomeAgentTitle}>Become an Agent</Text>
-          <Text style={styles.becomeAgentDesc}>
-            Register as an MTAA agent, offer financial services, and earn commission on every transaction.
-          </Text>
-          <TouchableOpacity style={styles.applyBtn} onPress={() => router.push("/(os)/wallet/agent-register" as any)}>
-            <Text style={styles.applyBtnText}>Apply Now</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionTitle}>NEARBY AGENTS</Text>
-
-        {loading && !refreshing ? (
-          <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#10b981" />
-        ) : filteredAgents.length === 0 ? (
-          <View style={styles.empty}>
-            <MapPin size={40} color="#475569" />
-            <Text style={styles.emptyText}>No agents found</Text>
-            <Text style={styles.emptySub}>Try a different search or check back later</Text>
-          </View>
-        ) : (
-          filteredAgents.map(renderAgent)
-        )}
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-
-      {/* Deposit Modal */}
-      <Modal visible={showDeposit} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Deposit via {selectedAgent?.business_name}</Text>
-              <TouchableOpacity onPress={() => setShowDeposit(false)}>
-                <X size={24} color="#f8fafc" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.modalLabel}>Amount (KSh)</Text>
+        {/* Deposit Modal */}
+        {showDeposit && selectedAgent && (
+          <View style={{ backgroundColor: "#1e293b", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+            <Text style={{ fontSize: 16, fontWeight: "600", color: "#f1f5f9", marginBottom: 12 }}>
+              Deposit at {selectedAgent.business_name}
+            </Text>
+            <Text style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>Amount (KES)</Text>
             <TextInput
-              style={styles.amountInput}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor="#64748b"
               value={depositAmount}
               onChangeText={setDepositAmount}
+              keyboardType="decimal-pad"
+              placeholder="0.00"
+              placeholderTextColor="#475569"
+              style={{ backgroundColor: "#0f172a", borderRadius: 10, padding: 14, color: "#f1f5f9", fontSize: 16, marginBottom: 16 }}
             />
-            <TouchableOpacity
-              style={[styles.depositBtn, depositing && styles.depositBtnDisabled]}
-              onPress={handleDeposit}
-              disabled={depositing}
-            >
-              {depositing ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.depositBtnText}>Confirm Deposit</Text>
-              )}
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity onPress={() => setShowDeposit(false)} style={{ flex: 1, backgroundColor: "#334155", paddingVertical: 14, borderRadius: 12, alignItems: "center" }}>
+                <Text style={{ fontSize: 14, fontWeight: "600", color: "#cbd5e1" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDeposit} disabled={depositing} style={{ flex: 1, backgroundColor: "#22c55e", paddingVertical: 14, borderRadius: 12, alignItems: "center" }}>
+                {depositing ? <ActivityIndicator color="#fff" /> : <Text style={{ fontSize: 14, fontWeight: "600", color: "#fff" }}>Deposit</Text>}
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </Modal>
+        )}
+
+        {/* Agent List */}
+        <Text style={{ fontSize: 16, fontWeight: "600", color: "#94a3b8", marginBottom: 12 }}>Nearby Agents</Text>
+
+        {loading && !refreshing ? (
+          <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 40 }} />
+        ) : filtered.length === 0 ? (
+          <View style={{ alignItems: "center", paddingVertical: 40 }}>
+            <MapPin size={48} color="#334155" />
+            <Text style={{ color: "#475569", marginTop: 16 }}>No agents found</Text>
+          </View>
+        ) : (
+          filtered.map((agent) => (
+            <View key={agent.id} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 10 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: "#f1f5f9" }}>{agent.business_name}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Star size={14} color="#f59e0b" />
+                  <Text style={{ fontSize: 12, color: "#f59e0b" }}>{agent.rating.toFixed(1)}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <MapPin size={14} color="#64748b" />
+                <Text style={{ fontSize: 13, color: "#94a3b8" }}>{agent.location}</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                <Shield size={14} color="#22c55e" />
+                <Text style={{ fontSize: 12, color: "#22c55e" }}>Level {agent.agent_level} Agent</Text>
+                <Text style={{ fontSize: 12, color: "#64748b" }}>Float: KES {agent.cash_float.toFixed(2)}</Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+                <TouchableOpacity
+                  onPress={() => { setSelectedAgent(agent); setShowDeposit(true); }}
+                  style={{ backgroundColor: "#22c55e", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
+                  <ArrowDownLeft size={14} color="#fff" />
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#fff" }}>Deposit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: "#334155", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6 }}
+                >
+                  <ArrowUpRight size={14} color="#ef4444" />
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: "#ef4444" }}>Withdraw</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: "#334155", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 }}
+                >
+                  <Phone size={14} color="#3b82f6" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f172a" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#1e293b" },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#f8fafc" },
-  searchContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "#1e293b", margin: 16, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, gap: 8, borderWidth: 1, borderColor: "#334155" },
-  searchInput: { flex: 1, color: "#f8fafc", fontSize: 14 },
-  becomeAgentCard: { margin: 16, marginTop: 0, padding: 20, backgroundColor: "#1e293b", borderRadius: 16, alignItems: "center", borderWidth: 1, borderColor: "#334155" },
-  becomeAgentTitle: { fontSize: 16, fontWeight: "700", color: "#f8fafc" },
-  becomeAgentDesc: { fontSize: 13, color: "#94a3b8", textAlign: "center", marginTop: 8, lineHeight: 20 },
-  applyBtn: { marginTop: 16, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: "#10b981", borderRadius: 10 },
-  applyBtnText: { color: "#0f172a", fontWeight: "700", fontSize: 14 },
-  sectionTitle: { fontSize: 12, fontWeight: "700", color: "#94a3b8", marginHorizontal: 16, marginTop: 8, marginBottom: 12, letterSpacing: 0.5 },
-  agentCard: { backgroundColor: "#1e293b", marginHorizontal: 16, marginBottom: 12, padding: 16, borderRadius: 14, borderWidth: 1, borderColor: "#334155" },
-  agentHeader: { flexDirection: "row", alignItems: "center" },
-  agentIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#10b981", justifyContent: "center", alignItems: "center", marginRight: 12 },
-  agentInfo: { flex: 1 },
-  agentName: { fontSize: 15, fontWeight: "600", color: "#f8fafc" },
-  agentMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  agentLocation: { fontSize: 12, color: "#64748b" },
-  agentRating: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#f59e0b15", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  ratingText: { fontSize: 12, fontWeight: "600", color: "#f59e0b" },
-  agentFooter: { flexDirection: "row", gap: 16, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#334155" },
-  agentDetail: { flexDirection: "row", alignItems: "center", gap: 4 },
-  detailText: { fontSize: 12, color: "#94a3b8" },
-  empty: { alignItems: "center", paddingVertical: 40 },
-  emptyText: { fontSize: 16, fontWeight: "600", color: "#94a3b8", marginTop: 12 },
-  emptySub: { fontSize: 13, color: "#64748b", marginTop: 4 },
-  modalOverlay: { flex: 1, backgroundColor: "#000000aa", justifyContent: "flex-end" },
-  modalContent: { backgroundColor: "#1e293b", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  modalTitle: { fontSize: 16, fontWeight: "700", color: "#f8fafc", flex: 1 },
-  modalLabel: { fontSize: 13, color: "#94a3b8", marginBottom: 8 },
-  amountInput: { backgroundColor: "#0f172a", borderRadius: 12, padding: 16, color: "#f8fafc", fontSize: 24, fontWeight: "700", textAlign: "center", borderWidth: 1, borderColor: "#334155" },
-  depositBtn: { marginTop: 20, padding: 16, backgroundColor: "#10b981", borderRadius: 12, alignItems: "center" },
-  depositBtnDisabled: { backgroundColor: "#334155" },
-  depositBtnText: { color: "#0f172a", fontSize: 16, fontWeight: "700" },
-});

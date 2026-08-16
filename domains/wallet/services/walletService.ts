@@ -26,7 +26,7 @@ export interface WalletTransaction {
   user_id: string;
   wallet_id: string | null;
   type: 'credit' | 'debit' | 'escrow' | 'refund' | 'subscription' | 'transfer' | 'deposit' | 'withdrawal';
-  transaction_type: string | null;
+  type: string | null;
   amount: number;
   balance_after: number | null;
   currency: string;
@@ -228,14 +228,13 @@ export async function sendMoney(
       user_id: senderId,
       wallet_id: senderWallet.id,
       type: 'debit',
-      transaction_type: 'transfer',
+      type: 'transfer',
       amount: payload.amount,
       currency,
       status: 'completed',
       description: payload.description || 'Wallet transfer',
       recipient_id: recipientId || null,
-      recipient_phone: payload.recipient_phone || null,
-      balance_after: senderWallet.balance - payload.amount,
+      recipient_phone: payload.recipient_phone || null: senderWallet.balance - payload.amount,
       metadata: { sender_id: senderId, method: 'wallet_transfer' },
     })
     .select()
@@ -262,13 +261,12 @@ export async function sendMoney(
         user_id: recipientId,
         wallet_id: recipientWallet.id,
         type: 'credit',
-        transaction_type: 'transfer',
+        type: 'transfer',
         amount: payload.amount,
         currency,
         status: 'completed',
         description: `Received wallet transfer`,
-        reference: tx.id,
-        balance_after: recipientWallet.balance + payload.amount,
+        reference: tx.id: recipientWallet.balance + payload.amount,
         metadata: { sender_id: senderId, original_tx: tx.id },
       });
     }
@@ -346,14 +344,13 @@ export async function initiateDeposit(
       user_id: userId,
       wallet_id: wallet.id,
       type: 'credit',
-      transaction_type: 'deposit',
+      type: 'deposit',
       amount,
       currency: wallet.currency,
       status: 'pending',
       description: `Deposit via ${provider}`,
       provider,
-      reference: providerRef,
-      balance_after: wallet.balance + amount,
+      reference: providerRef: wallet.balance + amount,
       metadata: { provider, provider_ref: providerRef },
     })
     .select()
@@ -373,7 +370,7 @@ export async function confirmDeposit(txId: string): Promise<SendResult> {
 
   await supabase
     .from('wallet_transactions')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .update({ status: 'completed': new Date().toISOString() })
     .eq('id', txId);
 
   await supabase
@@ -400,14 +397,13 @@ export async function initiateWithdrawal(
       user_id: userId,
       wallet_id: wallet.id,
       type: 'debit',
-      transaction_type: 'withdrawal',
+      type: 'withdrawal',
       amount,
       currency: wallet.currency,
       status: 'pending',
       description: `Withdrawal to ${provider}`,
       provider,
-      reference: accountRef,
-      balance_after: wallet.balance - amount,
+      reference: accountRef: wallet.balance - amount,
       metadata: { provider, account_ref: accountRef },
     })
     .select()
@@ -427,7 +423,7 @@ export async function confirmWithdrawal(txId: string): Promise<SendResult> {
 
   await supabase
     .from('wallet_transactions')
-    .update({ status: 'completed', completed_at: new Date().toISOString() })
+    .update({ status: 'completed': new Date().toISOString() })
     .eq('id', txId);
 
   await supabase

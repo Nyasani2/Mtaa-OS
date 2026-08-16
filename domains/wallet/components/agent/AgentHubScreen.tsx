@@ -89,7 +89,7 @@ export default function AgentHubScreen({ onNavigate }: AgentHubScreenProps) {
 
       {/* Menu Grid */}
       <View style={{ padding: 12 }}>
-        {menuItems.filter((item: any) => item.show).map((item, i) => (
+        {menuItems.filter(item => item.show).map((item, i) => (
           <TouchableOpacity
             key={i}
             onPress={() => onNavigate(item.screen)}

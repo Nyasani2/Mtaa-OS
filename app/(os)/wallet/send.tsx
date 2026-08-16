@@ -1,437 +1,247 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  Alert,
+  ScrollView,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { PaymentAuth } from '@/components/wallet/PaymentAuth';
-import { supabase } from '@/lib/supabase/client';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useWallet } from '@/hooks/useWallet';
+import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 export default function SendScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const user = useAuthStore((s) => s.user);
+  const insets = useSafeAreaInsets();
+  const { balance, sendMoney, recentContacts } = useWallet();
 
-  const [recipientId, setRecipientId] = useState<string>(params.recipientId as string || '');
-  const [recipientName, setRecipientName] = useState<string>(params.recipientName as string || '');
+  const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
-  const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [fetchingRecipient, setFetchingRecipient] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [transferResult, setTransferResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  const numericAmount = parseFloat(amount) || 0;
-  const fee = numericAmount * 0.01; // 1% fee
-  const total = numericAmount + fee;
-
-  useEffect(() => {
-    fetchBalance();
-    if (params.recipientId && !params.recipientName) {
-      fetchRecipientName(params.recipientId as string);
+  const handleSend = useCallback(async () => {
+    if (!recipient.trim()) { Alert.alert('Error', 'Please enter a recipient'); return; }
+    if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount'); return;
     }
-  }, []);
+    if (Number(amount) > balance) { Alert.alert('Error', 'Insufficient balance'); return; }
 
-  const fetchBalance = async () => {
-    if (!user?.id) return;
-    const { data } = await supabase
-      .from('wallet_accounts')
-      .select('balance, available_balance')
-      .eq('user_id', user.id)
-      .eq('is_default', true)
-      .single();
-    if (data) setBalance(data.available_balance || data.balance || 0);
-  };
-
-  const fetchRecipientName = async (id: string) => {
-    setFetchingRecipient(true);
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('display_name, username')
-      .eq('user_id', id)
-      .single();
-    if (data) {
-      setRecipientName(data.display_name || data.username || 'Unknown');
-    }
-    setFetchingRecipient(false);
-  };
-
-  const handleConfirm = () => {
-    if (!recipientId || numericAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid recipient and amount');
-      return;
-    }
-    if (total > balance) {
-      Alert.alert('Insufficient Balance', `Your available balance is ${balance.toFixed(2)}`);
-      return;
-    }
-    setShowAuth(true);
-  };
-
-  const handleAuthSuccess = async () => {
-    setShowAuth(false);
     setLoading(true);
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/wallet-transfer`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            recipient_id: recipientId,
-            amount: numericAmount,
-            currency: 'KES',
-            description: note || 'MTAA Transfer',
-            metadata: {
-              recipient_name: recipientName,
-              fee,
-              auth_method: useAuthStore.getState().biometricEnabled ? 'biometric' : 'pin',
-            },
-          }),
-        }
-      );
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Transfer failed');
-
-      setTransferResult({ success: true, message: `Sent ${currency} ${numericAmount.toFixed(2)} to ${recipientName}` });
-      fetchBalance();
+      await sendMoney?.({ recipient: recipient.trim(), amount: Number(amount), note: note.trim() });
+      Alert.alert('Success', `Sent KSh ${amount} to ${recipient}`, [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (err: any) {
-      setTransferResult({ success: false, message: err.message || 'Transfer failed' });
+      Alert.alert('Send Failed', err?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
-  };
+  }, [recipient, amount, note, balance, sendMoney, router]);
 
-  const handleAuthCancel = () => {
-    setShowAuth(false);
-  };
-
-  const currency = 'KSh';
-
-  if (transferResult) {
-    return (
-      <View style={styles.resultContainer}>
-        <View style={[styles.resultCard, transferResult.success ? styles.successCard : styles.errorCard]}>
-          <Ionicons
-            name={transferResult.success ? 'checkmark-circle' : 'close-circle'}
-            size={64}
-            color={transferResult.success ? '#22c55e' : '#ef4444'}
-          />
-          <Text style={styles.resultTitle}>
-            {transferResult.success ? 'Payment Sent' : 'Payment Failed'}
-          </Text>
-          <Text style={styles.resultMessage}>{transferResult.message}</Text>
-        </View>
-        <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
-          <Text style={styles.doneText}>Done</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const quickAmounts = [100, 500, 1000, 5000];
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Send Money</Text>
-          <Text style={styles.subtitle}>Available: {currency} {balance.toFixed(2)}</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Send Money</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        <View style={styles.form}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          {/* Balance Card */}
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>Available Balance</Text>
+            <Text style={styles.balanceValue}>KSh {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
+          </View>
+
           {/* Recipient */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Recipient</Text>
-            <View style={styles.recipientBox}>
-              {fetchingRecipient ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <>
-                  <Ionicons name="person-circle" size={28} color="#3b82f6" />
-                  <Text style={styles.recipientText}>
-                    {recipientName || recipientId.substring(0, 8) + '...'}
-                  </Text>
-                </>
-              )}
+          <View style={styles.section}>
+            <Text style={styles.label}>To</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone number, username, or wallet ID"
+                placeholderTextColor={COLORS.textSecondary}
+                value={recipient}
+                onChangeText={setRecipient}
+                autoCapitalize="none"
+                keyboardType="default"
+              />
             </View>
+
+            {/* Recent contacts */}
+            {recentContacts && recentContacts.length > 0 && (
+              <View style={styles.recentRow}>
+                {recentContacts.slice(0, 4).map((c: any, i: number) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.recentChip}
+                    onPress={() => setRecipient(c.phone || c.walletId || c.name)}
+                  >
+                    <View style={styles.recentAvatar}>
+                      <Text style={styles.recentInitial}>{c.name?.[0] || '?'}</Text>
+                    </View>
+                    <Text style={styles.recentName} numberOfLines={1}>{c.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Amount */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Amount</Text>
-            <View style={styles.amountInputBox}>
-              <Text style={styles.currencySymbol}>{currency}</Text>
+          <View style={styles.section}>
+            <Text style={styles.label}>Amount (KSh)</Text>
+            <View style={styles.amountRow}>
+              <Text style={styles.currency}>KSh</Text>
               <TextInput
                 style={styles.amountInput}
-                keyboardType="decimal-pad"
                 placeholder="0.00"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor={COLORS.textSecondary}
                 value={amount}
                 onChangeText={setAmount}
+                keyboardType="decimal-pad"
                 maxLength={10}
               />
+            </View>
+            <View style={styles.quickRow}>
+              {quickAmounts.map(amt => (
+                <TouchableOpacity
+                  key={amt}
+                  style={styles.quickChip}
+                  onPress={() => setAmount(amt.toString())}
+                >
+                  <Text style={styles.quickText}>KSh {amt.toLocaleString()}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
           {/* Note */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Note (optional)</Text>
-            <TextInput
-              style={styles.noteInput}
-              placeholder="What's this for?"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              value={note}
-              onChangeText={setNote}
-              maxLength={100}
-            />
+          <View style={styles.section}>
+            <Text style={styles.label}>Note (optional)</Text>
+            <View style={styles.inputRow}>
+              <Ionicons name="create-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="What's this for?"
+                placeholderTextColor={COLORS.textSecondary}
+                value={note}
+                onChangeText={setNote}
+                maxLength={100}
+              />
+            </View>
           </View>
 
-          {/* Summary */}
-          {numericAmount > 0 && (
-            <View style={styles.summary}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Amount</Text>
-                <Text style={styles.summaryValue}>{currency} {numericAmount.toFixed(2)}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Fee (1%)</Text>
-                <Text style={styles.summaryValue}>{currency} {fee.toFixed(2)}</Text>
-              </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.totalValue}>{currency} {total.toFixed(2)}</Text>
-              </View>
-            </View>
-          )}
-
+          {/* Send Button */}
           <TouchableOpacity
-            style={[
-              styles.confirmButton,
-              (!recipientId || numericAmount <= 0 || total > balance) && styles.confirmButtonDisabled,
-            ]}
-            onPress={handleConfirm}
-            disabled={!recipientId || numericAmount <= 0 || total > balance || loading}
+            style={[styles.sendBtn, loading && styles.sendBtnDisabled]}
+            onPress={handleSend}
+            disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.confirmText}>Confirm & Authorize</Text>
+              <>
+                <Ionicons name="paper-plane" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.sendBtnText}>Send Money</Text>
+              </>
             )}
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-
-      {showAuth && (
-        <PaymentAuth
-          amount={total}
-          currency={currency}
-          recipientName={recipientName || 'Recipient'}
-          onSuccess={handleAuthSuccess}
-          onCancel={handleAuthCancel}
-        />
-      )}
+        </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0a0f',
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.5)',
-  },
-  form: {
-    gap: 20,
-  },
-  inputGroup: {
-    gap: 8,
-  },
-  inputLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  recipientBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  recipientText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  amountInputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  currencySymbol: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.5)',
-    marginRight: 8,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  noteInput: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    color: '#ffffff',
-    fontSize: 15,
-  },
-  summary: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  summaryRow: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.md,
   },
-  summaryLabel: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.5)',
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
+  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
+  balanceCard: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.md,
+    padding: SIZES.lg,
+    marginBottom: SIZES.lg,
   },
-  summaryValue: {
-    fontSize: 14,
-    color: '#ffffff',
-  },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    marginTop: 8,
-    paddingTop: 12,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  totalValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#3b82f6',
-  },
-  confirmButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#2563eb',
+  balanceLabel: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  balanceValue: { fontFamily: FONTS.bold, fontSize: 28, color: '#fff', marginTop: 4 },
+  section: { marginBottom: SIZES.lg },
+  label: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary, marginBottom: SIZES.sm },
+  inputRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    height: 52,
   },
-  confirmButtonDisabled: {
-    backgroundColor: 'rgba(37,99,235,0.3)',
+  inputIcon: { marginRight: SIZES.sm },
+  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
+  recentRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  recentChip: { alignItems: 'center', width: 64 },
+  recentAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: COLORS.primary + '20',
+    justifyContent: 'center', alignItems: 'center',
   },
-  confirmText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
+  recentInitial: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary },
+  recentName: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.text, marginTop: 4 },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingHorizontal: SIZES.md,
+    height: 64,
   },
-  resultContainer: {
+  currency: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginRight: SIZES.sm },
+  amountInput: { flex: 1, fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text },
+  quickRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  quickChip: {
     flex: 1,
-    backgroundColor: '#0a0a0f',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.sm,
+    paddingVertical: SIZES.sm,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  quickText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.text },
+  sendBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.md,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+    marginTop: SIZES.lg,
   },
-  resultCard: {
-    alignItems: 'center',
-    padding: 32,
-    borderRadius: 16,
-    width: '100%',
-    borderWidth: 1,
-  },
-  successCard: {
-    backgroundColor: 'rgba(34,197,94,0.08)',
-    borderColor: 'rgba(34,197,94,0.2)',
-  },
-  errorCard: {
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    borderColor: 'rgba(239,68,68,0.2)',
-  },
-  resultTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  resultMessage: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
-  },
-  doneButton: {
-    marginTop: 24,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  doneText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
+  sendBtnDisabled: { opacity: 0.6 },
+  sendBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
 });

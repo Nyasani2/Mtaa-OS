@@ -1,367 +1,303 @@
-// @ts-nocheck
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
+  StyleSheet,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
   Dimensions,
-  Animated,
-  StyleSheet,
-  ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/lib/modules/wallet/store';
-import { sendMoney, getWalletTransactions } from '@/lib/services/wallet-service';
-import { supabase } from '@/lib/supabase';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useWallet } from '@/hooks/useWallet';
+import { COLORS, FONTS, SIZES } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
-const QR_SIZE = width * 0.55;
+const SCAN_SIZE = width * 0.65;
 
-export default function QrPayScreen() {
+export default function QRPayScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const { accounts, activeAccountId, addTransaction, syncBalance } = useWalletStore();
+  const insets = useSafeAreaInsets();
+  const { balance, sendMoney } = useWallet();
 
-  const activeAccount = accounts.find((a: any) => a.id === activeAccountId) || accounts[0];
-
-  const [mode, setMode] = useState<'scan' | 'mycode'>('scan');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [scanResult, setScanResult] = useState<any>(null);
+  const [scanData, setScanData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [showAmountInput, setShowAmountInput] = useState(false);
-  const [customAmount, setCustomAmount] = useState('');
-  const [qrData, setQrData] = useState('');
-
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [mode, setMode] = useState<'scan' | 'mycode'>('scan');
 
   useEffect(() => {
-    if (mode === 'mycode' && user?.id) {
-      const data = JSON.stringify({
-        type: 'mtaa_payment',
-        user_id: user.id,
-        username: user.user_metadata?.username || 'user',
-        timestamp: Date.now(),
-      });
-      setQrData(data);
-    }
-  }, [mode, user]);
+    if (!permission?.granted) requestPermission();
+  }, [permission, requestPermission]);
 
-  const animateToMode = useCallback((targetMode: 'scan' | 'mycode') => {
-    Animated.spring(slideAnim, {
-      toValue: targetMode === 'scan' ? 0 : 1,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
-    setMode(targetMode);
-  }, [slideAnim]);
-
-  const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
+  const handleBarCodeScanned = useCallback(({ data }: { data: string }) => {
     if (scanned) return;
     setScanned(true);
-    setLoading(true);
-
     try {
-      let parsed;
-      try {
-        parsed = JSON.parse(data);
-      } catch {
-        parsed = { user_id: data, type: 'mtaa_payment' };
-      }
-
-      if (parsed.type !== 'mtaa_payment' && !parsed.user_id) {
-        Alert.alert('Invalid QR', 'This QR code is not a valid MTAA payment code.');
-        setScanned(false);
-        setLoading(false);
-        return;
-      }
-
-      // Look up recipient
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('id, display_name, username, avatar_url')
-        .eq('id', parsed.user_id)
-        .single();
-
-      if (!profile) {
-        Alert.alert('Not Found', 'Could not find the recipient.');
-        setScanned(false);
-        setLoading(false);
-        return;
-      }
-
-      setScanResult({
-        recipient: profile,
-        userId: profile.id,
-        prefillAmount: parsed.amount,
-      });
-      setLoading(false);
-    } catch (err: any) {
-      setLoading(false);
-      setScanned(false);
-      Alert.alert('Scan Error', err.message);
+      const parsed = JSON.parse(data);
+      setScanData(parsed);
+    } catch {
+      // Treat raw string as wallet ID
+      setScanData({ walletId: data, amount: 0 });
     }
   }, [scanned]);
 
-  const handleSendPayment = useCallback(async () => {
-    if (!scanResult) return;
-    const numAmount = parseFloat(amount || customAmount);
-    if (!numAmount || numAmount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount');
-      return;
-    }
-    if (numAmount > (activeAccount?.balance || 0)) {
-      Alert.alert('Insufficient Balance', 'You do not have enough funds.');
-      return;
-    }
-
+  const handlePay = useCallback(async () => {
+    if (!scanData) return;
     setLoading(true);
     try {
-      const success = await sendMoney(user?.id || '', scanResult.userId, numAmount);
-      if (!success) throw new Error('Transfer failed on server');
-
-      // Update local balance
-      syncBalance(activeAccountId, (activeAccount?.balance || 0) - numAmount);
-
-      // Add transaction record
-      addTransaction({
-        id: Date.now().toString(),
-        type: 'debit',
-        amount: numAmount,
-        currency: 'KES',
-        description: note || `QR Payment to ${scanResult.recipient?.display_name || 'user'}`,
-        status: 'completed',
-        timestamp: new Date().toISOString(),
-        balanceAfter: (activeAccount?.balance || 0) - numAmount,
+      await sendMoney?.({
+        recipient: scanData.walletId || scanData.recipient,
+        amount: scanData.amount || 0,
+        note: scanData.note || 'QR Payment',
       });
-
-      setLoading(false);
-      Alert.alert(
-        'Payment Sent',
-        `KSh ${numAmount.toLocaleString()} sent successfully!`,
-        [{ text: 'OK', onPress: () => { setScanResult(null); setScanned(false); setAmount(''); setNote(''); } }]
-      );
+      Alert.alert('Success', 'Payment completed', [
+        { text: 'OK', onPress: () => { setScanned(false); setScanData(null); } }
+      ]);
     } catch (err: any) {
+      Alert.alert('Payment Failed', err?.message || 'Something went wrong');
+      setScanned(false);
+    } finally {
       setLoading(false);
-      Alert.alert('Payment Failed', err.message);
     }
-  }, [scanResult, amount, customAmount, note, activeAccount, activeAccountId, user, syncBalance, addTransaction]);
+  }, [scanData, sendMoney]);
 
-  const handleEnterCustomAmount = useCallback(() => {
-    setShowAmountInput(true);
-  }, []);
-
-  const handleSetCustomAmount = useCallback(() => {
-    const val = parseFloat(customAmount);
-    if (val > 0) {
-      setAmount(customAmount);
-      setShowAmountInput(false);
-    }
-  }, [customAmount]);
+  if (!permission?.granted) {
+    return (
+      <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
+        <Ionicons name="camera-outline" size={64} color={COLORS.textSecondary} />
+        <Text style={styles.permTitle}>Camera Access Needed</Text>
+        <Text style={styles.permSub}>We need camera permission to scan QR codes</Text>
+        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+          <Text style={styles.permBtnText}>Grant Permission</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.title}>QR Pay</Text>
-          <View style={{ width: 40 }} />
-        </View>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>QR Pay</Text>
+        <View style={{ width: 40 }} />
+      </View>
 
-        {/* Mode Toggle */}
-        <View style={styles.tabBar}>
-          <TouchableOpacity
-            onPress={() => animateToMode('scan')}
-            style={[styles.tab, mode === 'scan' && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, mode === 'scan' && styles.tabTextActive]}>Scan</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => animateToMode('mycode')}
-            style={[styles.tab, mode === 'mycode' && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, mode === 'mycode' && styles.tabTextActive]}>My Code</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Mode Toggle */}
+      <View style={styles.modeBar}>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === 'scan' && styles.modeBtnActive]}
+          onPress={() => { setMode('scan'); setScanned(false); setScanData(null); }}
+        >
+          <Ionicons name="scan-outline" size={16} color={mode === 'scan' ? '#fff' : COLORS.textSecondary} />
+          <Text style={[styles.modeText, mode === 'scan' && styles.modeTextActive]}>Scan</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.modeBtn, mode === 'mycode' && styles.modeBtnActive]}
+          onPress={() => setMode('mycode')}
+        >
+          <Ionicons name="qr-code-outline" size={16} color={mode === 'mycode' ? '#fff' : COLORS.textSecondary} />
+          <Text style={[styles.modeText, mode === 'mycode' && styles.modeTextActive]}>My Code</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* SCAN MODE */}
-        {mode === 'scan' && !scanResult && (
-          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-            <View style={styles.qrFrame}>
-              <Text style={{ color: '#9ca3af', textAlign: 'center' }}>
-                Camera view would render here.\nTap below to simulate scan.
-              </Text>
+      {mode === 'scan' ? (
+        <View style={styles.scanContainer}>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          />
+
+          {/* Overlay */}
+          <View style={styles.overlay} pointerEvents="none">
+            <View style={styles.overlayDark} />
+            <View style={styles.scanFrame}>
+              <View style={[styles.corner, styles.cornerTL]} />
+              <View style={[styles.corner, styles.cornerTR]} />
+              <View style={[styles.corner, styles.cornerBL]} />
+              <View style={[styles.corner, styles.cornerBR]} />
             </View>
-
-            <Text style={{ color: '#9ca3af', marginTop: 16, fontSize: 14 }}>
-              Point camera at a payment QR code
-            </Text>
-
-            <TouchableOpacity onPress={handleEnterCustomAmount} style={styles.actionBtn}>
-              <Ionicons name="cash-outline" size={20} color="#10b981" />
-              <Text style={styles.actionBtnText}>Enter Custom Amount</Text>
-            </TouchableOpacity>
-
-            {/* Simulate scan button for testing */}
-            <TouchableOpacity
-              onPress={() => {
-                if (user?.id) {
-                  handleBarCodeScanned({ data: JSON.stringify({ type: 'mtaa_payment', user_id: user.id, amount: 100 }) });
-                }
-              }}
-              style={[styles.actionBtn, { marginTop: 8 }]}
-            >
-              <Ionicons name="scan-outline" size={20} color="#6366f1" />
-              <Text style={styles.actionBtnText}>Simulate Scan (Test)</Text>
-            </TouchableOpacity>
+            <View style={styles.overlayDark} />
           </View>
-        )}
 
-        {/* Custom Amount Input */}
-        {showAmountInput && (
-          <View style={styles.card}>
-            <Text style={styles.label}>Enter Amount</Text>
-            <TextInput
-              value={customAmount}
-              onChangeText={setCustomAmount}
-              placeholder="0.00"
-              placeholderTextColor="#6b7280"
-              keyboardType="decimal-pad"
-              style={styles.amountInput}
-            />
-            <TouchableOpacity onPress={handleSetCustomAmount} style={styles.confirmBtn}>
-              <Text style={styles.confirmText}>Set Amount</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowAmountInput(false)} style={{ alignItems: 'center', marginTop: 12 }}>
-              <Text style={{ color: '#9ca3af' }}>Cancel</Text>
-            </TouchableOpacity>
+          {/* Scan prompt */}
+          <View style={styles.scanPrompt} pointerEvents="none">
+            <Text style={styles.scanPromptText}>Align QR code within frame</Text>
           </View>
-        )}
 
-        {/* Scan Result - Payment Form */}
-        {scanResult && (
-          <View style={{ paddingHorizontal: 16 }}>
-            <View style={[styles.card, { alignItems: 'center' }]}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {(scanResult.recipient?.display_name || 'U').charAt(0).toUpperCase()}
-                </Text>
-              </View>
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600' }}>
-                {scanResult.recipient?.display_name || 'Unknown User'}
-              </Text>
-              <Text style={{ color: '#9ca3af', marginTop: 4 }}>@{scanResult.recipient?.username || 'user'}</Text>
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.label}>Amount (KSh)</Text>
-              <TextInput
-                value={amount}
-                onChangeText={setAmount}
-                placeholder="0.00"
-                placeholderTextColor="#6b7280"
-                keyboardType="decimal-pad"
-                style={styles.amountInput}
-              />
-            </View>
-
-            <View style={styles.card}>
-              <Text style={styles.label}>Note (Optional)</Text>
-              <TextInput
-                value={note}
-                onChangeText={setNote}
-                placeholder="What's this for?"
-                placeholderTextColor="#6b7280"
-                style={styles.input}
-              />
-            </View>
-
-            <TouchableOpacity onPress={handleSendPayment} disabled={loading} style={styles.confirmBtn}>
-              {loading ? <ActivityIndicator color="#fff" /> : (
-                <Text style={styles.confirmText}>Send Payment</Text>
+          {/* Scanned result */}
+          {scanned && scanData && (
+            <View style={styles.resultCard}>
+              <Text style={styles.resultTitle}>Payment Request</Text>
+              <Text style={styles.resultDetail}>To: {scanData.walletId || scanData.recipient || 'Unknown'}</Text>
+              {scanData.amount > 0 && (
+                <Text style={styles.resultAmount}>KSh {Number(scanData.amount).toLocaleString()}</Text>
               )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => { setScanResult(null); setScanned(false); }} style={{ alignItems: 'center', marginTop: 16 }}>
-              <Text style={{ color: '#9ca3af' }}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* MY CODE MODE */}
-        {mode === 'mycode' && (
-          <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-            <View style={styles.qrWhiteBox}>
-              <Text style={{ color: '#000', fontSize: 14, fontWeight: '700', marginBottom: 12 }}>
-                {user?.user_metadata?.display_name || 'Your QR Code'}
-              </Text>
-              <View style={styles.qrPlaceholder}>
-                <Ionicons name="qr-code" size={120} color="#000" />
+              <View style={styles.resultActions}>
+                <TouchableOpacity style={styles.resultCancel} onPress={() => { setScanned(false); setScanData(null); }}>
+                  <Text style={styles.resultCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.resultPay, loading && { opacity: 0.6 }]}
+                  onPress={handlePay}
+                  disabled={loading}
+                >
+                  {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.resultPayText}>Pay</Text>}
+                </TouchableOpacity>
               </View>
             </View>
-
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 24 }}>
-              {user?.user_metadata?.display_name || 'Your QR Code'}
-            </Text>
-            <Text style={{ color: '#9ca3af', marginTop: 6, textAlign: 'center', paddingHorizontal: 40 }}>
-              Others can scan this code to send you money instantly
-            </Text>
-
-            <View style={{ flexDirection: 'row', marginTop: 24, gap: 10 }}>
-              <TouchableOpacity onPress={() => setAmount('')} style={[styles.qrAmountBtn, amount === '' && styles.qrAmountBtnActive]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Any Amount</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleEnterCustomAmount} style={[styles.qrAmountBtn, amount !== '' && styles.qrAmountBtnActive]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>
-                  {amount ? `KSh ${parseFloat(amount).toLocaleString()}` : 'Set Amount'}
-                </Text>
-              </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <View style={styles.codeContainer}>
+          <View style={styles.codeCard}>
+            <View style={styles.qrPlaceholder}>
+              <Ionicons name="qr-code" size={120} color={COLORS.primary} />
             </View>
-
-            <TouchableOpacity onPress={() => Alert.alert('Share', 'QR code sharing coming soon')} style={styles.actionBtn}>
-              <Ionicons name="share-outline" size={20} color="#6366f1" />
-              <Text style={styles.actionBtnText}>Share QR Code</Text>
-            </TouchableOpacity>
+            <Text style={styles.codeLabel}>Your QR Code</Text>
+            <Text style={styles.codeSub}>Others can scan this to pay you</Text>
           </View>
-        )}
-      </ScrollView>
+          <View style={styles.balanceMini}>
+            <Text style={styles.balanceMiniLabel}>Balance</Text>
+            <Text style={styles.balanceMiniValue}>KSh {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  scroll: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  tabBar: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 16, padding: 4, borderRadius: 14, marginBottom: 20 },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
-  tabActive: { backgroundColor: '#6366f1' },
-  tabText: { fontSize: 14, color: '#9ca3af', fontWeight: '600' },
-  tabTextActive: { color: '#fff' },
-  qrFrame: { width: QR_SIZE + 40, height: QR_SIZE + 40, borderRadius: 24, borderWidth: 3, borderColor: '#6366f1', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.03)' },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 14, marginTop: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  actionBtnText: { color: '#fff', marginLeft: 10, fontWeight: '600', fontSize: 15 },
-  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginHorizontal: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  label: { fontSize: 14, color: '#9ca3af', marginBottom: 8 },
-  amountInput: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  input: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  confirmBtn: { backgroundColor: '#10b981', marginHorizontal: 16, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 8, marginBottom: 8 },
-  confirmText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  avatarText: { color: '#fff', fontSize: 24, fontWeight: '700' },
-  qrWhiteBox: { backgroundColor: '#fff', padding: 24, borderRadius: 24, alignItems: 'center' },
-  qrPlaceholder: { width: QR_SIZE, height: QR_SIZE, backgroundColor: '#f0f0f0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  qrAmountBtn: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  qrAmountBtnActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
+  container: { flex: 1, backgroundColor: '#000' },
+  center: { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.md,
+  },
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: '#fff' },
+  modeBar: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: SIZES.md,
+    padding: 4,
+    marginBottom: SIZES.md,
+  },
+  modeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.lg,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.sm,
+    gap: 6,
+  },
+  modeBtnActive: { backgroundColor: COLORS.primary },
+  modeText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
+  modeTextActive: { color: '#fff' },
+  scanContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
+  overlayDark: { flex: 1, width: '100%', backgroundColor: 'rgba(0,0,0,0.6)' },
+  scanFrame: {
+    width: SCAN_SIZE,
+    height: SCAN_SIZE,
+    backgroundColor: 'transparent',
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: 24,
+    height: 24,
+    borderColor: COLORS.primary,
+  },
+  cornerTL: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
+  cornerTR: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
+  cornerBL: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
+  cornerBR: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
+  scanPrompt: { position: 'absolute', bottom: 120 },
+  scanPromptText: { fontFamily: FONTS.medium, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
+  resultCard: {
+    position: 'absolute',
+    bottom: 40,
+    left: SIZES.md,
+    right: SIZES.md,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.md,
+    padding: SIZES.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  resultTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: SIZES.sm },
+  resultDetail: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary },
+  resultAmount: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary, marginTop: SIZES.sm },
+  resultActions: { flexDirection: 'row', gap: SIZES.md, marginTop: SIZES.lg },
+  resultCancel: {
+    flex: 1,
+    paddingVertical: SIZES.md,
+    borderRadius: SIZES.sm,
+    backgroundColor: COLORS.border,
+    alignItems: 'center',
+  },
+  resultCancelText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.text },
+  resultPay: {
+    flex: 1,
+    paddingVertical: SIZES.md,
+    borderRadius: SIZES.sm,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  resultPayText: { fontFamily: FONTS.bold, fontSize: 15, color: '#fff' },
+  codeContainer: { flex: 1, alignItems: 'center', paddingTop: SIZES.xl },
+  codeCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.lg,
+    padding: SIZES.xl,
+    alignItems: 'center',
+    width: width - SIZES.md * 2,
+  },
+  qrPlaceholder: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#fff',
+    borderRadius: SIZES.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.md,
+  },
+  codeLabel: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
+  codeSub: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
+  balanceMini: {
+    marginTop: SIZES.lg,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: SIZES.md,
+    paddingHorizontal: SIZES.lg,
+    paddingVertical: SIZES.md,
+    alignItems: 'center',
+  },
+  balanceMiniLabel: { fontFamily: FONTS.medium, fontSize: 12, color: 'rgba(255,255,255,0.6)' },
+  balanceMiniValue: { fontFamily: FONTS.bold, fontSize: 20, color: '#fff', marginTop: 2 },
+  permTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginTop: SIZES.lg },
+  permSub: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary, marginTop: SIZES.sm, textAlign: 'center', paddingHorizontal: SIZES.xl },
+  permBtn: {
+    marginTop: SIZES.lg,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.md,
+    borderRadius: SIZES.md,
+  },
+  permBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
 });

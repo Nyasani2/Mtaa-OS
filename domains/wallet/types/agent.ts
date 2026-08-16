@@ -23,7 +23,7 @@ export interface AgentTransaction {
   id: string;
   agent_id: string;
   customer_id?: string;
-  transaction_type: 'customer_deposit' | 'customer_withdrawal' | 'float_topup' | 'commission_payout';
+  type: 'customer_deposit' | 'customer_withdrawal' | 'float_topup' | 'commission_payout';
   amount: number;
   commission: number;
   customer_phone?: string;
