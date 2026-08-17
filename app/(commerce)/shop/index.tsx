@@ -38,7 +38,7 @@ export default function MyShopsScreen() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
             <TouchableOpacity onPress={() => router.push(`/shop/${s.id}`)} style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: '#1976d2', fontWeight: '700' }}>Dashboard</Text></TouchableOpacity>
             <TouchableOpacity onPress={() => router.push(`/shop/${s.id}/products`)} style={{ backgroundColor: '#e8f5e9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: '#2e7d32', fontWeight: '700' }}>Products</Text></TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push(`/shop/${s.id}/sell`} style={{ backgroundColor: '#fff3e0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: '#ef6c00', fontWeight: '700' }}>Sell / POS</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push(`/shop/${s.id}/sell`)} style={{ backgroundColor: '#fff3e0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: '#ef6c00', fontWeight: '700' }}>Sell / POS</Text></TouchableOpacity>
             <TouchableOpacity onPress={() => router.push(`/shop/${s.id}/pay`)} style={{ backgroundColor: '#f3e5f5', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}><Text style={{ color: '#7b1fa2', fontWeight: '700' }}>Pay ID / QR</Text></TouchableOpacity>
           </View>
         </View>
