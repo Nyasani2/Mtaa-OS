@@ -35,7 +35,7 @@ export default function ProductListScreen() {
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
-        .from('shop_products')
+        .from('products')
         .select('*')
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });

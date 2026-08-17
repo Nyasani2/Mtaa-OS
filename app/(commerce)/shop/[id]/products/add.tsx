@@ -101,7 +101,7 @@ export default function AddProductScreen() {
 
     try {
       const { data: product, error } = await supabase
-        .from('shop_products')
+        .from('products')
         .insert({
           shop_id: shopId,
           name: formData.name.trim(),
