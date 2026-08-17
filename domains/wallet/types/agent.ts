@@ -23,7 +23,7 @@ export interface AgentTransaction {
   id: string;
   agent_id: string;
   customer_id?: string;
-  type: 'customer_deposit' | 'customer_withdrawal' | 'float_topup' | 'commission_payout';
+  transaction_type: 'customer_deposit' | 'customer_withdrawal' | 'float_topup' | 'commission_payout';
   amount: number;
   commission: number;
   customer_phone?: string;
@@ -47,7 +47,7 @@ export interface AgentDashboardData {
     id: string;
     change_type: string;
     amount: number;
-
+    balance_after: number;
     description: string;
     created_at: string;
   }[];
@@ -63,3 +63,4 @@ export interface AgentOnboardingForm {
   locationLng?: number;
   pin: string;
 }
+

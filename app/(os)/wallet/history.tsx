@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 
 export default function HistoryScreen() {
   const { transactions } = useWalletStore();
@@ -36,3 +36,4 @@ const styles = StyleSheet.create({
   positive: { color: '#0f0' },
   negative: { color: '#f00' },
 });
+

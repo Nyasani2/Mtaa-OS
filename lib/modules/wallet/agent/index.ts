@@ -15,7 +15,7 @@ import { Alert, Linking, Platform } from 'react-native';
 // ============================================================
 // TYPES
 // ============================================================
-export interface WalletAgentMap {
+export interface Agent {
   id: string;
   agent_code: string;
   agent_qr_code: string;
@@ -34,7 +34,7 @@ export interface WalletAgentMap {
   distance_km?: number;
 }
 
-export interface WalletAgentMapApplication {
+export interface AgentApplication {
   id: string;
   user_id: string;
   full_name: string;
@@ -61,7 +61,7 @@ export interface WalletAgentMapApplication {
   max_transaction_amount: number;
 }
 
-export interface WalletAgentMapTransaction {
+export interface AgentTransaction {
   id: string;
   transaction_type: 'deposit' | 'withdrawal' | 'bill_payment' | 'airtime';
   agent_id: string;
@@ -91,7 +91,7 @@ export interface CommissionBreakdown {
 // SERVICE — AGENT MAP & DISCOVERY
 // ============================================================
 export const agentMapService = {
-  async findNearbyAgents(lat: number, lng: number, radiusKm: number = 5, serviceType: 'deposit' | 'withdrawal' = 'deposit'): Promise<WalletAgentMap[]> {
+  async findNearbyAgents(lat: number, lng: number, radiusKm: number = 5, serviceType: 'deposit' | 'withdrawal' = 'deposit'): Promise<Agent[]> {
     const { data, error } = await supabase.rpc('find_nearby_agents', {
       lat,
       lng,
@@ -102,24 +102,24 @@ export const agentMapService = {
     return data || [];
   },
 
-  async getAgentByQR(qrCode: string): Promise<WalletAgentMap | null> {
+  async getAgentByQR(qrCode: string): Promise<Agent | null> {
     const { data, error } = await supabase
       .from('wallet_agents')
       .select('*')
       .eq('agent_qr_code', qrCode)
       .eq('status', 'active')
       .eq('collateral_paid', true)
-      .maybeSingle();
+      .single();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   },
 
-  async getAgentById(id: string): Promise<WalletAgentMap | null> {
+  async getAgentById(id: string): Promise<Agent | null> {
     const { data, error } = await supabase
       .from('wallet_agents')
       .select('*')
       .eq('id', id)
-      .maybeSingle();
+      .single();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -146,7 +146,7 @@ export const agentTransactionService = {
     amount: number;
     scannedQRCode: string;
     customerPhone?: string;
-  }): Promise<WalletAgentMapTransaction> {
+  }): Promise<AgentTransaction> {
     const { data, error } = await supabase
       .from('wallet_agent_transactions')
       .insert({
@@ -160,7 +160,7 @@ export const agentTransactionService = {
         reference_code: `AGT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`
       })
       .select()
-      .maybeSingle();
+      .single();
     if (error) throw error;
     if (!data) throw new Error('Failed to create transaction');
     return data;
@@ -182,7 +182,7 @@ export const agentTransactionService = {
     return data;
   },
 
-  async getCustomerTransactions(): Promise<WalletAgentMapTransaction[]> {
+  async getCustomerTransactions(): Promise<AgentTransaction[]> {
     const { data, error } = await supabase
       .from('wallet_agent_transactions')
       .select('*, wallet_agents(business_name, agent_code)')
@@ -192,7 +192,7 @@ export const agentTransactionService = {
     return data || [];
   },
 
-  async getAgentTransactions(agentId: string): Promise<WalletAgentMapTransaction[]> {
+  async getAgentTransactions(agentId: string): Promise<AgentTransaction[]> {
     const { data, error } = await supabase
       .from('wallet_agent_transactions')
       .select('*')
@@ -207,7 +207,7 @@ export const agentTransactionService = {
 // SERVICE — BECOME AN AGENT
 // ============================================================
 export const agentApplicationService = {
-  async submitApplication(application: Omit<WalletAgentMapApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'collateral_paid'>): Promise<WalletAgentMapApplication> {
+  async submitApplication(application: Omit<AgentApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'collateral_paid'>): Promise<AgentApplication> {
     const { data, error } = await supabase
       .from('wallet_agent_applications')
       .insert({
@@ -216,7 +216,7 @@ export const agentApplicationService = {
         collateral_paid: false
       })
       .select()
-      .maybeSingle();
+      .single();
     if (error) throw error;
     if (!data) throw new Error('Failed to submit application');
     return data;
@@ -231,24 +231,24 @@ export const agentApplicationService = {
     if (error) throw error;
   },
 
-  async getMyApplication(): Promise<WalletAgentMapApplication | null> {
+  async getMyApplication(): Promise<AgentApplication | null> {
     const { data, error } = await supabase
       .from('wallet_agent_applications')
       .select('*')
       .eq('user_id', useAuthStore.getState().user?.id)
       .order('created_at', { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .single();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   },
 
-  async getMyAgentProfile(): Promise<WalletAgentMap | null> {
+  async getMyAgentProfile(): Promise<Agent | null> {
     const { data, error } = await supabase
       .from('wallet_agents')
       .select('*')
       .eq('user_id', useAuthStore.getState().user?.id)
-      .maybeSingle();
+      .single();
     if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
@@ -354,7 +354,7 @@ export function useMyAgentProfile() {
 export function FindAgentMapScreen() {
   const [serviceType, setServiceType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState<WalletAgentMap | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const { data: agents, isLoading } = useNearbyAgents(
     location?.lat || -1.2921,
     location?.lng || 36.8219,
@@ -372,10 +372,10 @@ export function FindAgentMapScreen() {
     })();
   }, []);
 
-  const handleAgentSelect = (agent: WalletAgentMap) => {
+  const handleAgentSelect = (agent: Agent) => {
     setSelectedAgent(agent);
     // Navigate to QR scan screen with agent pre-selected
-    // router.push(`/wallet/agent-scan?agentId=${agent.id}` as any);
+    // router.push(`/wallet/agent-scan?agentId=${agent.id}`);
   };
 
   return {
@@ -394,7 +394,7 @@ export function FindAgentMapScreen() {
 // ============================================================
 export function AgentQRScanScreen() {
   const [hasPermission, requestPermission] = useCameraPermissions();
-  const [scannedAgent, setScannedAgent] = useState<WalletAgentMap | null>(null);
+  const [scannedAgent, setScannedAgent] = useState<Agent | null>(null);
   const [transactionType, setTransactionType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [amount, setAmount] = useState('');
   const [commission, setCommission] = useState<CommissionBreakdown | null>(null);
@@ -411,7 +411,7 @@ export function AgentQRScanScreen() {
       .select('*')
       .eq('agent_qr_code', data)
       .eq('status', 'active')
-      .maybeSingle();
+      .single();
 
     if (agent) {
       setScannedAgent(agent);
@@ -444,7 +444,7 @@ export function AgentQRScanScreen() {
         scannedQRCode: scannedAgent.agent_qr_code,
       });
 
-      // Step 2: WalletAgentMap confirms (in real app, agent taps confirm on their device)
+      // Step 2: Agent confirms (in real app, agent taps confirm on their device)
       await agentTransactionService.agentConfirmTransaction(tx.id);
 
       // Step 3: Process the transaction (wallet transfers + commissions)
@@ -454,7 +454,7 @@ export function AgentQRScanScreen() {
         'Success',
         `${transactionType === 'deposit' ? 'Deposit' : 'Withdrawal'} of KES ${amount} completed.
 ` +
-        `WalletAgentMap commission: KES ${result.agent_commission}
+        `Agent commission: KES ${result.agent_commission}
 ` +
         `Fee: KES ${result.customer_fee}`
       );
@@ -482,7 +482,7 @@ export function AgentQRScanScreen() {
 }
 
 // ============================================================
-// SCREEN 3: AGENT DASHBOARD (WalletAgentMap's own view)
+// SCREEN 3: AGENT DASHBOARD (Agent's own view)
 // ============================================================
 export function AgentDashboardScreen() {
   const { data: agentProfile, isLoading: profileLoading } = useMyAgentProfile();
@@ -495,7 +495,7 @@ export function AgentDashboardScreen() {
         .select('*')
         .eq('agent_id', agentProfile?.id)
         .eq('date', new Date().toISOString().split('T')[0])
-        .maybeSingle();
+        .single();
       return data;
     },
     enabled: !!agentProfile?.id,
@@ -524,7 +524,7 @@ export function AgentDashboardScreen() {
 // ============================================================
 export function BecomeAgentScreen() {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<Partial<WalletAgentMapApplication>>({
+  const [formData, setFormData] = useState<Partial<AgentApplication>>({
     full_name: '',
     id_number: '',
     phone: '',
@@ -570,7 +570,7 @@ export function BecomeAgentScreen() {
     }
 
     try {
-      await submitApplication.mutateAsync(formData as Omit<WalletAgentMapApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'collateral_paid'>);
+      await submitApplication.mutateAsync(formData as Omit<AgentApplication, 'id' | 'created_at' | 'updated_at' | 'status' | 'collateral_paid'>);
       setStep(3); // Go to payment step
     } catch (err) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to submit');
@@ -603,3 +603,4 @@ export function BecomeAgentScreen() {
 // ============================================================
 // EXPORTS
 // ============================================================
+

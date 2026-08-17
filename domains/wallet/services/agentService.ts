@@ -62,7 +62,7 @@ export class AgentService {
   }
 
   static async getMyAgent(userId: string): Promise<Agent | null> {
-    const { data, error } = await supabase.from('agents').select('*').eq('user_id', userId).single();
+    const { data, error } = await supabase.from("wallet_agents").select('*').eq('user_id', userId).single();
     return error ? null : data;
   }
 
@@ -76,3 +76,4 @@ export class AgentService {
     return json;
   }
 }
+

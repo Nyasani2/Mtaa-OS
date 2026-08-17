@@ -2,10 +2,10 @@ import { supabase } from '@/lib/supabase';
 
 export async function getWalletBalance(userId: string) {
   const { data, error } = await supabase
-    .from('wallet_accounts')
+    .from("wallet_accounts")
     .select('*')
     .eq('user_id', userId)
-    .maybeSingle();
+    .single();
   if (error) throw error;
   return data;
 }
@@ -25,18 +25,18 @@ export async function createWalletTransaction(params: any) {
     .from('wallet_transactions')
     .insert(params)
     .select()
-    .maybeSingle();
+    .single();
   if (error) throw error;
   return data;
 }
 
 export async function updateWalletBalance(userId: string, amount: number) {
   const { data, error } = await supabase
-    .from('wallet_accounts')
+    .from("wallet_accounts")
     .update({ balance: amount, updated_at: new Date().toISOString() })
     .eq('user_id', userId)
     .select()
-    .maybeSingle();
+    .single();
   if (error) throw error;
   return data;
 }
@@ -97,3 +97,4 @@ export async function paySchoolFee(params: {
     return { success: false, error: err.message || 'Payment failed' };
   }
 }
+

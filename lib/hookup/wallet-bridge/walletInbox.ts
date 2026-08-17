@@ -54,3 +54,4 @@ class WalletInbox {
 }
 
 export const walletInbox = new WalletInbox()
+

@@ -1,12 +1,13 @@
 import { useAuthStore } from './store/auth.store';
 
-export const useAuth = () => {
+export { useAuthStore as useAuth };
+
+export const useIdentity = () => {
   const store = useAuthStore();
   return {
     user: store.user,
-    session: store.session,
-    isLoading: store.isLoading,
     isAuthenticated: store.isAuthenticated,
-    signOut: store.signOut,
+    identity: store.user,
+    profile: store.user,
   };
 };

@@ -1,4 +1,3 @@
-
 // Edge Function: initiate-transfer
 // Handles phone-to-phone money transfers
 
@@ -38,7 +37,7 @@ serve(async (req) => {
 
     // Get sender wallet
     const { data: senderWallet } = await supabaseClient
-      .from('wallet_accounts')
+      .from("wallet_accounts")
       .select('*')
       .eq('user_id', sender_id)
       .eq('wallet_type', 'main')
@@ -69,7 +68,7 @@ serve(async (req) => {
     if (recipientUser) {
       // Registered user - direct transfer
       const { data: recipientWallet } = await supabaseClient
-        .from('wallet_accounts')
+        .from("wallet_accounts")
         .select('*')
         .eq('user_id', recipientUser.user_id)
         .eq('wallet_type', 'main')
@@ -84,7 +83,7 @@ serve(async (req) => {
 
       // Debit sender
       await supabaseClient
-        .from('wallet_accounts')
+        .from("wallet_accounts")
         .update({
           available_balance: senderWallet.available_balance - amount,
           total_outgoing: senderWallet.total_outgoing + amount
@@ -93,7 +92,7 @@ serve(async (req) => {
 
       // Credit recipient
       await supabaseClient
-        .from('wallet_accounts')
+        .from("wallet_accounts")
         .update({
           available_balance: recipientWallet.available_balance + amount,
           total_incoming: recipientWallet.total_incoming + amount
@@ -179,7 +178,7 @@ serve(async (req) => {
 
       // Debit sender (hold in pending)
       await supabaseClient
-        .from('wallet_accounts')
+        .from("wallet_accounts")
         .update({
           available_balance: senderWallet.available_balance - amount,
           pending_balance: senderWallet.pending_balance + amount
@@ -221,3 +220,4 @@ serve(async (req) => {
     })
   }
 })
+

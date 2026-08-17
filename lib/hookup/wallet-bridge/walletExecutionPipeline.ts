@@ -11,8 +11,9 @@ export function walletExecutionPipeline(event: { type: WalletEventType; payload?
     case "TRANSFER_INIT":
       return engine.processTransfer(event.payload);
     case "BALANCE_REQUEST":
-      return engine.getBalance('');
+      return engine.getBalance();
     default:
       return Promise.resolve({ success: false, error: "Unknown event type" });
   }
 }
+

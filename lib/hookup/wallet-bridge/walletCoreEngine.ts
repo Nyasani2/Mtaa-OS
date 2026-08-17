@@ -19,13 +19,14 @@ export class WalletCoreEngine {
 
   async getBalance(userId: string) {
     const { data, error } = await supabase
-      .from('wallet_accounts')
+      .from("wallet_accounts")
       .select('balance, currency')
       .eq('user_id', userId)
-      .maybeSingle();
+      .single();
     if (error || !data) {
       return { balance: 0, currency: "KES" };
     }
     return { balance: data.balance || 0, currency: data.currency || "KES" };
   }
 }
+

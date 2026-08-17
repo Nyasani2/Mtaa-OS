@@ -124,3 +124,4 @@ export const businessService = {
     return { data: data as BusinessTransaction | null, error };
   },
 };
+

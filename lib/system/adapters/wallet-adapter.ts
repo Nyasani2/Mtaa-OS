@@ -63,3 +63,4 @@ class WalletAdapter {
 }
 
 export const walletAdapter = new WalletAdapter()
+

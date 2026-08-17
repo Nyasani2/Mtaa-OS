@@ -57,7 +57,7 @@ export default function GovernmentHubScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.reportButton} onPress={() => router.push('/wallet/gov-portal')}>
+        <TouchableOpacity style={styles.reportButton} onPress={() => router.push('/(os)/wallet/gov-portal')}>
           <Text style={styles.reportButtonText}>View Full Reports</Text>
         </TouchableOpacity>
       </View>
@@ -89,3 +89,4 @@ const styles = StyleSheet.create({
   reportButton: { backgroundColor: '#00D68F', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   reportButtonText: { color: '#0A0A0A', fontSize: 16, fontWeight: '700' },
 });
+

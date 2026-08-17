@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 
 export async function posScanBarcode(shopId: string, barcode: string) {
@@ -23,7 +22,7 @@ export async function posCreateSale(sessionId: string, items: Array<{ product_id
 
   if (error) throw error;
 
-  const saleItems = items.map((item: any) => ({
+  const saleItems = items.map(item => ({
     sale_id: sale.id,
     product_id: item.product_id,
     quantity: item.quantity,

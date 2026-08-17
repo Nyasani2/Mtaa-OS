@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function ReceiveScreen() {
   const router = useRouter();
@@ -29,3 +29,4 @@ const styles = StyleSheet.create({
   backButton: { marginTop: 32, backgroundColor: '#222', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },
   backText: { color: '#fff', fontWeight: '600' },
 });
+

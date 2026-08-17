@@ -1,34 +1,33 @@
 import { useState, useCallback } from 'react';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
 export interface TaxReport {
-  year: number;
-  totalIncome: number;
-  totalExpenses: number;
-  totalFees: number;
-  taxableAmount: number;
-  currency: string;
-  transactionCount: number;
+  id: string; user_id: string; year: number;
+  tax_liability: number; total_income: number;
+  total_deductible: number; status: string; created_at: string;
 }
 
-export function useWalletTaxes() {
-  const [reports, setReports] = useState<TaxReport[]>([]);
+export const useWalletTaxes = () => {
+  const { user } = useAuthStore();
+  const [taxes, setTaxes] = useState<TaxReport[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadTaxReport = useCallback(async (year: number) => {
+  const refresh = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
-    setError(null);
-    setReports([{
-      year,
-      totalIncome: 0,
-      totalExpenses: 0,
-      totalFees: 0,
-      taxableAmount: 0,
-      currency: 'USD',
-      transactionCount: 0,
-    }]);
-    setLoading(false);
-  }, []);
+    try {
+      const { data, error: dbError } = await supabase
+        .from('wallet_tax_reports').select('*')
+        .eq('user_id', user.id).order('year', { ascending: false });
+      if (dbError) throw dbError;
+      setTaxes(data || []);
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  }, [user]);
 
-  return { reports, transactions: [], loading, error, loadTaxReport, exportTaxCSV: () => null };
-}
+  const exportTaxCSV = () => null;
+  return { taxes, loading, error, refresh, exportTaxCSV };
+};
+export default useWalletTaxes;

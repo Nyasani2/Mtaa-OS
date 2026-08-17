@@ -1,34 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
 export interface WalletAccount {
-  id: string;
-  user_id: string;
-  balance: number;
-  held_balance: number;
-  currency: string;
-  status: string;
-  tier: string;
-  created_at: string;
+  id: string; user_id: string; balance: number;
+  available_balance: number; hold_balance: number;
+  currency: string; status: string; is_default: boolean;
 }
 
-export function useWalletAccount() {
+export const useWalletAccount = () => {
   const { user } = useAuthStore();
-  const [wallet, setWallet] = useState<WalletAccount | null>(null);
+  const [account, setAccount] = useState<WalletAccount | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadWallet = useCallback(async () => {
+  const refresh = useCallback(async () => {
     if (!user?.id) return;
-    setLoading(true);
-    const { data, error } = await supabase.from('wallets').select('*').eq('user_id', user.id).single();
-    if (error) setError(error.message);
-    else setWallet(data as WalletAccount);
-    setLoading(false);
-  }, [user?.id]);
+    setLoading(true); setError(null);
+    try {
+      const { data, error: dbError } = await supabase
+        .from('wallet_accounts').select('*')
+        .eq('user_id', user.id).eq('is_default', true).maybeSingle();
+      if (dbError) throw dbError;
+      setAccount(data || null);
+    } catch (e: any) { setError(e.message || 'Failed to load wallet'); }
+    finally { setLoading(false); }
+  }, [user]);
 
-  useEffect(() => { loadWallet(); }, [loadWallet]);
-
-  return { wallet, loading, error, balance: wallet?.balance || 0, loadWallet };
-}
+  useEffect(() => { refresh(); }, [refresh]);
+  return { account, loading, error, refresh };
+};
+export default useWalletAccount;

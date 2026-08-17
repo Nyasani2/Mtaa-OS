@@ -23,7 +23,7 @@ export default function AgentMapScreen() {
   const loadAgents = async () => {
     setLoading(true);
     const { data } = await supabase
-      .from('agents')
+      .from("wallet_agents")
       .select('id, business_name, agent_type, location_lat, location_lng, float_balance')
       .eq('status', 'active')
       .order('float_balance', { ascending: false });
@@ -83,3 +83,4 @@ export default function AgentMapScreen() {
     </View>
   );
 }
+

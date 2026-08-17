@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 import { supabase } from '@/lib/supabase';
 
 interface BusinessProfile {
@@ -355,3 +355,4 @@ const styles = StyleSheet.create({
   },
   verifiedText: { fontSize: 11, color: '#22C55E', fontWeight: '600' },
 });
+

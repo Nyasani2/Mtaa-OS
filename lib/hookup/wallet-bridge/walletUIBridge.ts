@@ -7,6 +7,7 @@ export function walletUIBridge() {
   return {
     handleQRScan: (data: string) => engine.processQR(data),
     handleTransfer: (payload: any) => engine.processTransfer(payload),
-    handleBalanceRequest: () => engine.getBalance(''),
+    handleBalanceRequest: () => engine.getBalance(),
   };
 }
+

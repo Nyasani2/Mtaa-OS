@@ -107,3 +107,4 @@ const styles = StyleSheet.create({
   txAmount: { fontSize: 14, fontWeight: '700' },
   emptyText: { color: '#9CA3AF', textAlign: 'center', padding: 16 },
 });
+

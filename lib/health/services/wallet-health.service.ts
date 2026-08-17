@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase';
 export const walletHealthService = {
   async getBalance(userId: string): Promise<number> {
     const { data, error } = await supabase
-      .from('wallet_accounts')
+      .from("wallet_accounts")
       .select('balance')
       .eq('user_id', userId)
-      .maybeSingle();
+      .single();
     if (error) throw error;
     return data?.balance ?? 0;
   },
@@ -45,3 +45,4 @@ export const walletHealthService = {
     if (invError) throw invError;
   },
 };
+

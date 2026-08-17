@@ -34,7 +34,7 @@ serve(async (req) => {
 
     // Check admin role
     const { data: userData } = await supabaseAdmin
-      .from('profiles')
+      .from("user_profiles")
       .select('role')
       .eq('id', user.id)
       .single();
@@ -152,3 +152,4 @@ serve(async (req) => {
     });
   }
 });
+

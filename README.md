@@ -1,85 +1,56 @@
-# MTAA Auth Unification — ALL Apps Recognize User
+# Shop Management Flow — Dashboard + Add Product + Product List
 
-## The Problem
-200+ files import auth from 5+ different paths. Some paths are broken:
-- `useIdentity` from `@/lib/auth/store/auth.store` ← DOES NOT EXIST
-- `useAuth` from `@/lib/auth` ← Returns non-existent `profile`/`refreshSession`
-- `/auth/login`, `/auth/signup` routes ← 404 (route group doesn't appear in URL)
+## What You Get
+1. **Shop Dashboard** (`app/(commerce)/shop/[id].tsx`)
+   - Cover photo, logo, shop info
+   - Stats: orders, sales, rating, product count
+   - Quick actions: Add Product, All Products, Orders, Settings
+   - Recent products list
 
-## The Solution
+2. **Add Product** (`app/(commerce)/shop/[id]/products/add.tsx`)
+   - Photo upload (web file picker, native coming)
+   - Name, category, price, stock quantity
+   - Barcode / SKU field with scan button placeholder
+   - Description
+   - Success → option to add another or view shop
 
-### ONE canonical import for ALL apps:
-```ts
-import { useCurrentUser } from '@/lib/auth';
+3. **Product List** (`app/(commerce)/shop/[id]/products/index.tsx`)
+   - All products in the shop
+   - Image, name, price, stock, barcode, status
+   - Pull to refresh
+   - Empty state with "Add First Product" button
 
-function MyAppScreen() {
-  const { user, userId, isAuthenticated, isLoading } = useCurrentUser();
-
-  if (isLoading) return <Loading />;
-  if (!isAuthenticated) return <LoginPrompt />;
-
-  // user.id, user.email available here
-}
-```
-
-### Alternative: Direct store access (for selectors)
-```ts
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-
-const userId = useAuthStore((s) => s.user?.id);
-```
-
-## Install
-
+## Installation
 ```bash
 cd ~/MTAA_OS_V10
-unzip -o ~/Downloads/mtaa-auth-unified.zip
-
-# Replace auth barrel
-cp lib/auth/index.ts.new lib/auth/index.ts
-
-# Add unified hook
-cp lib/auth/use-current-user.ts.new lib/auth/use-current-user.ts
-
-# Fix legacy hook redirect
-cp lib/hooks/useIdentity.ts.new lib/hooks/useIdentity.ts
-
-# Run mass fix across ALL files
-bash scripts/mtaa-auth-mass-fix.sh
-
-# Verify
-bash scripts/mtaa-auth-verify.sh
-
-# Clean and restart
-rm -rf .expo node_modules/.cache
+unzip -o ~/Downloads/shop-management-flow.zip -d .
+rm -rf node_modules/.cache .expo
 npx expo start --clear
 ```
 
-## What Changed
+## Important — Check Your Product Table Name
+The code uses `shop_products`. If your table has a different name, change it in:
+- `app/(commerce)/shop/[id].tsx` (line with `.from('shop_products')`)
+- `app/(commerce)/shop/[id]/products/add.tsx` (line with `.from('shop_products')`)
+- `app/(commerce)/shop/[id]/products/index.tsx` (line with `.from('shop_products')`)
 
-| File | Change |
-|------|--------|
-| `lib/auth/index.ts` | Unified barrel: exports `useAuthStore`, `useAuth`, `useCurrentUser`, `useIdentity`, `IdentityProvider` |
-| `lib/auth/use-current-user.ts` | NEW — single hook every app uses to get user |
-| `lib/auth/useAuth.ts` | Fixed — removed `profile` and `refreshSession` |
-| `lib/hooks/useIdentity.ts` | Redirects to canonical `@/lib/auth/identity-provider` |
-| 200+ app files | Broken imports auto-fixed by mass script |
-
-## Rule for ALL Future Apps
-
-**ALWAYS** import user recognition from ONE of these two paths:
-
-```ts
-// Option A: Unified hook (recommended for screens)
-import { useCurrentUser } from '@/lib/auth';
-const { user, userId, isAuthenticated } = useCurrentUser();
-
-// Option B: Direct store (recommended for selectors/performance)
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-const userId = useAuthStore((s) => s.user?.id);
+Run this SQL to check your actual product table name:
+```sql
+SELECT table_name FROM information_schema.tables 
+WHERE table_schema = 'public' AND table_name LIKE '%product%';
 ```
 
-**NEVER** import from:
-- `@/lib/auth/store/auth.store` for `useIdentity`
-- `@/lib/auth` for `useAuth` (unless you know it's fixed)
-- `@/lib/hooks/useIdentity` (legacy)
+## Storage Bucket
+Product photos upload to Supabase Storage bucket `shop-products`.
+Run this in Supabase SQL Editor to create it:
+```sql
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('shop-products', 'shop-products', true)
+ON CONFLICT (id) DO NOTHING;
+```
+
+## Test Flow
+1. Create a shop → should navigate to dashboard automatically
+2. Tap "Add Product" → fill form → add photos → submit
+3. See product in dashboard "Recent Products" section
+4. Tap "All Products" → see full product list

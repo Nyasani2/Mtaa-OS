@@ -89,3 +89,4 @@ class WalletEventBus {
 
 // SINGLETON (OS-level bus)
 export const walletEventBus = new WalletEventBus()
+

@@ -2,20 +2,19 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Exclude backup dirs and heavy paths from Metro scan
-config.resolver.blockList = [
-  /auth-cleanup-backup-.*/,
-  /\.git\/.*/,
-  /\.expo\/web\/cache\/.*/,
-  /node_modules\/.*\/node_modules\/.*/,
-  /backups\/.*/,
-  /archive\/.*/,
-  /\.backup\/.*/,
-];
-
-// Keep asset extensions clean
-config.resolver.assetExts = config.resolver.assetExts.filter(
-  (ext) => !['svg', 'md', 'txt'].includes(ext)
-);
+// Fix: react-native-maps crashes web bundler — shim it on web
+const originalResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform, info) => {
+  if (platform === 'web' && moduleName === 'react-native-maps') {
+    return {
+      filePath: require('path').join(__dirname, 'shims/react-native-maps.web.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform, info);
+  }
+  return context.resolveRequest(context, moduleName, platform, info);
+};
 
 module.exports = config;

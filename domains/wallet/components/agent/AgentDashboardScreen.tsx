@@ -72,13 +72,13 @@ export default function AgentDashboardScreen() {
           }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontSize: 14, fontWeight: '500' }}>
-                {tx.type === 'customer_deposit' ? '📥 Deposit' : '📤 Withdrawal'}
+                {tx.transaction_type === 'customer_deposit' ? '📥 Deposit' : '📤 Withdrawal'}
               </Text>
               <Text style={{ fontSize: 12, color: '#888' }}>{tx.customer_phone} • {tx.reference_code}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: tx.type === 'customer_deposit' ? '#28a745' : '#dc3545' }}>
-                {tx.type === 'customer_deposit' ? '+' : '-'}KES {tx.amount?.toLocaleString()}
+              <Text style={{ fontSize: 14, fontWeight: '600', color: tx.transaction_type === 'customer_deposit' ? '#28a745' : '#dc3545' }}>
+                {tx.transaction_type === 'customer_deposit' ? '+' : '-'}KES {tx.amount?.toLocaleString()}
               </Text>
               <Text style={{ fontSize: 11, color: '#ffc107' }}>+KES {tx.commission?.toLocaleString()}</Text>
             </View>
@@ -110,3 +110,4 @@ export default function AgentDashboardScreen() {
     </ScrollView>
   );
 }
+

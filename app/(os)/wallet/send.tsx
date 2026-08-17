@@ -14,7 +14,7 @@ export default function SendScreen() {
     const amt = parseFloat(amount);
     if (!to || isNaN(amt) || amt <= 0 || amt > balance) return;
     setLoading(true);
-    await send(to, amt);
+    await send({ recipient_phone: to, amount: amt, description: 'Transfer' });
     setLoading(false);
     router.back();
   };
@@ -22,7 +22,7 @@ export default function SendScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Send Money</Text>
-      <Text style={styles.balance}>Available: {balance.toFixed(2)}</Text>
+      <Text style={styles.balance}>Available: {balance?.toFixed?.(2) ?? '0.00'}</Text>
 
       <TextInput
         style={styles.input}

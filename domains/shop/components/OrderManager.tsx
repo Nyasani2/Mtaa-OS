@@ -1,132 +1,96 @@
 // domains/shop/components/OrderManager.tsx
-// Shop order management component
-// Imported by: app/(commerce)/shop/[id]/orders.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { supabase } from '@/lib/supabase/client';
 
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-export interface ShopOrder {
+interface Order {
   id: string;
-  customerName: string;
-  items: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total: number;
-  currency: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-  createdAt: string;
+  customer_name: string;
+  created_at: string;
 }
 
-export interface OrderManagerProps {
-  orders: ShopOrder[];
-  onUpdateStatus?: (orderId: string, status: ShopOrder['status']) => void;
-  onViewDetail?: (orderId: string) => void;
-  loading?: boolean;
+interface Props {
+  shopId: string;
 }
 
-const statusColors: Record<string, string> = {
-  pending: '#f59e0b',
-  confirmed: '#3b82f6',
-  shipped: '#8b5cf6',
-  delivered: '#22c55e',
-  cancelled: '#ef4444',
-  refunded: '#6b7280',
-};
+export default function OrderManager({ shopId }: Props) {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(false);
 
-export default function OrderManager({ orders, onUpdateStatus, onViewDetail, loading }: OrderManagerProps) {
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>Loading orders...</Text>
-      </View>
-    );
-  }
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('shop_id', shopId)
+      .order('created_at', { ascending: false });
+    if (!error && data) setOrders(data as Order[]);
+    setLoading(false);
+  }, [shopId]);
 
-  if (!orders?.length) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cube-outline" size={48} color="#d1d5db" />
-        <Text style={styles.emptyText}>No orders yet</Text>
-      </View>
-    );
-  }
+  useEffect(() => { loadOrders(); }, [loadOrders]);
 
-  const renderOrder = ({ item }: { item: ShopOrder }) => (
-    <TouchableOpacity style={styles.orderCard} onPress={() => onViewDetail?.(item.id)}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>#{item.id.slice(-6).toUpperCase()}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: statusColors[item.status] + '15' }]}>
-          <Text style={[styles.statusText, { color: statusColors[item.status] }]}>
-            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-          </Text>
-        </View>
-      </View>
-      <Text style={styles.customerName}>{item.customerName}</Text>
-      <View style={styles.orderMeta}>
-        <Text style={styles.metaText}>{item.items} items</Text>
-        <Text style={styles.metaText}>·</Text>
-        <Text style={styles.totalText}>{item.currency} {item.total.toLocaleString()}</Text>
-      </View>
-      <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+  const updateStatus = async (orderId: string, status: Order['status']) => {
+    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      loadOrders();
+    }
+  };
 
-      {item.status === 'pending' && (
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: '#22c55e' }]}
-            onPress={() => onUpdateStatus?.(item.id, 'confirmed')}
-          >
-            <Text style={styles.actionBtnText}>Confirm</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: '#ef4444' }]}
-            onPress={() => onUpdateStatus?.(item.id, 'cancelled')}
-          >
-            <Text style={styles.actionBtnText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </TouchableOpacity>
+  const confirmDelivery = async (orderId: string) => {
+    await updateStatus(orderId, 'delivered');
+  };
+
+  const renderItem = ({ item }: { item: Order }) => (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <Text style={styles.customer}>{item.customer_name}</Text>
+        <Text style={[styles.badge, styles[item.status]]}>{item.status}</Text>
+      </View>
+      <Text style={styles.total}>KES {item.total?.toLocaleString()}</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.btn} onPress={() => updateStatus(item.id, 'processing')}>
+          <Text style={styles.btnText}>Process</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.btn} onPress={() => updateStatus(item.id, 'shipped')}>
+          <Text style={styles.btnText}>Ship</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.btn, styles.deliverBtn]} onPress={() => confirmDelivery(item.id)}>
+          <Text style={styles.btnText}>Deliver</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 
   return (
-    <FlatList
-      data={orders}
-      keyExtractor={(item) => item.id}
-      renderItem={renderOrder}
-      contentContainerStyle={styles.list}
-    />
+    <View style={styles.container}>
+      <Text style={styles.header}>Orders</Text>
+      {loading && <Text style={styles.loading}>Loading...</Text>}
+      <FlatList data={orders} keyExtractor={(o) => o.id} renderItem={renderItem} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  loadingText: { fontSize: 14, color: '#6b7280', marginTop: 12 },
-  emptyText: { fontSize: 16, color: '#6b7280', marginTop: 12 },
-  list: { padding: 16 },
-  orderCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  orderId: { fontSize: 14, fontWeight: '700', color: '#0a0a0a' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  customerName: { fontSize: 15, fontWeight: '600', color: '#374151', marginBottom: 4 },
-  orderMeta: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  metaText: { fontSize: 13, color: '#6b7280', marginRight: 6 },
-  totalText: { fontSize: 14, fontWeight: '700', color: '#0a0a0a' },
-  date: { fontSize: 12, color: '#9ca3af' },
-  actions: { flexDirection: 'row', marginTop: 12, gap: 8 },
-  actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  actionBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 16 },
+  header: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+  loading: { color: '#888', textAlign: 'center' },
+  card: { backgroundColor: '#1f1f1f', borderRadius: 12, padding: 16, marginBottom: 12 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  customer: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, fontSize: 12, fontWeight: '600' },
+  pending: { backgroundColor: '#F59E0B', color: '#000' },
+  processing: { backgroundColor: '#3B82F6', color: '#fff' },
+  shipped: { backgroundColor: '#8B5CF6', color: '#fff' },
+  delivered: { backgroundColor: '#10B981', color: '#fff' },
+  cancelled: { backgroundColor: '#EF4444', color: '#fff' },
+  total: { color: '#10B981', fontSize: 18, fontWeight: '700', marginTop: 8 },
+  actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  btn: { backgroundColor: '#333', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  deliverBtn: { backgroundColor: '#10B981' },
+  btnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

@@ -120,3 +120,4 @@ class WalletIntelligenceEngine {
 }
 
 export const walletIntelligenceEngine = new WalletIntelligenceEngine()
+

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { AppManifest } from "../types";
 
 export const manifest: AppManifest = {
@@ -15,3 +14,4 @@ export const manifest: AppManifest = {
   isOSApp: true,
   size: "8MB",
 };
+

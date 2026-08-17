@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from '@/lib/supabase';
 
 export interface WalletExecutionPayload {
   action: "transfer" | "deposit" | "withdraw" | "escrow";
@@ -35,3 +35,4 @@ export async function executeWalletAction(payload: WalletExecutionPayload): Prom
 }
 
 export default { executeWalletAction };
+

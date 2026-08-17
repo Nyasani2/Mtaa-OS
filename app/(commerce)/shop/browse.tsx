@@ -5,7 +5,7 @@ import MarketplaceBrowser from '@/domains/shop/components/MarketplaceBrowser';
 export default function ShopBrowseScreen() {
   return (
     <View style={styles.container}>
-      <MarketplaceBrowser items={[]} />
+      <MarketplaceBrowser />
     </View>
   );
 }

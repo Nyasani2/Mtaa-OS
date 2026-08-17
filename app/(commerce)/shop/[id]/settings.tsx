@@ -1,11 +1,10 @@
-// @ts-nocheck
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useShop } from '@/domains/shop/hooks/useShop';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 export default function ShopSettingsScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();

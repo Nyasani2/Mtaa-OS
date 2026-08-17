@@ -138,3 +138,4 @@ export default function AgentTransactionScreen({ mode }: { mode: 'deposit' | 'wi
     </ScrollView>
   );
 }
+

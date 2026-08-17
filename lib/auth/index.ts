@@ -1,5 +1,2 @@
-// MTAA Auth — Single source of truth. ALL apps import from here ONLY.
 export { useAuthStore } from './store/auth.store';
-export { useAuth } from './useAuth';
-export { useCurrentUser } from './use-current-user';
-export { useIdentity, IdentityProvider } from './identity-provider';
+export { useAuth, useIdentity } from './useAuth';

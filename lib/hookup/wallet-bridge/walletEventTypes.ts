@@ -38,3 +38,4 @@ export interface WalletEvent<T extends WalletEventType = WalletEventType> {
   payload: WalletEventPayload[T]
   timestamp: number
 }
+

@@ -1,9 +1,8 @@
-// @ts-nocheck
 // app/(commerce)/shop/[id]/wallet.tsx
 // Shop wallet screen — manages shop-level wallet (business_wallet)
 // Uses canonical wallet hooks + shop context
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,81 +15,58 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useShop } from '@/domains/shop/hooks/useShop';
-import {
-  useWalletBalance,
-  useWalletSend,
-  useWalletReceive,
-  useWalletHistory,
-} from '@/domains/wallet/hooks/useWallet';
+import { useWallet } from '@/hooks/useWallet';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ShopWalletScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { shop } = useShop(shopId);
-
-  // Use shop owner's wallet (business wallets are linked to user_id)
-  // In future: support business_wallets table directly
-  const { balance, loading: balanceLoading, error: balanceError, refresh: refreshBalance } = useWalletBalance();
-  const { send, sending, error: sendError, lastTx } = useWalletSend();
-  const { request, createRequest, cancelRequest, loading: receiveLoading } = useWalletReceive();
-  const { transactions, loading: historyLoading, refresh: refreshHistory } = useWalletHistory({ limit: 20 });
+  const { balance, transactions, fetchTransactions, sendMoney, loading: walletLoading } = useWallet();
 
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'send' | 'receive' | 'history'>('overview');
+  const [sendAmount, setSendAmount] = useState('');
+  const [sendRecipient, setSendRecipient] = useState('');
+  const [sendLoading, setSendLoading] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refreshBalance(), refreshHistory()]);
+    await fetchTransactions?.();
     setRefreshing(false);
-  }, [refreshBalance, refreshHistory]);
+  }, [fetchTransactions]);
 
-  const handleSend = async (recipientPhone: string, amount: number, description: string) => {
-    const result = await send({
-      recipient_phone: recipientPhone,
-      amount,
-      description,
-      pin: '0000', // PIN should come from PIN input modal in production
-    });
-    // @ts-ignore
-    if (result.success) {
-      Alert.alert('Sent', `Sent ${amount} to ${recipientPhone}`);
-    } else {
-    // @ts-ignore
-      Alert.alert('Failed', result.error || 'Transfer failed');
+  const handleSend = async () => {
+    const amount = Number(sendAmount);
+    if (!sendRecipient.trim() || isNaN(amount) || amount <= 0) {
+      Alert.alert('Error', 'Enter valid recipient and amount'); return;
     }
-  };
-
-  const handleReceive = async (amount?: number) => {
-    const result = await createRequest({ amount, description: `Payment to ${shop?.name || 'shop'}` });
-    // @ts-ignore
-    if (result.success) {
-    // @ts-ignore
-      Alert.alert('Request Created', `Share this request: ${result.request?.deep_link}`);
+    if (amount > balance) { Alert.alert('Error', 'Insufficient balance'); return; }
+    setSendLoading(true);
+    try {
+      await sendMoney?.({ recipient: sendRecipient.trim(), amount, description: `Payment from ${shop?.name || 'shop'}` });
+      Alert.alert('Sent', `Sent KSh ${amount} to ${sendRecipient}`);
+      setSendAmount(''); setSendRecipient(''); setActiveTab('overview');
+    } catch (err: any) {
+      Alert.alert('Failed', err?.message || 'Transfer failed');
+    } finally {
+      setSendLoading(false);
     }
   };
 
   const formatCurrency = (amount: number, currency = 'KES') => {
-    return `${currency} ${amount.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
+    return `${currency} ${(amount || 0).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
   };
 
   const renderOverview = () => (
     <View style={styles.overviewContainer}>
-      {/* Balance Card */}
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Balance</Text>
         <Text style={styles.balanceAmount}>
-          {balanceLoading ? '...' : formatCurrency(balance?.available || 0, balance?.currency)}
+          {walletLoading ? '...' : formatCurrency(balance || 0)}
         </Text>
-        {balance?.pending ? (
-          <Text style={styles.pendingText}>Pending: {formatCurrency(balance.pending, balance.currency)}</Text>
-        ) : null}
-        {balance?.escrow ? (
-          <Text style={styles.escrowText}>Escrow: {formatCurrency(balance.escrow, balance.currency)}</Text>
-        ) : null}
       </View>
 
-      {/* Quick Actions */}
       <View style={styles.actionsGrid}>
         <TouchableOpacity style={styles.actionBtn} onPress={() => setActiveTab('send')}>
           <Ionicons name="arrow-up-circle" size={28} color="#007AFF" />
@@ -100,7 +76,7 @@ export default function ShopWalletScreen() {
           <Ionicons name="arrow-down-circle" size={28} color="#34C759" />
           <Text style={styles.actionLabel}>Receive</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/(commerce)/shop/${shopId}/analytics` as any)}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(`/(commerce)/shop/${shopId}/analytics`)}>
           <Ionicons name="bar-chart" size={28} color="#FF9500" />
           <Text style={styles.actionLabel}>Analytics</Text>
         </TouchableOpacity>
@@ -110,23 +86,10 @@ export default function ShopWalletScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Shop Context */}
       {shop ? (
         <View style={styles.shopCard}>
           <Text style={styles.shopName}>{shop.name}</Text>
-          <Text style={styles.shopMeta}>ID: {shop.id.slice(0, 8)}...</Text>
-        </View>
-      ) : null}
-
-      {/* Error Banner */}
-      {(balanceError || sendError) ? (
-    // @ts-ignore
-        <View style={styles.errorBanner}>
-    // @ts-ignore
-          <Text style={styles.errorText}>{balanceError || sendError}</Text>
-          <TouchableOpacity onPress={onRefresh}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Text style={styles.shopMeta}>ID: {shop.id?.slice(0, 8)}...</Text>
         </View>
       ) : null}
     </View>
@@ -136,13 +99,34 @@ export default function ShopWalletScreen() {
     <View style={styles.tabContainer}>
       <Text style={styles.tabTitle}>Send Money</Text>
       <Text style={styles.tabSubtitle}>From {shop?.name || 'your shop'}</Text>
-      {/* Send form would go here — simplified for now */}
+      <View style={styles.inputWrap}>
+        <Text style={styles.inputLabel}>Recipient Phone</Text>
+        <TextInput
+          style={styles.textInput}
+          placeholder="2547XXXXXXXX"
+          placeholderTextColor="#8E8E93"
+          value={sendRecipient}
+          onChangeText={setSendRecipient}
+          keyboardType="phone-pad"
+        />
+      </View>
+      <View style={styles.inputWrap}>
+        <Text style={styles.inputLabel}>Amount (KSh)</Text>
+        <TextInput
+          style={styles.textInput}
+          placeholder="0.00"
+          placeholderTextColor="#8E8E93"
+          value={sendAmount}
+          onChangeText={setSendAmount}
+          keyboardType="decimal-pad"
+        />
+      </View>
       <TouchableOpacity
-        style={[styles.primaryBtn, sending && styles.disabledBtn]}
-        onPress={() => handleSend('+254700000000', 100, 'Test payment')}
-        disabled={sending}
+        style={[styles.primaryBtn, sendLoading && styles.disabledBtn]}
+        onPress={handleSend}
+        disabled={sendLoading}
       >
-        <Text style={styles.primaryBtnText}>{sending ? 'Sending...' : 'Send Test Payment'}</Text>
+        <Text style={styles.primaryBtnText}>{sendLoading ? 'Sending...' : 'Send Payment'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setActiveTab('overview')}>
         <Text style={styles.secondaryBtnText}>Back</Text>
@@ -153,27 +137,11 @@ export default function ShopWalletScreen() {
   const renderReceive = () => (
     <View style={styles.tabContainer}>
       <Text style={styles.tabTitle}>Receive Payment</Text>
-      {request ? (
-    // @ts-ignore
-        <View style={styles.requestCard}>
-    // @ts-ignore
-          <Text style={styles.requestLabel}>Request ID: {request.request_id}</Text>
-    // @ts-ignore
-          <Text style={styles.requestAmount}>{formatCurrency(request.amount, request.currency)}</Text>
-    // @ts-ignore
-          <TouchableOpacity style={styles.dangerBtn} onPress={() => cancelRequest(request.request_id)}>
-            <Text style={styles.dangerBtnText}>Cancel Request</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[styles.primaryBtn, receiveLoading && styles.disabledBtn]}
-          onPress={() => handleReceive(500)}
-          disabled={receiveLoading}
-        >
-          <Text style={styles.primaryBtnText}>{receiveLoading ? 'Creating...' : 'Create Payment Request (500)'}</Text>
-        </TouchableOpacity>
-      )}
+      <Text style={styles.tabSubtitle}>Share your shop wallet details</Text>
+      <View style={styles.receiveCard}>
+        <Ionicons name="qr-code" size={64} color="#007AFF" />
+        <Text style={styles.receiveHint}>QR code generation coming soon</Text>
+      </View>
       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setActiveTab('overview')}>
         <Text style={styles.secondaryBtnText}>Back</Text>
       </TouchableOpacity>
@@ -183,29 +151,29 @@ export default function ShopWalletScreen() {
   const renderHistory = () => (
     <View style={styles.tabContainer}>
       <Text style={styles.tabTitle}>Transaction History</Text>
-      {historyLoading && !transactions.length ? (
+      {walletLoading && !transactions?.length ? (
         <ActivityIndicator size="large" color="#007AFF" />
-      ) : transactions.length === 0 ? (
+      ) : !transactions?.length ? (
         <View style={styles.emptyState}>
           <Ionicons name="receipt-outline" size={48} color="#C7C7CC" />
           <Text style={styles.emptyText}>No transactions yet</Text>
         </View>
       ) : (
-        transactions.map((tx) => (
-          <View key={tx.id} style={styles.txRow}>
+        transactions.map((tx: any) => (
+          <View key={tx.id || tx.transaction_id || Math.random()} style={styles.txRow}>
             <View style={styles.txIcon}>
               <Ionicons
-                name={tx.type === 'credit' ? 'arrow-down' : tx.type === 'debit' ? 'arrow-up' : 'swap-horizontal'}
+                name={tx.type === 'credit' || tx.direction === 'in' ? 'arrow-down' : tx.type === 'debit' || tx.direction === 'out' ? 'arrow-up' : 'swap-horizontal'}
                 size={20}
-                color={tx.type === 'credit' ? '#34C759' : tx.type === 'debit' ? '#FF3B30' : '#007AFF'}
+                color={tx.type === 'credit' || tx.direction === 'in' ? '#34C759' : tx.type === 'debit' || tx.direction === 'out' ? '#FF3B30' : '#007AFF'}
               />
             </View>
             <View style={styles.txDetails}>
-              <Text style={styles.txDesc}>{tx.description || tx.type}</Text>
-              <Text style={styles.txMeta}>{new Date(tx.created_at).toLocaleDateString()}</Text>
+              <Text style={styles.txDesc}>{tx.description || tx.type || 'Transaction'}</Text>
+              <Text style={styles.txMeta}>{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : '—'}</Text>
             </View>
-            <Text style={[styles.txAmount, tx.type === 'credit' ? styles.credit : styles.debit]}>
-              {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount, tx.currency)}
+            <Text style={[styles.txAmount, (tx.type === 'credit' || tx.direction === 'in') ? styles.credit : styles.debit]}>
+              {(tx.type === 'credit' || tx.direction === 'in') ? '+' : '-'}{formatCurrency(tx.amount, tx.currency)}
             </Text>
           </View>
         ))
@@ -226,7 +194,7 @@ export default function ShopWalletScreen() {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Shop Wallet</Text>
-        <TouchableOpacity onPress={() => router.push(`/(commerce)/shop/${shopId}/settings` as any)}>
+        <TouchableOpacity onPress={() => router.push(`/(commerce)/shop/${shopId}/settings`)}>
           <Ionicons name="settings-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
@@ -262,8 +230,6 @@ const styles = StyleSheet.create({
   },
   balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 8 },
   balanceAmount: { color: '#fff', fontSize: 36, fontWeight: '800' },
-  pendingText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 4 },
-  escrowText: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 2 },
 
   actionsGrid: {
     flexDirection: 'row',
@@ -300,20 +266,22 @@ const styles = StyleSheet.create({
   shopName: { fontSize: 16, fontWeight: '700', color: '#000' },
   shopMeta: { fontSize: 13, color: '#8E8E93', marginTop: 4 },
 
-  errorBanner: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  errorText: { color: '#fff', fontSize: 14, flex: 1 },
-  retryText: { color: '#fff', fontSize: 14, fontWeight: '700', marginLeft: 12 },
-
   tabContainer: { padding: 16 },
   tabTitle: { fontSize: 22, fontWeight: '800', color: '#000', marginBottom: 8 },
   tabSubtitle: { fontSize: 14, color: '#8E8E93', marginBottom: 24 },
+
+  inputWrap: { marginBottom: 16 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6 },
+  textInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
 
   primaryBtn: {
     backgroundColor: '#007AFF',
@@ -333,26 +301,15 @@ const styles = StyleSheet.create({
     borderColor: '#C7C7CC',
   },
   secondaryBtnText: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
-  dangerBtn: {
-    backgroundColor: '#FF3B30',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  dangerBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 
-  requestCard: {
+  receiveCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 40,
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#34C759',
   },
-  requestLabel: { fontSize: 13, color: '#8E8E93', marginBottom: 8 },
-  requestAmount: { fontSize: 28, fontWeight: '800', color: '#000' },
+  receiveHint: { fontSize: 14, color: '#8E8E93', marginTop: 12 },
 
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, color: '#8E8E93', marginTop: 12 },

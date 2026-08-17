@@ -1,4 +1,3 @@
-
 // ============================================================
 // MTAA WALLET OPERATIONS — CONSOLIDATED EDGE FUNCTION
 // Actions: deposit, transfer, withdraw, execute, balance, history
@@ -98,7 +97,7 @@ async function walletDeposit(supabaseAdmin, userId, params) {
     .from("wallet_accounts")
     .select("id, available_balance")
     .eq("user_id", userId)
-    .eq("account_type", "main")
+    .eq("wallet_type", "main")
     .single();
 
   if (!wallet) throw new Error("Wallet not found");
@@ -147,7 +146,7 @@ async function walletTransfer(supabaseAdmin, userId, params) {
     .from("wallet_accounts")
     .select("id, available_balance, currency_code")
     .eq("user_id", userId)
-    .eq("account_type", "main")
+    .eq("wallet_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -161,7 +160,7 @@ async function walletTransfer(supabaseAdmin, userId, params) {
     .from("wallet_accounts")
     .select("id, user_id")
     .eq("user_id", recipient_id)
-    .eq("account_type", "main")
+    .eq("wallet_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -233,7 +232,7 @@ async function walletTransfer(supabaseAdmin, userId, params) {
     const { data: mtaaWallet } = await supabaseAdmin
       .from("wallet_accounts")
       .select("id, balance, available_balance, user_id")
-      .eq("account_type", "main")
+      .eq("wallet_type", "main")
       .ilike("wallet_name", "%MTAA%")
       .maybeSingle();
 
@@ -295,7 +294,7 @@ async function walletWithdraw(supabaseAdmin, userId, params) {
     .from("wallet_accounts")
     .select("id, available_balance, currency_code")
     .eq("user_id", userId)
-    .eq("account_type", "main")
+    .eq("wallet_type", "main")
     .eq("is_active", true)
     .single();
 
@@ -404,7 +403,7 @@ async function walletBalance(supabaseAdmin, userId, params) {
     .from("wallet_accounts")
     .select("id, available_balance, pending_balance, currency_code, wallet_type, wallet_name, is_active")
     .eq("user_id", userId)
-    .eq("account_type", wallet_type)
+    .eq("wallet_type", wallet_type)
     .single();
 
   if (!wallet) throw new Error("Wallet not found");
@@ -472,3 +471,4 @@ async function walletHistory(supabaseAdmin, userId, params) {
     offset
   };
 }
+

@@ -20,3 +20,4 @@ export const manifest: AppManifest = {
 };
 
 export default manifest;
+

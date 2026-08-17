@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 export default function EmailVerifyScreen() {
@@ -87,7 +87,6 @@ export default function EmailVerifyScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* Icon */}
         <View style={styles.iconContainer}>
           <View style={[styles.iconCircle, isVerified ? styles.iconVerified : styles.iconPending]}>
             <Ionicons name={isVerified ? "mail-open" : "mail"} size={40} color="#fff" />
@@ -169,7 +168,6 @@ export default function EmailVerifyScreen() {
           </>
         )}
 
-        {/* Security Note */}
         <View style={styles.securityNote}>
           <Ionicons name="lock-closed" size={14} color="#8E8E93" />
           <Text style={styles.securityText}>Your email is used for account recovery and security alerts.</Text>

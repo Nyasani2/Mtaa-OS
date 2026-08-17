@@ -250,3 +250,4 @@ const styles = StyleSheet.create({
   actionBtnDisabled: { opacity: 0.6 },
   actionBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
 });
+

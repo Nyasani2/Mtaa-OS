@@ -1,4 +1,3 @@
-
 // Edge Function: wallet-deposit
 // Unified deposit handler: M-Pesa STK, Card, Bank, Crypto
 // Multi-country support — flagship Kenya (M-Pesa)
@@ -69,8 +68,8 @@ serve(async (req) => {
 
     // ─── GET WALLET ───
     const { data: wallet, error: walletError } = await supabaseClient
-      .from('wallet_accounts')
-      .select('id, balance, available_balance, currency, status, account_type')
+      .from("wallet_accounts")
+      .select('id, balance, available_balance, currency, status, wallet_type')
       .eq('user_id', user_id)
       .eq('is_default', true)
       .single()
@@ -301,3 +300,4 @@ serve(async (req) => {
     )
   }
 })
+

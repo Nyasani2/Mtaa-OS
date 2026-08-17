@@ -24,7 +24,7 @@ class WalletLedgerEngine {
         created_at: new Date().toISOString(),
       })
       .select()
-      .maybeSingle()
+      .single()
 
     if (error) {
       walletEventBus.emit('TRANSACTION_FAILED', error)
@@ -43,7 +43,7 @@ class WalletLedgerEngine {
       .update({ status: 'CONFIRMED' })
       .eq('reference', reference)
       .select()
-      .maybeSingle()
+      .single()
 
     if (error) throw error
 
@@ -63,7 +63,7 @@ class WalletLedgerEngine {
       .update({ status: 'FAILED' })
       .eq('reference', reference)
       .select()
-      .maybeSingle()
+      .single()
 
     if (error) throw error
 
@@ -96,3 +96,4 @@ class WalletLedgerEngine {
 }
 
 export const walletLedgerEngine = new WalletLedgerEngine()
+

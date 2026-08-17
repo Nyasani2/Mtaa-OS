@@ -5,8 +5,8 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useIdentity } from "@/hooks/useAuthStore";
-import { supabase } from "@/lib/supabase";
+import { useIdentity } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from "expo-router";
 import {
   ArrowLeft, MapPin, Phone, Star, DollarSign, ArrowDownLeft,
@@ -43,7 +43,7 @@ export default function AgentBankingScreen() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("agents")
+        .from("wallet_agents")
         .select("*")
         .eq("is_active", true)
         .order("rating", { ascending: false })
@@ -83,7 +83,7 @@ export default function AgentBankingScreen() {
       if (txError) throw txError;
 
       // Update agent float
-      await supabase.from("agents").update({
+      await supabase.from("wallet_agents").update({
         cash_float: selectedAgent.cash_float + parseFloat(depositAmount),
       }).eq("id", selectedAgent.id);
 
@@ -207,3 +207,4 @@ export default function AgentBankingScreen() {
     </View>
   );
 }
+

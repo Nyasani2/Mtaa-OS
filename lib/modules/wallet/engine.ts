@@ -41,10 +41,10 @@ function generateId(): string {
  */
 async function verifyRecipient(phone: string): Promise<string | null> {
   const { data, error } = await supabase
-    .from('user_profiles')
+    .from("user_profiles")
     .select('id')
     .eq('phone', phone)
-    .maybeSingle();
+    .single();
 
   if (error || !data) {
     return null;
@@ -57,10 +57,10 @@ async function verifyRecipient(phone: string): Promise<string | null> {
  */
 async function getServerBalance(accountId: string): Promise<number | null> {
   const { data, error } = await supabase
-    .from('wallet_accounts')
+    .from("wallet_accounts")
     .select('balance')
     .eq('id', accountId)
-    .maybeSingle();
+    .single();
 
   if (error || !data) {
     return null;
@@ -131,7 +131,7 @@ export async function sendMoney(params: SendMoneyParams): Promise<SendMoneyResul
 
   // Insert transaction into Supabase
   const { error: txError } = await supabase
-    .from('transactions')
+    .from("wallet_transactions")
     .insert({
       id: txId,
       user_id: user.id,
@@ -155,7 +155,7 @@ export async function sendMoney(params: SendMoneyParams): Promise<SendMoneyResul
 
   // Update sender balance
   const { error: balanceError } = await supabase
-    .from('wallet_accounts')
+    .from("wallet_accounts")
     .update({ balance: newBalance, updated_at: now })
     .eq('id', senderAccountId);
 
@@ -217,14 +217,14 @@ export async function syncWalletState(accountId: string): Promise<{
 
   // Fetch balance
   const { data: walletData, error: walletError } = await supabase
-    .from('wallet_accounts')
+    .from("wallet_accounts")
     .select('balance')
     .eq('id', accountId)
-    .maybeSingle();
+    .single();
 
   // Fetch transactions
   const { data: txData, error: txError } = await supabase
-    .from('transactions')
+    .from("wallet_transactions")
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
@@ -295,7 +295,7 @@ export async function getGoFundState(): Promise<{
     .from('go_fund')
     .select('credit_limit, credit_used, is_active, is_eligible')
     .eq('user_id', user.id)
-    .maybeSingle();
+    .single();
 
   if (error || !data) {
     return { creditLimit: 0, creditUsed: 0, creditAvailable: 0, isActive: false, isEligible: false, error: error?.message };
@@ -309,3 +309,4 @@ export async function getGoFundState(): Promise<{
     isEligible: data.is_eligible,
   };
 }
+

@@ -10,8 +10,8 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
-import { useIdentity } from "@/hooks/useAuthStore";
-import { supabase } from "@/lib/supabase";
+import { useIdentity } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from "expo-router";
 import {
   Flashlight,
@@ -280,3 +280,4 @@ export default function QrScannerScreen() {
     </View>
   );
 }
+

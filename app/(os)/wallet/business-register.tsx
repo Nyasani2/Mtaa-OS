@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 const BUSINESS_TYPES = [
@@ -463,3 +463,4 @@ const styles = StyleSheet.create({
   },
   btnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
+

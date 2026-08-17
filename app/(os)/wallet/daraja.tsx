@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 
@@ -35,7 +35,7 @@ interface DarajaTransaction {
   mpesa_receipt: string | null;
   result_desc: string | null;
   created_at: string;
-
+  completed_at: string | null;
 }
 
 export default function DarajaScreen() {
@@ -390,3 +390,4 @@ const styles = StyleSheet.create({
   modalBtnPrimary: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#007AFF', alignItems: 'center' },
   modalBtnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
+

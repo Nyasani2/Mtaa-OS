@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 
@@ -14,7 +14,7 @@ interface ComplianceCheck {
   check_type: string;
   status: 'passed' | 'pending' | 'failed' | 'warning';
   description: string;
-
+  completed_at: string | null;
   expires_at: string | null;
   document_url: string | null;
 }
@@ -286,3 +286,4 @@ const styles = StyleSheet.create({
   modalBtnPrimary: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#007AFF', alignItems: 'center' },
   modalBtnPrimaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
+

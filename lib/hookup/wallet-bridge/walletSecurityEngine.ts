@@ -134,3 +134,4 @@ class WalletSecurityEngine {
 }
 
 export const walletSecurityEngine = new WalletSecurityEngine()
+

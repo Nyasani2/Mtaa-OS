@@ -26,3 +26,4 @@ export function useWalletRealtime(userId: string, onUpdate: (payload: any) => vo
     };
   }, [userId]);
 }
+

@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 interface BusinessDoc {
@@ -323,3 +323,4 @@ const styles = StyleSheet.create({
   },
   infoText: { flex: 1, fontSize: 12, color: '#93C5FD', lineHeight: 18 },
 });
+

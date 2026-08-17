@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { useAuthStore } from '@/hooks/useAuthStore';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 
@@ -400,3 +400,4 @@ const styles = StyleSheet.create({
   closeBtn: { backgroundColor: '#2C2C2E', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 12 },
   closeBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
 });
+

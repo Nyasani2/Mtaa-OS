@@ -156,7 +156,7 @@ export default function AccountingScreen() {
       const grossProfit = revenue - totalExpenses;
 
       // Expense breakdown
-      const expenseBreakdown: ExpenseCategory[] = EXPENSE_CATEGORIES.map((cat: any) => {
+      const expenseBreakdown: ExpenseCategory[] = EXPENSE_CATEGORIES.map(cat => {
         const catExpenses = (expenses || []).filter((e: any) => (e.category || 'Other') === cat.name);
         const amount = catExpenses.reduce((s: number, e: any) => s + (e.amount || 0), 0);
         return {
@@ -255,14 +255,14 @@ export default function AccountingScreen() {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Accounting</Text>
-        <TouchableOpacity onPress={() => router.push(`/(commerce)/shop/${shopId}/settings` as any)}>
+        <TouchableOpacity onPress={() => router.push(`/(commerce)/shop/${shopId}/settings`)}>
           <Ionicons name="settings-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
 
       {/* Period Selector */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodScroll}>
-        {(['today', 'week', 'month', 'quarter', 'year'] as const).map((p: any) => (
+        {(['today', 'week', 'month', 'quarter', 'year'] as const).map(p => (
           <TouchableOpacity
             key={p}
             style={[styles.periodBtn, period === p && styles.periodBtnActive]}
@@ -345,7 +345,7 @@ export default function AccountingScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Financial Reports</Text>
         <View style={styles.reportsGrid}>
-          {REPORTS.map((report: any) => (
+          {REPORTS.map(report => (
             <TouchableOpacity
               key={report.id}
               style={styles.reportCard}
@@ -365,21 +365,21 @@ export default function AccountingScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push(`/(commerce)/shop/${shopId}/pos` as any)}
+            onPress={() => router.push(`/(commerce)/shop/${shopId}/pos`)}
           >
-            <Ionicons name="card" size={22} color="#007AFF" />
+            <Ionicons name="cash-register" size={22} color="#007AFF" />
             <Text style={styles.actionLabel}>Open POS</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push(`/(commerce)/shop/${shopId}/wallet` as any)}
+            onPress={() => router.push(`/(commerce)/shop/${shopId}/wallet`)}
           >
             <Ionicons name="wallet" size={22} color="#34C759" />
             <Text style={styles.actionLabel}>Wallet</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() => router.push(`/(commerce)/shop/${shopId}/analytics` as any)}
+            onPress={() => router.push(`/(commerce)/shop/${shopId}/analytics`)}
           >
             <Ionicons name="bar-chart" size={22} color="#FF9500" />
             <Text style={styles.actionLabel}>Analytics</Text>

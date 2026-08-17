@@ -31,7 +31,7 @@ serve(async (req) => {
 
     // Get wallet
     const { data: wallet } = await supabaseClient
-      .from('wallets')
+      .from("wallet_accounts")
       .select('*')
       .eq('user_id', user_id)
       .eq('wallet_type', 'main')
@@ -63,7 +63,7 @@ serve(async (req) => {
 
     // Get savings balance
     const { data: savingsWallet } = await supabaseClient
-      .from('wallets')
+      .from("wallet_accounts")
       .select('available_balance')
       .eq('user_id', user_id)
       .eq('wallet_type', 'savings')
@@ -78,7 +78,7 @@ serve(async (req) => {
       .or(`buyer_id.eq.${user_id},seller_id.eq.${user_id}`)
 
     const totalEscrows = escrows?.length ?? 0
-    const completedEscrows = escrows?.filter((e: any) => e.status === 'released').length ?? 0
+    const completedEscrows = escrows?.filter(e => e.status === 'released').length ?? 0
     const escrowRate = totalEscrows > 0 ? completedEscrows / totalEscrows : 0
 
     // Calculate scores (0-1000 scale)
@@ -155,3 +155,4 @@ serve(async (req) => {
     })
   }
 })
+

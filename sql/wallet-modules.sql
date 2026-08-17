@@ -176,3 +176,4 @@ CREATE TRIGGER trg_savings_updated_at BEFORE UPDATE ON savings_accounts FOR EACH
 
 DROP TRIGGER IF EXISTS trg_loans_updated_at ON loans;
 CREATE TRIGGER trg_loans_updated_at BEFORE UPDATE ON loans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+

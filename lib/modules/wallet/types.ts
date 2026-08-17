@@ -135,3 +135,4 @@ export interface Wallet {
 
 // Export TransactionType alias for history.tsx
 export type TransactionType = WalletTransaction["type"];
+
