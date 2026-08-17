@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-__QR_IMPORT__
+
 
 export default function ShopPayIdScreen() {
   const { id } = useLocalSearchParams();
@@ -41,9 +41,9 @@ export default function ShopPayIdScreen() {
       <Text style={{ fontSize: 22, fontWeight: '800', color: '#111' }}>Shop Pay ID</Text>
       <Text style={{ color: '#666', marginTop: 4, marginBottom: 18 }}>Private to you. Customers scan to pay this shop.</Text>
       <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#eee' }}>
-        __QR_VIEW__
+        <View style={{width:200,height:200,backgroundColor:"#111",justifyContent:"center",alignItems:"center",borderRadius:12}}><Text style={{color:"#fff",fontSize:11,textAlign:"center"}}>QR renders on native{"\n"}(install react-native-qrcode-svg to enable)</Text></View>
         <Text style={{ fontSize: 20, fontWeight: '800', color: '#111', marginTop: 12 }}>{row?.wallet_id}</Text>
-        <TouchableOpacity onPress={() => { try { (navigator as any)?.clipboard?.writeText(payLink); Alert.alert('Copied', payLink); } catch { Alert.alert('Pay link', payLink); } }} style={{ marginTop: 12, backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 }}>
+        <TouchableOpacity onPress={() => { try { (navigator as any)?.clipboard?.writeText(payLink); Alert.alert('Copied', payLink); } catch {} }} style={{ marginTop: 12, backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 }}>
           <Text style={{ color: '#1976d2', fontWeight: '700' }}>Copy pay link</Text>
         </TouchableOpacity>
       </View>
