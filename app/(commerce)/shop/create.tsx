@@ -32,7 +32,7 @@ export default function CreateShopScreen() {
         name: name.trim(), category: type,
         address: location.trim() || null, city: location.trim() || null,
         description: description.trim() || null,
-        owner_id: user.id, status: 'open', is_active: true, is_verified: false,
+        owner_id: user.id, is_active: true, is_verified: false,
       }).select().single();
       if (error) throw error;
       await supabase.from('shop_staff').insert({
