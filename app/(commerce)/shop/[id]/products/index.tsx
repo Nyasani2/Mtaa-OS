@@ -16,7 +16,7 @@ interface Product {
   id: string;
   name: string;
   description: string | null;
-  price: number;
+  selling_price: number;
   stock_quantity: number;
   images: string[] | null;
   barcode: string | null;
@@ -77,7 +77,7 @@ export default function ProductListScreen() {
       <View style={styles.info}>
         <Text style={styles.name}>{item.name}</Text>
         {item.category && <Text style={styles.category}>{item.category}</Text>}
-        <Text style={styles.price}>KES {item.price}</Text>
+        <Text style={styles.selling_price}>KES {item.selling_price}</Text>
         <Text style={styles.stock}>Stock: {item.stock_quantity}</Text>
         {item.barcode && <Text style={styles.barcode}>Barcode: {item.barcode}</Text>}
       </View>
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { fontSize: 15, fontWeight: '600', color: '#111' },
   category: { fontSize: 12, color: '#888', marginTop: 2 },
-  price: { fontSize: 15, color: '#007AFF', fontWeight: 'bold', marginTop: 4 },
+  selling_price: { fontSize: 15, color: '#007AFF', fontWeight: 'bold', marginTop: 4 },
   stock: { fontSize: 12, color: '#666', marginTop: 2 },
   barcode: { fontSize: 11, color: '#999', marginTop: 1 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginLeft: 8 },

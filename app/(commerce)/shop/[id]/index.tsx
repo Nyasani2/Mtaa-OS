@@ -34,7 +34,7 @@ interface Shop {
 interface Product {
   id: string;
   name: string;
-  price: number;
+  selling_price: number;
   stock_quantity: number;
   images: string[] | null;
   status: string;
@@ -68,7 +68,7 @@ export default function ShopDashboardScreen() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, price, stock_quantity, images, status')
+        .select('id, name, selling_price, stock_quantity, images, status')
         .eq('shop_id', id)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -244,7 +244,7 @@ export default function ShopDashboardScreen() {
               </View>
               <View style={styles.productInfo}>
                 <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>KES {product.price}</Text>
+                <Text style={styles.productPrice}>KES {product.selling_price}</Text>
                 <Text style={styles.productStock}>Stock: {product.stock_quantity}</Text>
               </View>
               <View style={[styles.statusBadgeSmall, product.status === 'active' ? styles.activeBadge : styles.inactiveBadge]}>
