@@ -13,6 +13,7 @@ const MENU_ITEMS = [
   { label: 'Professional', route: '/profile/professional/portfolio' },
   { label: 'Portfolio', route: '/profile/professional/portfolio' },
   { label: 'Earnings', route: '/profile/creator/earnings' },
+        { label: 'My Shops', route: '/shop' },
   { label: 'Family', route: '/profile/family' },
   { label: 'QR Code', route: '/profile/qr' },
   { label: 'Messages', route: '/messages' },
