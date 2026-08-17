@@ -243,6 +243,13 @@ class CartService {
 
   // ─── Checkout Preparation ────────────────────────────────────────
 
+  calculateTotals(items: any[]) {
+    const list = items || [];
+    const subtotal = list.reduce((sum: number, i: any) =>
+      sum + Number(i.unit_price ?? i.selling_price ?? i.price ?? 0) * Number(i.quantity || 1), 0);
+    return { subtotal, delivery_fee: 0, tax: 0, total: subtotal, currency: list[0]?.currency || 'KES' };
+  }
+
   async prepareCheckout(userId: string): Promise<{
     success: boolean;
     summary?: CartSummary;
