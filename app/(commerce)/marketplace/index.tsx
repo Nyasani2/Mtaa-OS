@@ -5,7 +5,7 @@
 // Uses: lib/marketplace/services/marketplace-service.ts
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
+import { Alert,
   View,
   Text,
   StyleSheet,
@@ -287,7 +287,7 @@ export default function MarketplaceIndexScreen() {
                           const { error } = await supabase.from('cart_items').insert({ cart_id: cart.id, product_id: item.product_id, qty: 1, unit_price: item.price || 0 });
                           if (error) { Alert.alert('Cart', error.message); return; }
                           setCartCount(c => c + 1);
-                        } catch (e2) { Alert.alert('Cart', String(e2?.message || e2)); }
+                        } catch (e2) { console.error('[cart]', e2); Alert.alert('Cart', String(e2?.message || e2)); }
                       }}
                     >
                       <Ionicons name="add" size={16} color="#fff" />
