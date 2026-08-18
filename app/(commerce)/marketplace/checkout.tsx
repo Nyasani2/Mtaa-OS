@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 import { cartService, ShippingAddress } from '@/lib/marketplace/services/cart.service';
 import withdrawService from '@/domains/wallet/services/withdrawService';
 
@@ -53,6 +54,18 @@ export default function CheckoutScreen() {
     setLoading(true);
     const items = await cartService.getCart();
     setCartItems(items);
+    try {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      const { data: prof } = await supabase.from('user_profiles').select('*').eq('user_id', uid).maybeSingle();
+      if (prof) {
+        setFullName(prof.full_name || prof.display_name || '');
+        setPhone(prof.phone || '');
+        setAddress1(prof.address || prof.address_line1 || '');
+        setCity(prof.city || '');
+        setState(prof.state || prof.county || '');
+        setPostalCode(prof.postal_code || '');
+      }
+    } catch {}
 
     // Check KYC if total > 10,000
     const numTotal = parseFloat(total as string) || 0;

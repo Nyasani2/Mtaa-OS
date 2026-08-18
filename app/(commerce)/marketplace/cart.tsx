@@ -205,7 +205,7 @@ export default function CartScreen() {
           style={styles.checkoutBtn}
     
           onPress={() => router.push({
-            pathname: '/(os)/marketplace/checkout',
+            pathname: '/marketplace/checkout',
             params: { total: totals.total.toString() }
           })}
         >
