@@ -68,7 +68,7 @@ export default function ShopDashboardScreen() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, selling_price, stock_quantity, images, status')
+        .select('id, name, selling_price, stock_quantity, images, is_active')
         .eq('shop_id', id)
         .order('created_at', { ascending: false })
         .limit(5);

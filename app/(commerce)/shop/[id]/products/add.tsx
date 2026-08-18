@@ -18,7 +18,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 interface FormData {
   name: string;
   description: string;
-  price: string;
+  sku: 'SKU-' + Date.now().toString(36).toUpperCase(), selling_price: 0, cost_price: string;
   stock_quantity: string;
   barcode: string;
   category: string;
@@ -34,7 +34,7 @@ export default function AddProductScreen() {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
-    price: '',
+    selling_price: '',
     stock_quantity: '1',
     barcode: '',
     category: '',
@@ -106,7 +106,7 @@ export default function AddProductScreen() {
           shop_id: shopId,
           name: formData.name.trim(),
           description: formData.description.trim() || null,
-          price: Number(formData.price),
+          selling_price: Number(formData.price),
           stock_quantity: Number(formData.stock_quantity) || 0,
           barcode: formData.barcode.trim() || null,
           category: formData.category.trim() || null,
@@ -129,7 +129,7 @@ export default function AddProductScreen() {
             setFormData({
               name: '',
               description: '',
-              price: '',
+              selling_price: '',
               stock_quantity: '1',
               barcode: '',
               category: '',
@@ -207,7 +207,7 @@ export default function AddProductScreen() {
           <TextInput
             style={styles.input}
             value={formData.price}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, price: text }))}
+            onChangeText={(text) => setFormData((prev) => ({ ...prev, selling_price: text }))}
             placeholder="0.00"
             placeholderTextColor="#999"
             keyboardType="decimal-pad"
