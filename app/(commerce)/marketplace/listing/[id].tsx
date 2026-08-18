@@ -27,7 +27,11 @@ export default function ListingDetailScreen() {
       const shopId = prod?.shop_id;
       if (!shopId) { setMsg('Shop not found'); return; }
       let { data: cart } = await supabase.from('carts').select('id').eq('user_id', uid).eq('shop_id', shopId).maybeSingle();
-      if (!cart) cart = (await supabase.from('carts').insert({ user_id: uid, shop_id: shopId, status: 'active' }).select().single()).data;
+      if (!cart) {
+        const ins = await supabase.from('carts').insert({ user_id: uid, shop_id: shopId, status: 'active' }).select().single();
+        if (ins.error) { setMsg('Cart create: ' + ins.error.message); return; }
+        cart = ins.data;
+      }
       if (!cart) { setMsg('Could not open cart'); return; }
       const { error } = await supabase.from('cart_items').insert({ cart_id: cart.id, product_id: item.product_id, qty: 1, unit_price: item.price || 0 });
       if (error) { setMsg(error.message); return; }
