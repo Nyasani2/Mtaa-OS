@@ -18,7 +18,17 @@ export default function ListingDetailScreen() {
     setItem(data); setLoading(false);
   })(); }, [id]);
 
-  const addToCart = async () => {
+    const boostListing = async () => {
+    try {
+      const { data, error } = await supabase.rpc('boost_listing', { p_listing_id: item.id, p_user_id: user.id, p_cost: 500 });
+      if (error) { setMsg('Boost failed: ' + error.message); return; }
+      if (!data.success) { setMsg(data.error); return; }
+      setMsg('⚡ Boosted! Visible on Streets for 7 days.');
+      setTimeout(() => load(), 1000);
+    } catch (e) { setMsg('Boost error: ' + String(e)); }
+  };
+
+const addToCart = async () => {
     try {
       const uid = user?.id;
       if (!uid) { setMsg('Sign in first'); return; }
@@ -59,6 +69,16 @@ export default function ListingDetailScreen() {
       <Text style={{ color: '#666', marginBottom: 12 }}>Seller: {item.seller_name || 'MTAA Seller'}</Text>
       <Text style={{ color: '#333', lineHeight: 22, marginBottom: 18 }}>{item.description || 'No description.'}</Text>
       {msg ? <Text style={{ color: '#b71c1c', marginBottom: 8 }}>{msg}</Text> : null}
+      {item.seller_id === user?.id && (!item.boosted_until || new Date(item.boosted_until) < new Date()) ? (
+        <TouchableOpacity onPress={boostListing} style={{ backgroundColor: '#f5a623', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 }}>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>⚡ Boost to Streets (500 KES)</Text>
+        </TouchableOpacity>
+      ) : null}
+      {item.boosted_until && new Date(item.boosted_until) > new Date() ? (
+        <View style={{ backgroundColor: '#1a3a1a', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+          <Text style={{ color: '#00d26a', fontWeight: '700' }}>✓ Boosted until {new Date(item.boosted_until).toLocaleDateString()}</Text>
+        </View>
+      ) : null}
       <TouchableOpacity onPress={addToCart} style={{ backgroundColor: '#2196f3', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Add to Cart</Text>
       </TouchableOpacity>
