@@ -28,18 +28,23 @@ export default function ListingDetailScreen() {
         .update({ boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 })
         .eq('id', item.id);
       if (ue) { setMsg('Boost update failed: ' + ue.message); return; }
-      // Create a sponsored post via the Streets service (what the feed reads)
-      await StreetsService.createPost({
-        content: '⚡ Sponsored: ' + (item.title || item.name) + ' — KES ' + Number(item.price || 0).toLocaleString() + '. Available now on MTAA Market!',
-        caption: (item.title || item.name) + ' · KES ' + Number(item.price || 0).toLocaleString(),
-        title: item.title || item.name,
-        media_url: item.images?.[0] || null,
-        media_type: item.images?.[0] ? 'image' : 'text',
-        hashtags: ['sponsored', 'marketplace', 'mtaa'],
-        is_public: true,
-        allow_comments: true,
-        location: item.location || null,
-      });
+
+      // Publish sponsored post via the Streets service (feed-native)
+      try {
+        await StreetsService.createPost({
+          content: '⚡ Sponsored: ' + (item.title || item.name) + ' — KES ' + Number(item.price || 0).toLocaleString() + ' on MTAA Market!',
+          caption: (item.title || item.name) + ' · KES ' + Number(item.price || 0).toLocaleString(),
+          title: item.title || item.name || 'Marketplace Deal',
+          media_url: item.images?.[0] || null,
+          media_type: item.images?.[0] ? 'image' : undefined,
+          hashtags: ['sponsored', 'marketplace', 'mtaa', 'deal'],
+          is_public: true,
+          allow_comments: true,
+        });
+      } catch (postErr: any) {
+        console.warn('[boost] streets post failed (listing still boosted):', postErr?.message || postErr);
+      }
+
       setMsg('⚡ Boosted! Now live on Streets for 7 days.');
       setItem({ ...item, boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 });
     } catch (e) { setMsg('Boost error: ' + String(e)); }
