@@ -18,7 +18,9 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 interface FormData {
   name: string;
   description: string;
-  sku: 'SKU-' + Date.now().toString(36).toUpperCase(), selling_price: 0, cost_price: string;
+  sku: string;
+  selling_price: string;
+  cost_price: string;
   stock_quantity: string;
   barcode: string;
   category: string;
