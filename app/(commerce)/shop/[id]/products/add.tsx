@@ -94,7 +94,7 @@ export default function AddProductScreen() {
       Alert.alert('Error', 'Product name is required');
       return;
     }
-    if (!formData.price.trim() || isNaN(Number(formData.price))) {
+    if (!formData.selling_price.trim() || isNaN(Number(formData.selling_price))) {
       Alert.alert('Error', 'Valid price is required');
       return;
     }
@@ -108,7 +108,7 @@ export default function AddProductScreen() {
           shop_id: shopId,
           name: formData.name.trim(),
           description: formData.description.trim() || null,
-          selling_price: Number(formData.price),
+          selling_price: Number(formData.selling_price),
           stock_quantity: Number(formData.stock_quantity) || 0,
           barcode: formData.barcode.trim() || null,
           category: formData.category.trim() || null,
@@ -208,7 +208,7 @@ export default function AddProductScreen() {
           <Text style={styles.label}>Price (KES) *</Text>
           <TextInput
             style={styles.input}
-            value={formData.price}
+            value={formData.selling_price}
             onChangeText={(text) => setFormData((prev) => ({ ...prev, selling_price: text }))}
             placeholder="0.00"
             placeholderTextColor="#999"
