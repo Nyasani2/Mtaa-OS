@@ -28,7 +28,6 @@ export default function CartScreen() {
   const loadCart = useCallback(async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-      const { data: { user } } = await supabase.auth.getUser();
       let items: any[] = [];
       if (user) {
         const { data: myCarts } = await supabase.from('carts').select('id').eq('user_id', user.id);
