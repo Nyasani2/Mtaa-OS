@@ -113,7 +113,6 @@ export default function AddProductScreen() {
           barcode: formData.barcode.trim() || null,
           category: formData.category.trim() || null,
           images: images.length > 0 ? images : null,
-          status: 'active',
         })
         .select()
         .single();
