@@ -247,7 +247,8 @@ class CartService {
     const list = items || [];
     const subtotal = list.reduce((sum: number, i: any) =>
       sum + Number(i.unit_price ?? i.selling_price ?? i.price ?? 0) * Number(i.quantity || 1), 0);
-    return { subtotal, delivery_fee: 0, tax: 0, total: subtotal, currency: list[0]?.currency || 'KES' };
+    const platformFee = Math.round(subtotal * 0.025);
+    return { subtotal, platformFee, shipping: 0, delivery_fee: 0, tax: 0, discount: 0, savings: 0, total: subtotal + platformFee, currency: list[0]?.currency || 'KES' };
   }
 
   async prepareCheckout(userId: string): Promise<{
