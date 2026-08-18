@@ -28,7 +28,7 @@ export default function ListingDetailScreen() {
         .eq('id', item.id);
       if (ue) { setMsg('Boost update failed: ' + ue.message); return; }
       setMsg('⚡ Boosted! Visible on Streets for 7 days.');
-      setTimeout(() => load(), 600);
+      setItem({ ...item, boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 });
     } catch (e) { setMsg('Boost error: ' + String(e)); }
   };
 
