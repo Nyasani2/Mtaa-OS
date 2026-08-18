@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
 import { getListings } from '@/lib/marketplace/services/marketplace-service';
 import type { Listing } from '@/lib/marketplace/types';
 
@@ -245,9 +246,13 @@ export default function MarketplaceIndexScreen() {
                 style={styles.listingCard}
                 onPress={() => handleListingPress(item)}
               >
-                <View style={styles.listingImagePlaceholder}>
-                  <Ionicons name="image" size={24} color="#C7C7CC" />
-                </View>
+                {item.images && item.images[0] ? (
+                  <Image source={{ uri: item.images[0] }} style={{ width: 72, height: 72, borderRadius: 8 }} />
+                ) : (
+                  <View style={styles.listingImagePlaceholder}>
+                    <Ionicons name="image" size={24} color="#C7C7CC" />
+                  </View>
+                )}
                 <View style={styles.listingInfo}>
     
     
@@ -265,9 +270,20 @@ export default function MarketplaceIndexScreen() {
                     )}
                     <TouchableOpacity
                       style={styles.addToCartBtn}
-                      onPress={(e) => {
+                      onPress={async (e) => {
                         e.stopPropagation();
-                        setCartCount(c => c + 1);
+                        try {
+                          const uid = (await supabase.auth.getUser()).data.user?.id;
+                          const { error } = await supabase.from('cart_items').insert({
+                            user_id: uid, listing_id: item.id, quantity: 1,
+                            unit_price: item.price || 0, currency: item.currency || 'KES',
+                            listing_title: item.title || item.name,
+                            listing_image_url: item.images?.[0] || null,
+                            seller_id: item.seller_id || null, seller_name: item.seller_name || '',
+                          });
+                          if (error) { Alert.alert('Cart', error.message); return; }
+                          setCartCount(c => c + 1);
+                        } catch (e2) { Alert.alert('Cart', String(e2?.message || e2)); }
                       }}
                     >
                       <Ionicons name="add" size={16} color="#fff" />
