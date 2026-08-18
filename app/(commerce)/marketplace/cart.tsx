@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 import { cartService, CartItem } from '@/lib/marketplace/services/cart.service';
 import { useMarketplaceStore } from '@/lib/marketplace/state/marketplace.store';
 
@@ -26,7 +27,16 @@ export default function CartScreen() {
 
   const loadCart = useCallback(async () => {
     setLoading(true);
-    const items = await cartService.getCart();
+    const { data: { user } } = await supabase.auth.getUser();
+      let items: any[] = [];
+      if (user) {
+        const { data: myCarts } = await supabase.from('carts').select('id').eq('user_id', user.id);
+        const ids = (myCarts || []).map((c: any) => c.id);
+        if (ids.length) {
+          const { data: rows } = await supabase.from('cart_items').select('*, products(name, images, selling_price)').in('cart_id', ids);
+          items = (rows || []).map((i: any) => ({ ...i, listing_id: i.product_id, quantity: i.qty, product_name: i.products?.name, product_image: i.products?.images?.[0] || null, unit_price: i.unit_price ?? i.products?.selling_price ?? 0, currency: 'KES', seller_name: i.seller_name || '', listing_title: i.products?.name }));
+        }
+      }
     setCartItems(items);
     setLoading(false);
   }, []);

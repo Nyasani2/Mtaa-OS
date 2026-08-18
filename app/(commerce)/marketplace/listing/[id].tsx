@@ -33,8 +33,14 @@ export default function ListingDetailScreen() {
         cart = ins.data;
       }
       if (!cart) { setMsg('Could not open cart'); return; }
-      const { error } = await supabase.from('cart_items').insert({ cart_id: cart.id, product_id: item.product_id, qty: 1, unit_price: item.price || 0 });
-      if (error) { setMsg(error.message); return; }
+      const { data: existing } = await supabase.from('cart_items').select('id, qty').eq('cart_id', cart.id).eq('product_id', item.product_id).maybeSingle();
+      if (existing) {
+        const { error } = await supabase.from('cart_items').update({ qty: existing.qty + 1 }).eq('id', existing.id);
+        if (error) { setMsg(error.message); return; }
+      } else {
+        const { error } = await supabase.from('cart_items').insert({ cart_id: cart.id, product_id: item.product_id, qty: 1, unit_price: item.price || 0 });
+        if (error) { setMsg(error.message); return; }
+      }
       router.push('/marketplace/cart');
     } catch (e) { console.error('[listing-cart]', e); setMsg(String(e?.message || e)); }
   };
