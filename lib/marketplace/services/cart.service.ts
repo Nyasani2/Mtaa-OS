@@ -57,47 +57,29 @@ class CartService {
 
   // ─── Get Cart ────────────────────────────────────────────────────
 
-  async getCart(userId: string): Promise<CartItem[]> {
-    const { data, error } = await supabase
-      .from('cart_items')
-      .select(`
-        id,
-        user_id,
-        listing_id,
-        quantity,
-        unit_price,
-        currency,
-        created_at,
-        updated_at,
-        listings:listing_id (
-          title,
-          image_url,
-          seller_id,
-          profiles:seller_id (display_name)
-        )
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('[CartService] getCart error:', error);
-      return [];
+  async getCart(userId?: string): Promise<any[]> {
+    let uid = userId;
+    if (!uid) uid = (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return [];
+    const { data: myCarts } = await supabase.from('carts').select('id').eq('user_id', uid);
+    const ids = (myCarts || []).map((c: any) => c.id);
+    if (!ids.length) return [];
+    const { data: rows, error } = await supabase.from('cart_items').select('*').in('cart_id', ids);
+    if (error) { console.error('[CartService] getCart error:', error); return []; }
+    const pids = Array.from(new Set((rows || []).map((r: any) => r.product_id)));
+    const prodMap: any = {};
+    if (pids.length) {
+      const { data: prods } = await supabase.from('products').select('id, name, images, selling_price, shop_id, shops(owner_id)').in('id', pids);
+      (prods || []).forEach((pr: any) => { prodMap[pr.id] = pr; });
     }
-
-    return (data || []).map((row: any) => ({
-      id: row.id,
-      user_id: row.user_id,
-      listing_id: row.listing_id,
-      quantity: row.quantity,
-      unit_price: row.unit_price,
-      currency: row.currency || 'USD',
-      listing_title: row.listings?.title || 'Unknown Item',
-      listing_image_url: row.listings?.image_url || null,
-      seller_id: row.listings?.seller_id || '',
-      seller_name: row.listings?.profiles?.display_name || 'Unknown Seller',
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-    }));
+    return (rows || []).map((i: any) => {
+      const pr = prodMap[i.product_id] || {};
+      return { ...i, user_id: uid, listing_id: i.product_id, quantity: i.qty,
+        unit_price: i.unit_price ?? pr.selling_price ?? 0, currency: 'KES',
+        product_name: pr.name || 'Item', listing_title: pr.name || 'Item',
+        product_image: pr.images?.[0] || null, listing_image_url: pr.images?.[0] || null,
+        seller_id: pr.shops?.owner_id || '', seller_name: '', shop_id: pr.shop_id };
+    });
   }
 
   async getCartSummary(userId: string): Promise<CartSummary> {
@@ -253,6 +235,77 @@ class CartService {
       deliveryFee: shippingTotal, delivery_fee: shippingTotal, tax: 0, discount: 0, savings: 0,
       total: subtotal + platformFee + shippingTotal, grandTotal: subtotal + platformFee + shippingTotal,
       currency: list[0]?.currency || 'KES' };
+  }
+
+  async checkout(payload: any): Promise<any> {
+    try {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) return { success: false, error: 'Not signed in' };
+      const items: any[] = payload?.items || [];
+      if (!items.length) return { success: false, error: 'Cart is empty' };
+      const totals = this.calculateTotals(items);
+
+      const pids = Array.from(new Set(items.map((i: any) => i.product_id).filter(Boolean)));
+      const { data: prods } = await supabase.from('products').select('id, name, shop_id, stock_quantity, selling_price, shops(owner_id)').in('id', pids);
+      const prodMap: any = {}; (prods || []).forEach((pr: any) => { prodMap[pr.id] = pr; });
+
+      for (const i of items) {
+        const pr = prodMap[i.product_id];
+        if (!pr) return { success: false, error: 'Product not found' };
+        if ((pr.stock_quantity || 0) < (i.quantity || 1)) return { success: false, error: 'Insufficient stock for ' + pr.name };
+      }
+
+      if ((payload?.payment_method || 'wallet') === 'wallet') {
+        const bySeller: any = {};
+        for (const i of items) {
+          const sid = prodMap[i.product_id]?.shops?.owner_id;
+          if (!sid || sid === uid) continue;
+          bySeller[sid] = (bySeller[sid] || 0) + Number(i.unit_price || 0) * Number(i.quantity || 1);
+        }
+        for (const sid of Object.keys(bySeller)) {
+          const { error } = await supabase.rpc('execute_p2p_transfer', {
+            p_sender_id: uid, p_receiver_id: sid, p_amount: bySeller[sid],
+            p_currency: 'KES', p_description: 'MTAA Marketplace purchase',
+          });
+          if (error) {
+            const msg = (error.message || '').toLowerCase();
+            return (msg.includes('balance') || msg.includes('insufficient'))
+              ? { success: false, code: 'INSUFFICIENT_FUNDS', error: error.message }
+              : { success: false, error: error.message };
+          }
+        }
+      }
+
+      for (const i of items) {
+        const pr = prodMap[i.product_id];
+        await supabase.from('products').update({ stock_quantity: Math.max((pr.stock_quantity || 0) - (i.quantity || 1), 0) }).eq('id', i.product_id);
+      }
+
+      let orderId: string | null = null;
+      const sellers = Array.from(new Set(items.map((i: any) => prodMap[i.product_id]?.shops?.owner_id).filter(Boolean)));
+      for (const sid of (sellers.length ? sellers : [null])) {
+        const mine = items.filter((i: any) => (sid ? prodMap[i.product_id]?.shops?.owner_id === sid : true));
+        const sub = mine.reduce((s2: number, i: any) => s2 + Number(i.unit_price || 0) * Number(i.quantity || 1), 0);
+        const fee = Math.round(sub * 0.025);
+        const { data: ord, error: oe } = await supabase.from('marketplace_orders').insert({
+          buyer_id: uid, seller_id: sid,
+          items: mine.map((i: any) => ({ product_id: i.product_id, name: prodMap[i.product_id]?.name, qty: i.quantity, unit_price: i.unit_price })),
+          subtotal: sub, platform_fee: fee, shipping: 0, total: sub + fee, currency: 'KES',
+          status: 'paid', payment_method: payload?.payment_method || 'wallet',
+          shipping_address: payload?.shipping_address || null, notes: payload?.notes || null,
+        }).select().single();
+        if (!oe && ord) orderId = ord.id;
+      }
+
+      const { data: myCarts } = await supabase.from('carts').select('id').eq('user_id', uid);
+      const cids = (myCarts || []).map((cc: any) => cc.id);
+      if (cids.length) await supabase.from('cart_items').delete().in('cart_id', cids);
+
+      return { success: true, order_id: orderId, total: totals.total };
+    } catch (e: any) {
+      console.error('[CartService] checkout error:', e);
+      return { success: false, error: e?.message || String(e) };
+    }
   }
 
   async prepareCheckout(userId: string): Promise<{
