@@ -58,8 +58,9 @@ export default function CheckoutScreen() {
     const numTotal = parseFloat(total as string) || 0;
     if (numTotal > 10000) {
     
-      const kyc = await withdrawService.checkKycLevel();
-      setKycWarning(!kyc.eligible);
+      let kyc: any = null;
+      try { kyc = await (withdrawService as any)?.checkKycLevel?.(); } catch {}
+      setKycWarning(!!kyc && kyc.eligible === false);
     }
 
     setLoading(false);
