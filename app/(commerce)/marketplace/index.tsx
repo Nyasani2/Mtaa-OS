@@ -274,13 +274,17 @@ export default function MarketplaceIndexScreen() {
                         e.stopPropagation();
                         try {
                           const uid = (await supabase.auth.getUser()).data.user?.id;
-                          const { error } = await supabase.from('cart_items').insert({
-                            user_id: uid, listing_id: item.id, quantity: 1,
-                            unit_price: item.price || 0, currency: item.currency || 'KES',
-                            listing_title: item.title || item.name,
-                            listing_image_url: item.images?.[0] || null,
-                            seller_id: item.seller_id || null, seller_name: item.seller_name || '',
-                          });
+                          if (!item.product_id) { Alert.alert('Cart', 'Listing not linked to a product yet'); return; }
+                          const { data: prod } = await supabase.from('products').select('shop_id').eq('id', item.product_id).single();
+                          const shopId = prod?.shop_id;
+                          if (!shopId) { Alert.alert('Cart', 'Product shop not found'); return; }
+                          let { data: cart } = await supabase.from('carts').select('id').eq('user_id', uid).eq('shop_id', shopId).maybeSingle();
+                          if (!cart) {
+                            const ins = await supabase.from('carts').insert({ user_id: uid, shop_id: shopId, status: 'active' }).select().single();
+                            cart = ins.data;
+                          }
+                          if (!cart) { Alert.alert('Cart', 'Could not open cart'); return; }
+                          const { error } = await supabase.from('cart_items').insert({ cart_id: cart.id, product_id: item.product_id, qty: 1, unit_price: item.price || 0 });
                           if (error) { Alert.alert('Cart', error.message); return; }
                           setCartCount(c => c + 1);
                         } catch (e2) { Alert.alert('Cart', String(e2?.message || e2)); }
