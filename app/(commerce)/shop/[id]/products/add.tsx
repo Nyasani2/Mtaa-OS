@@ -62,10 +62,8 @@ export default function AddProductScreen() {
         is_active: true,
       }).select().single();
       if (error) throw error;
-      Alert.alert('Success', `${name} added!`, [
-        { text: 'Add Another', onPress: () => { setName(''); setCategory(''); setBarcode(''); setPrice(''); setStock(''); setDescription(''); setImages([]); } },
-        { text: 'Back to Dashboard', onPress: () => router.push(`/shop/${id}`) },
-      ]);
+      setName(''); setCategory(''); setBarcode(''); setPrice(''); setStock(''); setDescription(''); setImages([]);
+      router.replace(`/shop/${id}/products`);
     } catch (e) { console.error('[add-product]', e); setErr(e?.message || String(e)); }
     setBusy(false);
   };
