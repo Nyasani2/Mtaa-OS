@@ -28,16 +28,27 @@ export default function CartScreen() {
   const loadCart = useCallback(async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       let items: any[] = [];
       if (user) {
         const { data: myCarts } = await supabase.from('carts').select('id').eq('user_id', user.id);
         const ids = (myCarts || []).map((c: any) => c.id);
         if (ids.length) {
-          const { data: rows } = await supabase.from('cart_items').select('*, products(name, images, selling_price)').in('cart_id', ids);
-          items = (rows || []).map((i: any) => ({ ...i, listing_id: i.product_id, quantity: i.qty, product_name: i.products?.name, product_image: i.products?.images?.[0] || null, unit_price: i.unit_price ?? i.products?.selling_price ?? 0, currency: 'KES', seller_name: i.seller_name || '', listing_title: i.products?.name }));
+          const { data: rows } = await supabase.from('cart_items').select('*').in('cart_id', ids);
+          const pids = Array.from(new Set((rows || []).map((r: any) => r.product_id)));
+          const prodMap: any = {};
+          if (pids.length) {
+            const { data: prods } = await supabase.from('products').select('id, name, images, selling_price').in('id', pids);
+            (prods || []).forEach((pr: any) => { prodMap[pr.id] = pr; });
+          }
+          items = (rows || []).map((i: any) => ({ ...i, listing_id: i.product_id, quantity: i.qty,
+            product_name: prodMap[i.product_id]?.name || 'Item',
+            product_image: prodMap[i.product_id]?.images?.[0] || null,
+            unit_price: i.unit_price ?? prodMap[i.product_id]?.selling_price ?? 0,
+            currency: 'KES', seller_name: '', listing_title: prodMap[i.product_id]?.name }));
         }
       }
-    setCartItems(items);
+      setCartItems(items);
     setLoading(false);
   }, []);
 
