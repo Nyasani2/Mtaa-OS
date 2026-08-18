@@ -20,15 +20,19 @@ export default function ListingDetailScreen() {
 
     const boostListing = async () => {
     try {
-      const { data, error } = await supabase.rpc('boost_listing', { p_listing_id: item.id, p_user_id: user.id, p_cost: 500 });
-      if (error) { setMsg('Boost failed: ' + error.message); return; }
-      if (!data.success) { setMsg(data.error); return; }
+      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 500, _reference: 'Boost listing to Streets' });
+      if (de) { setMsg('Boost failed: ' + de.message); return; }
+      const until = new Date(Date.now() + 7 * 86400000).toISOString();
+      const { error: ue } = await supabase.from('marketplace_listings')
+        .update({ boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 })
+        .eq('id', item.id);
+      if (ue) { setMsg('Boost update failed: ' + ue.message); return; }
       setMsg('⚡ Boosted! Visible on Streets for 7 days.');
-      setTimeout(() => load(), 1000);
+      setTimeout(() => load(), 600);
     } catch (e) { setMsg('Boost error: ' + String(e)); }
   };
 
-const addToCart = async () => {
+  const addToCart = async () => {
     try {
       const uid = user?.id;
       if (!uid) { setMsg('Sign in first'); return; }
