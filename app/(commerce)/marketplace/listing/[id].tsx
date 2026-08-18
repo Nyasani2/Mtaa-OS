@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import * as StreetsService from '@/lib/services/streets-service';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function ListingDetailScreen() {
@@ -27,23 +28,18 @@ export default function ListingDetailScreen() {
         .update({ boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 })
         .eq('id', item.id);
       if (ue) { setMsg('Boost update failed: ' + ue.message); return; }
-      // Publish a sponsored post into streets_posts (what the feed reads) — no feed code changes
-      const marker = '[boost:' + item.id + ']';
-      const { data: dup } = await supabase.from('streets_posts').select('id').ilike('content', '%' + marker + '%').limit(1);
-      if (!dup || !dup.length) {
-        await supabase.from('streets_posts').insert({
-          creator_id: user.id,
-          content: marker + ' ⚡ Sponsored: ' + (item.title || item.name) + ' — KES ' + Number(item.price || 0).toLocaleString() + '. Available now on MTAA Market!',
-          caption: (item.title || item.name) + ' · KES ' + Number(item.price || 0).toLocaleString(),
-          title: item.title || item.name,
-          media_url: item.images?.[0] || null,
-          media_type: item.images?.[0] ? 'image' : 'text',
-          hashtags: ['sponsored', 'marketplace', 'mtaa'],
-          is_public: true, allow_comments: true, allow_duet: false,
-          location: item.location || null,
-          likes_count: 0, comments_count: 0, shares_count: 0, views_count: 0, saves_count: 0,
-        });
-      }
+      // Create a sponsored post via the Streets service (what the feed reads)
+      await StreetsService.createPost({
+        content: '⚡ Sponsored: ' + (item.title || item.name) + ' — KES ' + Number(item.price || 0).toLocaleString() + '. Available now on MTAA Market!',
+        caption: (item.title || item.name) + ' · KES ' + Number(item.price || 0).toLocaleString(),
+        title: item.title || item.name,
+        media_url: item.images?.[0] || null,
+        media_type: item.images?.[0] ? 'image' : 'text',
+        hashtags: ['sponsored', 'marketplace', 'mtaa'],
+        is_public: true,
+        allow_comments: true,
+        location: item.location || null,
+      });
       setMsg('⚡ Boosted! Now live on Streets for 7 days.');
       setItem({ ...item, boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 });
     } catch (e) { setMsg('Boost error: ' + String(e)); }
