@@ -98,6 +98,9 @@ export default function MTaxiHub() {
           </View>
         )}
       </ScrollView>
+          <TouchableOpacity onPress={() => router.push('/(mtaxi)/driver/onboarding')} style={{ marginHorizontal: 16, marginBottom: 16, backgroundColor: '#7c3aed', borderRadius: 14, paddingVertical: 14, alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>🧑🔧 Become a Driver — earn per ride</Text>
+        </TouchableOpacity>
     </SafeAreaView>
   );
 }
