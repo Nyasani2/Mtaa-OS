@@ -50,11 +50,16 @@ export default function GarageHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [myGarage, setMyGarage] = React.useState<any>(null);
+  const [debugMsg, setDebugMsg] = useState('');
   React.useEffect(() => { (async () => {
     try {
-      const { data } = await supabase.from('mtaxi_garages').select('*').eq('owner_id', user?.id).maybeSingle();
-      if (data) setMyGarage(data);
-    } catch {}
+      console.log('🔍 checking garage for user:', user?.id);
+      const { data, error } = await supabase.from('mtaxi_garages').select('*').eq('owner_id', user?.id).maybeSingle();
+      console.log('🔍 result:', { data, error });
+      if (error) setDebugMsg('Error: ' + error.message);
+      else if (data) { setMyGarage(data); setDebugMsg('Found: ' + data.name); }
+      else setDebugMsg('No garage for user ' + user?.id);
+    } catch (e) { setDebugMsg('Catch: ' + String(e)); }
   })(); }, [user?.id]);
 
   const { garage, loading: garageLoading, loadGarage } = useGarage();
