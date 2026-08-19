@@ -76,6 +76,25 @@ export default function TrackingScreen() {
     cancelled: '#e74c3c',
   };
 
+  const handleComplete = async () => {
+    if (!ride || !user?.id || !driver) { Alert.alert('Not ready'); return; }
+    const total = Number(ride.fare_estimate || 0);
+    if (total <= 0) { Alert.alert('Invalid fare'); return; }
+    const { data: w } = await supabase.from('wallet_accounts').select('available_balance, balance').eq('user_id', user.id).maybeSingle();
+    const bal = Number(w?.available_balance || w?.balance || 0);
+    if (bal < total) { Alert.alert('❌ Insufficient balance', 'KES ' + bal + ' available. Top up to complete.'); return; }
+    const platformFee = Math.round(total * 0.03);
+    const driverPayout = total - platformFee;
+    try {
+      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: total, _reference: 'MTaxi ride ' + ride.id });
+      if (de) throw new Error('Debit failed: ' + de.message);
+      try { await supabase.rpc('mtaa_credit_wallet', { p_user_id: driver.owner_id || driver.user_id, p_amount: driverPayout, p_description: 'MTaxi ride payout (after 3% platform fee)', p_reference: 'mtaxi-' + ride.id, p_topup_method: 'ride' }); } catch {}
+      await supabase.from('mtaxi_rides').update({ status: 'completed', payment_status: 'paid', platform_fee: platformFee, driver_payout: driverPayout, completed_at: new Date().toISOString() }).eq('id', ride.id);
+      Alert.alert('✅ Ride Complete', 'You paid KES ' + total.toLocaleString() + '\nDriver received KES ' + driverPayout.toLocaleString() + '\nPlatform fee: KES ' + platformFee + ' (3%)');
+      loadRide();
+    } catch (e) { Alert.alert('Payment failed', String(e?.message || e)); }
+  };
+
   const canCancel = ride && ['searching', 'accepted', 'arrived'].includes(ride.status);
 
   if (loading && !ride) return <View style={styles.center}><ActivityIndicator color="#e94560" /></View>;
@@ -140,6 +159,8 @@ export default function TrackingScreen() {
 }
 
 const styles = StyleSheet.create({
+  completeBtn: { backgroundColor: '#27ae60', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 12 },
+  completeBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   container: { flex: 1, backgroundColor: '#0f0f1a', padding: 16 },
   center: { justifyContent: 'center', alignItems: 'center', padding: 40 },
   header: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 12 },
