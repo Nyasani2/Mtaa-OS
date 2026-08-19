@@ -75,6 +75,17 @@ export function useGarage() {
   // Load my garage — tries edge function first, falls back to direct query
   const loadMyGarage = useCallback(async () => {
     setLoading();
+    // ── check mtaxi_garages FIRST (source of truth for registrations) ──
+    try {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (uid) {
+        const { data: g } = await supabase.from('mtaxi_garages').select('*').eq('owner_id', uid).maybeSingle();
+        if (g) {
+          setState(prev => ({ ...prev, myGarage: g as any, currentGarage: g as any, isLoading: false, error: null }));
+          return g as any;
+        }
+      }
+    } catch {}
     try {
       // Try the service function first
       const garage = await withTimeout(getMyGarage(), QUERY_TIMEOUT, 'loadMyGarage');

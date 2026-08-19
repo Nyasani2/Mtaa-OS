@@ -64,7 +64,7 @@ export default function GarageOnboarding() {
         tax_id: form.tax_id || null,
         services: form.services,
         garage_type: 'general',
-        approved: false,
+        approved: true,
         application_fee_paid: false,
       });
       if (error) throw new Error(error.message);
