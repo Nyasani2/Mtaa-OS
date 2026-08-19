@@ -4,18 +4,46 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { HostInfoCard, ReviewList, AmenityBadge } from "@/domains/stay/components";
 import { Heart, Share2, MapPin, Star, Users, Bed, Bath, Wifi, ChevronLeft, Calendar, ShieldCheck } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { supabase } from "@/lib/supabase";
+import * as StreetsService from "@/lib/services/streets-service";
 
 export default function StayDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { fetchListing, toggleSaved, savedIds, currentListing: listing } = useStay();
+  const { user } = useAuthStore();
+  const [boostMsg, setBoostMsg] = useState(null);
 
   useEffect(() => {
     if (id) fetchListing(id as string);
   }, [id, fetchListing]);
 
   if (!listing) return <View style={styles.center}><Text>Stay not found</Text></View>;
+
+  const boostStay = async () => {
+    try {
+      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 500, _reference: 'Boost stay to Streets' });
+      if (de) { setBoostMsg('Boost failed: ' + de.message); return; }
+      const until = new Date(Date.now() + 7 * 86400000).toISOString();
+      await supabase.from('properties').update({ boosted_until: until, boost_cost: (Number(listing.boost_cost) || 0) + 500 }).eq('id', listing.id);
+      const marker = '[stayboost:' + listing.id + ']';
+      const { data: dup } = await supabase.from('streets_posts').select('id').ilike('content', '%' + marker + '%').limit(1);
+      if (!dup || !dup.length) {
+        await StreetsService.createPost({
+          creatorId: user.id,
+          content: marker + ' ⚡ Sponsored Stay: ' + listing.title + ' in ' + listing.town + ' — KES ' + Number(listing.price_per_night || 0).toLocaleString() + '/night. Open the Stay app to book!',
+          caption: listing.title + ' · ' + listing.town + ' · KES ' + Number(listing.price_per_night || 0).toLocaleString() + '/night',
+          mediaUrl: listing.cover_image || null,
+          mediaType: 'image',
+          hashtags: ['sponsored', 'stay', 'mtaa', 'deal'],
+          isPublic: true,
+        });
+      }
+      setBoostMsg('⚡ Boosted! Your stay is live on Streets for 7 days.');
+    } catch (e) { setBoostMsg('Boost error: ' + String(e)); }
+  };
 
   const saved = savedIds.includes(listing.id);
   const price = listing.price_per_night || 0;
@@ -102,6 +130,21 @@ export default function StayDetailScreen() {
 
           {/* Reviews */}
           <ReviewList reviews={[]} />
+
+          {listing.owner_id === user?.id ? (
+            <View style={{ marginTop: 20 }}>
+              {listing.boosted_until && new Date(listing.boosted_until) > new Date() ? (
+                <View style={{ backgroundColor: '#e8f5e9', borderRadius: 12, padding: 14 }}>
+                  <Text style={{ color: '#1a5c4b', fontWeight: '700' }}>✓ Boosted on Streets until {new Date(listing.boosted_until).toLocaleDateString()}</Text>
+                </View>
+              ) : (
+                <TouchableOpacity onPress={boostStay} style={{ backgroundColor: '#f5a623', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
+                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>⚡ Boost to Streets (500 KES)</Text>
+                </TouchableOpacity>
+              )}
+              {boostMsg ? <Text style={{ color: '#1a5c4b', marginTop: 8, textAlign: 'center', fontWeight: '600' }}>{boostMsg}</Text> : null}
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
