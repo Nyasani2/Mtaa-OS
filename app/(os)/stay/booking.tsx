@@ -28,8 +28,8 @@ export default function BookingScreen() {
   const cleaning = Number(listing.cleaning_fee || 0);
   const base = subtotal + cleaning;
   const guestFee = Math.round(base * 0.03);
-  const hostNet = Math.round(base * 0.97);
-  const guestTotal = base + guestFee;
+  const hostGross = Math.round(base * 0.97);
+  const hostNet = hostGross; // WHT computed at confirm time with country lookup
   const checkOut = new Date(new Date(checkIn).getTime() + nights * 86400000).toISOString().slice(0, 10);
 
   const confirm = async () => {
@@ -43,7 +43,14 @@ export default function BookingScreen() {
       const ref = 'stay-' + Date.now();
       const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: guestTotal, _reference: 'Stay booking: ' + listing.title });
       if (de) throw new Error(de.message);
-      try { await supabase.rpc('mtaa_credit_wallet', { p_user_id: listing.owner_id, p_amount: hostNet, p_description: 'Stay booking payout', p_reference: ref, p_topup_method: 'booking' }); } catch {}
+      const { data: wht } = await supabase.from('withholding_tax_rates').select('rate_percent, tax_authority').eq('country_code', listing.country || 'KE').maybeSingle();
+      const whtRate = Number(wht?.rate_percent || 0) / 100;
+      const whtAmt = Math.round(hostGross * whtRate);
+      const hostPayout = hostGross - whtAmt;
+      try { await supabase.rpc('mtaa_credit_wallet', { p_user_id: listing.owner_id, p_amount: hostPayout, p_description: 'Stay booking payout (net of WHT)', p_reference: ref, p_topup_method: 'booking' }); } catch {}
+      if (whtAmt > 0) {
+        await supabase.from('government_tax_wallets').update({ balance: supabase.raw('balance + ' + whtAmt), total_withheld: supabase.raw('total_withheld + ' + whtAmt), updated_at: new Date().toISOString() }).eq('country_code', listing.country || 'KE').catch(() => {});
+      }
       const { error: be } = await supabase.from('property_bookings').insert({
         property_id: listing.id, guest_id: user.id, host_id: listing.owner_id,
         check_in_date: new Date(checkIn).toISOString(), check_out_date: new Date(checkOut).toISOString(),
@@ -53,7 +60,7 @@ export default function BookingScreen() {
         payment_status: 'fully_paid', booking_status: 'confirmed',
       }).select().single();
       if (be) throw new Error(be.message);
-      Alert.alert('✅ Booked!', 'You paid KES ' + guestTotal.toLocaleString() + ' (incl. 3% guest fee). Host receives KES ' + hostNet.toLocaleString() + '.');
+      Alert.alert('✅ Booked!', 'You paid: KES ' + guestTotal.toLocaleString() + '\n\nHost net: KES ' + hostPayout.toLocaleString() + '\nWHT to ' + (wht?.tax_authority || 'govt') + ': KES ' + whtAmt + ' (' + Math.round(whtRate*100) + '%)');
       router.replace('/stay/bookings');
     } catch (e) { setErr(String(e?.message || e)); }
     setBusy(false);
