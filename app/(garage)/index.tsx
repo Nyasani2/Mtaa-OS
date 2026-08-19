@@ -48,6 +48,7 @@ export default function GarageHomeScreen() {
 
 
   const router = useRouter();
+  const { user } = useAuthStore();
   const [myGarage, setMyGarage] = React.useState<any>(null);
   React.useEffect(() => { (async () => {
     try {
@@ -318,7 +319,7 @@ export default function GarageHomeScreen() {
           <View>
             <Text style={styles.headerTitle}>Garage OS</Text>
             <Text style={styles.headerSubtitle}>
-              {garage?.name || (garageLoading ? 'Loading...' : 'Not registered')}
+              {myGarage ? '✅ ' + myGarage.name + (myGarage.inspection_partner ? ' · Inspection Partner' : ' · Registered') : (garage?.name || (garageLoading ? 'Loading...' : 'Not registered'))}
             </Text>
           </View>
           <TouchableOpacity
