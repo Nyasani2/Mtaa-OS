@@ -326,6 +326,11 @@ export default function GarageHomeScreen() {
             <Text style={styles.headerSubtitle}>
               {myGarage ? ('✅ ' + myGarage.name + (myGarage.inspection_partner ? ' · Inspection Partner' : ' · Registered')) : (garage?.name || (garageLoading ? 'Loading...' : 'Not registered'))}
             </Text>
+          {myGarage ? (
+            <TouchableOpacity onPress={() => router.push('/(mtaxi)/driver/onboarding?garageId=' + myGarage.id)} style={{ backgroundColor: '#7c3aed', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginTop: 10, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>‍🔧 Become a Driver / Mechanic here</Text>
+            </TouchableOpacity>
+          ) : null}
           </View>
           <TouchableOpacity
             style={styles.settingsBtn}
