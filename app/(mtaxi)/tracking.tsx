@@ -87,20 +87,23 @@ export default function TrackingScreen() {
     const { data: w } = await supabase.from('wallet_accounts').select('available_balance, balance').eq('user_id', user.id).maybeSingle();
     const bal = Number(w?.available_balance || w?.balance || 0);
     if (bal < total) { Alert.alert('❌ Insufficient balance', 'KES ' + bal + ' available. Top up to complete.'); return; }
-    const platformFee = Math.round(total * 0.03);
-    const driverGross = total - platformFee;
-    // Withholding tax (Kenya 5%, Uganda 6%, etc.)
     const { data: wht } = await supabase.from('withholding_tax_rates').select('rate_percent, tax_authority').eq('country_code', driver.country_code || 'KE').maybeSingle();
-    const whtRate = Number(wht?.rate_percent || 0) / 100;
-    const whtAmt = Math.round(driverGross * whtRate);
-    const driverPayout = driverGross - whtAmt;
+    const whtPct = Number(wht?.rate_percent || 0);
     try {
-      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: total, _reference: 'MTaxi ride ' + ride.id });
-      if (de) throw new Error('Debit failed: ' + de.message);
-      try { await supabase.rpc('mtaa_credit_wallet', { p_user_id: driver.owner_id || driver.user_id, p_amount: driverPayout, p_description: 'MTaxi ride payout (net of WHT)', p_reference: 'mtaxi-' + ride.id, p_topup_method: 'ride' }); } catch {}
-      if (whtAmt > 0) {
-        await supabase.from('government_tax_wallets').update({ balance: supabase.raw('balance + ' + whtAmt), total_withheld: supabase.raw('total_withheld + ' + whtAmt), updated_at: new Date().toISOString() }).eq('country_code', driver.country_code || 'KE').catch(() => {});
-      }
+      const { data: r, error: settleErr } = await supabase.rpc('mtaa_settle', {
+        p_payer_id: user.id,
+        p_payee_id: driver.owner_id || driver.user_id,
+        p_total: total,
+        p_platform_rate_pct: 3,
+        p_wht_rate_pct: whtPct,
+        p_wht_country: driver.country_code || 'KE',
+        p_reference: 'mtaxi-' + ride.id,
+      });
+      if (settleErr) throw new Error('Settle failed: ' + settleErr.message);
+      if (!r?.ok) throw new Error('Settle not ok');
+      const platformFee = Number(r.platform_fee || 0);
+      const driverPayout = Number(r.payee_net || 0);
+      const whtAmt = Number(r.wht || 0);
       await supabase.from('mtaxi_rides').update({ status: 'completed', payment_status: 'paid', platform_fee: platformFee, driver_payout: driverPayout, withholding_tax: whtAmt, country_code: driver.country_code || 'KE', completed_at: new Date().toISOString() }).eq('id', ride.id);
       Alert.alert('✅ Ride Complete', 'You paid: KES ' + total.toLocaleString() + '\n\nDriver net: KES ' + driverPayout.toLocaleString() + '\nPlatform fee: KES ' + platformFee + ' (3%)\nWithholding tax (' + (wht?.tax_authority || 'govt') + '): KES ' + whtAmt + ' (' + Math.round(whtRate*100) + '%)');
       loadRide();
