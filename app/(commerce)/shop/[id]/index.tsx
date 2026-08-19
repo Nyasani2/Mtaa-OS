@@ -231,6 +231,10 @@ return (
             <Text style={styles.actionIcon}>➕</Text>
             <Text style={styles.actionLabel}>Add Product</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/shop/' + id + '/sell')} style={{ flex: 1, minWidth: 140, backgroundColor: '#fff', borderRadius: 12, padding: 16, alignItems: 'center' }}>
+            <Text style={{ fontSize: 26 }}>🛒</Text>
+            <Text style={{ fontWeight: '700', marginTop: 6, color: '#e8590c' }}>Sell / POS</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionCard}
             onPress={() => router.push(`/(commerce)/shop/${id}/products`)}
