@@ -1,88 +1,161 @@
 // @ts-nocheck
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
+const TZ_COUNTRY = { 'Africa/Nairobi':'KE','Africa/Dar_es_Salaam':'TZ','Africa/Kampala':'UG','Africa/Lagos':'NG','Africa/Johannesburg':'ZA','Africa/Kigali':'RW','Africa/Addis_Ababa':'ET','Africa/Accra':'GH','Europe/London':'GB','America/New_York':'US','Asia/Kolkata':'IN' };
+
 export default function SellPOSScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuthStore();
+  const [mode, setMode] = useState('sell');
   const [code, setCode] = useState('');
   const [lines, setLines] = useState([]);
+  const [taxes, setTaxes] = useState([]);
+  const [country, setCountry] = useState('KE');
+  const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [newProd, setNewProd] = useState(null);
+  const [npName, setNpName] = useState('');
+  const [npPrice, setNpPrice] = useState('');
+  const [npStock, setNpStock] = useState('1');
   const ref = useRef(null);
 
+  useEffect(() => { (async () => {
+    const { data } = await supabase.from('tax_settings').select('*').eq('is_active', true).order('country_name');
+    setTaxes(data || []);
+    let cc = null;
+    try { const { data: prof } = await supabase.from('user_profiles').select('country').eq('user_id', user?.id).maybeSingle(); cc = prof?.country; } catch {}
+    if (!cc) { try { cc = TZ_COUNTRY[Intl.DateTimeFormat().resolvedOptions().timeZone]; } catch {} }
+    if (cc && (data || []).some(t => t.country_code === cc)) setCountry(cc);
+  })(); }, []);
+
+  const tax = taxes.find(t => t.country_code === country) || taxes.find(t => t.country_code === 'DEFAULT') || { rate_percent: 0, tax_name: 'VAT' };
+  const rate = Number(tax.rate_percent || 0);
+  const subtotal = lines.reduce((s, l) => s + Number(l.price) * l.qty, 0);
+  const taxAmt = Math.round(subtotal * rate / (100 + rate));
+  const sellerNet = subtotal - taxAmt;
+
   const lookup = async (raw) => {
-    const q = (raw || code).trim();
+    const q = (raw || code).trim(); setCode('');
     if (!q) return;
-    const { data, error } = await supabase.from('products').select('*')
-      .eq('shop_id', id).or(`barcode.eq.${q},sku.eq.${q}`).limit(1);
-    if (error || !data?.length) { Alert.alert('Not found', `No product with barcode/SKU "${q}"`); return; }
+    const { data } = await supabase.from('products').select('*').eq('shop_id', id).or(`barcode.eq.${q},sku.eq.${q}`).limit(1);
+    if (!data?.length) {
+      if (mode === 'stock') { setNewProd({ barcode: q }); setNpName(''); setNpPrice(''); setNpStock('1'); }
+      else setMsg('Not found: ' + q + ' (switch to STOCK to add it)');
+      return;
+    }
     const p = data[0];
-    const inCart = lines.find((l) => l.id === p.id)?.qty || 0;
-    if ((p.stock_quantity || 0) - inCart < 1) { Alert.alert('Out of stock', p.name); return; }
-    setLines((prev) => {
-      const ex = prev.find((l) => l.id === p.id);
-      return ex ? prev.map((l) => (l.id === p.id ? { ...l, qty: l.qty + 1 } : l))
-        : [...prev, { id: p.id, name: p.name, price: Number(p.selling_price || 0), qty: 1, stock: p.stock_quantity }];
-    });
-    setCode(''); ref.current?.focus();
+    if (mode === 'stock') {
+      const add = typeof window !== 'undefined' ? parseInt(window.prompt('Stock for ' + p.name + ' — add how many?', '10'), 10) : 10;
+      const n = isNaN(add) ? 0 : add;
+      await supabase.from('products').update({ stock_quantity: (Number(p.stock_quantity) || 0) + n }).eq('id', p.id);
+      setMsg('✅ +' + n + ' → ' + p.name + ' stock now ' + ((Number(p.stock_quantity) || 0) + n));
+    } else {
+      setLines(prev => {
+        const ex = prev.find(l => l.id === p.id);
+        if (ex) return prev.map(l => l.id === p.id ? { ...l, qty: l.qty + 1 } : l);
+        return [...prev, { id: p.id, name: p.name, price: Number(p.selling_price) || 0, stock: Number(p.stock_quantity) || 0, qty: 1 }];
+      });
+      setMsg(null);
+    }
+    ref.current?.focus();
   };
 
-  const complete = async () => {
+  const saveNewProduct = async () => {
+    if (!npName.trim() || !npPrice) { setMsg('Name + price required'); return; }
+    const { error } = await supabase.from('products').insert({
+      shop_id: id, name: npName.trim(), selling_price: Number(npPrice), cost_price: 0,
+      stock_quantity: Number(npStock) || 0, sku: newProd.barcode || ('SKU-' + Date.now()),
+      barcode: newProd.barcode || null, is_active: true, images: [],
+    });
+    if (error) { setMsg('Create failed: ' + error.message); return; }
+    setMsg('✅ ' + npName + ' stocked with barcode ' + newProd.barcode);
+    setNewProd(null);
+  };
+
+  const checkout = async () => {
     if (!lines.length || busy) return;
     setBusy(true);
-    const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
-    for (const l of lines) {
-      const { error } = await supabase.from('products')
-        .update({ stock_quantity: Math.max(l.stock - l.qty, 0) }).eq('id', l.id);
-      if (error) { Alert.alert('Stock update failed', error.message); setBusy(false); return; }
-    }
-    const { data: sh } = await supabase.from('shops').select('total_sales,total_orders').eq('id', id).single();
-    await supabase.from('shops').update({
-      total_sales: Number(sh?.total_sales || 0) + total,
-      total_orders: Number(sh?.total_orders || 0) + 1,
-    }).eq('id', id);
-    if (user?.id) {
-      await supabase.rpc('mtaa_credit_wallet', {
-        p_user_id: user.id, p_amount: total, p_description: 'POS sale', p_reference: null, p_topup_method: null,
-      });
-    }
-    setLines([]); setBusy(false);
-    Alert.alert('Sale complete', `KES ${total.toFixed(2)} — stock updated, wallet credited.`);
+    try {
+      for (const l of lines) {
+        if ((l.stock || 0) < l.qty) throw new Error(l.name + ': only ' + l.stock + ' in stock');
+      }
+      for (const l of lines) {
+        await supabase.from('products').update({ stock_quantity: (l.stock || 0) - l.qty }).eq('id', l.id);
+      }
+      try { await supabase.rpc('mtaa_credit_wallet', { p_user_id: user.id, p_amount: sellerNet, p_description: 'POS sale', p_reference: 'pos-' + Date.now(), p_topup_method: 'pos' }); } catch {}
+      if (taxAmt > 0) {
+        await supabase.from('tax_payments').insert({ shop_id: id, seller_id: user.id, country_code: country, tax_name: tax.tax_name, rate_percent: rate, taxable_amount: subtotal, tax_amount: taxAmt, reference: 'pos-' + Date.now() });
+      }
+      Alert.alert('Sale complete ✅', 'Collected: KES ' + subtotal.toLocaleString() + '\n' + tax.tax_name + ' (' + country + ' ' + rate + '%) auto-deducted: KES ' + taxAmt.toLocaleString() + '\nYou received: KES ' + sellerNet.toLocaleString() + '\nStock updated.');
+      setLines([]);
+    } catch (e) { Alert.alert('Sale failed', String(e?.message || e)); }
+    setBusy(false);
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f7f7fa' }} contentContainerStyle={{ padding: 16, paddingTop: 48 }}>
-      <Text style={{ fontSize: 22, fontWeight: '800', color: '#111', marginBottom: 12 }}>Sell / POS</Text>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-        <TextInput ref={ref} value={code} onChangeText={setCode} autoFocus placeholder="Scan or type barcode, press Enter"
-          onSubmitEditing={() => lookup(code)} style={{ flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#ddd' }} />
-        <TouchableOpacity onPress={() => lookup(code)} style={{ backgroundColor: '#2196f3', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' }}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>Add</Text>
+    <ScrollView style={{ flex: 1, backgroundColor: '#f4f5f7' }} contentContainerStyle={{ padding: 16 }}>
+      <TouchableOpacity onPress={() => router.back()}><Text style={{ color: '#007AFF', fontWeight: '700', marginBottom: 10 }}>← Back</Text></TouchableOpacity>
+      <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 12 }}>POS — Scan to Sell / Stock</Text>
+
+      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => setMode('sell')} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, marginRight: 6, backgroundColor: mode === 'sell' ? '#007AFF' : '#ddd', alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>🛒 SELL</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setMode('stock')} style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: mode === 'stock' ? '#00a651' : '#ddd', alignItems: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>📦 STOCK</Text>
         </TouchableOpacity>
       </View>
-      {lines.map((l) => (
-        <View key={l.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#eee' }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: '700', color: '#222' }}>{l.name}</Text>
-            <Text style={{ color: '#777', fontSize: 12 }}>KES {l.price.toFixed(2)} · stock {l.stock}</Text>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+        {taxes.map(t => (
+          <TouchableOpacity key={t.country_code} onPress={() => setCountry(t.country_code)} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16, marginRight: 6, backgroundColor: country === t.country_code ? '#333' : '#e6e6e6' }}>
+            <Text style={{ color: country === t.country_code ? '#fff' : '#333', fontWeight: '600' }}>{t.country_code} · {t.rate_percent}%</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <TextInput ref={ref} autoFocus value={code} onChangeText={setCode} onSubmitEditing={() => lookup()} placeholder={mode === 'sell' ? 'Scan / type barcode → Enter to sell' : 'Scan / type barcode → Enter to stock'} style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12 }} />
+      {msg ? <Text style={{ color: '#b45309', marginBottom: 10 }}>{msg}</Text> : null}
+
+      {newProd ? (
+        <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+          <Text style={{ fontWeight: '700', marginBottom: 8 }}>New product (barcode {newProd.barcode})</Text>
+          <TextInput value={npName} onChangeText={setNpName} placeholder="Name" style={{ backgroundColor: '#f2f2f2', borderRadius: 8, padding: 10, marginBottom: 8 }} />
+          <TextInput value={npPrice} onChangeText={setNpPrice} placeholder="Price (KES)" keyboardType="numeric" style={{ backgroundColor: '#f2f2f2', borderRadius: 8, padding: 10, marginBottom: 8 }} />
+          <TextInput value={npStock} onChangeText={setNpStock} placeholder="Initial stock" keyboardType="numeric" style={{ backgroundColor: '#f2f2f2', borderRadius: 8, padding: 10, marginBottom: 8 }} />
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity onPress={saveNewProduct} style={{ flex: 1, backgroundColor: '#00a651', borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginRight: 6 }}><Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => setNewProd(null)} style={{ flex: 1, backgroundColor: '#ccc', borderRadius: 8, paddingVertical: 10, alignItems: 'center' }}><Text style={{ fontWeight: '700' }}>Cancel</Text></TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => setLines((p) => p.map((x) => x.id === l.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x))} style={{ paddingHorizontal: 10 }}><Text style={{ fontSize: 18, fontWeight: '800' }}>−</Text></TouchableOpacity>
-          <Text style={{ fontWeight: '800', width: 24, textAlign: 'center' }}>{l.qty}</Text>
-          <TouchableOpacity onPress={() => setLines((p) => p.map((x) => x.id === l.id ? { ...x, qty: Math.min(l.stock, x.qty + 1) } : x))} style={{ paddingHorizontal: 10 }}><Text style={{ fontSize: 18, fontWeight: '800' }}>+</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => setLines((p) => p.filter((x) => x.id !== l.id))} style={{ paddingLeft: 8 }}><Text style={{ color: '#e53935', fontWeight: '700' }}>✕</Text></TouchableOpacity>
+        </View>
+      ) : null}
+
+      {lines.map(l => (
+        <View key={l.id} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontWeight: '700' }}>{l.name}</Text>
+            <Text style={{ color: '#666' }}>KES {l.price.toLocaleString()} · stock {l.stock}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setLines(p => p.map(x => x.id === l.id ? { ...x, qty: Math.max(1, x.qty - 1) } : x))} style={{ paddingHorizontal: 10 }}><Text style={{ fontSize: 18, fontWeight: '800' }}>−</Text></TouchableOpacity>
+          <Text style={{ fontWeight: '800', marginHorizontal: 6 }}>{l.qty}</Text>
+          <TouchableOpacity onPress={() => setLines(p => p.map(x => x.id === l.id ? { ...x, qty: x.qty + 1 } : x))} style={{ paddingHorizontal: 10 }}><Text style={{ fontSize: 18, fontWeight: '800' }}>+</Text></TouchableOpacity>
         </View>
       ))}
-      <Text style={{ fontSize: 20, fontWeight: '800', color: '#111', marginVertical: 12 }}>
-        Total: KES {lines.reduce((s, l) => s + l.price * l.qty, 0).toFixed(2)}
-      </Text>
-      <TouchableOpacity onPress={complete} disabled={busy || !lines.length} style={{ backgroundColor: '#43a047', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: lines.length ? 1 : 0.5 }}>
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Complete Sale</Text>
+
+      <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, marginTop: 8 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text>Subtotal</Text><Text style={{ fontWeight: '700' }}>KES {subtotal.toLocaleString()}</Text></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text>{tax.tax_name} ({country} {rate}%) auto-deduct</Text><Text style={{ fontWeight: '700', color: '#b45309' }}>− KES {taxAmt.toLocaleString()}</Text></View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}><Text style={{ fontWeight: '800' }}>You receive</Text><Text style={{ fontWeight: '800', color: '#00a651' }}>KES {sellerNet.toLocaleString()}</Text></View>
+      </View>
+
+      <TouchableOpacity onPress={checkout} disabled={busy || !lines.length} style={{ backgroundColor: '#007AFF', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginTop: 12, opacity: lines.length ? 1 : 0.5 }}>
+        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>{busy ? 'Processing…' : '✅ Complete Sale'}</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 10, alignItems: 'center' }}><Text style={{ color: '#666' }}>Back to dashboard</Text></TouchableOpacity>
     </ScrollView>
   );
 }
