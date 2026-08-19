@@ -141,7 +141,24 @@ return (
           <Image source={{ uri: shop.cover_image_url }} style={styles.coverImage} />
         ) : (
           <View style={[styles.coverImage, styles.coverPlaceholder]}>
-            <TouchableOpacity onPress={pickCover} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#333', fontWeight: '700' }}>📷 Add Cover Photo</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              if (typeof document === 'undefined') return;
+              const input = document.createElement('input');
+              input.type = 'file'; input.accept = 'image/*';
+              input.onchange = async (e) => {
+                const file = e.target.files?.[0]; if (!file) return;
+                try {
+                  const path = 'covers/' + id + '-' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]+/g, '_');
+                  const { error } = await supabase.storage.from('shop-products').upload(path, file, { contentType: file.type, upsert: true });
+                  if (error) { alert('Upload failed: ' + error.message); return; }
+                  const pub = supabase.storage.from('shop-products').getPublicUrl(path);
+                  await supabase.from('shops').update({ cover_image: pub.publicUrl }).eq('id', id);
+                  if (typeof setShop === 'function') setShop((prev) => prev ? { ...prev, cover_image: pub.publicUrl } : prev);
+                  else alert('✅ Cover uploaded — refresh to see it');
+                } catch (e2) { alert('Cover error: ' + String(e2)); }
+              };
+              input.click();
+            }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: '#333', fontWeight: '700' }}>📷 Add Cover Photo</Text></TouchableOpacity>
           </View>
         )}
         <View style={styles.overlay} />
