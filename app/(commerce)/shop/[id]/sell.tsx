@@ -58,6 +58,21 @@ export default function SellPOSScreen() {
     else setMsg('Camera permission denied');
   };
 
+  const loadZxing = () => new Promise((res, rej) => {
+    if ((window as any).ZXingBrowser) return res((window as any).ZXingBrowser);
+    const s1 = document.createElement('script');
+    s1.src = 'https://unpkg.com/@zxing/library@0.21.0/umd/index.min.js';
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js';
+      s2.onload = () => res((window as any).ZXingBrowser);
+      s2.onerror = () => rej(new Error('zxing-browser load failed'));
+      document.head.appendChild(s2);
+    };
+    s1.onerror = () => rej(new Error('zxing load failed'));
+    document.head.appendChild(s1);
+  });
+
   const stopWebScanner = () => {
     try { zxingRef.current?.stop(); } catch {}
     zxingRef.current = null;
@@ -82,8 +97,8 @@ export default function SellPOSScreen() {
     wrap.appendChild(vid); wrap.appendChild(laser); wrap.appendChild(btn);
     document.body.appendChild(wrap);
     try {
-      const { BrowserMultiFormatReader } = await import('@zxing/browser');
-      const reader = new BrowserMultiFormatReader();
+      const ZXb = await loadZxing();
+      const reader = new ZXb.BrowserMultiFormatReader();
       zxingRef.current = await reader.decodeFromVideoDevice(undefined, vid, (result) => { if (result) onScan({ data: result.getText() }); });
     } catch (e) { alert('Scanner error: ' + (e?.message || e)); stopWebScanner(); }
   };
