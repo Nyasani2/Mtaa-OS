@@ -22,6 +22,7 @@ export default function ListPropertyScreen() {
   const [photos, setPhotos] = useState([]);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState(null);
 
   const pickPhotos = () => {
     if (typeof document === 'undefined') { Alert.alert('Photos', 'Photo upload available on web'); return; }
@@ -60,7 +61,7 @@ export default function ListPropertyScreen() {
     };
     const { data, error } = await supabase.from('properties').insert(payload).select().single();
     setBusy(false);
-    if (error) { Alert.alert('❌ Listing failed', error.message); return; }
+    if (error) { setErr(error.message); Alert.alert('❌ Listing failed', error.message); return; }
     if (data?.id && photos.length > 1) {
       for (let i = 1; i < photos.length; i++) {
         await supabase.from('property_photos').insert({ property_id: data.id, url: photos[i], is_primary: false, sort_order: i }).catch(() => {});
@@ -113,6 +114,7 @@ export default function ListPropertyScreen() {
       <Text style={{ marginHorizontal: 16, fontWeight: '700' }}>Price per Night (KES) *</Text>
       <TextInput value={price} onChangeText={setPrice} placeholder="e.g. 5000" keyboardType="numeric" style={{ margin: 16, marginTop: 8, backgroundColor: '#fff', borderRadius: 10, padding: 14 }} />
 
+      {err ? <Text style={{ marginHorizontal: 16, marginBottom: 8, color: '#c92a2a', fontWeight: '700' }}>❌ {err}</Text> : null}
       <TouchableOpacity onPress={submit} disabled={busy} style={{ margin: 16, backgroundColor: '#1a5c4b', borderRadius: 12, paddingVertical: 16, alignItems: 'center', opacity: busy ? 0.6 : 1 }}>
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>{busy ? 'Listing…' : 'List Stay'}</Text>
       </TouchableOpacity>
