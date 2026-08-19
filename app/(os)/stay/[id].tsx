@@ -12,12 +12,13 @@ import * as StreetsService from "@/lib/services/streets-service";
 export default function StayDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { fetchListing, toggleSaved, savedIds, currentListing: listing } = useStay();
+  const { fetchListing, toggleSaved, savedIds } = useStay();
+  const [listing, setListing] = useState(null);
   const { user } = useAuthStore();
   const [boostMsg, setBoostMsg] = useState(null);
 
   useEffect(() => {
-    if (id) fetchListing(id as string);
+    if (id) fetchListing(id as string).then((d) => setListing(d));
   }, [id, fetchListing]);
 
   if (!listing) return <View style={styles.center}><Text>Stay not found</Text></View>;
