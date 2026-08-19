@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const TZ_COUNTRY = { 'Africa/Nairobi':'KE','Africa/Dar_es_Salaam':'TZ','Africa/Kampala':'UG','Africa/Lagos':'NG','Africa/Johannesburg':'ZA','Africa/Kigali':'RW','Africa/Addis_Ababa':'ET','Africa/Accra':'GH','Europe/London':'GB','America/New_York':'US','Asia/Kolkata':'IN' };
 
@@ -23,6 +24,9 @@ export default function SellPOSScreen() {
   const [npPrice, setNpPrice] = useState('');
   const [npStock, setNpStock] = useState('1');
   const ref = useRef(null);
+  const [scanning, setScanning] = useState(false);
+  const [perm, requestPerm] = useCameraPermissions();
+  const lastScan = useRef(0);
 
   useEffect(() => { (async () => {
     const { data } = await supabase.from('tax_settings').select('*').eq('is_active', true).order('country_name');
@@ -38,6 +42,19 @@ export default function SellPOSScreen() {
   const subtotal = lines.reduce((s, l) => s + Number(l.price) * l.qty, 0);
   const taxAmt = Math.round(subtotal * rate / (100 + rate));
   const sellerNet = subtotal - taxAmt;
+
+  const onScan = (e) => {
+    const now = Date.now();
+    if (now - lastScan.current < 1500) return;
+    lastScan.current = now;
+    if (e?.data) lookup(e.data);
+  };
+
+  const startCamera = async () => {
+    const ok = await requestPerm();
+    if (ok?.granted) setScanning(true);
+    else setMsg('Camera permission denied');
+  };
 
   const lookup = async (raw) => {
     const q = (raw || code).trim(); setCode('');
@@ -120,6 +137,15 @@ export default function SellPOSScreen() {
       </ScrollView>
 
       <TextInput ref={ref} autoFocus value={code} onChangeText={setCode} onSubmitEditing={() => lookup()} placeholder={mode === 'sell' ? 'Scan / type barcode → Enter to sell' : 'Scan / type barcode → Enter to stock'} style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12 }} />
+      <TouchableOpacity onPress={scanning ? () => setScanning(false) : startCamera} style={{ backgroundColor: scanning ? '#c92a2a' : '#333', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginBottom: 10 }}>
+        <Text style={{ color: '#fff', fontWeight: '700' }}>{scanning ? '✖ Close Camera' : '📷 Scan with Camera'}</Text>
+      </TouchableOpacity>
+      {scanning && perm?.granted ? (
+        <View style={{ height: 240, borderRadius: 12, overflow: 'hidden', marginBottom: 10 }}>
+          <CameraView style={{ flex: 1 }} facing="back" onBarcodeScanned={onScan} />
+          <View style={{ position: 'absolute', top: '45%', left: '10%', right: '10%', height: 2, backgroundColor: '#00ff00' }} />
+        </View>
+      ) : null}
       {msg ? <Text style={{ color: '#b45309', marginBottom: 10 }}>{msg}</Text> : null}
 
       {newProd ? (
