@@ -157,12 +157,12 @@ return (
                   alert('✅ Cover photo saved');
                 };
                 inp.click();
-              }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
+              }} style={{ zIndex: 5, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ color: '#333', fontWeight: '700' }}>📷 Add Cover Photo</Text>
         </TouchableOpacity>
           </View>
         )}
-        <View style={styles.overlay} />
+        <View style={styles.overlay} pointerEvents="none" />
       </View>
 
       {/* Shop Header */}
