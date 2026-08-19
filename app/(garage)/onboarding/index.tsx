@@ -7,6 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useGarage } from '@/lib/hooks/useGarage';
+import { supabase } from '@/lib/supabase';
 import {
   Wrench, MapPin, Phone, Mail, FileText, ChevronRight,
   CheckCircle, Building2, User
@@ -47,16 +48,30 @@ export default function GarageOnboarding() {
 
   const handleSubmit = async () => {
     if (!form.name || !form.address || !form.phone) {
-      Alert.alert('Required', 'Name, address, and phone are required.');
+      window.alert('Name, address, and phone are required.');
       return;
     }
     try {
-      await registerGarage(form);
-      Alert.alert('Success', 'Garage registered successfully!', [
-        { text: 'OK', onPress: () => router.replace('/(garage)') }
-      ]);
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to register garage');
+      const { error } = await supabase.from('mtaxi_garages').insert({
+        owner_id: user?.id,
+        owner_name: (user as any)?.email || 'owner',
+        name: form.name,
+        address: form.address,
+        location: form.address,
+        phone: form.phone,
+        email: form.email || null,
+        registration_number: form.registration_number || null,
+        tax_id: form.tax_id || null,
+        services: form.services,
+        garage_type: 'general',
+        approved: false,
+        application_fee_paid: false,
+      });
+      if (error) throw new Error(error.message);
+      window.alert('✅ Garage registered: ' + form.name);
+      router.replace('/(garage)');
+    } catch (e) {
+      window.alert('❌ Register failed: ' + String((e as any)?.message || e));
     }
   };
 

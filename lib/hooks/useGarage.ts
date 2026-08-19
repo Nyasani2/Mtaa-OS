@@ -93,7 +93,7 @@ export function useGarage() {
       if (message.includes('does not exist') || message.includes('relation') || message.includes('timed out')) {
         try {
           const { data, error } = await supabase
-            .from('garages')
+            .from('mtaxi_garages')
             .select('*')
             .eq('owner_id', (await supabase.auth.getUser()).data.user?.id)
             .maybeSingle();
