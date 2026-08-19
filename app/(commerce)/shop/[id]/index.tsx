@@ -147,14 +147,21 @@ return (
                 inp.type = 'file'; inp.accept = 'image/*';
                 inp.onchange = async (ev) => {
                   const f = ev.target.files?.[0]; if (!f) return;
+                  const save = async (url) => {
+                    const { error: ue } = await supabase.from('shops').update({ cover_image: url }).eq('id', id);
+                    if (ue) { alert('DB save failed: ' + ue.message); return; }
+                    if (typeof setShop === 'function') setShop((prev) => prev ? { ...prev, cover_image: url } : prev);
+                  };
                   const path = 'covers/' + id + '-' + Date.now() + '-' + f.name.replace(/[^a-zA-Z0-9.]+/g, '_');
                   const { error } = await supabase.storage.from('shop-products').upload(path, f, { contentType: f.type, upsert: true });
-                  if (error) { alert('Upload failed: ' + error.message); return; }
-                  const pub = supabase.storage.from('shop-products').getPublicUrl(path);
-                  const { error: ue } = await supabase.from('shops').update({ cover_image: pub.publicUrl }).eq('id', id);
-                  if (ue) { alert('DB save failed: ' + ue.message); return; }
-                  if (typeof setShop === 'function') setShop((prev) => prev ? { ...prev, cover_image: pub.publicUrl } : prev);
-                  alert('✅ Cover photo saved');
+                  if (!error) {
+                    const pub = supabase.storage.from('shop-products').getPublicUrl(path);
+                    await save(pub.publicUrl); alert('✅ Cover saved');
+                  } else {
+                    const r = new FileReader();
+                    r.onload = async () => { await save(String(r.result)); alert('✅ Cover saved (embedded)'); };
+                    r.readAsDataURL(f);
+                  }
                 };
                 inp.click();
               }} style={{ zIndex: 5, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}>
