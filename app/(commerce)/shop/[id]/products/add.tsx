@@ -16,6 +16,9 @@ export default function AddProductScreen() {
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState([]);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [videoDur, setVideoDur] = useState(0);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
@@ -40,7 +43,28 @@ export default function AddProductScreen() {
     input.click();
   };
 
-  const submit = async () => {
+    const pickVideo = () => {
+    if (typeof document === 'undefined') { Alert.alert('Video', 'Available on web'); return; }
+    const input = document.createElement('input'); input.type = 'file'; input.accept = 'video/*';
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      setUploadingVideo(true);
+      try {
+        const objUrl = URL.createObjectURL(file);
+        const dur = await new Promise((res) => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => res(v.duration || 0); v.onerror = () => res(0); v.src = objUrl; });
+        if (dur > 30.5) { setErr('Video too long (' + Math.round(dur) + 's). Max 30 seconds.'); setUploadingVideo(false); return; }
+        const path = 'product-video-' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]+/g, '_');
+        const { error } = await supabase.storage.from('shop-products').upload(path, file, { contentType: file.type, upsert: false });
+        if (error) { setErr('Video upload failed: ' + error.message); setUploadingVideo(false); return; }
+        setVideoUrl(supabase.storage.from('shop-products').getPublicUrl(path).publicUrl);
+        setVideoDur(Math.round(dur)); setErr(null);
+      } catch (e2) { setErr('Video error: ' + String(e2)); }
+      setUploadingVideo(false);
+    };
+    input.click();
+  };
+
+const submit = async () => {
     setErr(null);
     if (!name.trim()) { setErr('Name is required'); return; }
     if (!price || Number(price) <= 0) { setErr('Price must be > 0'); return; }
@@ -54,6 +78,7 @@ export default function AddProductScreen() {
         sku: 'SKU-' + Date.now().toString(36).toUpperCase(),
         cost_price: 0,
         selling_price: Number(price),
+        video_url: videoUrl,
         stock_quantity: Number(stock),
         category: category.trim() || null,
         description: description.trim() || null,
@@ -89,6 +114,9 @@ export default function AddProductScreen() {
         <TouchableOpacity onPress={pickPhoto} style={{ width: 72, height: 72, borderRadius: 10, borderWidth: 1, borderColor: '#bbb', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
           {uploading ? <ActivityIndicator size="small" /> : <Text style={{ color: '#2196f3', fontWeight: '700' }}>+ Photo</Text>}
         </TouchableOpacity>
+      <TouchableOpacity onPress={pickVideo} disabled={uploadingVideo} style={{ borderWidth: 1, borderStyle: 'dashed', borderColor: '#7048e8', borderRadius: 12, width: 96, height: 96, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#7048e8', fontWeight: '700' }}>{uploadingVideo ? '…' : videoUrl ? '🎬 ' + videoDur + 's ✓' : '+ Video 30s'}</Text>
+      </TouchableOpacity>
       </View>
 
       <Text style={label}>Product Name *</Text>
