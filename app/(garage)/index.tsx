@@ -324,7 +324,7 @@ export default function GarageHomeScreen() {
           <View>
             <Text style={styles.headerTitle}>Garage OS</Text>
             <Text style={styles.headerSubtitle}>
-              {myGarage ? '✅ ' + myGarage.name + (myGarage.inspection_partner ? ' · Inspection Partner' : ' · Registered') : (garage?.name || (garageLoading ? 'Loading...' : 'Not registered'))}
+              {myGarage ? ('✅ ' + myGarage.name + (myGarage.inspection_partner ? ' · Inspection Partner' : ' · Registered')) : (garage?.name || (garageLoading ? 'Loading...' : 'Not registered'))}
             </Text>
           </View>
           <TouchableOpacity
