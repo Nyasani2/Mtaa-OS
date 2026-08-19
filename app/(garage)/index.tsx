@@ -48,7 +48,6 @@ export default function GarageHomeScreen() {
 
 
   const router = useRouter();
-  const { user } = useAuthStore();
   const [myGarage, setMyGarage] = React.useState<any>(null);
   React.useEffect(() => { (async () => {
     try {
