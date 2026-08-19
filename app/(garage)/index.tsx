@@ -45,6 +45,10 @@ type TabKey = 'vehicles' | 'recordings' | 'incidents' | 'diagnostics';
 /* ─────────────────────────── Main Screen ─────────────────────────── */
 
 export default function GarageHomeScreen() {
+
+
+  const router = useRouter();
+  const { user } = useAuthStore();
   const [myGarage, setMyGarage] = React.useState<any>(null);
   React.useEffect(() => { (async () => {
     try {
@@ -53,8 +57,6 @@ export default function GarageHomeScreen() {
     } catch {}
   })(); }, [user?.id]);
 
-  const router = useRouter();
-  const { user } = useAuthStore();
   const { garage, loading: garageLoading, loadGarage } = useGarage();
 
   const [activeTab, setActiveTab] = useState<TabKey>('vehicles');
