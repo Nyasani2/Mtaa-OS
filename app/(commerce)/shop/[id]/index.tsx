@@ -137,8 +137,8 @@ return (
     >
       {/* Cover Image */}
       <View style={styles.coverContainer}>
-        {shop.cover_image_url ? (
-          <Image source={{ uri: shop.cover_image_url }} style={styles.coverImage} />
+        {shop.cover_image_image_url ? (
+          <Image source={{ uri: shop.cover_image_image_url }} style={styles.coverImage} />
         ) : (
           <View style={[styles.coverImage, styles.coverPlaceholder]}>
             <TouchableOpacity onPress={() => {
