@@ -27,6 +27,8 @@ export default function SellPOSScreen() {
   const [scanning, setScanning] = useState(false);
   const [perm, requestPerm] = useCameraPermissions();
   const lastScan = useRef(0);
+  const [taxOn, setTaxOn] = useState(true);
+  const zxingRef = useRef(null);
 
   useEffect(() => { (async () => {
     const { data } = await supabase.from('tax_settings').select('*').eq('is_active', true).order('country_name');
@@ -40,7 +42,7 @@ export default function SellPOSScreen() {
   const tax = taxes.find(t => t.country_code === country) || taxes.find(t => t.country_code === 'DEFAULT') || { rate_percent: 0, tax_name: 'VAT' };
   const rate = Number(tax.rate_percent || 0);
   const subtotal = lines.reduce((s, l) => s + Number(l.price) * l.qty, 0);
-  const taxAmt = Math.round(subtotal * rate / (100 + rate));
+  const taxAmt = taxOn ? Math.round(subtotal * rate / (100 + rate)) : 0;
   const sellerNet = subtotal - taxAmt;
 
   const onScan = (e) => {
@@ -54,6 +56,36 @@ export default function SellPOSScreen() {
     const ok = await requestPerm();
     if (ok?.granted) setScanning(true);
     else setMsg('Camera permission denied');
+  };
+
+  const stopWebScanner = () => {
+    try { zxingRef.current?.stop(); } catch {}
+    zxingRef.current = null;
+    const el = document.getElementById('pos-scan-overlay'); if (el) el.remove();
+    setScanning(false);
+  };
+
+  const startWebScanner = async () => {
+    setScanning(true);
+    const wrap = document.createElement('div');
+    wrap.id = 'pos-scan-overlay';
+    wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+    const vid = document.createElement('video');
+    vid.setAttribute('playsinline', 'true'); vid.setAttribute('autoplay', 'true'); vid.muted = true;
+    vid.style.cssText = 'width:92%;max-width:640px;border-radius:12px;';
+    const laser = document.createElement('div');
+    laser.style.cssText = 'position:fixed;top:50%;left:8%;right:8%;height:2px;background:#00ff00;pointer-events:none;';
+    const btn = document.createElement('button');
+    btn.textContent = '✖ Close Camera';
+    btn.style.cssText = 'margin-top:14px;padding:12px 28px;border:none;border-radius:10px;background:#c92a2a;color:#fff;font-weight:700;font-size:15px;';
+    btn.onclick = stopWebScanner;
+    wrap.appendChild(vid); wrap.appendChild(laser); wrap.appendChild(btn);
+    document.body.appendChild(wrap);
+    try {
+      const { BrowserMultiFormatReader } = await import('@zxing/browser');
+      const reader = new BrowserMultiFormatReader();
+      zxingRef.current = await reader.decodeFromVideoDevice(undefined, vid, (result) => { if (result) onScan({ data: result.getText() }); });
+    } catch (e) { alert('Scanner error: ' + (e?.message || e)); stopWebScanner(); }
   };
 
   const lookup = async (raw) => {
@@ -137,7 +169,7 @@ export default function SellPOSScreen() {
       </ScrollView>
 
       <TextInput ref={ref} autoFocus value={code} onChangeText={setCode} onSubmitEditing={() => lookup()} placeholder={mode === 'sell' ? 'Scan / type barcode → Enter to sell' : 'Scan / type barcode → Enter to stock'} style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 16, marginBottom: 12 }} />
-      <TouchableOpacity onPress={scanning ? () => setScanning(false) : startCamera} style={{ backgroundColor: scanning ? '#c92a2a' : '#333', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginBottom: 10 }}>
+      <TouchableOpacity onPress={() => { if (typeof document !== 'undefined') { startWebScanner(); } else if (scanning) { setScanning(false); } else { startCamera(); } }} style={{ backgroundColor: scanning ? '#c92a2a' : '#333', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ color: '#fff', fontWeight: '700' }}>{scanning ? '✖ Close Camera' : '📷 Scan with Camera'}</Text>
       </TouchableOpacity>
       {scanning && perm?.granted ? (
@@ -173,6 +205,12 @@ export default function SellPOSScreen() {
         </View>
       ))}
 
+      <TouchableOpacity onPress={() => setTaxOn(v => !v)} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8 }}>
+        <Text style={{ fontWeight: '700' }}>🧾 Auto-deduct tax ({country} {rate}%) — {taxOn ? 'ON' : 'OFF'}</Text>
+        <View style={{ width: 46, height: 26, borderRadius: 13, backgroundColor: taxOn ? '#00a651' : '#ccc', justifyContent: 'center', padding: 3 }}>
+          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', alignSelf: taxOn ? 'flex-end' : 'flex-start' }} />
+        </View>
+      </TouchableOpacity>
       <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 14, marginTop: 8 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text>Subtotal</Text><Text style={{ fontWeight: '700' }}>KES {subtotal.toLocaleString()}</Text></View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><Text>{tax.tax_name} ({country} {rate}%) auto-deduct</Text><Text style={{ fontWeight: '700', color: '#b45309' }}>− KES {taxAmt.toLocaleString()}</Text></View>
