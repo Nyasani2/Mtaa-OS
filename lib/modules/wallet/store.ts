@@ -1,2 +1,2 @@
 export { useWalletStore } from '@/lib/stores/wallet-store';
-export { useWallet as default } from '@/domains/wallet/hooks/useWallet';
+export { useWallet as default } from 'app/(os)/wallet/hooks';

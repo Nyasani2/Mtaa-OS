@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/lib/auth/useAuth';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { useWalletStore } from 'app/(os)/wallet/hooks';
 import { depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
 

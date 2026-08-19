@@ -6,7 +6,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/domains/wallet/hooks/useWallet';
+import { useWalletStore } from 'app/(os)/wallet/hooks';
 import { supabase } from '@/lib/supabase';
 import { BlurView } from 'expo-blur';
 

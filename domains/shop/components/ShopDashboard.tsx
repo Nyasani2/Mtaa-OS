@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShop, useShopProducts, useShopOrders } from '@/domains/shop/hooks/useShop';
-import { useWalletBalance } from '@/domains/wallet/hooks/useWallet';
+import { useWalletBalance } from 'app/(os)/wallet/hooks';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ShopDashboardProps {

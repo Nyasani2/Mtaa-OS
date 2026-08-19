@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWallet } from '@/domains/wallet/hooks/useWallet';
+import { useWallet } from 'app/(os)/wallet/hooks';
 import { supabase } from '@/lib/supabase';
 
 export default function AdvanceRequestScreen() {

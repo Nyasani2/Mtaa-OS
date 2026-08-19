@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useWalletTransactions } from '@/domains/wallet/hooks/useWallet';
+import { useWalletTransactions } from 'app/(os)/wallet/hooks';
 
 export default function TransactionsScreen() {
   const router = useRouter();
