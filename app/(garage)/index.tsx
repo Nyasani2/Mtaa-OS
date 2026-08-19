@@ -100,7 +100,12 @@ export default function GarageHomeScreen() {
     { label: 'Open Cases', value: incidentStats?.open || 0, icon: Activity, color: '#f59e0b' },
   ];
 
-  /* ── Quick Actions ── */
+  /* ── Quick Actions</Text>
+      <TouchableOpacity onPress={() => router.push('/inspections')} style={{ backgroundColor: '#16a34a', borderRadius: 12, padding: 14, marginBottom: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>🔍 Vehicle Inspections — earn 50% per job</Text>
+        <Text style={{ color: '#fff', fontSize: 18 }}>›</Text>
+      </TouchableOpacity>
+      <Text style={{ fontSize: 17, fontWeight: '700', marginBottom: 10 }}> ── */
   const quickActions = [
     {
       label: 'New Work Order',
@@ -163,7 +168,7 @@ export default function GarageHomeScreen() {
       return (
         <View style={styles.emptyTab}>
           <Car size={40} color="#d1d5db" />
-          <Text style={styles.emptyTitle}>No vehicle cameras registered</Text>
+          <Text style={styles.emptyTitle}>Devices (optional add-on) — no cameras registered</Text>
           <Text style={styles.emptySubtitle}>Add a dashcam or security camera to monitor your vehicle.</Text>
           <TouchableOpacity
             style={styles.emptyButton}
