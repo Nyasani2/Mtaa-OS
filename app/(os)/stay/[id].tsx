@@ -25,10 +25,13 @@ export default function StayDetailScreen() {
 
   const boostStay = async () => {
     try {
-      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 500, _reference: 'Boost stay to Streets' });
+      const { data: wbal } = await supabase.from('wallet_accounts').select('balance').eq('user_id', user.id).maybeSingle();
+      const bal = Number(wbal?.balance || 0);
+      if (bal < 200) { setBoostMsg('❌ Insufficient wallet balance (KES ' + bal + '). Top up first — boost costs KES 200.'); return; }
+      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 200, _reference: 'Boost stay to Streets' });
       if (de) { setBoostMsg('Boost failed: ' + de.message); return; }
       const until = new Date(Date.now() + 7 * 86400000).toISOString();
-      await supabase.from('properties').update({ boosted_until: until, boost_cost: (Number(listing.boost_cost) || 0) + 500 }).eq('id', listing.id);
+      await supabase.from('properties').update({ boosted_until: until, boost_cost: (Number(listing.boost_cost) || 0) + 200 }).eq('id', listing.id);
       const marker = '[stayboost:' + listing.id + ']';
       const { data: dup } = await supabase.from('streets_posts').select('id').ilike('content', '%' + marker + '%').limit(1);
       if (!dup || !dup.length) {
@@ -140,7 +143,7 @@ export default function StayDetailScreen() {
                 </View>
               ) : (
                 <TouchableOpacity onPress={boostStay} style={{ backgroundColor: '#f5a623', borderRadius: 12, paddingVertical: 14, alignItems: 'center' }}>
-                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>⚡ Boost to Streets (500 KES)</Text>
+                  <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>⚡ Boost to Streets (200 KES)</Text>
                 </TouchableOpacity>
               )}
               {boostMsg ? <Text style={{ color: '#1a5c4b', marginTop: 8, textAlign: 'center', fontWeight: '600' }}>{boostMsg}</Text> : null}

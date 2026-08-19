@@ -229,7 +229,7 @@ class CartService {
     const list = items || [];
     const subtotal = list.reduce((sum: number, i: any) =>
       sum + Number(i.unit_price ?? i.selling_price ?? i.price ?? 0) * Number(i.quantity || 1), 0);
-    const platformFee = Math.round(subtotal * 0.025);
+    const platformFee = Math.round(subtotal * 0.03);
     const shippingTotal = 0;
     return { subtotal, platformFee, platform_fee: platformFee, shipping: shippingTotal, shippingTotal,
       deliveryFee: shippingTotal, delivery_fee: shippingTotal, tax: 0, discount: 0, savings: 0,

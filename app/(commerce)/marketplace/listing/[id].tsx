@@ -47,11 +47,14 @@ export default function ListingDetailScreen() {
 
 const boostListing = async () => {
     try {
-      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 500, _reference: 'Boost listing to Streets' });
+      const { data: wbal } = await supabase.from('wallet_accounts').select('balance').eq('user_id', user.id).maybeSingle();
+      const bal = Number(wbal?.balance || 0);
+      if (bal < 200) { setMsg('❌ Insufficient wallet balance (KES ' + bal + '). Top up first — boost costs KES 200.'); return; }
+      const { error: de } = await supabase.rpc('wallet_debit', { _user_id: user.id, _amount: 200, _reference: 'Boost listing to Streets' });
       if (de) { setMsg('Boost failed: ' + de.message); return; }
       const until = new Date(Date.now() + 7 * 86400000).toISOString();
       const { error: ue } = await supabase.from('marketplace_listings')
-        .update({ boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 })
+        .update({ boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 200 })
         .eq('id', item.id);
       if (ue) { setMsg('Boost update failed: ' + ue.message); return; }
       try {
@@ -67,7 +70,7 @@ const boostListing = async () => {
         });
       } catch (postErr) { console.warn('[boost] post failed:', postErr); }
       setMsg('⚡ Boosted! ' + (videoUrl ? 'Video ad' : 'Ad') + ' live on Streets for 7 days.');
-      setItem({ ...item, boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 500 });
+      setItem({ ...item, boosted_until: until, boost_cost: (Number(item.boost_cost) || 0) + 200 });
     } catch (e) { setMsg('Boost error: ' + String(e)); }
   };
 
@@ -119,7 +122,7 @@ const boostListing = async () => {
       ) : null}
       {item.seller_id === user?.id && (!item.boosted_until || new Date(item.boosted_until) < new Date()) ? (
         <TouchableOpacity onPress={boostListing} style={{ backgroundColor: '#f5a623', borderRadius: 12, paddingVertical: 16, alignItems: 'center', marginBottom: 12 }}>
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>⚡ Boost to Streets (500 KES)</Text>
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>⚡ Boost to Streets (200 KES)</Text>
         </TouchableOpacity>
       ) : null}
       {item.boosted_until && new Date(item.boosted_until) > new Date() ? (
