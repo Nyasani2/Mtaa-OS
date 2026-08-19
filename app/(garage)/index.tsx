@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { supabase } from '@/lib/supabase';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -44,6 +45,15 @@ type TabKey = 'vehicles' | 'recordings' | 'incidents' | 'diagnostics';
 /* ─────────────────────────── Main Screen ─────────────────────────── */
 
 export default function GarageHomeScreen() {
+  const { user } = useAuthStore();
+  const [myGarage, setMyGarage] = React.useState<any>(null);
+  React.useEffect(() => { (async () => {
+    try {
+      const { data } = await supabase.from('mtaxi_garages').select('*').eq('owner_id', user?.id).maybeSingle();
+      if (data) setMyGarage(data);
+    } catch {}
+  })(); }, [user?.id]);
+
   const router = useRouter();
   const { user } = useAuthStore();
   const { garage, loading: garageLoading, loadGarage } = useGarage();
