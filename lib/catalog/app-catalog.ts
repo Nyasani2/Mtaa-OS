@@ -77,11 +77,12 @@ export const ALL_APPS: AppTile[] = [
   { id: 'credit', name: 'Credit', icon: 'card', iconSet: 'Ionicons', route: '/(finance)/credit', color: '#fff', bgColor: '#10b981', ownerOnly: false, category: 'FINANCE', status: 'live' },
   { id: 'wallet', name: 'Wallet', icon: 'wallet', iconSet: 'Ionicons', route: '/(os)/wallet', color: '#fff', bgColor: '#f97316', ownerOnly: false, category: 'FINANCE', status: 'live' },
 
-  // ─── COMMERCE (4 apps) ───
+  // ─── COMMERCE (5 apps) ───
   { id: 'ads', name: 'Ads', icon: 'megaphone', iconSet: 'Ionicons', route: '/(business)/ads', color: '#fff', bgColor: '#f97316', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'marketplace', name: 'Market', icon: 'cart', iconSet: 'Ionicons', route: '/(commerce)/marketplace', color: '#fff', bgColor: '#84cc16', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'restaurant', name: 'Restaurant', icon: 'restaurant', iconSet: 'Ionicons', route: '/(os)/restaurant', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'shop', name: 'Shop', icon: 'storefront', iconSet: 'Ionicons', route: '/(commerce)/shop', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'COMMERCE', status: 'live' },
+  { id: 'stay', name: 'Stay', icon: 'home', iconSet: 'Ionicons', route: '/(os)/stay', color: '#fff', bgColor: '#1a5c4b', ownerOnly: false, category: 'COMMERCE', status: 'live' },
 
   // ─── CIVIC ARCHIVED ───
   // { id: 'civic', name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'missing' },

@@ -7,7 +7,7 @@ export const stayManifest: ModuleManifest = {
   description: 'Find and book stays, rentals, and accommodations',
   version: '1.0.0',
   author: 'MTAA OS',
-  category: 'lifestyle',
+  category: 'commerce',
   icon: 'home',
   color: '#1a5c4b',
   entryRoute: '/(os)/stay',
