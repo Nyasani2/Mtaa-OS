@@ -84,8 +84,8 @@ export default function MTruckOnboarding() {
     setLoading(true);
     try {
       // 1) wallet balance gate
-      const { data: w } = const __auth = await requestPaymentAuth(FEE); if (!__auth) throw new Error('Cancelled: PIN or biometric required');
-      await supabase.from('wallet_accounts').select('balance, available_balance').eq('user_id', user.id).maybeSingle();
+      await requestPaymentAuth(FEE); if (!__auth) throw new Error('Cancelled: PIN or biometric required');
+      const { data: w } = = await supabase.from('wallet_accounts').select('balance, available_balance').eq('user_id', user.id).maybeSingle();
       const bal = Number(w?.available_balance ?? w?.balance ?? 0);
       if (bal < FEE) { setSubmitErr('❌ Insufficient balance (KES ' + bal + '). Top up KES ' + FEE + ' to activate.'); setLoading(false); return; }
       // 2) atomic debit (50% platform / 50% treasury)
