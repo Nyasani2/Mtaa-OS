@@ -4,6 +4,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'reac
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { requestPaymentAuth } from '@/components/pay/ConfirmPayment';
 
 const FEES: Record<string, number> = { boda: 1000, car: 2000, truck: 5000 };
 const ANGLES = ['Front', 'Back', 'Left side', 'Right side', 'Interior'];
@@ -48,8 +49,9 @@ export default function DriverOnboarding() {
       const bal = Number(w?.available_balance ?? w?.balance ?? 0);
       if (bal < fee) { setErr('❌ Insufficient balance (KES ' + bal + '). Top up KES ' + fee + ' to activate.'); setBusy(false); return; }
       // 2) atomic debit (platform 50% + garage/inspector 50%)
-      const payee = garageId ? (await supabase.from('mtaxi_garages').select('owner_id').eq('id', garageId).maybeSingle()).data?.owner_id : user!.id;
-      const { error: se } = await supabase.rpc('mtaa_settle', { p_payer_id: user!.id, p_payee_id: payee || user!.id, p_total: fee, p_platform_rate_pct: 50, p_wht_rate_pct: 0, p_reference: 'driver-onboard-' + Date.now() });
+      const payee = garageId ? (const __auth = await requestPaymentAuth(fee); if (!__auth) throw new Error('Cancelled: PIN or biometric required');
+      await supabase.from('mtaxi_garages').select('owner_id').eq('id', garageId).maybeSingle()).data?.owner_id : user!.id;
+      const { error: se } = await supabase.rpc('mtaa_settle', { p_payer_id: user!.id, p_payee_id: payee || user!.id, p_total: fee, p_platform_rate_pct: 50, p_wht_rate_pct: 0, p_reference: 'driver-onboard-' + Date.now() , p_tx_pin: __auth?.pin || null, p_biometric_ok: !!__auth?.biometric});
       if (se) throw new Error(se.message);
       // 3) create driver record
       const { error: e1 } = await supabase.from('mtaxi_drivers').upsert({

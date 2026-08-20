@@ -58,3 +58,11 @@ export function ConfirmPayment({ visible, amount, onClose, onConfirm }: {
     </Modal>
   );
 }
+
+export async function requestPaymentAuth(amount: number): Promise<{pin?:string; biometric?:boolean}|null> {
+  const bio = await confirmWithBiometric('Confirm KES ' + amount.toLocaleString());
+  if (bio) return { biometric: true };
+  const pin = typeof window !== 'undefined' ? window.prompt('Enter your 4-digit transaction PIN to pay KES ' + amount.toLocaleString()) : null;
+  if (pin && /^\d{4}$/.test(pin.trim())) return { pin: pin.trim() };
+  return null;
+}

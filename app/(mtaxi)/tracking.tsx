@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useTransport } from '@/lib/transport/hooks/useTransport';
 import { supabase } from '@/lib/supabase';
+import { requestPaymentAuth } from '@/components/pay/ConfirmPayment';
 
 export default function TrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -87,7 +88,8 @@ export default function TrackingScreen() {
     const { data: w } = await supabase.from('wallet_accounts').select('available_balance, balance').eq('user_id', user.id).maybeSingle();
     const bal = Number(w?.available_balance || w?.balance || 0);
     if (bal < total) { Alert.alert('❌ Insufficient balance', 'KES ' + bal + ' available. Top up to complete.'); return; }
-    const { data: wht } = await supabase.from('withholding_tax_rates').select('rate_percent, tax_authority').eq('country_code', driver.country_code || 'KE').maybeSingle();
+    const { data: wht } = const __auth = await requestPaymentAuth(total); if (!__auth) throw new Error('Cancelled: PIN or biometric required');
+      await supabase.from('withholding_tax_rates').select('rate_percent, tax_authority').eq('country_code', driver.country_code || 'KE').maybeSingle();
     const whtPct = Number(wht?.rate_percent || 0);
     try {
       const { data: r, error: settleErr } = await supabase.rpc('mtaa_settle', {
@@ -98,7 +100,7 @@ export default function TrackingScreen() {
         p_wht_rate_pct: whtPct,
         p_wht_country: driver.country_code || 'KE',
         p_reference: 'mtaxi-' + ride.id,
-      });
+      , p_tx_pin: __auth?.pin || null, p_biometric_ok: !!__auth?.biometric});
       if (settleErr) throw new Error('Settle failed: ' + settleErr.message);
       if (!r?.ok) throw new Error('Settle not ok');
       const platformFee = Number(r.platform_fee || 0);

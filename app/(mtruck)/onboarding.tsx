@@ -7,6 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import { requestPaymentAuth } from '@/components/pay/ConfirmPayment';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const STEPS = ['Company Info', 'Fleet Details', 'Documents', 'Review'];
@@ -83,11 +84,12 @@ export default function MTruckOnboarding() {
     setLoading(true);
     try {
       // 1) wallet balance gate
-      const { data: w } = await supabase.from('wallet_accounts').select('balance, available_balance').eq('user_id', user.id).maybeSingle();
+      const { data: w } = const __auth = await requestPaymentAuth(FEE); if (!__auth) throw new Error('Cancelled: PIN or biometric required');
+      await supabase.from('wallet_accounts').select('balance, available_balance').eq('user_id', user.id).maybeSingle();
       const bal = Number(w?.available_balance ?? w?.balance ?? 0);
       if (bal < FEE) { setSubmitErr('❌ Insufficient balance (KES ' + bal + '). Top up KES ' + FEE + ' to activate.'); setLoading(false); return; }
       // 2) atomic debit (50% platform / 50% treasury)
-      const { error: se } = await supabase.rpc('mtaa_settle', { p_payer_id: user.id, p_payee_id: user.id, p_total: FEE, p_platform_rate_pct: 50, p_wht_rate_pct: 0, p_reference: 'mtruck-activate-' + Date.now() });
+      const { error: se } = await supabase.rpc('mtaa_settle', { p_payer_id: user.id, p_payee_id: user.id, p_total: FEE, p_platform_rate_pct: 50, p_wht_rate_pct: 0, p_reference: 'mtruck-activate-' + Date.now() , p_tx_pin: __auth?.pin || null, p_biometric_ok: !!__auth?.biometric});
       if (se) throw new Error('Payment failed: ' + se.message);
       // 3) persist (columns matched to schema)
       const { error: insertError } = await supabase.from('mtruck_fleet').insert({
