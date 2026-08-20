@@ -73,43 +73,50 @@ export default function MTruckOnboarding() {
     else router.back();
   };
 
+  const [submitErr, setSubmitErr] = useState('');
+  const FEE = 5000;
   const handleSubmit = async () => {
+    setSubmitErr('');
     const error = validateStep();
-    if (error) { Alert.alert('Validation Error', error); return; }
-    if (!user) { Alert.alert('Error', 'You must be logged in'); return; }
-
+    if (error) { window.alert('Validation: ' + error); return; }
+    if (!user) { window.alert('You must be logged in.'); return; }
     setLoading(true);
     try {
-      const { error: insertError } = await supabase
-        .from('mtruck_fleet')
-        .insert({
-          owner_id: user.id,
-          name: companyName.trim(),
-          business_reg: businessReg.trim(),
-          kra_pin: kraPin.trim(),
-          address: address.trim() || null,
-          city: city.trim() || null,
-          contact_phone: contactPhone.trim(),
-          contact_email: contactEmail.trim() || null,
-          vehicle_count: parseInt(fleetSize, 10) || 0,
-          truck_types: truckTypes,
-          coverage_areas: coverageAreas.split(',').map((a: any) => a.trim()).filter(Boolean),
-          license_number: licenseNumber.trim(),
-          insurance_provider: insuranceProvider.trim(),
-          insurance_number: insuranceNumber.trim(),
-          status: 'pending_verification',
-          verified: false,
-        });
-
-      if (insertError) throw insertError;
-
-      Alert.alert(
-        'Application Submitted',
-        'Your trucking company registration is pending verification. You will be notified once approved.',
-        [{ text: 'OK', onPress: () => router.replace('/(mtruck)') }]
-      );
+      // 1) wallet balance gate
+      const { data: w } = await supabase.from('wallet_accounts').select('balance, available_balance').eq('user_id', user.id).maybeSingle();
+      const bal = Number(w?.available_balance ?? w?.balance ?? 0);
+      if (bal < FEE) { setSubmitErr('❌ Insufficient balance (KES ' + bal + '). Top up KES ' + FEE + ' to activate.'); setLoading(false); return; }
+      // 2) atomic debit (50% platform / 50% treasury)
+      const { error: se } = await supabase.rpc('mtaa_settle', { p_payer_id: user.id, p_payee_id: user.id, p_total: FEE, p_platform_rate_pct: 50, p_wht_rate_pct: 0, p_reference: 'mtruck-activate-' + Date.now() });
+      if (se) throw new Error('Payment failed: ' + se.message);
+      // 3) persist (columns matched to schema)
+      const { error: insertError } = await supabase.from('mtruck_fleet').insert({
+        owner_id: user.id,
+        name: companyName.trim(),
+        company_name: companyName.trim(),
+        business_reg: businessReg.trim(),
+        kra_pin: kraPin.trim(),
+        address: address.trim() || null,
+        city: city.trim() || null,
+        contact_phone: contactPhone.trim(),
+        contact_email: contactEmail.trim() || null,
+        fleet_size: parseInt(fleetSize, 10) || 0,
+        vehicle_count: parseInt(fleetSize, 10) || 0,
+        truck_types: truckTypes,
+        coverage_areas: coverageAreas.split(',').map((a: any) => a.trim()).filter(Boolean),
+        license_number: licenseNumber.trim(),
+        insurance_provider: insuranceProvider.trim(),
+        insurance_number: insuranceNumber.trim(),
+        status: 'pending_verification',
+        verified: false,
+        activation_fee_paid: true,
+      });
+      if (insertError) throw new Error(insertError.message);
+      window.alert('✅ KES ' + FEE + ' paid. ' + companyName + ' submitted — pending verification.');
+      router.replace('/(mtruck)');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to submit application');
+      setSubmitErr('❌ ' + String(err?.message || err));
+      window.alert('❌ ' + String(err?.message || err));
     } finally {
       setLoading(false);
     }
@@ -222,6 +229,7 @@ export default function MTruckOnboarding() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={[styles.nextButton, loading && styles.nextButtonDisabled]} onPress={handleSubmit} disabled={loading}>
+              {submitErr ? <Text style={{ color: '#ff6b6b', fontWeight: '700', marginBottom: 8, paddingHorizontal: 16 }}>{submitErr}</Text> : null}
             {loading ? <ActivityIndicator color="#FFF" /> : (
               <><Text style={styles.nextButtonText}>Submit Application</Text><MaterialCommunityIcons name="send" size={18} color="#FFF" /></>
             )}
