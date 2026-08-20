@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
+import { AppLockProvider } from '@/lib/security/app-lock-provider';
 export default function OSLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <AppLockProvider>
+      <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="appstore" />
       <Stack.Screen name="wallet" />
@@ -30,6 +32,7 @@ export default function OSLayout() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="coming-soon" />
       <Stack.Screen name="launcher" />
-    </Stack>
+      </Stack>
+    </AppLockProvider>
   );
 }

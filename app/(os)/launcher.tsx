@@ -4,10 +4,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useAppLock } from '@/lib/security/app-lock-provider';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllApps, getAppById, AppManifest } from '@/lib/mtaa/appstore/unified-registry';
 
 export default function LauncherScreen() {
+  const { lock } = useAppLock(); {
   const router = useRouter();
 
   const launchApp = (app: AppManifest) => {
