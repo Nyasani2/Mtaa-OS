@@ -4,6 +4,7 @@
  * Full UI for the 22-engine cognitive architecture
  */
 
+import { ASISCSEProvider } from '@/lib/asis-cse/asis-cse-provider';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
@@ -26,7 +27,7 @@ import { useASIS } from '@/lib/asis-cse/asis-cse-provider';;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-export default function ASISScreen() {
+function ASISScreenInner() {
   const {
     isInitialized,
     isProcessing,
@@ -680,3 +681,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+
+export default function ASISScreen(props: any) {
+  return <ASISCSEProvider><ASISScreenInner {...props} /></ASISCSEProvider>;
+}
