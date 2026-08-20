@@ -21,7 +21,14 @@ export default function SetPin() {
   const save = async (c: string) => {
     if (c !== pin) { setErr('PINs do not match'); setConfirm(''); setStep('pin'); setPin(''); return; }
     const { error } = await supabase.rpc('hash_tx_pin', { p_pin: pin }).then(async ({ data: hash }) =>
-      supabase.from('user_profiles').upsert({ user_id: user!.id, tx_pin_hash: hash }, { onConflict: 'user_id' }));
+// ensure profile has a display_name (NOT NULL) before any upsert
+      try {
+        const email = (user as any)?.email || 'user';
+        const name = email.split('@')[0];
+        await supabase.from('user_profiles').update({ display_name: name }).eq('user_id', user!.id).then();
+        await supabase.from('user_profiles').upsert({ user_id: user!.id, display_name: name }, { onConflict: 'user_id', ignoreDuplicates: true });
+      } catch {}
+            supabase.from('user_profiles').upsert({ user_id: user!.id, tx_pin_hash: hash }, { onConflict: 'user_id' }));
     if (error) { setErr(error.message); return; }
     window.alert('✅ Transaction PIN set. Every payment will now require it.');
     router.back();
