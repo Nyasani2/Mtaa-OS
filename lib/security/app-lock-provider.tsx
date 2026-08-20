@@ -64,11 +64,14 @@ export const AppLockProvider: React.FC<AppLockProviderProps> = ({ children }) =>
   }, [lock, user?.id]);
 
   const handleBiometric = async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock MTAA',
-      fallbackLabel: 'Use PIN',
-    });
-    if (result.success) unlock();
+    try {
+      if (typeof window !== 'undefined') { window.alert('Biometric not available on web — use PIN.'); return; }
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock MTAA',
+        fallbackLabel: 'Use PIN',
+      });
+      if (result.success) unlock();
+    } catch { /* ignore */ }
   };
 
   const handlePinSubmit = async () => {

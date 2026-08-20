@@ -42,6 +42,7 @@ export const APP_CATEGORIES = {
 // Status: live = file exists, missing = no index.tsx found, stub = placeholder
 export const ALL_APPS: AppTile[] = [
   // ─── OS (12 apps) ───
+  { id: 'set-pin', name: 'Set PIN', icon: 'keypad', iconSet: 'Ionicons', route: '/(os)/wallet/set-pin', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'OS', status: 'live' },
   { id: 'lock-screen', name: 'Lock Screen', icon: 'lock-closed', iconSet: 'Ionicons', route: '/(os)/launcher', action: 'lock', color: '#fff', bgColor: '#6b7280', ownerOnly: false, category: 'OS', status: 'live' },
   { id: 'appstore', name: 'App Store', icon: 'apps', iconSet: 'Ionicons', route: '/(os)/appstore', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false, category: 'OS', status: 'live' },
   { id: 'asis', name: 'ASIS', icon: 'hardware-chip', iconSet: 'Ionicons', route: '/(os)/asis', color: '#fff', bgColor: '#0ea5e9', ownerOnly: false, category: 'OS', status: 'live' },
