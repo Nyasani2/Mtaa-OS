@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllApps, getAppById, AppManifest } from '@/lib/mtaa/appstore/unified-registry';
 
 export default function LauncherScreen() {
-  const { lock } = useAppLock(); {
+  const { lock } = useAppLock();
   const router = useRouter();
 
   const launchApp = (app: AppManifest) => {
