@@ -100,7 +100,7 @@ export default function TrackingScreen() {
         p_wht_rate_pct: whtPct,
         p_wht_country: driver.country_code || 'KE',
         p_reference: 'mtaxi-' + ride.id,
-      , p_tx_pin: __auth?.pin || null, p_biometric_ok: !!__auth?.biometric});
+      p_tx_pin: __auth?.pin || null, p_biometric_ok: !!__auth?.biometric});
       if (settleErr) throw new Error('Settle failed: ' + settleErr.message);
       if (!r?.ok) throw new Error('Settle not ok');
       const platformFee = Number(r.platform_fee || 0);
