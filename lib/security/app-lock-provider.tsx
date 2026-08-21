@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { AppState, AppStateStatus, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppState, AppStateStatus, View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { pinEngine } from '@/lib/security/pin-engine';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -74,6 +74,11 @@ export const AppLockProvider: React.FC<AppLockProviderProps> = ({ children }) =>
     } catch { /* ignore */ }
   };
 
+  const handlePinSubmitWith = async (candidate: string) => {
+    if (!user?.id) return;
+    const valid = await pinEngine.verifyPin(user.id, candidate);
+    if (valid) unlock(); else { setError('Incorrect PIN'); setPin(''); }
+  };
   const handlePinSubmit = async () => {
     if (!user?.id) return;
     const valid = await pinEngine.verifyPin(user.id, pin);
@@ -97,19 +102,19 @@ export const AppLockProvider: React.FC<AppLockProviderProps> = ({ children }) =>
               <Text style={styles.btnText}>Unlock with Biometric</Text>
             </TouchableOpacity>
             <View style={styles.pinRow}>
-              {Array.from({ length: 6 }).map((_, i) => (
+              {Array.from({ length: 4 }).map((_, i) => (
                 <View key={i} style={[styles.dot, pin.length > i && styles.dotFilled]} />
               ))}
             </View>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <View style={styles.numpad}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <TouchableOpacity key={n} style={styles.key} onPress={() => setPin((p) => p + String(n))}>
+                <TouchableOpacity key={n} style={styles.key} onPress={() => { const np = pin + String(n); setPin(np); if (np.length === 4) setTimeout(() => handlePinSubmitWith(np), 50); }}>
                   <Text style={styles.keyText}>{n}</Text>
                 </TouchableOpacity>
               ))}
               <View style={styles.key} />
-              <TouchableOpacity style={styles.key} onPress={() => setPin((p) => p + '0')}>
+              <TouchableOpacity style={styles.key} onPress={() => { const np = pin + '0'; setPin(np); if (np.length === 4) setTimeout(() => handlePinSubmitWith(np), 50); }}>
                 <Text style={styles.keyText}>0</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.key} onPress={() => setPin((p) => p.slice(0, -1))}>

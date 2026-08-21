@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
 let Bio: any = null;
@@ -8,7 +8,7 @@ try { Bio = require('expo-local-authentication'); } catch {}
 
 export async function confirmWithBiometric(reason = 'Confirm payment'): Promise<boolean> {
   try {
-    if (!Bio) return false;
+    if (!Bio || Platform.OS === 'web') return false;
     const ok = await Bio.hasHardwareAsync();
     if (!ok) return false;
     const r = await Bio.authenticateAsync({ promptMessage: reason });
