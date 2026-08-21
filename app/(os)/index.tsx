@@ -33,7 +33,11 @@ const TILE_SIZE = (width - 48) / 4;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, getDisplayName, refreshProfile, profile } = useAuthStore();
+  React.useEffect(() => {
+    if (user && !profile) refreshProfile();
+  }, [user, profile]);
+
   const insets = useSafeAreaInsets();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -121,7 +125,7 @@ export default function HomeScreen() {
                 <View>
                   <Text style={styles.greeting}>Good Day</Text>
                   <Text style={styles.userName}>
-                    {(user as any)?.full_name || user?.email || 'User'}
+                    {getDisplayName() || 'User'}
                   </Text>
                 </View>
                 <TouchableOpacity
