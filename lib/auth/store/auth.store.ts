@@ -32,7 +32,7 @@ export interface AuthState {
   signOut: () => Promise<void>;
   getUserRole: () => string | null;
   getAvatarUrl: () => string | null;
-  getDisplayName: () => { const pr = get().profile as any; const u = get().user; return pr?.display_name || pr?.full_name || pr?.username || (u?.email ? u.email.split('@')[0] : null); }, redirectTo?: string) => Promise<{ error?: any }>;
+  getDisplayName: () => string | null;
   updatePassword: (newPassword: string) => Promise<{ error?: any }>;
 
   setPin: (pin: string) => Promise<void>;
