@@ -32,11 +32,7 @@ export interface AuthState {
   signOut: () => Promise<void>;
   getUserRole: () => string | null;
   getAvatarUrl: () => string | null;
-  getDisplayName: () => string | null;
-  refreshProfile: () => Promise<void>;
-  verifyEmail: () => Promise<boolean>;
-  resendVerification: () => Promise<{ error?: any }>;
-  resetPassword: (email: string, redirectTo?: string) => Promise<{ error?: any }>;
+  getDisplayName: () => { const pr = get().profile as any; const u = get().user; return pr?.display_name || pr?.full_name || pr?.username || (u?.email ? u.email.split('@')[0] : null); }, redirectTo?: string) => Promise<{ error?: any }>;
   updatePassword: (newPassword: string) => Promise<{ error?: any }>;
 
   setPin: (pin: string) => Promise<void>;
@@ -87,7 +83,7 @@ export const useAuthStore = create<AuthState>()(
 
             const { data: profile } = await supabase
               .from('user_profiles')
-              .select('email_verified, pin_set, biometric_enabled')
+              .select('email_verified, pin_set, biometric_enabled, display_name, full_name, username, avatar_url')
               .eq('user_id', user.id)
               .single();
 
