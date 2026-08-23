@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
     // 💳 3. GET WALLET
     const { data: wallet } = await supabase
-      .from('wallets')
+      .from('wallet_accounts')
       .select('*')
       .eq('user_id', user_id)
       .single()
