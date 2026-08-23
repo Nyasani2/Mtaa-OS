@@ -1,5 +1,6 @@
 export * from './useWalletAccount';
 export * from './useWalletTaxes';
-export { default as useWalletStore } from './useAgent';
-export { default as useWallet } from './useAgent';
-export { default as useWalletTransactions } from './useAgent';
+export * from '@/lib/stores/wallet-store';
+export { useWalletStore as useWallet } from '@/lib/stores/wallet-store';
+export { useWalletStore as useWalletTransactions } from '@/lib/stores/wallet-store';
+export default {};
