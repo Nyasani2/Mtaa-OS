@@ -51,19 +51,19 @@ export default function DepositScreen() {
 
   const validateCard = useCallback(() => {
     if (!cardNumber.replace(/\s/g, '').match(/^\d{13,19}$/)) {
-      Alert.alert('Invalid Card', 'Please enter a valid card number (13-19 digits)');
+      window.alert('Invalid Card', 'Please enter a valid card number (13-19 digits)');
       return false;
     }
     if (!expiry.match(/^\d{2}\/\d{2}$/)) {
-      Alert.alert('Invalid Expiry', 'Please enter expiry as MM/YY');
+      window.alert('Invalid Expiry', 'Please enter expiry as MM/YY');
       return false;
     }
     if (!cvv.match(/^\d{3,4}$/)) {
-      Alert.alert('Invalid CVV', 'Please enter a valid CVV (3-4 digits)');
+      window.alert('Invalid CVV', 'Please enter a valid CVV (3-4 digits)');
       return false;
     }
     if (cardHolder.trim().length < 2) {
-      Alert.alert('Invalid Name', 'Please enter the cardholder name');
+      window.alert('Invalid Name', 'Please enter the cardholder name');
       return false;
     }
     return true;
@@ -71,11 +71,11 @@ export default function DepositScreen() {
 
   const validateBank = useCallback(() => {
     if (bankName.trim().length < 2) {
-      Alert.alert('Invalid Bank', 'Please enter your bank name');
+      window.alert('Invalid Bank', 'Please enter your bank name');
       return false;
     }
     if (!accountNumber.match(/^\d{8,20}$/)) {
-      Alert.alert('Invalid Account', 'Please enter a valid account number');
+      window.alert('Invalid Account', 'Please enter a valid account number');
       return false;
     }
     return true;
@@ -83,7 +83,7 @@ export default function DepositScreen() {
 
   const validateMobile = useCallback(() => {
     if (!mobileNumber.match(/^\d{9,12}$/)) {
-      Alert.alert('Invalid Number', 'Please enter a valid M-Pesa number');
+      window.alert('Invalid Number', 'Please enter a valid M-Pesa number');
       return false;
     }
     return true;
@@ -92,11 +92,11 @@ export default function DepositScreen() {
   const handleDeposit = useCallback(async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid deposit amount');
+      window.alert('Invalid Amount', 'Please enter a valid deposit amount');
       return;
     }
     if (numAmount < 100) {
-      Alert.alert('Minimum Deposit', 'Minimum deposit amount is KSh 100');
+      window.alert('Minimum Deposit', 'Minimum deposit amount is KSh 100');
       return;
     }
 
@@ -142,14 +142,14 @@ export default function DepositScreen() {
       });
 
       setLoading(false);
-      Alert.alert(
+      window.alert(
         'Deposit Successful',
         `KSh ${numAmount.toLocaleString()} has been deposited to your wallet.`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (err: any) {
       setLoading(false);
-      Alert.alert('Deposit Failed', err.message || 'Something went wrong');
+      window.alert('Deposit Failed', err.message || 'Something went wrong');
     }
   }, [amount, selectedMethod, user, activeAccountId, activeAccount, validateCard, validateBank, validateMobile, syncBalance, addTransaction, router]);
 
