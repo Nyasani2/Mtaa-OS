@@ -122,7 +122,7 @@ export default function DepositScreen() {
         }
       } catch (e) {
         setLoading(false);
-        window.alert('M-Pesa Failed', String(e));
+        window.alert('M-Pesa Failed: ' + String((e && e.message) || e));
         return; // Don't instant-confirm — M-Pesa only works via STK push
       }
     }
