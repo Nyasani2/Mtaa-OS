@@ -105,6 +105,23 @@ export default function DepositScreen() {
     if (selectedMethod === 'mobile' && !validateMobile()) return;
 
     setLoading(true);
+    // Try real Daraja STK push first (if configured)
+    if (phone && method.id === 'mpesa') {
+      try {
+        const { data: stkData, error: stkErr } = await supabase.functions.invoke('mpesa-stk-push', {
+          body: { phone, amount: Number(amount), user_id: user.id }
+        });
+        if (stkErr) throw stkErr;
+        if (stkData?.success) {
+          window.alert('✅ STK Push sent to ' + phone + '. Approve on your phone.');
+          // Don't instant-confirm yet — wait for mpesa-callback to confirm_mpesa_deposit
+          return;
+        }
+      } catch (e) {
+        console.log('STK push failed, falling back to instant-confirm:', e);
+      }
+    }
+
     try {
       const success = await depositToWallet(
         user?.id || '',
