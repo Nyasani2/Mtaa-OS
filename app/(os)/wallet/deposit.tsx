@@ -105,20 +105,25 @@ export default function DepositScreen() {
     if (selectedMethod === 'mobile' && !validateMobile()) return;
 
     setLoading(true);
-    // Try real Daraja STK push first (if configured)
-    if (phone && method.id === 'mpesa') {
+    // M-Pesa: ONLY use STK push (no instant-confirm fallback)
+    if (selectedMethod === 'mobile' && mobileNumber) {
       try {
         const { data: stkData, error: stkErr } = await supabase.functions.invoke('mpesa-stk-push', {
-          body: { phone, amount: Number(amount), user_id: user.id }
+          body: { phone: mobileNumber, amount: numAmount, user_id: user.id }
         });
         if (stkErr) throw stkErr;
         if (stkData?.success) {
-          window.alert('✅ STK Push sent to ' + phone + '. Approve on your phone.');
-          // Don't instant-confirm yet — wait for mpesa-callback to confirm_mpesa_deposit
+          window.alert('✅ STK Push sent to ' + mobileNumber + '. Approve on your phone.');
+          setLoading(false);
+          router.back(); // Return to wallet — callback will credit wallet automatically
           return;
+        } else {
+          throw new Error('STK push failed: ' + (stkData?.error || 'Unknown error'));
         }
       } catch (e) {
-        console.log('STK push failed, falling back to instant-confirm:', e);
+        setLoading(false);
+        window.alert('M-Pesa Failed', String(e));
+        return; // Don't instant-confirm — M-Pesa only works via STK push
       }
     }
 
