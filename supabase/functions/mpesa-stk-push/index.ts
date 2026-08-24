@@ -76,11 +76,13 @@ Deno.serve(async (req) => {
     const reference = `MPESA_${user_id}_${Date.now()}`
 
     // 💳 3. GET WALLET
-    const { data: wallet } = await supabase
+    const { data: wrows } = await supabase
       .from('wallet_accounts')
       .select('*')
       .eq('user_id', user_id)
-      .single()
+      .order('created_at', { ascending: true })
+      .limit(1)
+    const wallet = wrows && wrows[0]
 
     if (!wallet) {
       return new Response(
