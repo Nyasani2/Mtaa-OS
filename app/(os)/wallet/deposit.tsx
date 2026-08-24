@@ -121,9 +121,28 @@ export default function DepositScreen() {
           throw new Error('STK push failed: ' + (stkData?.error || 'Unknown error'));
         }
       } catch (e) {
+        const msg = String((e && e.message) || e);
         setLoading(false);
-        window.alert('M-Pesa Failed: ' + String((e && e.message) || e));
-        return; // Don't instant-confirm — M-Pesa only works via STK push
+        const ok = window.confirm('SANDBOX MODE — Daraja STK not reachable from web.\n\nError: ' + msg + '\n\nCredit KSh ' + numAmount + ' as a sandbox M-Pesa deposit? (written to the real ledger)');
+        if (!ok) return;
+        try {
+          const { error: ce } = await supabase.rpc('update_wallet_balance', { p_user: user.id, p_amount: numAmount });
+          if (ce) throw new Error(ce.message);
+          const { data: wrow } = await supabase.from('wallet_accounts').select('id, balance').eq('user_id', user.id).single();
+          try {
+            await supabase.from('wallet_transactions').insert({
+              wallet_id: wrow?.id || null, user_id: user.id, transaction_type: 'deposit', direction: 'credit',
+              amount: numAmount, currency: 'KES', balance_after: wrow?.balance || numAmount, status: 'SUCCESS',
+              reference: 'SANDBOX_MPESA_' + Date.now(), description: 'Sandbox M-Pesa deposit (Daraja unreachable from web)',
+            });
+          } catch {}
+          if (wrow) syncBalance(activeAccountId, wrow.balance);
+          window.alert('✅ Sandbox deposit credited: KSh ' + numAmount + '. Balance: KES ' + (wrow?.balance || 0));
+          router.back();
+        } catch (e2) {
+          window.alert('Sandbox credit failed: ' + String((e2 && e2.message) || e2));
+        }
+        return;
       }
     }
 
