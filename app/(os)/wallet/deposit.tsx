@@ -105,40 +105,18 @@ export default function DepositScreen() {
     if (selectedMethod === 'mobile' && !validateMobile()) return;
 
     setLoading(true);
-    // M-Pesa: REAL STK push only (no sandbox)
+    // M-Pesa: server-side STK via first-party RPC (works in every browser window)
     if (selectedMethod === 'mobile' && mobileNumber) {
       setLoading(true);
-      let stkOk = false; let detail = '';
       try {
-        const { data, error } = await supabase.functions.invoke('mpesa-stk-push', {
-          body: { phone: mobileNumber, amount: numAmount },
-        });
-        if (error) throw new Error(error.message || 'invoke failed');
-        if (data?.success) stkOk = true; else detail = String(data?.error || 'STK rejected');
-      } catch (e1) {
-        // raw fetch fallback with real HTTP diagnostics
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const key = (supabase as any).supabaseKey || '';
-          const res = await fetch('https://exfmzfrgsxnwwwliatva.supabase.co/functions/v1/mpesa-stk-push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', apikey: key, Authorization: 'Bearer ' + (session?.access_token || '') },
-            body: JSON.stringify({ phone: mobileNumber, amount: numAmount }),
-          });
-          const txt = await res.text();
-          detail = 'HTTP ' + res.status + ' — ' + txt.slice(0, 250);
-          let j: any = null; try { j = JSON.parse(txt); } catch {}
-          if (res.ok && j && j.success) stkOk = true;
-        } catch (e2) {
-          detail = 'Browser blocked the call (' + String((e2 as any)?.message || e2) + '). Try an incognito window (extensions off).';
-        }
-      }
-      setLoading(false);
-      if (stkOk) {
-        window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone.');
+        const { data, error } = await supabase.rpc('mtaa_stk_push', { p_phone: mobileNumber, p_amount: numAmount });
+        setLoading(false);
+        if (error) throw new Error(error.message);
+        window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone — wallet credits automatically on confirmation.');
         router.back();
-      } else {
-        window.alert('❌ M-Pesa STK failed: ' + detail);
+      } catch (e) {
+        setLoading(false);
+        window.alert('❌ M-Pesa STK failed: ' + String((e && e.message) || e));
       }
       return;
     }

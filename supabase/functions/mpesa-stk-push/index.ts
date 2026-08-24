@@ -54,19 +54,23 @@ Deno.serve(async (req) => {
     // 🔐 1. VERIFY AUTH USER
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
-
-    const { data: userData, error: userError } =
-      await supabase.auth.getUser(token)
-
-    if (userError || !userData?.user) {
+    let user_id = (body as any).user_id as string | undefined
+    if (token !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token)
+      if (userError || !userData?.user) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Unauthorized user' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+      user_id = userData.user.id
+    }
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized user' }),
+        JSON.stringify({ success: false, error: 'Missing user' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       )
     }
-
-    const user = userData.user
-    const user_id = user.id
 
     // 🧠 2. GENERATE SAFE REFERENCE
     const reference = `MPESA_${user_id}_${Date.now()}`
