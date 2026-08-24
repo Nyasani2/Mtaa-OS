@@ -54,22 +54,27 @@ Deno.serve(async (req) => {
     // 🔐 1. VERIFY AUTH USER
     const authHeader = req.headers.get('Authorization') || ''
     const token = authHeader.replace('Bearer ', '')
+    const internalTok = req.headers.get('x-internal-token')
     let user_id = (body as any).user_id as string | undefined
-    if (token !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+    if (internalTok) {
+      const { data: sec } = await supabase
+        .from('mtaa_internal_secrets').select('value').eq('key', 'internal_token').maybeSingle()
+      if (!sec || sec.value !== internalTok || !user_id) {
+        return new Response(JSON.stringify({ success: false, error: 'Bad internal token' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } })
+      }
+    } else if (token && token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') && user_id) {
+      // trusted internal service-role call
+    } else if (token) {
       const { data: userData, error: userError } = await supabase.auth.getUser(token)
       if (userError || !userData?.user) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Unauthorized user' }),
-          { status: 401, headers: { 'Content-Type': 'application/json' } }
-        )
+        return new Response(JSON.stringify({ success: false, error: 'Unauthorized user' }),
+          { status: 401, headers: { 'Content-Type': 'application/json' } })
       }
       user_id = userData.user.id
-    }
-    if (!user_id) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing user' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      )
+    } else {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } })
     }
 
     // 🧠 2. GENERATE SAFE REFERENCE
