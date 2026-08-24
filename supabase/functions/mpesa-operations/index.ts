@@ -96,7 +96,9 @@ async function stkPush(supabaseAdmin, params) {
       },
     }
   );
-  const authData = await authResponse.json();
+  const authText = await authResponse.text();
+  let authData: any = {};
+  try { authData = JSON.parse(authText); } catch { throw new Error(`OAuth HTTP ${authResponse.status}: ${authText.slice(0, 200) || 'empty body'}`); }
 
   if (!authData.access_token) {
     throw new Error("Failed to get M-Pesa access token");
@@ -127,7 +129,9 @@ async function stkPush(supabaseAdmin, params) {
     }
   );
 
-  const stkData = await stkResponse.json();
+  const stkText = await stkResponse.text();
+  let stkData: any = {};
+  try { stkData = JSON.parse(stkText); } catch { throw new Error(`STK HTTP ${stkResponse.status}: ${stkText.slice(0, 200) || 'empty body'}`); }
 
   if (stkData.errorCode) {
     throw new Error(`M-Pesa error: ${stkData.errorMessage}`);
