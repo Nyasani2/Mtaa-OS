@@ -112,6 +112,7 @@ export default function DepositScreen() {
         const { data, error } = await supabase.rpc('mtaa_stk_push', { p_phone: mobileNumber, p_amount: numAmount });
         setLoading(false);
         if (error) throw new Error(error.message);
+        if (data && data.ok === false) throw new Error(String(data.error || 'STK bridge not configured'));
         window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone — wallet credits automatically on confirmation.');
         router.back();
       } catch (e) {
