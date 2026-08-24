@@ -120,9 +120,11 @@ export default function DepositScreen() {
         } else {
           throw new Error(data?.error || 'STK push rejected');
         }
-      } catch (e) {
+      } catch (e: any) {
+        let detail = (e && e.message) || String(e);
+        try { if (e?.context?.json) { const j = await e.context.json(); if (j?.error) detail = j.error; } } catch {}
         setLoading(false);
-        window.alert('❌ M-Pesa STK failed: ' + String((e && e.message) || e));
+        window.alert('❌ M-Pesa STK failed: ' + detail);
       }
       return;
     }
