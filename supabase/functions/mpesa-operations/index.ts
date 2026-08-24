@@ -245,19 +245,22 @@ async function callbackHandler(supabaseAdmin, params) {
     const mpesaReceipt = callback.CallbackMetadata?.Item?.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value;
     const phone = callback.CallbackMetadata?.Item?.find((i: any) => i.Name === "PhoneNumber")?.Value;
 
-    // Get wallet
+    // Get wallet from canonical wallet_accounts
     const { data: wallet } = await supabaseAdmin
-      .from("wallets")
-      .select("id, available_balance")
+      .from("wallet_accounts")
+      .select("id, balance, available_balance")
       .eq("user_id", transaction.user_id)
-      .eq("wallet_type", "main")
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (wallet) {
-      // Credit wallet
+      // Credit canonical wallet
       await supabaseAdmin
-        .from("wallets")
-        .update({ available_balance: wallet.available_balance + amount })
+        .from("wallet_accounts")
+        .update({ 
+          balance: (wallet.balance || 0) + amount,
+          available_balance: (wallet.available_balance || 0) + amount 
+        })
         .eq("id", wallet.id);
 
       // Record wallet transaction
