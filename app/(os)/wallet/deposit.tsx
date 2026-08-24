@@ -106,15 +106,20 @@ export default function DepositScreen() {
 
     setLoading(true);
     // M-Pesa: server-side STK via first-party RPC (works in every browser window)
+    // M-Pesa: call the ORIGINAL mpesa-operations function (proven working path from 28/5)
     if (selectedMethod === 'mobile' && mobileNumber) {
       setLoading(true);
       try {
-        const { data, error } = await supabase.rpc('mtaa_stk_push', { p_phone: mobileNumber, p_amount: numAmount });
-        setLoading(false);
-        if (error) throw new Error(error.message);
-        if (data && data.ok === false) throw new Error(String(data.error || 'STK bridge not configured'));
-        window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone — wallet credits automatically on confirmation.');
-        router.back();
+        const { data, error } = await supabase.functions.invoke('mpesa-operations', {
+          body: { action: 'stk_push', user_id: user?.id, phone: mobileNumber, amount: numAmount, account_reference: 'MTAAWallet' },
+        });
+        if (error) throw new Error(error.message || 'invoke failed');
+        if (data?.success) {
+          window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone.');
+          router.back();
+        } else {
+          throw new Error(data?.error || 'STK push rejected');
+        }
       } catch (e) {
         setLoading(false);
         window.alert('❌ M-Pesa STK failed: ' + String((e && e.message) || e));
