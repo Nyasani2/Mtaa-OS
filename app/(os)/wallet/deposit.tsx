@@ -105,45 +105,42 @@ export default function DepositScreen() {
     if (selectedMethod === 'mobile' && !validateMobile()) return;
 
     setLoading(true);
-    // M-Pesa: ONLY use STK push (no instant-confirm fallback)
+    // M-Pesa: REAL STK push only (no sandbox)
     if (selectedMethod === 'mobile' && mobileNumber) {
+      setLoading(true);
+      let stkOk = false; let detail = '';
       try {
-        const { data: stkData, error: stkErr } = await supabase.functions.invoke('mpesa-stk-push', {
-          body: { phone: mobileNumber, amount: numAmount, user_id: user.id }
+        const { data, error } = await supabase.functions.invoke('mpesa-stk-push', {
+          body: { phone: mobileNumber, amount: numAmount },
         });
-        if (stkErr) throw stkErr;
-        if (stkData?.success) {
-          window.alert('✅ STK Push sent to ' + mobileNumber + '. Approve on your phone.');
-          setLoading(false);
-          router.back(); // Return to wallet — callback will credit wallet automatically
-          return;
-        } else {
-          throw new Error('STK push failed: ' + (stkData?.error || 'Unknown error'));
-        }
-      } catch (e) {
-        const msg = String((e && e.message) || e);
-        setLoading(false);
-        const ok = window.confirm('SANDBOX MODE — Daraja STK not reachable from web.\n\nError: ' + msg + '\n\nCredit KSh ' + numAmount + ' as a sandbox M-Pesa deposit? (written to the real ledger)');
-        if (!ok) return;
+        if (error) throw new Error(error.message || 'invoke failed');
+        if (data?.success) stkOk = true; else detail = String(data?.error || 'STK rejected');
+      } catch (e1) {
+        // raw fetch fallback with real HTTP diagnostics
         try {
-          const { error: ce } = await supabase.rpc('update_wallet_balance', { p_user: user.id, p_amount: numAmount });
-          if (ce) throw new Error(ce.message);
-          const { data: wrow } = await supabase.from('wallet_accounts').select('id, balance').eq('user_id', user.id).single();
-          try {
-            await supabase.from('wallet_transactions').insert({
-              wallet_id: wrow?.id || null, user_id: user.id, transaction_type: 'deposit', direction: 'credit',
-              amount: numAmount, currency: 'KES', balance_after: wrow?.balance || numAmount, status: 'SUCCESS',
-              reference: 'SANDBOX_MPESA_' + Date.now(), description: 'Sandbox M-Pesa deposit (Daraja unreachable from web)',
-            });
-          } catch {}
-          if (wrow) syncBalance(activeAccountId, wrow.balance);
-          window.alert('✅ Sandbox deposit credited: KSh ' + numAmount + '. Balance: KES ' + (wrow?.balance || 0));
-          router.back();
+          const { data: { session } } = await supabase.auth.getSession();
+          const key = (supabase as any).supabaseKey || '';
+          const res = await fetch('https://exfmzfrgsxnwwwliatva.supabase.co/functions/v1/mpesa-stk-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: key, Authorization: 'Bearer ' + (session?.access_token || '') },
+            body: JSON.stringify({ phone: mobileNumber, amount: numAmount }),
+          });
+          const txt = await res.text();
+          detail = 'HTTP ' + res.status + ' — ' + txt.slice(0, 250);
+          let j: any = null; try { j = JSON.parse(txt); } catch {}
+          if (res.ok && j && j.success) stkOk = true;
         } catch (e2) {
-          window.alert('Sandbox credit failed: ' + String((e2 && e2.message) || e2));
+          detail = 'Browser blocked the call (' + String((e2 as any)?.message || e2) + '). Try an incognito window (extensions off).';
         }
-        return;
       }
+      setLoading(false);
+      if (stkOk) {
+        window.alert('✅ STK push sent to ' + mobileNumber + '. Enter your M-Pesa PIN on your phone.');
+        router.back();
+      } else {
+        window.alert('❌ M-Pesa STK failed: ' + detail);
+      }
+      return;
     }
 
     try {
