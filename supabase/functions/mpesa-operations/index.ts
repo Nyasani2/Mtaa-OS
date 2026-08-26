@@ -236,7 +236,7 @@ async function callbackHandler(supabaseAdmin, params) {
   // Find the pending transaction
   const { data: transaction } = await supabaseAdmin
     .from("mpesa_transactions")
-    .select("*, wallets(id, user_id)")
+    .select("*")
     .eq("merchant_request_id", merchantRequestId)
     .eq("checkout_request_id", checkoutRequestId)
     .single();
