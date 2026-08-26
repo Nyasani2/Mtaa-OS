@@ -23,7 +23,8 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    const { action, ...params } = body;
+    let { action, ...params } = body;
+    if (!action && body?.Body?.stkCallback) { action = "callback_handler"; params = body; } // real Safaricom callbacks carry no action
 
     let result;
     switch (action) {
