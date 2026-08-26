@@ -84,7 +84,7 @@ async function stkPush(supabaseAdmin, params) {
   }
 
   // Generate timestamp and password
-  const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, "").slice(0, 14);
+  const timestamp = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().replace(/\D/g, "").slice(0, 14); // EAT (UTC+3) — Safaricom validates in Nairobi time
   const password = btoa(`${shortcode}${passkey}${timestamp}`);
 
   // Get access token
