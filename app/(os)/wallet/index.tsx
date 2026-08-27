@@ -76,19 +76,9 @@ export default function WalletHomeScreen() {
     { label: 'Agent', icon: 'people', color: '#34C759', route: '/(os)/wallet/agent' },
     { label: 'Agent Map', icon: 'map', color: '#34C759', route: '/(os)/wallet/agent-map' },
     { label: 'Banks', icon: 'business', color: '#007AFF', route: '/(os)/wallet/banks' },
-    { label: 'Cards', icon: 'card', color: '#007AFF', route: '/(os)/wallet/cards' },
     { label: 'Regulatory', icon: 'document-text', color: '#FF9500', route: '/(os)/wallet/regulatory' },
     { label: 'Central Bank', icon: 'globe', color: '#5856D6', route: '/(os)/wallet/treasury-hub' },
     { label: 'Credit', icon: 'trending-up', color: '#AF52DE', route: '/(os)/wallet/credit' },
-    { label: 'Escrow', icon: 'lock-closed', color: '#FF3B30', route: '/(os)/wallet/escrow' },
-    { label: 'Savings', icon: 'wallet', color: '#34C759', route: '/(os)/wallet/savings-hub' },
-    { label: 'GoFund', icon: 'heart', color: '#FF2D55', route: '/(os)/wallet/gofund-hub' },
-    { label: 'Tax', icon: 'calculator', color: '#FF3B30', route: '/(os)/wallet/tax-hub' },
-    { label: 'Business', icon: 'briefcase', color: '#5AC8FA', route: '/(os)/wallet/business' },
-    { label: 'Merchant', icon: 'storefront', color: '#5AC8FA', route: '/(os)/wallet/merchant-dashboard' },
-    { label: 'QR Pay', icon: 'qr-code', color: '#007AFF', route: '/(os)/wallet/qr' },
-    { label: 'Rewards', icon: 'gift', color: '#FF9500', route: '/(os)/wallet/rewards' },
-    { label: 'Crypto', icon: 'logo-bitcoin', color: '#FF9500', route: '/(os)/wallet/crypto' },
   ];
 
   return (
