@@ -1,134 +1,75 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
-import { Ionicons } from '@expo/vector-icons';
-import { walletService } from '@/lib/services/wallet-service';
+import { supabase } from '@/lib/supabase/config';
+import { mtaaFee, fmtKES, TX_LIMIT } from '@/lib/wallet/fees';
 
 export default function WithdrawScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [balance, setBalance] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const num = parseFloat(amount) || 0;
+  const fee = mtaaFee(num);
+  const total = num + fee;
 
-  const handleWithdraw = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-    if (!phone || phone.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
-      return;
-    }
-    if (!user) {
-      Alert.alert('Error', 'Please sign in first');
-      return;
-    }
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: w } = await supabase.from('wallet_accounts').select('balance').eq('user_id', user.id).limit(1).maybeSingle();
+      if (w) setBalance(Number(w.balance) || 0);
+    })();
+  }, []);
 
-    setLoading(true);
-    try {
-      // Use existing wallet-service withdraw action
-      const result = await walletService.execute({
-        action: 'withdraw',
-        amount: parseFloat(amount),
-        currency: 'KES',
-        method: 'mpesa',
-        destination: phone,
-        accountId: user.id,
-      });
-
-      if (result.success) {
-        Alert.alert(
-          'Withdrawal Initiated',
-          `KSh ${amount} will be sent to ${phone} within minutes.`,
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
-      } else {
-        Alert.alert('Failed', result.message || 'Withdrawal failed. Please try again.');
-      }
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
+  const withdraw = async () => {
+    if (num < 1) { window.alert('Withdraw: minimum KSh 1'); return; }
+    if (num > TX_LIMIT) { window.alert('Withdraw: max KSh 500,000 per transaction'); return; }
+    setBusy(true);
+    const { data, error } = await supabase.rpc('mtaa_withdraw', { p_phone: phone.trim(), p_amount: num });
+    setBusy(false);
+    if (error) { window.alert('Withdraw Failed: ' + error.message); return; }
+    const r: any = data;
+    if (!r?.ok) { window.alert('Withdraw Failed: ' + String((r && r.error) || 'unknown')); return; }
+    window.alert('Withdrawal of ' + fmtKES(num) + ' queued to ' + phone + ' | Ref ' + r.ref + ' | Fee ' + fmtKES(r.fee) + ' | Balance ' + fmtKES(Number(r.balance)));
+    router.back();
   };
-
-  const quickAmounts = [100, 500, 1000, 2000, 5000];
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Withdraw</Text>
-        <View style={{ width: 40 }} />
+      <Text style={styles.title}>Withdraw</Text>
+      <Text style={styles.sub}>Available: {fmtKES(balance)} • Free under KSh 1,000 • Max KSh 500,000</Text>
+      <TextInput style={styles.input} placeholder="Amount (KSh) — any amount" placeholderTextColor="#8E8E93" value={amount} onChangeText={setAmount} keyboardType="numeric" />
+      <View style={styles.chips}>
+        {[100, 500, 1000, 2000, 5000].map(v => (
+          <TouchableOpacity key={v} style={styles.chip} onPress={() => setAmount(String(v))}><Text style={styles.chipText}>KSh {v}</Text></TouchableOpacity>
+        ))}
       </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Amount (KSh)</Text>
-        <TextInput
-          style={styles.amountInput}
-          placeholder="0.00"
-          placeholderTextColor="#6b7280"
-          keyboardType="decimal-pad"
-          value={amount}
-          onChangeText={setAmount}
-        />
-        <View style={styles.quickRow}>
-          {quickAmounts.map((amt) => (
-            <TouchableOpacity key={amt} style={styles.quickBtn} onPress={() => setAmount(String(amt))}>
-              <Text style={styles.quickText}>KSh {amt}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <TextInput style={styles.input} placeholder="Withdraw To (2547XXXXXXXX)" placeholderTextColor="#8E8E93" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      <View style={styles.feeRow}>
+        <Text style={styles.feeText}>Fee: {fmtKES(fee)}</Text>
+        <Text style={styles.feeText}>Total debit: {fmtKES(total)}</Text>
       </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Withdraw To (M-Pesa Number)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="2547XXXXXXXX"
-          placeholderTextColor="#6b7280"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-        />
-      </View>
-
-      <TouchableOpacity
-        style={[styles.confirmBtn, loading && styles.confirmBtnDisabled]}
-        onPress={handleWithdraw}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.confirmText}>Withdraw KSh {amount || '0'}</Text>
-        )}
+      <TouchableOpacity style={styles.btn} onPress={withdraw} disabled={busy}>
+        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Withdraw {fmtKES(num)}</Text>}
       </TouchableOpacity>
-
-      <Text style={styles.hint}>Funds will be sent to your M-Pesa number. Standard M-Pesa charges apply.</Text>
+      <Text style={styles.note}>Funds are sent to your M-Pesa number. Fees go to the MTAA Treasury.</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  card: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20, marginHorizontal: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  label: { fontSize: 14, color: '#9ca3af', marginBottom: 8 },
-  amountInput: { fontSize: 40, fontWeight: 'bold', color: '#fff', paddingVertical: 8 },
-  quickRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  quickBtn: { backgroundColor: 'rgba(239,68,68,0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  quickText: { color: '#ef4444', fontSize: 12, fontWeight: '600' },
-  input: { fontSize: 18, color: '#fff', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
-  confirmBtn: { backgroundColor: '#ef4444', marginHorizontal: 16, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 8 },
-  confirmBtnDisabled: { opacity: 0.6 },
-  confirmText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  hint: { textAlign: 'center', color: '#6b7280', fontSize: 12, marginTop: 16, paddingHorizontal: 32 },
+  container: { flex: 1, backgroundColor: '#0A0A0F', padding: 16, paddingTop: 60 },
+  title: { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  sub: { color: '#8E8E93', marginBottom: 16, fontSize: 12 },
+  input: { backgroundColor: '#1C1C1E', borderRadius: 12, padding: 14, color: '#fff', marginBottom: 12, fontSize: 16 },
+  chips: { flexDirection: 'row', marginBottom: 12, gap: 8 },
+  chip: { backgroundColor: '#2C2C2E', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  chipText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  feeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  feeText: { color: '#8E8E93', fontSize: 13 },
+  btn: { backgroundColor: '#E11D48', borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 10 },
+  btnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  note: { color: '#8E8E93', fontSize: 11, textAlign: 'center' },
 });
-
