@@ -31,8 +31,8 @@ export default function WalletHomeScreen() {
       if (!alive) return;
       if (w) setDbBalance(Number(w.balance) || 0);
       setDbTx([
-        ...(wt || []).map((t: any) => ({ id: t.id, type: t.direction || t.transaction_type || 'credit', description: t.description || 'Wallet transaction', created_at: t.created_at, amount: t.amount })),
-        ...(mt || []).map((t: any) => ({ id: t.id, type: 'deposit', description: ('M-Pesa Deposit ' + (t.mpesa_receipt || '')).trim(), created_at: t.created_at, amount: t.amount })),
+        ...(wt || []).map((t: any) => ({ id: t.id, type: t.direction || t.transaction_type || 'credit', description: t.description || 'Wallet transaction', created_at: t.created_at, amount: t.amount, code: t.reference || String(t.id).replace(/-/g,'').slice(0, 8).toUpperCase() })),
+        ...(mt || []).map((t: any) => ({ id: t.id, type: 'deposit', description: 'M-Pesa Deposit', created_at: t.created_at, amount: t.amount, code: t.mpesa_receipt || String(t.checkout_request_id || t.id).replace(/-/g,'').slice(-8).toUpperCase() })),
       ].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5));
     };
     load();
@@ -157,7 +157,7 @@ export default function WalletHomeScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.txDesc}>{tx.description || tx.type}</Text>
-                <Text style={styles.txDate}>{tx.created_at ? new Date(tx.created_at).toLocaleDateString() : ''}</Text>
+                <Text style={styles.txDate}>{tx.code ? '#' + tx.code + ' \u2022 ' : ''}{tx.created_at ? new Date(tx.created_at).toLocaleString('en-KE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</Text>
               </View>
               <Text style={[styles.txAmount, { color: tx.type === 'credit' || tx.type === 'deposit' ? '#34C759' : '#FF3B30' }]}>
                 {tx.type === 'credit' || tx.type === 'deposit' ? '+' : '-'}{currency} {tx.amount?.toLocaleString('en-KE')}

@@ -95,8 +95,8 @@ export default function DepositScreen() {
       window.alert('Invalid Amount', 'Please enter a valid deposit amount');
       return;
     }
-    if (numAmount < 100) {
-      window.alert('Minimum Deposit', 'Minimum deposit amount is KSh 100');
+    if (numAmount < 1) {
+      window.alert('Minimum Deposit', 'Minimum deposit amount is KSh 1');
       return;
     }
 
