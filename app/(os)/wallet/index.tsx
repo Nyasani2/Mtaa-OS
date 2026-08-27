@@ -7,19 +7,46 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useWalletStore } from '@/hooks/useWalletStore';
+import { supabase } from '@/lib/supabase/config';
 
 export default function WalletHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const wallet = useWalletStore();
 
-  const balance = wallet.balance ?? 0;
+  const balance = dbBalance ?? wallet.balance ?? 0;
   const heldBalance = wallet.heldBalance ?? 0;
   const currency = wallet.currency ?? 'KES';
   const loading = wallet.loading ?? false;
-  const transactions = wallet.transactions ?? [];
+  const transactions = dbTx.length ? dbTx : (wallet.transactions ?? []);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [dbBalance, setDbBalance] = useState<number | null>(null);
+  const [dbTx, setDbTx] = useState<any[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      if (!user?.id) return;
+      const { data: w } = await supabase
+        .from('wallet_accounts').select('balance').eq('user_id', user.id).limit(1).maybeSingle();
+      const { data: wt } = await supabase
+        .from('wallet_transactions').select('*').eq('user_id', user.id)
+        .order('created_at', { ascending: false }).limit(5);
+      const { data: mt } = await supabase
+        .from('mpesa_transactions').select('*').eq('user_id', user.id)
+        .order('created_at', { ascending: false }).limit(5);
+      if (!alive) return;
+      if (w) setDbBalance(Number(w.balance) || 0);
+      setDbTx([
+        ...(wt || []).map((t: any) => ({ id: t.id, type: t.direction || t.transaction_type || 'credit', description: t.description || 'Wallet transaction', created_at: t.created_at, amount: t.amount })),
+        ...(mt || []).map((t: any) => ({ id: t.id, type: 'deposit', description: ('M-Pesa Deposit ' + (t.mpesa_receipt || '')).trim(), created_at: t.created_at, amount: t.amount })),
+      ].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5));
+    };
+    load();
+    const iv = setInterval(load, 15000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [user?.id]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
