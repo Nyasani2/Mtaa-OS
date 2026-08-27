@@ -1,8 +1,8 @@
 // lib/useAuthGuard.ts
-import { useIdentity } from '@/lib/auth/identity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export function useAuthGuard(requiredRole?: string) {
-  const identity = useIdentity();
+  const identity = useAuthStore();
 
   return {
     isAllowed: identity.isAuthenticated && (!requiredRole || (identity.user as any)?.role === requiredRole),

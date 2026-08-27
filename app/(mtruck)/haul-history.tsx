@@ -1,13 +1,13 @@
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShipperStore } from '@/lib/mtruck/stores/useShipperStore';
-import { useIdentity } from '@/lib/auth/identity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useEffect } from 'react';
 import { MapPin, Clock, Star, ChevronRight, Package, TrendingUp, TrendingDown } from 'lucide-react-native';
 
 export default function HaulHistory() {
   const router = useRouter();
-  const { user } = useIdentity();
+  const { user } = useAuthStore();
   const { jobs, loadJobs, isLoading } = useShipperStore();
 
   useEffect(() => {

@@ -1,7 +1,7 @@
-import { useIdentity } from './useIdentity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export function useProfessional() {
-  const { professional, refresh } = useIdentity();
+  const { professional, refresh } = useAuthStore();
   return { ...professional, refresh };
 }
 export default useProfessional;

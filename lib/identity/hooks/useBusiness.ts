@@ -1,7 +1,7 @@
-import { useIdentity } from './useIdentity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export function useBusiness() {
-  const { business, refresh } = useIdentity();
+  const { business, refresh } = useAuthStore();
   return { ...business, refresh };
 }
 export default useBusiness;

@@ -11,12 +11,12 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/appstore';
-import { useIdentity } from "@/lib/auth";
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function AppStoreYou() {
   const router = useRouter();
   const { installedApps, apps, interests, toggleInterest } = useAppStore();
-  const { user } = useIdentity();
+  const { user } = useAuthStore();
 
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [wifiOnly, setWifiOnly] = useState(true);

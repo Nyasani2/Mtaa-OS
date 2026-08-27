@@ -12,7 +12,7 @@ import {
   Alert,
   Image,
 } from "react-native";
-import { useIdentity } from '@/lib/auth/store/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from "expo-router";
 import {
@@ -43,7 +43,7 @@ interface QrCodeData {
 }
 
 export default function QrDisplayScreen() {
-  const { user } = useIdentity();
+  const { user } = useAuthStore();
   const router = useRouter();
   const [qrCode, setQrCode] = useState<QrCodeData | null>(null);
   const [loading, setLoading] = useState(false);

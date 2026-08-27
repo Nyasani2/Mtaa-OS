@@ -1,5 +1,5 @@
 // MTAA Identity Engine — Barrel Export
-// Import everything from here: import { useIdentity, useWallet } from '@/lib/identity';
+// Import everything from here: import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export { useIdentity, refreshIdentity } from './hooks/useIdentity';
 export { useWallet } from './hooks/useWallet';

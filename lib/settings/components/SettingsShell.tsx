@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { useRouter } from "expo-router";
-import { useIdentity } from "@/lib/auth/identity";
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from "@expo/vector-icons";
 
 interface SettingsItem {
@@ -20,7 +20,7 @@ interface SettingsSection {
 
 export default function SettingsShell() {
   const router = useRouter();
-  const { user, signOut } = useIdentity();
+  const { user, signOut } = useAuthStore();
 
   const handleSignOut = async () => {
     await signOut();

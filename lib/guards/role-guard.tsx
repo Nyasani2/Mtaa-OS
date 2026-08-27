@@ -1,7 +1,7 @@
 // lib/guards/role-guard.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useIdentity } from '@/lib/auth/identity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useRouter } from 'expo-router';
 
 interface RoleGuardProps {
@@ -11,7 +11,7 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({ children, allowedRoles, fallback }: RoleGuardProps) {
-  const identity = useIdentity();
+  const identity = useAuthStore();
   const router = useRouter();
   const userRole = identity.user?.user_metadata?.role as string | undefined;
 

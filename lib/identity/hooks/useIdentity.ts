@@ -26,7 +26,7 @@ async function refreshGlobalState(userId: string) {
   notifyListeners();
 }
 
-export function useIdentity() {
+export function useAuthStore() {
   const [state, setState] = useState<IdentityEngineState>(globalState);
 
   useEffect(() => {

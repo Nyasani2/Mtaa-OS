@@ -5,7 +5,7 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
-import { useIdentity } from '@/lib/auth/store/auth.store';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from "expo-router";
 import {
@@ -26,7 +26,7 @@ interface BankAccount {
 }
 
 export default function BankAccountsScreen() {
-  const { user } = useIdentity();
+  const { user } = useAuthStore();
   const router = useRouter();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(false);

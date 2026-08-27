@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MapPin, Package, DollarSign, CheckCircle } from 'lucide-react-native';
-import { useIdentity } from '@/lib/auth/identity';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 interface JobDetail {
@@ -28,7 +28,7 @@ interface JobDetail {
 export default function SettlementScreen() {
   const router = useRouter();
   const { jobId } = useLocalSearchParams<{ jobId: string }>();
-  const { user } = useIdentity();
+  const { user } = useAuthStore();
 
   const [job, setJob] = useState<JobDetail | null>(null);
   const [loading, setLoading] = useState(true);

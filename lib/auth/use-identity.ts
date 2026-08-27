@@ -11,7 +11,7 @@ try {
   getPinState = async () => ({ isSet: false, isLocked: false, attemptsRemaining: 5 });
 }
 
-export function useIdentity() {
+export function useAuthStore() {
   const store = useAuthStore();
   const [pinState, setPinState] = useState({
     isSet: false,
