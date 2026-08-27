@@ -155,8 +155,8 @@ export default function BankAccountsScreen() {
                   </View>
                 )}
               </View>
-              <Text style={{ fontSize: 14, color: "#94a3b8", marginBottom: 2 }}>{acct.account_name}</Text>
-              <Text style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>****{acct.account_number.slice(-4)}</Text>
+              <Text style={{ fontSize: 14, color: "#94a3b8", marginBottom: 2 }}>{acct.account_name || 'Bank account'}</Text>
+              <Text style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>****{(acct.account_number || '0000').slice(-4)}</Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 {acct.is_verified ? (
                   <><CheckCircle size={14} color="#22c55e" /><Text style={{ fontSize: 12, color: "#22c55e" }}>Verified</Text></>
