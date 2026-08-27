@@ -13,14 +13,6 @@ export default function WalletHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const wallet = useWalletStore();
-
-  const balance = dbBalance ?? wallet.balance ?? 0;
-  const heldBalance = wallet.heldBalance ?? 0;
-  const currency = wallet.currency ?? 'KES';
-  const loading = wallet.loading ?? false;
-  const transactions = dbTx.length ? dbTx : (wallet.transactions ?? []);
-
-  const [refreshing, setRefreshing] = useState(false);
   const [dbBalance, setDbBalance] = useState<number | null>(null);
   const [dbTx, setDbTx] = useState<any[]>([]);
 
@@ -47,6 +39,15 @@ export default function WalletHomeScreen() {
     const iv = setInterval(load, 15000);
     return () => { alive = false; clearInterval(iv); };
   }, [user?.id]);
+
+  const balance = dbBalance ?? wallet.balance ?? 0;
+  const heldBalance = wallet.heldBalance ?? 0;
+  const currency = wallet.currency ?? 'KES';
+  const loading = wallet.loading ?? false;
+  const transactions = dbTx.length ? dbTx : (wallet.transactions ?? []);
+
+  const [refreshing, setRefreshing] = useState(false);
+
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
