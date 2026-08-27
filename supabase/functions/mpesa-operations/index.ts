@@ -6,6 +6,8 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const MPESA_BASE = Deno.env.get("MPESA_ENV") === "production" ? "https://api.safaricom.co.ke" : "https://sandbox.safaricom.co.ke";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -90,7 +92,7 @@ async function stkPush(supabaseAdmin, params) {
 
   // Get access token
   const authResponse = await fetch(
-    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    `${MPESA_BASE}/oauth/v1/generate?grant_type=client_credentials`,
     {
       headers: {
         Authorization: "Basic " + btoa(`${consumerKey}:${consumerSecret}`),
@@ -107,7 +109,7 @@ async function stkPush(supabaseAdmin, params) {
 
   // Initiate STK push
   const stkResponse = await fetch(
-    "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+    `${MPESA_BASE}/mpesa/stkpush/v1/processrequest`,
     {
       method: "POST",
       headers: {
