@@ -1332,8 +1332,9 @@ export const useWalletStore = create<WalletState>()(
       loadMerchantProfile: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to merchant service
-          set({ loading: false });
+          const { data: profile, error: mErr } = await supabase.from('business_profiles').select('*').limit(1);
+          if (mErr) throw mErr;
+          set({ merchant_profile: profile?.[0] || null, loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1350,8 +1351,9 @@ export const useWalletStore = create<WalletState>()(
       loadBusinessProfile: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to business service
-          set({ loading: false });
+          const { data: biz, error: bErr } = await supabase.from('businesses').select('*').limit(1);
+          if (bErr) throw bErr;
+          set({ business_profile: biz?.[0] || null, loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1378,8 +1380,9 @@ export const useWalletStore = create<WalletState>()(
       loadCreditInfo: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to credit service
-          set({ loading: false });
+          const { data: credit, error: cErr } = await supabase.from('wallet_credit_scores').select('*').limit(1);
+          if (cErr) throw cErr;
+          set({ credit_info: credit?.[0] || null, loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1388,7 +1391,8 @@ export const useWalletStore = create<WalletState>()(
       applyForCredit: async (amount, purpose) => {
         set({ loading: true });
         try {
-          // TODO: Wire to credit application edge function
+          const { data, error } = await supabase.functions.invoke('wallet-fuliza', { body: { amount, purpose } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1400,7 +1404,8 @@ export const useWalletStore = create<WalletState>()(
       repayCredit: async (amount) => {
         set({ loading: true });
         try {
-          // TODO: Wire to credit repayment service
+          const { data, error } = await supabase.functions.invoke('wallet-operations', { body: { action: 'repay', amount } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1416,8 +1421,9 @@ export const useWalletStore = create<WalletState>()(
       loadEscrow: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to escrow service
-          set({ loading: false });
+          const { data: escrows, error: eErr } = await supabase.from('wallet_escrows').select('*').limit(50);
+          if (eErr) throw eErr;
+          set({ escrows: escrows || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1426,9 +1432,10 @@ export const useWalletStore = create<WalletState>()(
       createEscrow: async (payload) => {
         set({ loading: true });
         try {
-          // TODO: Wire to escrow creation edge function
+          const { data, error } = await supabase.functions.invoke('wallet-operations', { body: { action: 'create_escrow', payload } });
+          if (error) throw error;
           set({ loading: false });
-          return { success: true, contractId: generateUUID() };
+          return { success: true };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1438,7 +1445,8 @@ export const useWalletStore = create<WalletState>()(
       releaseEscrow: async (contractId) => {
         set({ loading: true });
         try {
-          // TODO: Wire to escrow release
+          const { data, error } = await supabase.functions.invoke('wallet-operations', { body: { action: 'release_escrow', contractId } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1450,7 +1458,8 @@ export const useWalletStore = create<WalletState>()(
       disputeEscrow: async (contractId, reason) => {
         set({ loading: true });
         try {
-          // TODO: Wire to escrow dispute
+          const { data, error } = await supabase.functions.invoke('wallet-operations', { body: { action: 'dispute_escrow', contractId, reason } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1466,8 +1475,9 @@ export const useWalletStore = create<WalletState>()(
       loadSavings: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to savings service
-          set({ loading: false });
+          const { data: goals, error: sErr } = await supabase.from('wallet_savings_goals').select('*').limit(50);
+          if (sErr) throw sErr;
+          set({ savings_goals: goals || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1476,9 +1486,10 @@ export const useWalletStore = create<WalletState>()(
       createSavingsGoal: async (goal) => {
         set({ loading: true });
         try {
-          // TODO: Wire to savings goal creation
+          const { data, error } = await supabase.from('wallet_savings_goals').insert([goal]).select();
+          if (error) throw error;
           set({ loading: false });
-          return { success: true, goalId: generateUUID() };
+          return { success: true };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1488,7 +1499,8 @@ export const useWalletStore = create<WalletState>()(
       contributeToSavings: async (goalId, amount) => {
         set({ loading: true });
         try {
-          // TODO: Wire to savings contribution
+          const { data, error } = await supabase.functions.invoke('wallet-deposit', { body: { goalId, amount, type: 'savings' } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1504,8 +1516,9 @@ export const useWalletStore = create<WalletState>()(
       loadGoFund: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to gofund service
-          set({ loading: false });
+          const { data: campaigns, error: gErr } = await supabase.from('wallet_gofund_campaigns').select('*').limit(50);
+          if (gErr) throw gErr;
+          set({ gofund_campaigns: campaigns || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1514,9 +1527,10 @@ export const useWalletStore = create<WalletState>()(
       createCampaign: async (campaign) => {
         set({ loading: true });
         try {
-          // TODO: Wire to campaign creation
+          const { data, error } = await supabase.from('wallet_gofund_campaigns').insert([campaign]).select();
+          if (error) throw error;
           set({ loading: false });
-          return { success: true, campaignId: generateUUID() };
+          return { success: true };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1526,7 +1540,8 @@ export const useWalletStore = create<WalletState>()(
       donateToCampaign: async (campaignId, amount) => {
         set({ loading: true });
         try {
-          // TODO: Wire to donation service
+          const { data, error } = await supabase.functions.invoke('tribe-donate', { body: { campaignId, amount } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1542,8 +1557,9 @@ export const useWalletStore = create<WalletState>()(
       loadTax: async (year?) => {
         set({ loading: true });
         try {
-          // TODO: Wire to tax service
-          set({ loading: false });
+          const { data: taxes, error: taxErr } = await supabase.from('tax_records').select('*').limit(50);
+          if (taxErr) throw taxErr;
+          set({ tax_records: taxes || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1552,9 +1568,10 @@ export const useWalletStore = create<WalletState>()(
       calculateTax: async (transactionId) => {
         set({ loading: true });
         try {
-          // TODO: Wire to tax calculation engine
+          const { data, error } = await supabase.functions.invoke('calculate-tax', { body: { transactionId } });
+          if (error) throw error;
           set({ loading: false });
-          return { success: true, taxAmount: 0 };
+          return data;
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1564,7 +1581,8 @@ export const useWalletStore = create<WalletState>()(
       fileTaxReturn: async (returnId) => {
         set({ loading: true });
         try {
-          // TODO: Wire to tax filing service
+          const { data, error } = await supabase.functions.invoke('process-tax-payment', { body: { returnId } });
+          if (error) throw error;
           set({ loading: false });
           return { success: true };
         } catch (err: any) {
@@ -1576,9 +1594,10 @@ export const useWalletStore = create<WalletState>()(
       exportTaxCSV: async (year) => {
         set({ loading: true });
         try {
-          // TODO: Wire to tax export service
+          const { data, error } = await supabase.from('tax_records').select('*').eq('year', year);
+          if (error) throw error;
           set({ loading: false });
-          return { success: true, url: '' };
+          return { success: true, data };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1602,8 +1621,9 @@ export const useWalletStore = create<WalletState>()(
       loadJurisdictions: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to jurisdiction service
-          set({ loading: false });
+          const { data: juris, error: jErr } = await supabase.from('civic_jurisdictions').select('*').limit(50);
+          if (jErr) throw jErr;
+          set({ jurisdictions: juris || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1628,8 +1648,10 @@ export const useWalletStore = create<WalletState>()(
       syncCentralBank: async (id) => {
         set({ loading: true });
         try {
-          // TODO: Wire to central bank sync
+          const { data, error } = await supabase.functions.invoke('wallet-operations', { body: { action: 'sync_cbk', id } });
+          if (error) throw error;
           set({ loading: false });
+          return { success: true };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1673,9 +1695,10 @@ export const useWalletStore = create<WalletState>()(
       scanQR: async (code) => {
         set({ loading: true });
         try {
-          // TODO: Wire to QR resolution edge function
+          const { data: qrRes, error: qrErr } = await supabase.functions.invoke('qr-resolve', { body: { code } });
+          if (qrErr) throw qrErr;
           set({ loading: false });
-          return { success: true, paymentIntent: null };
+          return qrRes;
         } catch (err: any) {
           set({ error: err?.message, loading: false });
           return { success: false, error: err?.message };
@@ -1721,8 +1744,9 @@ export const useWalletStore = create<WalletState>()(
       loadAuditLog: async (limit = 50) => {
         set({ loading: true });
         try {
-          // TODO: Wire to audit log edge function
-          set({ loading: false });
+          const { data: logs, error: lErr } = await supabase.from('wallet_audit_log').select('*').order('created_at', { ascending: false }).limit(limit);
+          if (lErr) throw lErr;
+          set({ audit_logs: logs || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1735,8 +1759,9 @@ export const useWalletStore = create<WalletState>()(
       loadReconciliation: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to reconciliation service
-          set({ loading: false });
+          const { data: settlements, error: recErr } = await supabase.from('wallet_settlements').select('*').limit(50);
+          if (recErr) throw recErr;
+          set({ reconciliations: settlements || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1745,8 +1770,10 @@ export const useWalletStore = create<WalletState>()(
       resolveReconciliation: async (id, notes) => {
         set({ loading: true });
         try {
-          // TODO: Wire to reconciliation resolution
+          const { data, error } = await supabase.from('wallet_settlements').update({ status: 'resolved', notes }).eq('id', id);
+          if (error) throw error;
           set({ loading: false });
+          return { success: true };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1759,8 +1786,9 @@ export const useWalletStore = create<WalletState>()(
       loadNotifications: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to notification service
-          set({ loading: false });
+          const { data: notifs, error: nErr } = await supabase.from('wallet_notifications').select('*').limit(50);
+          if (nErr) throw nErr;
+          set({ notifications: notifs || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1836,8 +1864,9 @@ export const useWalletStore = create<WalletState>()(
       loadFeeStructures: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to fee configuration service
-          set({ loading: false });
+          const { data: fees, error: fErr } = await supabase.from('fee_structures').select('*').limit(50);
+          if (fErr) throw fErr;
+          set({ fee_structures: fees || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
