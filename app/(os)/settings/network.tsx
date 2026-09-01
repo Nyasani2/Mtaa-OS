@@ -1,4 +1,8 @@
 // @ts-nocheck
+import * as Network from 'expo-network';
+import * as Battery from 'expo-battery';
+import * as Location from 'expo-location';
+import * as Device from 'expo-device';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch,
@@ -143,6 +147,16 @@ export default function NetworkSettingsScreen() {
   const [location, setLocation] = useState<LocationState>(MOCK_LOCATION);
   const [sim, setSim] = useState<SimState>(MOCK_SIM);
   const [battery, setBattery] = useState<BatteryState>(MOCK_BATTERY);
+  // HARDWARE-LIVE: real device telemetry (MOCK_* kept only as initial fallbacks)
+  useEffect(() => {
+    (async () => {
+      try { const n = await Network.getNetworkStateAsync(); if (n.isConnected) setNetwork((p: any) => ({ ...p, status: 'Connected', type: n.type || p.type })); } catch (e) {}
+      try { const lvl = await Battery.getBatteryLevelAsync(); const chg = await Battery.isChargingAsync(); setBattery((p: any) => ({ ...p, level: Math.round(lvl*100), percentage: Math.round(lvl*100), charging: chg, status: chg ? 'Charging' : 'On Battery' })); } catch (e) {}
+      try { const st = await Location.requestForegroundPermissionsAsync(); if (st.status === 'granted') { const loc = await Location.getCurrentPositionAsync({}); setLocation((p: any) => ({ ...p, lat: loc.coords.latitude.toFixed(4), lng: loc.coords.longitude.toFixed(4), latitude: loc.coords.latitude, longitude: loc.coords.longitude })); } } catch (e) {}
+      try { setSim((p: any) => ({ ...p, carrier: Device.cellularCarrier || Device.manufacturer || p.carrier, operator: Device.cellularCarrier || p.operator })); } catch (e) {}
+    })();
+  }, []);
+
   const [hasNetwork, setHasNetwork] = useState(false);
   const [hasLocation, setHasLocation] = useState(false);
   const [hasCellular, setHasCellular] = useState(false);
