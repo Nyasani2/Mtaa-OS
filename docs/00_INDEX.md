@@ -1,0 +1,18 @@
+# MTAA FINAL PRODUCTION AUDIT — DELIVERABLES INDEX
+
+| # | Document | Status |
+|---|----------|--------|
+| 01 | MTAA_PRODUCTION_BASELINE.md | ✅ generated |
+| 02 | MTAA_GAP_REGISTER.md | 🚧 in progress |
+| 03 | STUB_CLASSIFICATION_REPORT.md | 🚧 extracting |
+| 04 | DATABASE_DEPENDENCY_MAP.md | 🚧 extracting |
+| 05 | WALLET_INTEGRATION_MAP.md | ⏳ |
+| 06 | AUTHENTICATION_AUDIT.md | ⏳ |
+| 07 | ASIS_CSE_INTEGRATION_AUDIT.md | ⏳ |
+| 08 | APP_USER_JOURNEY_MATRIX.md | ⏳ |
+| 09 | REGULATORY_AND_TAX_AUDIT.md | ⏳ |
+| 10 | COMMERCE_DELIVERY_INTEGRATION.md | ⏳ |
+| 11 | SECURITY_AUDIT.md | ⏳ |
+| 12 | DEPLOYMENT_READINESS.md | ⏳ |
+| 13 | REGRESSION_TEST_REPORT.md | ⏳ |
+| 14 | FINAL_REPAIR_LOG.md | ⏳ |
