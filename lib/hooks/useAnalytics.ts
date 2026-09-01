@@ -1,14 +1,26 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function useAnalytics() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchAnalytics = useCallback(async () => {
+  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    // TODO: Implement
-    setLoading(false);
+    supabase
+      .from('analytics_events')
+      .select('*')
+      .limit(20)
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) setError(error.message);
+        else setData(data || []);
+        setLoading(false);
+      });
+    return () => { isMounted = false; };
   }, []);
 
-  return { data, loading, fetchAnalytics };
+  return { data, loading, error, refetch: () => setLoading(true) };
 }

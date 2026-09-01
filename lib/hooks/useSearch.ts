@@ -1,14 +1,26 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function useSearch() {
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const search = useCallback(async (query: string) => {
+  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    // TODO: Implement
-    setLoading(false);
+    supabase
+      .from('apps')
+      .select('*')
+      .limit(20)
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) setError(error.message);
+        else setData(data || []);
+        setLoading(false);
+      });
+    return () => { isMounted = false; };
   }, []);
 
-  return { results, loading, search };
+  return { data, loading, error, refetch: () => setLoading(true) };
 }

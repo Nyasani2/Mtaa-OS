@@ -1,14 +1,26 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export function useHealth() {
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchRecords = useCallback(async () => {
+  useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    // TODO: Implement
-    setLoading(false);
+    supabase
+      .from('health_records')
+      .select('*')
+      .limit(20)
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) setError(error.message);
+        else setData(data || []);
+        setLoading(false);
+      });
+    return () => { isMounted = false; };
   }, []);
 
-  return { records, loading, fetchRecords };
+  return { data, loading, error, refetch: () => setLoading(true) };
 }
