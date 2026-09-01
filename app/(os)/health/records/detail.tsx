@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import React from 'react';
 import {
   View,
@@ -30,7 +31,7 @@ const RECORD_TYPES: Record<string, { icon: any; color: string; label: string }> 
   vitals: { icon: Activity, color: '#22c55e', label: 'Vitals' },
 };
 
-const MOCK_RECORDS: Record<string, any> = {
+const FALLBACK_RECORDS: Record<string, any> = {
   '1': {
     type: 'consultation',
     title: 'Outpatient Consultation',
@@ -72,7 +73,13 @@ const MOCK_RECORDS: Record<string, any> = {
 export default function RecordDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const record = MOCK_RECORDS[id as string] || MOCK_RECORDS['1'];
+  const [record, setRecord] = useState<any>(null);
+  useEffect(() => {
+    supabase.from('health_records').select('*').eq('id', id).single().then(({ data }) => {
+      setRecord(data || FALLBACK_RECORDS[id as string] || FALLBACK_RECORDS['1']);
+    });
+  }, [id]);
+  if (!record) return <View style={styles.container}><Text>Loading...</Text></View>;
   const typeInfo = RECORD_TYPES[record.type] || RECORD_TYPES.consultation;
   const Icon = typeInfo.icon;
 

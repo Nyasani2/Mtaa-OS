@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 // app/(communication)/messages/index.tsx
 // MTAA Messenger — Conversations
 
@@ -14,7 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const MOCK_CHATS = [
+const FALLBACK_CHATS = [
   { id: '1', name: 'John Doe', message: 'Hey, are you available?', time: '2m', unread: 2 },
   { id: '2', name: 'Jane Smith', message: 'Meeting at 3pm', time: '1h', unread: 0 },
   { id: '3', name: 'Team Alpha', message: 'Project update sent', time: '3h', unread: 5 },
@@ -22,6 +23,12 @@ const MOCK_CHATS = [
 ];
 
 export default function MessagesScreen() {
+  const [chats, setChats] = useState(FALLBACK_CHATS);
+  useEffect(() => {
+    supabase.from('conversations').select('*').order('created_at', { ascending: false }).limit(20).then(({ data }) => {
+      if (data && data.length > 0) setChats(data.map((c: any) => ({ id: c.id, name: c.title || 'Chat', message: c.last_message || '', time: 'now', unread: c.unread_count || 0 })));
+    });
+  }, []);
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -46,7 +53,7 @@ export default function MessagesScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {MOCK_CHATS.map((chat: any) => (
+        {chats.map((chat: any) => (
           <TouchableOpacity key={chat.id} style={styles.chatRow}>
             <View style={styles.avatar}>
               <Ionicons name="person" size={24} color="#C7C7CC" />

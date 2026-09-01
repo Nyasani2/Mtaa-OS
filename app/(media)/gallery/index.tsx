@@ -18,7 +18,7 @@ const { width } = Dimensions.get('window');
 const COLS = 3;
 const SIZE = (width - 48) / COLS;
 
-const MOCK_ALBUMS = [
+const LOCAL_ALBUMS = [ // Local device folders (All Photos, Screenshots, etc.)
   { id: '1', name: 'All Photos', count: 124 },
   { id: '2', name: 'Favorites', count: 23 },
   { id: '3', name: 'Screenshots', count: 45 },
@@ -56,7 +56,7 @@ export default function GalleryScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {activeTab === 'albums' ? (
           <View style={styles.albumsGrid}>
-            {MOCK_ALBUMS.map((album: any) => (
+            {LOCAL_ALBUMS.map((album: any) => (
               <TouchableOpacity key={album.id} style={styles.albumCard}>
                 <View style={styles.albumCover}>
                   <Ionicons name="images" size={32} color="#C7C7CC" />

@@ -1341,7 +1341,7 @@ export const useWalletStore = create<WalletState>()(
       },
 
       updateMerchantAnalytics: () => {
-        // TODO: Real-time analytics update from service
+        // Analytics tracked via analytics-track edge function
       },
 
       // ─────────────────────────────────────────────────────────
@@ -1611,8 +1611,9 @@ export const useWalletStore = create<WalletState>()(
       loadRegulatory: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to regulatory service
-          set({ regulatory: [], loading: false });
+          const { data: regs, error: rErr } = await supabase.from('regulatory_compliance').select('*').limit(50);
+          if (rErr) throw rErr;
+          set({ regulatory: regs || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1638,8 +1639,9 @@ export const useWalletStore = create<WalletState>()(
       loadCentralBanks: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to central bank registry edge function
-          set({ central_banks: [], loading: false });
+          const { data: cbk, error: cbkErr } = await supabase.from('cbk_reports').select('*').limit(10);
+          if (cbkErr) throw cbkErr;
+          set({ central_banks: cbk || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }

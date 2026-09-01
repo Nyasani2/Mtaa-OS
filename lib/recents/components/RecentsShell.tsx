@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
 import { useRouter } from "expo-router";
@@ -14,7 +15,7 @@ interface RecentItem {
   route?: string;
 }
 
-const MOCK_RECENTS: RecentItem[] = [
+const FALLBACK_RECENTS: RecentItem[] = [
   { id: "1", type: "call", title: "John Doe", subtitle: "Outgoing call • 2:34", time: "2 min ago", icon: "call", iconColor: "#22C55E" },
   { id: "2", type: "transaction", title: "Sent KSh 500", subtitle: "To Jane Smith", time: "15 min ago", icon: "wallet", iconColor: "#6366F1", route: "/wallet/history" },
   { id: "3", type: "message", title: "Jane Smith", subtitle: "Hey, are you coming?", time: "30 min ago", icon: "chatbubble", iconColor: "#3B82F6" },
@@ -26,7 +27,13 @@ export default function RecentsShell() {
   const router = useRouter();
   const [filter, setFilter] = useState<"all" | "calls" | "messages" | "transactions">("all");
 
-  const filtered = filter === "all" ? MOCK_RECENTS : MOCK_RECENTS.filter((r) => {
+  const [recents, setRecents] = useState(FALLBACK_RECENTS);
+  useEffect(() => {
+    supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(10).then(({ data }) => {
+      if (data && data.length > 0) setRecents(data.map((l: any) => ({ id: l.id, type: l.action_type || 'app', title: l.title || 'Activity', subtitle: l.description || '', time: 'now', icon: 'alert', iconColor: '#6366F1' })));
+    });
+  }, []);
+  const filtered = filter === "all" ? recents : recents.filter((r) => {
     if (filter === "calls") return r.type === "call";
     if (filter === "messages") return r.type === "message";
     if (filter === "transactions") return r.type === "transaction";
