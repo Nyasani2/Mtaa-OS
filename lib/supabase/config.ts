@@ -27,7 +27,7 @@ const storageAdapter = isWeb
   : AsyncStorage;
 
 export const supabase = 
-createClient(SUPABASE_URL, SUPABASE_ANON_KEY, supabaseUrl, supabaseAnonKey, {
+createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: storageAdapter,
     autoRefreshToken: true,
