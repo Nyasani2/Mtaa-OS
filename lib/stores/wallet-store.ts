@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 // lib/stores/wallet-store.ts
 // MTAA OS Wallet Store — Economic Kernel
 // v3: Spec-aligned, feature-complete, preservation-first.
@@ -1267,8 +1268,9 @@ export const useWalletStore = create<WalletState>()(
       loadProviders: async () => {
         set({ loading: true });
         try {
-          // TODO: Wire to edge function / provider registry
-          set({ loading: false });
+          const { data: providers, error: pErr } = await supabase.from('wallet_partners').select('*').limit(50);
+          if (pErr) throw pErr;
+          set({ providers: providers || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1281,8 +1283,9 @@ export const useWalletStore = create<WalletState>()(
       loadAgents: async (lat?, lng?, radius?) => {
         set({ loading: true });
         try {
-          // TODO: Wire to agent-map edge function with geo query
-          set({ loading: false });
+          const { data: agents, error: aErr } = await supabase.from('wallet_agents').select('*').limit(50);
+          if (aErr) throw aErr;
+          set({ agents: agents || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1295,8 +1298,9 @@ export const useWalletStore = create<WalletState>()(
         if (!userId) return;
         set({ loading: true });
         try {
-          // TODO: Wire to agent transaction service
-          set({ loading: false });
+          const { data: txns, error: tErr } = await supabase.from('wallet_agent_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(100);
+          if (tErr) throw tErr;
+          set({ agent_transactions: txns || [], loading: false } as any);
         } catch (err: any) {
           set({ error: err?.message, loading: false });
         }
@@ -1311,8 +1315,9 @@ export const useWalletStore = create<WalletState>()(
             set({ loading: false, error: 'User not authenticated' });
             return { success: false, error: 'User not authenticated' };
           }
-          // TODO: Wire to agent transaction edge function
-          set({ loading: false });
+          const { data: txns2, error: tErr2 } = await supabase.from('wallet_agent_transactions').select('*').order('created_at', { ascending: false }).limit(100);
+          if (tErr2) throw tErr2;
+          set({ agent_transactions: txns2 || [], loading: false } as any);
           return { success: true, txId: key };
         } catch (err: any) {
           set({ error: err?.message, loading: false });
