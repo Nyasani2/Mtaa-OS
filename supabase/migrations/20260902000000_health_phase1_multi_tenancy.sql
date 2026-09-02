@@ -1,4 +1,4 @@
--- Health Phase 1: multi-tenancy anchor (applied via dashboard 2026-09-02)
+-- Health Phase 1: multi-tenancy anchor (idempotent)
 CREATE TABLE IF NOT EXISTS public.health_facility_staff (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
