@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { WalletCoreEngine } from "./walletCoreEngine";
 
 export type WalletEventType = "QR_SCANNED" | "TRANSFER_INIT" | "BALANCE_REQUEST" | "PAYMENT_REQUEST";

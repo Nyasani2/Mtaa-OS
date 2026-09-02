@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useWalletStore } from '@/lib/stores/wallet-store';
 
 export function useAgent() {

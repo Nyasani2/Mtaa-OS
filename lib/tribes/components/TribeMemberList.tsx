@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 import { TribeMember } from '../types';

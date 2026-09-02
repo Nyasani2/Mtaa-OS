@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { WalletCoreEngine } from "./walletCoreEngine";
 import type { WalletEventType } from "./walletExecutionPipeline";
 

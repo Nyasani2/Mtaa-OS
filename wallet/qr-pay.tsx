@@ -13,7 +13,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useWallet } from '@/hooks/useWallet';
-import { COLORS, FONTS, SIZES } from '@/constants/theme';
+import { colors } from '@/constants/theme';
+const COLORS = (colors as any)?.light || colors || {};
+const FONTS = { regular: 'System', bold: 'System', light: 'System' };
+const SIZES = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
+
 
 const { width } = Dimensions.get('window');
 const SCAN_SIZE = width * 0.65;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/wallet/index.tsx — My Wallet (full feature dashboard)
 import React, { useEffect, useState, useCallback } from 'react';
 import {

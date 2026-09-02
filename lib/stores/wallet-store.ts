@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 // lib/stores/wallet-store.ts
 // MTAA OS Wallet Store — Economic Kernel

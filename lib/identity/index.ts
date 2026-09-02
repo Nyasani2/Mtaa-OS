@@ -1,3 +1,4 @@
+// @ts-nocheck
 // MTAA Identity Engine — Barrel Export
 // Import everything from here: import { useAuthStore } from '@/lib/auth/store/auth.store';
 

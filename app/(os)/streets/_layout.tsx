@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

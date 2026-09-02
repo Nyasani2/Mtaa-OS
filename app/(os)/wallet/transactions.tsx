@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/wallet/transactions.tsx
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';

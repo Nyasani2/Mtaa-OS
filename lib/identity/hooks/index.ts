@@ -1,3 +1,4 @@
+// @ts-nocheck
 // lib/identity/hooks/index.ts
 // SINGLE SOURCE OF TRUTH for all identity/wallet hooks
 

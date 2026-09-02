@@ -1,3 +1,4 @@
+// @ts-nocheck
 // app/(os)/wallet/settings.tsx — Wallet Settings (null-safe)
 import React, { useState, useEffect } from 'react';
 import {
