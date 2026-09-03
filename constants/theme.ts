@@ -50,5 +50,3 @@ export const FONTS: Record<string, any> = { regular: 'System', medium: 'System',
 export const SIZES: Record<string, number> = { xs: 10, sm: 12, md: 14, lg: 16, xl: 20, xxl: 24 };
 
 export const COLORS: any = { ...(colors as any).light, text: '#0f172a', textSecondary: '#64748b', textLight: '#94a3b8' };
-/* DUP */ export const FONTS: Record<string, string> = { regular: 'System', medium: 'System', bold: 'System' };
-/* DUP */ export const SIZES: Record<string, number> = { xs: 10, sm: 12, md: 14, lg: 16, xl: 20, xxl: 24 };
