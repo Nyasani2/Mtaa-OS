@@ -28,7 +28,7 @@ export default function MarketplaceBrowser() {
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card}>
             <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.price}>KES {item.price?.toLocaleString()}</Text>
+            <Text style={styles.price}>KES {(item as any).price?.toLocaleString()}</Text>
           </TouchableOpacity>
         )}
       />
