@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import { Redirect } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { supabase } from '@/lib/supabase';
-import { useState } from 'react';
 
 export type EducationRole = 'super_admin' | 'ministry' | 'school_admin' | 'teacher' | 'parent' | 'student' | 'none';
 
