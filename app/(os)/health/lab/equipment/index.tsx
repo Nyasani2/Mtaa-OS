@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
 import { Alert, useRouter } from "expo-router";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useLabEquipment, useCreateEquipment, useUpdateEquipmentStatus } from "@/lib/health/hooks/useLab";
 
 const STATUSES = ["operational", "maintenance", "out_of_order", "calibrating"];

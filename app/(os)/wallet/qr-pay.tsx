@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ActivityIndicator, Dimensions, Animated, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useAuth } from '@/lib/auth/useAuth';
 import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
 import { Alert, sendMoney, getWalletTransactions } from '@/lib/services/wallet-service';

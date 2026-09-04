@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CreateBudgetScreen() {
   const router = useRouter();

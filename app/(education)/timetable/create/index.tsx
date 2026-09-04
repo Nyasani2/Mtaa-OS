@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 const DAYS = [
   { label: "Sunday", value: 0 },

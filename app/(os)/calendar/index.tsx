@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Alert,

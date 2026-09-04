@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
 import { Alert, useRouter } from "expo-router";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useVitalsRecords, useCreateVitalsRecord } from "@/lib/health/hooks/useVitals";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 

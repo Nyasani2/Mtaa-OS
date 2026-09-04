@@ -4,7 +4,7 @@ import { Alert,
   View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput
 } from "react-native";
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Alert, SafeAreaView } from "react-native-safe-area-context";
 import { Alert, useHealthStore } from "@/domains/health/state/healthStore";
 

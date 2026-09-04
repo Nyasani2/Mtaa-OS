@@ -5,7 +5,7 @@
 import { Alert, useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 

@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIn
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Alert, deviceEngine } from '@/lib/security/device-engine';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Device {
   id: string;

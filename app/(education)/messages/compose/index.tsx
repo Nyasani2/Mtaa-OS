@@ -3,7 +3,7 @@ import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityInd
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import EducationService from "@/lib/services/education-service";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ComposeMessageScreen() {
   const router = useRouter();

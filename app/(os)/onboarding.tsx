@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Dimensions, ActivityIndicator, FlatList, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Alert, useProfile } from '@/lib/profile/hooks/useProfile';

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SchoolStudentsScreen() {
   const router = useRouter();

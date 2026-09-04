@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Platform } from 'react-native';
 import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 // ─── Types ─────────────────────────────────────────────────────────
 interface NetworkState {

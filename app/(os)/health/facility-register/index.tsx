@@ -4,7 +4,7 @@ import { Alert, View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet,
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const FACILITY_TYPES = [
   { value: 'pharmacy', label: 'Pharmacy', level: 1 },

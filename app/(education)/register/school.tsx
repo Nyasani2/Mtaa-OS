@@ -3,7 +3,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useRouter } from 'expo-router';
 import { Alert, LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const PROGRAM_OPTIONS = ['Primary', 'Secondary', 'TVET', 'University', 'Mixed'];
 const OWNERSHIP_OPTIONS = ['Public', 'Private', 'Religious', 'Community', 'NGO'];

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Alert, useWalletStore } from '@/lib/stores/wallet-store';
 import { supabase } from '@/lib/supabase';

@@ -4,7 +4,7 @@ import { View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicat
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 import EducationService from "@/lib/services/education-service";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function QRCheckinScreen() {
   const router = useRouter();

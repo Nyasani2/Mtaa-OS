@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Alert, View, Text, TouchableOpacity, ScrollView, StyleSheet, Switch, Alert } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function EducationSettingsScreen() {
   const router = useRouter();

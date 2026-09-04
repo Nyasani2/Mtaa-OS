@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
 import { Alert, useRouter } from "expo-router";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 const TYPES = ["Primary", "Secondary", "High School", "University", "College", "Vocational", "Other"];
 

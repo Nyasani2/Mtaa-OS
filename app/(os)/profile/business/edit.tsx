@@ -3,7 +3,7 @@ import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const BUSINESS_TYPES = ['Retail', 'Food & Beverage', 'Services', 'Technology', 'Agriculture', 'Manufacturing', 'Healthcare', 'Education', 'Transport', 'Other'];
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from "expo-document-picker";
 
 export default function AssignmentSubmitScreen() {

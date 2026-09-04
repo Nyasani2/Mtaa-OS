@@ -3,7 +3,7 @@
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useAuth } from '@/lib/auth/useAuth';
 import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
 import { Alert, depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';

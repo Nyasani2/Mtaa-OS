@@ -3,7 +3,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useRouter } from 'expo-router';
 import { Alert, LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 const GENDER_OPTIONS = ['Male', 'Female', 'Other', 'Prefer not to say'];
 const SUBJECT_OPTIONS = ['Mathematics', 'English', 'Science', 'Social Studies', 'Kiswahili', 'ICT', 'Arts', 'Music', 'PE', 'Religion', 'Business', 'Agriculture'];

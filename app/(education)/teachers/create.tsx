@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, addTeacher } from '@/lib/services/education-service';
 
 export default function AddTeacherScreen() {

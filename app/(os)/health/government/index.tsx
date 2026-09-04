@@ -6,7 +6,7 @@ import { Alert,
 } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import { Alert, SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import { Alert, useHealthRole } from "@/lib/health/hooks/useHealthRole";
 import { Alert, useGovernment } from "@/lib/health/hooks/useGovernment";

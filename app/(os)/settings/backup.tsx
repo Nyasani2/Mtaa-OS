@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function BackupSettingsScreen() {
   const router = useRouter();

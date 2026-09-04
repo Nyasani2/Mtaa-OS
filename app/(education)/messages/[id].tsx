@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function MessageDetailScreen() {
   const { id } = useLocalSearchParams();

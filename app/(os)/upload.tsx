@@ -7,7 +7,7 @@ import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Acti
 import * as ImagePicker from 'expo-image-picker';
 import { Alert, Video } from 'expo-av';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 

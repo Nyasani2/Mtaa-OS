@@ -4,7 +4,7 @@ import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, ActivityInd
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import { Alert, supabase } from "@/lib/supabase";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function EventCreateScreen() {
   const router = useRouter();

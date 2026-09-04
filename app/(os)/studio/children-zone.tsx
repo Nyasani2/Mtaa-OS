@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView, TextInput, AppState } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert, Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 // Children's content categories

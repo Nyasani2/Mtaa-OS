@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Alert, useAuthStore } from '@/hooks/useAuthStore';
 import { Alert, useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';

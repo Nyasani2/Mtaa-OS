@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import * as Contacts from "expo-contacts";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 interface ContactItem {
   id: string;

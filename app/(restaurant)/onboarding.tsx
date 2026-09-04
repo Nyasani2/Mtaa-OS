@@ -3,7 +3,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const STEPS = ['Restaurant Info', 'Location & Hours', 'Menu Setup', 'Review'];
 

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Alert, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ExamTakeScreen() {
   const { id } = useLocalSearchParams();

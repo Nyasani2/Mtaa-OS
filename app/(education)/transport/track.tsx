@@ -5,7 +5,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshCon
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 import { supabase } from "@/lib/supabase";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TransportTrackScreen() {
   const router = useRouter();

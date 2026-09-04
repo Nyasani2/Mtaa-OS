@@ -5,7 +5,7 @@ import { Alert,
 } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import { Alert, SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import { Alert, useAppointments } from "@/lib/health/hooks/useAppointments";
 import { Alert, format } from "date-fns";

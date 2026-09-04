@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert, Linking } from "react-native";
 import { Alert, useRouter } from "expo-router";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import { Alert, useFacilities, useCreateFacility } from "@/lib/health/hooks/useFacility";
 
 const TYPES = ["hospital", "clinic", "pharmacy", "lab", "imaging", "rehabilitation"];

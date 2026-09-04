@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
 const EMERGENCY_TYPES = [
   { id: "fire", label: "Fire", icon: "flame", color: "#ef4444" },

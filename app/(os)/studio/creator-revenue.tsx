@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from '@expo/vector-icons';
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 import { supabase } from "@/lib/supabase";
 

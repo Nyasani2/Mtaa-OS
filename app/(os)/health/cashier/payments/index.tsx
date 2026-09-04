@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, M
 import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Alert, useCashierPayments } from '@/lib/health/hooks/useCashier';
-import { Alert, Feather } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 export default function CashierPaymentsScreen() {
   const router = useRouter();

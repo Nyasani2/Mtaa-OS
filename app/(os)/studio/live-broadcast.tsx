@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Switch } from "react-native";
 import { Alert, SafeAreaView } from "react-native-safe-area-context";
 import { Alert, useRouter } from "expo-router";
-import { Alert, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import { Alert, supabase } from "@/lib/supabase";
 

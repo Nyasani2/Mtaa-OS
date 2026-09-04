@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { Feather, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 import { supabase } from "@/lib/supabase";
 
