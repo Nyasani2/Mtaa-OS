@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { FileText, ChevronLeft, Check } from "lucide-react-native";
-import { useState } from "react";
+import { useState } from 'react';
 
 const TERMS_TEXT = "1. The Landlord agrees to lease the property to the Tenant for the agreed term.\n\n2. Rent is due on the 1st of each month. Late payments incur a 5% fee.\n\n3. The Tenant agrees to maintain the property in good condition.\n\n4. No subletting without written consent.\n\n5. Security deposit of one month's rent is required.\n\n6. Either party may terminate with 30 days written notice.\n\n7. This agreement is governed by local property law.";
 

@@ -1,6 +1,6 @@
 // lib/mtaxi/components/RiderHome.tsx
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from "react-native";
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { useRouter } from "expo-router";
 import { MapPin, Clock, CreditCard, Car, Star, ChevronRight } from "lucide-react-native";
 

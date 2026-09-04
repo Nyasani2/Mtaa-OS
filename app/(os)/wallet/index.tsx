@@ -1,7 +1,7 @@
-import { useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect, useCallback } from 'react';
 // app/(os)/wallet/index.tsx — My Wallet (full feature dashboard)
-import React, { useEffect, useState, useCallback } from 'react';
+
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +47,6 @@ export default function WalletHomeScreen() {
   const transactions = dbTx.length ? dbTx : (wallet.transactions ?? []);
 
   const [refreshing, setRefreshing] = useState(false);
-
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

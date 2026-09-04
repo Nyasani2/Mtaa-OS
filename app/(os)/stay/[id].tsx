@@ -1,11 +1,11 @@
-import { useState } from 'react';
 // @ts-nocheck
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { HostInfoCard, ReviewList, AmenityBadge } from "@/domains/stay/components";
 import { Heart, Share2, MapPin, Star, Users, Bed, Bath, Wifi, ChevronLeft, Calendar, ShieldCheck } from "lucide-react-native";
-import { useEffect, useState } from "react";
+
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 import { supabase } from "@/lib/supabase";
 import * as StreetsService from "@/lib/services/streets-service";

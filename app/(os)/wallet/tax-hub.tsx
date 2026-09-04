@@ -1,8 +1,7 @@
-import { Alert, useState } from 'react';
+import { useState, useEffect } from 'react';
 // app/(os)/wallet/tax-hub.tsx
 // MTAA Tax Hub -- Taxpayer registration, liability tracking, payment processing
 
-import { Alert, useEffect, useState } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

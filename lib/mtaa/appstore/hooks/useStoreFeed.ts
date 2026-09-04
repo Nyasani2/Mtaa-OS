@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react';
 import { useAppStore } from "@/lib/mtaa/appstore/store";
 import type { AppManifest, ModuleManifest, InstalledApp } from "@/lib/mtaa/appstore/apps/types";
 

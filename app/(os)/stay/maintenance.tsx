@@ -1,7 +1,7 @@
 // @ts-nocheck
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useState } from 'react';
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { Wrench, ChevronLeft, Camera, Check } from "lucide-react-native";
 

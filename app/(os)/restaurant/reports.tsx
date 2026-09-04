@@ -1,10 +1,9 @@
-import { useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Reports Screen
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
 import { useReports, useDashboardAutoRefresh } from '@/lib/restaurant/hooks';
 

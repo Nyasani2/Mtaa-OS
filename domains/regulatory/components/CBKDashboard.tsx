@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useCBKReportData, useGenerateReport } from "../hooks/useCompliance";
 
 export default function CBKDashboard() {

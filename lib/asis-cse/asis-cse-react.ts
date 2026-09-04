@@ -4,15 +4,7 @@
  * Hooks and components for UI consumption of the cognitive architecture
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 
 import {
   ASISMessage,

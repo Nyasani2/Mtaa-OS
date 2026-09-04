@@ -1,7 +1,7 @@
-import { useState } from 'react';
 // @ts-nocheck
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useState, useEffect } from 'react';
+
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
 import { Ionicons } from '@expo/vector-icons';

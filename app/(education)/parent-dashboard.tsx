@@ -1,7 +1,6 @@
-import { useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 
-import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

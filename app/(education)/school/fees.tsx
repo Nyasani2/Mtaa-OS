@@ -1,6 +1,6 @@
-import { Alert, useState } from 'react';
-import React, { useEffect, useState } from "react";
-import { Alert, View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
+import React, { useState, useEffect } from 'react';
+
+import { Alert, View, Text, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
 import { Ionicons } from '@expo/vector-icons';

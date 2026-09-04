@@ -5,7 +5,7 @@
 // Calls the mtruck-settle edge function (supabase/functions/mtruck-settle),
 // which credits the driver's real wallet and MTAA's platform revenue
 // wallet via the audited mtaa_add_wallet_transaction RPC.
-import { Alert, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, MapPin, Package, DollarSign, CheckCircle } from 'lucide-react-native';

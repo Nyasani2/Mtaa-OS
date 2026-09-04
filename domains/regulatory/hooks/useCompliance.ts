@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { complianceService, type ComplianceReport, type TaxRecord, type CBKReport } from "../services/complianceService";
 
 export function useComplianceReports(options?: { type?: string; status?: string; limit?: number }) {

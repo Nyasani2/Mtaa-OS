@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import CBKDashboard from "./CBKDashboard";
 import FraudDashboard from "./FraudDashboard";
 import AuditDashboard from "./AuditDashboard";

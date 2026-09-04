@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { Calendar, Clock, MapPin, ChevronRight } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 export default function StayBookingsScreen() {
   const { myBookings, loading, fetchMyBookings } = useStay();

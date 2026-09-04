@@ -1,10 +1,10 @@
 // @ts-nocheck
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { StayList } from "@/domains/stay/components";
 import { Home, Building2, Hotel, TrendingUp, MapPin, Search } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 const CATEGORIES = [
   { id: "all", label: "All", icon: Home },

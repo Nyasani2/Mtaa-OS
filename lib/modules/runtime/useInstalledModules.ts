@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import { useModuleStore } from "./module-store";
 import type { InstalledModule, ModuleId, ModuleLifecycle } from "./module.types";
 

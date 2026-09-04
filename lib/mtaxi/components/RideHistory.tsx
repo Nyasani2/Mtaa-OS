@@ -1,6 +1,6 @@
 // lib/mtaxi/components/RideHistory.tsx
-import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useRouter } from "expo-router";
 import { MapPin, Clock, Star, ChevronRight, Car, Navigation } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";

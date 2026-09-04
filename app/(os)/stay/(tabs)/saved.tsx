@@ -1,9 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { StayList } from "@/domains/stay/components";
 import { Heart, Trash2 } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 export default function StaySavedScreen() {
   const { listings, savedIds, loading, toggleSaved, fetchListings } = useStay();

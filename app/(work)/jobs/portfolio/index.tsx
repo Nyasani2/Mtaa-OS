@@ -1,9 +1,6 @@
 // @ts-nocheck
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions, Image
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { useRouter } from "expo-router";
 import {
   Plus, Star, ExternalLink, Share2, Download, QrCode,

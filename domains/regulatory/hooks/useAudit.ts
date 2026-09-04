@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { auditService, type AuditLogEntry, type AuditQuery } from "../services/auditService";
 
 export function useAuditLogs(query: AuditQuery = {}) {

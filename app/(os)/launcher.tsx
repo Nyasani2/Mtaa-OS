@@ -1,7 +1,7 @@
-import { useState } from 'react';
 // @ts-nocheck
+import React, { useState, useMemo } from 'react';
 // app/(os)/launcher.tsx — All Apps screen (reads canonical catalog)
-import React, { useMemo, useState } from 'react';
+
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

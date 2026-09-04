@@ -1,5 +1,4 @@
 // @ts-nocheck
-
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';

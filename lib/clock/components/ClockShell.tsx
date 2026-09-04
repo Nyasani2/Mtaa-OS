@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Switch, TextInput, Alert } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Switch, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Alarm {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import { AppLifecycle, RunningApp } from "./app-lifecycle";
 import { osEvents } from "./os-events";
 

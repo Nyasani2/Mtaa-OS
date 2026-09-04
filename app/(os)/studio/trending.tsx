@@ -1,6 +1,6 @@
-import { useState } from 'react';
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Flame } from 'lucide-react-native';

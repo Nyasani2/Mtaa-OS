@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { supabase } from '@/lib/supabase/config';
 

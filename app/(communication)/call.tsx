@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, Alert, Platform } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, Platform } from 'react-native';
 import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import * as Contacts from "expo-contacts";
 import { Ionicons } from '@expo/vector-icons';

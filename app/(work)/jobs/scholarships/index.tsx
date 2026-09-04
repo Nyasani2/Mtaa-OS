@@ -1,8 +1,6 @@
 // @ts-nocheck
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import {
   GraduationCap, DollarSign, Calendar, MapPin, ChevronRight,
   BookOpen, Award, Trophy, CheckCircle2, Heart, Share2,

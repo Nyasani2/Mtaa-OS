@@ -1,6 +1,6 @@
-import { useState } from 'react';
 // @ts-nocheck
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Video } from 'lucide-react-native';

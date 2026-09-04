@@ -2,7 +2,7 @@
 // app/(os)/settings/index.tsx — MTAA OS Settings v4.1
 // Device/OS-level settings only. Security features moved to Profile → Privacy & Security.
 
-import { Alert, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

@@ -1,10 +1,9 @@
-import { Alert, useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Staff & Attendance Screen
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, RefreshControl, ScrollView } from 'react-native';
 import { Alert, useAttendance, useIsClockedIn } from '@/lib/restaurant/hooks';
 

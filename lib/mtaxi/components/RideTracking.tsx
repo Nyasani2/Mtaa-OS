@@ -1,6 +1,6 @@
 // lib/mtaxi/components/RideTracking.tsx
-import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Linking } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Phone, MessageSquare, X, Navigation, Clock, Star, User } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";

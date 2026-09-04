@@ -1,6 +1,6 @@
 "use client";
 
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ReactNode } from "react";
 

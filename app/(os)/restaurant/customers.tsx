@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Customers & Loyalty Screen
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 
 export default function RestaurantCustomers() {

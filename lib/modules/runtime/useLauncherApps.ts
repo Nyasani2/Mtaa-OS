@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback } from 'react';
 import { useModuleStore } from "./module-store";
 import { getLauncherApps, getRecentApps, recordAppOpen } from "./module-launcher";
 import type { LauncherApp, ModuleId } from "./module.types";

@@ -1,6 +1,6 @@
 // lib/mtaxi/components/DriverRide.tsx
-import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Linking } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, Phone, MessageSquare, CheckCircle, Flag, AlertTriangle } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";

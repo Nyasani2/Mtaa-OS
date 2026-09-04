@@ -1,5 +1,4 @@
 // @ts-nocheck
-
 // app/(education)/teachers/create.tsx
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';

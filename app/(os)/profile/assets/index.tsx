@@ -1,8 +1,7 @@
-import { useState } from 'react';
 // @ts-nocheck
+import { useState, useEffect } from 'react';
 // app/(os)/profile/assets/index.tsx — Assets Registry
 
-import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
+import React, { useState } from 'react';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Alert, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
 import { Ionicons } from '@expo/vector-icons';

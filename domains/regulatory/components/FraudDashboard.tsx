@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useFraudFlags, useFraudMetrics, useUpdateFraudFlag } from "../hooks/useFraud";
 
 const SEVERITY_COLORS = {

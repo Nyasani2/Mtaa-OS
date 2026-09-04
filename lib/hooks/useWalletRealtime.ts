@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 
 export function useWalletRealtime(userId: string, onUpdate: (payload: any) => void) {

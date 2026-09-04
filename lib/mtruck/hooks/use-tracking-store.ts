@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 import {
   getTruckLocations, updateTruckLocation,

@@ -1,5 +1,5 @@
 "use client";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 interface Props {
   stats: { totalAppointments: number; totalRecords: number; pendingLabs: number; unreadNotifications: number };
 }

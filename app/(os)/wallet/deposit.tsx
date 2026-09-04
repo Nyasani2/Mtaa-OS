@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import React, { useState, useCallback } from 'react';

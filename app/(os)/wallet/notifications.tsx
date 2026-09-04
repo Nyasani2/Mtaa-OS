@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useWalletStore } from "@/lib/modules/wallet/store";
 import { WalletNotification } from "@/lib/modules/wallet/types";
 import { ArrowLeftRight, ArrowUpRight, ArrowDownLeft, Bell, CheckCircle, Clock, ShieldAlert, AlertTriangle } from "lucide-react-native";

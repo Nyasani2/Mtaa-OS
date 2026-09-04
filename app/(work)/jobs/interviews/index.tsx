@@ -1,8 +1,6 @@
 // @ts-nocheck
 import React from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import {
   Video, Mic, Calendar, Clock, FileText, CheckCircle,
   ChevronRight, MessageSquare, ArrowLeft, Star,

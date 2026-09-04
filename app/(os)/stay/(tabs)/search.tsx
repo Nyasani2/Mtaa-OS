@@ -1,5 +1,5 @@
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { useState } from "react";
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
 import { useRouter } from "expo-router";
 import { useStaySearch } from "@/domains/stay/hooks/useStaySearch";
 import { StayList, SearchFilters } from "@/domains/stay/components";

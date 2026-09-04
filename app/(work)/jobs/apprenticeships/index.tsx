@@ -1,9 +1,6 @@
 // @ts-nocheck
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from "expo-router";
 import {
   Award, Users, Clock, MapPin, DollarSign, Star,

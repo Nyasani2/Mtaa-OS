@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';

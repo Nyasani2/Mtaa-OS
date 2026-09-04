@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 import { getTradeCorridors, getCorridorByRoute } from "@/lib/mtruck/services/addressService";
 import type { MtruckTradeCorridor, Route } from "@/lib/mtruck/types";

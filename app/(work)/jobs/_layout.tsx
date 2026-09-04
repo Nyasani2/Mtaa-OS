@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { useAuthStore } from "@/lib/auth/store/auth.store";
 
 export default function JobsLayout() {

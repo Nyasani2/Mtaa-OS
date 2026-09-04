@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { NotificationService } from "../services/notification.service";
 
 export function useHealthNotifications(userId: string) {

@@ -1,8 +1,8 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTribes as useTribeChat } from "../hooks/useTribes";
 
 interface Props {

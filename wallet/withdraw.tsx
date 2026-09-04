@@ -10,7 +10,6 @@ const colors = (colors as any)?.light || colors || {};
 const fonts = { regular: 'System', bold: 'System', light: 'System' };
 const sizes = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
 
-
 const WITHDRAW_METHODS = [
   { id: 'mpesa', label: 'M-Pesa', icon: '📱' },
   { id: 'bank', label: 'Bank Account', icon: '🏦' },

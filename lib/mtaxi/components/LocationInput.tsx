@@ -1,5 +1,5 @@
 import React from "react";
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 interface Props {
   label: string; value: string; onChangeText: (text: string) => void;

@@ -1,5 +1,5 @@
 // lib/os/use-os.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 export interface InstalledAppV2 {
   id: string;

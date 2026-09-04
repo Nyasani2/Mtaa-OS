@@ -1,6 +1,6 @@
 "use client";
 
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from "expo-router";
 
 export function SafeModeScreen() {

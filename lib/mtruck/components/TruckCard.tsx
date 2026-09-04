@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Truck } from "@/lib/mtruck/types";
 

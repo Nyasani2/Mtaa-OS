@@ -1,6 +1,6 @@
 // lib/mtaxi/components/DriverHome.tsx
-import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityIndicator } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { useRouter } from "expo-router";
 import { Power, DollarSign, List, TrendingUp, Star, Car, ChevronRight, UserPlus } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Switch } from "react-native";
+import React, { useState } from 'react';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Switch } from 'react-native';
 import { Alert, useRouter } from "expo-router";
 import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
 import EducationService from "@/lib/services/education-service";

@@ -1,7 +1,7 @@
-import { Alert, useState } from 'react';
-import { Alert, TextInput, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert, TextInput, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

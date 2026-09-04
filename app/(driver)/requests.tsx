@@ -1,5 +1,5 @@
-import { Alert, useState } from 'react';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';

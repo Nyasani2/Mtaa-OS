@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { VehicleType } from "../types";
 
 const VEHICLES: { type: VehicleType; label: string; icon: string; baseRate: number }[] = [

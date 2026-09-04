@@ -11,7 +11,6 @@ const colors = (colors as any)?.light || colors || {};
 const fonts = { regular: 'System', bold: 'System', light: 'System' };
 const sizes = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
 
-
 const { width } = Dimensions.get('window');
 const SCAN_SIZE = width * 0.65;
 

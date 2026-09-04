@@ -1,6 +1,6 @@
 // lib/mtaxi/components/DriverEarnings.tsx
-import React, { useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from "expo-router";
 import { DollarSign, TrendingUp, Calendar, Clock, ChevronLeft } from "lucide-react-native";
 import { useDriver } from "../hooks/useDriver";

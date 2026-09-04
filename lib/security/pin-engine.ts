@@ -130,7 +130,6 @@ export const pinEngine = {
   },
 };
 
-
 // ── Standalone export for wallet-pin-guard.tsx and app-lock-provider.tsx ──
 export async function verifyPin(pin: string, userId?: string): Promise<boolean> {
   return await pinEngine.verifyPin(userId || 'default', pin);

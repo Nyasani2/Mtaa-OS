@@ -4,15 +4,7 @@
  * Fixed: generateError crash, added localStorage chat persistence
  */
 
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  ReactNode,
-} from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 
 import {
   initializeASIS,

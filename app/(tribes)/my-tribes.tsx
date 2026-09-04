@@ -1,5 +1,5 @@
-import { useAuthStore } from '@/lib/auth/store/auth.store';
 // @ts-nocheck
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 // app/(os)/tribes/my-tribes.tsx
 // My Tribes Screen — tribes user has joined
 

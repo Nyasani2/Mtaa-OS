@@ -1,6 +1,6 @@
-import { Alert, useState } from 'react';
 // @ts-nocheck
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Clipboard, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';

@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl
-} from "react-native";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuditLogs, useAuditSummary } from "../hooks/useAudit";
 
 const ACTION_COLORS = { INSERT: "#059669", UPDATE: "#ca8a04", DELETE: "#dc2626" };

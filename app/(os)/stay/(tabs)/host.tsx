@@ -1,8 +1,8 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from "expo-router";
 import { useStay } from "@/domains/stay/hooks/useStay";
 import { Plus, Building2, Users, Star, Wallet, ShieldCheck } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 export default function StayHostScreen() {
   const router = useRouter();

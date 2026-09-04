@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { fraudService, type FraudFlag, type FraudMetrics, type FraudQuery } from "../services/fraudService";
 
 export function useFraudFlags(query: FraudQuery = {}) {

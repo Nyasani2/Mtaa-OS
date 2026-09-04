@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { usePharmacy as usePharmacies } from "../hooks/usePharmacy";
 
 export function PharmacyBrowser() {

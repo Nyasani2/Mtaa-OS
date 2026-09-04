@@ -1,6 +1,4 @@
 // @ts-nocheck
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -134,5 +132,4 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
   empty: { paddingVertical: 10, fontSize: 13, color: '#475569', fontStyle: 'italic' },
 });
-
 

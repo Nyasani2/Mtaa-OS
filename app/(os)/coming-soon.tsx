@@ -1,11 +1,6 @@
 // app/(os)/coming-soon.tsx — Reusable Coming Soon Screen
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Clock, Sparkles } from "lucide-react-native";
 

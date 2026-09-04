@@ -46,7 +46,6 @@ export default function MessagesScreen() {
     }
   }, [user]);
 
-
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);

@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useState } from "react";
-import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert, Linking } from "react-native";
+import React, { useState } from 'react';
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Linking } from 'react-native';
 import { Alert, useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, useFacilities, useCreateFacility } from "@/lib/health/hooks/useFacility";

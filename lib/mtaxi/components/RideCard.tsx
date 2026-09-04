@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Ride } from "../types";
 
 const STATUS_COLORS: Record<string, string> = {

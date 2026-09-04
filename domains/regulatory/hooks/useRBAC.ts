@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { rbacService, type FinancialRole, type UserWithRoles } from "../services/rbacService";
 
 export function useFinancialRoles() {

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 import type { JobApplication } from "@/lib/jobs/types";
 
 interface Props {

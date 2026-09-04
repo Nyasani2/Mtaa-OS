@@ -1,6 +1,6 @@
 "use client";
 
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet } from 'react-native';
 import type { ReactNode } from "react";
 
 interface Props {

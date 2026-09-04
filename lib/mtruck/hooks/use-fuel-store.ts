@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useEffect } from "react";
+import { useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 import { getLatestTelemetry } from "@/lib/mtruck/services/tracking-service";
 import type { MtruckFuelAlert, MtruckTelemetry } from "@/lib/mtruck/types";

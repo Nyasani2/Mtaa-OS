@@ -1,7 +1,7 @@
 // MTAA STAY OS — SEARCH FILTERS COMPONENT
 
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { SlidersHorizontal } from "lucide-react-native";
 import type { StaySearchFilters, StayType, ListingType } from "../types";
 

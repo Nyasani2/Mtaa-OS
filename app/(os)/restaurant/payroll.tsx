@@ -1,10 +1,9 @@
-import { Alert, useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Payroll Screen
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, RefreshControl, ScrollView } from 'react-native';
 import { Alert, usePayroll } from '@/lib/restaurant/hooks';
 

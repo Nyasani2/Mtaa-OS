@@ -1,11 +1,10 @@
-import { useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Kitchen Display System (KDS) Screen
 // Web-safe: Uses polling instead of WebSocket for browser compatibility
 // ============================================================================
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Vibration } from 'react-native';
 import { useKds } from '@/lib/restaurant/hooks';
 

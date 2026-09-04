@@ -1,5 +1,5 @@
-import { useState } from 'react';
 // @ts-nocheck
+import { useState } from 'react';
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';

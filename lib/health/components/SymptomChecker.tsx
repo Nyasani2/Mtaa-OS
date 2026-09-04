@@ -1,7 +1,7 @@
 "use client";
 
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
 
 export function SymptomChecker() {
   const [symptoms, setSymptoms] = useState("");

@@ -1,6 +1,6 @@
 "use client";
 
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRecords } from "../hooks/useRecords";
 
 interface Props {

@@ -1,8 +1,5 @@
-import React, { useState, useCallback } from "react";
-import { Alert,
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator, TextInput, Alert,
-} from "react-native";
+import React, { useState, useCallback } from 'react';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { Alert, useRouter } from "expo-router";
 import { Alert, SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';

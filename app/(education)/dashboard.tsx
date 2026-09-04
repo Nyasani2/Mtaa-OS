@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

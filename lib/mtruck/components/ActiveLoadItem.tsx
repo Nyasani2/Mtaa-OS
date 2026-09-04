@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 import type { Load } from "@/lib/mtruck/types";
 
 interface Props {

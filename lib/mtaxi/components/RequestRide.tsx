@@ -1,6 +1,6 @@
 // lib/mtaxi/components/RequestRide.tsx
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator, Alert } from "react-native";
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, CreditCard, Wallet, Banknote, ChevronRight, Car, Star, Truck, Users } from "lucide-react-native";
 import { useRides } from "../hooks/useRides";

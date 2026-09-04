@@ -1,10 +1,9 @@
-import { Alert, useState } from 'react';
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Menu Management Screen
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Switch, ScrollView, RefreshControl } from 'react-native';
 import { Alert, useMenu } from '@/lib/restaurant/hooks';
 

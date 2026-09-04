@@ -1,9 +1,6 @@
 // @ts-nocheck
-import React, { useState, useEffect, useCallback } from "react";
-import { Alert,
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions, ActivityIndicator, Alert
-} from "react-native";
+import React, { useState, useEffect, useCallback } from 'react';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Alert, useRouter } from "expo-router";
 import { Alert,
   Zap, DollarSign, Shield, CheckCircle, Clock, MessageSquare,

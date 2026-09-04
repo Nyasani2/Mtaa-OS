@@ -63,7 +63,6 @@ export default function ExploreScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   root:{flex:1,backgroundColor:'#000'},
   header:{flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:12,paddingTop:Platform.OS==='ios'?50:16,paddingBottom:10,backgroundColor:'#000',borderBottomWidth:1,borderBottomColor:'#1a1a1a'},
