@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Alert, ActivityIndicator, Modal, TextInput
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { BlurView } from 'expo-blur';
+import { Alert, BlurView } from 'expo-blur';
 
 interface ComplianceCheck {
   id: string;

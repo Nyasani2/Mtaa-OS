@@ -1,10 +1,10 @@
 // @ts-nocheck
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useStay } from "@/domains/stay/hooks/useStay";
-import { useWallet, useWalletAccount } from "app/(os)/wallet/hooks";
-import { CreditCard, ChevronLeft, ShieldCheck, Wallet } from "lucide-react-native";
-import { useState } from "react";
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Alert, useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, useStay } from "@/domains/stay/hooks/useStay";
+import { Alert, useWallet, useWalletAccount } from "app/(os)/wallet/hooks";
+import { Alert, CreditCard, ChevronLeft, ShieldCheck, Wallet } from "lucide-react-native";
+import { Alert, useState } from "react";
 
 export default function StayPaymentScreen() {
   const { id } = useLocalSearchParams();

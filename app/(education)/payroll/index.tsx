@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { DollarSign, Users, Calendar, ChevronRight, Plus, Wallet } from 'lucide-react-native';
+import { Alert, DollarSign, Users, Calendar, ChevronRight, Plus, Wallet } from 'lucide-react-native';
 
 export default function PayrollScreen() {
   const router = useRouter();

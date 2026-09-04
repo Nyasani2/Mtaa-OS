@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { 
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, 
-  ActivityIndicator, TextInput, Dimensions 
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useHealthMap, MapEntityType } from '@/hooks/useHealthMap';
 import { 

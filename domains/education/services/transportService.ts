@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type RT=Database['public']['Tables']['education_transport_routes']['Row'];type ST=Database['public']['Tables']['education_student_transport']['Row'];
 export async function getRoutes(instId:string){const{d,e}=await supabase.from('education_transport_routes').select('*').eq('institution_id',instId).order('route_name');if(e)throw e;return d||[];}
 export async function getRoute(id:string){const{d,e}=await supabase.from('education_transport_routes').select('*,students:education_student_transport(student:education_students(full_name))').eq('id',id).single();if(e)throw e;return d;}

@@ -1,9 +1,8 @@
+import { useState } from 'react';
 // @ts-nocheck
 // app/(os)/wallet/index.tsx — My Wallet (full feature dashboard)
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

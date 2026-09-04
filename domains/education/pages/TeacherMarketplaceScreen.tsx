@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useTeacherServices,useBookings}from'../hooks/useTeacherEconomy';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useTeacherServices,useBookings}from'../hooks/useTeacherEconomy';import{Ionicons}from'@expo/vector-icons';
 export default function TeacherMarketplaceScreen({teacherId}:{teacherId:string}){const[sm,setSm]=useState(false);const[rf,setRf]=useState(false);const{services,loading,error,refresh,create}=useTeacherServices(teacherId);const{bookings}=useBookings(undefined,teacherId);
 const[ti,setTi]=useState('');const[desc,setD]=useState('');const[pr,setP]=useState('');const[cat,setC]=useState('tutoring');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

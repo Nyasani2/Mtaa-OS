@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
+import { Alert, useState, useEffect, useCallback } from "react";
+import { Alert,
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl,
 } from "react-native";
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from "expo-router";
-import {
+import { Alert, useRouter } from "expo-router";
+import { Alert,
   ArrowLeft, MapPin, Phone, Star, DollarSign, ArrowDownLeft,
   ArrowUpRight, Shield, User, Search, ChevronRight,
 } from "lucide-react-native";

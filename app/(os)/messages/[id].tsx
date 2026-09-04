@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, TextInput,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Send, Phone, Video } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

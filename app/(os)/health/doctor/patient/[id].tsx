@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import {
+import { Alert,
   User, Heart, Activity, Pill, AlertTriangle, FileText,
   ChevronLeft, Phone, Mail, MapPin, Calendar, Stethoscope,
   Thermometer, Droplets, Wind, TrendingUp, Shield

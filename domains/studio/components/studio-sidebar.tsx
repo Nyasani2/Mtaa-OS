@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Platform
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Platform } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 

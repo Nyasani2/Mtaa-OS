@@ -1,10 +1,8 @@
+import { Alert, useState } from 'react';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
-  Alert, RefreshControl, Share, Linking, Platform
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Share, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import * as Clipboard from 'expo-clipboard';

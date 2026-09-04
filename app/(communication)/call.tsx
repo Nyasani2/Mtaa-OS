@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, Alert, Platform } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, Linking, Alert, Platform } from "react-native";
+import { Alert, useLocalSearchParams, useRouter } from "expo-router";
 import * as Contacts from "expo-contacts";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 interface CallLogItem {
   id: string;

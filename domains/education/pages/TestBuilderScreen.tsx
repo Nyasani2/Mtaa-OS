@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
-  Alert, ActivityIndicator, RefreshControl, FlatList,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator, RefreshControl, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';

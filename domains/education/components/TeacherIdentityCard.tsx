@@ -1,16 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  Alert,
-  Share,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert, Share, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTeacherIdentity } from '@/domains/education/hooks/useTeacherIdentity';
 import { useAuth } from '@/hooks/useAuth';

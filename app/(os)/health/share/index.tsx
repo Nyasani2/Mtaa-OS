@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { useHealthSharing } from '@/lib/health/hooks/useHealthSharing';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Alert, useHealthSharing } from '@/lib/health/hooks/useHealthSharing';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 export default function ShareScreen() {

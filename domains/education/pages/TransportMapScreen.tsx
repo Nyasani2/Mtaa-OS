@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
-  Dimensions, Animated,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Animated } from 'react-native';
 import MapView, { Marker, Polyline, Circle } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';

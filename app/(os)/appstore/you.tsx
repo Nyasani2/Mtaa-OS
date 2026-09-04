@@ -1,13 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '@/lib/appstore';

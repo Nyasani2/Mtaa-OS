@@ -3,15 +3,7 @@
 // Imported by: app/(os)/streets/settings.tsx
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

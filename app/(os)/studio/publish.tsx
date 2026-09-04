@@ -1,8 +1,8 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMVideos } from '@/lib/services/mstudio-hooks';
+import { Alert, useMVideos } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioPublishScreen() {

@@ -5,22 +5,11 @@
 // Uses: lib/marketplace/services/marketplace-service.ts
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert,
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  RefreshControl,
-  ActivityIndicator,
-  Image,
-  Dimensions,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator, Image, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
-import { getListings } from '@/lib/marketplace/services/marketplace-service';
+import { Alert, getListings } from '@/lib/marketplace/services/marketplace-service';
 import type { Listing } from '@/lib/marketplace/types';
 
 const { width } = Dimensions.get('window');

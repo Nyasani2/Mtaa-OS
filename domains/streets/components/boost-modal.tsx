@@ -1,8 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, Modal, TouchableOpacity, TextInput, StyleSheet,
-  useWindowDimensions, Platform, ActivityIndicator, ScrollView
-} from 'react-native';
+import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet, useWindowDimensions, Platform, ActivityIndicator, ScrollView } from 'react-native';
 import { X, ChevronRight, AlertTriangle, CheckCircle, Users } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';

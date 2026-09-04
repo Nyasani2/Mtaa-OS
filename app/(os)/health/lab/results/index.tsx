@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Save, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { Alert, ChevronLeft, Save, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 
 interface ResultField {
   id: string; parameter: string; value: string; unit: string;

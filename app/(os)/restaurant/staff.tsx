@@ -1,14 +1,12 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 // ============================================================================
 // MTAA Restaurant Module — Staff & Attendance Screen
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Modal, TextInput, Alert, RefreshControl, ScrollView
-} from 'react-native';
-import { useAttendance, useIsClockedIn } from '@/lib/restaurant/hooks';
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, RefreshControl, ScrollView } from 'react-native';
+import { Alert, useAttendance, useIsClockedIn } from '@/lib/restaurant/hooks';
 
 export default function RestaurantStaff() {
   const {

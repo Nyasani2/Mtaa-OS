@@ -1,4 +1,4 @@
-import React,{useState,useEffect}from'react';import{View,Text,TouchableOpacity,ActivityIndicator}from'react-native';import{useQRSession}from'../hooks/useIdentity';import{Ionicons}from'@expo/vector-icons';import QRCode from'react-native-qrcode-svg';
+import React,{useState,useEffect}from'react';import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';import{useQRSession}from'../hooks/useIdentity';import{Ionicons}from'@expo/vector-icons';import QRCode from'react-native-qrcode-svg';
 export default function QRIdentityScreen({institutionId}:{institutionId:string}){const{session,loading,error,refresh,create}=useQRSession(institutionId);const[code,setCode]=useState('');
 useEffect(()=>{if(session?.session_code)setCode(session.session_code);},[session]);
 const generate=async()=>{const code='QR-'+Math.random().toString(36).substring(2,10).toUpperCase();const exp=new Date();exp.setHours(exp.getHours()+24);await create({institution_id:institutionId,session_code:code,expires_at:exp.toISOString(),is_active:true});await refresh();};

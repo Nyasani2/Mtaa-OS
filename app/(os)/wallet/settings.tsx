@@ -1,13 +1,11 @@
 // @ts-nocheck
 // app/(os)/wallet/settings.tsx — Wallet Settings (null-safe)
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/hooks/useWalletStore';
+import { Alert, useWalletStore } from '@/hooks/useWalletStore';
 
 export default function WalletSettingsScreen() {
   const router = useRouter();

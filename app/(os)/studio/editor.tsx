@@ -1,8 +1,9 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMProjects, useMVideos } from '@/lib/services/mstudio-hooks';
+import { Alert, useMProjects, useMVideos } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioEditorScreen() {

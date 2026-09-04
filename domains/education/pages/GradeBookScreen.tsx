@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useGrades}from'../hooks/useClassroom';import{useStudents}from'../hooks/useIdentity';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useGrades}from'../hooks/useClassroom';import{useStudents}from'../hooks/useIdentity';import{Ionicons}from'@expo/vector-icons';
 export default function GradeBookScreen({classId,institutionId}:{classId:string;institutionId:string}){const[gm,setGm]=useState(false);const[selStu,setSel]=useState<string|null>(null);const[rf,setRf]=useState(false);const{students}=useStudents(institutionId,classId);const{grades,loading,error,refresh,create}=useGrades(selStu||'');
 const[sub,setSub]=useState('');const[sc,setSc]=useState('');const[fb,setFb]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useParentConnections,useParentNotifications}from'../hooks/useParent';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useParentConnections,useParentNotifications}from'../hooks/useParent';import{Ionicons}from'@expo/vector-icons';
 export default function ParentPortalScreen({parentId}:{parentId:string}){const[cm,setCm]=useState(false);const[rf,setRf]=useState(false);const{connections,loading,error,refresh,connect}=useParentConnections(parentId);const{notifications}=useParentNotifications(parentId);
 const[stu,setStu]=useState('');const[rel,setRel]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

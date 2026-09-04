@@ -1,10 +1,8 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch, Alert,
-} from 'react-native';
+import { Alert, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useShop } from '@/domains/shop/hooks/useShop';
+import { Alert, useShop } from '@/domains/shop/hooks/useShop';
 import { supabase } from '@/lib/supabase/client';
 
 export default function ShopSettingsScreen() {

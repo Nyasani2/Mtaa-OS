@@ -1,17 +1,14 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator, Alert
-} from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert,
   Pill, Clock, ChevronRight, AlertCircle, CheckCircle2,
   Calendar, User, Building2, RefreshCw
 } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Colors } from '@/constants/Colors';
+import { Alert, Colors } from '@/constants/Colors';
 
 interface Prescription {
   id: string;

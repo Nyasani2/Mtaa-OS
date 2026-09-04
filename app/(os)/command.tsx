@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator,
-  Dimensions, Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 

@@ -1,8 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';

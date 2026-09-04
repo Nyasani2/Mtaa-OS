@@ -1,10 +1,11 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useEducation } from '@/domains/education/hooks/useEducation';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function ParentFees() {

@@ -1,17 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 interface ProfessionalProfile {
   id: string;

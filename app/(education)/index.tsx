@@ -1,8 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, StatusBar, Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, StatusBar, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

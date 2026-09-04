@@ -1,18 +1,9 @@
 // @ts-nocheck
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  TextInput,
-} from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useDiagnostics } from '@/lib/hooks/useDiagnostics';
-import { useGarage } from '@/lib/hooks/useGarage';
+import { Alert, useDiagnostics } from '@/lib/hooks/useDiagnostics';
+import { Alert, useGarage } from '@/lib/hooks/useGarage';
 
 const SEVERITY_COLORS = {
   critical: '#ef4444',

@@ -1,18 +1,11 @@
+import { useState } from 'react';
 import React, { useEffect, useState } from 'react';
 // @ts-nocheck
 import { supabase } from '@/lib/supabase';
 // app/(communication)/messages/index.tsx
 // MTAA Messenger — Conversations
 
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 

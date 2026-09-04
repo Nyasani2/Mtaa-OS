@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, FlatList } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTraditionalHealer } from '@/lib/health/hooks/useTraditionalHealer';
-import { Plus, X, Leaf, Edit3, Trash2, Package, DollarSign, AlertTriangle } from 'lucide-react-native';
+import { Alert, useTraditionalHealer } from '@/lib/health/hooks/useTraditionalHealer';
+import { Alert, Plus, X, Leaf, Edit3, Trash2, Package, DollarSign, AlertTriangle } from 'lucide-react-native';
 
 export default function HealerRemediesScreen() {
   const router = useRouter();

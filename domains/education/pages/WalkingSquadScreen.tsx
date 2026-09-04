@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useSquads,useSquadMembers,useCheckpoints}from'../hooks/useWalking';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useSquads,useSquadMembers,useCheckpoints}from'../hooks/useWalking';import{Ionicons}from'@expo/vector-icons';
 export default function WalkingSquadScreen({institutionId}:{institutionId:string}){const[sm,setSm]=useState(false);const[selSq,setSel]=useState<string|null>(null);const[rf,setRf]=useState(false);const{squads,loading,error,refresh,create}=useSquads(institutionId);const{members}=useSquadMembers(selSq||'');const{checkpoints}=useCheckpoints(selSq||'');
 const[n,setN]=useState('');const[mp,setMp]=useState('');const[mt,setMt]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

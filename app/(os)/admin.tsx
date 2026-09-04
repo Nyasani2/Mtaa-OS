@@ -4,10 +4,7 @@
 // Hidden behind admin auth. Add button on home for admin users only.
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, SafeAreaView
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 

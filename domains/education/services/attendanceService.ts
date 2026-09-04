@@ -1,5 +1,5 @@
 // @ts-nocheck
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type Att=Database['public']['Tables']['education_attendance']['Row'];
 export async function getAttendanceSessions(instId:string,date?:string){let q=supabase.from('education_attendance').select('*,class:education_classes(name),teacher:education_teachers(user:user_profiles(full_name))').eq('institution_id',instId).order('session_date',{ascending:false});if(date)q=q.eq('session_date',date);const{d,e}=await q;if(e)throw e;return d||[];}
 export async function getStudentAttendance(studentId:string){const{d,e}=await supabase.from('education_attendance').select('*').eq('student_id',studentId).order('session_date',{ascending:false});if(e)throw e;return d||[];}

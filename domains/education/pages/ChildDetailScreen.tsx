@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView}from'react-native';import{useStudents}from'../hooks/useIdentity';import{useGrades}from'../hooks/useClassroom';import{useStudentAttendance}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';import{useStudents}from'../hooks/useIdentity';import{useGrades}from'../hooks/useClassroom';import{useStudentAttendance}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
 export default function ChildDetailScreen({studentId}:{studentId:string}){const[rf,setRf]=useState(false);const{students,loading,error,refresh}=useStudents();const student=students.find((s:any)=>s.id===studentId);const{grades}=useGrades(studentId);const{attendance}=useStudentAttendance(studentId);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};
 if(loading&&!student)return<View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator size="large"color="#3B82F6"/></View>;

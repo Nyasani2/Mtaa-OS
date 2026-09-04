@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
 export default function StudentSubmissionScreen({classId,studentId}:{classId:string;studentId:string}){const[rf,setRf]=useState(false);const[selAsn,setSel]=useState<string|null>(null);const{assignments,loading,error,refresh}=useAssignments(classId);const{submissions,submit}=useSubmissions(selAsn||'');
 const[url,setU]=useState('');const[cm,setC]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-  Alert,
-  TextInput,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInstitutionProfile, useVerificationWorkflow, useInstitutionDocuments } from '@/domains/education/hooks/useInstitutionProfile';
 import { useAuth } from '@/hooks/useAuth';

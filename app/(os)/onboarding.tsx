@@ -1,24 +1,11 @@
 // @ts-nocheck
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Dimensions,
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StatusBar,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Dimensions, ActivityIndicator, FlatList, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useProfile } from '@/lib/profile/hooks/useProfile';
+import { Alert, useProfile } from '@/lib/profile/hooks/useProfile';
 
 const { width, height } = Dimensions.get('window');
 

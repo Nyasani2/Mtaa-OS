@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, Pressable, StyleSheet, TextInput, ScrollView,
-  ActivityIndicator, Platform,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Upload, X, Film } from 'lucide-react-native';
 import { useStudio } from '@/domains/studio/hooks/useStudio';

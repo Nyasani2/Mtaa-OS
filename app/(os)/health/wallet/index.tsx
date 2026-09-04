@@ -1,8 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {

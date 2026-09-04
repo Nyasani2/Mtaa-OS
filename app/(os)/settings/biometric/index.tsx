@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { checkBiometricAvailability, getBiometricStatus, enrollBiometric, revokeAllBiometric, removeThisDevice, authenticateWithBiometric, BiometricDevice } from '@/lib/security/biometric-service';
+import { Alert, checkBiometricAvailability, getBiometricStatus, enrollBiometric, revokeAllBiometric, removeThisDevice, authenticateWithBiometric, BiometricDevice } from '@/lib/security/biometric-service';
 
 export default function BiometricScreen() {
   const router = useRouter();

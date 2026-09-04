@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // @ts-nocheck
 // app/(os)/profile/assets/index.tsx — Assets Registry
 

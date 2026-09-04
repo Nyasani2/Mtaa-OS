@@ -1,10 +1,9 @@
+import { Alert, useState } from 'react';
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator, Alert
-} from 'react-native';
+import { Alert, View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { supabase } from '@/lib/supabase';
 

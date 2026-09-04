@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, Image, StyleSheet, TouchableOpacity, Share,
-  ActivityIndicator, Dimensions,
-} from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Share, ActivityIndicator, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';

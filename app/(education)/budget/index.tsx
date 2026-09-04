@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { PieChart, BarChart3, Plus, ChevronRight, Target, AlertCircle } from 'lucide-react-native';
+import { Alert, PieChart, BarChart3, Plus, ChevronRight, Target, AlertCircle } from 'lucide-react-native';
 
 export default function BudgetScreen() {
   const router = useRouter();

@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Alert, LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 const PROGRAM_OPTIONS = ['Primary', 'Secondary', 'TVET', 'University', 'Mixed'];
 const OWNERSHIP_OPTIONS = ['Public', 'Private', 'Religious', 'Community', 'NGO'];

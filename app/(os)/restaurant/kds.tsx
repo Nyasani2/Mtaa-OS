@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // @ts-nocheck
 // ============================================================================
 // MTAA Restaurant Module — Kitchen Display System (KDS) Screen
@@ -5,10 +6,7 @@
 // ============================================================================
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ScrollView, RefreshControl, Dimensions, Vibration
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Vibration } from 'react-native';
 import { useKds } from '@/lib/restaurant/hooks';
 
 const { width } = Dimensions.get('window');

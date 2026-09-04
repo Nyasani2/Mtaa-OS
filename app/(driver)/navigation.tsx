@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, Alert,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useDriver } from '@/lib/transport/hooks/useDriver';
+import { Alert, useDriver } from '@/lib/transport/hooks/useDriver';
 import { supabase } from '@/lib/supabase';
 
 export default function DriverNavigationScreen() {

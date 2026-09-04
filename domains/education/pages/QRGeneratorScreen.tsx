@@ -1,16 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  Alert,
-  Share,
-  TextInput,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert, Share, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQRSession } from '@/domains/education/hooks/useQRSession';
 import { useAuth } from '@/hooks/useAuth';

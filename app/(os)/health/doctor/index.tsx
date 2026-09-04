@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, ScrollView, ActivityIndicator,
-  RefreshControl, Alert
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

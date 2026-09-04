@@ -3,17 +3,7 @@
 // Imported by: app/(os)/streets/comments/[postId].tsx
 
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

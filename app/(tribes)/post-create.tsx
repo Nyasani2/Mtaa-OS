@@ -3,19 +3,10 @@
 // Create Post Screen
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { tribesService } from '@/lib/tribes/services/tribes.service';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, tribesService } from '@/lib/tribes/services/tribes.service';
 
 export default function PostCreateScreen() {
   const router = useRouter();

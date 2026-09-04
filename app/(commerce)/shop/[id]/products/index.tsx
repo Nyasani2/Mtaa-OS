@@ -1,14 +1,6 @@
+import { useState } from 'react';
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
 
@@ -21,7 +13,10 @@ interface Product {
   images: string[] | null;
   barcode: string | null;
   category: string | null;
-  status: string;
+  status?: string;
+  tax_rate?: number;
+  cover_image?: string;
+  location?: string;
   created_at: string;
 }
 

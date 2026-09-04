@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // @ts-nocheck
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';

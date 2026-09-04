@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet,
-  RefreshControl, ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

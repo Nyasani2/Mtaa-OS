@@ -1,13 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
-  ActivityIndicator, Alert 
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useStaffManagement } from '@/hooks/useStaffManagement';
+import { Alert, useStaffManagement } from '@/hooks/useStaffManagement';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { 
+import { Alert, 
   ChevronLeft, Users, Search, Filter, ShieldCheck, ShieldAlert, 
   UserX, CheckCircle2, XCircle, MoreVertical, Stethoscope, 
   Ambulance, Pill, CreditCard, Building2, Leaf, ClipboardList 

@@ -1,14 +1,7 @@
 // @ts-nocheck
 // app/(os)/wifi.tsx — MTAA OS Wi-Fi Manager
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Switch,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES } from '@/constants/theme';

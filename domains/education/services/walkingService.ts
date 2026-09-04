@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type WS=Database['public']['Tables']['education_walking_squads']['Row'];type WM=Database['public']['Tables']['education_walking_members']['Row'];type WC=Database['public']['Tables']['education_walking_checkpoints']['Row'];
 export async function getSquads(instId:string){const{d,e}=await supabase.from('education_walking_squads').select('*,leader:user_profiles(full_name,phone)').eq('institution_id',instId).order('squad_name');if(e)throw e;return d||[];}
 export async function getSquad(id:string){const{d,e}=await supabase.from('education_walking_squads').select('*,members:education_walking_members(parent:user_profiles(full_name,phone),child:education_students(full_name)),checkpoints:education_walking_checkpoints(*)').eq('id',id).single();if(e)throw e;return d;}

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Search, Plus } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

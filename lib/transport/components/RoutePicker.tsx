@@ -1,8 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, FlatList,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, Modal, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useLocation } from '@/lib/transport/hooks/useLocation';
 

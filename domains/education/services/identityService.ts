@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type Inst=Database['public']['Tables']['education_institutions']['Row'];type Tch=Database['public']['Tables']['education_teachers']['Row'];type Stu=Database['public']['Tables']['education_students']['Row'];type QR=Database['public']['Tables']['education_qr_sessions']['Row'];
 export async function getInstitutions(){const{d,e}=await supabase.from('education_institutions').select('*').order('name');if(e)throw e;return d||[];}
 export async function getInstitution(id:string){const{d,e}=await supabase.from('education_institutions').select('*').eq('id',id).single();if(e)throw e;return d;}

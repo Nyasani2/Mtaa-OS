@@ -1,9 +1,10 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useTransport } from '@/lib/transport/hooks/useTransport';
+import { Alert, useTransport } from '@/lib/transport/hooks/useTransport';
 import { supabase } from '@/lib/supabase';
 
 export default function TrackingScreen() {

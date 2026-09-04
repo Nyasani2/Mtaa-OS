@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView}from'react-native';import{useStudentAttendance,useAttendanceStats}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';import{useStudentAttendance,useAttendanceStats}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
 export default function AttendanceHistoryScreen({studentId,institutionId}:{studentId:string;institutionId:string}){const[rf,setRf]=useState(false);const[date,setDate]=useState(new Date().toISOString().split('T')[0]);const{attendance,loading,error,refresh}=useStudentAttendance(studentId);const{stats}=useAttendanceStats(institutionId,date);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};
 const streak=attendance.reduce((s:any,a:any,i:number)=>{if(i===0)return a.status==='present'?1:0;return a.status==='present'?s+1:0;},0);

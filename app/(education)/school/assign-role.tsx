@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { Alert, useLocalSearchParams, useRouter } from "expo-router";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 const ROLES = [
   { key: "teacher", label: "Teacher", table: "education_teachers", icon: "people" },

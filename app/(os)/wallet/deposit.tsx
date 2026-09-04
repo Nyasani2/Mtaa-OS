@@ -3,10 +3,10 @@
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
-import { useWalletStore } from 'app/(os)/wallet/hooks';
-import { depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, useAuth } from '@/lib/auth/useAuth';
+import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
+import { Alert, depositToWallet, getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
 const PAYMENT_METHODS = [
   { id: 'card', label: 'Credit/Debit Card', icon: 'card-outline' as const },

@@ -1,6 +1,7 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import * as T from '@/lib/tribes/services/tribes.service';

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, AlertTriangle, Phone, User, Clock } from 'lucide-react-native';
+import { Alert, ArrowLeft, AlertTriangle, Phone, User, Clock } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { useHealthRole } from '@/lib/health/hooks';
+import { Alert, useHealthRole } from '@/lib/health/hooks';
 
 interface CriticalResult {
   id: string;

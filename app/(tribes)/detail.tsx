@@ -3,21 +3,10 @@
 // Tribe Detail Screen — posts feed, events, members, donate, join/leave
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  Alert,
-  TextInput,
-  RefreshControl,
-  StyleSheet,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, TextInput, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { tribesService, Tribe, TribePost, TribeEvent, TribeMember } from '@/lib/tribes/services/tribes.service';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, tribesService, Tribe, TribePost, TribeEvent, TribeMember } from '@/lib/tribes/services/tribes.service';
 
 export default function TribeDetailScreen() {
   const router = useRouter();

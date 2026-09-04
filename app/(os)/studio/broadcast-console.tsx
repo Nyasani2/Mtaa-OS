@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { Feather, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { supabase } from "@/lib/supabase";
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from "react-native";
+import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { Alert, useRouter } from "expo-router";
+import { Alert, Feather, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
+import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { Alert, supabase } from "@/lib/supabase";
 
 interface Broadcaster {
   id: string; name: string; type: string; verified: boolean; logo_url: string | null;

@@ -1,13 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const STEPS = ['Company Info', 'Fleet Details', 'Documents', 'Review'];
 

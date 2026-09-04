@@ -1,12 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
-import {
+import { Alert,
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput
 } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import { Alert, useRouter } from "expo-router";
+import { Alert, Ionicons } from "@expo/vector-icons";
+import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { Alert, useHealthStore } from "@/domains/health/state/healthStore";
 
 interface AuditEntry {
   id: string;

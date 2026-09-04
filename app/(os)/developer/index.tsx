@@ -1,15 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, Alert, Switch, ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Switch, ActivityIndicator } from 'react-native';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { requestWithdrawal, getUserWithdrawals, WalletWithdrawal } from '@/lib/services/wallet-deposit-service';
+import { Alert, requestWithdrawal, getUserWithdrawals, WalletWithdrawal } from '@/lib/services/wallet-deposit-service';
 
 const TABS = ['dashboard', 'submit', 'my-apps', 'earnings'] as const;
 

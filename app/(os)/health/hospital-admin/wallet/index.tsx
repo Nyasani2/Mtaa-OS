@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useHospitalWallet } from '@/lib/health/hooks/useHospitalWallet';
-import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Alert, useHospitalWallet } from '@/lib/health/hooks/useHospitalWallet';
+import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Wallet, ArrowUpRight, ArrowDownLeft, TrendingUp, Eye, EyeOff, RefreshCw, DollarSign, Building2 } from 'lucide-react-native';
+import { Alert, Wallet, ArrowUpRight, ArrowDownLeft, TrendingUp, Eye, EyeOff, RefreshCw, DollarSign, Building2 } from 'lucide-react-native';
 
 export default function HospitalWalletScreen() {
   const router = useRouter();

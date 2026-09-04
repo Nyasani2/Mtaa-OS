@@ -1,9 +1,7 @@
+import { useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useLocation } from '@/lib/transport/hooks/useLocation';

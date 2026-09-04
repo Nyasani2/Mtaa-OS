@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';

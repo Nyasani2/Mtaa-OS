@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Eye, Heart, Play, TrendingUp } from 'lucide-react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';

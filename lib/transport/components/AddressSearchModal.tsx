@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  Modal, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { geocodeAddress, GeocodeResult } from '@/lib/transport/services/geocode.service';
 

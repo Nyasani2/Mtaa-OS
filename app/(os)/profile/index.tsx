@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, Alert, StyleSheet, Pressable } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { User, ChevronRight, MoreVertical, Trash2, Eye, Heart, Share2, Play, LogOut, X, Pencil } from 'lucide-react-native';
+import { Alert, User, ChevronRight, MoreVertical, Trash2, Eye, Heart, Share2, Play, LogOut, X, Pencil } from 'lucide-react-native';
 
 const MENU_ITEMS = [
   { label: 'Edit Profile', route: '/profile/edit' },

@@ -1,10 +1,11 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Heart, MessageCircle, Share, UserPlus, Flag, Radio, Send, MessageSquare, Image as ImageIcon, Video as VideoIcon } from 'lucide-react-native';
+import { Alert, Heart, MessageCircle, Share, UserPlus, Flag, Radio, Send, MessageSquare, Image as ImageIcon, Video as VideoIcon } from 'lucide-react-native';
 import * as T from '@/lib/tribes/services/tribes.service';
 import AskAsis from '@/lib/tribes/components/AskAsis';
 

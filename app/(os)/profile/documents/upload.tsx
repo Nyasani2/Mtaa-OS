@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
-  ActivityIndicator, Alert, Platform
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 import * as DocumentPicker from 'expo-document-picker';

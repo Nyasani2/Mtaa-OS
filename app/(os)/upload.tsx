@@ -3,22 +3,11 @@
 // FIXED: Uses creator_id (not user_id)
 
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  Alert,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Video } from 'expo-av';
+import { Alert, Video } from 'expo-av';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 

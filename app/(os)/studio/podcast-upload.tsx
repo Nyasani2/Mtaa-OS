@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator
-} from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Feather } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';

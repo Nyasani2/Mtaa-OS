@@ -1,13 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
-  Modal, FlatList, TextInput,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, FlatList, TextInput } from 'react-native';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { deliveryService, DeliveryAgent } from '@/domains/shop/services/deliveryService';
+import { Alert, deliveryService, DeliveryAgent } from '@/domains/shop/services/deliveryService';
 import { supabase } from '@/lib/supabase/client';
 
 interface DeliveryTask {
@@ -17,7 +14,10 @@ interface DeliveryTask {
   buyer_user_id?: string;
   shipping_address?: string;
   total_amount: number;
-  status: string;
+  status?: string;
+  tax_rate?: number;
+  cover_image?: string;
+  location?: string;
   delivery_type: string;
   assigned_agent_id?: string;
   created_at: string;

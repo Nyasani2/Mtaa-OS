@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Receipt, TrendingUp, Filter, Plus, ChevronRight, Tag } from 'lucide-react-native';
+import { Alert, Receipt, TrendingUp, Filter, Plus, ChevronRight, Tag } from 'lucide-react-native';
 
 export default function ExpensesScreen() {
   const router = useRouter();

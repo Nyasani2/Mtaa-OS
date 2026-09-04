@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 interface FamilyMember {
   id: string;

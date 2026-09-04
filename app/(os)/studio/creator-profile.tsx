@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, ScrollView, Image, Pressable, StyleSheet, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Settings, Upload, Video, Music, Podcast, BookOpen, Radio, FileText } from 'lucide-react-native';
 import { useStudio, StudioVideo } from '@/domains/studio/hooks/useStudio';

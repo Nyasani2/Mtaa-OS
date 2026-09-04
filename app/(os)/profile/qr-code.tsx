@@ -1,20 +1,12 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Clipboard,
-  Platform,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Clipboard, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { qrIdentityService, QrIdentityData } from '@/lib/services/qr-identity';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, qrIdentityService, QrIdentityData } from '@/lib/services/qr-identity';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 export default function QrCodeScreen() {
   const router = useRouter();

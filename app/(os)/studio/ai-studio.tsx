@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert
-} from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 interface AITool {

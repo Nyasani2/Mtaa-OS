@@ -1,16 +1,7 @@
 // @ts-nocheck
 import { supabase } from '@/lib/supabase';
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   Car,

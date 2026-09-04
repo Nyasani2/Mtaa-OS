@@ -1,21 +1,11 @@
 // @ts-nocheck
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  StyleSheet,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/lib/auth/useAuth';
-import { useWalletStore } from 'app/(os)/wallet/hooks';
-import { getWalletTransactions } from '@/lib/services/wallet-service';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, useAuth } from '@/lib/auth/useAuth';
+import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
+import { Alert, getWalletTransactions } from '@/lib/services/wallet-service';
 import { supabase } from '@/lib/supabase';
 
 const { width } = Dimensions.get('window');

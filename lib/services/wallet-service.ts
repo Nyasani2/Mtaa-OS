@@ -34,3 +34,10 @@ export async function ensureWallet(userId: string) { return { id: userId, status
 export async function getWalletAccountByUserId(userId: string) { return { id: userId, balance: 0 }; }
 export async function createWalletTransaction(p: any) { return { id: 'tx_' + Date.now(), ...p }; }
 export const walletService = { sendMoney, getBalance, ensureWallet, getTransactions };
+
+// === AUTO-PATCHED SERVICE EXPORTS ===
+export async function sendMoney(p: any) { return { success: true, txId: 'mock_' + Date.now() }; }
+export async function getBalance(userId: string) { return { balance: 0, held_balance: 0 }; }
+export async function getTransactions(userId: string) { return []; }
+export async function initiateWithdrawal(p: any) { return { success: true }; }
+export async function getWalletTransactions(userId: string) { return []; }

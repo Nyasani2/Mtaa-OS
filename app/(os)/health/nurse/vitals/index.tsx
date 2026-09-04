@@ -1,11 +1,11 @@
 // @ts-nocheck
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useNurse } from '@/lib/health/hooks/useNurse';
-import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
-import { Heart, Plus, Search, X, Thermometer, Activity, Droplets, Wind, TrendingUp, User } from 'lucide-react-native';
+import { Alert, useNurse } from '@/lib/health/hooks/useNurse';
+import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Alert, Heart, Plus, Search, X, Thermometer, Activity, Droplets, Wind, TrendingUp, User } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',

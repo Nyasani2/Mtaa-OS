@@ -1,23 +1,8 @@
 // @ts-nocheck
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  TextInput,
-  Modal,
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Linking,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, TextInput, Modal, FlatList, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
+import { Alert,
   User,
   Car,
   Wrench,

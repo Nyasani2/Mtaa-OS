@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 
 interface FollowingUser {
   id: string;

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, FlaskConical, Plus, Trash2, Send, User, CheckSquare } from 'lucide-react-native';
+import { Alert, ArrowLeft, FlaskConical, Plus, Trash2, Send, User, CheckSquare } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { useHealthRole } from '@/lib/health/hooks';
+import { Alert, useHealthRole } from '@/lib/health/hooks';
 
 const COMMON_TESTS = [
   'Complete Blood Count (CBC)',

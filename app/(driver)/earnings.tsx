@@ -1,8 +1,6 @@
+import { useState } from 'react';
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useDriver } from '@/lib/transport/hooks/useDriver';
 

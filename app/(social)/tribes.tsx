@@ -4,16 +4,7 @@
 // Replaces stub with real integration
 
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTribes } from '@/lib/tribes/hooks/useTribes';

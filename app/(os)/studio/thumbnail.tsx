@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { useMThumbnails } from '@/lib/services/mstudio-hooks';
+import { Alert, useMThumbnails } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioThumbnailScreen() {

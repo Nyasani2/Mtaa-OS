@@ -1,6 +1,7 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';

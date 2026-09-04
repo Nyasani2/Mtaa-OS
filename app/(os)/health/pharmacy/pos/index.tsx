@@ -1,12 +1,12 @@
 // @ts-nocheck
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, Alert, FlatList } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { usePharmacy } from '@/lib/health/hooks/usePharmacy';
-import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Alert, usePharmacy } from '@/lib/health/hooks/usePharmacy';
+import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { ShoppingCart, Plus, Search, X, Minus, Trash2, CreditCard, Wallet, DollarSign, CheckCircle, Printer } from 'lucide-react-native';
+import { Alert, ShoppingCart, Plus, Search, X, Minus, Trash2, CreditCard, Wallet, DollarSign, CheckCircle, Printer } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',

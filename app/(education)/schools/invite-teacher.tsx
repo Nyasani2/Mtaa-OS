@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { addTeacher } from '@/lib/services/education-service';
+import { Alert, addTeacher } from '@/lib/services/education-service';
 
 export default function InviteTeacherScreen() {
   const router = useRouter();

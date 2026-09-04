@@ -1,18 +1,15 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-  ScrollView, Alert, ActivityIndicator,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useLocation } from '@/lib/transport/hooks/useLocation';
-import { useTransport } from '@/lib/transport/hooks/useTransport';
+import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
+import { Alert, useTransport } from '@/lib/transport/hooks/useTransport';
 import VehicleSelector from '@/lib/transport/components/VehicleSelector';
 import PaymentSelector from '@/lib/transport/components/PaymentSelector';
 import FareBreakdownView from '@/lib/transport/components/FareBreakdown';
 import AddressSearchModal from '@/lib/transport/components/AddressSearchModal';
-import { GeocodeResult } from '@/lib/transport/services/geocode.service';
+import { Alert, GeocodeResult } from '@/lib/transport/services/geocode.service';
 
 export default function RequestScreen() {
   const router = useRouter();

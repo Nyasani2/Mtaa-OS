@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from "react";
-import {
+import { Alert,
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   RefreshControl, ActivityIndicator, TextInput, Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { useGovernment } from "@/lib/health/hooks/useGovernment";
+import { Alert, useRouter } from "expo-router";
+import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { Alert, Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { Alert, useGovernment } from "@/lib/health/hooks/useGovernment";
 
 export default function VerifyFacilitiesScreen() {
   const router = useRouter();

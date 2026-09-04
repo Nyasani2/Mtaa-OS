@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { checkBiometricStatus, authenticateBiometric, setBiometricEnabled } from '@/lib/security/biometric-engine';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, checkBiometricStatus, authenticateBiometric, setBiometricEnabled } from '@/lib/security/biometric-engine';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

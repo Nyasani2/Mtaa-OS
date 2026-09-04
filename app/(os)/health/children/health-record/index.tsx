@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Dimensions
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {

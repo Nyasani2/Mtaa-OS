@@ -1,14 +1,7 @@
+import { useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';

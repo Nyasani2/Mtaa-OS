@@ -3,14 +3,7 @@
 // Imported by: app/(education)/feed.tsx
 
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

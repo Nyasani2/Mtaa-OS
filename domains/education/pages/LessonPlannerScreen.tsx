@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useLessons,useSubjects}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useLessons,useSubjects}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
 export default function LessonPlannerScreen({classId,teacherId}:{classId:string;teacherId:string}){const[lm,setLm]=useState(false);const[rf,setRf]=useState(false);const{lessons,loading,error,refresh,create}=useLessons(classId);const{subjects}=useSubjects();
 const[ti,setTi]=useState('');const[dt,setDt]=useState('');const[sub,setSub]=useState('');const[notes,setN]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

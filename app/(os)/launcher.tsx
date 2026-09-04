@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // @ts-nocheck
 // app/(os)/launcher.tsx — All Apps screen (reads canonical catalog)
 import React, { useMemo, useState } from 'react';

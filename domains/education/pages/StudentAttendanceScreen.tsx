@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useStudentAttendance } from '@/domains/education/hooks/useAttendance';

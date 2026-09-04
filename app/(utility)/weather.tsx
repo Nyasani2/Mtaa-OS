@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { Alert, SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 // OpenWeatherMap API — free tier: 1000 calls/day
 // User must add OPENWEATHER_API_KEY to environment

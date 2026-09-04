@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { healthRoleService } from '@/lib/health/services/health-role.service';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { Alert, healthRoleService } from '@/lib/health/services/health-role.service';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 const FACILITY_TYPES = [

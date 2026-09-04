@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 let ImagePicker: any = null;
 try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }

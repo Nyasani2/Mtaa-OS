@@ -1,12 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CalculatorScreen() {

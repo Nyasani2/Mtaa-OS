@@ -1,17 +1,14 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
-  Alert, Modal, TextInput, ScrollView
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from '@/lib/stores/wallet-store';
+import { Alert, useWalletStore } from '@/lib/stores/wallet-store';
 import { supabase } from '@/lib/supabase';
 import * as Location from 'expo-location';
-import { BlurView } from 'expo-blur';
+import { Alert, BlurView } from 'expo-blur';
 
 interface Agent {
   id: string;

@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView}from'react-native';import{useStudents}from'../hooks/useIdentity';import{useAttendance}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';import{useStudents}from'../hooks/useIdentity';import{useAttendance}from'../hooks/useAttendance';import{Ionicons}from'@expo/vector-icons';
 export default function AttendanceMarkingScreen({classId,institutionId,teacherId}:{classId:string;institutionId:string;teacherId:string}){const[rf,setRf]=useState(false);const[date,setDate]=useState(new Date().toISOString().split('T')[0]);const{students}=useStudents(institutionId,classId);const{mark,bulkMark}=useAttendance(institutionId,date);
 const[marks,setMarks]=useState<Record<string,string>>({});
 const[sv,setSv]=useState(false);

@@ -1,9 +1,10 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useDeviceManager } from '@/lib/hooks/useDeviceManager';
+import { Alert, useDeviceManager } from '@/lib/hooks/useDeviceManager';
 import CameraCard from '@/lib/components/device/CameraCard';
 import DeviceTile from '@/lib/components/device/DeviceTile';
 

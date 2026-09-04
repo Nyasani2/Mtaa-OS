@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useShopOrders } from '@/domains/shop/hooks/useShop';
 

@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator,
-  RefreshControl, ScrollView, Alert
-} from 'react-native';
+import { Alert, View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useEducation, type ParticipantRole } from '@/domains/education/hooks/useEducation';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, useEducation, type ParticipantRole } from '@/domains/education/hooks/useEducation';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 const ROLE_COLORS: Record<string, string> = {
   student: '#10b981',

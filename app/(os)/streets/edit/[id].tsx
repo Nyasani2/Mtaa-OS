@@ -1,24 +1,11 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { Alert, View, Text, TextInput, Image, Pressable, StyleSheet, ScrollView, Switch, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
-import { getPostById, updatePost, deletePost, StreetsPost } from '@/lib/services/streets-service';
+import { Alert, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, Video, ResizeMode } from 'expo-av';
+import { Alert, getPostById, updatePost, deletePost, StreetsPost } from '@/lib/services/streets-service';
 
 // ─── Component ─────────────────────────────────────────────
 export default function EditPostScreen() {

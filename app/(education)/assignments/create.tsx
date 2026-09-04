@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
-  ActivityIndicator, Alert, Platform,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

@@ -1,13 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  Vibration,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Vibration, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';

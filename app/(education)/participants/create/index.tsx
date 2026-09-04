@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from "react-native";
+import { Alert, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 export default function CreateParticipantScreen() {
   const router = useRouter();

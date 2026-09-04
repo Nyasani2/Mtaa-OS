@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import {
+import { Alert,
   ChevronLeft, FlaskConical, Clock, AlertTriangle, CheckCircle2,
   TrendingUp, Package, Activity
 } from 'lucide-react-native';

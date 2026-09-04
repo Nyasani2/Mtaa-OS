@@ -1,9 +1,10 @@
+import { Alert, useState } from 'react';
 
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { Alert, useRouter } from "expo-router";
+import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 export default function RollCallScreen() {
   const router = useRouter();

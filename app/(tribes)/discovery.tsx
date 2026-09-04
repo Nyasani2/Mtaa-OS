@@ -3,17 +3,7 @@
 // Tribes Discovery Screen — browse, search, filter by category
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Image,
-  ActivityIndicator,
-  RefreshControl,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { tribesService, Tribe } from '@/lib/tribes/services/tribes.service';

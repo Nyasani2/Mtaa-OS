@@ -1,15 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  Modal,
-  TextInput,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';

@@ -1,15 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  RefreshControl, Alert, ActivityIndicator, Modal
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Alert, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useWalletStore } from 'app/(os)/wallet/hooks';
+import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
 import { supabase } from '@/lib/supabase';
-import { BlurView } from 'expo-blur';
+import { Alert, BlurView } from 'expo-blur';
 
 interface DarajaConfig {
   id: string;

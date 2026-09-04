@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/lib/auth/useAuth';
-import { Ionicons } from '@expo/vector-icons';
-import { walletService } from '@/lib/services/wallet-service';
+import { Alert, useAuth } from '@/lib/auth/useAuth';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, walletService } from '@/lib/services/wallet-service';
 
 export default function TransferScreen() {
   const router = useRouter();

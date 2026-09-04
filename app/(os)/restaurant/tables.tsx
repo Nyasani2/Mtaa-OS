@@ -1,14 +1,12 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 // ============================================================================
 // MTAA Restaurant Module — Table Management Screen
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  Modal, TextInput, Alert, ScrollView, RefreshControl
-} from 'react-native';
-import { useTables, useOrders } from '@/lib/restaurant/hooks';
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, ScrollView, RefreshControl } from 'react-native';
+import { Alert, useTables, useOrders } from '@/lib/restaurant/hooks';
 
 export default function RestaurantTables() {
   const {

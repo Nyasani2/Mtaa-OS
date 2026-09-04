@@ -3,18 +3,7 @@
 // Post Detail Screen — full post + comments thread
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { tribesService, TribePost } from '@/lib/tribes/services/tribes.service';

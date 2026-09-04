@@ -3,21 +3,12 @@
 // Cart Screen — view cart, adjust quantities, proceed to checkout
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { cartService, CartItem } from '@/lib/marketplace/services/cart.service';
-import { useMarketplaceStore } from '@/lib/marketplace/state/marketplace.store';
+import { Alert, cartService, CartItem } from '@/lib/marketplace/services/cart.service';
+import { Alert, useMarketplaceStore } from '@/lib/marketplace/state/marketplace.store';
 
 export default function CartScreen() {
   const router = useRouter();

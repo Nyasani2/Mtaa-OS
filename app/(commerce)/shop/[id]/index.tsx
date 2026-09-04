@@ -1,3 +1,4 @@
+import { Alert, useState } from 'react';
 import { Alert, TextInput, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
@@ -11,7 +12,10 @@ interface Shop {
   description: string | null;
   address: string | null;
   category: string;
-  status: string;
+  status?: string;
+  tax_rate?: number;
+  cover_image?: string;
+  location?: string;
   logo_url: string | null;
   cover_image_url: string | null;
   rating: number;
@@ -29,7 +33,10 @@ interface Product {
   selling_price: number;
   stock_quantity: number;
   images: string[] | null;
-  status: string;
+  status?: string;
+  tax_rate?: number;
+  cover_image?: string;
+  location?: string;
 }
 
 export default function ShopDashboardScreen() {

@@ -1,8 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TouchableOpacity, ActivityIndicator, RefreshControl,
-  ScrollView, Modal, TextInput, StyleSheet, FlatList,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput, StyleSheet, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInstitutions } from '../hooks/useInstitutions';
 import { InstitutionCard } from '../components/InstitutionCard';

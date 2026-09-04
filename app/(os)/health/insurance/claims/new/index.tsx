@@ -1,12 +1,12 @@
 // @ts-nocheck
 import React, { useState } from "react";
-import {
+import { Alert,
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert
 } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useHealthStore } from "@/domains/health/state/healthStore";
+import { Alert, useRouter } from "expo-router";
+import { Alert, Ionicons } from "@expo/vector-icons";
+import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { Alert, useHealthStore } from "@/domains/health/state/healthStore";
 
 const SERVICE_TYPES = ["Inpatient", "Outpatient", "Surgery", "Laboratory", "Pharmacy", "Radiology", "Dental", "Optical", "Maternity"];
 

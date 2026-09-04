@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, Alert, Platform, Vibration, Keyboard,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, Vibration, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ─── Types ─────────────────────────────────────────────────────────

@@ -1,11 +1,6 @@
 import React from 'react';
 
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet
-} from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 
 export function LoadingProvider({
   message = 'Loading...'

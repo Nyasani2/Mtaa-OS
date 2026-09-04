@@ -3,15 +3,12 @@
 // Features: Month/Day/Week views, Event CRUD, Reminders, Categories, Recurring, Search
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Modal, TextInput, Switch, Alert, Platform,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import {
+import { Alert,
   CalendarEvent, getEvents, getEventsForDate, createEvent, updateEvent, deleteEvent,
   createReminder, getRemindersForEvent, deleteReminder,
   EVENT_CATEGORIES, REMINDER_OPTIONS, EventCategory,

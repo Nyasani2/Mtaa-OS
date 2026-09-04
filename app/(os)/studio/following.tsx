@@ -1,8 +1,6 @@
+import { useState } from 'react';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, FlatList, Image, TouchableOpacity, RefreshControl,
-  ActivityIndicator, Dimensions
-} from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, RefreshControl, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';

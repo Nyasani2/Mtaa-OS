@@ -1,12 +1,6 @@
+import { useState } from 'react';
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';

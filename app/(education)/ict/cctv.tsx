@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Dimensions } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, Video, ResizeMode } from 'expo-av';
 
 const { width } = Dimensions.get('window');
 

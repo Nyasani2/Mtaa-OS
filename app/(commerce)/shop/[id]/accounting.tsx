@@ -4,19 +4,10 @@
 // Fixed: supabase import path corrected to @/lib/supabase
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useShop } from '@/domains/shop/hooks/useShop';
+import { Alert, Ionicons } from '@expo/vector-icons';
+import { Alert, useShop } from '@/domains/shop/hooks/useShop';
 import { supabase } from '@/lib/supabase';
 
 // ─── Types ─────────────────────────────────────────────────────

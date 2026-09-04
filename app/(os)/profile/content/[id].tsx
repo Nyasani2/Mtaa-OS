@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
-  Dimensions, ActivityIndicator,
-} from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase/client';

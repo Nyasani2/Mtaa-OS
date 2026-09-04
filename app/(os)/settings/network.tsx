@@ -4,13 +4,10 @@ import * as Battery from 'expo-battery';
 import * as Location from 'expo-location';
 import * as Device from 'expo-device';
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch,
-  ActivityIndicator, Alert, Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Platform } from 'react-native';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 // ─── Types ─────────────────────────────────────────────────────────
 interface NetworkState {

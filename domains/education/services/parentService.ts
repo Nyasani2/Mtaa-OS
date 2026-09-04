@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type PC=Database['public']['Tables']['education_parent_connections']['Row'];
 export async function getParentConnections(parentId:string){const{d,e}=await supabase.from('education_parent_connections').select('*,student:education_students(full_name,grade,class:education_classes(name)),institution:education_institutions(name)').eq('parent_id',parentId).order('created_at',{ascending:false});if(e)throw e;return d||[];}
 export async function getStudentParents(studentId:string){const{d,e}=await supabase.from('education_parent_connections').select('*,parent:user_profiles(full_name,email,phone)').eq('student_id',studentId).order('priority',{ascending:true});if(e)throw e;return d||[];}

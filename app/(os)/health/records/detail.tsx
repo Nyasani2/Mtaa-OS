@@ -1,13 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,

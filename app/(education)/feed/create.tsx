@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image } from "react-native";
-import { useRouter } from "expo-router";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image } from "react-native";
+import { Alert, useRouter } from "expo-router";
+import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { Alert, Ionicons } from "@expo/vector-icons";
 
 export default function FeedCreateScreen() {
   const router = useRouter();

@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useLabEquipment, useCreateEquipment, useUpdateEquipmentStatus } from "@/lib/health/hooks/useLab";
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
+import { Alert, useRouter } from "expo-router";
+import { Alert, Ionicons } from "@expo/vector-icons";
+import { Alert, useLabEquipment, useCreateEquipment, useUpdateEquipmentStatus } from "@/lib/health/hooks/useLab";
 
 const STATUSES = ["operational", "maintenance", "out_of_order", "calibrating"];
 const FILTERS = ["all", "operational", "maintenance", "out_of_order", "calibrating"];

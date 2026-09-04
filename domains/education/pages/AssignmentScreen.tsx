@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
 export default function AssignmentScreen({classId,teacherId}:{classId:string;teacherId:string}){const[am,setAm]=useState(false);const[rf,setRf]=useState(false);const[selAsn,setSel]=useState<string|null>(null);const{assignments,loading,error,refresh,create}=useAssignments(classId);
 const[ti,setTi]=useState('');const[desc,setD]=useState('');const[dd,setDd]=useState('');const[tp,setTp]=useState('homework');const[sv,setSv]=useState(false);
 const{submissions}=useSubmissions(selAsn||'');

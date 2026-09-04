@@ -1,17 +1,14 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions, ActivityIndicator, Alert
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
+import { Alert,
   Plus, Star, ExternalLink, Share2, Download, QrCode,
   Edit3, Eye, Heart, MessageSquare, ChevronRight,
   FileText, Link2, Briefcase
 } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/Colors';
+import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Colors } from '@/constants/Colors';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

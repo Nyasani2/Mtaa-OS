@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { useChildrenRecords, useCreateChildRecord } from "@/lib/health/hooks/useChildren";
+import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
+import { Alert, useRouter } from "expo-router";
+import { Alert, Ionicons } from "@expo/vector-icons";
+import { Alert, useChildrenRecords, useCreateChildRecord } from "@/lib/health/hooks/useChildren";
 
 const GENDERS = ["male", "female", "other"];
 const FILTERS = ["all", "infant", "toddler", "child", "adolescent"];

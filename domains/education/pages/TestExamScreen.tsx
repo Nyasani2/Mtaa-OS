@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView}from'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';import{useAssignments,useSubmissions}from'../hooks/useClassroom';import{Ionicons}from'@expo/vector-icons';
 export default function TestExamScreen({classId}:{classId:string}){const[rf,setRf]=useState(false);const{assignments,loading,error,refresh}=useAssignments(classId);const tests=assignments.filter((a:any)=>a.assignment_type==='test'||a.assignment_type==='quiz');
 const ra=async()=>{setRf(true);await refresh();setRf(false);};
 if(loading&&!tests.length)return<View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator size="large"color="#3B82F6"/></View>;

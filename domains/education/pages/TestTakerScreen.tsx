@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
-  Alert, ActivityIndicator, SafeAreaView,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useTestTaker, useStudentTestResults } from '@/domains/education/hooks/useTestQuiz';

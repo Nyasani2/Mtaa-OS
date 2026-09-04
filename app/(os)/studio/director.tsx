@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert } from 'react-native';
-import { useMPairing } from '@/lib/services/mstudio-hooks';
+import { Alert, View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { Alert, useMPairing } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioDirectorScreen() {

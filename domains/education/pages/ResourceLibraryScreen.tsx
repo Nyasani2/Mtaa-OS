@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView,Modal,TextInput}from'react-native';import{useContentLibrary}from'../hooks/useTeacherEconomy';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Modal, TextInput } from 'react-native';import{useContentLibrary}from'../hooks/useTeacherEconomy';import{Ionicons}from'@expo/vector-icons';
 export default function ResourceLibraryScreen({institutionId,teacherId}:{institutionId:string;teacherId:string}){const[um,setUm]=useState(false);const[rf,setRf]=useState(false);const{content,loading,error,refresh,upload}=useContentLibrary(institutionId);
 const[ti,setTi]=useState('');const[ty,setTy]=useState('pdf');const[url,setU]=useState('');const[sub,setS]=useState('');const[sv,setSv]=useState(false);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};

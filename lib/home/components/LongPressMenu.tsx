@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useHomeStore, AppLayoutItem } from '../store/home.store';
 import { useRouter } from 'expo-router';

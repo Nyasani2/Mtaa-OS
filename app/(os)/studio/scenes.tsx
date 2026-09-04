@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useMProjects } from '@/lib/services/mstudio-hooks';
+import { Alert, useMProjects } from '@/lib/services/mstudio-hooks';
 
 export default function StudioScenesScreen() {
   const { projectId } = useLocalSearchParams<{ projectId: string }>();

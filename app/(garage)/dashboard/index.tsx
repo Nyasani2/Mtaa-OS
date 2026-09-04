@@ -1,14 +1,11 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Alert
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useGarage } from '@/lib/hooks/useGarage';
-import { useAppointments } from '@/lib/hooks/useAppointments';
-import {
+import { Alert, useGarage } from '@/lib/hooks/useGarage';
+import { Alert, useAppointments } from '@/lib/hooks/useAppointments';
+import { Alert,
   Wrench, Calendar, Search, TrendingUp, AlertTriangle,
   ChevronRight, DollarSign, Clock, Car, Shield, FileText
 } from 'lucide-react-native';

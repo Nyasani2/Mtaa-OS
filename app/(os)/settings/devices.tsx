@@ -1,18 +1,10 @@
+import { Alert, useState } from 'react';
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { deviceEngine } from '@/lib/security/device-engine';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, deviceEngine } from '@/lib/security/device-engine';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 interface Device {
   id: string;

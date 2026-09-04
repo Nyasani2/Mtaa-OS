@@ -1,18 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-  RefreshControl,
-  Alert,
-  Platform,
-} from 'react-native';
+import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { Alert, FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

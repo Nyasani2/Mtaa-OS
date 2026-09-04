@@ -1,12 +1,10 @@
+import { useState } from 'react';
 // ============================================================================
 // MTAA Restaurant Module — Customers & Loyalty Screen
 // ============================================================================
 
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, RefreshControl
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 
 export default function RestaurantCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);

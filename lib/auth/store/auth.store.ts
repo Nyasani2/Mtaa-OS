@@ -13,6 +13,20 @@ export interface User {
 }
 
 export interface AuthState {
+  resetPassword: (email: string, redirectTo?: string) => Promise<void>;
+  verifyEmail: () => Promise<void>;
+  resendVerification: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+  assets: any[];
+  business: any;
+  creator: any;
+  documents: any[];
+  family: any[];
+  professional: any;
+  qr: any;
+  identity: any;
+  reputation: any;
+  refresh: () => Promise<void>;
   user: User | null;
   profile: any | null;
   session: any | null;
@@ -218,7 +232,7 @@ export const useAuthStore = create<AuthState>()(
         return { error };
       },
 
-      resetPassword: async (email, redirectTo) => {
+      resetPassword: async (email: string, redirectTo?: string) => {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: redirectTo || 'https://mtaa.app/update-password',
         });

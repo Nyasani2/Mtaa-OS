@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
+import { Alert, useState, useEffect, useCallback } from "react";
+import { Alert,
   View,
   Text,
   TouchableOpacity,
@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from "expo-router";
-import {
+import { Alert, useRouter } from "expo-router";
+import { Alert,
   Flashlight,
   Keyboard,
   ScanLine,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getEmergencyData, updateEmergencyData, validateEmergencyData, EmergencyData, EmergencyContact } from '@/lib/health/security/emergency-card';
+import { Alert, getEmergencyData, updateEmergencyData, validateEmergencyData, EmergencyData, EmergencyContact } from '@/lib/health/security/emergency-card';
 
 export default function EmergencyCardEditScreen() {
   const router = useRouter();

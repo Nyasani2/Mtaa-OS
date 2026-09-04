@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Users, Search, Filter, Plus, ChevronRight, CheckCircle, Clock } from 'lucide-react-native';
+import { Alert, Users, Search, Filter, Plus, ChevronRight, CheckCircle, Clock } from 'lucide-react-native';
 
 export default function EnrollmentsScreen() {
   const router = useRouter();

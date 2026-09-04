@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, ScrollView, TextInput, Pressable, Image,
-  StyleSheet, ActivityIndicator, Platform, Dimensions,
-} from 'react-native';
+import { View, Text, ScrollView, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ThumbsUp, MessageCircle, Share2, Bookmark,

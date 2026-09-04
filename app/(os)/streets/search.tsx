@@ -1,9 +1,6 @@
 // @ts-nocheck
 import React, { useState, useCallback, useRef } from 'react';
-import {
-  View, Text, TextInput, Pressable, StyleSheet, FlatList,
-  Image, ActivityIndicator, Keyboard, ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, FlatList, Image, ActivityIndicator, Keyboard, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';

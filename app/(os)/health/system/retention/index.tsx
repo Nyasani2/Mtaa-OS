@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,

@@ -1,14 +1,6 @@
 // @ts-nocheck
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTribes } from '../hooks/useTribes';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { TribePost } from '../types';

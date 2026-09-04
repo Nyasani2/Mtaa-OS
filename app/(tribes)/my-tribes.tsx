@@ -4,16 +4,7 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 // My Tribes Screen — tribes user has joined
 
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-  RefreshControl,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';

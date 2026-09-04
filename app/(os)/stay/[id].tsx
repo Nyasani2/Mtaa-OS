@@ -1,3 +1,4 @@
+import { useState } from 'react';
 // @ts-nocheck
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";

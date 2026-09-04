@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert,
-} from 'react-native';
+import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
-import { useShopProducts } from '@/domains/shop/hooks/useShop';
+import { Alert, useShopProducts } from '@/domains/shop/hooks/useShop';
 
 export default function ShopInventoryScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();

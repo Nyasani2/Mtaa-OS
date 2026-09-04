@@ -1,4 +1,4 @@
-import React,{useState}from'react';import{View,Text,TouchableOpacity,ActivityIndicator,RefreshControl,ScrollView}from'react-native';import{useRoutes,useTransportAnomalies}from'../hooks/useTransport';import{Ionicons}from'@expo/vector-icons';
+import React,{useState}from'react';import { View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';import{useRoutes,useTransportAnomalies}from'../hooks/useTransport';import{Ionicons}from'@expo/vector-icons';
 export default function TransportTrackerScreen({institutionId}:{institutionId:string}){const[rf,setRf]=useState(false);const{routes,loading,error,refresh}=useRoutes(institutionId);const{anomalies}=useTransportAnomalies(institutionId);
 const ra=async()=>{setRf(true);await refresh();setRf(false);};
 if(loading&&!routes.length)return<View style={{flex:1,justifyContent:'center',alignItems:'center'}}><ActivityIndicator size="large"color="#3B82F6"/></View>;

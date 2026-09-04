@@ -4,11 +4,11 @@
 // Uses canonical wallet hooks + shop context
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useShop } from '@/domains/shop/hooks/useShop';
-import { useWallet } from '@/hooks/useWallet';
-import { Ionicons } from '@expo/vector-icons';
+import { Alert, useShop } from '@/domains/shop/hooks/useShop';
+import { Alert, useWallet } from '@/hooks/useWallet';
+import { Alert, Ionicons } from '@expo/vector-icons';
 
 export default function ShopWalletScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();

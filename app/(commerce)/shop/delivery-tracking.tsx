@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +7,10 @@ import { deliveryService } from '@/domains/shop/services/deliveryService';
 import { supabase } from '@/lib/supabase/client';
 
 interface TimelineEvent {
-  status: string;
+  status?: string;
+  tax_rate?: number;
+  cover_image?: string;
+  location?: string;
   label: string;
   time: string;
   completed: boolean;

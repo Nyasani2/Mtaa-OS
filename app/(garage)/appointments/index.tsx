@@ -1,16 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal,
-  TextInput, ActivityIndicator, RefreshControl, Alert, Image,
-  KeyboardAvoidingView, Platform
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator, RefreshControl, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useGarage } from '@/lib/hooks/useGarage';
-import { useAppointments } from '@/lib/hooks/useAppointments';
+import { Alert, useGarage } from '@/lib/hooks/useGarage';
+import { Alert, useAppointments } from '@/lib/hooks/useAppointments';
 import { supabase } from '@/lib/supabase';
-import {
+import { Alert,
   Wrench, Calendar, Clock, ChevronRight, Plus, X, Camera,
   Car,
   CheckCircle, AlertCircle, DollarSign, FileText, Star,

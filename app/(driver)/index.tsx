@@ -1,13 +1,11 @@
+import { Alert, useState } from 'react';
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ActivityIndicator, Switch, Alert,
-} from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { useLocation } from '@/lib/transport/hooks/useLocation';
-import { useDriver } from '@/lib/transport/hooks/useDriver';
+import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
+import { Alert, useDriver } from '@/lib/transport/hooks/useDriver';
 
 export default function DriverDashboard() {
   const router = useRouter();

@@ -2,12 +2,7 @@
 // Order Success Screen — confirmation after checkout
 
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

@@ -3,15 +3,7 @@
 // Fixed: wallet section now uses canonical useWalletBalance
 
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useShop, useShopProducts, useShopOrders } from '@/domains/shop/hooks/useShop';
 import { useWalletBalance } from 'app/(os)/wallet/hooks';

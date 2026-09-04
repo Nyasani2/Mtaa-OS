@@ -1,4 +1,4 @@
-import{supabase}from'@/lib/supabase';import type{Database}from'@/lib/supabase';
+import { supabase } from '@/lib/supabase';import type{Database}from'@/lib/supabase';
 type Cls=Database['public']['Tables']['education_classes']['Row'];type Sub=Database['public']['Tables']['education_subjects']['Row'];type Les=Database['public']['Tables']['education_lessons']['Row'];type Asn=Database['public']['Tables']['education_assignments']['Row'];type Subm=Database['public']['Tables']['education_submissions']['Row'];type Grd=Database['public']['Tables']['education_grades']['Row'];
 export async function getClasses(instId:string){const{d,e}=await supabase.from('education_classes').select('*,teacher:education_teachers(user:user_profiles(full_name)),subject:education_subjects(name)').eq('institution_id',instId).order('name');if(e)throw e;return d||[];}
 export async function getClass(id:string){const{d,e}=await supabase.from('education_classes').select('*,teacher:education_teachers(user:user_profiles(full_name)),students:education_students(id,full_name)').eq('id',id).single();if(e)throw e;return d;}
