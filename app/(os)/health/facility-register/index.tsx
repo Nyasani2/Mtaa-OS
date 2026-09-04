@@ -39,6 +39,34 @@ const SPECIALTIES = [
   'Physiotherapy', 'Laboratory', 'Pharmacy', 'Maternity'
 ];
 
+
+  const handleFacilitySubmit = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('health_facilities').insert({
+        name: form.name, type: form.type, ownership: form.ownership, level: form.level,
+        country: form.country, county: form.county, town: form.town, address: form.address,
+        phone: form.phone, email: form.email, bed_capacity: parseInt(form.bed_capacity || '0'),
+        has_emergency: form.has_emergency, is_24hr: form.is_24hr, has_ambulance: form.has_ambulance,
+        has_icu: form.has_icu, has_maternity: form.has_maternity, has_dialysis: form.has_dialysis,
+        has_radiology: form.has_radiology, specialties: form.selectedSpecialties,
+        founder_name: form.founder_name, founder_id_number: form.founder_id_number,
+        license_number: form.license_number, license_body: form.license_body,
+        status: 'PENDING'
+      }).select().single();
+      if (error) throw error;
+      if (data && user?.id) {
+        await supabase.from('health_facility_staff').insert({ user_id: user.id, facility_id: data.id, role: 'ADMIN' });
+      }
+      Alert.alert('Success', 'Facility registered and pending verification.');
+      router.replace('/(os)/health');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 export default function FacilityRegistrationScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
