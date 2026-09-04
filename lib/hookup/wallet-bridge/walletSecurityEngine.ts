@@ -8,7 +8,7 @@
  * - request fingerprinting
  */
 
-import { walletEventBus } from './walletEventBus'
+import { walletEventBus } from './walletEventBus';
 
 class WalletSecurityEngine {
   private processedTx = new Set<string>()

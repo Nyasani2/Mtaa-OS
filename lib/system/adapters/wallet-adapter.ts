@@ -3,9 +3,9 @@
  * Bridges walletEventBus → systemEventBus
  */
 
-import { walletEventBus } from '@/lib/hookup/wallet-bridge/walletEventBus'
-import { WALLET_EVENTS } from '@/lib/hookup/wallet-bridge/walletEventTypes'
-import { systemEventBus, MTAAEventType } from '../event-bus'
+import { walletEventBus } from '@/lib/hookup/wallet-bridge/walletEventBus';
+import { WALLET_EVENTS } from '@/lib/hookup/wallet-bridge/walletEventTypes';
+import { systemEventBus, MTAAEventType } from '../event-bus';
 
 const WALLET_EVENT_MAP: Record<string, MTAAEventType> = {
   [WALLET_EVENTS.WALLET_LOADED]: 'wallet:boot:completed',

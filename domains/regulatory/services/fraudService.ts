@@ -3,8 +3,8 @@
  * Manages fraud flags, investigations, and risk scoring
  */
 
-import { supabase } from '@/lib/supabase'
-import { systemEventBus } from '@/lib/system/event-bus'
+import { supabase } from '@/lib/supabase';
+import { systemEventBus } from '@/lib/system/event-bus';
 
 export interface FraudFlag {
   id: string

@@ -1,7 +1,7 @@
 // M-Pesa Daraja Callback Handler
 // FIXED: Added transaction wrapping, idempotency, error handling, notification
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleCallback(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
   try {

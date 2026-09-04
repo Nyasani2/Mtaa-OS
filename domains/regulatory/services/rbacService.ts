@@ -4,7 +4,7 @@
  * Financial admin role management
  */
 
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
 
 export interface FinancialRole {
   id: string

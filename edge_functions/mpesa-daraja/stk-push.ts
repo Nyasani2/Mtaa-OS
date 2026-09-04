@@ -1,7 +1,7 @@
 // M-Pesa Daraja 3.0 STK Push Handler
 // FIXED: Added validation, error handling, wallet transaction creation
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const MPESA_CONFIG = {
   sandbox: {

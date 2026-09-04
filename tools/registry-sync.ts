@@ -3,8 +3,8 @@
  * Rebuilds apps.registry.json + loader map automatically
  */
 
-import fs from 'fs'
-import path from 'path'
+import fs from 'fs';
+import path from 'path';
 
 const APPS_DIR = path.resolve(__dirname, '../../apps')
 const REGISTRY_FILE = path.resolve(__dirname, '../../apps.registry.json')

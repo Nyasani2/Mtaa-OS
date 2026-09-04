@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { getSchools, getSchoolById, createSchool, updateSchool } from '@/domains/education/services/education-schools-service';
 
 // ── Teachers ──
-import { getTeachers, getTeacherById, getTeacherByUserId,  updateTeacher } from '@/domains/education/services/education-teachers-service';
+import { getTeachers, getTeacherById, getTeacherByUserId, updateTeacher } from '@/domains/education/services/education-teachers-service';
 
 // ── Students ──
 import { getStudents, getStudentById, getStudentByUserId, createStudent } from '@/domains/education/services/education-students-service';
@@ -15,13 +15,13 @@ import { getStudents, getStudentById, getStudentByUserId, createStudent } from '
 import { getClasses, getClassById, createClass } from '@/domains/education/services/education-classes-service';
 
 // ── Assignments ──
-import { getAssignments,  getSubmissions, createAssignment, submitAssignment } from '@/domains/education/services/education-assignments-service';
+import { getAssignments, getSubmissions, createAssignment, submitAssignment } from '@/domains/education/services/education-assignments-service';
 
 // ── Attendance ──
 import { getAttendance, markAttendance, getAttendanceSummary } from '@/domains/education/services/education-attendance-service';
 
 // ── Grades ──
-import { getGrades,  createGrade } from '@/domains/education/services/education-grades-service';
+import { getGrades, createGrade } from '@/domains/education/services/education-grades-service';
 
 // ── Timetable ──
 import { getTimetable, createTimetableEntry } from '@/domains/education/services/education-timetable-service';
@@ -42,7 +42,7 @@ import { getMessages, sendMessage } from '@/domains/education/services/education
 import { getPayrolls, createPayroll } from '@/domains/education/services/education-payroll-service';
 
 // ── Transport ──
-import { getTransportRoutes,  createTransportRoute } from '@/domains/education/services/education-transport-service';
+import { getTransportRoutes, createTransportRoute } from '@/domains/education/services/education-transport-service';
 
 // ── Subjects ──
 import { getSubjects, createSubject } from '@/domains/education/services/education-subjects-service';

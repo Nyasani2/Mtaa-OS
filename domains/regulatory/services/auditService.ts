@@ -3,8 +3,8 @@
  * Manages immutable audit logs for regulatory compliance
  */
 
-import { supabase } from '@/lib/supabase'
-import { systemEventBus } from '@/lib/system/event-bus'
+import { supabase } from '@/lib/supabase';
+import { systemEventBus } from '@/lib/system/event-bus';
 
 export interface AuditLogEntry {
   id: string

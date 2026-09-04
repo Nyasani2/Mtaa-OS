@@ -3,8 +3,8 @@
  * Manages compliance reports, tax records, sanctions screening, CBK reports
  */
 
-import { supabase } from '@/lib/supabase'
-import { systemEventBus } from '@/lib/system/event-bus'
+import { supabase } from '@/lib/supabase';
+import { systemEventBus } from '@/lib/system/event-bus';
 
 export interface ComplianceReport {
   id: string

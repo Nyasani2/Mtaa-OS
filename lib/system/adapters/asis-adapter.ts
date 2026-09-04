@@ -14,13 +14,13 @@
  * go live, not an oversight.
  */
 
-import { systemEventBus, MTAAEventType } from '../event-bus'
-import { FraudMonitor } from '@/asis/wallet/fraud-monitor'
-import { TransferOrchestrator } from '@/asis/wallet/transfer-orchestrator'
-import { TransactionIntelligence } from '@/asis/wallet/transaction-intelligence'
-import { WalletAssistant } from '@/asis/wallet/wallet-assistant'
-import { TransactionValidator } from '@/asis/wallet/security/transaction-validator'
-import { TransferPolicy } from '@/asis/wallet/security/transfer-policy'
+import { systemEventBus, MTAAEventType } from '../event-bus';
+import { FraudMonitor } from '@/asis/wallet/fraud-monitor';
+import { TransferOrchestrator } from '@/asis/wallet/transfer-orchestrator';
+import { TransactionIntelligence } from '@/asis/wallet/transaction-intelligence';
+import { WalletAssistant } from '@/asis/wallet/wallet-assistant';
+import { TransactionValidator } from '@/asis/wallet/security/transaction-validator';
+import { TransferPolicy } from '@/asis/wallet/security/transfer-policy';
 
 class ASISAdapter {
   private active = false

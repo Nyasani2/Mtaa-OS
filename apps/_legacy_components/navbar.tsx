@@ -1,6 +1,6 @@
-import React from 'react'
-import { View, Text, Pressable } from 'react-native'
-import { router } from 'expo-router'
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { router } from 'expo-router';
 
 type NavItem = {
   label: string

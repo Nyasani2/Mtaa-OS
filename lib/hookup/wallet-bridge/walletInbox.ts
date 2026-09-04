@@ -5,7 +5,7 @@
  * Wallet uses this instead of global clutter.
  */
 
-import { walletEventBus, WalletEvent } from './walletEventBus'
+import { walletEventBus, WalletEvent } from './walletEventBus';
 
 type InboxMessage = {
   id: string

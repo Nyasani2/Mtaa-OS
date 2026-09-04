@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, Text } from 'react-native'
+import React from 'react';
+import { View, Text } from 'react-native';
 
 const colors: any = {
   blue: 'bg-blue-900/20 border-blue-500/20',

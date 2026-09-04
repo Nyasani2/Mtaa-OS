@@ -9,8 +9,8 @@
  * - Edge functions
  */
 
-import { supabase } from '@/lib/supabase'
-import { walletEventBus } from './walletEventBus'
+import { supabase } from '@/lib/supabase';
+import { walletEventBus } from './walletEventBus';
 
 class WalletTransactionExecutor {
   async execute(input: any) {

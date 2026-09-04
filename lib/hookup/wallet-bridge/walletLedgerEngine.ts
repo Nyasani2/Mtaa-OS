@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase'
-import { walletEventBus } from './walletEventBus'
+import { supabase } from '@/lib/supabase';
+import { walletEventBus } from './walletEventBus';
 
 type LedgerEntry = {
   user_id: string

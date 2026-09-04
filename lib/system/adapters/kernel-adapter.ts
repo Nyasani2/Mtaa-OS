@@ -3,8 +3,8 @@
  * Bridges kernelEventBus → systemEventBus
  */
 
-import { kernelEventBus } from '@/lib/kernel/kernel-event-bus'
-import { systemEventBus, MTAAEventType } from '../event-bus'
+import { kernelEventBus } from '@/lib/kernel/kernel-event-bus';
+import { systemEventBus, MTAAEventType } from '../event-bus';
 
 const KERNEL_EVENT_MAP: Record<string, MTAAEventType> = {
   'kernel:init': 'kernel:boot:complete',
