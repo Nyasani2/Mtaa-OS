@@ -17,9 +17,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '@/hooks/useWallet';
 import { colors } from '@/constants/theme';
-const COLORS = (colors as any)?.light || colors || {};
-const FONTS = { regular: 'System', bold: 'System', light: 'System' };
-const SIZES = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
+const colors = (colors as any)?.light || colors || {};
+const fonts = { regular: 'System', bold: 'System', light: 'System' };
+const sizes = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
 
 
 export default function SendScreen() {
@@ -63,7 +63,7 @@ export default function SendScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Send Money</Text>
           <View style={{ width: 40 }} />
@@ -80,11 +80,11 @@ export default function SendScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>To</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Phone number, username, or wallet ID"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={recipient}
                 onChangeText={setRecipient}
                 autoCapitalize="none"
@@ -119,7 +119,7 @@ export default function SendScreen() {
               <TextInput
                 style={styles.amountInput}
                 placeholder="0.00"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="decimal-pad"
@@ -143,11 +143,11 @@ export default function SendScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>Note (optional)</Text>
             <View style={styles.inputRow}>
-              <Ionicons name="create-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+              <Ionicons name="create-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="What's this for?"
-                placeholderTextColor={COLORS.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={note}
                 onChangeText={setNote}
                 maxLength={100}
@@ -177,77 +177,77 @@ export default function SendScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
+    paddingHorizontal: sizes.md,
+    paddingVertical: sizes.md,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
+  headerTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
+  scroll: { paddingHorizontal: sizes.md, paddingBottom: sizes.xl },
   balanceCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
-    padding: SIZES.lg,
-    marginBottom: SIZES.lg,
+    backgroundColor: colors.primary,
+    borderRadius: sizes.md,
+    padding: sizes.lg,
+    marginBottom: sizes.lg,
   },
-  balanceLabel: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
-  balanceValue: { fontFamily: FONTS.bold, fontSize: 28, color: '#fff', marginTop: 4 },
-  section: { marginBottom: SIZES.lg },
-  label: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary, marginBottom: SIZES.sm },
+  balanceLabel: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  balanceValue: { fontFamily: fonts.bold, fontSize: 28, color: '#fff', marginTop: 4 },
+  section: { marginBottom: sizes.lg },
+  label: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary, marginBottom: sizes.sm },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingHorizontal: sizes.md,
     height: 52,
   },
-  inputIcon: { marginRight: SIZES.sm },
-  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
-  recentRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  inputIcon: { marginRight: sizes.sm },
+  input: { flex: 1, fontFamily: fonts.regular, fontSize: 16, color: colors.text },
+  recentRow: { flexDirection: 'row', marginTop: sizes.md, gap: sizes.sm },
   recentChip: { alignItems: 'center', width: 64 },
   recentAvatar: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: COLORS.primary + '20',
+    backgroundColor: colors.primary + '20',
     justifyContent: 'center', alignItems: 'center',
   },
-  recentInitial: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary },
-  recentName: { fontFamily: FONTS.medium, fontSize: 11, color: COLORS.text, marginTop: 4 },
+  recentInitial: { fontFamily: fonts.bold, fontSize: 18, color: colors.primary },
+  recentName: { fontFamily: fonts.medium, fontSize: 11, color: colors.text, marginTop: 4 },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingHorizontal: sizes.md,
     height: 64,
   },
-  currency: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginRight: SIZES.sm },
-  amountInput: { flex: 1, fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text },
-  quickRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  currency: { fontFamily: fonts.bold, fontSize: 18, color: colors.primary, marginRight: sizes.sm },
+  amountInput: { flex: 1, fontFamily: fonts.bold, fontSize: 28, color: colors.text },
+  quickRow: { flexDirection: 'row', marginTop: sizes.md, gap: sizes.sm },
   quickChip: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingVertical: SIZES.sm,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingVertical: sizes.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
-  quickText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.text },
+  quickText: { fontFamily: fonts.medium, fontSize: 13, color: colors.text },
   sendBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
+    backgroundColor: colors.primary,
+    borderRadius: sizes.md,
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SIZES.lg,
+    marginTop: sizes.lg,
   },
   sendBtnDisabled: { opacity: 0.6 },
-  sendBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
+  sendBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#fff' },
 });
 

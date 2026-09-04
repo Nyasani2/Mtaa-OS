@@ -1,7 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import React from 'react';
 import {
   View,
   Text,

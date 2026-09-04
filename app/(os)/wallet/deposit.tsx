@@ -1,3 +1,4 @@
+import { Alert } from 'react-native';
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import {

@@ -15,9 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useWallet } from '@/hooks/useWallet';
 import { colors } from '@/constants/theme';
-const COLORS = (colors as any)?.light || colors || {};
-const FONTS = { regular: 'System', bold: 'System', light: 'System' };
-const SIZES = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
+const colors = (colors as any)?.light || colors || {};
+const fonts = { regular: 'System', bold: 'System', light: 'System' };
+const sizes = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
 
 
 const { width } = Dimensions.get('window');
@@ -73,7 +73,7 @@ export default function QRPayScreen() {
   if (!permission?.granted) {
     return (
       <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
-        <Ionicons name="camera-outline" size={64} color={COLORS.textSecondary} />
+        <Ionicons name="camera-outline" size={64} color={colors.textSecondary} />
         <Text style={styles.permTitle}>Camera Access Needed</Text>
         <Text style={styles.permSub}>We need camera permission to scan QR codes</Text>
         <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
@@ -100,14 +100,14 @@ export default function QRPayScreen() {
           style={[styles.modeBtn, mode === 'scan' && styles.modeBtnActive]}
           onPress={() => { setMode('scan'); setScanned(false); setScanData(null); }}
         >
-          <Ionicons name="scan-outline" size={16} color={mode === 'scan' ? '#fff' : COLORS.textSecondary} />
+          <Ionicons name="scan-outline" size={16} color={mode === 'scan' ? '#fff' : colors.textSecondary} />
           <Text style={[styles.modeText, mode === 'scan' && styles.modeTextActive]}>Scan</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.modeBtn, mode === 'mycode' && styles.modeBtnActive]}
           onPress={() => setMode('mycode')}
         >
-          <Ionicons name="qr-code-outline" size={16} color={mode === 'mycode' ? '#fff' : COLORS.textSecondary} />
+          <Ionicons name="qr-code-outline" size={16} color={mode === 'mycode' ? '#fff' : colors.textSecondary} />
           <Text style={[styles.modeText, mode === 'mycode' && styles.modeTextActive]}>My Code</Text>
         </TouchableOpacity>
       </View>
@@ -165,7 +165,7 @@ export default function QRPayScreen() {
         <View style={styles.codeContainer}>
           <View style={styles.codeCard}>
             <View style={styles.qrPlaceholder}>
-              <Ionicons name="qr-code" size={120} color={COLORS.primary} />
+              <Ionicons name="qr-code" size={120} color={colors.primary} />
             </View>
             <Text style={styles.codeLabel}>Your QR Code</Text>
             <Text style={styles.codeSub}>Others can scan this to pay you</Text>
@@ -182,34 +182,34 @@ export default function QRPayScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+  center: { justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
+    paddingHorizontal: sizes.md,
+    paddingVertical: sizes.md,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: '#fff' },
+  headerTitle: { fontFamily: fonts.bold, fontSize: 18, color: '#fff' },
   modeBar: {
     flexDirection: 'row',
     alignSelf: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: SIZES.md,
+    borderRadius: sizes.md,
     padding: 4,
-    marginBottom: SIZES.md,
+    marginBottom: sizes.md,
   },
   modeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: SIZES.lg,
-    paddingVertical: SIZES.sm,
-    borderRadius: SIZES.sm,
+    paddingHorizontal: sizes.lg,
+    paddingVertical: sizes.sm,
+    borderRadius: sizes.sm,
     gap: 6,
   },
-  modeBtnActive: { backgroundColor: COLORS.primary },
-  modeText: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
+  modeBtnActive: { backgroundColor: colors.primary },
+  modeText: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary },
   modeTextActive: { color: '#fff' },
   scanContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
@@ -224,86 +224,86 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 24,
     height: 24,
-    borderColor: COLORS.primary,
+    borderColor: colors.primary,
   },
   cornerTL: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
   cornerTR: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
   cornerBL: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
   cornerBR: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
   scanPrompt: { position: 'absolute', bottom: 120 },
-  scanPromptText: { fontFamily: FONTS.medium, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
+  scanPromptText: { fontFamily: fonts.medium, fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   resultCard: {
     position: 'absolute',
     bottom: 40,
-    left: SIZES.md,
-    right: SIZES.md,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    padding: SIZES.lg,
+    left: sizes.md,
+    right: sizes.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.md,
+    padding: sizes.lg,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 10,
   },
-  resultTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text, marginBottom: SIZES.sm },
-  resultDetail: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary },
-  resultAmount: { fontFamily: FONTS.bold, fontSize: 24, color: COLORS.primary, marginTop: SIZES.sm },
-  resultActions: { flexDirection: 'row', gap: SIZES.md, marginTop: SIZES.lg },
+  resultTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.text, marginBottom: sizes.sm },
+  resultDetail: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary },
+  resultAmount: { fontFamily: fonts.bold, fontSize: 24, color: colors.primary, marginTop: sizes.sm },
+  resultActions: { flexDirection: 'row', gap: sizes.md, marginTop: sizes.lg },
   resultCancel: {
     flex: 1,
-    paddingVertical: SIZES.md,
-    borderRadius: SIZES.sm,
-    backgroundColor: COLORS.border,
+    paddingVertical: sizes.md,
+    borderRadius: sizes.sm,
+    backgroundColor: colors.border,
     alignItems: 'center',
   },
-  resultCancelText: { fontFamily: FONTS.bold, fontSize: 15, color: COLORS.text },
+  resultCancelText: { fontFamily: fonts.bold, fontSize: 15, color: colors.text },
   resultPay: {
     flex: 1,
-    paddingVertical: SIZES.md,
-    borderRadius: SIZES.sm,
-    backgroundColor: COLORS.primary,
+    paddingVertical: sizes.md,
+    borderRadius: sizes.sm,
+    backgroundColor: colors.primary,
     alignItems: 'center',
   },
-  resultPayText: { fontFamily: FONTS.bold, fontSize: 15, color: '#fff' },
-  codeContainer: { flex: 1, alignItems: 'center', paddingTop: SIZES.xl },
+  resultPayText: { fontFamily: fonts.bold, fontSize: 15, color: '#fff' },
+  codeContainer: { flex: 1, alignItems: 'center', paddingTop: sizes.xl },
   codeCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.lg,
-    padding: SIZES.xl,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.lg,
+    padding: sizes.xl,
     alignItems: 'center',
-    width: width - SIZES.md * 2,
+    width: width - sizes.md * 2,
   },
   qrPlaceholder: {
     width: 200,
     height: 200,
     backgroundColor: '#fff',
-    borderRadius: SIZES.md,
+    borderRadius: sizes.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SIZES.md,
+    marginBottom: sizes.md,
   },
-  codeLabel: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  codeSub: { fontFamily: FONTS.regular, fontSize: 13, color: COLORS.textSecondary, marginTop: 4 },
+  codeLabel: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
+  codeSub: { fontFamily: fonts.regular, fontSize: 13, color: colors.textSecondary, marginTop: 4 },
   balanceMini: {
-    marginTop: SIZES.lg,
+    marginTop: sizes.lg,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: SIZES.md,
-    paddingHorizontal: SIZES.lg,
-    paddingVertical: SIZES.md,
+    borderRadius: sizes.md,
+    paddingHorizontal: sizes.lg,
+    paddingVertical: sizes.md,
     alignItems: 'center',
   },
-  balanceMiniLabel: { fontFamily: FONTS.medium, fontSize: 12, color: 'rgba(255,255,255,0.6)' },
-  balanceMiniValue: { fontFamily: FONTS.bold, fontSize: 20, color: '#fff', marginTop: 2 },
-  permTitle: { fontFamily: FONTS.bold, fontSize: 20, color: COLORS.text, marginTop: SIZES.lg },
-  permSub: { fontFamily: FONTS.regular, fontSize: 14, color: COLORS.textSecondary, marginTop: SIZES.sm, textAlign: 'center', paddingHorizontal: SIZES.xl },
+  balanceMiniLabel: { fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.6)' },
+  balanceMiniValue: { fontFamily: fonts.bold, fontSize: 20, color: '#fff', marginTop: 2 },
+  permTitle: { fontFamily: fonts.bold, fontSize: 20, color: colors.text, marginTop: sizes.lg },
+  permSub: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginTop: sizes.sm, textAlign: 'center', paddingHorizontal: sizes.xl },
   permBtn: {
-    marginTop: SIZES.lg,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: SIZES.xl,
-    paddingVertical: SIZES.md,
-    borderRadius: SIZES.md,
+    marginTop: sizes.lg,
+    backgroundColor: colors.primary,
+    paddingHorizontal: sizes.xl,
+    paddingVertical: sizes.md,
+    borderRadius: sizes.md,
   },
-  permBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
+  permBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#fff' },
 });
 

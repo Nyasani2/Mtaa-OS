@@ -15,9 +15,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useWallet } from '@/hooks/useWallet';
 import { colors } from '@/constants/theme';
-const COLORS = (colors as any)?.light || colors || {};
-const FONTS = { regular: 'System', bold: 'System', light: 'System' };
-const SIZES = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
+const colors = (colors as any)?.light || colors || {};
+const fonts = { regular: 'System', bold: 'System', light: 'System' };
+const sizes = { sm: 12, md: 16, lg: 20, xl: 24, xxl: 32 };
 
 
 const WITHDRAW_METHODS = [
@@ -68,7 +68,7 @@ export default function WithdrawScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Withdraw</Text>
         <View style={{ width: 40 }} />
@@ -100,11 +100,11 @@ export default function WithdrawScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Recipient</Text>
           <View style={styles.inputRow}>
-            <Ionicons name="person-outline" size={20} color={COLORS.textSecondary} style={styles.inputIcon} />
+            <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder={getPlaceholder()}
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={recipient}
               onChangeText={setRecipient}
               autoCapitalize="none"
@@ -120,7 +120,7 @@ export default function WithdrawScreen() {
             <TextInput
               style={styles.amountInput}
               placeholder="0.00"
-              placeholderTextColor={COLORS.textSecondary}
+              placeholderTextColor={colors.textSecondary}
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
@@ -167,92 +167,92 @@ export default function WithdrawScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SIZES.md,
-    paddingVertical: SIZES.md,
+    paddingHorizontal: sizes.md,
+    paddingVertical: sizes.md,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  headerTitle: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.text },
-  scroll: { paddingHorizontal: SIZES.md, paddingBottom: SIZES.xl },
+  headerTitle: { fontFamily: fonts.bold, fontSize: 18, color: colors.text },
+  scroll: { paddingHorizontal: sizes.md, paddingBottom: sizes.xl },
   balanceCard: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
-    padding: SIZES.lg,
-    marginBottom: SIZES.lg,
+    backgroundColor: colors.primary,
+    borderRadius: sizes.md,
+    padding: sizes.lg,
+    marginBottom: sizes.lg,
   },
-  balanceLabel: { fontFamily: FONTS.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
-  balanceValue: { fontFamily: FONTS.bold, fontSize: 28, color: '#fff', marginTop: 4 },
-  sectionLabel: { fontFamily: FONTS.bold, fontSize: 16, color: COLORS.text, marginBottom: SIZES.md },
-  methodRow: { flexDirection: 'row', gap: SIZES.sm, marginBottom: SIZES.lg },
+  balanceLabel: { fontFamily: fonts.medium, fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  balanceValue: { fontFamily: fonts.bold, fontSize: 28, color: '#fff', marginTop: 4 },
+  sectionLabel: { fontFamily: fonts.bold, fontSize: 16, color: colors.text, marginBottom: sizes.md },
+  methodRow: { flexDirection: 'row', gap: sizes.sm, marginBottom: sizes.lg },
   methodChip: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.md,
-    paddingVertical: SIZES.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.md,
+    paddingVertical: sizes.md,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  methodChipActive: { borderColor: COLORS.primary },
+  methodChipActive: { borderColor: colors.primary },
   methodIcon: { fontSize: 24, marginBottom: 4 },
-  methodLabel: { fontFamily: FONTS.medium, fontSize: 12, color: COLORS.textSecondary },
-  methodLabelActive: { color: COLORS.primary, fontFamily: FONTS.bold },
-  section: { marginBottom: SIZES.lg },
-  label: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary, marginBottom: SIZES.sm },
+  methodLabel: { fontFamily: fonts.medium, fontSize: 12, color: colors.textSecondary },
+  methodLabelActive: { color: colors.primary, fontFamily: fonts.bold },
+  section: { marginBottom: sizes.lg },
+  label: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary, marginBottom: sizes.sm },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingHorizontal: sizes.md,
     height: 52,
   },
-  inputIcon: { marginRight: SIZES.sm },
-  input: { flex: 1, fontFamily: FONTS.regular, fontSize: 16, color: COLORS.text },
+  inputIcon: { marginRight: sizes.sm },
+  input: { flex: 1, fontFamily: fonts.regular, fontSize: 16, color: colors.text },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingHorizontal: SIZES.md,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingHorizontal: sizes.md,
     height: 64,
   },
-  currency: { fontFamily: FONTS.bold, fontSize: 18, color: COLORS.primary, marginRight: SIZES.sm },
-  amountInput: { flex: 1, fontFamily: FONTS.bold, fontSize: 28, color: COLORS.text },
-  quickRow: { flexDirection: 'row', marginTop: SIZES.md, gap: SIZES.sm },
+  currency: { fontFamily: fonts.bold, fontSize: 18, color: colors.primary, marginRight: sizes.sm },
+  amountInput: { flex: 1, fontFamily: fonts.bold, fontSize: 28, color: colors.text },
+  quickRow: { flexDirection: 'row', marginTop: sizes.md, gap: sizes.sm },
   quickChip: {
     flex: 1,
-    backgroundColor: COLORS.surface,
-    borderRadius: SIZES.sm,
-    paddingVertical: SIZES.sm,
+    backgroundColor: colors.surface,
+    borderRadius: sizes.sm,
+    paddingVertical: sizes.sm,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
-  quickText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.text },
+  quickText: { fontFamily: fonts.medium, fontSize: 13, color: colors.text },
   feeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: SIZES.md,
+    paddingVertical: sizes.md,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    marginBottom: SIZES.md,
+    borderTopColor: colors.border,
+    marginBottom: sizes.md,
   },
-  feeLabel: { fontFamily: FONTS.medium, fontSize: 14, color: COLORS.textSecondary },
-  feeValue: { fontFamily: FONTS.bold, fontSize: 14, color: COLORS.text },
+  feeLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.textSecondary },
+  feeValue: { fontFamily: fonts.bold, fontSize: 14, color: colors.text },
   actionBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.md,
+    backgroundColor: colors.primary,
+    borderRadius: sizes.md,
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionBtnDisabled: { opacity: 0.6 },
-  actionBtnText: { fontFamily: FONTS.bold, fontSize: 16, color: '#fff' },
+  actionBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#fff' },
 });
 
