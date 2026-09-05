@@ -24,6 +24,70 @@ interface WalletBalance {
   assets: { symbol: string; balance: number; value_usd: number }[];
 }
 
+
+  const [wallets, setWallets] = useState<CryptoWallet[]>([]);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [selectedWallet, setSelectedWallet] = useState<CryptoWallet | null>(null);
+  const [transferForm, setTransferForm] = useState({ toAddress: '', amount: '' });
+  const [convertForm, setConvertForm] = useState({ toCurrency: 'ETH', amount: '' });
+
+  useEffect(() => {
+    loadWallets();
+  }, []);
+
+  const loadWallets = async () => {
+    if (!user?.id) return;
+    const data = await cryptoService.getWallets(user.id);
+    setWallets(data);
+  };
+
+  const handleTransfer = async () => {
+    if (!selectedWallet || !transferForm.toAddress || !transferForm.amount) {
+      Alert.alert('Validation', 'Please fill all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      await cryptoService.initiateTransfer(
+        selectedWallet.id,
+        transferForm.toAddress,
+        parseFloat(transferForm.amount)
+      );
+      Alert.alert('Success', 'Transfer completed');
+      setShowTransferModal(false);
+      setTransferForm({ toAddress: '', amount: '' });
+      loadWallets();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConvert = async () => {
+    if (!selectedWallet || !convertForm.amount) {
+      Alert.alert('Validation', 'Please enter amount');
+      return;
+    }
+    setLoading(true);
+    try {
+      await cryptoService.convertCrypto(
+        selectedWallet.id,
+        convertForm.toCurrency,
+        parseFloat(convertForm.amount)
+      );
+      Alert.alert('Success', 'Conversion completed');
+      setShowConvertModal(false);
+      setConvertForm({ toCurrency: 'ETH', amount: '' });
+      loadWallets();
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 export default function BinanceScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -102,7 +166,7 @@ export default function BinanceScreen() {
       'Choose deposit method:',
       [
         { text: 'Bank Transfer', onPress: () => router.push('/(finance)/wallet/deposit' as any) },
-        { text: 'Crypto Transfer', onPress: () => Alert.alert('Coming Soon', 'Crypto deposit via blockchain address coming soon.') },
+        { text: 'Crypto Transfer', onPress: () => { setSelectedWallet(wallets[0] || null); setShowTransferModal(true); } },
         { text: 'Cancel', style: 'cancel' }
       ]
     );
@@ -117,7 +181,7 @@ export default function BinanceScreen() {
   };
 
   const handleConvert = () => {
-    Alert.alert('Coming Soon', 'Crypto conversion feature is under development.');
+    setSelectedWallet(wallets[0] || null); setShowConvertModal(true);
   };
 
   const handleAssetPress = (asset: CryptoAsset) => {
