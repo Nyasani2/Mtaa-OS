@@ -1,3 +1,3 @@
 // @ts-nocheck
 import { makeEduList } from '@/lib/hubs/EduListScreen';
-export default makeEduList({'table': 'studio_copyright_claims', 'title': 'Copyright Claims', 'subtitle': 'DMCA & disputes', 'columns': ['title', 'status'], 'icon': 'document-lock', 'accent': '#64748b'});
+export default makeEduList({"table": "studio_copyright_claims", "title": "Copyright Claims", "columns": ["title", "status"], "icon": "document-lock", "accent": "#64748b"});

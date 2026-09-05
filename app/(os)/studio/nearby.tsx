@@ -1,3 +1,3 @@
 // @ts-nocheck
 import { makeEduList } from '@/lib/hubs/EduListScreen';
-export default makeEduList({'table': 'studio_tracks', 'title': 'Nearby Creators', 'subtitle': 'Discover local talent', 'columns': ['title', 'artist'], 'icon': 'locate', 'accent': '#ec4899'});
+export default makeEduList({"table": "studio_tracks", "title": "Nearby Creators", "columns": ["title", "artist"], "icon": "locate", "accent": "#ec4899"});
