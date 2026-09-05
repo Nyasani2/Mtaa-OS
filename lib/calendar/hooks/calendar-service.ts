@@ -4,7 +4,6 @@ export async function createEvent(event: Partial<CalendarEvent>): Promise<Calend
 export async function updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent | null> { return null; }
 export async function deleteEvent(id: string): Promise<boolean> { return true; }
 
-
 export async function getEventsForDate(userId: string, date: string): Promise<CalendarEvent[]> {
   return [];
 }

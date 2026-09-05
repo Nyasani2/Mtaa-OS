@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 
 const { width } = Dimensions.get('window');
 

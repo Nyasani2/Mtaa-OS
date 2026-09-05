@@ -1,16 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
-import { Alert, useRouter } from "expo-router";
-import { Alert,
-  Zap, DollarSign, Shield, CheckCircle, Clock, MessageSquare,
-  ChevronRight, Users, Star, FileText, Briefcase, Lock,
-  Unlock, AlertTriangle, Wallet
-} from "lucide-react-native";
-import { Alert, SafeAreaView } from "react-native-safe-area-context";
-import { Alert, Colors } from "@/constants/Colors";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, supabase } from "@/lib/supabase";
+import { useRouter } from 'expo-router';
+import { Zap, DollarSign, Shield, CheckCircle, Clock, MessageSquare, ChevronRight, Users, Star, FileText, Briefcase, Lock, Unlock, AlertTriangle, Wallet } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
 const { width } = Dimensions.get("window");
 

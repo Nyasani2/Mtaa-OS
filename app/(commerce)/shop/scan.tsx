@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Modal } from 'react-native';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, shopService } from '@/domains/shop/services/shopService';
+import { shopService } from '@/domains/shop/services/shopService';
 import { supabase } from '@/lib/supabase/client';
 
 /**

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
-import { Alert, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Alert, SafeAreaView } from "react-native-safe-area-context";
-import { Alert, useHealthStore } from "@/domains/health/state/healthStore";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useHealthStore } from '@/domains/health/state/healthStore';
 
 interface ReportData {
   id: string;

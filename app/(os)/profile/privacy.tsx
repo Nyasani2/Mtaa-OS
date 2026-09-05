@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, biometricEngine } from '@/lib/security/biometric-engine';
+import { biometricEngine } from '@/lib/security/biometric-engine';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function PrivacyScreen() {

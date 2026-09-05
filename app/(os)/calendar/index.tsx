@@ -6,13 +6,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput, Switch, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Alert,
-  CalendarEvent, getEvents, getEventsForDate, createEvent, updateEvent, deleteEvent,
-  createReminder, getRemindersForEvent, deleteReminder,
-  EVENT_CATEGORIES, REMINDER_OPTIONS, EventCategory,
-} from '@/lib/services/calendar-service';
+import { CalendarEvent, getEvents, getEventsForDate, createEvent, updateEvent, deleteEvent, createReminder, getRemindersForEvent, deleteReminder, EVENT_CATEGORIES, REMINDER_OPTIONS, EventCategory } from '@/lib/services/calendar-service';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];

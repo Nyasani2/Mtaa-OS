@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Alert, useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from "expo-document-picker";
 

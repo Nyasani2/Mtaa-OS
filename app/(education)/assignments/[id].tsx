@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, FileText, Users, Calendar, ChevronRight, BookOpen, Clock } from 'lucide-react-native';
+import { FileText, Users, Calendar, ChevronRight, BookOpen, Clock } from 'lucide-react-native';
 
 export default function AssignmentDetailScreen() {
   const router = useRouter();

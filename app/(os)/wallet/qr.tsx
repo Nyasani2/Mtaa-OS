@@ -4,19 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Share, Image } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, useRouter } from "expo-router";
-import { Alert,
-  QrCode,
-  Copy,
-  Share2,
-  RefreshCw,
-  Clock,
-  DollarSign,
-  ChevronDown,
-  X,
-  Check,
-  ArrowLeft,
-} from "lucide-react-native";
+import { useRouter } from 'expo-router';
+import { QrCode, Copy, Share2, RefreshCw, Clock, DollarSign, ChevronDown, X, Check, ArrowLeft } from 'lucide-react-native';
 
 interface QrCodeData {
   id: string;

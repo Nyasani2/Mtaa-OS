@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Alert, useHealthSharing } from '@/lib/health/hooks/useHealthSharing';
+import { useHealthSharing } from '@/lib/health/hooks/useHealthSharing';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';

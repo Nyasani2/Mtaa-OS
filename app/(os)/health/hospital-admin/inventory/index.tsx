@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useHospitalInventory } from '@/lib/health/hooks/useHospitalInventory';
-import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
-import { Alert, Package, Plus, AlertTriangle, Search, Filter, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react-native';
+import { useHospitalInventory } from '@/lib/health/hooks/useHospitalInventory';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Package, Plus, AlertTriangle, Search, Filter, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react-native';
 
 export default function HospitalInventoryScreen() {
   const router = useRouter();

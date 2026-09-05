@@ -3,12 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useGarage } from '@/lib/hooks/useGarage';
-import { Alert, useAppointments } from '@/lib/hooks/useAppointments';
-import { Alert,
-  Wrench, Calendar, Search, TrendingUp, AlertTriangle,
-  ChevronRight, DollarSign, Clock, Car, Shield, FileText
-} from 'lucide-react-native';
+import { useGarage } from '@/lib/hooks/useGarage';
+import { useAppointments } from '@/lib/hooks/useAppointments';
+import { Wrench, Calendar, Search, TrendingUp, AlertTriangle, ChevronRight, DollarSign, Clock, Car, Shield, FileText } from 'lucide-react-native';
 
 export default function GarageDashboard() {
   const router = useRouter();

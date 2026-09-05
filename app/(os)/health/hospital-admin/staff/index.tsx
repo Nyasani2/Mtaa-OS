@@ -2,13 +2,9 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useStaffManagement } from '@/hooks/useStaffManagement';
+import { useStaffManagement } from '@/hooks/useStaffManagement';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, 
-  ChevronLeft, Users, Search, Filter, ShieldCheck, ShieldAlert, 
-  UserX, CheckCircle2, XCircle, MoreVertical, Stethoscope, 
-  Ambulance, Pill, CreditCard, Building2, Leaf, ClipboardList 
-} from 'lucide-react-native';
+import { ChevronLeft, Users, Search, Filter, ShieldCheck, ShieldAlert, UserX, CheckCircle2, XCircle, MoreVertical, Stethoscope, Ambulance, Pill, CreditCard, Building2, Leaf, ClipboardList } from 'lucide-react-native';
 
 const ROLE_ICONS: Record<string, any> = {
   doctor: Stethoscope,

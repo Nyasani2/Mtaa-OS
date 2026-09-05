@@ -320,7 +320,6 @@ export function formatReasoningChain(chain: ReasoningChain): string {
   return lines.join('\n');
 }
 
-
 // === AUTO-ADDED EXPORT ===
 export function buildReasoningChain(input: any): ReasoningChain {
   return { steps: [], confidence: 0.5 } as any;

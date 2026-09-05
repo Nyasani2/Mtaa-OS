@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
-import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
 import { supabase } from '@/lib/supabase';
 
 interface Appointment {

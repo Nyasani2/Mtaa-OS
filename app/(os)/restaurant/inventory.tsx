@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 // ============================================================================
 
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, RefreshControl, ScrollView } from 'react-native';
-import { Alert, useInventory } from '@/lib/restaurant/hooks';
+import { useInventory } from '@/lib/restaurant/hooks';
 
 export default function RestaurantInventory() {
   const {

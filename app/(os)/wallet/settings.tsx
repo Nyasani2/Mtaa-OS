@@ -5,7 +5,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Ac
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useWalletStore } from '@/hooks/useWalletStore';
+import { useWalletStore } from '@/hooks/useWalletStore';
 
 export default function WalletSettingsScreen() {
   const router = useRouter();

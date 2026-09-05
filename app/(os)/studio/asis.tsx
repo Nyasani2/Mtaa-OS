@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native';
-import { Alert, useMASIS } from '@/lib/services/mstudio-hooks';
+import { useMASIS } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const KIMI_API_KEY = process.env.EXPO_PUBLIC_KIMI_API_KEY || '';

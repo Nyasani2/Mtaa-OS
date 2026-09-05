@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, FlatList, TextInput } from 'react-native';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, deliveryService, DeliveryAgent } from '@/domains/shop/services/deliveryService';
+import { deliveryService, DeliveryAgent } from '@/domains/shop/services/deliveryService';
 import { supabase } from '@/lib/supabase/client';
 
 interface DeliveryTask {

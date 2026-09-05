@@ -731,7 +731,6 @@ export const tableService = {
 // EXPORT ALL SERVICES
 // ════════════════════════════════════════════════════════════════════════════
 
-
 export default {
   orders: orderService,
   kds: kdsService,

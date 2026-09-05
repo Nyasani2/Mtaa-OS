@@ -5,8 +5,8 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Switch, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert, tribesService } from '@/lib/tribes/services/tribes.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { tribesService } from '@/lib/tribes/services/tribes.service';
 
 export default function CreateTribeScreen() {
   const router = useRouter();

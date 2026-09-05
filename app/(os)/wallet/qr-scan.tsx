@@ -4,15 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, TextInput, ActivityIndicator, Dimensions } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, useRouter } from "expo-router";
-import { Alert,
-  Flashlight,
-  Keyboard,
-  ScanLine,
-  X,
-  ArrowRight,
-  ArrowLeft,
-} from "lucide-react-native";
+import { useRouter } from 'expo-router';
+import { Flashlight, Keyboard, ScanLine, X, ArrowRight, ArrowLeft } from 'lucide-react-native';
 
 const { width } = Dimensions.get("window");
 const SCANNER_SIZE = Math.min(width - 64, 280);

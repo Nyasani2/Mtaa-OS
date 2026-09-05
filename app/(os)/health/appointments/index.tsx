@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
-import { Alert, useRouter } from "expo-router";
-import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, useAppointments } from "@/lib/health/hooks/useAppointments";
-import { Alert, format } from "date-fns";
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useAppointments } from '@/lib/health/hooks/useAppointments';
+import { format } from 'date-fns';
 
 type TabType = "upcoming" | "past";
 

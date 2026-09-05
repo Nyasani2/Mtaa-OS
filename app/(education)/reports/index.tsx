@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, FileText, BarChart3, Download, ChevronRight, Calendar, TrendingUp } from 'lucide-react-native';
+import { FileText, BarChart3, Download, ChevronRight, Calendar, TrendingUp } from 'lucide-react-native';
 
 export default function ReportsScreen() {
   const router = useRouter();

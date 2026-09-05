@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity,
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, addTeacher } from '@/lib/services/education-service';
+import { addTeacher } from '@/lib/services/education-service';
 
 export default function InviteTeacherScreen() {
   const router = useRouter();

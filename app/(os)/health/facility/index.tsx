@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Linking } from 'react-native';
-import { Alert, useRouter } from "expo-router";
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useFacilities, useCreateFacility } from "@/lib/health/hooks/useFacility";
+import { useFacilities, useCreateFacility } from '@/lib/health/hooks/useFacility';
 
 const TYPES = ["hospital", "clinic", "pharmacy", "lab", "imaging", "rehabilitation"];
 const FILTERS = ["all", "hospital", "clinic", "pharmacy", "lab", "imaging"];

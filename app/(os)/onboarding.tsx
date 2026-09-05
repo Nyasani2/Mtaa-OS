@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useProfile } from '@/lib/profile/hooks/useProfile';
+import { useProfile } from '@/lib/profile/hooks/useProfile';
 
 const { width, height } = Dimensions.get('window');
 

@@ -3,10 +3,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Alert, useAuthStore } from '@/hooks/useAuthStore';
-import { Alert, useWalletStore } from '@/hooks/useWalletStore';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { useWalletStore } from '@/hooks/useWalletStore';
 import { supabase } from '@/lib/supabase';
-import { Alert, BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
 
 interface Agent {
   id: string;

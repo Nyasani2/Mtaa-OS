@@ -2,13 +2,10 @@
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert,
-  Pill, Clock, ChevronRight, AlertCircle, CheckCircle2,
-  Calendar, User, Building2, RefreshCw
-} from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pill, Clock, ChevronRight, AlertCircle, CheckCircle2, Calendar, User, Building2, RefreshCw } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, Colors } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 interface Prescription {
   id: string;

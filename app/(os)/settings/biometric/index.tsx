@@ -3,7 +3,7 @@ import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Ac
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, checkBiometricAvailability, getBiometricStatus, enrollBiometric, revokeAllBiometric, removeThisDevice, authenticateWithBiometric, BiometricDevice } from '@/lib/security/biometric-service';
+import { checkBiometricAvailability, getBiometricStatus, enrollBiometric, revokeAllBiometric, removeThisDevice, authenticateWithBiometric, BiometricDevice } from '@/lib/security/biometric-service';
 
 export default function BiometricScreen() {
   const router = useRouter();

@@ -61,13 +61,9 @@ export interface GeoLocation {
   name?: string;
 }
 
-
 // ============================================================
 // EXISTING: CORE TRUCKING TYPES (12 tables)
 // ============================================================
-
-
-
 
 export interface FleetAlert {
   id: string;
@@ -89,7 +85,6 @@ export interface FleetMetrics {
   revenuePerTruck: number;
   utilizationRate: number;
 }
-
 
 export interface FreightBid {
   id: string;
@@ -213,7 +208,6 @@ export interface EquipmentBooking {
   created_at: string;
 }
 
-
 export interface MaintenanceRecord {
   id: string;
   truck_id: string;
@@ -225,8 +219,6 @@ export interface MaintenanceRecord {
   cost?: number;
   notes?: string;
 }
-
-
 
 // ============================================================
 // NEW: CORE TRUCKING TYPES (9 tables)

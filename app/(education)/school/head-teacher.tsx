@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIn
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, getSchools, getTeachers, getStudents, getClasses, getPayroll, getEvents } from '@/lib/services/education-service';
+import { getSchools, getTeachers, getStudents, getClasses, getPayroll, getEvents } from '@/lib/services/education-service';
 
 export default function HeadTeacherScreen() {
   const router = useRouter();

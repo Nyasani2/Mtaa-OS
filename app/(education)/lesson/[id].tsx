@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { Alert, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { Alert, useRouter, useLocalSearchParams } from "expo-router";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, supabase } from "@/lib/supabase";
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LessonViewerScreen() {

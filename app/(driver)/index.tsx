@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
-import { Alert, useDriver } from '@/lib/transport/hooks/useDriver';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
+import { useDriver } from '@/lib/transport/hooks/useDriver';
 
 export default function DriverDashboard() {
   const router = useRouter();

@@ -4,9 +4,9 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useWalletStore } from 'app/(os)/wallet/hooks';
+import { useWalletStore } from 'app/(os)/wallet/hooks';
 import { supabase } from '@/lib/supabase';
-import { Alert, BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
 
 interface DarajaConfig {
   id: string;

@@ -3,13 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useGarage } from '@/lib/hooks/useGarage';
+import { useGarage } from '@/lib/hooks/useGarage';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  Wrench, Calendar, Clock, ChevronLeft, Car, Gauge, Fuel,
-  Phone, User, FileText, DollarSign, CheckCircle, AlertTriangle,
-  MapPin, Share2, Printer, ChevronRight
-} from 'lucide-react-native';
+import { Wrench, Calendar, Clock, ChevronLeft, Car, Gauge, Fuel, Phone, User, FileText, DollarSign, CheckCircle, AlertTriangle, MapPin, Share2, Printer, ChevronRight } from 'lucide-react-native';
 
 const WORKFLOW_STAGES = [
   { key: 'vehicle_reception', label: 'Reception' },

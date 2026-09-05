@@ -4,11 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  User, Heart, Activity, Pill, AlertTriangle, FileText,
-  ChevronLeft, Phone, Mail, MapPin, Calendar, Stethoscope,
-  Thermometer, Droplets, Wind, TrendingUp, Shield
-} from 'lucide-react-native';
+import { User, Heart, Activity, Pill, AlertTriangle, FileText, ChevronLeft, Phone, Mail, MapPin, Calendar, Stethoscope, Thermometer, Droplets, Wind, TrendingUp, Shield } from 'lucide-react-native';
 
 interface PatientDetail {
   id: string;

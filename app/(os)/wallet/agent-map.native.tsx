@@ -5,10 +5,10 @@ import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useWalletStore } from '@/lib/stores/wallet-store';
+import { useWalletStore } from '@/lib/stores/wallet-store';
 import { supabase } from '@/lib/supabase';
 import * as Location from 'expo-location';
-import { Alert, BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
 
 interface Agent {
   id: string;

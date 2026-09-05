@@ -2,9 +2,9 @@
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, usePharmacy } from '@/lib/health/hooks/usePharmacy';
-import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
-import { Alert, Package, Plus, Search, X, AlertTriangle, TrendingDown, Edit3, Trash2, Pill } from 'lucide-react-native';
+import { usePharmacy } from '@/lib/health/hooks/usePharmacy';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { Package, Plus, Search, X, AlertTriangle, TrendingDown, Edit3, Trash2, Pill } from 'lucide-react-native';
 
 const COLORS = {
   primary: '#0A4DA6', primaryLight: '#E8F0FE', success: '#10B981', warning: '#F59E0B',

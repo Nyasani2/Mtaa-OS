@@ -6,16 +6,8 @@ import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIn
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert,
-  calculateTax,
-  processTaxPayment,
-  generateTaxpayerId,
-  getTaxpayerByUser,
-  getTaxRecords,
-  getTaxLiabilities,
-  getRevenuePayments,
-} from '@/lib/services/tax-service';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { calculateTax, processTaxPayment, generateTaxpayerId, getTaxpayerByUser, getTaxRecords, getTaxLiabilities, getRevenuePayments } from '@/lib/services/tax-service';
 
 export default function TaxHubScreen() {
   const router = useRouter();

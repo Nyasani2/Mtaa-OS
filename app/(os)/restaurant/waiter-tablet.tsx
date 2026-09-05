@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Alert, usePos, useMenuSearch, useTables, useKds } from '@/lib/restaurant/hooks';
+import { usePos, useMenuSearch, useTables, useKds } from '@/lib/restaurant/hooks';
 
 export default function WaiterTablet() {
   const {

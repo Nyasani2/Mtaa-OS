@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, useRouter } from "expo-router";
-import { Alert,
-  ArrowLeft, MapPin, Phone, Star, DollarSign, ArrowDownLeft,
-  ArrowUpRight, Shield, User, Search, ChevronRight,
-} from "lucide-react-native";
+import { useRouter } from 'expo-router';
+import { ArrowLeft, MapPin, Phone, Star, DollarSign, ArrowDownLeft, ArrowUpRight, Shield, User, Search, ChevronRight } from 'lucide-react-native';
 
 interface Agent {
   id: string;

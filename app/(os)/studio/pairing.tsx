@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, FlatList } from 'react-native';
-import { Alert, useMPairing } from '@/lib/services/mstudio-hooks';
+import { useMPairing } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioPairingScreen() {

@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput } from 'react-native';
-import { Alert, useRouter } from "expo-router";
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useVitalsRecords, useCreateVitalsRecord } from "@/lib/health/hooks/useVitals";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { useVitalsRecords, useCreateVitalsRecord } from '@/lib/health/hooks/useVitals';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const FILTERS = ["all", "normal", "abnormal", "critical"];
 

@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { Alert, useRouter } from "expo-router";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, supabase } from "@/lib/supabase";
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function EventCreateScreen() {

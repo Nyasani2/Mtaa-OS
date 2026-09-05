@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, FileText, Clock, CheckCircle, Plus, ChevronRight } from 'lucide-react-native';
+import { FileText, Clock, CheckCircle, Plus, ChevronRight } from 'lucide-react-native';
 
 export default function ExamScreen() {
   const router = useRouter();

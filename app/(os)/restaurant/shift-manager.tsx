@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native';
-import { Alert, useShifts, useStaff } from '@/lib/restaurant/hooks';
+import { useShifts, useStaff } from '@/lib/restaurant/hooks';
 
 export default function ShiftManager() {
   const {

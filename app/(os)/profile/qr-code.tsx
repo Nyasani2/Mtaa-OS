@@ -5,7 +5,7 @@ import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Cli
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, qrIdentityService, QrIdentityData } from '@/lib/services/qr-identity';
+import { qrIdentityService, QrIdentityData } from '@/lib/services/qr-identity';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function QrCodeScreen() {

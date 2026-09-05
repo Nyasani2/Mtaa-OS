@@ -5,9 +5,9 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { Alert, cartService, ShippingAddress } from '@/lib/marketplace/services/cart.service';
+import { cartService, ShippingAddress } from '@/lib/marketplace/services/cart.service';
 import withdrawService from '@/domains/wallet/services/withdrawService';
 
 const PAYMENT_METHODS = [

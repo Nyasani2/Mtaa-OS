@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 // ============================================================================
 
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, RefreshControl, ScrollView } from 'react-native';
-import { Alert, usePayroll } from '@/lib/restaurant/hooks';
+import { usePayroll } from '@/lib/restaurant/hooks';
 
 export default function RestaurantPayroll() {
   const {

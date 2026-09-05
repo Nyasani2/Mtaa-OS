@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
-import { Alert, useRouter } from "expo-router";
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SchoolApprovalsScreen() {

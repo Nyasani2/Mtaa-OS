@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, MapPin, Package, DollarSign, CheckCircle } from 'lucide-react-native';
+import { MapPin, Package, DollarSign, CheckCircle } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

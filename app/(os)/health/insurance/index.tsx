@@ -2,14 +2,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert,
-  Shield, FileCheck, AlertCircle, Clock, CheckCircle2, XCircle,
-  Calendar, Plus, X
-} from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Shield, FileCheck, AlertCircle, Clock, CheckCircle2, XCircle, Calendar, Plus, X } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, Colors } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 interface InsurancePolicy {
   id: string; provider_name: string; policy_number: string; policy_type: string;

@@ -4,7 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, ChevronLeft, Save, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { ChevronLeft, Save, AlertTriangle, CheckCircle2, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 
 interface ResultField {
   id: string; parameter: string; value: string; unit: string;

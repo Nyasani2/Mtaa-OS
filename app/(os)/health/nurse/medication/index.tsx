@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, ArrowLeft, Pill, CheckCircle2, Clock, AlertTriangle, User } from 'lucide-react-native';
+import { ArrowLeft, Pill, CheckCircle2, Clock, AlertTriangle, User } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { Alert, useHealthRole } from '@/lib/health/hooks';
+import { useHealthRole } from '@/lib/health/hooks';
 
 interface MedTask {
   id: string;

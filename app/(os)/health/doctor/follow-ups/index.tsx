@@ -4,10 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  ChevronLeft, Plus, Calendar, CheckCircle2, Bell, User,
-  AlertTriangle, Search, Filter, Phone, MessageSquare
-} from 'lucide-react-native';
+import { ChevronLeft, Plus, Calendar, CheckCircle2, Bell, User, AlertTriangle, Search, Filter, Phone, MessageSquare } from 'lucide-react-native';
 
 interface FollowUp {
   id: string;

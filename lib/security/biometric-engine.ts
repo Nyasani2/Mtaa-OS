@@ -58,7 +58,6 @@ export const biometricEngine = {
   },
 };
 
-
 // ── Compatibility exports for legacy callers ──
 export async function checkBiometricStatus(): Promise<{ available: boolean; enrolled: boolean }> {
   try {

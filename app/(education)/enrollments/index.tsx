@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, Users, Search, Filter, Plus, ChevronRight, CheckCircle, Clock } from 'lucide-react-native';
+import { Users, Search, Filter, Plus, ChevronRight, CheckCircle, Clock } from 'lucide-react-native';
 
 export default function EnrollmentsScreen() {
   const router = useRouter();

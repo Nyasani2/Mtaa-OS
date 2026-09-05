@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, useRouter } from "expo-router";
-import { Alert,
-  ArrowLeft, Landmark, Plus, Trash2, CheckCircle, XCircle,
-  CreditCard, ChevronRight,
-} from "lucide-react-native";
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Landmark, Plus, Trash2, CheckCircle, XCircle, CreditCard, ChevronRight } from 'lucide-react-native';
 
 interface BankAccount {
   id: string;

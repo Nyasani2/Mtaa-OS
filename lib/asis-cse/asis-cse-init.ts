@@ -18,7 +18,6 @@ export interface ASISInitConfig {
   };
 }
 
-
 export interface ASISMetrics {
   generateReport(): string;
   recordEvent(name: string, value?: number): void;

@@ -2,8 +2,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useDiagnostics } from '@/lib/hooks/useDiagnostics';
-import { Alert, useGarage } from '@/lib/hooks/useGarage';
+import { useDiagnostics } from '@/lib/hooks/useDiagnostics';
+import { useGarage } from '@/lib/hooks/useGarage';
 
 const SEVERITY_COLORS = {
   critical: '#ef4444',

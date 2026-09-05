@@ -6,8 +6,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, useShop } from '@/domains/shop/hooks/useShop';
-import { Alert, useWallet } from '@/hooks/useWallet';
+import { useShop } from '@/domains/shop/hooks/useShop';
+import { useWallet } from '@/hooks/useWallet';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ShopWalletScreen() {

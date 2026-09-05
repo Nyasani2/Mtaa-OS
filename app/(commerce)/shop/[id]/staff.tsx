@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase/client';
-import { Alert, useUser } from '@/hooks/useUser';
+import { useUser } from '@/hooks/useUser';
 
 interface StaffMember { id: string; user_id: string; role: string; status?: string;
   tax_rate?: number;

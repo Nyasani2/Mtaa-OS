@@ -9,7 +9,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
-import { Alert, getListings } from '@/lib/marketplace/services/marketplace-service';
+import { getListings } from '@/lib/marketplace/services/marketplace-service';
 import type { Listing } from '@/lib/marketplace/types';
 
 const { width } = Dimensions.get('window');

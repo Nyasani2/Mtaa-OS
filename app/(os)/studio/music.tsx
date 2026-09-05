@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Alert, View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
-import { Alert, useMMusic } from '@/lib/services/mstudio-hooks';
+import { useMMusic } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioMusicScreen() {

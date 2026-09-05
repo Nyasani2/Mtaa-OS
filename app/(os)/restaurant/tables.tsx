@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 // ============================================================================
 
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, ScrollView, RefreshControl } from 'react-native';
-import { Alert, useTables, useOrders } from '@/lib/restaurant/hooks';
+import { useTables, useOrders } from '@/lib/restaurant/hooks';
 
 export default function RestaurantTables() {
   const {

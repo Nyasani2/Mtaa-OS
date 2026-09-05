@@ -1,12 +1,12 @@
 // @ts-nocheck
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
-import { Alert, useRouter } from "expo-router";
-import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, useHealthRole } from "@/lib/health/hooks/useHealthRole";
-import { Alert, useGovernment } from "@/lib/health/hooks/useGovernment";
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { useGovernment } from '@/lib/health/hooks/useGovernment';
 
 export default function GovernmentScreen() {
   const router = useRouter();

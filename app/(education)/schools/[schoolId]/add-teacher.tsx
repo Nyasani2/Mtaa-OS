@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useEducation } from '@/domains/education/hooks/useEducation';
+import { useEducation } from '@/domains/education/hooks/useEducation';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function AddTeacher() {

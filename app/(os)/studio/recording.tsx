@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Alert, View, Text, TouchableOpacity } from 'react-native';
-import { Alert, CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { Alert, useMRecordings, useMVideos } from '@/lib/services/mstudio-hooks';
+import { useMRecordings, useMVideos } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioRecordingScreen() {

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
 
 interface ComplianceCheck {
   id: string;

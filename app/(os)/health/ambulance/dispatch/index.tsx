@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useAmbulanceDispatch } from '@/lib/health/hooks/useAmbulanceDispatch';
+import { useAmbulanceDispatch } from '@/lib/health/hooks/useAmbulanceDispatch';
 
 export default function AmbulanceDispatchScreen() {
   const router = useRouter();

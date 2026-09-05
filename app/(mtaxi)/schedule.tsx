@@ -4,13 +4,13 @@ import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform }
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
-import { Alert, useTransport } from '@/lib/transport/hooks/useTransport';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
+import { useTransport } from '@/lib/transport/hooks/useTransport';
 import VehicleSelector from '@/lib/transport/components/VehicleSelector';
 import PaymentSelector from '@/lib/transport/components/PaymentSelector';
 import FareBreakdownView from '@/lib/transport/components/FareBreakdown';
 import AddressSearchModal from '@/lib/transport/components/AddressSearchModal';
-import { Alert, GeocodeResult } from '@/lib/transport/services/geocode.service';
+import { GeocodeResult } from '@/lib/transport/services/geocode.service';
 
 export default function ScheduleScreen() {
   const router = useRouter();

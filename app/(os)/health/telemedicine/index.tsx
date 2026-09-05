@@ -4,10 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList }
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  ChevronLeft, Video, Phone, Calendar, Clock, User, CheckCircle2,
-  XCircle, AlertTriangle, Mic, Camera, MessageSquare, FileText
-} from 'lucide-react-native';
+import { ChevronLeft, Video, Phone, Calendar, Clock, User, CheckCircle2, XCircle, AlertTriangle, Mic, Camera, MessageSquare, FileText } from 'lucide-react-native';
 
 interface TeleSession {
   id: string;

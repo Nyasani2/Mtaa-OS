@@ -275,7 +275,6 @@ export function generateResearchReport(research: ResearchResult): string {
   ].join('\n');
 }
 
-
 // === AUTO-ADDED EXPORTS ===
 export type Fact = any;
 export type ResearchReport = any;

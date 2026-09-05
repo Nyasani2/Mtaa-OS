@@ -3,16 +3,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, ActivityIndicator, RefreshControl, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useGarage } from '@/lib/hooks/useGarage';
-import { Alert, useAppointments } from '@/lib/hooks/useAppointments';
+import { useGarage } from '@/lib/hooks/useGarage';
+import { useAppointments } from '@/lib/hooks/useAppointments';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  Wrench, Calendar, Clock, ChevronRight, Plus, X, Camera,
-  Car,
-  CheckCircle, AlertCircle, DollarSign, FileText, Star,
-  Phone, Mail, MapPin, User, Gauge, Fuel, Image as ImageIcon,
-  ChevronLeft, ChevronRight as ChevronRightIcon, Printer, Share2
-} from 'lucide-react-native';
+import { Wrench, Calendar, Clock, ChevronRight, Plus, X, Camera, Car, CheckCircle, AlertCircle, DollarSign, FileText, Star, Phone, Mail, MapPin, User, Gauge, Fuel, Image as ImageIcon, ChevronLeft, ChevronRight as ChevronRightIcon, Printer, Share2 } from 'lucide-react-native';
 
 const WORKFLOW_STAGES = [
   { key: 'vehicle_reception', label: 'Reception', icon: 'Car' },

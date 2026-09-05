@@ -62,7 +62,6 @@ export class ProfileService {
 
 export default ProfileService;
 
-
 // === AUTO-ADDED INSTANCE EXPORTS ===
 export const profileService = new ProfileService();
 export const profileRoleService = profileService;

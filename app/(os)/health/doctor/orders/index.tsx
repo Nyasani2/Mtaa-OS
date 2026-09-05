@@ -4,10 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  ChevronLeft, Plus, Pill, FlaskConical, Scan, Stethoscope,
-  Clock, CheckCircle2, XCircle, AlertCircle, Search, Filter
-} from 'lucide-react-native';
+import { ChevronLeft, Plus, Pill, FlaskConical, Scan, Stethoscope, Clock, CheckCircle2, XCircle, AlertCircle, Search, Filter } from 'lucide-react-native';
 
 interface Order {
   id: string;

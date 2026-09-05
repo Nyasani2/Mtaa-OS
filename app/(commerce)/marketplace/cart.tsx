@@ -5,10 +5,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
-import { Alert, cartService, CartItem } from '@/lib/marketplace/services/cart.service';
-import { Alert, useMarketplaceStore } from '@/lib/marketplace/state/marketplace.store';
+import { cartService, CartItem } from '@/lib/marketplace/services/cart.service';
+import { useMarketplaceStore } from '@/lib/marketplace/state/marketplace.store';
 
 export default function CartScreen() {
   const router = useRouter();

@@ -2,9 +2,9 @@
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useHospitalPOS } from '@/lib/health/hooks/useHospitalPOS';
-import { Alert, useHealthRole } from '@/lib/health/hooks/useHealthRole';
-import { Alert, CreditCard, DollarSign, Wallet, Smartphone, Shield, Plus, Minus, Trash2, X, ChevronRight, ShoppingCart, User } from 'lucide-react-native';
+import { useHospitalPOS } from '@/lib/health/hooks/useHospitalPOS';
+import { useHealthRole } from '@/lib/health/hooks/useHealthRole';
+import { CreditCard, DollarSign, Wallet, Smartphone, Shield, Plus, Minus, Trash2, X, ChevronRight, ShoppingCart, User } from 'lucide-react-native';
 
 const PAYMENT_METHODS = [
   { key: 'cash', label: 'Cash', icon: DollarSign, color: '#10B981' },

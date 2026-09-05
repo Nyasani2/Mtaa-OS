@@ -4,10 +4,7 @@ import { Alert, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  ChevronLeft, FlaskConical, Clock, AlertTriangle, CheckCircle2,
-  TrendingUp, Package, Activity
-} from 'lucide-react-native';
+import { ChevronLeft, FlaskConical, Clock, AlertTriangle, CheckCircle2, TrendingUp, Package, Activity } from 'lucide-react-native';
 
 interface LabTest {
   id: string; sample_id: string; patient_id: string; patient_name: string;

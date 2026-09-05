@@ -4,8 +4,8 @@ import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
 import { useRouter } from 'expo-router';
 import UnifiedMap from '@/lib/components/maps/UnifiedMap';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, requestFreight, estimateFreight, getHaulTypes, checkTruckAvailability } from '@/lib/services/mtruck-service';
-import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
+import { requestFreight, estimateFreight, getHaulTypes, checkTruckAvailability } from '@/lib/services/mtruck-service';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
 
 const URGENCY_LEVELS = [
   { id: 'normal', name: 'Normal', desc: 'Standard delivery', multiplier: 1.0 },

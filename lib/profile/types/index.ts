@@ -241,7 +241,6 @@ export interface PrivacySettings {
   allow_messages: boolean;
 }
 
-
 // === MERGED FROM types-additions.ts ===
 export interface ProfileConnection { id: string; requester_id: string; recipient_id: string; type: ConnectionType; status: 'pending' | 'accepted' | 'rejected' | 'blocked'; created_at: string; }
 

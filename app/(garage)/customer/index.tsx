@@ -2,34 +2,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, TextInput, Modal, FlatList, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert,
-  User,
-  Car,
-  Wrench,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  CreditCard,
-  FileText,
-  MessageSquare,
-  ArrowLeft,
-  Search,
-  X,
-  ThumbsUp,
-  ThumbsDown,
-  Send,
-  QrCode,
-  Shield,
-  TrendingUp,
-  Package,
-  ChevronRight,
-  Receipt,
-} from 'lucide-react-native';
+import { User, Car, Wrench, Star, Phone, Mail, MapPin, Calendar, Clock, CheckCircle, AlertTriangle, CreditCard, FileText, MessageSquare, ArrowLeft, Search, X, ThumbsUp, ThumbsDown, Send, QrCode, Shield, TrendingUp, Package, ChevronRight, Receipt } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, useEducation, type ParticipantRole } from '@/domains/education/hooks/useEducation';
+import { useEducation, type ParticipantRole } from '@/domains/education/hooks/useEducation';
 import { Ionicons } from '@expo/vector-icons';
 
 const ROLE_COLORS: Record<string, string> = {

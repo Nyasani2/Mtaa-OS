@@ -231,7 +231,6 @@ export const shipperService = {
   },
 };
 
-
 // === AUTO-ADDED STUBS ===
 export async function getMyJobs(shipper_id: string) { return []; }
 export async function trackJob(jobId: string) { return null; }

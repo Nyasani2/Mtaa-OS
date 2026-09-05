@@ -5,7 +5,7 @@ import { Alert, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } fr
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import * as T from '@/lib/tribes/services/tribes.service';
-import { Alert, Lock, Vote } from 'lucide-react-native';
+import { Lock, Vote } from 'lucide-react-native';
 
 export default function GovernanceScreen() {
   const { id } = useLocalSearchParams();

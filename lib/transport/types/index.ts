@@ -115,7 +115,6 @@ export interface ScheduleRideParams {
   currency: string;
 }
 
-
 // === MERGED FROM types-additions.ts ===
 // === CORRECTED CreateRidePayload from ride.service.ts ===
 export interface CreateRidePayload {

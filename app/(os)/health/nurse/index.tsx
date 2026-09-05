@@ -4,10 +4,7 @@ import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList }
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert,
-  ChevronLeft, Users, Heart, Pill, BedDouble, Activity,
-  Clock, AlertTriangle, CheckCircle2, Thermometer, Droplets
-} from 'lucide-react-native';
+import { ChevronLeft, Users, Heart, Pill, BedDouble, Activity, Clock, AlertTriangle, CheckCircle2, Thermometer, Droplets } from 'lucide-react-native';
 
 interface PatientAssignment {
   id: string;

@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, TextInput } from 'react-native';
-import { Alert, useRouter, useLocalSearchParams } from "expo-router";
-import { Alert, SafeAreaView } from "react-native-safe-area-context";
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, useAuthStore } from "@/lib/auth/store/auth.store";
-import { Alert, useGovernment } from "@/lib/health/hooks/useGovernment";
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { useGovernment } from '@/lib/health/hooks/useGovernment';
 
 export default function SurveillanceScreen() {
   const router = useRouter();

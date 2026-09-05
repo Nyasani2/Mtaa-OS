@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Alert, useShop } from '@/domains/shop/hooks/useShop';
+import { useShop } from '@/domains/shop/hooks/useShop';
 import { supabase } from '@/lib/supabase/client';
 
 export default function ShopSettingsScreen() {

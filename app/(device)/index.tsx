@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useDeviceManager } from '@/lib/hooks/useDeviceManager';
+import { useDeviceManager } from '@/lib/hooks/useDeviceManager';
 import CameraCard from '@/lib/components/device/CameraCard';
 import DeviceTile from '@/lib/components/device/DeviceTile';
 

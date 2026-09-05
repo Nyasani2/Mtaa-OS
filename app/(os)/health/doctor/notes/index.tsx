@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, ScrollView } from 'react-native';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Alert, useDoctorNotes } from '@/lib/health/hooks/useDoctor';
+import { useDoctorNotes } from '@/lib/health/hooks/useDoctor';
 import { Feather } from '@expo/vector-icons';
 
 export default function DoctorNotesScreen() {

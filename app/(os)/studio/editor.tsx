@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, useMProjects, useMVideos } from '@/lib/services/mstudio-hooks';
+import { useMProjects, useMVideos } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioEditorScreen() {

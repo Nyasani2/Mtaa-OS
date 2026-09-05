@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import { Alert, View, Text, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, useLocation } from '@/lib/transport/hooks/useLocation';
-import { Alert, useDriver } from '@/lib/transport/hooks/useDriver';
-import { Alert, haversine } from '@/lib/transport/services/ride.service';
+import { useLocation } from '@/lib/transport/hooks/useLocation';
+import { useDriver } from '@/lib/transport/hooks/useDriver';
+import { haversine } from '@/lib/transport/services/ride.service';
 
 export default function DriverRequestsScreen() {
   const { user } = useAuthStore();

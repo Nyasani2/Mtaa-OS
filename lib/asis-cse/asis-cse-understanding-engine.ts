@@ -416,7 +416,6 @@ function nodeCount(edges: any[]): number {
   return nodes.size;
 }
 
-
 // === AUTO-ADDED STUB ===
 (UnderstandingEngine.prototype as any).generateModelName = function(nodes: any[]): string {
   return 'Model_' + Date.now();

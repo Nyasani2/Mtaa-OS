@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, School, MapPin, Users, BookOpen, ChevronRight, Phone, Mail } from 'lucide-react-native';
+import { School, MapPin, Users, BookOpen, ChevronRight, Phone, Mail } from 'lucide-react-native';
 
 export default function SchoolDetailScreen() {
   const router = useRouter();

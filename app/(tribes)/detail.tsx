@@ -5,8 +5,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, TextInput, RefreshControl, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
-import { Alert, tribesService, Tribe, TribePost, TribeEvent, TribeMember } from '@/lib/tribes/services/tribes.service';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { tribesService, Tribe, TribePost, TribeEvent, TribeMember } from '@/lib/tribes/services/tribes.service';
 
 export default function TribeDetailScreen() {
   const router = useRouter();

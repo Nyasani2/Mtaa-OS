@@ -5,7 +5,7 @@ import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { Alert, CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 const TZ_COUNTRY = { 'Africa/Nairobi':'KE','Africa/Dar_es_Salaam':'TZ','Africa/Kampala':'UG','Africa/Lagos':'NG','Africa/Johannesburg':'ZA','Africa/Kigali':'RW','Africa/Addis_Ababa':'ET','Africa/Accra':'GH','Europe/London':'GB','America/New_York':'US','Asia/Kolkata':'IN' };
 

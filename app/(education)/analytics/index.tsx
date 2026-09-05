@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, BarChart3, TrendingUp, Users, BookOpen, ChevronRight } from 'lucide-react-native';
+import { BarChart3, TrendingUp, Users, BookOpen, ChevronRight } from 'lucide-react-native';
 
 export default function AnalyticsScreen() {
   const router = useRouter();

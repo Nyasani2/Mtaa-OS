@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, useMVideos } from '@/lib/services/mstudio-hooks';
+import { useMVideos } from '@/lib/services/mstudio-hooks';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function StudioPublishScreen() {

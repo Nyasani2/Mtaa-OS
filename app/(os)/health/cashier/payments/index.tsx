@@ -1,9 +1,9 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { Alert, View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal } from 'react-native';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Alert, useCashierPayments } from '@/lib/health/hooks/useCashier';
+import { useCashierPayments } from '@/lib/health/hooks/useCashier';
 import { Feather } from '@expo/vector-icons';
 
 export default function CashierPaymentsScreen() {

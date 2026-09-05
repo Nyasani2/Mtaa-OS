@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Alert, View, Text, ScrollView, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Alert, ArrowLeft, Pill, Plus, Trash2, Send, User } from 'lucide-react-native';
+import { ArrowLeft, Pill, Plus, Trash2, Send, User } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
-import { Alert, useHealthRole } from '@/lib/health/hooks';
+import { useHealthRole } from '@/lib/health/hooks';
 
 interface PrescriptionItem {
   medication: string;

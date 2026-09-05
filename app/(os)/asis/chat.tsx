@@ -4,14 +4,7 @@ import { Alert, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, K
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert,
-  getOrCreateConversation,
-  getMessages,
-  saveMessage,
-  processQuery,
-  clearMessages,
-  type AsisMessage,
-} from '@/lib/asis/services/asis-cse-service';
+import { getOrCreateConversation, getMessages, saveMessage, processQuery, clearMessages, type AsisMessage } from '@/lib/asis/services/asis-cse-service';
 
 interface ChatMessage extends AsisMessage {
   isLoading?: boolean;

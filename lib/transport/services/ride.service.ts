@@ -361,7 +361,6 @@ export async function createInspection(payload: {
   return data;
 }
 
-
 // ============================================================
 // DRIVER FUNCTIONS
 // ============================================================

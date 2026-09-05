@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Modal, FlatList } from 'react-native';
-import { Alert, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { Alert, shopService } from '@/domains/shop/services/shopService';
-import { Alert, posService, POSStaff } from '@/domains/shop/services/posService';
+import { shopService } from '@/domains/shop/services/shopService';
+import { posService, POSStaff } from '@/domains/shop/services/posService';
 
 interface CartItem {
   product: any;
