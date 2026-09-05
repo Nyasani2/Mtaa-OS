@@ -1,385 +1,159 @@
 // @ts-nocheck
-// app/(finance)/binance/index.tsx
-// MTAA Binance — Crypto Trading
-// FIXED: Removed hardcoded mock prices. Now fetches real data from CoinGecko API.
-// If API fails, shows error state instead of fake data.
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { cryptoService } from '@/lib/services/crypto-service';
 
-interface CryptoAsset {
-  id: string;
-  name: string;
-  symbol: string;
-  current_price: number;
-  price_change_percentage_24h: number;
-  image: string;
-}
-
-interface WalletBalance {
-  total_balance_usd: number;
-  assets: { symbol: string; balance: number; value_usd: number }[];
-}
-
-
-  const [wallets, setWallets] = useState<CryptoWallet[]>([]);
-  const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showConvertModal, setShowConvertModal] = useState(false);
-  const [selectedWallet, setSelectedWallet] = useState<CryptoWallet | null>(null);
-  const [transferForm, setTransferForm] = useState({ toAddress: '', amount: '' });
-  const [convertForm, setConvertForm] = useState({ toCurrency: 'ETH', amount: '' });
-
-  useEffect(() => {
-    loadWallets();
-  }, []);
-
-  const loadWallets = async () => {
-    if (!user?.id) return;
-    const data = await cryptoService.getWallets(user.id);
-    setWallets(data);
-  };
-
-  const handleTransfer = async () => {
-    if (!selectedWallet || !transferForm.toAddress || !transferForm.amount) {
-      Alert.alert('Validation', 'Please fill all fields');
-      return;
-    }
-    setLoading(true);
-    try {
-      await cryptoService.initiateTransfer(
-        selectedWallet.id,
-        transferForm.toAddress,
-        parseFloat(transferForm.amount)
-      );
-      Alert.alert('Success', 'Transfer completed');
-      setShowTransferModal(false);
-      setTransferForm({ toAddress: '', amount: '' });
-      loadWallets();
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConvert = async () => {
-    if (!selectedWallet || !convertForm.amount) {
-      Alert.alert('Validation', 'Please enter amount');
-      return;
-    }
-    setLoading(true);
-    try {
-      await cryptoService.convertCrypto(
-        selectedWallet.id,
-        convertForm.toCurrency,
-        parseFloat(convertForm.amount)
-      );
-      Alert.alert('Success', 'Conversion completed');
-      setShowConvertModal(false);
-      setConvertForm({ toCurrency: 'ETH', amount: '' });
-      loadWallets();
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const CURRENCIES = ['BTC', 'ETH', 'USDT', 'BNB'];
 
 export default function BinanceScreen() {
-  const router = useRouter();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'spot' | 'convert'>('spot');
-  const [assets, setAssets] = useState<CryptoAsset[]>([]);
-  const [walletBalance, setWalletBalance] = useState<WalletBalance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [wallets, setWallets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(null); // 'transfer' | 'convert' | 'create'
+  const [selected, setSelected] = useState(null);
+  const [form, setForm] = useState({ toAddress: '', amount: '', toCurrency: 'ETH', createCurrency: 'BTC' });
 
-  const fetchCryptoData = useCallback(async () => {
-    try {
-      // Fetch top 20 cryptos from CoinGecko (free tier, no API key needed)
-      const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h'
-      );
+  const load = async () => { if (user?.id) setWallets(await cryptoService.getWallets(user.id)); };
+  useEffect(() => { load(); }, [user?.id]);
 
-      if (!response.ok) {
-        throw new Error(`CoinGecko API error: ${response.status}`);
-      }
+  const open = (type, wallet) => { setSelected(wallet); setModal(type); };
 
-      const data: CryptoAsset[] = await response.json();
-      setAssets(data);
-      setError(null);
-    } catch (err: any) {
-      console.error('[Binance] Crypto fetch error:', err);
-      setError('Unable to load crypto prices. Pull to retry.');
-      // Don't set fake data — show error state
-    }
-  }, []);
-
-  const fetchWalletBalance = useCallback(async () => {
-    if (!user?.id) return;
-
-    try {
-      // Fetch user's crypto wallet from Supabase
-      const { data, error } = await supabase
-        .from('crypto_wallets')
-        .select('symbol, balance, value_usd')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const total = (data || []).reduce((sum, a) => sum + (a.value_usd || 0), 0);
-      setWalletBalance({
-        total_balance_usd: total,
-        assets: data || []
-      });
-    } catch (err: any) {
-      console.error('[Binance] Wallet fetch error:', err);
-      // Wallet may not exist yet — show zero balance
-      setWalletBalance({ total_balance_usd: 0, assets: [] });
-    }
-  }, [user?.id]);
-
-  const loadAll = useCallback(async () => {
+  const createWallet = async () => {
     setLoading(true);
-    await Promise.all([fetchCryptoData(), fetchWalletBalance()]);
-    setLoading(false);
-  }, [fetchCryptoData, fetchWalletBalance]);
-
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([fetchCryptoData(), fetchWalletBalance()]);
-    setRefreshing(false);
-  }, [fetchCryptoData, fetchWalletBalance]);
-
-  const handleDeposit = () => {
-    Alert.alert(
-      'Deposit Crypto',
-      'Choose deposit method:',
-      [
-        { text: 'Bank Transfer', onPress: () => router.push('/(finance)/wallet/deposit' as any) },
-        { text: 'Crypto Transfer', onPress: () => { setSelectedWallet(wallets[0] || null); setShowTransferModal(true); } },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    try { await cryptoService.createWallet(user.id, form.createCurrency, 'mainnet'); await load(); setModal(null); }
+    finally { setLoading(false); }
   };
 
-  const handleWithdraw = () => {
-    if (!walletBalance || walletBalance.total_balance_usd <= 0) {
-      Alert.alert('No Balance', 'You have no crypto assets to withdraw.');
-      return;
-    }
-    router.push('/(finance)/wallet/withdraw' as any);
+  const transfer = async () => {
+    setLoading(true);
+    try {
+      await cryptoService.initiateTransfer(selected.id, form.toAddress, parseFloat(form.amount || '0'));
+      await load(); setModal(null); setForm({ ...form, toAddress: '', amount: '' });
+    } finally { setLoading(false); }
   };
 
-  const handleConvert = () => {
-    setSelectedWallet(wallets[0] || null); setShowConvertModal(true);
+  const convert = async () => {
+    setLoading(true);
+    try {
+      await cryptoService.convertCrypto(selected.id, form.toCurrency, parseFloat(form.amount || '0'));
+      await load(); setModal(null); setForm({ ...form, amount: '' });
+    } finally { setLoading(false); }
   };
-
-  const handleAssetPress = (asset: CryptoAsset) => {
-    router.push({
-      pathname: '/(finance)/binance/asset-detail' as any,
-      params: { id: asset.id, symbol: asset.symbol, name: asset.name }
-    });
-  };
-
-  const formatPrice = (price: number) => {
-    if (price >= 1000) return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    if (price >= 1) return `$${price.toFixed(2)}`;
-    return `$${price.toFixed(6)}`;
-  };
-
-  const formatChange = (change: number) => {
-    const sign = change >= 0 ? '+' : '';
-    return `${sign}${change.toFixed(2)}%`;
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#F0B90B" />
-        <Text style={{ color: '#8E8E93', marginTop: 12 }}>Loading markets...</Text>
-      </View>
-    );
-  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Crypto Markets</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/settings' as any)}>
-          <Ionicons name="settings-outline" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
+    <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <Text style={s.title}>Crypto Wallet</Text>
+      <Text style={s.subtitle}>Deposit, transfer and convert across chains</Text>
 
-      <View style={styles.balanceCard}>
-        <Text style={styles.balanceLabel}>Total Balance</Text>
-        <Text style={styles.balanceAmount}>
-          {walletBalance ? `$${walletBalance.total_balance_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00'}
-        </Text>
-        <View style={styles.balanceActions}>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleDeposit}>
-            <Ionicons name="arrow-down" size={20} color="#007AFF" />
-            <Text style={styles.actionLabel}>Deposit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleWithdraw}>
-            <Ionicons name="arrow-up" size={20} color="#007AFF" />
-            <Text style={styles.actionLabel}>Withdraw</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleConvert}>
-            <Ionicons name="swap-horizontal" size={20} color="#007AFF" />
-            <Text style={styles.actionLabel}>Convert</Text>
-          </TouchableOpacity>
+      {wallets.map((w) => (
+        <View key={w.id} style={s.walletCard}>
+          <View style={s.walletTop}>
+            <Text style={s.walletCurrency}>{w.currency}</Text>
+            <Text style={s.walletBalance}>{Number(w.balance || 0).toFixed(6)}</Text>
+          </View>
+          <Text style={s.walletAddress} numberOfLines={1}>{w.address}</Text>
+          <View style={s.walletActions}>
+            <TouchableOpacity style={s.actionBtn} onPress={() => open('transfer', w)}>
+              <Ionicons name="paper-plane-outline" size={16} color="#0ea5e9" />
+              <Text style={s.actionText}>Transfer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.actionBtn} onPress={() => open('convert', w)}>
+              <Ionicons name="swap-horizontal-outline" size={16} color="#f59e0b" />
+              <Text style={s.actionText}>Convert</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ))}
 
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'spot' && styles.tabActive]}
-          onPress={() => setActiveTab('spot')}
-        >
-          <Text style={[styles.tabText, activeTab === 'spot' && styles.tabTextActive]}>Spot</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'convert' && styles.tabActive]}
-          onPress={() => setActiveTab('convert')}
-        >
-          <Text style={[styles.tabText, activeTab === 'convert' && styles.tabTextActive]}>Convert</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={s.addBtn} onPress={() => setModal('create')}>
+        <Ionicons name="add-circle-outline" size={20} color="#fff" />
+        <Text style={s.addBtnText}>Add Wallet</Text>
+      </TouchableOpacity>
 
-      {error && (
-        <View style={styles.errorBanner}>
-          <Ionicons name="warning-outline" size={18} color="#FF3B30" />
-          <Text style={styles.errorText}>{error}</Text>
+      {modal && (
+        <View style={s.overlay}>
+          <View style={s.modal}>
+            {modal === 'create' && (
+              <>
+                <Text style={s.modalTitle}>Create Wallet</Text>
+                <View style={s.currRow}>
+                  {CURRENCIES.map((c) => (
+                    <TouchableOpacity key={c} style={[s.chip, form.createCurrency === c && s.chipActive]} onPress={() => setForm({ ...form, createCurrency: c })}>
+                      <Text style={[s.chipText, form.createCurrency === c && s.chipTextActive]}>{c}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity style={s.submitBtn} onPress={createWallet} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.submitText}>Create</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+            {modal === 'transfer' && selected && (
+              <>
+                <Text style={s.modalTitle}>Send {selected.currency}</Text>
+                <TextInput style={s.input} placeholder="Recipient address" value={form.toAddress} onChangeText={(v) => setForm({ ...form, toAddress: v })} />
+                <TextInput style={s.input} placeholder="Amount" keyboardType="decimal-pad" value={form.amount} onChangeText={(v) => setForm({ ...form, amount: v })} />
+                <TouchableOpacity style={s.submitBtn} onPress={transfer} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.submitText}>Send</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+            {modal === 'convert' && selected && (
+              <>
+                <Text style={s.modalTitle}>Convert {selected.currency}</Text>
+                <TextInput style={s.input} placeholder="Amount" keyboardType="decimal-pad" value={form.amount} onChangeText={(v) => setForm({ ...form, amount: v })} />
+                <Text style={s.label}>To:</Text>
+                <View style={s.currRow}>
+                  {CURRENCIES.filter((c) => c !== selected.currency).map((c) => (
+                    <TouchableOpacity key={c} style={[s.chip, form.toCurrency === c && s.chipActive]} onPress={() => setForm({ ...form, toCurrency: c })}>
+                      <Text style={[s.chipText, form.toCurrency === c && s.chipTextActive]}>{c}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity style={s.submitBtn} onPress={convert} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.submitText}>Convert</Text>}
+                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setModal(null)}>
+              <Text style={s.cancelText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
-
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {assets.length === 0 && !error ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="trending-up-outline" size={48} color="#C7C7CC" />
-            <Text style={styles.emptyText}>No market data available</Text>
-          </View>
-        ) : (
-          assets.map((asset: any) => (
-            <TouchableOpacity key={asset.id} style={styles.assetRow} onPress={() => handleAssetPress(asset)}>
-              <View style={styles.assetIcon}>
-                <Text style={styles.assetSymbolText}>{asset.symbol[0]}</Text>
-              </View>
-              <View style={styles.assetInfo}>
-                <Text style={styles.assetName}>{asset.name}</Text>
-                <Text style={styles.assetSymbolSmall}>{asset.symbol.toUpperCase()}</Text>
-              </View>
-              <View style={styles.assetPrice}>
-                <Text style={styles.priceText}>{formatPrice(asset.current_price)}</Text>
-                <Text style={[
-                  styles.changeText, 
-                  asset.price_change_percentage_24h >= 0 ? styles.positive : styles.negative
-                ]}>
-                  {formatChange(asset.price_change_percentage_24h)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    backgroundColor: '#fff',
-  },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#000' },
-  balanceCard: {
-    backgroundColor: '#1C1C1E',
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-  },
-  balanceLabel: { color: '#8E8E93', fontSize: 14 },
-  balanceAmount: { color: '#fff', fontSize: 32, fontWeight: '800', marginTop: 8 },
-  balanceActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-  },
-  actionBtn: { alignItems: 'center' },
-  actionLabel: { color: '#fff', fontSize: 12, marginTop: 6 },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: { borderBottomColor: '#F0B90B' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#8E8E93' },
-  tabTextActive: { color: '#F0B90B' },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF3B3015',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  errorText: { color: '#FF3B30', fontSize: 13, flex: 1 },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#8E8E93', fontSize: 15, marginTop: 12 },
-  assetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
-  },
-  assetIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0B90B15',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  assetSymbolText: { fontSize: 18, fontWeight: '800', color: '#F0B90B' },
-  assetInfo: { flex: 1, marginLeft: 12 },
-  assetName: { fontSize: 16, fontWeight: '600', color: '#000' },
-  assetSymbolSmall: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
-  assetPrice: { alignItems: 'flex-end' },
-  priceText: { fontSize: 16, fontWeight: '600', color: '#000' },
-  changeText: { fontSize: 13, marginTop: 2 },
-  positive: { color: '#34C759' },
-  negative: { color: '#FF3B30' },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  content: { padding: 16, paddingTop: 48 },
+  title: { fontSize: 24, fontWeight: '800', color: '#f8fafc' },
+  subtitle: { fontSize: 14, color: '#94a3b8', marginBottom: 20 },
+  walletCard: { backgroundColor: '#1e293b', borderRadius: 14, padding: 16, marginBottom: 12 },
+  walletTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  walletCurrency: { fontSize: 18, fontWeight: '700', color: '#f59e0b' },
+  walletBalance: { fontSize: 18, fontWeight: '700', color: '#f8fafc' },
+  walletAddress: { fontSize: 12, color: '#64748b', marginVertical: 8 },
+  walletActions: { flexDirection: 'row', gap: 12 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0f172a', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  actionText: { color: '#e2e8f0', fontSize: 13, fontWeight: '600' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#f59e0b', borderRadius: 12, padding: 14, marginTop: 8 },
+  addBtnText: { color: '#fff', fontWeight: '700' },
+  overlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modal: { width: '88%', backgroundColor: '#1e293b', borderRadius: 14, padding: 20 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#f8fafc', marginBottom: 14 },
+  input: { backgroundColor: '#0f172a', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: '#f8fafc', marginBottom: 10 },
+  label: { color: '#94a3b8', fontSize: 13, marginBottom: 6 },
+  currRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, backgroundColor: '#0f172a' },
+  chipActive: { backgroundColor: '#f59e0b' },
+  chipText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  chipTextActive: { color: '#fff' },
+  submitBtn: { backgroundColor: '#0ea5e9', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 10 },
+  submitText: { color: '#fff', fontWeight: '700' },
+  cancelBtn: { padding: 10, alignItems: 'center' },
+  cancelText: { color: '#94a3b8' },
 });
