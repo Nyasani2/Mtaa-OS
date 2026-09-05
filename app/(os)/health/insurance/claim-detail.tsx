@@ -9,7 +9,8 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 const STATUS_FLOW = {
   submitted: { next: 'under_review', label: 'Start Review', icon: 'eye-outline', color: '#f59e0b' },
   under_review: { next: 'approved', alt: 'rejected', label: 'Approve / Reject', icon: 'checkmark-circle-outline', color: '#10b981' },
-  approved: null, rejected: null,
+  approved: null,
+  rejected: null,
 };
 
 export default function ClaimDetailScreen() {
@@ -27,70 +28,136 @@ export default function ClaimDetailScreen() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data: c } = await supabase.from('health_insurance_claims').select('*, policy:health_insurance_policies(*), patient:health_patients(*), invoice:health_invoices(*)').eq('id', id).single();
+      const { data: c } = await supabase
+        .from('health_insurance_claims')
+        .select('*, policy:health_insurance_policies(*), patient:health_patients(*), invoice:health_invoices(*)')
+        .eq('id', id)
+        .single();
       setClaim(c);
       if (c?.policy) setPolicy(c.policy);
       if (c?.patient) setPatient(c.patient);
       if (c?.invoice) setInvoice(c.invoice);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
+
   useEffect(() => { load(); }, [id]);
 
   const updateStatus = async (newStatus) => {
     setBusy(true);
     try {
-      const { error } = await supabase.from('health_insurance_claims').update({
-        status: newStatus,
-        reviewer_notes: notes || claim?.reviewer_notes || null,
-        reviewed_at: new Date().toISOString(),
-        reviewed_by: user?.id,
-        rejection_reason: newStatus === 'rejected' ? (notes || 'No reason provided') : null,
-      }).eq('id', id);
+      const { error } = await supabase
+        .from('health_insurance_claims')
+        .update({
+          status: newStatus,
+          reviewer_notes: notes || claim?.reviewer_notes || null,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id,
+          rejection_reason: newStatus === 'rejected' ? (notes || 'No reason provided') : null,
+        })
+        .eq('id', id);
       if (error) throw error;
       Alert.alert('Success', `Claim marked as ${newStatus.replace('_', ' ')}`);
       load();
     } catch (err) {
       Alert.alert('Error', err?.message || 'Update failed');
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (loading) return <View style={[s.container, s.center]}><ActivityIndicator size="large" color="#8b5cf6" /></View>;
-  if (!claim) return <View style={[s.container, s.center]}><Text>No claim found</Text></View>;
+  if (loading) {
+    return (
+      <View style={[s.container, s.center]}>
+        <ActivityIndicator size="large" color="#8b5cf6" />
+      </View>
+    );
+  }
+
+  if (!claim) {
+    return (
+      <View style={[s.container, s.center]}>
+        <Text>No claim found</Text>
+      </View>
+    );
+  }
 
   const flow = STATUS_FLOW[claim.status];
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <View style={[s.statusBanner, s['status_' + claim.status]]}>
-        <Ionicons name={claim.status === 'approved' ? 'checkmark-circle' : claim.status === 'rejected' ? 'close-circle' : 'hourglass', size={22} color="#fff"} />
+      <View style={[s.statusBanner, s[`status_${claim.status}`]]}>
+        <Ionicons
+          name={claim.status === 'approved' ? 'checkmark-circle' : claim.status === 'rejected' ? 'close-circle' : 'hourglass'}
+          size={22}
+          color="#fff"
+        />
         <Text style={s.statusText}>{claim.status.replace('_', ' ').toUpperCase()}</Text>
       </View>
 
       <View style={s.card}>
         <Text style={s.cardTitle}>Claim Details</Text>
-        <View style={s.row}><Text style={s.rowLabel}>Claim ID</Text><Text style={s.rowValue}>{claim.id.slice(0, 8)}…</Text></View>
-        <View style={s.row}><Text style={s.rowLabel}>Claimed Amount</Text><Text style={[s.rowValue, s.amount]}>KES {Number(claim.claimed_amount || 0).toLocaleString()}</Text></View>
-        <View style={s.row}><Text style={s.rowLabel}>Submitted</Text><Text style={s.rowValue}>{new Date(claim.created_at).toLocaleString()}</Text></View>
-        {claim.reviewed_at && <View style={s.row}><Text style={s.rowLabel}>Reviewed</Text><Text style={s.rowValue}>{new Date(claim.reviewed_at).toLocaleString()}</Text></View>}
+        <View style={s.row}>
+          <Text style={s.rowLabel}>Claim ID</Text>
+          <Text style={s.rowValue}>{claim.id.slice(0, 8)}…</Text>
+        </View>
+        <View style={s.row}>
+          <Text style={s.rowLabel}>Claimed Amount</Text>
+          <Text style={[s.rowValue, s.amount]}>KES {Number(claim.claimed_amount || 0).toLocaleString()}</Text>
+        </View>
+        <View style={s.row}>
+          <Text style={s.rowLabel}>Submitted</Text>
+          <Text style={s.rowValue}>{new Date(claim.created_at).toLocaleString()}</Text>
+        </View>
+        {claim.reviewed_at && (
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Reviewed</Text>
+            <Text style={s.rowValue}>{new Date(claim.reviewed_at).toLocaleString()}</Text>
+          </View>
+        )}
       </View>
 
       {patient && (
         <View style={s.card}>
           <Text style={s.cardTitle}>Patient</Text>
-          <View style={s.row}><Text style={s.rowLabel}>Name</Text><Text style={s.rowValue}>{patient.first_name} {patient.last_name}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Phone</Text><Text style={s.rowValue}>{patient.phone || '—'}</Text></View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Name</Text>
+            <Text style={s.rowValue}>{patient.first_name} {patient.last_name}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Phone</Text>
+            <Text style={s.rowValue}>{patient.phone || '—'}</Text>
+          </View>
         </View>
       )}
 
       {policy && (
         <View style={s.card}>
           <Text style={s.cardTitle}>Insurance Policy</Text>
-          <View style={s.row}><Text style={s.rowLabel}>Provider</Text><Text style={s.rowValue}>{policy.provider_name || 'Policy'}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Policy #</Text><Text style={s.rowValue}>{policy.policy_number || '—'}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Coverage</Text><Text style={s.rowValue}>KES {Number(policy.coverage_limit || 0).toLocaleString()}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Used</Text><Text style={s.rowValue}>KES {Number(policy.used_amount || 0).toLocaleString()}</Text></View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Provider</Text>
+            <Text style={s.rowValue}>{policy.provider_name || 'Policy'}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Policy #</Text>
+            <Text style={s.rowValue}>{policy.policy_number || '—'}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Coverage</Text>
+            <Text style={s.rowValue}>KES {Number(policy.coverage_limit || 0).toLocaleString()}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Used</Text>
+            <Text style={s.rowValue}>KES {Number(policy.used_amount || 0).toLocaleString()}</Text>
+          </View>
           <View style={s.progressWrap}>
-            <View style={[s.progressBar, { width: `${Math.min(100, ((policy.used_amount || 0) / (policy.coverage_limit || 1)) * 100)}%` }]} />
+            <View
+              style={[
+                s.progressBar,
+                { width: `${Math.min(100, ((policy.used_amount || 0) / (policy.coverage_limit || 1)) * 100)}%` }
+              ]}
+            />
           </View>
         </View>
       )}
@@ -98,33 +165,66 @@ export default function ClaimDetailScreen() {
       {invoice && (
         <View style={s.card}>
           <Text style={s.cardTitle}>Linked Invoice</Text>
-          <View style={s.row}><Text style={s.rowLabel}>Total</Text><Text style={s.rowValue}>KES {Number(invoice.total_amount || 0).toLocaleString()}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Method</Text><Text style={s.rowValue}>{invoice.payment_method || '—'}</Text></View>
-          <View style={s.row}><Text style={s.rowLabel}>Items</Text><Text style={s.rowValue}>{(invoice.items || []).length} line(s)</Text></View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Total</Text>
+            <Text style={s.rowValue}>KES {Number(invoice.total_amount || 0).toLocaleString()}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Method</Text>
+            <Text style={s.rowValue}>{invoice.payment_method || '—'}</Text>
+          </View>
+          <View style={s.row}>
+            <Text style={s.rowLabel}>Items</Text>
+            <Text style={s.rowValue}>{(invoice.items || []).length} line(s)</Text>
+          </View>
         </View>
       )}
 
       <View style={s.card}>
         <Text style={s.cardTitle}>Reviewer Notes</Text>
-        <TextInput style={s.textarea} multiline numberOfLines={4} placeholder="Add notes for this decision…" value={notes} onChangeText={setNotes} />
-        {claim.rejection_reason && <View style={s.rejectReason}><Ionicons name="alert-circle" size={16} color="#ef4444" /><Text style={s.rejectText}>Rejection: {claim.rejection_reason}</Text></View>}
+        <TextInput
+          style={s.textarea}
+          multiline
+          numberOfLines={4}
+          placeholder="Add notes for this decision…"
+          value={notes}
+          onChangeText={setNotes}
+        />
+        {claim.rejection_reason && (
+          <View style={s.rejectReason}>
+            <Ionicons name="alert-circle" size={16} color="#ef4444" />
+            <Text style={s.rejectText}>Rejection: {claim.rejection_reason}</Text>
+          </View>
+        )}
       </View>
 
       {flow && (
         <View style={s.actions}>
           {flow.alt ? (
             <>
-              <TouchableOpacity style={[s.actionBtn, s.approveBtn]} onPress={() => updateStatus(flow.next)} disabled={busy}>
+              <TouchableOpacity
+                style={[s.actionBtn, s.approveBtn]}
+                onPress={() => updateStatus(flow.next)}
+                disabled={busy}
+              >
                 <Ionicons name="checkmark-circle" size={22} color="#fff" />
                 <Text style={s.actionBtnText}>Approve</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.actionBtn, s.rejectBtn]} onPress={() => updateStatus(flow.alt)} disabled={busy}>
+              <TouchableOpacity
+                style={[s.actionBtn, s.rejectBtn]}
+                onPress={() => updateStatus(flow.alt)}
+                disabled={busy}
+              >
                 <Ionicons name="close-circle" size={22} color="#fff" />
                 <Text style={s.actionBtnText}>Reject</Text>
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity style={[s.actionBtn, { backgroundColor: flow.color }]} onPress={() => updateStatus(flow.next)} disabled={busy}>
+            <TouchableOpacity
+              style={[s.actionBtn, { backgroundColor: flow.color }]}
+              onPress={() => updateStatus(flow.next)}
+              disabled={busy}
+            >
               <Ionicons name={flow.icon} size={22} color="#fff" />
               <Text style={s.actionBtnText}>{flow.label}</Text>
             </TouchableOpacity>
