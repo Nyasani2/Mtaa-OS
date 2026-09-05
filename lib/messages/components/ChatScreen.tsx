@@ -1,121 +1,104 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from "expo-router";
-import * as SMS from "expo-sms";
+// @ts-nocheck
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-interface Message {
-  id: string;
-  text: string;
-  sent: boolean;
-  timestamp: string;
-}
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function ChatScreen() {
+  const params = useLocalSearchParams();
+  const id = params.id;
   const router = useRouter();
-  const { name, phone } = useLocalSearchParams<{ name: string; phone: string }>();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
+  const { user } = useAuthStore();
+  const [msgs, setMsgs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState('');
+  const [title, setTitle] = useState('Conversation');
 
-  const handleSend = async () => {
-    if (!input.trim() || !phone) return;
+  const markRead = async () => {
+    await supabase.from('conversation_participants')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('conversation_id', id).eq('user_id', user?.id);
+  };
 
-    const text = input.trim();
-    setInput("");
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('chat_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true });
+      setMsgs(data || []);
+      setLoading(false);
+      markRead();
 
-    // Add to local UI immediately
-    const localMsg: Message = {
-      id: Date.now().toString(),
-      text,
-      sent: true,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    setMessages((prev) => [...prev, localMsg]);
+      if (!data?.length) {
+        const { data: conv } = await supabase.from('conversations').select('title').eq('id', id).single();
+        if (conv?.title) setTitle(conv.title);
+      }
+    })();
 
-    // Send via expo-sms
-    setSending(true);
-    const { result } = await SMS.sendSMSAsync([phone], text);
-    setSending(false);
+    const channel = supabase
+      .channel('chat-' + id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `conversation_id=eq.${id}` }, (payload) => {
+        setMsgs((m) => [...m, payload.new]);
+        markRead();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
 
-    if (result === "cancelled") {
-      Alert.alert("Cancelled", "Message was not sent");
-    }
+  const send = async () => {
+    if (!draft.trim()) return;
+    const body = draft.trim();
+    setDraft('');
+    await supabase.from('chat_messages').insert({ conversation_id: id, sender_id: user?.id, body });
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerName}>{name || "Unknown"}</Text>
-          <Text style={styles.headerPhone}>{phone || ""}</Text>
-        </View>
-        <TouchableOpacity onPress={() => router.push({ pathname: "/communication/call" as any, params: { phone } })}>
-          <Ionicons name="call-outline" size={22} color="#6366F1" />
-        </TouchableOpacity>
+    <View style={s.container}>
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={22} color="#0f172a" /></TouchableOpacity>
+        <Text style={s.title} numberOfLines={1}>{title}</Text>
+        <View style={{ width: 22 }} />
       </View>
 
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={[styles.messageBubble, item.sent ? styles.sentBubble : styles.receivedBubble]}>
-            <Text style={item.sent ? styles.sentText : styles.receivedText}>{item.text}</Text>
-            <Text style={styles.timestamp}>{item.timestamp}</Text>
-          </View>
-        )}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="chatbubble-outline" size={48} color="#334155" />
-            <Text style={styles.emptyText}>No messages yet</Text>
-            <Text style={styles.emptySub}>Send a message to start the conversation</Text>
-          </View>
-        }
-      />
-
-      <View style={styles.inputBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor="#64748B"
-          value={input}
-          onChangeText={setInput}
-          multiline
+      {loading ? (
+        <ActivityIndicator size="large" color="#0ea5e9" style={{ marginTop: 40 }} />
+      ) : (
+        <FlatList
+          data={msgs}
+          keyExtractor={(m) => m.id}
+          contentContainerStyle={s.list}
+          ListEmptyComponent={<Text style={s.empty}>No messages yet — say hi 👋</Text>}
+          renderItem={({ item }) => {
+            const mine = item.sender_id === user?.id;
+            return (
+              <View style={[s.bubble, mine ? s.mine : s.theirs]}>
+                <Text style={[s.bubbleText, mine && s.mineText]}>{item.body}</Text>
+              </View>
+            );
+          }}
         />
-        <TouchableOpacity style={[styles.sendBtn, (!input.trim() || sending) && styles.sendBtnDisabled]} onPress={handleSend} disabled={!input.trim() || sending}>
-          <Ionicons name="send" size={20} color="#fff" />
-        </TouchableOpacity>
+      )}
+
+      <View style={s.inputRow}>
+        <TextInput style={s.input} placeholder="Type a message..." value={draft} onChangeText={setDraft} onSubmitEditing={send} />
+        <TouchableOpacity style={s.sendBtn} onPress={send}><Ionicons name="send" size={20} color="#fff" /></TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
-  headerCenter: { flex: 1, marginLeft: 12 },
-  headerName: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  headerPhone: { color: "#64748B", fontSize: 12, marginTop: 2 },
-  messageBubble: { maxWidth: "75%", padding: 12, borderRadius: 16, marginBottom: 8 },
-  sentBubble: { alignSelf: "flex-end", backgroundColor: "#6366F1", borderBottomRightRadius: 4 },
-  receivedBubble: { alignSelf: "flex-start", backgroundColor: "#1a1a1a", borderBottomLeftRadius: 4 },
-  sentText: { color: "#fff", fontSize: 15 },
-  receivedText: { color: "#fff", fontSize: 15 },
-  timestamp: { color: "#94A3B8", fontSize: 11, marginTop: 4, alignSelf: "flex-end" },
-  emptyState: { alignItems: "center", marginTop: 60 },
-  emptyText: { color: "#94A3B8", fontSize: 16, marginTop: 16 },
-  emptySub: { color: "#64748B", fontSize: 13, marginTop: 4 },
-  inputBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1, borderTopColor: "#1a1a1a" },
-  input: { flex: 1, backgroundColor: "#1a1a1a", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, color: "#fff", fontSize: 15, maxHeight: 100 },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#6366F1", justifyContent: "center", alignItems: "center", marginLeft: 8 },
-  sendBtnDisabled: { backgroundColor: "#334155" },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 48, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  title: { fontSize: 17, fontWeight: '800', color: '#0f172a', flex: 1, textAlign: 'center' },
+  list: { padding: 16 },
+  empty: { textAlign: 'center', color: '#94a3b8', marginTop: 60 },
+  bubble: { maxWidth: '75%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 8 },
+  mine: { alignSelf: 'flex-end', backgroundColor: '#0ea5e9' },
+  theirs: { alignSelf: 'flex-start', backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0' },
+  bubbleText: { fontSize: 15, color: '#0f172a' },
+  mineText: { color: '#fff' },
+  inputRow: { flexDirection: 'row', gap: 8, padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  input: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15 },
+  sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#0ea5e9', justifyContent: 'center', alignItems: 'center' },
 });
-
