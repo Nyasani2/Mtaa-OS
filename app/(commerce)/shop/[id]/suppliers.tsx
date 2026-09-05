@@ -7,6 +7,8 @@ interface Supplier { id: string; name: string; contact_name?: string; phone?: st
 
 export default function ShopSuppliersScreen() {
   const { id: shopId } = useLocalSearchParams<{ id: string }>();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ name: '', contact_person: '', email: '', phone: '', address: '' });
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,9 +64,58 @@ export default function ShopSuppliersScreen() {
           </View>
         }
       />
-      <TouchableOpacity style={styles.addBtn} onPress={() => Alert.alert('Coming Soon', 'Supplier creation in next update')}>
+      <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreateModal(true)}>
         <Text style={styles.addBtnText}>➕ Add Supplier</Text>
       </TouchableOpacity>
+
+      {showCreateModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create Supplier</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Supplier Name *"
+              value={newSupplier.name}
+              onChangeText={(v) => setNewSupplier({ ...newSupplier, name: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Contact Person *"
+              value={newSupplier.contact_person}
+              onChangeText={(v) => setNewSupplier({ ...newSupplier, contact_person: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={newSupplier.email}
+              onChangeText={(v) => setNewSupplier({ ...newSupplier, email: v })}
+              keyboardType="email-address"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone"
+              value={newSupplier.phone}
+              onChangeText={(v) => setNewSupplier({ ...newSupplier, phone: v })}
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Address"
+              value={newSupplier.address}
+              onChangeText={(v) => setNewSupplier({ ...newSupplier, address: v })}
+              multiline
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreateModal(false)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.submitBtn} onPress={handleCreateSupplier} disabled={loading}>
+                <Text style={styles.submitBtnText}>{loading ? 'Creating...' : 'Create'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }

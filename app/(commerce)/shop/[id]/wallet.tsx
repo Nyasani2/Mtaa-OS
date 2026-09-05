@@ -1,3 +1,4 @@
+import QRCode from 'react-native-qrcode-svg';
 // @ts-nocheck
 // app/(commerce)/shop/[id]/wallet.tsx
 // Shop wallet screen — manages shop-level wallet (business_wallet)
@@ -84,6 +85,25 @@ export default function ShopWalletScreen() {
           <Text style={styles.shopMeta}>ID: {shop.id?.slice(0, 8)}...</Text>
         </View>
       ) : null}
+
+      {showQRCode && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Payment QR Code</Text>
+            <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            <View style={styles.qrContainer}>
+              <QRCode value={qrValue} size={250} />
+            </View>
+            <Text style={styles.qrHint}>Share this QR code with customers for instant payments</Text>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setShowQRCode(false)}
+            >
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -123,6 +143,25 @@ export default function ShopWalletScreen() {
       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setActiveTab('overview')}>
         <Text style={styles.secondaryBtnText}>Back</Text>
       </TouchableOpacity>
+
+      {showQRCode && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Payment QR Code</Text>
+            <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            <View style={styles.qrContainer}>
+              <QRCode value={qrValue} size={250} />
+            </View>
+            <Text style={styles.qrHint}>Share this QR code with customers for instant payments</Text>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setShowQRCode(false)}
+            >
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -132,11 +171,46 @@ export default function ShopWalletScreen() {
       <Text style={styles.tabSubtitle}>Share your shop wallet details</Text>
       <View style={styles.receiveCard}>
         <Ionicons name="qr-code" size={64} color="#007AFF" />
-        <Text style={styles.receiveHint}>QR code generation coming soon</Text>
+        <TouchableOpacity
+              style={styles.qrButton}
+              onPress={() => {
+                const paymentData = JSON.stringify({
+                  type: 'shop_payment',
+                  shop_id: shopId,
+                  amount: 0,
+                  currency: 'KES',
+                  timestamp: Date.now(),
+                });
+                setQrValue(paymentData);
+                setShowQRCode(true);
+              }}
+            >
+              <Ionicons name="qr-code-outline" size={24} color="#0ea5e9" />
+              <Text style={styles.qrButtonText}>Generate QR Code</Text>
+            </TouchableOpacity>
       </View>
       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setActiveTab('overview')}>
         <Text style={styles.secondaryBtnText}>Back</Text>
       </TouchableOpacity>
+
+      {showQRCode && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Payment QR Code</Text>
+            <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            <View style={styles.qrContainer}>
+              <QRCode value={qrValue} size={250} />
+            </View>
+            <Text style={styles.qrHint}>Share this QR code with customers for instant payments</Text>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setShowQRCode(false)}
+            >
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -173,6 +247,25 @@ export default function ShopWalletScreen() {
       <TouchableOpacity style={styles.secondaryBtn} onPress={() => setActiveTab('overview')}>
         <Text style={styles.secondaryBtnText}>Back</Text>
       </TouchableOpacity>
+
+      {showQRCode && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Payment QR Code</Text>
+            <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            <View style={styles.qrContainer}>
+              <QRCode value={qrValue} size={250} />
+            </View>
+            <Text style={styles.qrHint}>Share this QR code with customers for instant payments</Text>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setShowQRCode(false)}
+            >
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -200,6 +293,106 @@ export default function ShopWalletScreen() {
 }
 
 const styles = StyleSheet.create({
+
+    modalOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 24,
+      width: '90%',
+      maxWidth: 400,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      color: '#64748b',
+      marginBottom: 16,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#e2e8f0',
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 12,
+      fontSize: 15,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 8,
+    },
+    cancelBtn: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#e2e8f0',
+      alignItems: 'center',
+    },
+    cancelBtnText: {
+      color: '#64748b',
+      fontWeight: '600',
+    },
+    submitBtn: {
+      flex: 1,
+      padding: 14,
+      borderRadius: 8,
+      backgroundColor: '#0ea5e9',
+      alignItems: 'center',
+    },
+    submitBtnText: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+    qrButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      backgroundColor: '#f0f9ff',
+      borderRadius: 8,
+      marginTop: 16,
+      gap: 8,
+    },
+    qrButtonText: {
+      color: '#0ea5e9',
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    qrContainer: {
+      alignItems: 'center',
+      marginVertical: 20,
+    },
+    qrHint: {
+      fontSize: 13,
+      color: '#64748b',
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    closeBtn: {
+      padding: 14,
+      borderRadius: 8,
+      backgroundColor: '#0ea5e9',
+      alignItems: 'center',
+    },
+    closeBtnText: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+
   container: { flex: 1, backgroundColor: '#F2F2F7' },
   header: {
     flexDirection: 'row',
