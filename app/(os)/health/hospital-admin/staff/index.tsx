@@ -114,10 +114,10 @@ export default function StaffManagementScreen() {
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        <StatBox label="Total" value={stats.total} color="#2563EB" />
-        <StatBox label="Active" value={stats.active} color="#059669" />
-        <StatBox label="Pending" value={stats.pending} color="#D97706" />
-        <StatBox label="Verified" value={stats.verified} color="#7C3AED" />
+        <StatBox label="Total" value={(stats?.total ?? 0)} color="#2563EB" />
+        <StatBox label="Active" value={(stats?.active ?? 0)} color="#059669" />
+        <StatBox label="Pending" value={(stats?.pending ?? 0)} color="#D97706" />
+        <StatBox label="Verified" value={(stats?.verified ?? 0)} color="#7C3AED" />
       </View>
 
       {/* Search */}

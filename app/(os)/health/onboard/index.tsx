@@ -83,14 +83,18 @@ export default function HealthOnboardScreen() {
         const firstName = profile?.first_name || user.email?.split('@')[0] || 'User';
         const lastName = profile?.last_name || '';
 
-        const { error } = await supabase.from('health_staff').upsert({
-          user_id: user.id,
-          full_name: `${firstName} ${lastName}`.trim(),
-          role: roleKey,
-          phone: profile?.phone || null,
-          status: 'pending',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
+        let { error } = await supabase.from('health_staff').upsert({
+            user_id: user.id,
+            full_name: `${firstName} ${lastName}`.trim(),
+            role: roleKey,
+            phone: profile?.phone || null,
+            status: 'pending',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
+          if (error) {
+            const retry: any = await supabase.from('health_staff').upsert({ user_id: user.id, role: roleKey, status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+            error = retry.error;
+          }
 
         if (error) throw error;
         Alert.alert(

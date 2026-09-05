@@ -64,7 +64,10 @@ export default function DriverRegistrationScreen() {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' });
 
-      if (staffError) throw staffError;
+      if (staffError) {
+          const r: any = await supabase.from('health_staff').upsert({ user_id: user.id, role: 'ambulance_driver', status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+          if (r.error) throw r.error;
+        }
 
       // 2. Create ambulance driver record
       const { error: driverError } = await supabase.from('health_ambulance_drivers').upsert({
