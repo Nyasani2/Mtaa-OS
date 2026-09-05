@@ -1,3 +1,4 @@
+import { accountService } from '@/lib/auth/account-service';
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -6,6 +7,27 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 export default function SettingsProfileScreen() {
+
+  const handleLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: async () => {
+        await accountService.logout();
+        router.replace('/' as any);
+      }},
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert('Delete Account', 'This permanently deletes your MTAA account and data. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        await accountService.deleteAccount();
+        router.replace('/' as any);
+      }},
+    ]);
+  };
+
   const router = useRouter();
   const { user, signOut } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
@@ -95,7 +117,7 @@ export default function SettingsProfileScreen() {
         </View>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Danger Zone</Text>
-          <TouchableOpacity style={[styles.row, styles.dangerRow]} onPress={handleSignOut} disabled={signingOut}><Ionicons name="log-out-outline" size={20} color="#dc2626" /><Text style={[styles.rowText, { color: '#dc2626' }]}>{signingOut ? 'Signing out...' : 'Sign Out'}</Text>{signingOut && <ActivityIndicator size="small" color="#dc2626" />}</TouchableOpacity>
+          <TouchableOpacity style={[styles.row, styles.dangerRow]} onPress={handleLogout} disabled={signingOut}><Ionicons name="log-out-outline" size={20} color="#dc2626" /><Text style={[styles.rowText, { color: '#dc2626' }]}>{signingOut ? 'Signing out...' : 'Sign Out'}</Text>{signingOut && <ActivityIndicator size="small" color="#dc2626" />}</TouchableOpacity>
           <TouchableOpacity style={[styles.row, styles.dangerRow]} onPress={handleDeleteAccount} disabled={deleting}><Ionicons name="trash-outline" size={20} color="#dc2626" /><Text style={[styles.rowText, { color: '#dc2626' }]}>{deleting ? 'Deleting...' : 'Delete Account'}</Text>{deleting && <ActivityIndicator size="small" color="#dc2626" />}</TouchableOpacity>
         </View>
       </ScrollView>

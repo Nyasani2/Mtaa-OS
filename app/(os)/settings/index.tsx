@@ -1,3 +1,4 @@
+import { accountService } from '@/lib/auth/account-service';
 // @ts-nocheck
 // app/(os)/settings/index.tsx — MTAA OS Settings v4.1
 // Device/OS-level settings only. Security features moved to Profile → Privacy & Security.
@@ -20,6 +21,27 @@ interface SettingsItem {
 }
 
 export default function SettingsScreen() {
+
+  const handleLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: async () => {
+        await accountService.logout();
+        router.replace('/' as any);
+      }},
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert('Delete Account', 'This permanently deletes your MTAA account and data. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        await accountService.deleteAccount();
+        router.replace('/' as any);
+      }},
+    ]);
+  };
+
   const router = useRouter();
   const { user, profile, signOut } = useAuthStore();
   const [darkMode, setDarkMode] = useState(false);
@@ -121,7 +143,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.email}>{email}</Text>
           {user && (
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout}>
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
           )}
