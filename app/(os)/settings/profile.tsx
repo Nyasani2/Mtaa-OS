@@ -1,4 +1,3 @@
-import { accountService } from '@/lib/auth/account-service';
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -7,27 +6,6 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
 
 export default function SettingsProfileScreen() {
-
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: async () => {
-        await accountService.logout();
-        router.replace('/' as any);
-      }},
-    ]);
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert('Delete Account', 'This permanently deletes your MTAA account and data. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => {
-        await accountService.deleteAccount();
-        router.replace('/' as any);
-      }},
-    ]);
-  };
-
   const router = useRouter();
   const { user, signOut } = useAuthStore();
   const [profile, setProfile] = useState<any>(null);
