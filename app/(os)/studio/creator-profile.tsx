@@ -1,271 +1,100 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Settings, Upload, Video, Music, Podcast, BookOpen, Radio, FileText } from 'lucide-react-native';
-import { useStudio, StudioVideo } from '@/domains/studio/hooks/useStudio';
+// @ts-nocheck
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import VideoCard from '@/domains/studio/components/video-card';
 
 const TABS = [
-  { key: 'videos', label: 'Videos', icon: Video },
-  { key: 'music', label: 'Music', icon: Music },
-  { key: 'podcasts', label: 'Podcasts', icon: Podcast },
-  { key: 'courses', label: 'Courses', icon: BookOpen },
-  { key: 'livestreams', label: 'Livestreams', icon: Radio },
-  { key: 'drafts', label: 'Drafts', icon: FileText },
+  { key: 'tracks', label: 'Published', table: 'studio_tracks', icon: 'musical-notes', accent: '#8b5cf6' },
+  { key: 'drafts', label: 'Drafts', table: 'studio_drafts', icon: 'document', accent: '#f59e0b' },
+  { key: 'broadcasts', label: 'Broadcasts', table: 'studio_broadcasts', icon: 'radio', accent: '#ef4444' },
 ];
 
 export default function CreatorProfileScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuthStore();
-  const { getCreatorProfile, getCreatorVideos } = useStudio();
-
-  const [profile, setProfile] = useState<any>(null);
-  const [videos, setVideos] = useState<StudioVideo[]>([]);
+  const [activeTab, setActiveTab] = useState('tracks');
+  const [data, setData] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('videos');
-
-  const targetId = id || user?.id;
-  const isOwn = !id || id === user?.id;
 
   useEffect(() => {
-    if (!targetId) return;
     (async () => {
-      setLoading(true);
-      const p = await getCreatorProfile(targetId);
-      setProfile(p);
-      const v = await getCreatorVideos(targetId);
-      setVideos(v);
+      if (!user?.id) return;
+      const results: any = {};
+      for (const tab of TABS) {
+        const userIdField = tab.table === 'studio_broadcasts' ? 'broadcaster_id' : 'creator_id';
+        const { data } = await supabase
+          .from(tab.table)
+          .select('*')
+          .eq(userIdField, user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        results[tab.key] = data || [];
+      }
+      setData(results);
       setLoading(false);
     })();
-  }, [targetId]);
+  }, [user?.id]);
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ff0040" />
-      </View>
-    );
-  }
+  const current = TABS.find((t) => t.key === activeTab) || TABS[0];
+  const items = data[activeTab] || [];
 
-  if (!profile) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.notFound}>Profile not found</Text>
-      </View>
-    );
-  }
+  if (loading) return <View style={s.center}><ActivityIndicator size="large" color="#8b5cf6" /></View>;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#fff" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Studio</Text>
-        {isOwn && (
-          <Pressable onPress={() => router.push('/(os)/studio/settings' as any)}>
-            <Settings size={22} color="#fff" />
-          </Pressable>
-        )}
+    <ScrollView style={s.container} contentContainerStyle={s.content}>
+      <View style={s.header}>
+        <Ionicons name="person-circle" size={48} color="#8b5cf6" />
+        <Text style={s.title}>Creator Profile</Text>
       </View>
 
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        {profile.avatar_url ? (
-          <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarText}>{(profile.display_name || '?').charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
-        <Text style={styles.name}>{profile.display_name || 'Creator'}</Text>
-        <Text style={styles.handle}>@{profile.handle || 'creator'}</Text>
+      <View style={s.tabBar}>
+        {TABS.map((tab) => (
+          <TouchableOpacity key={tab.key} style={[s.tab, activeTab === tab.key && { borderColor: tab.accent, backgroundColor: tab.accent + '18' }]} onPress={() => setActiveTab(tab.key)}>
+            <Ionicons name={tab.icon as any} size={18} color={activeTab === tab.key ? tab.accent : '#64748b'} />
+            <Text style={[s.tabText, activeTab === tab.key && { color: tab.accent }]}>{tab.label}</Text>
+            <View style={[s.badge, { backgroundColor: tab.accent }]}>
+              <Text style={s.badgeText}>{(data[tab.key] || []).length}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>{profile.followers_count || 0}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>{profile.following_count || 0}</Text>
-            <Text style={styles.statLabel}>Following</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>{profile.total_views || 0}</Text>
-            <Text style={styles.statLabel}>Views</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statNum}>{profile.subscriber_count || 0}</Text>
-            <Text style={styles.statLabel}>Subscribers</Text>
-          </View>
+      {items.length === 0 ? (
+        <View style={s.empty}>
+          <Ionicons name={current.icon} size={56} color="#cbd5e1" />
+          <Text style={s.emptyText}>No {current.label.toLowerCase()} yet</Text>
         </View>
-
-        {/* Revenue */}
-        <View style={styles.revenueCard}>
-          <View>
-            <Text style={styles.revenueLabel}>Total Revenue</Text>
-            <Text style={styles.revenueAmount}>KES {profile.total_revenue?.toLocaleString() || '0'}</Text>
+      ) : (
+        items.map((item: any) => (
+          <View key={item.id} style={s.card}>
+            <Ionicons name={current.icon} size={22} color={current.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.cardTitle}>{item.title || item.name || 'Untitled'}</Text>
+              <Text style={s.cardMeta}>{new Date(item.created_at).toLocaleDateString()}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#94a3b8" />
           </View>
-          <Pressable onPress={() => router.push('/(os)/studio/analytics' as any)}>
-            <Text style={styles.analyticsLink}>View Analytics</Text>
-          </Pressable>
-        </View>
-
-        {/* Action Buttons */}
-        {isOwn && (
-          <View style={styles.actionRow}>
-            <Pressable
-              style={styles.uploadBtn}
-              onPress={() => router.push('/(os)/studio/upload-center' as any)}
-            >
-              <Upload size={16} color="#fff" />
-              <Text style={styles.uploadBtnText}>Upload</Text>
-            </Pressable>
-            <Pressable
-              style={styles.liveBtn}
-              onPress={() => router.push('/(os)/studio/live-setup' as any)}
-            >
-              <Radio size={16} color="#fff" />
-              <Text style={styles.liveBtnText}>Go Live</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-
-      {/* Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll}>
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          return (
-            <Pressable
-              key={t.key}
-              style={[styles.tab, activeTab === t.key && styles.tabActive]}
-              onPress={() => setActiveTab(t.key)}
-            >
-              <Icon size={14} color={activeTab === t.key ? '#000' : '#aaa'} />
-              <Text style={[styles.tabText, activeTab === t.key && styles.tabTextActive]}>{t.label}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {/* Tab Content */}
-      <View style={styles.content}>
-        {activeTab === 'videos' && (
-          <>
-            {videos.length > 0 ? (
-              <View style={styles.grid}>
-                {videos.map((v) => (
-                  <VideoCard
-                    key={v.id}
-                    id={v.id}
-                    title={v.title}
-                    thumbnail_url={v.thumbnail_url}
-                    creator_name={v.creator_name}
-                    creator_avatar={v.creator_avatar}
-                    view_count={v.view_count}
-                    duration_seconds={v.duration_seconds}
-                    created_at={v.created_at}
-                    size="small"
-                  />
-                ))}
-              </View>
-            ) : (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No videos yet</Text>
-              </View>
-            )}
-          </>
-        )}
-        {activeTab !== 'videos' && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>{activeTab} coming soon</Text>
-          </View>
-        )}
-      </View>
+        ))
+      )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' },
-  notFound: { color: '#fff', fontSize: 16 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  profileCard: { alignItems: 'center', paddingVertical: 20 },
-  avatar: { width: 80, height: 80, borderRadius: 40, marginBottom: 10 },
-  avatarFallback: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { color: '#fff', fontSize: 28, fontWeight: '800' },
-  name: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  handle: { color: '#aaa', fontSize: 13, marginTop: 2 },
-  statsRow: { flexDirection: 'row', marginTop: 16, gap: 24 },
-  stat: { alignItems: 'center' },
-  statNum: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  statLabel: { color: '#888', fontSize: 11, marginTop: 2 },
-  revenueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1a1a1a',
-    width: '90%',
-    padding: 14,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  revenueLabel: { color: '#888', fontSize: 12 },
-  revenueAmount: { color: '#fff', fontSize: 20, fontWeight: '800', marginTop: 2 },
-  analyticsLink: { color: '#ff0040', fontSize: 12, fontWeight: '600' },
-  actionRow: { flexDirection: 'row', gap: 12, marginTop: 14, width: '90%' },
-  uploadBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ff0040',
-    paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6,
-  },
-  uploadBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  liveBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2a2a2a',
-    paddingVertical: 10,
-    borderRadius: 8,
-    gap: 6,
-  },
-  liveBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  tabScroll: { paddingHorizontal: 12, marginTop: 10, maxHeight: 40 },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#1a1a1a',
-    marginHorizontal: 4,
-    gap: 4,
-    height: 32,
-  },
-  tabActive: { backgroundColor: '#fff' },
-  tabText: { color: '#aaa', fontSize: 12, fontWeight: '600' },
-  tabTextActive: { color: '#000' },
-  content: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  empty: { alignItems: 'center', marginTop: 40 },
-  emptyText: { color: '#666', fontSize: 14 },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  content: { padding: 16, paddingTop: 48, paddingBottom: 40 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: '800', color: '#0f172a' },
+  tabBar: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#fff' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b', flex: 1 },
+  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardTitle: { fontSize: 15, fontWeight: '600', color: '#0f172a' },
+  cardMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  empty: { alignItems: 'center', marginTop: 60 },
+  emptyText: { fontSize: 15, color: '#94a3b8', marginTop: 12 },
 });
