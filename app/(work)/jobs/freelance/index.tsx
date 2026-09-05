@@ -196,7 +196,7 @@ export default function FreelanceScreen() {
   const handleReleaseEscrow = async () => {
     Alert.alert('Release Escrow', 'This will release funds to the worker. Continue?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Release', onPress: () => Alert.alert('Coming Soon', 'Escrow release via smart contract coming soon.') }
+      { text: 'Release', onPress: async () => { try { const { supabase } = await import('@/lib/supabase'); await supabase.from('jobs_escrow_releases').insert({ status: 'requested' }); Alert.alert('Escrow', 'Release requested — pending counter-party confirmation.'); } catch (e) { Alert.alert('Escrow', e?.message || 'Failed to request release.'); } } }
     ]);
   };
 

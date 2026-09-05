@@ -93,7 +93,7 @@ export default function CCTVViewer() {
           <Ionicons name="grid-outline" size={18} color={viewMode === 'grid' ? '#fff' : '#64748b'} />
           <Text style={[styles.controlText, viewMode === 'grid' && styles.controlTextActive]}>Grid</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.controlBtn} onPress={() => Alert.alert('Recordings', 'Playback from cloud storage coming soon.')}>
+        <TouchableOpacity style={styles.controlBtn} onPress={() => require('expo-router').router.push('/education/ict/recordings')}>
           <Ionicons name="play-back-outline" size={18} color="#64748b" />
           <Text style={styles.controlText}>Playback</Text>
         </TouchableOpacity>
