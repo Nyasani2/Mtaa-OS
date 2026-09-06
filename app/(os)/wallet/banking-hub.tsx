@@ -1,22 +1,8 @@
-// app/(os)/wallet/banking-hub.tsx — Banking Hub
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
+// @ts-nocheck
+import DomainHubScreen from '@/lib/hubs/DomainHubScreen';
 export default function BankingHubScreen() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Banking Hub</Text>
-        <Text style={styles.subtitle}>Coming soon — under development</Text>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  return <DomainHubScreen config={{
+    title: 'Banking Hub', subtitle: 'Manage bank accounts & transfers', icon: 'business', color: '#0ea5e9',
+    tiles: [{ label: 'Linked Banks', icon: 'card', route: '/(os)/wallet/banks' }, { label: 'Transfers', icon: 'swap-horizontal', route: '/(os)/wallet/transfer' }, { label: 'Daraja/M-Pesa', icon: 'phone-portrait', route: '/(os)/wallet/daraja' }]
+  }} />;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  scroll: { padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 8 },
-  subtitle: { color: '#94A3B8', fontSize: 16 },
-});

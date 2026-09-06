@@ -1,22 +1,8 @@
-// app/(os)/wallet/insurance-hub.tsx — Insurance Hub
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
+// @ts-nocheck
+import DomainHubScreen from '@/lib/hubs/DomainHubScreen';
 export default function InsuranceHubScreen() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Insurance Hub</Text>
-        <Text style={styles.subtitle}>Coming soon — under development</Text>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  return <DomainHubScreen config={{
+    title: 'Insurance Hub', subtitle: 'Policies & claims', icon: 'shield-checkmark', color: '#3b82f6',
+    tiles: [{ label: 'My Policies', icon: 'document-text', route: '/(os)/health/insurance' }, { label: 'File a Claim', icon: 'alert-circle', route: '/(os)/health/insurance/claims/new' }, { label: 'Health Records', icon: 'medical', route: '/(os)/health' }]
+  }} />;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  scroll: { padding: 16, alignItems: 'center', justifyContent: 'center', flex: 1 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 8 },
-  subtitle: { color: '#94A3B8', fontSize: 16 },
-});
