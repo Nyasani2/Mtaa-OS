@@ -40,8 +40,7 @@ export default function LoginScreen() {
         promptMessage: 'Unlock MTAA',
         cancelLabel: 'Use Password',
       });
-      if (result.success && session) {
-        router.replace('/(os)');
+      if (result.success && session) { setTimeout(() => router.replace('/(os)'), 100);
       } else {
         setError('Biometric authentication failed');
       }
@@ -55,10 +54,8 @@ export default function LoginScreen() {
   // Redirect logic after successful auth
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (!pinSet) {
-        router.replace('/create-pin');
-      } else {
-        router.replace('/(os)');
+      if (!pinSet) { setTimeout(() => router.replace('/create-pin'), 100);
+      } else { setTimeout(() => router.replace('/(os)'), 100);
       }
     }
   }, [isAuthenticated, pinSet]);
