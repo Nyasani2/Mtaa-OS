@@ -30,44 +30,50 @@ export default function MedicalRecordScreen() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'diagnosis' | 'prescription' | 'lab' | 'imaging' | 'vitals'>('all');
   const [loading, setLoading] = useState(false);
 
-  const timelineEvents: TimelineEvent[] = [
-    {
-      id: '1', type: 'visit', title: 'Outpatient Consultation',
-      subtitle: 'General checkup, routine follow-up',
-      date: '2025-06-10T09:30:00Z', facility: 'Nairobi West Hospital',
-      doctor: 'Dr. Sarah Kimani', status: 'completed'
-    },
-    {
-      id: '2', type: 'diagnosis', title: 'Type 2 Diabetes Mellitus',
-      subtitle: 'ICD-10: E11.9 | Primary diagnosis',
-      date: '2025-06-10T09:45:00Z', facility: 'Nairobi West Hospital',
-      doctor: 'Dr. Sarah Kimani', status: 'active'
-    },
-    {
-      id: '3', type: 'prescription', title: 'Metformin 500mg',
-      subtitle: '1 tablet twice daily for 30 days',
-      date: '2025-06-10T10:00:00Z', facility: 'Nairobi West Hospital',
-      doctor: 'Dr. Sarah Kimani', status: 'active'
-    },
-    {
-      id: '4', type: 'lab', title: 'HbA1c Test',
-      subtitle: 'Result: 7.2% | Reference: <5.7%',
-      date: '2025-06-05T08:00:00Z', facility: 'Lancet Laboratories',
-      doctor: 'Lab Tech: James Omondi', status: 'completed'
-    },
-    {
-      id: '5', type: 'vitals', title: 'Vitals Recorded',
-      subtitle: 'BP: 140/90 | HR: 78 | Temp: 36.5C',
-      date: '2025-06-10T09:35:00Z', facility: 'Nairobi West Hospital',
-      doctor: 'Nurse: Grace Muthoni', status: 'completed'
-    },
-    {
-      id: '6', type: 'imaging', title: 'Chest X-Ray',
-      subtitle: 'No abnormalities detected',
-      date: '2025-05-20T14:00:00Z', facility: 'Nairobi Imaging Centre',
-      doctor: 'Dr. Peter Njoroge', status: 'completed'
-    },
-  ];
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(true);
+
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      setLoadingTimeline(true);
+      try {
+        const { data: patient } = await supabase.from('health_patients').select('id').eq('user_id', profile?.id || user?.id).maybeSingle();
+        const pid = patient?.id;
+        if (!pid) { setLoadingTimeline(false); return; }
+
+        const [appts, rx, labs] = await Promise.all([
+          supabase.from('health_appointments').select('*').eq('patient_id', pid).order('scheduled_date', { ascending: false }).limit(10),
+          supabase.from('health_prescriptions').select('*').eq('patient_id', pid).order('created_at', { ascending: false }).limit(10),
+          supabase.from('health_lab_results').select('*, order:health_lab_orders(test_name)').eq('order.patient_id', pid).order('created_at', { ascending: false }).limit(10)
+        ]);
+
+        const events: TimelineEvent[] = [];
+        (appts.data || []).forEach((a: any) => events.push({
+          id: a.id, type: 'visit', title: 'Medical Consultation',
+          subtitle: a.reason || 'General checkup',
+          date: a.scheduled_date, facility: a.facility_name || 'MTAA Clinic',
+          doctor: a.doctor_name || 'Unknown', status: a.status
+        }));
+        (rx.data || []).forEach((r: any) => events.push({
+          id: r.id, type: 'prescription', title: 'Prescription Issued',
+          subtitle: r.medication_name || 'Medication',
+          date: r.created_at, facility: r.facility_name || 'MTAA Pharmacy',
+          doctor: r.doctor_name || 'Unknown', status: r.status
+        }));
+        (labs.data || []).forEach((l: any) => events.push({
+          id: l.id, type: 'lab', title: 'Lab Result Ready',
+          subtitle: l.order?.test_name || 'Lab Test',
+          date: l.created_at, facility: 'MTAA Lab',
+          doctor: 'Lab Technician', status: 'completed'
+        }));
+
+        events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTimelineEvents(events);
+      } catch (e) { console.error(e); }
+      finally { setLoadingTimeline(false); }
+    };
+    fetchTimeline();
+  }, []);
 
   const filteredEvents = activeFilter === 'all'
     ? timelineEvents

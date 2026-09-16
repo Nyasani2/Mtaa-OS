@@ -1,138 +1,188 @@
 // @ts-nocheck
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
-interface EmergencyCase {
-  id: string;
-  patient_name: string;
-  status: string;
-  priority: string;
-  created_at: string;
-  location?: string;
-}
-
 export default function EmergencyScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'queue' | 'schedule' | 'patients'>('queue');
-  const [cases, setCases] = useState<EmergencyCase[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [dispatched, setDispatched] = useState(false);
+  const [patientType, setPatientType] = useState('self'); // 'self' or 'other'
+  const [patientName, setPatientName] = useState('');
 
-  const loadCases = async () => {
-    try {
-      setErrorMsg(null);
-      const { data, error } = await supabase
-        .from('health_emergency_cases')
-        .select('id, patient_name, status, priority, created_at, location')
-        .order('created_at', { ascending: false })
-        .limit(50);
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
 
-      if (error) throw error;
-      setCases(data || []);
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to load emergency cases');
-      setCases([]);
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => Alert.alert('Location Error', 'Please enable location services'),
+        { enableHighAccuracy: true }
+      );
     }
   };
 
-  React.useEffect(() => {
-    loadCases().finally(() => setLoading(false));
-  }, []);
+  const dispatchAmbulance = async () => {
+    if (!location) { Alert.alert('Error', 'Location not available'); return; }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from('health_emergencies').insert({
+        caller_user_id: user.id,
+        caller_name: user.user_metadata?.full_name || 'Unknown',
+        patient_type: patientType,
+        patient_name: patientType === 'other' ? patientName : user.user_metadata?.full_name,
+        latitude: location.lat,
+        longitude: location.lng,
+        status: 'dispatched',
+        created_at: new Date().toISOString(),
+      }).select().single();
 
-  const refresh = async () => {
-    setRefreshing(true);
-    await loadCases();
-    setRefreshing(false);
+      if (error) throw error;
+
+      // Create billing record
+      await supabase.from('health_billing').insert({
+        user_id: user.id,
+        type: 'ambulance_dispatch',
+        amount: 5000, // KES base rate
+        status: 'pending',
+        reference_id: data.id,
+        description: 'Emergency ambulance dispatch',
+        created_at: new Date().toISOString(),
+      });
+
+      setDispatched(true);
+      Alert.alert('🚨 Ambulance Dispatched', 'Help is on the way! Billing has been initiated to your account.');
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filtered = activeTab === 'queue'
-    ? cases.filter((c) => ['waiting', 'triaged'].includes(c.status))
-    : activeTab === 'schedule'
-    ? cases.filter((c) => ['scheduled', 'admitted'].includes(c.status))
-    : cases;
-
-  const renderCase = ({ item }: { item: EmergencyCase }) => (
-    <TouchableOpacity style={s.caseCard} onPress={() => router.push(`/health/emergency/case/${item.id}` as any)}>
-      <View style={s.caseRow}>
-        <Ionicons name="warning-outline" size={20} color={item.priority === 'critical' ? '#ef4444' : '#f59e0b'} />
-        <Text style={s.caseName}>{item.patient_name || 'Unknown'}</Text>
-        <Text style={[s.caseBadge, item.status === 'waiting' ? s.badgeWait : s.badgeDone]}>{item.status}</Text>
+  if (dispatched) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.successBox}>
+          <Ionicons name="checkmark-circle" size={80} color="#10b981" />
+          <Text style={styles.successTitle}>Ambulance Dispatched!</Text>
+          <Text style={styles.successText}>ETA: 8-12 minutes</Text>
+          <Text style={styles.successText}>Location: {location?.lat.toFixed(4)}, {location?.lng.toFixed(4)}</Text>
+          <Text style={styles.billingText}>Billing: KES 5,000 charged to your account</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backBtnText}>Return to Health</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={s.caseMeta}>{item.location || 'Location unknown'} • {new Date(item.created_at).toLocaleString()}</Text>
-    </TouchableOpacity>
-  );
+    );
+  }
 
   return (
-    <View style={s.container}>
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Emergency</Text>
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.title}>🚨 Emergency Dispatch</Text>
       </View>
 
-      <View style={s.tabRow}>
-        {(['queue', 'schedule', 'patients'] as const).map((tab) => (
-          <TouchableOpacity key={tab} style={[s.tab, activeTab === tab && s.tabActive]} onPress={() => setActiveTab(tab)}>
-            <Text style={[s.tabText, activeTab === tab && s.tabTextActive]}>
-              {tab === 'queue' ? 'Queue' : tab === 'schedule' ? 'Schedule' : 'Patients'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {errorMsg ? (
-        <View style={s.errorBox}>
-          <Text style={s.errorText}>{errorMsg}</Text>
-          <TouchableOpacity onPress={refresh}><Text style={s.retry}>Retry</Text></TouchableOpacity>
+      <View style={styles.content}>
+        <View style={styles.warningBox}>
+          <Ionicons name="warning" size={32} color="#dc2626" />
+          <Text style={styles.warningText}>For life-threatening emergencies only. False calls may incur penalties.</Text>
         </View>
-      ) : null}
 
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} size="large" color="#ef4444" />
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          renderItem={renderCase}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
-          contentContainerStyle={filtered.length === 0 ? s.emptyContainer : s.list}
-          ListEmptyComponent={
-            <View style={s.emptyState}>
-              <Ionicons name="checkmark-circle-outline" size={48} color="#cbd5e1" />
-              <Text style={s.emptyTitle}>No {activeTab} cases</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Who needs the ambulance?</Text>
+          <View style={styles.radioGroup}>
+            <TouchableOpacity style={[styles.radioCard, patientType === 'self' && styles.radioActive]} onPress={() => setPatientType('self')}>
+              <Ionicons name="person" size={24} color={patientType === 'self' ? '#dc2626' : '#6b7280'} />
+              <Text style={[styles.radioText, patientType === 'self' && styles.radioTextActive]}>Myself</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.radioCard, patientType === 'other' && styles.radioActive]} onPress={() => setPatientType('other')}>
+              <Ionicons name="people" size={24} color={patientType === 'other' ? '#dc2626' : '#6b7280'} />
+              <Text style={[styles.radioText, patientType === 'other' && styles.radioTextActive]}>Someone Else</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {patientType === 'other' && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Patient Name</Text>
+            <TextInput style={styles.input} placeholder="Enter patient name" value={patientName} onChangeText={setPatientName} />
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your Location</Text>
+          {location ? (
+            <View style={styles.locationBox}>
+              <Ionicons name="location" size={24} color="#10b981" />
+              <View>
+                <Text style={styles.locationText}>Lat: {location.lat.toFixed(6)}</Text>
+                <Text style={styles.locationText}>Lng: {location.lng.toFixed(6)}</Text>
+              </View>
             </View>
-          }
-        />
-      )}
-    </View>
+          ) : (
+            <TouchableOpacity style={styles.locateBtn} onPress={getCurrentLocation}>
+              <Text style={styles.locateBtnText}>📍 Get My Location</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.billingBox}>
+          <Text style={styles.billingTitle}>💳 Billing Information</Text>
+          <Text style={styles.billingDesc}>Ambulance dispatch fee: <Text style={styles.billingAmount}>KES 5,000</Text></Text>
+          <Text style={styles.billingDesc}>Charged to: <Text style={styles.billingUser}>{user?.user_metadata?.full_name || 'Your account'}</Text></Text>
+          <Text style={styles.billingNote}>Payment will be processed via your MTAA Wallet</Text>
+        </View>
+
+        <TouchableOpacity style={styles.dispatchBtn} onPress={dispatchAmbulance} disabled={loading || !location}>
+          {loading ? <ActivityIndicator color="#fff" /> : (
+            <>
+              <Ionicons name="car" size={24} color="#fff" />
+              <Text style={styles.dispatchBtnText}>DISPATCH AMBULANCE NOW</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#991b1b' },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  tabRow: { flexDirection: 'row', padding: 12, gap: 8 },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#e2e8f0' },
-  tabActive: { backgroundColor: '#991b1b' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
-  tabTextActive: { color: '#fff' },
-  list: { paddingHorizontal: 12, paddingBottom: 24 },
-  emptyContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyState: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: '#94a3b8', marginTop: 12 },
-  caseCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 2, elevation: 1 },
-  caseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  caseName: { flex: 1, fontSize: 15, fontWeight: '700', color: '#1e293b' },
-  caseBadge: { fontSize: 10, fontWeight: '700', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, overflow: 'hidden' },
-  badgeWait: { backgroundColor: '#fef3c7', color: '#92400e' },
-  badgeDone: { backgroundColor: '#d1fae5', color: '#065f46' },
-  caseMeta: { fontSize: 12, color: '#94a3b8' },
-  errorBox: { marginHorizontal: 12, marginVertical: 8, backgroundColor: '#fef2f2', borderRadius: 10, padding: 12, alignItems: 'center' },
-  errorText: { color: '#ef4444', fontSize: 13 },
-  retry: { color: '#0ea5e9', marginTop: 6, fontWeight: '600' },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#dc2626' },
+  backBtn: { marginRight: 16 }, title: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+  content: { padding: 20 },
+  warningBox: { flexDirection: 'row', backgroundColor: '#fef2f2', padding: 16, borderRadius: 12, marginBottom: 20, gap: 12 },
+  warningText: { flex: 1, color: '#dc2626', fontSize: 14, fontWeight: '600' },
+  section: { marginBottom: 20 }, sectionTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  radioGroup: { flexDirection: 'row', gap: 12 },
+  radioCard: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, gap: 12 },
+  radioActive: { backgroundColor: '#7f1d1d', borderWidth: 2, borderColor: '#dc2626' },
+  radioText: { color: '#94a3b8', fontSize: 14, fontWeight: '600' }, radioTextActive: { color: '#fff' },
+  label: { fontSize: 14, color: '#94a3b8', marginBottom: 8 },
+  input: { backgroundColor: '#1e293b', padding: 16, borderRadius: 12, color: '#fff', fontSize: 16 },
+  locationBox: { flexDirection: 'row', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, gap: 12, alignItems: 'center' },
+  locationText: { color: '#10b981', fontSize: 14 },
+  locateBtn: { backgroundColor: '#1e293b', padding: 16, borderRadius: 12, alignItems: 'center' },
+  locateBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  billingBox: { backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginBottom: 20 },
+  billingTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  billingDesc: { fontSize: 14, color: '#94a3b8', marginBottom: 8 },
+  billingAmount: { color: '#f59e0b', fontWeight: '700' }, billingUser: { color: '#10b981', fontWeight: '600' },
+  billingNote: { fontSize: 12, color: '#64748b', marginTop: 8 },
+  dispatchBtn: { flexDirection: 'row', backgroundColor: '#dc2626', padding: 20, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  dispatchBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  successBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  successTitle: { fontSize: 24, fontWeight: 'bold', color: '#10b981', marginTop: 20, marginBottom: 12 },
+  successText: { fontSize: 16, color: '#94a3b8', marginBottom: 8 },
+  billingText: { fontSize: 14, color: '#f59e0b', marginTop: 20, fontWeight: '600' },
 });

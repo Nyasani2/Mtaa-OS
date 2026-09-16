@@ -69,14 +69,24 @@ export default function RecordDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [record, setRecord] = useState<any>(null);
+
   useEffect(() => {
+    if (!id) {
+      setRecord(FALLBACK_RECORDS['1']);
+      return;
+    }
     supabase.from('health_records').select('*').eq('id', id).single().then(({ data }) => {
       setRecord(data || FALLBACK_RECORDS[id as string] || FALLBACK_RECORDS['1']);
     });
   }, [id]);
+
   if (!record) return <View style={styles.container}><Text>Loading...</Text></View>;
+
   const typeInfo = RECORD_TYPES[record.type] || RECORD_TYPES.consultation;
   const Icon = typeInfo.icon;
+  
+  // FIX: Safely access doctor name directly from the record object
+  const doctorName = record.doctor || 'Unknown Doctor';
 
   return (
     <View style={styles.container}>
@@ -87,15 +97,12 @@ export default function RecordDetailScreen() {
         <Text style={styles.headerTitle}>Record Detail</Text>
         <View style={{ width: 24 }} />
       </View>
-
       <ScrollView style={styles.content}>
-        {/* Type Badge */}
         <View style={[styles.typeBadge, { backgroundColor: typeInfo.color + '15' }]}>
           <Icon size={18} color={typeInfo.color} />
           <Text style={[styles.typeText, { color: typeInfo.color }]}>{typeInfo.label}</Text>
         </View>
 
-        {/* Title & Status */}
         <Text style={styles.title}>{record.title}</Text>
         <View style={styles.statusRow}>
           <View style={[styles.statusBadge, { backgroundColor: record.status === 'active' ? '#22c55e15' : '#6b728015' }]}>
@@ -106,7 +113,6 @@ export default function RecordDetailScreen() {
           </View>
         </View>
 
-        {/* Meta */}
         <View style={styles.metaCard}>
           <View style={styles.metaRow}>
             <Calendar size={16} color="#6b7280" />
@@ -114,7 +120,7 @@ export default function RecordDetailScreen() {
           </View>
           <View style={styles.metaRow}>
             <User size={16} color="#6b7280" />
-            <Text style={styles.metaText}>{record.doctor}</Text>
+            <Text style={styles.metaText}>{doctorName}</Text>
           </View>
           <View style={styles.metaRow}>
             <MapPin size={16} color="#6b7280" />
@@ -122,13 +128,11 @@ export default function RecordDetailScreen() {
           </View>
         </View>
 
-        {/* Description */}
         <View style={styles.detailCard}>
           <Text style={styles.detailTitle}>Details</Text>
           <Text style={styles.detailText}>{record.description}</Text>
         </View>
 
-        {/* Actions */}
         <View style={styles.actionsRow}>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#0066cc' }]}>
             <Text style={styles.actionBtnText}>Share</Text>

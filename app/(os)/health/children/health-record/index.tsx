@@ -64,9 +64,9 @@ export default function ChildHealthRecordScreen() {
   ];
 
   const visits: Visit[] = [
-    { date: '2025-05-10', type: 'Routine checkup', doctor: 'Dr. Sarah Kimani', facility: 'Nairobi West Hospital', notes: 'Growth normal. Continue current diet.' },
-    { date: '2025-01-15', type: 'Vaccination', doctor: 'Nurse Grace Muthoni', facility: 'Nairobi West Hospital', notes: 'DTP-HepB-Hib dose 3 administered.' },
-    { date: '2024-09-20', type: 'Fever consultation', doctor: 'Dr. Peter Njoroge', facility: 'Aga Khan Hospital', notes: 'Malaria negative. Viral fever. Paracetamol prescribed.' },
+    { date: '2025-05-10', type: 'Routine checkup', doctor: doctor?.name || 'Unknown Doctor', facility: 'Nairobi West Hospital', notes: 'Growth normal. Continue current diet.' },
+    { date: '2025-01-15', type: 'Vaccination', doctor: nurse?.name || 'Unknown Nurse', facility: 'Nairobi West Hospital', notes: 'DTP-HepB-Hib dose 3 administered.' },
+    { date: '2024-09-20', type: 'Fever consultation', doctor: doctor?.name || 'Unknown Doctor', facility: 'Aga Khan Hospital', notes: 'Malaria negative. Viral fever. Paracetamol prescribed.' },
   ];
 
   const getAge = (dob: string) => {

@@ -13,14 +13,7 @@ interface PaginatedListProps {
 }
 
 export function PaginatedList({
-  page,
-  totalPages,
-  hasNext,
-  hasPrev,
-  onNext,
-  onPrev,
-  isLoading,
-  children,
+  page, totalPages, hasNext, hasPrev, onNext, onPrev, isLoading, children,
 }: PaginatedListProps) {
   return (
     <View style={styles.container}>
@@ -51,19 +44,10 @@ export function PaginatedList({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 16, borderTopWidth: 1, borderTopColor: '#333',
   },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
+  button: { backgroundColor: '#4CAF50', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6 },
   disabled: { backgroundColor: '#444', opacity: 0.5 },
   buttonText: { color: '#fff', fontWeight: '600' },
   pageInfo: { color: '#fff', fontSize: 14 },

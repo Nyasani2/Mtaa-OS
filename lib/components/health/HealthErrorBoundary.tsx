@@ -42,39 +42,17 @@ export class HealthErrorBoundary extends Component<Props, State> {
         </View>
       );
     }
-
     return this.props.children;
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0f0f0f',
-    padding: 24,
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#0f0f0f', padding: 24,
   },
-  title: {
-    color: '#ff4444',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  message: {
-    color: '#aaa',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  title: { color: '#ff4444', fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  message: { color: '#aaa', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  button: { backgroundColor: '#4CAF50', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });

@@ -18,7 +18,7 @@ export default function AppointmentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useAuthStore();
-  const [appt, setAppt] = useState(null);
+  const [appt, setAppt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
@@ -38,20 +38,17 @@ export default function AppointmentDetailScreen() {
 
   useEffect(() => { load(); }, [id]);
 
-  const updateStatus = async (newStatus) => {
+  const updateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
       const { error } = await supabase
         .from('health_appointments')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
       Alert.alert('Success', `Appointment marked as ${newStatus.replace('_', ' ')}`);
       load();
-    } catch (err) {
+    } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to update');
     } finally {
       setUpdating(false);
@@ -61,7 +58,7 @@ export default function AppointmentDetailScreen() {
   if (loading) return <View style={[s.container, s.center]}><ActivityIndicator size="large" color="#0ea5e9" /></View>;
   if (!appt) return <View style={[s.container, s.center]}><Text>Appointment not found</Text></View>;
 
-  const statusColor = STATUS_COLORS[appt.status] || '#64748b';
+  const statusColor = STATUS_COLORS[appt.status as keyof typeof STATUS_COLORS] || '#64748b';
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
@@ -74,7 +71,7 @@ export default function AppointmentDetailScreen() {
         <Text style={s.cardTitle}>Schedule</Text>
         <View style={s.row}>
           <Text style={s.rowLabel}>Date & Time</Text>
-          <Text style={s.rowValue}>{new Date(appt.scheduled_at).toLocaleString()}</Text>
+          <Text style={s.rowValue}>{new Date(appt.scheduled_at || appt.scheduled_date).toLocaleString()}</Text>
         </View>
         <View style={s.row}>
           <Text style={s.rowLabel}>Duration</Text>
@@ -141,22 +138,22 @@ export default function AppointmentDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  content: { paddingBottom: 40 },
+  content: { padding: 16, paddingTop: 48, paddingBottom: 40 },
   center: { justifyContent: 'center', alignItems: 'center', flex: 1 },
-  statusHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 20, paddingTop: 50 },
-  statusText: { color: '#fff', fontSize: 20, fontWeight: '800', textTransform: 'uppercase' },
-  card: { backgroundColor: '#fff', margin: 16, borderRadius: 12, padding: 16 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
-  rowLabel: { color: '#64748b', fontSize: 14 },
-  rowValue: { color: '#0f172a', fontWeight: '600', fontSize: 14, flex: 1, textAlign: 'right', marginLeft: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginHorizontal: 16, marginTop: 8 },
-  actions: { padding: 16, gap: 10 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 10, padding: 14 },
+  statusHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 12, marginBottom: 12 },
+  statusText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginBottom: 10 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+  rowLabel: { color: '#64748b' },
+  rowValue: { color: '#0f172a', fontWeight: '600' },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#0f172a', marginVertical: 10 },
+  actions: { gap: 10 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, padding: 14 },
   btnPrimary: { backgroundColor: '#0ea5e9' },
   btnSuccess: { backgroundColor: '#10b981' },
   btnDanger: { backgroundColor: '#ef4444' },
   btnOutline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' },
-  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  actionBtnTextOutline: { color: '#64748b', fontWeight: '600', fontSize: 15 },
+  actionBtnText: { color: '#fff', fontWeight: '700' },
+  actionBtnTextOutline: { color: '#64748b', fontWeight: '600' },
 });

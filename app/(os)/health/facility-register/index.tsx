@@ -1,246 +1,395 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 
 const FACILITY_TYPES = [
-  { value: 'pharmacy', label: 'Pharmacy', level: 1 },
-  { value: 'clinic', label: 'Clinic', level: 2 },
-  { value: 'laboratory', label: 'Laboratory', level: 3 },
-  { value: 'diagnostic_center', label: 'Diagnostic Center', level: 3 },
-  { value: 'maternity', label: 'Maternity Home', level: 3 },
-  { value: 'dental', label: 'Dental Clinic', level: 2 },
-  { value: 'optical', label: 'Optical Center', level: 2 },
-  { value: 'physiotherapy', label: 'Physiotherapy Center', level: 2 },
-  { value: 'specialist_center', label: 'Specialist Center', level: 4 },
-  { value: 'hospital', label: 'Hospital', level: 5 },
-  { value: 'ambulance_service', label: 'Ambulance Service', level: 1 },
+  { id: 'hospital', label: 'Hospital', icon: 'business' },
+  { id: 'clinic', label: 'Clinic', icon: 'medical' },
+  { id: 'pharmacy', label: 'Pharmacy', icon: 'cube' },
+  { id: 'laboratory', label: 'Laboratory', icon: 'flask' },
 ];
 
-const OWNERSHIP_TYPES = [
-  { value: 'private', label: 'Private' },
-  { value: 'public', label: 'Public / Government' },
-  { value: 'faith_based', label: 'Faith-Based' },
-  { value: 'ngo', label: 'NGO / Non-Profit' },
-  { value: 'community', label: 'Community' },
-  { value: 'parastatal', label: 'Parastatal' },
+const JURISDICTION_TYPES = [
+  { id: 'national', label: 'National Hospital' },
+  { id: 'county', label: 'County/State Hospital' },
+  { id: 'municipal', label: 'Municipal/City' },
+  { id: 'private_independent', label: 'Private Independent' },
+  { id: 'faith_jurisdiction', label: 'Faith-Based' },
 ];
 
-const SPECIALTIES = [
-  'General Medicine', 'Pediatrics', 'Cardiology', 'Orthopedics',
-  'Obstetrics', 'Dermatology', 'Psychiatry', 'Oncology',
-  'Neurology', 'Radiology', 'Pathology', 'Anesthesiology',
-  'Emergency Medicine', 'Surgery', 'Dental', 'Optical',
-  'Physiotherapy', 'Laboratory', 'Pharmacy', 'Maternity'
-];
-
-export default function FacilityRegistrationScreen() {
+export default function FacilityRegisterScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
-
-  const [form, setForm] = useState({
-    name: '', type: 'pharmacy', ownership: 'private', level: 1,
-    country: 'Kenya', county: '', town: '', address: '',
-    phone: '', email: '', bed_capacity: '0',
-    has_emergency: false, is_24hr: false, has_ambulance: false,
-    has_icu: false, has_maternity: false, has_dialysis: false, has_radiology: false,
-    selectedSpecialties: [] as string[],
-    founder_name: '', founder_id_number: '', founder_phone: '', founder_email: '',
-    license_number: '', license_body: '',
-  });
-
-  const updateForm = (key: string, value: any) => setForm(prev => ({ ...prev, [key]: value }));
-
-  const toggleSpecialty = (spec: string) => {
-    setForm(prev => ({
-      ...prev,
-      selectedSpecialties: prev.selectedSpecialties.includes(spec)
-        ? prev.selectedSpecialties.filter(s => s !== spec)
-        : [...prev.selectedSpecialties, spec]
-    }));
+  const [loading, setLoading] = useState(false);
+  
+  // Step 1: Basic Info
+  const [name, setName] = useState('');
+  const [type, setType] = useState('hospital');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  
+  // Step 2: Location
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [county, setCounty] = useState('');
+  const [address, setAddress] = useState('');
+  const [jurisdictionType, setJurisdictionType] = useState('county');
+  
+  // Step 3: Capacity
+  const [bedCapacity, setBedCapacity] = useState('');
+  const [icuBeds, setIcuBeds] = useState('');
+  
+  const handleNext = () => {
+    if (step === 1 && (!name || !licenseNumber)) {
+      Alert.alert('Error', 'Facility name and license number are required');
+      return;
+    }
+    if (step === 2 && (!address || !city)) {
+      Alert.alert('Error', 'Address and city are required');
+      return;
+    }
+    setStep(step + 1);
   };
 
   const handleSubmit = async () => {
-    if (!form.name || !form.phone || !form.founder_name) {
-      Alert.alert('Missing Information', 'Please fill in all required fields.');
+    if (!user?.id) {
+      Alert.alert('Error', 'You must be logged in');
       return;
     }
+    
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('health_facilities').insert({
-        name: form.name, type: form.type, ownership: form.ownership, level: form.level,
-        country: form.country, county: form.county, town: form.town, address: form.address,
-        phone: form.phone, email: form.email, bed_capacity: parseInt(form.bed_capacity || '0'),
-        has_emergency: form.has_emergency, is_24hr: form.is_24hr, has_ambulance: form.has_ambulance,
-        has_icu: form.has_icu, has_maternity: form.has_maternity, has_dialysis: form.has_dialysis,
-        has_radiology: form.has_radiology, specialties: form.selectedSpecialties,
-        founder_name: form.founder_name, founder_id_number: form.founder_id_number,
-        license_number: form.license_number, license_body: form.license_body,
-        status: 'UNDER_REVIEW', created_by: user?.id || null
-      }).select().single();
-
-      if (error) throw error;
-
-      if (data && user?.id) {
-        await supabase.from('health_facility_staff').insert({
-          user_id: user.id, facility_id: data.id, role: 'ADMIN', status: 'ACTIVE'
+      const { error } = await supabase
+        .from('health_facilities')
+        .insert({
+          name,
+          type,
+          license_number: licenseNumber,
+          address,
+          city,
+          county,
+          country,
+          jurisdiction_type: jurisdictionType,
+          bed_capacity: parseInt(bedCapacity) || 0,
+          icu_beds: parseInt(icuBeds) || 0,
+          owner_id: user.id,
+          status: 'pending_verification',
+          created_at: new Date().toISOString(),
         });
-      }
-
-      Alert.alert('Registration Submitted', 'Your facility has been registered and is now UNDER_REVIEW. You will be notified once verified.');
-      router.replace('/(os)/health');
+      
+      if (error) throw error;
+      
+      Alert.alert('Success', 'Facility registered successfully!', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
     } catch (e: any) {
-      Alert.alert('Registration Failed', e.message || 'An error occurred');
+      Alert.alert('Error', e.message || 'Failed to register facility');
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStep1 = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Step 1: Facility Information</Text>
-      <Text style={styles.label}>Facility Name *</Text>
-      <TextInput style={styles.input} value={form.name} onChangeText={v => updateForm('name', v)} placeholder="e.g., Haltons Pharmacy" />
-      
-      <Text style={styles.label}>Facility Type *</Text>
-      <View style={styles.optionsGrid}>
-        {FACILITY_TYPES.map((type: any) => (
-          <TouchableOpacity key={type.value} style={[styles.optionChip, form.type === type.value && styles.optionChipActive]} onPress={() => updateForm('type', type.value)}>
-            <Text style={[styles.optionChipText, form.type === type.value && styles.optionChipTextActive]}>{type.label}</Text>
-          </TouchableOpacity>
-        ))}
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Register Facility</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <Text style={styles.label}>Ownership *</Text>
-      <View style={styles.optionsGrid}>
-        {OWNERSHIP_TYPES.map((type: any) => (
-          <TouchableOpacity key={type.value} style={[styles.optionChip, form.ownership === type.value && styles.optionChipActive]} onPress={() => updateForm('ownership', type.value)}>
-            <Text style={[styles.optionChipText, form.ownership === type.value && styles.optionChipTextActive]}>{type.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Bed Capacity</Text>
-      <TextInput style={styles.input} value={form.bed_capacity} onChangeText={v => updateForm('bed_capacity', v)} keyboardType="numeric" placeholder="0" />
-
-      <Text style={styles.label}>Phone *</Text>
-      <TextInput style={styles.input} value={form.phone} onChangeText={v => updateForm('phone', v)} keyboardType="phone-pad" placeholder="+254 7XX XXX XXX" />
-
-      <TouchableOpacity style={styles.nextButton} onPress={() => setStep(2)}>
-        <Text style={styles.nextButtonText}>Next: Location & Services</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderStep2 = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Step 2: Location & Services</Text>
-      <Text style={styles.label}>County / Region</Text>
-      <TextInput style={styles.input} value={form.county} onChangeText={v => updateForm('county', v)} placeholder="e.g., Nairobi" />
-      
-      <Text style={styles.label}>Town / City</Text>
-      <TextInput style={styles.input} value={form.town} onChangeText={v => updateForm('town', v)} placeholder="e.g., Westlands" />
-
-      <Text style={styles.label}>Services Available</Text>
-      <View style={styles.switchesContainer}>
-        {[
-          { key: 'has_emergency', label: 'Emergency Services' },
-          { key: 'is_24hr', label: 'Open 24 Hours' },
-          { key: 'has_ambulance', label: 'Ambulance Service' },
-          { key: 'has_icu', label: 'ICU Available' },
-          { key: 'has_maternity', label: 'Maternity Services' },
-          { key: 'has_radiology', label: 'Radiology / Imaging' },
-        ].map((service: any) => (
-          <View key={service.key} style={styles.switchRow}>
-            <Text style={styles.switchLabel}>{service.label}</Text>
-            <Switch value={form[service.key as keyof typeof form] as boolean} onValueChange={v => updateForm(service.key, v)} />
+      {/* Progress Indicator */}
+      <View style={styles.progress}>
+        {[1, 2, 3].map((s) => (
+          <View
+            key={s}
+            style={[
+              styles.progressDot,
+              step >= s && styles.progressDotActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.progressText,
+                step >= s && styles.progressTextActive,
+              ]}
+            >
+              {s}
+            </Text>
           </View>
         ))}
       </View>
 
-      <Text style={styles.label}>Specialties Offered</Text>
-      <View style={styles.optionsGrid}>
-        {SPECIALTIES.map((spec: any) => (
-          <TouchableOpacity key={spec} style={[styles.optionChip, form.selectedSpecialties.includes(spec) && styles.optionChipActive]} onPress={() => toggleSpecialty(spec)}>
-            <Text style={[styles.optionChipText, form.selectedSpecialties.includes(spec) && styles.optionChipTextActive]}>{spec}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <ScrollView style={styles.content}>
+        {step === 1 && (
+          <>
+            <Text style={styles.stepTitle}>Step 1: Basic Information</Text>
+            <Text style={styles.label}>Facility Name *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Nairobi General Hospital"
+              value={name}
+              onChangeText={setName}
+            />
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.backButton} onPress={() => setStep(1)}><Text style={styles.backButtonText}>Back</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.nextButton} onPress={() => setStep(3)}><Text style={styles.nextButtonText}>Next: Founder Info</Text></TouchableOpacity>
-      </View>
-    </View>
-  );
+            <Text style={styles.label}>Facility Type *</Text>
+            <View style={styles.typeGrid}>
+              {FACILITY_TYPES.map((ft) => (
+                <TouchableOpacity
+                  key={ft.id}
+                  style={[
+                    styles.typeCard,
+                    type === ft.id && styles.typeCardActive,
+                  ]}
+                  onPress={() => setType(ft.id)}
+                >
+                  <Ionicons
+                    name={ft.icon as any}
+                    size={24}
+                    color={type === ft.id ? '#1A237E' : '#999'}
+                  />
+                  <Text
+                    style={[
+                      styles.typeText,
+                      type === ft.id && styles.typeTextActive,
+                    ]}
+                  >
+                    {ft.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-  const renderStep3 = () => (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Step 3: Founder / Primary Contact</Text>
-      <Text style={styles.label}>Full Name *</Text>
-      <TextInput style={styles.input} value={form.founder_name} onChangeText={v => updateForm('founder_name', v)} />
-      
-      <Text style={styles.label}>ID Number</Text>
-      <TextInput style={styles.input} value={form.founder_id_number} onChangeText={v => updateForm('founder_id_number', v)} />
+            <Text style={styles.label}>License Number *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. HOSP-2024-001"
+              value={licenseNumber}
+              onChangeText={setLicenseNumber}
+              autoCapitalize="characters"
+            />
+          </>
+        )}
 
-      <Text style={styles.label}>License Number</Text>
-      <TextInput style={styles.input} value={form.license_number} onChangeText={v => updateForm('license_number', v)} />
+        {step === 2 && (
+          <>
+            <Text style={styles.stepTitle}>Step 2: Location & Jurisdiction</Text>
+            <Text style={styles.label}>Country *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Kenya"
+              value={country}
+              onChangeText={setCountry}
+            />
 
-      <Text style={styles.label}>Issuing Body</Text>
-      <TextInput style={styles.input} value={form.license_body} onChangeText={v => updateForm('license_body', v)} placeholder="e.g. Ministry of Health" />
+            <Text style={styles.label}>City *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Nairobi"
+              value={city}
+              onChangeText={setCity}
+            />
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.backButton} onPress={() => setStep(2)}><Text style={styles.backButtonText}>Back</Text></TouchableOpacity>
-        <TouchableOpacity style={[styles.submitButton, loading && styles.submitButtonDisabled]} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Submit Registration</Text>}
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+            <Text style={styles.label}>County</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Nairobi County"
+              value={county}
+              onChangeText={setCounty}
+            />
 
-  return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Register Your Facility</Text>
-          <Text style={styles.headerSubtitle}>Any pharmacy, clinic, lab, or hospital across Africa</Text>
-        </View>
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
+            <Text style={styles.label}>Physical Address *</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Street address"
+              value={address}
+              onChangeText={setAddress}
+              multiline
+            />
+
+            <Text style={styles.label}>Jurisdiction Type</Text>
+            {JURISDICTION_TYPES.map((j) => (
+              <TouchableOpacity
+                key={j.id}
+                style={[
+                  styles.jurisdictionCard,
+                  jurisdictionType === j.id && styles.jurisdictionCardActive,
+                ]}
+                onPress={() => setJurisdictionType(j.id)}
+              >
+                <Text
+                  style={[
+                    styles.jurisdictionText,
+                    jurisdictionType === j.id && styles.jurisdictionTextActive,
+                  ]}
+                >
+                  {j.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <Text style={styles.stepTitle}>Step 3: Operational Capacity</Text>
+            <Text style={styles.label}>Total Bed Capacity</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 200"
+              value={bedCapacity}
+              onChangeText={setBedCapacity}
+              keyboardType="number-pad"
+            />
+
+            <Text style={styles.label}>ICU Beds</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 20"
+              value={icuBeds}
+              onChangeText={setIcuBeds}
+              keyboardType="number-pad"
+            />
+
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryTitle}>Review Submission</Text>
+              <Text style={styles.summaryText}>Name: {name}</Text>
+              <Text style={styles.summaryText}>Type: {type}</Text>
+              <Text style={styles.summaryText}>License: {licenseNumber}</Text>
+              <Text style={styles.summaryText}>
+                Location: {city}, {country}
+              </Text>
+              <Text style={styles.summaryText}>Beds: {bedCapacity || '0'}</Text>
+            </View>
+          </>
+        )}
       </ScrollView>
-    </KeyboardAvoidingView>
+
+      {/* Footer Buttons */}
+      <View style={styles.footer}>
+        {step < 3 ? (
+          <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+            <Text style={styles.nextBtnText}>Next Step</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.nextBtn, loading && styles.nextBtnDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            <Text style={styles.nextBtnText}>
+              {loading ? 'Submitting...' : 'Submit Registration'}
+            </Text>
+            {!loading && <Ionicons name="checkmark" size={18} color="#fff" />}
+          </TouchableOpacity>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { padding: 20, backgroundColor: '#0A7B5A', paddingTop: 60 },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  headerSubtitle: { fontSize: 14, color: '#E0F2E9', marginTop: 4 },
-  stepContainer: { padding: 20 },
-  stepTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16, color: '#1a1a1a' },
-  label: { fontSize: 14, fontWeight: '500', marginBottom: 6, marginTop: 12, color: '#333' },
-  input: { backgroundColor: '#fff', borderRadius: 8, padding: 12, fontSize: 15, borderWidth: 1, borderColor: '#ddd' },
-  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  optionChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd' },
-  optionChipActive: { backgroundColor: '#0A7B5A', borderColor: '#0A7B5A' },
-  optionChipText: { fontSize: 13, color: '#333' },
-  optionChipTextActive: { color: '#fff', fontWeight: '500' },
-  switchesContainer: { marginTop: 8 },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  switchLabel: { fontSize: 15, color: '#333' },
-  buttonRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  nextButton: { backgroundColor: '#0A7B5A', padding: 14, borderRadius: 8, alignItems: 'center', flex: 1 },
-  nextButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  backButton: { backgroundColor: '#fff', padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#ddd', flex: 1 },
-  backButtonText: { color: '#333', fontSize: 16, fontWeight: '600' },
-  submitButton: { backgroundColor: '#0A7B5A', padding: 14, borderRadius: 8, alignItems: 'center', flex: 2 },
-  submitButtonDisabled: { opacity: 0.6 },
-  submitButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingTop: 50,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#333' },
+  progress: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#fff',
+  },
+  progressDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressDotActive: { backgroundColor: '#1A237E' },
+  progressText: { fontSize: 14, fontWeight: '600', color: '#999' },
+  progressTextActive: { color: '#fff' },
+  content: { flex: 1, padding: 16 },
+  stepTitle: { fontSize: 20, fontWeight: '700', color: '#333', marginBottom: 16 },
+  label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6, marginTop: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    color: '#333',
+    backgroundColor: '#fff',
+  },
+  textArea: { height: 80, textAlignVertical: 'top' },
+  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  typeCard: {
+    width: '30%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  typeCardActive: { borderColor: '#1A237E', backgroundColor: '#E8EAF6' },
+  typeText: { fontSize: 12, color: '#666', marginTop: 6, textAlign: 'center' },
+  typeTextActive: { color: '#1A237E', fontWeight: '600' },
+  jurisdictionCard: {
+    padding: 14,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  jurisdictionCardActive: {
+    borderColor: '#1A237E',
+    backgroundColor: '#E8EAF6',
+  },
+  jurisdictionText: { fontSize: 14, color: '#666' },
+  jurisdictionTextActive: { color: '#1A237E', fontWeight: '600' },
+  summaryBox: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1A237E',
+  },
+  summaryTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 10 },
+  summaryText: { fontSize: 14, color: '#666', marginBottom: 4 },
+  footer: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  nextBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1A237E',
+    padding: 14,
+    borderRadius: 12,
+  },
+  nextBtnDisabled: { opacity: 0.6 },
+  nextBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 });

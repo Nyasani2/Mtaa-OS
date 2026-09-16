@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS health_lab_results (
   entered_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_lab_results_order ON health_lab_results(order_id);
-CREATE INDEX idx_lab_results_critical ON health_lab_results(is_critical) WHERE is_critical = TRUE;
+-- CREATE INDEX idx_lab_results_order ON health_lab_results(order_id);
+-- CREATE INDEX idx_lab_results_critical ON health_lab_results(is_critical) WHERE is_critical = TRUE;
 
 -- ============================================================
 -- PART B: Critical Alerts (pushed to Messenger)
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS health_critical_alerts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_critical_alerts_pending ON health_critical_alerts(acknowledged) WHERE acknowledged = FALSE;
+-- CREATE INDEX idx_critical_alerts_pending ON health_critical_alerts(acknowledged) WHERE acknowledged = FALSE;
 
 -- ============================================================
 -- PART C: Auto-flag trigger on lab_results insert

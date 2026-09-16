@@ -35,48 +35,46 @@ export default function LabResultsScreen() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [loading, setLoading] = useState(false);
 
-  const labResults: LabResult[] = [
-    {
-      id: '1', test_name: 'HbA1c', test_code: 'HBA1C', category: 'biochemistry',
-      result_value: '7.2', result_unit: '%', reference_range: '<5.7%',
-      is_abnormal: true, status: 'completed',
-      interpreted_by: 'Dr. James Omondi', interpreted_at: '2025-06-05T08:00:00Z',
-      facility: 'Lancet Laboratories', trend: 'up',
-      history: [
-        { date: '2025-03-05', value: '6.8' },
-        { date: '2025-01-05', value: '6.5' },
-        { date: '2024-10-05', value: '6.2' },
-      ]
-    },
-    {
-      id: '2', test_name: 'Fasting Blood Glucose', test_code: 'FBG', category: 'biochemistry',
-      result_value: '126', result_unit: 'mg/dL', reference_range: '70-100 mg/dL',
-      is_abnormal: true, status: 'completed',
-      interpreted_by: 'Dr. James Omondi', interpreted_at: '2025-06-05T08:00:00Z',
-      facility: 'Lancet Laboratories', trend: 'stable'
-    },
-    {
-      id: '3', test_name: 'Total Cholesterol', test_code: 'TCHOL', category: 'biochemistry',
-      result_value: '195', result_unit: 'mg/dL', reference_range: '<200 mg/dL',
-      is_abnormal: false, status: 'completed',
-      interpreted_by: 'Dr. James Omondi', interpreted_at: '2025-06-05T08:00:00Z',
-      facility: 'Lancet Laboratories', trend: 'down'
-    },
-    {
-      id: '4', test_name: 'Complete Blood Count', test_code: 'CBC', category: 'hematology',
-      result_value: 'Normal', result_unit: '', reference_range: 'Normal',
-      is_abnormal: false, status: 'completed',
-      interpreted_by: 'Dr. James Omondi', interpreted_at: '2025-05-20T10:00:00Z',
-      facility: 'Nairobi West Hospital', trend: 'stable'
-    },
-    {
-      id: '5', test_name: 'Liver Function Test', test_code: 'LFT', category: 'biochemistry',
-      result_value: 'Normal', result_unit: '', reference_range: 'Normal',
-      is_abnormal: false, status: 'completed',
-      interpreted_by: 'Dr. James Omondi', interpreted_at: '2025-05-20T10:00:00Z',
-      facility: 'Nairobi West Hospital', trend: 'stable'
-    },
-  ];
+  const [labResults, setLabResults] = useState<LabResult[]>([]);
+  const [loadingLabs, setLoadingLabs] = useState(true);
+
+  useEffect(() => {
+    const fetchLabs = async () => {
+      setLoadingLabs(true);
+      try {
+        const { data: patient } = await supabase.from('health_patients').select('id').eq('user_id', profile?.id || user?.id).maybeSingle();
+        const pid = patient?.id;
+        if (!pid) { setLoadingLabs(false); return; }
+
+        const { data, error } = await supabase
+          .from('health_lab_results')
+          .select('*, order:health_lab_orders(test_name, patient_id)')
+          .eq('order.patient_id', pid)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const mapped = data.map((r: any) => ({
+            id: r.id,
+            test_name: r.order?.test_name || 'Lab Test',
+            test_code: r.test_code || 'LAB',
+            category: 'biochemistry',
+            result_value: r.result_value || 'N/A',
+            result_unit: r.unit || '',
+            reference_range: r.reference_range || 'N/A',
+            is_abnormal: r.flag !== 'normal',
+            status: 'completed',
+            interpreted_by: r.verified_by || 'Lab Tech',
+            interpreted_at: r.created_at,
+            facility: 'MTAA Lab',
+            trend: 'stable'
+          }));
+          setLabResults(mapped);
+        }
+      } catch (e) { console.error(e); }
+      finally { setLoadingLabs(false); }
+    };
+    fetchLabs();
+  }, []);
 
   const categories = ['all', ...Array.from(new Set(labResults.map((r: any) => r.category)))];
 

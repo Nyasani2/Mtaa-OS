@@ -26,15 +26,8 @@ export function RoleGuard({ requiredRole, children, fallback }: RoleGuardProps) 
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0f0f0f',
-    padding: 24,
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#0f0f0f', padding: 24,
   },
-  text: {
-    color: '#ff4444',
-    fontSize: 16,
-    textAlign: 'center',
-  },
+  text: { color: '#ff4444', fontSize: 16, textAlign: 'center' },
 });

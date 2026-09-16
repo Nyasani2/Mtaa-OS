@@ -32,32 +32,48 @@ export default function PrescriptionsScreen() {
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
   const [loading, setLoading] = useState(false);
 
-  const prescriptions: Prescription[] = [
-    {
-      id: '1', drug_name: 'Metformin', generic_name: 'Metformin Hydrochloride',
-      dosage: '500mg', frequency: 'Twice daily', duration_days: 30, quantity: 60,
-      route: 'oral', instructions: 'Take with meals to reduce stomach upset',
-      status: 'active', prescribed_by: 'Dr. Sarah Kimani',
-      facility: 'Nairobi West Hospital', prescribed_at: '2025-06-10T10:00:00Z',
-      valid_until: '2025-07-10T10:00:00Z', is_substitutable: false
-    },
-    {
-      id: '2', drug_name: 'Amlodipine', generic_name: 'Amlodipine Besylate',
-      dosage: '5mg', frequency: 'Once daily', duration_days: 30, quantity: 30,
-      route: 'oral', instructions: 'Take in the morning',
-      status: 'active', prescribed_by: 'Dr. Peter Njoroge',
-      facility: 'Aga Khan University Hospital', prescribed_at: '2025-06-05T09:00:00Z',
-      valid_until: '2025-07-05T09:00:00Z', is_substitutable: true
-    },
-    {
-      id: '3', drug_name: 'Paracetamol', generic_name: 'Acetaminophen',
-      dosage: '500mg', frequency: 'Every 6 hours as needed', duration_days: 5, quantity: 20,
-      route: 'oral', instructions: 'For fever or pain. Max 4g per day.',
-      status: 'dispensed', prescribed_by: 'Dr. Sarah Kimani',
-      facility: 'Nairobi West Hospital', prescribed_at: '2025-05-20T14:00:00Z',
-      valid_until: '2025-05-25T14:00:00Z', is_substitutable: true
-    },
-  ];
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [loadingRx, setLoadingRx] = useState(true);
+
+  useEffect(() => {
+    const fetchRx = async () => {
+      setLoadingRx(true);
+      try {
+        const { data: patient } = await supabase.from('health_patients').select('id').eq('user_id', profile?.id || user?.id).maybeSingle();
+        const pid = patient?.id;
+        if (!pid) { setLoadingRx(false); return; }
+        
+        const { data, error } = await supabase
+          .from('health_prescriptions')
+          .select('*, items:health_prescription_items(*)')
+          .eq('patient_id', pid)
+          .order('created_at', { ascending: false });
+          
+        if (!error && data) {
+          const mapped = data.map((rx: any) => ({
+            id: rx.id,
+            drug_name: rx.items?.[0]?.medication_name || rx.medication_name || 'Unknown Medication',
+            generic_name: rx.items?.[0]?.medication_name || '',
+            dosage: rx.items?.[0]?.dosage || '',
+            frequency: rx.items?.[0]?.frequency || '',
+            duration_days: 30,
+            quantity: rx.items?.[0]?.quantity || 0,
+            route: 'oral',
+            instructions: rx.instructions || '',
+            status: rx.status,
+            prescribed_by: rx.doctor_name || 'Unknown Doctor',
+            facility: rx.facility_name || 'Unknown Facility',
+            prescribed_at: rx.created_at,
+            valid_until: rx.valid_until || rx.created_at,
+            is_substitutable: false
+          }));
+          setPrescriptions(mapped);
+        }
+      } catch (e) { console.error(e); }
+      finally { setLoadingRx(false); }
+    };
+    fetchRx();
+  }, []);
 
   const activePrescriptions = prescriptions.filter((p: any) => p.status === 'active');
   const historyPrescriptions = prescriptions.filter((p: any) => ['dispensed', 'partially_dispensed', 'cancelled', 'expired'].includes(p.status));

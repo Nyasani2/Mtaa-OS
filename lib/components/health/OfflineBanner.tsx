@@ -25,24 +25,10 @@ export function OfflineBanner() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: '#ff9800',
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: '#ff9800', padding: 12,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
-  text: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  button: {
-    backgroundColor: '#000',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 12,
-  },
+  text: { color: '#000', fontWeight: '600' },
+  button: { backgroundColor: '#000', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4 },
+  buttonText: { color: '#fff', fontSize: 12 },
 });

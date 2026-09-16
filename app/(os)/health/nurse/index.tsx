@@ -1,237 +1,386 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, ActivityIndicator, RefreshControl, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Users, Heart, Pill, BedDouble, Activity, Clock, AlertTriangle, CheckCircle2, Thermometer, Droplets } from 'lucide-react-native';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Ionicons } from '@expo/vector-icons';
 
-interface PatientAssignment {
-  id: string;
-  patient_id: string;
-  patient_name: string;
-  room_number: string;
-  bed_number: string;
-  admission_date: string;
-  diagnosis: string;
-  vitals_due: boolean;
-  meds_due: boolean;
-  last_vitals_at: string | null;
-  alert_level: 'stable' | 'watch' | 'critical';
-}
+// --- CLINICAL UTILITIES ---
+const calculateNEWS = (vitals) => {
+  let score = 0;
+  if (!vitals) return 0;
+  const hr = parseInt(vitals.hr);
+  const sys = parseInt(vitals.bp_systolic);
+  const temp = parseFloat(vitals.temp);
+  const rr = parseInt(vitals.rr);
+  const spo2 = parseInt(vitals.spo2);
 
-export default function NurseDashboardScreen() {
+  if (hr && (hr <= 40 || hr >= 131)) score += 3;
+  else if (hr && (hr <= 50 || hr >= 111)) score += 1;
+  if (sys && (sys <= 90 || sys >= 220)) score += 3;
+  else if (sys && (sys <= 100 || sys >= 219)) score += 1;
+  if (temp && (temp <= 35.0 || temp >= 39.1)) score += 3;
+  else if (temp && (temp <= 36.0 || temp >= 38.1)) score += 1;
+  if (rr && (rr <= 8 || rr >= 25)) score += 3;
+  else if (rr && (rr <= 9 || rr >= 21)) score += 2;
+  else if (rr && rr >= 12) score += 1;
+  if (spo2 && spo2 <= 91) score += 3;
+  else if (spo2 && spo2 <= 93) score += 2;
+  else if (spo2 && spo2 <= 95) score += 1;
+  return score;
+};
+
+export default function NurseWorkstationUltimate() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [patients, setPatients] = useState<PatientAssignment[]>([]);
-  const [stats, setStats] = useState({ total: 0, vitalsDue: 0, medsDue: 0, critical: 0 });
+  
+  // UNIT SELECTION (The core of the workstation)
+  const [activeUnit, setActiveUnit] = useState('opd'); // opd, general, icu, maternity, pediatrics
+  const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'vitals' | 'meds' | 'critical'>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Vitals Modal
+  const [vitalsModal, setVitalsModal] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isOPD, setIsOPD] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [vitalsForm, setVitalsForm] = useState({ hr: '', sys: '', dia: '', temp: '', rr: '', spo2: '', pain: '' });
 
-  useEffect(() => {
-    loadAssignments();
-  }, []);
+  const units = [
+    { id: 'opd', label: 'OPD / Triage', icon: 'people' },
+    { id: 'general', label: 'General Ward', icon: 'bed' },
+    { id: 'icu', label: 'ICU', icon: 'pulse' },
+    { id: 'maternity', label: 'Maternity', icon: 'woman' },
+    { id: 'pediatrics', label: 'Pediatrics', icon: 'child' },
+  ];
 
-  const loadAssignments = async () => {
+  useEffect(() => { loadRoster(); }, [activeUnit]);
+
+  const loadRoster = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('nurse_assignments')
-        .select('*, patients(full_name, room_number, bed_number, admission_date, diagnosis), health_profiles(heart_rate, temperature, blood_pressure, recorded_at)')
-        .eq('nurse_id', user?.id)
-        .eq('status', 'active');
+      const today = new Date().toISOString().split('T')[0];
+      let roster = [];
 
-      if (error) throw error;
+      if (activeUnit === 'opd') {
+        // OPD MODE: Fetch today's appointments waiting for triage/doctor
+        const { data: appts, error } = await supabase
+          .from('health_appointments')
+          .select('id, appointment_code, status, scheduled_time, reason, patient:health_patients(id, first_name, last_name, age, gender, allergies, phone)')
+          .eq('scheduled_date', today)
+          .in('status', ['scheduled', 'waiting', 'checked_in'])
+          .order('scheduled_time', { ascending: true });
+        
+        if (!error && appts) {
+          roster = appts.map(a => ({
+            id: a.id,
+            type: 'outpatient',
+            appointment_code: a.appointment_code,
+            status: a.status,
+            scheduled_time: a.scheduled_time,
+            reason: a.reason,
+            patient: a.patient,
+            latestVitals: null // Will be fetched if needed
+          }));
+        }
+      } else {
+        // INPATIENT MODE: Fetch admitted patients
+        // Note: We fetch all admitted and filter by department/ward if the column exists
+        const { data: pats, error } = await supabase
+          .from('health_patients')
+          .select('*')
+          .eq('admission_status', 'admitted');
+        
+        if (!error && pats) {
+          // Filter by ward if the schema has 'department' or 'ward', otherwise show all
+          const filtered = pats.filter(p => {
+            if (!activeUnit || activeUnit === 'general') return true;
+            const dept = (p.department || p.ward || '').toLowerCase();
+            return dept.includes(activeUnit);
+          });
 
-      const formatted = (data || []).map((a: any) => {
-        const lastVitals = a.health_profiles?.[0];
-        const vitalsDue = !lastVitals || (Date.now() - new Date(lastVitals.recorded_at).getTime()) > 4 * 60 * 60 * 1000;
-        const isCritical = lastVitals?.heart_rate > 120 || lastVitals?.temperature > 39;
-
-        return {
-          id: a.id,
-          patient_id: a.patient_id,
-          patient_name: a.patients?.full_name || 'Unknown',
-          room_number: a.patients?.room_number || '—',
-          bed_number: a.patients?.bed_number || '—',
-          admission_date: a.patients?.admission_date,
-          diagnosis: a.patients?.diagnosis || 'No diagnosis',
-          vitals_due: vitalsDue,
-          meds_due: a.meds_due || false,
-          last_vitals_at: lastVitals?.recorded_at || null,
-          alert_level: isCritical ? 'critical' : vitalsDue ? 'watch' : 'stable',
-        };
-      });
-
-      setPatients(formatted);
-      setStats({
-        total: formatted.length,
-        vitalsDue: formatted.filter((p: any) => p.vitals_due).length,
-        medsDue: formatted.filter((p: any) => p.meds_due).length,
-        critical: formatted.filter((p: any) => p.alert_level === 'critical').length,
-      });
+          // Enrich with latest vitals
+          roster = await Promise.all(filtered.map(async (p) => {
+            const { data: enc } = await supabase
+              .from('health_encounters')
+              .select('vitals_json, created_at')
+              .eq('patient_id', p.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            return {
+              id: p.id,
+              type: 'inpatient',
+              patient: p,
+              latestVitals: enc?.vitals_json || {},
+              newsScore: calculateNEWS(enc?.vitals_json),
+              lastVitalsTime: enc?.created_at
+            };
+          }));
+        }
+      }
+      setPatients(roster);
     } catch (err) {
-      Alert.alert('Error', 'Failed to load assignments');
+      console.error('Roster error:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const filteredPatients = patients.filter((p: any) => {
-    if (activeFilter === 'vitals') return p.vitals_due;
-    if (activeFilter === 'meds') return p.meds_due;
-    if (activeFilter === 'critical') return p.alert_level === 'critical';
-    return true;
-  });
+  const openVitals = (item) => {
+    setSelectedPatient(item);
+    setIsOPD(item.type === 'outpatient');
+    setVitalsForm({ hr: '', sys: '', dia: '', temp: '', rr: '', spo2: '', pain: '' });
+    setVitalsModal(true);
+  };
 
-  const getAlertColor = (level: string) => {
-    switch (level) {
-      case 'critical': return '#ef4444';
-      case 'watch': return '#f59e0b';
-      default: return '#22c55e';
+  const saveVitals = async () => {
+    setSaving(true);
+    try {
+      const vitalsData = {
+        hr: parseInt(vitalsForm.hr) || null,
+        bp: vitalsForm.sys && vitalsForm.dia ? `${vitalsForm.sys}/${vitalsForm.dia}` : null,
+        bp_systolic: parseInt(vitalsForm.sys) || null,
+        bp_diastolic: parseInt(vitalsForm.dia) || null,
+        temp: parseFloat(vitalsForm.temp) || null,
+        rr: parseInt(vitalsForm.rr) || null,
+        spo2: parseInt(vitalsForm.spo2) || null,
+        pain: parseInt(vitalsForm.pain) || null,
+      };
+
+      if (isOPD) {
+        // Save to encounters AND update appointment status to 'checked_in'
+        await supabase.from('health_encounters').insert({
+          patient_id: selectedPatient.patient.id,
+          appointment_id: selectedPatient.id,
+          encounter_type: 'triage_vitals',
+          vitals_json: vitalsData,
+          recorded_by: user.id,
+          created_at: new Date().toISOString()
+        });
+        
+        await supabase.from('health_appointments')
+          .update({ status: 'checked_in', vitals_json: vitalsData })
+          .eq('id', selectedPatient.id);
+          
+        Alert.alert('Triage Complete', 'Patient vitals recorded and marked ready for doctor.');
+      } else {
+        // Inpatient save
+        await supabase.from('health_encounters').insert({
+          patient_id: selectedPatient.id,
+          encounter_type: 'nursing_vitals',
+          vitals_json: vitalsData,
+          recorded_by: user.id,
+          created_at: new Date().toISOString()
+        });
+        Alert.alert('Success', 'Inpatient vitals recorded & NEWS updated.');
+      }
+      
+      setVitalsModal(false);
+      loadRoster();
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSaving(false);
     }
   };
+
+  // --- RENDER ---
+  const renderOPDItem = ({ item }) => (
+    <TouchableOpacity style={styles.opdCard} onPress={() => openVitals(item)}>
+      <View style={styles.opdHeader}>
+        <View style={styles.timeBadge}>
+          <Ionicons name="time" size={12} color="#fff" />
+          <Text style={styles.timeText}>{item.scheduled_time?.substring(0,5) || 'TBD'}</Text>
+        </View>
+        <View style={[styles.statusBadge, item.status === 'checked_in' ? styles.statusGreen : styles.statusYellow]}>
+          <Text style={styles.statusText}>{item.status.toUpperCase().replace('_', ' ')}</Text>
+        </View>
+      </View>
+      <Text style={styles.patientName}>{item.patient?.first_name} {item.patient?.last_name}</Text>
+      <Text style={styles.patientMeta}>{item.patient?.age || '?'}y • {item.patient?.gender || '?'} • {item.reason || 'Consultation'}</Text>
+      <View style={styles.triageAction}>
+        <Ionicons name="heart-pulse" size={16} color="#3b82f6" />
+        <Text style={styles.triageText}>Record Triage Vitals</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderInpatientItem = ({ item }) => (
+    <TouchableOpacity style={[styles.ipCard, item.newsScore >= 5 && styles.critCard]} onPress={() => openVitals(item)}>
+      <View style={styles.ipHeader}>
+        <Text style={styles.bedNum}>BED {item.patient.bed_number || item.patient.room_number || '?'}</Text>
+        <Text style={[styles.newsBadge, { color: item.newsScore >= 5 ? '#ef4444' : '#10b981' }]}>NEWS: {item.newsScore}</Text>
+      </View>
+      <Text style={styles.patientName}>{item.patient.first_name} {item.patient.last_name}</Text>
+      <Text style={styles.patientMeta}>{item.patient.age || '?'}y • {item.patient.diagnosis || 'Admitted'}</Text>
+      
+      <View style={styles.vitalsStrip}>
+        <Text style={styles.vitalText}>HR: {item.latestVitals.hr || '--'}</Text>
+        <Text style={styles.vitalText}>BP: {item.latestVitals.bp || '--'}</Text>
+        <Text style={styles.vitalText}>SpO2: {item.latestVitals.spo2 || '--'}</Text>
+        <Text style={styles.vitalText}>Temp: {item.latestVitals.temp || '--'}</Text>
+      </View>
+      {item.patient.allergies && item.patient.allergies.length > 0 && (
+        <View style={styles.allergyBanner}>
+          <Ionicons name="warning" size={12} color="#fff" />
+          <Text style={styles.allergyText}>ALLERGIES: {item.patient.allergies.join(', ')}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
+      {/* Header & Unit Selector */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nurse Station</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Nurse Workstation</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.unitScroll}>
+          {units.map(u => (
+            <TouchableOpacity 
+              key={u.id} 
+              style={[styles.unitPill, activeUnit === u.id && styles.activeUnitPill]} 
+              onPress={() => setActiveUnit(u.id)}
+            >
+              <Ionicons name={u.icon} size={16} color={activeUnit === u.id ? '#0f172a' : '#94a3b8'} />
+              <Text style={[styles.unitText, activeUnit === u.id && styles.activeUnitText]}>{u.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
-      <View style={styles.statsRow}>
-        <StatCard icon={<Users size={18} color="#6366f1" />} label="Patients" value={stats.total} color="#6366f1" />
-        <StatCard icon={<Activity size={18} color="#f59e0b" />} label="Vitals Due" value={stats.vitalsDue} color="#f59e0b" />
-        <StatCard icon={<Pill size={18} color="#8b5cf6" />} label="Meds Due" value={stats.medsDue} color="#8b5cf6" />
-        <StatCard icon={<AlertTriangle size={18} color="#ef4444" />} label="Critical" value={stats.critical} color="#ef4444" />
+      {/* Stats Bar */}
+      <View style={styles.statsBar}>
+        <View style={styles.statItem}>
+          <Text style={styles.statNum}>{patients.length}</Text>
+          <Text style={styles.statLabel}>{activeUnit === 'opd' ? 'Waiting' : 'Admitted'}</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={[styles.statNum, {color: '#ef4444'}]}>
+            {activeUnit === 'opd' ? patients.filter(p=>p.status==='waiting').length : patients.filter(p=>p.newsScore>=5).length}
+          </Text>
+          <Text style={styles.statLabel}>{activeUnit === 'opd' ? 'Pending Triage' : 'Critical'}</Text>
+        </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {(['all', 'vitals', 'meds', 'critical'] as const).map((f: any) => (
-          <TouchableOpacity
-            key={f}
-            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-            onPress={() => setActiveFilter(f)}
-          >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
-              {f === 'all' ? 'All' : f === 'vitals' ? 'Vitals Due' : f === 'meds' ? 'Meds Due' : 'Critical'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <FlatList
-        data={filteredPatients}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.patientCard}
-            onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}` as any)}
-          >
-            <View style={styles.patientHeader}>
-              <View style={styles.patientIdentity}>
-                <Text style={styles.patientName}>{item.patient_name}</Text>
-                <Text style={styles.patientRoom}>Room {item.room_number} · Bed {item.bed_number}</Text>
-              </View>
-              <View style={[styles.alertDot, { backgroundColor: getAlertColor(item.alert_level) }]} />
+      {/* Main List */}
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>
+      ) : (
+        <FlatList
+          data={patients}
+          keyExtractor={item => item.id}
+          renderItem={activeUnit === 'opd' ? renderOPDItem : renderInpatientItem}
+          contentContainerStyle={styles.listContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadRoster(); }} />}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name={activeUnit === 'opd' ? 'people-outline' : 'bed-outline'} size={48} color="#475569" />
+              <Text style={styles.emptyText}>No patients in {activeUnit.toUpperCase()}</Text>
             </View>
+          }
+        />
+      )}
 
-            <Text style={styles.diagnosisText}>{item.diagnosis}</Text>
-
-            <View style={styles.taskRow}>
-              {item.vitals_due && (
-                <View style={styles.taskBadge}>
-                  <Thermometer size={12} color="#f59e0b" />
-                  <Text style={styles.taskText}>Vitals due</Text>
-                </View>
-              )}
-              {item.meds_due && (
-                <View style={styles.taskBadge}>
-                  <Pill size={12} color="#8b5cf6" />
-                  <Text style={styles.taskText}>Meds due</Text>
-                </View>
-              )}
-              {item.last_vitals_at && (
-                <View style={styles.lastVitals}>
-                  <Clock size={12} color="#64748b" />
-                  <Text style={styles.lastVitalsText}>
-                    Last: {new Date(item.last_vitals_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-              )}
+      {/* Vitals Modal */}
+      <Modal visible={vitalsModal} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>{isOPD ? 'Triage Vitals' : 'Inpatient Vitals'}</Text>
+              <Text style={styles.modalPatient}>
+                {isOPD ? `${selectedPatient?.patient?.first_name} ${selectedPatient?.patient?.last_name}` : `${selectedPatient?.patient?.first_name} ${selectedPatient?.patient?.last_name}`}
+              </Text>
             </View>
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.actionBtn}
-                onPress={() => router.push(`/health/nurse/vitals?patientId=${item.patient_id}` as any)}
-              >
-                <Heart size={14} color="#fff" />
-                <Text style={styles.actionBtnText}>Vitals</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: '#8b5cf6' }]}
-                onPress={() => router.push(`/health/nurse/meds?patientId=${item.patient_id}` as any)}
-              >
-                <Pill size={14} color="#fff" />
-                <Text style={styles.actionBtnText}>Meds</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Users size={48} color="#334155" />
-            <Text style={styles.emptyTitle}>No patients assigned</Text>
+            <TouchableOpacity onPress={() => setVitalsModal(false)}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity>
           </View>
-        }
-      />
-    </View>
-  );
-}
-
-function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
-  return (
-    <View style={[styles.statCard, { borderTopColor: color }]}>
-      {icon}
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.inputGrid}>
+              {['hr', 'sys', 'dia', 'temp', 'rr', 'spo2', 'pain'].map(key => (
+                <View key={key} style={styles.inputBox}>
+                  <Text style={styles.inputLabel}>
+                    {key === 'hr' ? 'Heart Rate' : key === 'sys' ? 'Systolic BP' : key === 'dia' ? 'Diastolic BP' : key === 'temp' ? 'Temp (°C)' : key === 'rr' ? 'Resp. Rate' : key === 'spo2' ? 'SpO2 (%)' : 'Pain (0-10)'}
+                  </Text>
+                  <TextInput 
+                    style={styles.input} 
+                    value={vitalsForm[key]} 
+                    onChangeText={t => setVitalsForm({...vitalsForm, [key]: t})} 
+                    keyboardType={key === 'temp' ? 'decimal-pad' : 'numeric'} 
+                    placeholder="0"
+                    placeholderTextColor="#475569"
+                  />
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.saveBtn} onPress={saveVitals} disabled={saving}>
+              {saving ? <ActivityIndicator color="#fff"/> : <Text style={styles.saveBtnText}>Save Vitals</Text>}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 12, gap: 8 },
-  statCard: { flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 12, alignItems: 'center', borderTopWidth: 3 },
-  statValue: { fontSize: 20, fontWeight: '700', marginTop: 4 },
-  statLabel: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
-  filterScroll: { maxHeight: 44, marginBottom: 8 },
-  filterChip: { backgroundColor: '#1e293b', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#334155' },
-  filterChipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  filterText: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
-  filterTextActive: { color: '#fff' },
-  patientCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
-  patientHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  patientIdentity: { flex: 1 },
-  patientName: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  patientRoom: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-  alertDot: { width: 12, height: 12, borderRadius: 6 },
-  diagnosisText: { color: '#cbd5e1', fontSize: 13, marginBottom: 10 },
-  taskRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  taskBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#0f172a', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  taskText: { color: '#cbd5e1', fontSize: 11, fontWeight: '600' },
-  lastVitals: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  lastVitalsText: { color: '#64748b', fontSize: 11 },
-  actionRow: { flexDirection: 'row', gap: 10 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#6366f1', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  actionBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  emptyState: { alignItems: 'center', marginTop: 80 },
-  emptyTitle: { color: '#94a3b8', fontSize: 18, fontWeight: '700', marginTop: 16 },
+  container: { flex: 1, backgroundColor: '#020617' },
+  header: { backgroundColor: '#0f172a', paddingTop: 60, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  headerTitle: { color: '#f8fafc', fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  unitScroll: { maxHeight: 50 },
+  unitPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, marginRight: 10, gap: 8 },
+  activeUnitPill: { backgroundColor: '#3b82f6' },
+  unitText: { color: '#94a3b8', fontSize: 14, fontWeight: '600' },
+  activeUnitText: { color: '#0f172a', fontWeight: 'bold' },
+  statsBar: { flexDirection: 'row', backgroundColor: '#0f172a', padding: 16, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  statItem: { flex: 1, alignItems: 'center' },
+  statNum: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
+  statLabel: { color: '#64748b', fontSize: 12, marginTop: 4 },
+  listContent: { padding: 16, paddingBottom: 100 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  empty: { alignItems: 'center', marginTop: 100 },
+  emptyText: { color: '#64748b', fontSize: 16, marginTop: 16 },
+  
+  // OPD Styles
+  opdCard: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  opdHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  timeBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#334155', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  timeText: { color: '#fff', fontSize: 12, fontWeight: 'bold', marginLeft: 4 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusYellow: { backgroundColor: 'rgba(245, 158, 11, 0.2)' },
+  statusGreen: { backgroundColor: 'rgba(16, 185, 129, 0.2)' },
+  statusText: { color: '#f59e0b', fontSize: 10, fontWeight: 'bold' },
+  
+  patientName: { color: '#f8fafc', fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  patientMeta: { color: '#94a3b8', fontSize: 13, marginBottom: 12 },
+  triageAction: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: 10, borderRadius: 8, gap: 8 },
+  triageText: { color: '#3b82f6', fontSize: 14, fontWeight: 'bold' },
+
+  // Inpatient Styles
+  ipCard: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  critCard: { borderColor: '#ef4444', borderWidth: 2 },
+  ipHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  bedNum: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold', letterSpacing: 1 },
+  newsBadge: { fontSize: 14, fontWeight: 'bold' },
+  vitalsStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#334155' },
+  vitalText: { color: '#cbd5e1', fontSize: 13, fontFamily: 'monospace', width: '45%' },
+  allergyBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ef4444', padding: 8, borderRadius: 6, marginTop: 12, gap: 6 },
+  allergyText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+
+  // Modal Styles
+  modalContainer: { flex: 1, backgroundColor: '#020617' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, backgroundColor: '#0f172a', borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  modalPatient: { color: '#3b82f6', fontSize: 16, marginTop: 4 },
+  modalContent: { padding: 20 },
+  inputGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  inputBox: { width: '48%', backgroundColor: '#1e293b', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#334155' },
+  inputLabel: { color: '#94a3b8', fontSize: 12, marginBottom: 8 },
+  input: { color: '#fff', fontSize: 18, fontWeight: 'bold', fontFamily: 'monospace' },
+  saveBtn: { backgroundColor: '#3b82f6', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 24 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

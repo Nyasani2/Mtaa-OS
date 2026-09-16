@@ -56,19 +56,7 @@ export const ALL_APPS: AppTile[] = [
   { id: 'search', name: 'Search', icon: 'search', iconSet: 'Ionicons', route: '/(os)/search', color: '#fff', bgColor: '#6b7280', ownerOnly: false, category: 'OS', status: 'missing' },
 
   // ─── HEALTH (13 apps) ───
-  { id: 'ambulance', name: 'Ambulance', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health/ambulance', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'dispatch', name: 'Dispatch', icon: 'navigate', iconSet: 'Ionicons', route: '/(os)/health/ambulance/dispatch', color: '#fff', bgColor: '#dc2626', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'doctor', name: 'Doctor', icon: 'medkit', iconSet: 'Ionicons', route: '/(os)/health/doctor', color: '#fff', bgColor: '#06b6d4', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'emergency', name: 'Emergency', icon: 'warning', iconSet: 'Ionicons', route: '/(os)/health/emergency', color: '#fff', bgColor: '#dc2626', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'find-care', name: 'Find Care', icon: 'search', iconSet: 'Ionicons', route: '/(os)/health/find-care', color: '#fff', bgColor: '#0891b2', ownerOnly: false, category: 'HEALTH', status: 'live' },
   { id: 'health', name: 'Health', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health', color: '#fff', bgColor: '#06b6d4', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'hospital', name: 'Hospital', icon: 'fitness', iconSet: 'Ionicons', route: '/(os)/health/hospital-admin', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'insurance', name: 'Insurance', icon: 'shield', iconSet: 'Ionicons', route: '/(os)/health/insurance', color: '#fff', bgColor: '#059669', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'lab', name: 'Lab', icon: 'flask', iconSet: 'Ionicons', route: '/(os)/health/lab', color: '#fff', bgColor: '#a855f7', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'pharmacy', name: 'Pharmacy', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health/pharmacy', color: '#fff', bgColor: '#14b8a6', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'radiology', name: 'Radiology', icon: 'scan', iconSet: 'Ionicons', route: '/(os)/health/radiology', color: '#fff', bgColor: '#8b5cf6', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'records', name: 'Records', icon: 'folder', iconSet: 'Ionicons', route: '/(os)/health/records', color: '#fff', bgColor: '#6b7280', ownerOnly: false, category: 'HEALTH', status: 'live' },
-  { id: 'telemedicine', name: 'Telemed', icon: 'videocam', iconSet: 'Ionicons', route: '/(os)/health/telemedicine', color: '#fff', bgColor: '#06b6d4', ownerOnly: false, category: 'HEALTH', status: 'live' },
 
   // ─── FINANCE (3 apps) ───
   // REMOVED from FINANCE: gofund, onboarding, savings, scan, topup, transfer, withdraw
