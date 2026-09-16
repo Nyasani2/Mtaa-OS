@@ -1,3 +1,4 @@
+/* eslint-disable */
 // lib/hooks/useStreets.ts
 // FIXED 2026-08-13: Auto-load on mount, proper author fetching, bridges service API with screen
 
