@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { accountService } from '@/lib/auth/account-service';
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';

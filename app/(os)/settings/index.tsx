@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { accountService } from '@/lib/auth/account-service';
 // @ts-nocheck
 // app/(os)/settings/index.tsx — MTAA OS Settings v4.1

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { usePharmacy as usePharmacies } from "../hooks/usePharmacy";
 

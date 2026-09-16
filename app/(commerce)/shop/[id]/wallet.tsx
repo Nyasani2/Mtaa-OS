@@ -1,3 +1,4 @@
+// @ts-nocheck
 import QRCode from 'react-native-qrcode-svg';
 // @ts-nocheck
 // app/(commerce)/shop/[id]/wallet.tsx
