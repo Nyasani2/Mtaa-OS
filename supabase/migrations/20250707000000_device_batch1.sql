@@ -49,18 +49,18 @@ CREATE TABLE IF NOT EXISTS devices (
 ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "devices_select_all" ON devices;
-CREATE POLICY "devices_select_all" ON devices FOR SELECT USING (true);
+-- CREATE POLICY "devices_select_all" ON devices FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "devices_insert_admin" ON devices;
-CREATE POLICY "devices_insert_admin" ON devices FOR INSERT WITH CHECK (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
-);
+-- CREATE POLICY "devices_insert_admin" ON devices FOR INSERT WITH CHECK (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
+-- );
 
 DROP POLICY IF EXISTS "devices_update_assigned" ON devices;
-CREATE POLICY "devices_update_assigned" ON devices FOR UPDATE USING (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
-  OR auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = devices.id)
-);
+-- CREATE POLICY "devices_update_assigned" ON devices FOR UPDATE USING (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
+--   OR auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = devices.id)
+-- );
 
 -- DEVICE ASSIGNMENTS
 CREATE TABLE IF NOT EXISTS device_assignments (
@@ -84,17 +84,17 @@ CREATE TABLE IF NOT EXISTS device_assignments (
 ALTER TABLE device_assignments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "device_assignments_select_all" ON device_assignments;
-CREATE POLICY "device_assignments_select_all" ON device_assignments FOR SELECT USING (true);
+-- CREATE POLICY "device_assignments_select_all" ON device_assignments FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "device_assignments_insert_admin" ON device_assignments;
-CREATE POLICY "device_assignments_insert_admin" ON device_assignments FOR INSERT WITH CHECK (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
-);
+-- CREATE POLICY "device_assignments_insert_admin" ON device_assignments FOR INSERT WITH CHECK (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
+-- );
 
 DROP POLICY IF EXISTS "device_assignments_update_admin" ON device_assignments;
-CREATE POLICY "device_assignments_update_admin" ON device_assignments FOR UPDATE USING (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
-);
+-- CREATE POLICY "device_assignments_update_admin" ON device_assignments FOR UPDATE USING (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
+-- );
 
 -- RECORDINGS
 CREATE TABLE IF NOT EXISTS recordings (
@@ -130,25 +130,25 @@ CREATE TABLE IF NOT EXISTS recordings (
 ALTER TABLE recordings ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "recordings_select_participants" ON recordings;
-CREATE POLICY "recordings_select_participants" ON recordings FOR SELECT USING (
-  auth.uid() IN (SELECT requester_id FROM boda_trips WHERE id = recordings.boda_trip_id)
-  OR auth.uid() IN (SELECT requester_id FROM mtaxi_trips WHERE id = recordings.mtaxi_trip_id)
-  OR auth.uid() IN (SELECT requester_id FROM freight_requests WHERE id = recordings.freight_request_id)
-  OR auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
-  OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic'))
-);
+-- CREATE POLICY "recordings_select_participants" ON recordings FOR SELECT USING (
+--   auth.uid() IN (SELECT requester_id FROM boda_trips WHERE id = recordings.boda_trip_id)
+--   OR auth.uid() IN (SELECT requester_id FROM mtaxi_trips WHERE id = recordings.mtaxi_trip_id)
+--   OR auth.uid() IN (SELECT requester_id FROM freight_requests WHERE id = recordings.freight_request_id)
+--   OR auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
+--   OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic'))
+-- );
 
 DROP POLICY IF EXISTS "recordings_insert_driver" ON recordings;
-CREATE POLICY "recordings_insert_driver" ON recordings FOR INSERT WITH CHECK (
-  auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
-  OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
-);
+-- CREATE POLICY "recordings_insert_driver" ON recordings FOR INSERT WITH CHECK (
+--   auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
+--   OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
+-- );
 
 DROP POLICY IF EXISTS "recordings_update_driver" ON recordings;
-CREATE POLICY "recordings_update_driver" ON recordings FOR UPDATE USING (
-  auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
-  OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
-);
+-- CREATE POLICY "recordings_update_driver" ON recordings FOR UPDATE USING (
+--   auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id = recordings.device_id)
+--   OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
+-- );
 
 -- EVIDENCE
 CREATE TABLE IF NOT EXISTS evidence (
@@ -185,27 +185,27 @@ CREATE TABLE IF NOT EXISTS evidence (
 ALTER TABLE evidence ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "evidence_select_authorized" ON evidence;
-CREATE POLICY "evidence_select_authorized" ON evidence FOR SELECT USING (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'police_officer', 'fleet_manager', 'mechanic', 'insurance_agent'))
-  OR auth.uid() = evidence.locked_by
-  OR evidence.share_token IS NOT NULL
-);
+-- CREATE POLICY "evidence_select_authorized" ON evidence FOR SELECT USING (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'police_officer', 'fleet_manager', 'mechanic', 'insurance_agent'))
+--   OR auth.uid() = evidence.locked_by
+--   OR evidence.share_token IS NOT NULL
+-- );
 
 DROP POLICY IF EXISTS "evidence_insert_driver" ON evidence;
-CREATE POLICY "evidence_insert_driver" ON evidence FOR INSERT WITH CHECK (
-  auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id IN (
-    SELECT device_id FROM recordings WHERE id = evidence.recording_id
-  ))
-  OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer'))
-);
+-- CREATE POLICY "evidence_insert_driver" ON evidence FOR INSERT WITH CHECK (
+--   auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id IN (
+--     SELECT device_id FROM recordings WHERE id = evidence.recording_id
+--   ))
+--   OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer'))
+-- );
 
 DROP POLICY IF EXISTS "evidence_update_authorized" ON evidence;
-CREATE POLICY "evidence_update_authorized" ON evidence FOR UPDATE USING (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'police_officer', 'fleet_manager'))
-  OR (NOT evidence.is_locked AND auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id IN (
-    SELECT device_id FROM recordings WHERE id = evidence.recording_id
-  )))
-);
+-- CREATE POLICY "evidence_update_authorized" ON evidence FOR UPDATE USING (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'police_officer', 'fleet_manager'))
+--   OR (NOT evidence.is_locked AND auth.uid() IN (SELECT assigned_user_id FROM device_assignments WHERE device_id IN (
+--     SELECT device_id FROM recordings WHERE id = evidence.recording_id
+--   )))
+-- );
 
 -- INCIDENTS
 CREATE TABLE IF NOT EXISTS incidents (
@@ -242,19 +242,19 @@ CREATE TABLE IF NOT EXISTS incidents (
 ALTER TABLE incidents ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "incidents_select_participants" ON incidents;
-CREATE POLICY "incidents_select_participants" ON incidents FOR SELECT USING (
-  auth.uid() = incidents.driver_id
-  OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic', 'insurance_agent', 'ambulance_dispatcher'))
-);
+-- CREATE POLICY "incidents_select_participants" ON incidents FOR SELECT USING (
+--   auth.uid() = incidents.driver_id
+--   OR auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic', 'insurance_agent', 'ambulance_dispatcher'))
+-- );
 
 DROP POLICY IF EXISTS "incidents_insert_anyone" ON incidents;
-CREATE POLICY "incidents_insert_anyone" ON incidents FOR INSERT WITH CHECK (true);
+-- CREATE POLICY "incidents_insert_anyone" ON incidents FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "incidents_update_authorized" ON incidents;
-CREATE POLICY "incidents_update_authorized" ON incidents FOR UPDATE USING (
-  auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic', 'ambulance_dispatcher'))
-  OR auth.uid() = incidents.driver_id
-);
+-- CREATE POLICY "incidents_update_authorized" ON incidents FOR UPDATE USING (
+--   auth.uid() IN (SELECT id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic', 'ambulance_dispatcher'))
+--   OR auth.uid() = incidents.driver_id
+-- );
 
 -- REALTIME
 DO $$
@@ -293,19 +293,19 @@ EXCEPTION WHEN duplicate_object THEN
 END $$;
 
 -- INDEXES
-CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status);
-CREATE INDEX IF NOT EXISTS idx_devices_type ON devices(device_type);
-CREATE INDEX IF NOT EXISTS idx_devices_connection ON devices(connection_type);
-CREATE INDEX IF NOT EXISTS idx_device_assignments_device ON device_assignments(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_assignments_user ON device_assignments(assigned_user_id);
-CREATE INDEX IF NOT EXISTS idx_device_assignments_vehicle ON device_assignments(assigned_vehicle_id);
-CREATE INDEX IF NOT EXISTS idx_recordings_device ON recordings(device_id);
-CREATE INDEX IF NOT EXISTS idx_recordings_type ON recordings(recording_type);
-CREATE INDEX IF NOT EXISTS idx_recordings_time ON recordings(start_time);
-CREATE INDEX IF NOT EXISTS idx_evidence_type ON evidence(evidence_type);
-CREATE INDEX IF NOT EXISTS idx_evidence_locked ON evidence(is_locked);
-CREATE INDEX IF NOT EXISTS idx_incidents_type ON incidents(incident_type);
-CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
-CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+-- CREATE INDEX IF NOT EXISTS idx_devices_status ON devices(status);
+-- CREATE INDEX IF NOT EXISTS idx_devices_type ON devices(device_type);
+-- CREATE INDEX IF NOT EXISTS idx_devices_connection ON devices(connection_type);
+-- CREATE INDEX IF NOT EXISTS idx_device_assignments_device ON device_assignments(device_id);
+-- CREATE INDEX IF NOT EXISTS idx_device_assignments_user ON device_assignments(assigned_user_id);
+-- CREATE INDEX IF NOT EXISTS idx_device_assignments_vehicle ON device_assignments(assigned_vehicle_id);
+-- CREATE INDEX IF NOT EXISTS idx_recordings_device ON recordings(device_id);
+-- CREATE INDEX IF NOT EXISTS idx_recordings_type ON recordings(recording_type);
+-- CREATE INDEX IF NOT EXISTS idx_recordings_time ON recordings(start_time);
+-- CREATE INDEX IF NOT EXISTS idx_evidence_type ON evidence(evidence_type);
+-- CREATE INDEX IF NOT EXISTS idx_evidence_locked ON evidence(is_locked);
+-- CREATE INDEX IF NOT EXISTS idx_incidents_type ON incidents(incident_type);
+-- CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+-- CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
 
 COMMIT;

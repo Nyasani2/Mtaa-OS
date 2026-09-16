@@ -11,6 +11,7 @@ export function useHealthNotifications(userId: string) {
   }, [userId, qc]);
   return query;
 }
+
 export function useMarkNotificationRead() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: NotificationService.markAsRead, onSuccess: () => qc.invalidateQueries({ queryKey: ["health", "notifications"] }) });

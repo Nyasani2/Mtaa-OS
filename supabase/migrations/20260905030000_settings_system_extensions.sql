@@ -42,15 +42,15 @@ alter table public.audit_logs enable row level security;
 
 drop policy if exists verification_select on public.identity_verification_requests;
 drop policy if exists verification_insert on public.identity_verification_requests;
-create policy verification_select on public.identity_verification_requests for select to authenticated using (auth.uid() = user_id);
-create policy verification_insert on public.identity_verification_requests for insert to authenticated with check (auth.uid() = user_id);
+-- create policy verification_select on public.identity_verification_requests for select to authenticated using (auth.uid() = user_id);
+-- create policy verification_insert on public.identity_verification_requests for insert to authenticated with check (auth.uid() = user_id);
 
 drop policy if exists blocked_select on public.blocked_contacts;
 drop policy if exists blocked_insert on public.blocked_contacts;
 drop policy if exists blocked_delete on public.blocked_contacts;
-create policy blocked_select on public.blocked_contacts for select to authenticated using (auth.uid() = blocker_id);
-create policy blocked_insert on public.blocked_contacts for insert to authenticated with check (auth.uid() = blocker_id);
-create policy blocked_delete on public.blocked_contacts for delete to authenticated using (auth.uid() = blocker_id);
+-- create policy blocked_select on public.blocked_contacts for select to authenticated using (auth.uid() = blocker_id);
+-- create policy blocked_insert on public.blocked_contacts for insert to authenticated with check (auth.uid() = blocker_id);
+-- create policy blocked_delete on public.blocked_contacts for delete to authenticated using (auth.uid() = blocker_id);
 
 drop policy if exists audit_select on public.audit_logs;
-create policy audit_select on public.audit_logs for select to authenticated using (auth.uid() = user_id);
+-- create policy audit_select on public.audit_logs for select to authenticated using (auth.uid() = user_id);

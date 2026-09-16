@@ -66,19 +66,12 @@ export function useHealthProfile(userId?: string) {
 
 function mapDb(row: any): HealthProfile {
   return {
-    id: row.id,
-    userId: row.user_id,
-    fullName: row.full_name,
-    dateOfBirth: row.date_of_birth,
-    bloodGroup: row.blood_group,
-    allergies: row.allergies || [],
-    chronicConditions: row.chronic_conditions || [],
-    emergencyContacts: row.emergency_contacts || [],
-    organDonor: row.organ_donor,
-    heightCm: row.height_cm,
-    weightKg: row.weight_kg,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id, userId: row.user_id, fullName: row.full_name,
+    dateOfBirth: row.date_of_birth, bloodGroup: row.blood_group,
+    allergies: row.allergies || [], chronicConditions: row.chronic_conditions || [],
+    emergencyContacts: row.emergency_contacts || [], organDonor: row.organ_donor,
+    heightCm: row.height_cm, weightKg: row.weight_kg,
+    createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }
 

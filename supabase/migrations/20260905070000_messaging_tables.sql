@@ -25,23 +25,23 @@ alter table public.conversation_participants enable row level security;
 alter table public.chat_messages enable row level security;
 
 drop policy if exists conv_sel on public.conversations;
-create policy conv_sel on public.conversations for select to authenticated
-  using (exists (select 1 from public.conversation_participants cp where cp.conversation_id = id and cp.user_id = auth.uid()));
+-- create policy conv_sel on public.conversations for select to authenticated
+--   using (exists (select 1 from public.conversation_participants cp where cp.conversation_id = id and cp.user_id = auth.uid()));
 drop policy if exists conv_ins on public.conversations;
-create policy conv_ins on public.conversations for insert to authenticated with check (auth.uid() = created_by);
+-- create policy conv_ins on public.conversations for insert to authenticated with check (auth.uid() = created_by);
 
 drop policy if exists cp_sel on public.conversation_participants;
-create policy cp_sel on public.conversation_participants for select to authenticated using (true);
+-- create policy cp_sel on public.conversation_participants for select to authenticated using (true);
 drop policy if exists cp_ins on public.conversation_participants;
-create policy cp_ins on public.conversation_participants for insert to authenticated with check (true);
+-- create policy cp_ins on public.conversation_participants for insert to authenticated with check (true);
 drop policy if exists cp_upd on public.conversation_participants;
-create policy cp_upd on public.conversation_participants for update to authenticated using (auth.uid() = user_id);
+-- create policy cp_upd on public.conversation_participants for update to authenticated using (auth.uid() = user_id);
 
 drop policy if exists cm_sel on public.chat_messages;
-create policy cm_sel on public.chat_messages for select to authenticated
-  using (exists (select 1 from public.conversation_participants cp where cp.conversation_id = chat_messages.conversation_id and cp.user_id = auth.uid()));
+-- create policy cm_sel on public.chat_messages for select to authenticated
+--   using (exists (select 1 from public.conversation_participants cp where cp.conversation_id = chat_messages.conversation_id and cp.user_id = auth.uid()));
 drop policy if exists cm_ins on public.chat_messages;
-create policy cm_ins on public.chat_messages for insert to authenticated with check (auth.uid() = sender_id);
+-- create policy cm_ins on public.chat_messages for insert to authenticated with check (auth.uid() = sender_id);
 
 -- realtime for chat
 do $$ begin

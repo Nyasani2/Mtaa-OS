@@ -1,5 +1,3 @@
-// @ts-nocheck
-// lib/health/components/HealthShell.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
@@ -44,4 +42,3 @@ const styles = StyleSheet.create({
   activeText: { color: '#fff', fontWeight: '600' },
   content: { flex: 1, padding: 16 },
 });
-

@@ -1,8 +1,9 @@
-"use client";
 import { View, Text, StyleSheet } from 'react-native';
+
 interface Props {
   stats: { totalAppointments: number; totalRecords: number; pendingLabs: number; unreadNotifications: number };
 }
+
 export function DashboardStats({ stats }: Props) {
   return (
     <View style={styles.container}>
@@ -13,6 +14,7 @@ export function DashboardStats({ stats }: Props) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flexDirection: "row", flexWrap: "wrap", gap: 12, padding: 16 },
   card: { backgroundColor: "#1F1F1F", padding: 16, borderRadius: 12, width: "47%", alignItems: "center" },

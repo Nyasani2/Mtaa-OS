@@ -6,7 +6,7 @@
 -- ============================================================
 
 -- 1. BUDGET FRAMEWORK
-CREATE TABLE treasury_budget_cycles (
+CREATE TABLE IF NOT EXISTS treasury_budget_cycles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     fiscal_year INTEGER NOT NULL,
     cycle_type VARCHAR(20) CHECK (cycle_type IN ('annual', 'supplementary', 'revised')),
@@ -24,7 +24,7 @@ CREATE TABLE treasury_budget_cycles (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_budget_allocations (
+CREATE TABLE IF NOT EXISTS treasury_budget_allocations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     budget_cycle_id UUID REFERENCES treasury_budget_cycles(id) ON DELETE CASCADE,
     ministry_id UUID NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE treasury_budget_allocations (
 );
 
 -- 2. WARRANT & RELEASE MANAGEMENT
-CREATE TABLE treasury_warrants (
+CREATE TABLE IF NOT EXISTS treasury_warrants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     warrant_number VARCHAR(50) UNIQUE NOT NULL,
     budget_cycle_id UUID REFERENCES treasury_budget_cycles(id),
@@ -61,7 +61,7 @@ CREATE TABLE treasury_warrants (
 );
 
 -- 3. COMMITMENT CONTROL
-CREATE TABLE treasury_commitments (
+CREATE TABLE IF NOT EXISTS treasury_commitments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     commitment_number VARCHAR(50) UNIQUE NOT NULL,
     allocation_id UUID REFERENCES treasury_budget_allocations(id),
@@ -80,7 +80,7 @@ CREATE TABLE treasury_commitments (
 );
 
 -- 4. EXPENDITURE & PAYMENT VOUCHERS
-CREATE TABLE treasury_expenditures (
+CREATE TABLE IF NOT EXISTS treasury_expenditures (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     voucher_number VARCHAR(50) UNIQUE NOT NULL,
     commitment_id UUID REFERENCES treasury_commitments(id),
@@ -109,7 +109,7 @@ CREATE TABLE treasury_expenditures (
 );
 
 -- 5. TREASURY SINGLE ACCOUNT (TSA)
-CREATE TABLE treasury_tsa_accounts (
+CREATE TABLE IF NOT EXISTS treasury_tsa_accounts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     account_number VARCHAR(50) UNIQUE NOT NULL,
     account_name VARCHAR(255) NOT NULL,
@@ -128,7 +128,7 @@ CREATE TABLE treasury_tsa_accounts (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_tsa_transactions (
+CREATE TABLE IF NOT EXISTS treasury_tsa_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tsa_account_id UUID REFERENCES treasury_tsa_accounts(id),
     transaction_type VARCHAR(20) CHECK (transaction_type IN ('receipt', 'payment', 'transfer', 'reversal', 'adjustment')),
@@ -149,7 +149,7 @@ CREATE TABLE treasury_tsa_transactions (
 );
 
 -- 6. REVENUE MANAGEMENT
-CREATE TABLE treasury_revenue_collections (
+CREATE TABLE IF NOT EXISTS treasury_revenue_collections (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     collection_number VARCHAR(50) UNIQUE NOT NULL,
     revenue_source VARCHAR(50) CHECK (revenue_source IN ('tax', 'non_tax', 'fees', 'fines', 'grants', 'loans', 'dividends', 'rent', 'other')),
@@ -169,7 +169,7 @@ CREATE TABLE treasury_revenue_collections (
 );
 
 -- 7. DEBT MANAGEMENT
-CREATE TABLE treasury_debt_instruments (
+CREATE TABLE IF NOT EXISTS treasury_debt_instruments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     instrument_code VARCHAR(50) UNIQUE NOT NULL,
     instrument_type VARCHAR(30) CHECK (instrument_type IN ('external_bilateral', 'external_multilateral', 'external_commercial', 'domestic_treasury_bill', 'domestic_treasury_bond', 'domestic_sukuk', 'guarantee', 'on_lending')),
@@ -194,7 +194,7 @@ CREATE TABLE treasury_debt_instruments (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_debt_payments (
+CREATE TABLE IF NOT EXISTS treasury_debt_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     instrument_id UUID REFERENCES treasury_debt_instruments(id),
     payment_type VARCHAR(20) CHECK (payment_type IN ('principal', 'interest', 'commitment_fee', 'service_charge', 'penalty')),
@@ -214,7 +214,7 @@ CREATE TABLE treasury_debt_payments (
 );
 
 -- 8. CASH MANAGEMENT & FORECASTING
-CREATE TABLE treasury_cash_forecasts (
+CREATE TABLE IF NOT EXISTS treasury_cash_forecasts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     forecast_period VARCHAR(20) CHECK (forecast_period IN ('daily', 'weekly', 'monthly', 'quarterly')),
     forecast_date DATE NOT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE treasury_cash_forecasts (
 );
 
 -- 9. PAYROLL & PENSIONS
-CREATE TABLE treasury_payroll_cycles (
+CREATE TABLE IF NOT EXISTS treasury_payroll_cycles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cycle_name VARCHAR(100) NOT NULL,
     pay_period_start DATE NOT NULL,
@@ -246,7 +246,7 @@ CREATE TABLE treasury_payroll_cycles (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_payroll_entries (
+CREATE TABLE IF NOT EXISTS treasury_payroll_entries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cycle_id UUID REFERENCES treasury_payroll_cycles(id),
     employee_id UUID NOT NULL,
@@ -274,7 +274,7 @@ CREATE TABLE treasury_payroll_entries (
 );
 
 -- 10. E-PROCUREMENT
-CREATE TABLE treasury_procurement_requisitions (
+CREATE TABLE IF NOT EXISTS treasury_procurement_requisitions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     requisition_number VARCHAR(50) UNIQUE NOT NULL,
     ministry_id UUID NOT NULL,
@@ -292,7 +292,7 @@ CREATE TABLE treasury_procurement_requisitions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_tenders (
+CREATE TABLE IF NOT EXISTS treasury_tenders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tender_number VARCHAR(50) UNIQUE NOT NULL,
     requisition_id UUID REFERENCES treasury_procurement_requisitions(id),
@@ -315,7 +315,7 @@ CREATE TABLE treasury_tenders (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE TABLE treasury_contracts (
+CREATE TABLE IF NOT EXISTS treasury_contracts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_number VARCHAR(50) UNIQUE NOT NULL,
     tender_id UUID REFERENCES treasury_tenders(id),
@@ -335,7 +335,7 @@ CREATE TABLE treasury_contracts (
 );
 
 -- 11. ASSET MANAGEMENT
-CREATE TABLE treasury_assets (
+CREATE TABLE IF NOT EXISTS treasury_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_tag VARCHAR(50) UNIQUE NOT NULL,
     asset_name VARCHAR(255) NOT NULL,
@@ -361,7 +361,7 @@ CREATE TABLE treasury_assets (
 );
 
 -- 12. AUDIT & COMPLIANCE
-CREATE TABLE treasury_audit_findings (
+CREATE TABLE IF NOT EXISTS treasury_audit_findings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     audit_reference VARCHAR(50) UNIQUE NOT NULL,
     audit_type VARCHAR(30) CHECK (audit_type IN ('financial', 'compliance', 'performance', 'it_audit', 'special_investigation')),
@@ -383,7 +383,7 @@ CREATE TABLE treasury_audit_findings (
 );
 
 -- 13. FISCAL REPORTING
-CREATE TABLE treasury_fiscal_reports (
+CREATE TABLE IF NOT EXISTS treasury_fiscal_reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_period VARCHAR(20) CHECK (report_period IN ('monthly', 'quarterly', 'annual', 'special')),
     fiscal_year INTEGER NOT NULL,
@@ -401,7 +401,7 @@ CREATE TABLE treasury_fiscal_reports (
 );
 
 -- 14. APPROVAL HIERARCHIES
-CREATE TABLE treasury_approval_limits (
+CREATE TABLE IF NOT EXISTS treasury_approval_limits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id),
     ministry_id UUID,
@@ -420,7 +420,7 @@ CREATE TABLE treasury_approval_limits (
 );
 
 -- 15. BANK RECONCILIATION
-CREATE TABLE treasury_bank_reconciliations (
+CREATE TABLE IF NOT EXISTS treasury_bank_reconciliations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tsa_account_id UUID REFERENCES treasury_tsa_accounts(id),
     reconciliation_period VARCHAR(20) CHECK (reconciliation_period IN ('daily', 'weekly', 'monthly')),
@@ -439,7 +439,7 @@ CREATE TABLE treasury_bank_reconciliations (
 );
 
 -- 16. SMART CONTRACT CONTROLS
-CREATE TABLE treasury_smart_contracts (
+CREATE TABLE IF NOT EXISTS treasury_smart_contracts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contract_name VARCHAR(255) NOT NULL,
     contract_type VARCHAR(50) CHECK (contract_type IN ('payment_control', 'procurement_milestone', 'budget_lock', 'debt_service', 'revenue_share')),
@@ -454,7 +454,7 @@ CREATE TABLE treasury_smart_contracts (
 );
 
 -- 17. REAL-TIME DASHBOARD METRICS
-CREATE TABLE treasury_dashboard_metrics (
+CREATE TABLE IF NOT EXISTS treasury_dashboard_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     metric_name VARCHAR(100) NOT NULL,
     metric_category VARCHAR(50) CHECK (metric_category IN ('budget', 'revenue', 'expenditure', 'debt', 'cash', 'procurement', 'payroll', 'audit')),
@@ -468,7 +468,7 @@ CREATE TABLE treasury_dashboard_metrics (
 );
 
 -- 18. AUDIT LOG (Immutable)
-CREATE TABLE treasury_audit_logs (
+CREATE TABLE IF NOT EXISTS treasury_audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_name VARCHAR(50) NOT NULL,
     record_id UUID NOT NULL,
@@ -483,7 +483,7 @@ CREATE TABLE treasury_audit_logs (
 );
 
 -- 19. CITIZEN FEEDBACK
-CREATE TABLE treasury_citizen_feedback (
+CREATE TABLE IF NOT EXISTS treasury_citizen_feedback (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     feedback_type VARCHAR(30) CHECK (feedback_type IN ('budget_input', 'expenditure_query', 'corruption_tip', 'service_rating', 'suggestion')),
     related_ministry_id UUID,
@@ -502,7 +502,7 @@ CREATE TABLE treasury_citizen_feedback (
 );
 
 -- 20. REVENUE FORECASTING
-CREATE TABLE treasury_revenue_forecasts (
+CREATE TABLE IF NOT EXISTS treasury_revenue_forecasts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     fiscal_year INTEGER NOT NULL,
     revenue_source VARCHAR(50) NOT NULL,
@@ -519,7 +519,7 @@ CREATE TABLE treasury_revenue_forecasts (
 );
 
 -- 21. INTER-GOVERNMENTAL TRANSFERS
-CREATE TABLE treasury_intergov_transfers (
+CREATE TABLE IF NOT EXISTS treasury_intergov_transfers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     transfer_type VARCHAR(30) CHECK (transfer_type IN ('equitable_share', 'conditional_grant', 'equalization', 'loan', 'reimbursement')),
     from_level VARCHAR(20) CHECK (from_level IN ('national', 'county', 'municipal')),
@@ -535,7 +535,7 @@ CREATE TABLE treasury_intergov_transfers (
 );
 
 -- 22. EMERGENCY CONTINGENCY
-CREATE TABLE treasury_contingency_draws (
+CREATE TABLE IF NOT EXISTS treasury_contingency_draws (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     contingency_type VARCHAR(30) CHECK (contingency_type IN ('natural_disaster', 'security', 'health_emergency', 'economic_crisis', 'other')),
     draw_number VARCHAR(50) UNIQUE NOT NULL,
@@ -552,14 +552,14 @@ CREATE TABLE treasury_contingency_draws (
 -- ============================================================
 -- INDEXES
 -- ============================================================
-CREATE INDEX idx_treasury_expenditures_status ON treasury_expenditures(status);
-CREATE INDEX idx_treasury_expenditures_date ON treasury_expenditures(created_at);
-CREATE INDEX idx_treasury_tsa_transactions_date ON treasury_tsa_transactions(transaction_date);
-CREATE INDEX idx_treasury_revenue_date ON treasury_revenue_collections(collection_date);
-CREATE INDEX idx_treasury_debt_payments_due ON treasury_debt_payments(due_date);
-CREATE INDEX idx_treasury_commitments_status ON treasury_commitments(status);
-CREATE INDEX idx_treasury_audit_status ON treasury_audit_findings(status);
-CREATE INDEX idx_treasury_payroll_cycle ON treasury_payroll_entries(cycle_id);
+CREATE INDEX IF NOT EXISTS idx_treasury_expenditures_status ON treasury_expenditures(status);
+CREATE INDEX IF NOT EXISTS idx_treasury_expenditures_date ON treasury_expenditures(created_at);
+CREATE INDEX IF NOT EXISTS idx_treasury_tsa_transactions_date ON treasury_tsa_transactions(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_treasury_revenue_date ON treasury_revenue_collections(collection_date);
+CREATE INDEX IF NOT EXISTS idx_treasury_debt_payments_due ON treasury_debt_payments(due_date);
+CREATE INDEX IF NOT EXISTS idx_treasury_commitments_status ON treasury_commitments(status);
+CREATE INDEX IF NOT EXISTS idx_treasury_audit_status ON treasury_audit_findings(status);
+CREATE INDEX IF NOT EXISTS idx_treasury_payroll_cycle ON treasury_payroll_entries(cycle_id);
 
 -- ============================================================
 -- ROW LEVEL SECURITY
@@ -591,9 +591,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_tsa_balance
-    AFTER INSERT ON treasury_tsa_transactions
-    FOR EACH ROW EXECUTE FUNCTION update_tsa_balance();
+-- CREATE TRIGGER trg_update_tsa_balance
+--     AFTER INSERT ON treasury_tsa_transactions
+--     FOR EACH ROW EXECUTE FUNCTION update_tsa_balance();
 
 CREATE OR REPLACE FUNCTION update_commitment_balance()
 RETURNS TRIGGER AS $$
@@ -605,10 +605,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_commitment
-    AFTER INSERT ON treasury_expenditures
-    FOR EACH ROW WHEN (NEW.commitment_id IS NOT NULL)
-    EXECUTE FUNCTION update_commitment_balance();
+-- CREATE TRIGGER trg_update_commitment
+--     AFTER INSERT ON treasury_expenditures
+--     FOR EACH ROW WHEN (NEW.commitment_id IS NOT NULL)
+--     EXECUTE FUNCTION update_commitment_balance();
 
 CREATE OR REPLACE FUNCTION prevent_overspending()
 RETURNS TRIGGER AS $$
@@ -626,9 +626,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_prevent_overspending
-    BEFORE INSERT ON treasury_commitments
-    FOR EACH ROW EXECUTE FUNCTION prevent_overspending();
+-- CREATE TRIGGER trg_prevent_overspending
+--     BEFORE INSERT ON treasury_commitments
+--     FOR EACH ROW EXECUTE FUNCTION prevent_overspending();
 
 CREATE OR REPLACE FUNCTION treasury_audit_trigger()
 RETURNS TRIGGER AS $$
@@ -650,57 +650,57 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_audit_expenditures
-    AFTER INSERT OR UPDATE OR DELETE ON treasury_expenditures
-    FOR EACH ROW EXECUTE FUNCTION treasury_audit_trigger();
+-- CREATE TRIGGER trg_audit_expenditures
+--     AFTER INSERT OR UPDATE OR DELETE ON treasury_expenditures
+--     FOR EACH ROW EXECUTE FUNCTION treasury_audit_trigger();
 
 -- ============================================================
 -- VIEWS
 -- ============================================================
-CREATE VIEW treasury_budget_execution_summary AS
-SELECT 
-    bc.fiscal_year,
-    ba.ministry_id,
-    ba.program_code,
-    ba.program_name,
-    ba.approved_amount,
-    ba.released_amount,
-    ba.spent_amount,
-    ba.commitment_amount,
-    ba.available_balance,
-    ROUND(ba.spent_amount / NULLIF(ba.approved_amount, 0) * 100, 2) as execution_rate,
-    ROUND(ba.commitment_amount / NULLIF(ba.approved_amount, 0) * 100, 2) as commitment_rate
-FROM treasury_budget_allocations ba
-JOIN treasury_budget_cycles bc ON ba.budget_cycle_id = bc.id
-WHERE bc.status = 'active';
+-- CREATE VIEW treasury_budget_execution_summary AS
+-- SELECT 
+--     bc.fiscal_year,
+--     ba.ministry_id,
+--     ba.program_code,
+--     ba.program_name,
+--     ba.approved_amount,
+--     ba.released_amount,
+--     ba.spent_amount,
+--     ba.commitment_amount,
+--     ba.available_balance,
+--     ROUND(ba.spent_amount / NULLIF(ba.approved_amount, 0) * 100, 2) as execution_rate,
+--     ROUND(ba.commitment_amount / NULLIF(ba.approved_amount, 0) * 100, 2) as commitment_rate
+-- FROM treasury_budget_allocations ba
+-- JOIN treasury_budget_cycles bc ON ba.budget_cycle_id = bc.id
+-- WHERE bc.status = 'active';
 
-CREATE VIEW treasury_cash_position AS
-SELECT 
-    tsa.id,
-    tsa.account_name,
-    tsa.account_type,
-    tsa.currency,
-    tsa.current_balance,
-    SUM(CASE WHEN tst.transaction_type = 'receipt' AND tst.status = 'completed' THEN tst.amount ELSE 0 END) as total_receipts_30d,
-    SUM(CASE WHEN tst.transaction_type = 'payment' AND tst.status = 'completed' THEN tst.amount ELSE 0 END) as total_payments_30d
-FROM treasury_tsa_accounts tsa
-LEFT JOIN treasury_tsa_transactions tst ON tsa.id = tst.tsa_account_id 
-    AND tst.transaction_date >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY tsa.id, tsa.account_name, tsa.account_type, tsa.currency, tsa.current_balance;
+-- CREATE VIEW treasury_cash_position AS
+-- SELECT 
+--     tsa.id,
+--     tsa.account_name,
+--     tsa.account_type,
+--     tsa.currency,
+--     tsa.current_balance,
+--     SUM(CASE WHEN tst.transaction_type = 'receipt' AND tst.status = 'completed' THEN tst.amount ELSE 0 END) as total_receipts_30d,
+--     SUM(CASE WHEN tst.transaction_type = 'payment' AND tst.status = 'completed' THEN tst.amount ELSE 0 END) as total_payments_30d
+-- FROM treasury_tsa_accounts tsa
+-- LEFT JOIN treasury_tsa_transactions tst ON tsa.id = tst.tsa_account_id 
+--     AND tst.transaction_date >= CURRENT_DATE - INTERVAL '30 days'
+-- GROUP BY tsa.id, tsa.account_name, tsa.account_type, tsa.currency, tsa.current_balance;
 
-CREATE VIEW treasury_debt_service_schedule AS
-SELECT 
-    di.instrument_code,
-    di.creditor_name,
-    di.currency,
-    dp.payment_type,
-    dp.due_date,
-    dp.amount_due,
-    dp.amount_paid,
-    dp.status,
-    di.maturity_date,
-    di.outstanding_principal
-FROM treasury_debt_instruments di
-JOIN treasury_debt_payments dp ON di.id = dp.instrument_id
-WHERE dp.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
-ORDER BY dp.due_date;
+-- CREATE VIEW treasury_debt_service_schedule AS
+-- SELECT 
+--     di.instrument_code,
+--     di.creditor_name,
+--     di.currency,
+--     dp.payment_type,
+--     dp.due_date,
+--     dp.amount_due,
+--     dp.amount_paid,
+--     dp.status,
+--     di.maturity_date,
+--     di.outstanding_principal
+-- FROM treasury_debt_instruments di
+-- JOIN treasury_debt_payments dp ON di.id = dp.instrument_id
+-- WHERE dp.due_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
+-- ORDER BY dp.due_date;

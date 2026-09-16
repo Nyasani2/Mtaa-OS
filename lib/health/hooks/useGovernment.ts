@@ -65,7 +65,6 @@ export function useGovernment(userId: string | undefined) {
         supabase.from("health_population").select("id, name, age, gender, city, vaccination_status, chronic_conditions").limit(50),
       ]);
       if (fErr) throw fErr; if (aErr) throw aErr; if (oErr) throw oErr; if (pErr) throw pErr;
-
       const allFacilities = (fData || []) as FacilityRecord[];
       const verified = allFacilities.filter((f) => f.status === "verified").length;
       setStats({ facilities: allFacilities.length, verified, alerts: (aData || []).length });

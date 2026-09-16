@@ -68,34 +68,18 @@ export function useHealthMedications(patientId?: string) {
 
 function mapDb(row: any): Medication {
   return {
-    id: row.id,
-    patientId: row.patient_id,
-    name: row.name,
-    genericName: row.generic_name,
-    dosage: row.dosage,
-    frequency: row.frequency,
-    prescribedBy: row.prescribed_by,
-    prescribedAt: row.prescribed_at,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    status: row.status,
-    notes: row.notes,
+    id: row.id, patientId: row.patient_id, name: row.name, genericName: row.generic_name,
+    dosage: row.dosage, frequency: row.frequency, prescribedBy: row.prescribed_by,
+    prescribedAt: row.prescribed_at, startDate: row.start_date, endDate: row.end_date,
+    status: row.status, notes: row.notes,
   };
 }
 
 function mapToDb(m: Partial<Medication>): any {
   return {
-    id: m.id,
-    patient_id: m.patientId,
-    name: m.name,
-    generic_name: m.genericName,
-    dosage: m.dosage,
-    frequency: m.frequency,
-    prescribed_by: m.prescribedBy,
-    prescribed_at: m.prescribedAt,
-    start_date: m.startDate,
-    end_date: m.endDate,
-    status: m.status,
-    notes: m.notes,
+    id: m.id, patient_id: m.patientId, name: m.name, generic_name: m.genericName,
+    dosage: m.dosage, frequency: m.frequency, prescribed_by: m.prescribedBy,
+    prescribed_at: m.prescribedAt, start_date: m.startDate, end_date: m.endDate,
+    status: m.status, notes: m.notes,
   };
 }

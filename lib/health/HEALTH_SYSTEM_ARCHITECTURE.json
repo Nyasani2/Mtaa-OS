@@ -1,0 +1,66 @@
+{
+  "user_roles": {
+    "patient": {
+      "workspace": "/health/patient",
+      "features": ["Book appointments", "View medical records", "Request prescription refills", "Access test results", "Insurance claims", "Emergency services", "Find nearby facilities", "Ambulance request", "Medication reminders", "Health education"]
+    },
+    "doctor": {
+      "workspace": "/health/doctor",
+      "features": ["Patient queue management", "Schedule management", "Electronic medical records (EMR)", "E-prescriptions", "Lab test ordering", "Telemedicine consultations", "Patient history access", "Referrals", "Clinical notes", "Billing & insurance"]
+    },
+    "nurse": {
+      "workspace": "/health/nurse",
+      "features": ["Vitals recording", "Triage management", "Patient preparation", "Medication administration", "Care plans", "Wound care documentation", "Patient education", "Discharge planning"]
+    },
+    "pharmacist": {
+      "workspace": "/health/pharmacist",
+      "features": ["Prescription verification", "Medication dispensing", "Drug interaction checks", "Inventory management", "Patient counseling", "Insurance processing", "Refill management"]
+    },
+    "lab_technician": {
+      "workspace": "/health/lab",
+      "features": ["Test queue management", "Sample collection tracking", "Result entry", "Quality control", "Equipment maintenance", "Report generation"]
+    },
+    "radiologist": {
+      "workspace": "/health/radiology",
+      "features": ["Imaging queue", "Image viewing & analysis", "Report creation", "PACS integration", "Critical findings alerts"]
+    },
+    "receptionist": {
+      "workspace": "/health/receptionist",
+      "features": ["Patient registration", "Appointment scheduling", "Check-in/check-out", "Insurance verification", "Payment processing", "Queue management"]
+    },
+    "medical_student": {
+      "workspace": "/health/student",
+      "features": ["Read-only patient records (supervised)", "Learning modules", "Case studies", "Supervisor notes", "Educational resources", "Rotation schedule"]
+    },
+    "admin": {
+      "workspace": "/health/admin",
+      "features": ["Staff management", "Facility management", "System configuration", "Reports & analytics", "Billing oversight", "Compliance monitoring", "User permissions"]
+    },
+    "dispatcher": {
+      "workspace": "/health/dispatcher",
+      "features": ["Ambulance tracking", "Emergency dispatch", "Unit availability", "GPS routing", "Communication with field units"]
+    }
+  },
+  "patient_journey": {
+    "registration": "/health/patient/register",
+    "search_doctor": "/health/patient/find-doctor",
+    "book_appointment": "/health/patient/book",
+    "pre_visit": "/health/patient/pre-visit",
+    "check_in": "/health/patient/check-in",
+    "consultation": "/health/patient/consultation",
+    "lab_tests": "/health/patient/lab",
+    "pharmacy": "/health/patient/pharmacy",
+    "payment": "/health/patient/payment",
+    "follow_up": "/health/patient/follow-up",
+    "records": "/health/patient/records"
+  },
+  "doctor_journey": {
+    "dashboard": "/health/doctor/dashboard",
+    "today_queue": "/health/doctor/queue",
+    "patient_chart": "/health/doctor/patient/[id]",
+    "prescribe": "/health/doctor/prescribe",
+    "order_tests": "/health/doctor/lab-order",
+    "telemedicine": "/health/doctor/telemedicine",
+    "schedule": "/health/doctor/schedule"
+  }
+}

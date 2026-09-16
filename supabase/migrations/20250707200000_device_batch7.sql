@@ -328,18 +328,18 @@ EXCEPTION WHEN duplicate_object THEN
 END $$;
 
 -- INDEXES
-CREATE INDEX IF NOT EXISTS idx_bodycam_officer ON bodycam_sessions(officer_id);
-CREATE INDEX IF NOT EXISTS idx_bodycam_device ON bodycam_sessions(device_id);
-CREATE INDEX IF NOT EXISTS idx_bodycam_status ON bodycam_sessions(status);
-CREATE INDEX IF NOT EXISTS idx_shift_officer ON shift_assignments(officer_id);
-CREATE INDEX IF NOT EXISTS idx_shift_vehicle ON shift_assignments(vehicle_id);
-CREATE INDEX IF NOT EXISTS idx_driver_scores_driver ON driver_scores(driver_id);
-CREATE INDEX IF NOT EXISTS idx_driver_scores_period ON driver_scores(period_start, period_end);
-CREATE INDEX IF NOT EXISTS idx_device_logs_device ON device_logs(device_id);
-CREATE INDEX IF NOT EXISTS idx_device_logs_level ON device_logs(log_level);
-CREATE INDEX IF NOT EXISTS idx_obd_vehicle ON obd_diagnostics(vehicle_id);
-CREATE INDEX IF NOT EXISTS idx_repair_vehicle ON repair_records(vehicle_id);
-CREATE INDEX IF NOT EXISTS idx_fleet_alerts_type ON fleet_alerts(alert_type);
-CREATE INDEX IF NOT EXISTS idx_fleet_alerts_unack ON fleet_alerts(acknowledged) WHERE NOT acknowledged;
+-- CREATE INDEX IF NOT EXISTS idx_bodycam_officer ON bodycam_sessions(officer_id);
+-- CREATE INDEX IF NOT EXISTS idx_bodycam_device ON bodycam_sessions(device_id);
+-- CREATE INDEX IF NOT EXISTS idx_bodycam_status ON bodycam_sessions(status);
+-- CREATE INDEX IF NOT EXISTS idx_shift_officer ON shift_assignments(officer_id);
+-- CREATE INDEX IF NOT EXISTS idx_shift_vehicle ON shift_assignments(vehicle_id);
+-- CREATE INDEX IF NOT EXISTS idx_driver_scores_driver ON driver_scores(driver_id);
+-- CREATE INDEX IF NOT EXISTS idx_driver_scores_period ON driver_scores(period_start, period_end);
+-- CREATE INDEX IF NOT EXISTS idx_device_logs_device ON device_logs(device_id);
+-- CREATE INDEX IF NOT EXISTS idx_device_logs_level ON device_logs(log_level);
+-- CREATE INDEX IF NOT EXISTS idx_obd_vehicle ON obd_diagnostics(vehicle_id);
+-- CREATE INDEX IF NOT EXISTS idx_repair_vehicle ON repair_records(vehicle_id);
+-- CREATE INDEX IF NOT EXISTS idx_fleet_alerts_type ON fleet_alerts(alert_type);
+-- CREATE INDEX IF NOT EXISTS idx_fleet_alerts_unack ON fleet_alerts(acknowledged) WHERE NOT acknowledged;
 
 COMMIT;

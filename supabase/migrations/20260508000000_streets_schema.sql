@@ -225,61 +225,61 @@ ALTER TABLE street_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE street_gifts ENABLE ROW LEVEL SECURITY;
 
 -- Street Content Policies
-CREATE POLICY "Content viewable by everyone" ON street_content
-    FOR SELECT USING (
-        status = 'published' AND (
-            audience = 'public' OR
-            (audience = 'followers' AND EXISTS (
-                SELECT 1 FROM street_follows WHERE follower_id = auth.uid() AND following_id = user_id
-            )) OR
-            user_id = auth.uid()
-        )
-    );
+-- CREATE POLICY "Content viewable by everyone" ON street_content
+--     FOR SELECT USING (
+--         status = 'published' AND (
+--             audience = 'public' OR
+--             (audience = 'followers' AND EXISTS (
+--                 SELECT 1 FROM street_follows WHERE follower_id = auth.uid() AND following_id = user_id
+--             )) OR
+--             user_id = auth.uid()
+--         )
+--     );
 
-CREATE POLICY "Users can create content" ON street_content
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can create content" ON street_content
+--     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own content" ON street_content
-    FOR UPDATE USING (auth.uid() = user_id);
+-- CREATE POLICY "Users can update own content" ON street_content
+--     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete own content" ON street_content
-    FOR DELETE USING (auth.uid() = user_id);
+-- CREATE POLICY "Users can delete own content" ON street_content
+--     FOR DELETE USING (auth.uid() = user_id);
 
 -- Likes Policies
-CREATE POLICY "Likes viewable by everyone" ON street_likes FOR SELECT USING (true);
-CREATE POLICY "Users can like" ON street_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can unlike" ON street_likes FOR DELETE USING (auth.uid() = user_id);
+-- CREATE POLICY "Likes viewable by everyone" ON street_likes FOR SELECT USING (true);
+-- CREATE POLICY "Users can like" ON street_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can unlike" ON street_likes FOR DELETE USING (auth.uid() = user_id);
 
 -- Comments Policies
-CREATE POLICY "Comments viewable by everyone" ON street_comments FOR SELECT USING (true);
-CREATE POLICY "Users can comment" ON street_comments FOR INSERT WITH CHECK (auth.uid() = author_id);
-CREATE POLICY "Users can delete own comments" ON street_comments FOR DELETE USING (auth.uid() = author_id);
+-- CREATE POLICY "Comments viewable by everyone" ON street_comments FOR SELECT USING (true);
+-- CREATE POLICY "Users can comment" ON street_comments FOR INSERT WITH CHECK (auth.uid() = author_id);
+-- CREATE POLICY "Users can delete own comments" ON street_comments FOR DELETE USING (auth.uid() = author_id);
 
 -- Follows Policies
-CREATE POLICY "Follows viewable by everyone" ON street_follows FOR SELECT USING (true);
-CREATE POLICY "Users can follow" ON street_follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
-CREATE POLICY "Users can unfollow" ON street_follows FOR DELETE USING (auth.uid() = follower_id);
+-- CREATE POLICY "Follows viewable by everyone" ON street_follows FOR SELECT USING (true);
+-- CREATE POLICY "Users can follow" ON street_follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+-- CREATE POLICY "Users can unfollow" ON street_follows FOR DELETE USING (auth.uid() = follower_id);
 
 -- Saves Policies
-CREATE POLICY "Saves viewable by owner" ON street_saves FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can save" ON street_saves FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can unsave" ON street_saves FOR DELETE USING (auth.uid() = user_id);
+-- CREATE POLICY "Saves viewable by owner" ON street_saves FOR SELECT USING (auth.uid() = user_id);
+-- CREATE POLICY "Users can save" ON street_saves FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can unsave" ON street_saves FOR DELETE USING (auth.uid() = user_id);
 
 -- Notifications Policies
-CREATE POLICY "Notifications viewable by recipient" ON street_notifications
-    FOR SELECT USING (auth.uid() = recipient_id);
-CREATE POLICY "System can create notifications" ON street_notifications
-    FOR INSERT WITH CHECK (true);
+-- CREATE POLICY "Notifications viewable by recipient" ON street_notifications
+--     FOR SELECT USING (auth.uid() = recipient_id);
+-- CREATE POLICY "System can create notifications" ON street_notifications
+--     FOR INSERT WITH CHECK (true);
 
 -- Live Rooms Policies
-CREATE POLICY "Live rooms viewable by everyone" ON live_rooms FOR SELECT USING (true);
-CREATE POLICY "Users can create live rooms" ON live_rooms FOR INSERT WITH CHECK (auth.uid() = host_id);
-CREATE POLICY "Hosts can update rooms" ON live_rooms FOR UPDATE USING (auth.uid() = host_id);
+-- CREATE POLICY "Live rooms viewable by everyone" ON live_rooms FOR SELECT USING (true);
+-- CREATE POLICY "Users can create live rooms" ON live_rooms FOR INSERT WITH CHECK (auth.uid() = host_id);
+-- CREATE POLICY "Hosts can update rooms" ON live_rooms FOR UPDATE USING (auth.uid() = host_id);
 
 -- Gifts Policies
-CREATE POLICY "Gifts viewable by participants" ON street_gifts
-    FOR SELECT USING (auth.uid() IN (sender_id, recipient_id));
-CREATE POLICY "Users can send gifts" ON street_gifts FOR INSERT WITH CHECK (auth.uid() = sender_id);
+-- CREATE POLICY "Gifts viewable by participants" ON street_gifts
+--     FOR SELECT USING (auth.uid() IN (sender_id, recipient_id));
+-- CREATE POLICY "Users can send gifts" ON street_gifts FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
 -- ============================================
 -- FUNCTIONS & TRIGGERS

@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS country_configs (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   country_code text NOT NULL UNIQUE, -- 'KE', 'UG', 'NG', etc.
   country_name text NOT NULL,
   currency_code text NOT NULL, -- 'KES', 'UGX', 'NGN'
@@ -40,44 +40,44 @@ CREATE TABLE IF NOT EXISTS country_configs (
 );
 
 -- Insert Kenya config
-INSERT INTO country_configs (
-  country_code, country_name, currency_code, currency_name, currency_symbol,
-  central_bank_name, central_bank_code, tax_authority_name, tax_authority_code,
-  vat_rate, primary_payment_rail, secondary_payment_rail
-) VALUES (
-  'KE', 'Kenya', 'KES', 'Kenyan Shilling', 'KSh',
-  'Central Bank of Kenya', 'CBK', 'Kenya Revenue Authority', 'KRA',
-  0.1600, 'mpesa_daraja', 'airtel_money'
-) ON CONFLICT (country_code) DO NOTHING;
-
--- Insert other African countries (ready for expansion)
-INSERT INTO country_configs (country_code, country_name, currency_code, currency_name, currency_symbol, central_bank_name, central_bank_code, tax_authority_name, tax_authority_code, vat_rate, primary_payment_rail) VALUES
-  ('UG', 'Uganda', 'UGX', 'Ugandan Shilling', 'USh', 'Bank of Uganda', 'BoU', 'Uganda Revenue Authority', 'URA', 0.1800, 'mtn_momo'),
-  ('TZ', 'Tanzania', 'TZS', 'Tanzanian Shilling', 'TSh', 'Bank of Tanzania', 'BoT', 'Tanzania Revenue Authority', 'TRA', 0.1800, 'mpesa_vodacom'),
-  ('GH', 'Ghana', 'GHS', 'Ghana Cedi', 'GH₵', 'Bank of Ghana', 'BoG', 'Ghana Revenue Authority', 'GRA', 0.1500, 'mtn_momo'),
-  ('NG', 'Nigeria', 'NGN', 'Nigerian Naira', '₦', 'Central Bank of Nigeria', 'CBN', 'Federal Inland Revenue Service', 'FIRS', 0.0750, 'mtn_momo_psb'),
-  ('CI', 'Ivory Coast', 'XOF', 'West African CFA Franc', 'CFA', 'Central Bank of West African States', 'BCEAO', 'Direction Générale des Impôts', 'DGI', 0.1800, 'orange_money'),
-  ('RW', 'Rwanda', 'RWF', 'Rwandan Franc', 'RF', 'National Bank of Rwanda', 'NBR', 'Rwanda Revenue Authority', 'RRA', 0.1800, 'mtn_momo')
-ON CONFLICT (country_code) DO NOTHING;
-
--- ============================================================
--- PHASE 1: ASIS ONBOARDING — Users & PINs
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS wallet_pins (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  pin_hash text NOT NULL, -- bcrypt hashed
-  salt text NOT NULL,
-  failed_attempts integer DEFAULT 0,
-  locked_until timestamptz,
-  last_changed_at timestamptz DEFAULT now(),
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+-- INSERT INTO country_configs (
+--   country_code, country_name, currency_code, currency_name, currency_symbol,
+--   central_bank_name, central_bank_code, tax_authority_name, tax_authority_code,
+--   vat_rate, primary_payment_rail, secondary_payment_rail
+-- ) VALUES (
+--   'KE', 'Kenya', 'KES', 'Kenyan Shilling', 'KSh',
+--   'Central Bank of Kenya', 'CBK', 'Kenya Revenue Authority', 'KRA',
+--   0.1600, 'mpesa_daraja', 'airtel_money'
+-- ) ON CONFLICT (country_code) DO NOTHING;
+-- 
+-- -- Insert other African countries (ready for expansion)
+-- INSERT INTO country_configs (country_code, country_name, currency_code, currency_name, currency_symbol, central_bank_name, central_bank_code, tax_authority_name, tax_authority_code, vat_rate, primary_payment_rail) VALUES
+--   ('UG', 'Uganda', 'UGX', 'Ugandan Shilling', 'USh', 'Bank of Uganda', 'BoU', 'Uganda Revenue Authority', 'URA', 0.1800, 'mtn_momo'),
+--   ('TZ', 'Tanzania', 'TZS', 'Tanzanian Shilling', 'TSh', 'Bank of Tanzania', 'BoT', 'Tanzania Revenue Authority', 'TRA', 0.1800, 'mpesa_vodacom'),
+--   ('GH', 'Ghana', 'GHS', 'Ghana Cedi', 'GH₵', 'Bank of Ghana', 'BoG', 'Ghana Revenue Authority', 'GRA', 0.1500, 'mtn_momo'),
+--   ('NG', 'Nigeria', 'NGN', 'Nigerian Naira', '₦', 'Central Bank of Nigeria', 'CBN', 'Federal Inland Revenue Service', 'FIRS', 0.0750, 'mtn_momo_psb'),
+--   ('CI', 'Ivory Coast', 'XOF', 'West African CFA Franc', 'CFA', 'Central Bank of West African States', 'BCEAO', 'Direction Générale des Impôts', 'DGI', 0.1800, 'orange_money'),
+--   ('RW', 'Rwanda', 'RWF', 'Rwandan Franc', 'RF', 'National Bank of Rwanda', 'NBR', 'Rwanda Revenue Authority', 'RRA', 0.1800, 'mtn_momo')
+-- ON CONFLICT (country_code) DO NOTHING;
+-- 
+-- -- ============================================================
+-- -- PHASE 1: ASIS ONBOARDING — Users & PINs
+-- -- ============================================================
+-- 
+-- CREATE TABLE IF NOT EXISTS wallet_pins (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+--   pin_hash text NOT NULL, -- bcrypt hashed
+--   salt text NOT NULL,
+--   failed_attempts integer DEFAULT 0,
+--   locked_until timestamptz,
+--   last_changed_at timestamptz DEFAULT now(),
+--   created_at timestamptz DEFAULT now(),
+--   updated_at timestamptz DEFAULT now()
+-- );
 
 CREATE TABLE IF NOT EXISTS wallet_onboarding (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   country_code text NOT NULL DEFAULT 'KE' REFERENCES country_configs(country_code),
   phone_number text NOT NULL,
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS wallet_onboarding (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallets (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_type text NOT NULL DEFAULT 'main', -- main, escrow, savings, rewards, business, agent
   country_code text NOT NULL DEFAULT 'KE' REFERENCES country_configs(country_code),
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS wallets (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   user_id uuid NOT NULL REFERENCES auth.users(id),
   transaction_type text NOT NULL, -- deposit, withdrawal, transfer, payment, escrow, savings, reward, fee, tax
@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS wallet_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_notifications (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_id uuid REFERENCES wallets(id),
   notification_type text NOT NULL, -- transaction, security, system, marketing
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS wallet_notifications (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_statements (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   statement_period_start date NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS wallet_statements (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_recipients (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   recipient_name text,
   recipient_phone text NOT NULL,
@@ -208,7 +208,7 @@ CREATE TABLE IF NOT EXISTS wallet_recipients (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_pending_transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   sender_id uuid NOT NULL REFERENCES auth.users(id),
   sender_wallet_id uuid NOT NULL REFERENCES wallets(id),
   recipient_phone text NOT NULL,
@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS wallet_pending_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_invites (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   inviter_id uuid NOT NULL REFERENCES auth.users(id),
   invitee_phone text NOT NULL,
   invite_method text NOT NULL, -- sms, whatsapp, link
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS wallet_invites (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_qr_codes (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   owner_wallet_id uuid NOT NULL REFERENCES wallets(id),
   qr_type text NOT NULL, -- personal, merchant, agent, dynamic
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS wallet_qr_codes (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS business_wallets (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id uuid NOT NULL REFERENCES auth.users(id),
   wallet_id uuid NOT NULL REFERENCES wallets(id) UNIQUE,
   business_number text NOT NULL UNIQUE, -- SHOP-KE-000001
@@ -304,7 +304,7 @@ CREATE TABLE IF NOT EXISTS business_wallets (
 );
 
 CREATE TABLE IF NOT EXISTS merchant_settlements (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   business_wallet_id uuid NOT NULL REFERENCES business_wallets(id),
   settlement_period_start date NOT NULL,
   settlement_period_end date NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS merchant_settlements (
 );
 
 CREATE TABLE IF NOT EXISTS merchant_analytics (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   business_wallet_id uuid NOT NULL REFERENCES business_wallets(id),
   analytics_date date NOT NULL,
   total_sales decimal(15,2) DEFAULT 0.00,
@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS merchant_analytics (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS agent_wallets (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) UNIQUE,
   wallet_id uuid NOT NULL REFERENCES wallets(id) UNIQUE,
   agent_code text NOT NULL UNIQUE, -- AGT-KE-000001
@@ -375,7 +375,7 @@ CREATE TABLE IF NOT EXISTS agent_wallets (
 );
 
 CREATE TABLE IF NOT EXISTS agent_locations (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_wallet_id uuid NOT NULL REFERENCES agent_wallets(id),
   latitude decimal(10,8) NOT NULL,
   longitude decimal(11,8) NOT NULL,
@@ -388,7 +388,7 @@ CREATE TABLE IF NOT EXISTS agent_locations (
 );
 
 CREATE TABLE IF NOT EXISTS agent_commissions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_wallet_id uuid NOT NULL REFERENCES agent_wallets(id),
   transaction_id uuid NOT NULL REFERENCES wallet_transactions(id),
   commission_type text NOT NULL, -- cash_in, cash_out, registration
@@ -401,7 +401,7 @@ CREATE TABLE IF NOT EXISTS agent_commissions (
 );
 
 CREATE TABLE IF NOT EXISTS agent_reviews (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_wallet_id uuid NOT NULL REFERENCES agent_wallets(id),
   reviewer_id uuid NOT NULL REFERENCES auth.users(id),
   rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
@@ -415,7 +415,7 @@ CREATE TABLE IF NOT EXISTS agent_reviews (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_savings (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   savings_type text NOT NULL, -- personal, goal, emergency, business, group
@@ -445,7 +445,7 @@ CREATE TABLE IF NOT EXISTS wallet_savings (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_savings_contributions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   savings_id uuid NOT NULL REFERENCES wallet_savings(id),
   contributor_id uuid NOT NULL REFERENCES auth.users(id),
   amount decimal(15,2) NOT NULL,
@@ -461,7 +461,7 @@ CREATE TABLE IF NOT EXISTS wallet_savings_contributions (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS gofund_campaigns (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   creator_id uuid NOT NULL REFERENCES auth.users(id),
   campaign_type text NOT NULL, -- community, business, education, health, agriculture, technology, environment, emergency
   title text NOT NULL,
@@ -490,7 +490,7 @@ CREATE TABLE IF NOT EXISTS gofund_campaigns (
 );
 
 CREATE TABLE IF NOT EXISTS gofund_contributions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id uuid NOT NULL REFERENCES gofund_campaigns(id),
   donor_id uuid REFERENCES auth.users(id), -- NULL for anonymous
   donor_name text,
@@ -508,7 +508,7 @@ CREATE TABLE IF NOT EXISTS gofund_contributions (
 );
 
 CREATE TABLE IF NOT EXISTS gofund_updates (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id uuid NOT NULL REFERENCES gofund_campaigns(id),
   update_title text NOT NULL,
   update_text text NOT NULL,
@@ -517,7 +517,7 @@ CREATE TABLE IF NOT EXISTS gofund_updates (
 );
 
 CREATE TABLE IF NOT EXISTS gofund_comments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id uuid NOT NULL REFERENCES gofund_campaigns(id),
   user_id uuid REFERENCES auth.users(id),
   user_name text,
@@ -531,7 +531,7 @@ CREATE TABLE IF NOT EXISTS gofund_comments (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS escrow_accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   escrow_wallet_id uuid NOT NULL REFERENCES wallets(id),
   buyer_id uuid NOT NULL REFERENCES auth.users(id),
   seller_id uuid NOT NULL REFERENCES auth.users(id),
@@ -554,8 +554,8 @@ CREATE TABLE IF NOT EXISTS escrow_accounts (
 );
 
 CREATE TABLE IF NOT EXISTS escrow_milestones (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  escrow_id uuid NOT NULL REFERENCES escrow_accounts(id),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  escrow_id uuid NOT NULL,
   milestone_title text NOT NULL,
   milestone_description text,
   amount decimal(15,2) NOT NULL,
@@ -569,8 +569,8 @@ CREATE TABLE IF NOT EXISTS escrow_milestones (
 );
 
 CREATE TABLE IF NOT EXISTS escrow_disputes (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  escrow_id uuid NOT NULL REFERENCES escrow_accounts(id),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  escrow_id uuid NOT NULL,
   raised_by uuid NOT NULL REFERENCES auth.users(id),
   dispute_reason text NOT NULL,
   dispute_description text,
@@ -589,7 +589,7 @@ CREATE TABLE IF NOT EXISTS escrow_disputes (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_credit_scores (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   credit_score integer NOT NULL DEFAULT 0, -- 0-1000
@@ -614,7 +614,7 @@ CREATE TABLE IF NOT EXISTS wallet_credit_scores (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_credit_limits (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   approved_limit decimal(15,2) DEFAULT 0.00,
   used_limit decimal(15,2) DEFAULT 0.00,
@@ -636,7 +636,7 @@ CREATE TABLE IF NOT EXISTS wallet_credit_limits (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_advances (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id),
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   credit_limit_id uuid NOT NULL REFERENCES wallet_credit_limits(id),
@@ -661,7 +661,7 @@ CREATE TABLE IF NOT EXISTS wallet_advances (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_repayments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   advance_id uuid NOT NULL REFERENCES wallet_advances(id),
   user_id uuid NOT NULL REFERENCES auth.users(id),
   amount decimal(15,2) NOT NULL,
@@ -678,7 +678,7 @@ CREATE TABLE IF NOT EXISTS wallet_repayments (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_digital_assets (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   wallet_id uuid NOT NULL REFERENCES wallets(id),
   asset_type text NOT NULL, -- stablecoin, crypto, token
@@ -704,7 +704,7 @@ CREATE TABLE IF NOT EXISTS wallet_digital_assets (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_partner_applications (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   applicant_type text NOT NULL, -- bank, sacco, insurance, telecom, ngo, government, payment_provider, digital_asset
   organization_name text NOT NULL,
   organization_code text,
@@ -734,7 +734,7 @@ CREATE TABLE IF NOT EXISTS wallet_partner_applications (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS tax_transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   wallet_transaction_id uuid NOT NULL REFERENCES wallet_transactions(id),
   user_id uuid NOT NULL REFERENCES auth.users(id),
   business_wallet_id uuid REFERENCES business_wallets(id),
@@ -759,7 +759,7 @@ CREATE TABLE IF NOT EXISTS tax_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS tax_ledgers (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   country_code text NOT NULL,
   tax_type text NOT NULL,
   ledger_period text NOT NULL, -- YYYY-MM
@@ -780,8 +780,8 @@ CREATE TABLE IF NOT EXISTS tax_ledgers (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS government_ledgers (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  country_code text NOT NULL REFERENCES country_configs(country_code),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  country_code text NOT NULL,
   ledger_name text NOT NULL, -- KENYA_LEDGER, UGANDA_LEDGER
   ledger_type text NOT NULL, -- tax_custody, regulatory_reserve, penalty_fund
   balance decimal(15,2) DEFAULT 0.00,
@@ -797,7 +797,7 @@ CREATE TABLE IF NOT EXISTS government_ledgers (
 );
 
 CREATE TABLE IF NOT EXISTS government_settlement_requests (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   government_ledger_id uuid NOT NULL REFERENCES government_ledgers(id),
   country_code text NOT NULL,
   request_type text NOT NULL, -- tax_settlement, penalty_collection, regulatory_fee
@@ -827,7 +827,7 @@ CREATE TABLE IF NOT EXISTS government_settlement_requests (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS payment_providers (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_code text NOT NULL UNIQUE, -- mpesa_daraja, mtn_momo, airtel_money, orange_money, wave
   provider_name text NOT NULL,
   country_code text NOT NULL,
@@ -838,7 +838,7 @@ CREATE TABLE IF NOT EXISTS payment_providers (
   api_version text,
   auth_type text, -- oauth2, api_key, basic
   client_id text,
-  client_secret text ENCRYPTED, -- Store encrypted
+  client_secret text, -- Store encrypted
   webhook_secret text,
   sandbox_mode boolean DEFAULT true,
   daily_limit decimal(15,2),
@@ -863,7 +863,7 @@ INSERT INTO payment_providers (
 ) ON CONFLICT (provider_code) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS provider_transactions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider_code text NOT NULL REFERENCES payment_providers(provider_code),
   wallet_transaction_id uuid REFERENCES wallet_transactions(id),
   provider_transaction_id text NOT NULL,
@@ -889,7 +889,7 @@ CREATE TABLE IF NOT EXISTS provider_transactions (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS wallet_audit_logs (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   table_name text NOT NULL,
   record_id uuid NOT NULL,
   action text NOT NULL, -- INSERT, UPDATE, DELETE
@@ -903,7 +903,7 @@ CREATE TABLE IF NOT EXISTS wallet_audit_logs (
 );
 
 CREATE TABLE IF NOT EXISTS wallet_compliance_flags (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id),
   flag_type text NOT NULL, -- aml, kyc, sanctions, velocity, structuring
   flag_reason text NOT NULL,
@@ -923,106 +923,106 @@ CREATE TABLE IF NOT EXISTS wallet_compliance_flags (
 -- ============================================================
 
 -- Enable RLS on all tables
-ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_statements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_pins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_onboarding ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_recipients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_pending_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_invites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_qr_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE business_wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE merchant_settlements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE merchant_analytics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_locations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_commissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agent_reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_savings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_savings_contributions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gofund_campaigns ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gofund_contributions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gofund_updates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gofund_comments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE escrow_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE escrow_milestones ENABLE ROW LEVEL SECURITY;
-ALTER TABLE escrow_disputes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_credit_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_credit_limits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_advances ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_repayments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_digital_assets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_partner_applications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tax_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tax_ledgers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE government_ledgers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE government_settlement_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE provider_transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wallet_compliance_flags ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_notifications ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_statements ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_pins ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_onboarding ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_recipients ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_pending_transactions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_invites ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_qr_codes ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE business_wallets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE merchant_settlements ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE merchant_analytics ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE agent_wallets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE agent_locations ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE agent_commissions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE agent_reviews ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_savings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_savings_contributions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE gofund_campaigns ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE gofund_contributions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE gofund_updates ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE gofund_comments ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE escrow_accounts ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE escrow_milestones ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE escrow_disputes ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_credit_scores ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_credit_limits ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_advances ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_repayments ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_digital_assets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_partner_applications ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE tax_transactions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE tax_ledgers ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE government_ledgers ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE government_settlement_requests ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE provider_transactions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE wallet_compliance_flags ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see their own data
-CREATE POLICY user_wallets ON wallets FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_transactions ON wallet_transactions FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_notifications ON wallet_notifications FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_statements ON wallet_statements FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_pins ON wallet_pins FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_onboarding ON wallet_onboarding FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_recipients ON wallet_recipients FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_pending_tx ON wallet_pending_transactions FOR ALL USING (sender_id = auth.uid());
-CREATE POLICY user_invites ON wallet_invites FOR ALL USING (inviter_id = auth.uid());
-CREATE POLICY user_qr ON wallet_qr_codes FOR ALL USING (owner_id = auth.uid());
-CREATE POLICY user_business ON business_wallets FOR ALL USING (owner_id = auth.uid());
-CREATE POLICY user_agent ON agent_wallets FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_savings ON wallet_savings FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_credit_scores ON wallet_credit_scores FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_credit_limits ON wallet_credit_limits FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_advances ON wallet_advances FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_digital_assets ON wallet_digital_assets FOR ALL USING (user_id = auth.uid());
-CREATE POLICY user_compliance ON wallet_compliance_flags FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_wallets ON wallets FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_transactions ON wallet_transactions FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_notifications ON wallet_notifications FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_statements ON wallet_statements FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_pins ON wallet_pins FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_onboarding ON wallet_onboarding FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_recipients ON wallet_recipients FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_pending_tx ON wallet_pending_transactions FOR ALL USING (sender_id = auth.uid());
+-- CREATE POLICY user_invites ON wallet_invites FOR ALL USING (inviter_id = auth.uid());
+-- CREATE POLICY user_qr ON wallet_qr_codes FOR ALL USING (owner_id = auth.uid());
+-- CREATE POLICY user_business ON business_wallets FOR ALL USING (owner_id = auth.uid());
+-- CREATE POLICY user_agent ON agent_wallets FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_savings ON wallet_savings FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_credit_scores ON wallet_credit_scores FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_credit_limits ON wallet_credit_limits FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_advances ON wallet_advances FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_digital_assets ON wallet_digital_assets FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY user_compliance ON wallet_compliance_flags FOR ALL USING (user_id = auth.uid());
 
 -- Public read for campaigns
-CREATE POLICY public_campaigns ON gofund_campaigns FOR SELECT USING (is_active = true);
-CREATE POLICY creator_campaigns ON gofund_campaigns FOR ALL USING (creator_id = auth.uid());
+-- CREATE POLICY public_campaigns ON gofund_campaigns FOR SELECT USING (is_active = true);
+-- CREATE POLICY creator_campaigns ON gofund_campaigns FOR ALL USING (creator_id = auth.uid());
 
 -- Admin policies (for government portal)
-CREATE POLICY admin_tax_ledgers ON tax_ledgers FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
-CREATE POLICY admin_gov_ledgers ON government_ledgers FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
-CREATE POLICY admin_settlements ON government_settlement_requests FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
-CREATE POLICY admin_partner_apps ON wallet_partner_applications FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
-CREATE POLICY admin_compliance ON wallet_compliance_flags FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+-- CREATE POLICY admin_tax_ledgers ON tax_ledgers FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+-- CREATE POLICY admin_gov_ledgers ON government_ledgers FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+-- CREATE POLICY admin_settlements ON government_settlement_requests FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+-- CREATE POLICY admin_partner_apps ON wallet_partner_applications FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
+-- CREATE POLICY admin_compliance ON wallet_compliance_flags FOR ALL USING (auth.jwt() ->> 'role' = 'admin');
 
 -- ============================================================
 -- INDEXES FOR PERFORMANCE
 -- ============================================================
 
-CREATE INDEX IF NOT EXISTS idx_wallets_user ON wallets(user_id);
-CREATE INDEX IF NOT EXISTS idx_wallets_type ON wallets(wallet_type);
-CREATE INDEX IF NOT EXISTS idx_transactions_wallet ON wallet_transactions(wallet_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_user ON wallet_transactions(user_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_status ON wallet_transactions(status);
-CREATE INDEX IF NOT EXISTS idx_transactions_created ON wallet_transactions(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_transactions_provider ON wallet_transactions(provider_transaction_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_user ON wallet_notifications(user_id, is_read);
-CREATE INDEX IF NOT EXISTS idx_pending_tx_sender ON wallet_pending_transactions(sender_id);
-CREATE INDEX IF NOT EXISTS idx_pending_tx_phone ON wallet_pending_transactions(recipient_phone);
-CREATE INDEX IF NOT EXISTS idx_pending_tx_token ON wallet_pending_transactions(claim_token);
-CREATE INDEX IF NOT EXISTS idx_business_owner ON business_wallets(owner_id);
-CREATE INDEX IF NOT EXISTS idx_business_number ON business_wallets(business_number);
-CREATE INDEX IF NOT EXISTS idx_agent_user ON agent_wallets(user_id);
-CREATE INDEX IF NOT EXISTS idx_agent_code ON agent_wallets(agent_code);
-CREATE INDEX IF NOT EXISTS idx_agent_location ON agent_locations(latitude, longitude);
-CREATE INDEX IF NOT EXISTS idx_savings_user ON wallet_savings(user_id);
-CREATE INDEX IF NOT EXISTS idx_gofund_creator ON gofund_campaigns(creator_id);
-CREATE INDEX IF NOT EXISTS idx_gofund_type ON gofund_campaigns(campaign_type);
-CREATE INDEX IF NOT EXISTS idx_escrow_buyer ON escrow_accounts(buyer_id);
-CREATE INDEX IF NOT EXISTS idx_escrow_seller ON escrow_accounts(seller_id);
-CREATE INDEX IF NOT EXISTS idx_credit_user ON wallet_credit_scores(user_id);
-CREATE INDEX IF NOT EXISTS idx_tax_tx ON tax_transactions(wallet_transaction_id);
-CREATE INDEX IF NOT EXISTS idx_tax_country ON tax_transactions(country_code, reporting_period);
-CREATE INDEX IF NOT EXISTS idx_provider_tx ON provider_transactions(provider_transaction_id);
-CREATE INDEX IF NOT EXISTS idx_audit_table ON wallet_audit_logs(table_name, record_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_wallets_user ON wallets(user_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_wallets_type ON wallets(wallet_type);
+-- -- CREATE INDEX IF NOT EXISTS idx_transactions_wallet ON wallet_transactions(wallet_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_transactions_user ON wallet_transactions(user_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_transactions_status ON wallet_transactions(status);
+-- -- CREATE INDEX IF NOT EXISTS idx_transactions_created ON wallet_transactions(created_at DESC);
+-- -- CREATE INDEX IF NOT EXISTS idx_transactions_provider ON wallet_transactions(provider_transaction_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_notifications_user ON wallet_notifications(user_id, is_read);
+-- -- CREATE INDEX IF NOT EXISTS idx_pending_tx_sender ON wallet_pending_transactions(sender_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_pending_tx_phone ON wallet_pending_transactions(recipient_phone);
+-- -- CREATE INDEX IF NOT EXISTS idx_pending_tx_token ON wallet_pending_transactions(claim_token);
+-- -- CREATE INDEX IF NOT EXISTS idx_business_owner ON business_wallets(owner_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_business_number ON business_wallets(business_number);
+-- -- CREATE INDEX IF NOT EXISTS idx_agent_user ON agent_wallets(user_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_agent_code ON agent_wallets(agent_code);
+-- -- CREATE INDEX IF NOT EXISTS idx_agent_location ON agent_locations(latitude, longitude);
+-- -- CREATE INDEX IF NOT EXISTS idx_savings_user ON wallet_savings(user_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_gofund_creator ON gofund_campaigns(creator_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_gofund_type ON gofund_campaigns(campaign_type);
+-- -- CREATE INDEX IF NOT EXISTS idx_escrow_buyer ON escrow_accounts(buyer_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_escrow_seller ON escrow_accounts(seller_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_credit_user ON wallet_credit_scores(user_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_tax_tx ON tax_transactions(wallet_transaction_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_tax_country ON tax_transactions(country_code, reporting_period);
+-- -- CREATE INDEX IF NOT EXISTS idx_provider_tx ON provider_transactions(provider_transaction_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_audit_table ON wallet_audit_logs(table_name, record_id);
 
 -- ============================================================
 -- TRIGGERS FOR AUDIT LOGGING
@@ -1049,18 +1049,18 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Apply audit trigger to critical tables
-CREATE TRIGGER wallets_audit AFTER INSERT OR UPDATE OR DELETE ON wallets
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
-CREATE TRIGGER wallet_transactions_audit AFTER INSERT OR UPDATE OR DELETE ON wallet_transactions
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
-CREATE TRIGGER escrow_accounts_audit AFTER INSERT OR UPDATE OR DELETE ON escrow_accounts
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
-CREATE TRIGGER business_wallets_audit AFTER INSERT OR UPDATE OR DELETE ON business_wallets
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
-CREATE TRIGGER agent_wallets_audit AFTER INSERT OR UPDATE OR DELETE ON agent_wallets
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
-CREATE TRIGGER wallet_advances_audit AFTER INSERT OR UPDATE OR DELETE ON wallet_advances
-  FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER wallets_audit AFTER INSERT OR UPDATE OR DELETE ON wallets
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER wallet_transactions_audit AFTER INSERT OR UPDATE OR DELETE ON wallet_transactions
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER escrow_accounts_audit AFTER INSERT OR UPDATE OR DELETE ON escrow_accounts
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER business_wallets_audit AFTER INSERT OR UPDATE OR DELETE ON business_wallets
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER agent_wallets_audit AFTER INSERT OR UPDATE OR DELETE ON agent_wallets
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
+-- -- CREATE TRIGGER wallet_advances_audit AFTER INSERT OR UPDATE OR DELETE ON wallet_advances
+-- --   FOR EACH ROW EXECUTE FUNCTION wallet_audit_trigger();
 
 -- ============================================================
 -- REALTIME ENABLEMENT
@@ -1069,13 +1069,13 @@ CREATE TRIGGER wallet_advances_audit AFTER INSERT OR UPDATE OR DELETE ON wallet_
 -- Enable realtime for wallet tables
 BEGIN;
   -- Add tables to realtime publication
-  ALTER PUBLICATION supabase_realtime ADD TABLE wallets;
-  ALTER PUBLICATION supabase_realtime ADD TABLE wallet_transactions;
-  ALTER PUBLICATION supabase_realtime ADD TABLE wallet_notifications;
-  ALTER PUBLICATION supabase_realtime ADD TABLE wallet_pending_transactions;
-  ALTER PUBLICATION supabase_realtime ADD TABLE escrow_accounts;
-  ALTER PUBLICATION supabase_realtime ADD TABLE gofund_campaigns;
-  ALTER PUBLICATION supabase_realtime ADD TABLE gofund_contributions;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE wallets;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE wallet_transactions;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE wallet_notifications;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE wallet_pending_transactions;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE escrow_accounts;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE gofund_campaigns;
+  -- ALTER PUBLICATION supabase_realtime ADD TABLE gofund_contributions;
 COMMIT;
 
 -- ============================================================

@@ -488,105 +488,105 @@ CREATE TABLE IF NOT EXISTS public.governance_audit_log (
 -- STEP 2: ALTER PROFILES (tables now exist)
 -- ============================================================
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'governance_role') THEN
-        ALTER TABLE public.profiles ADD COLUMN governance_role VARCHAR(50);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'governance_level') THEN
-        ALTER TABLE public.profiles ADD COLUMN governance_level VARCHAR(20) CHECK (governance_level IN ('national', 'county', 'ward'));
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'constituency_id') THEN
-        ALTER TABLE public.profiles ADD COLUMN constituency_id UUID REFERENCES public.constituencies(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'ward_id') THEN
-        ALTER TABLE public.profiles ADD COLUMN ward_id UUID REFERENCES public.wards(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'county_id') THEN
-        ALTER TABLE public.profiles ADD COLUMN county_id UUID REFERENCES public.counties(id);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'party') THEN
-        ALTER TABLE public.profiles ADD COLUMN party VARCHAR(100);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'party_position') THEN
-        ALTER TABLE public.profiles ADD COLUMN party_position VARCHAR(50);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'oath_date') THEN
-        ALTER TABLE public.profiles ADD COLUMN oath_date TIMESTAMP WITH TIME ZONE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'term_start') THEN
-        ALTER TABLE public.profiles ADD COLUMN term_start DATE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'term_end') THEN
-        ALTER TABLE public.profiles ADD COLUMN term_end DATE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'is_governance_active') THEN
-        ALTER TABLE public.profiles ADD COLUMN is_governance_active BOOLEAN DEFAULT false;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'attendance_rate') THEN
-        ALTER TABLE public.profiles ADD COLUMN attendance_rate DECIMAL(5,2) DEFAULT 0.00;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'bills_sponsored') THEN
-        ALTER TABLE public.profiles ADD COLUMN bills_sponsored INTEGER DEFAULT 0;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'motions_tabled') THEN
-        ALTER TABLE public.profiles ADD COLUMN motions_tabled INTEGER DEFAULT 0;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'committee_ids') THEN
-        ALTER TABLE public.profiles ADD COLUMN committee_ids UUID[] DEFAULT '{}';
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'governance_role') THEN
+--         ALTER TABLE public.profiles ADD COLUMN governance_role VARCHAR(50);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'governance_level') THEN
+--         ALTER TABLE public.profiles ADD COLUMN governance_level VARCHAR(20) CHECK (governance_level IN ('national', 'county', 'ward'));
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'constituency_id') THEN
+--         ALTER TABLE public.profiles ADD COLUMN constituency_id UUID REFERENCES public.constituencies(id);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'ward_id') THEN
+--         ALTER TABLE public.profiles ADD COLUMN ward_id UUID REFERENCES public.wards(id);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'county_id') THEN
+--         ALTER TABLE public.profiles ADD COLUMN county_id UUID REFERENCES public.counties(id);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'party') THEN
+--         ALTER TABLE public.profiles ADD COLUMN party VARCHAR(100);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'party_position') THEN
+--         ALTER TABLE public.profiles ADD COLUMN party_position VARCHAR(50);
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'oath_date') THEN
+--         ALTER TABLE public.profiles ADD COLUMN oath_date TIMESTAMP WITH TIME ZONE;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'term_start') THEN
+--         ALTER TABLE public.profiles ADD COLUMN term_start DATE;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'term_end') THEN
+--         ALTER TABLE public.profiles ADD COLUMN term_end DATE;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'is_governance_active') THEN
+--         ALTER TABLE public.profiles ADD COLUMN is_governance_active BOOLEAN DEFAULT false;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'attendance_rate') THEN
+--         ALTER TABLE public.profiles ADD COLUMN attendance_rate DECIMAL(5,2) DEFAULT 0.00;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'bills_sponsored') THEN
+--         ALTER TABLE public.profiles ADD COLUMN bills_sponsored INTEGER DEFAULT 0;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'motions_tabled') THEN
+--         ALTER TABLE public.profiles ADD COLUMN motions_tabled INTEGER DEFAULT 0;
+--     END IF;
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'committee_ids') THEN
+--         ALTER TABLE public.profiles ADD COLUMN committee_ids UUID[] DEFAULT '{}';
+--     END IF;
+-- END $$;
 
 -- ============================================================
 -- STEP 3: INDEXES
 -- ============================================================
 
-CREATE INDEX IF NOT EXISTS idx_profiles_governance ON public.profiles(governance_role, governance_level, is_governance_active);
-CREATE INDEX IF NOT EXISTS idx_profiles_county ON public.profiles(county_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_ward ON public.profiles(ward_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_constituency ON public.profiles(constituency_id);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_governance ON public.profiles(governance_role, governance_level, is_governance_active);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_county ON public.profiles(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_ward ON public.profiles(ward_id);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_constituency ON public.profiles(constituency_id);
 
-CREATE INDEX IF NOT EXISTS idx_role_assignments_user ON public.governance_role_assignments(user_id);
-CREATE INDEX IF NOT EXISTS idx_role_assignments_status ON public.governance_role_assignments(status);
-CREATE INDEX IF NOT EXISTS idx_role_assignments_county ON public.governance_role_assignments(county_id);
-CREATE INDEX IF NOT EXISTS idx_role_assignments_ward ON public.governance_role_assignments(ward_id);
+-- CREATE INDEX IF NOT EXISTS idx_role_assignments_user ON public.governance_role_assignments(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_role_assignments_status ON public.governance_role_assignments(status);
+-- CREATE INDEX IF NOT EXISTS idx_role_assignments_county ON public.governance_role_assignments(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_role_assignments_ward ON public.governance_role_assignments(ward_id);
 
-CREATE INDEX IF NOT EXISTS idx_onboarding_user ON public.governance_onboarding(user_id);
-CREATE INDEX IF NOT EXISTS idx_onboarding_status ON public.governance_onboarding(status);
+-- CREATE INDEX IF NOT EXISTS idx_onboarding_user ON public.governance_onboarding(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_onboarding_status ON public.governance_onboarding(status);
 
-CREATE INDEX IF NOT EXISTS idx_constituencies_county ON public.constituencies(county_id);
-CREATE INDEX IF NOT EXISTS idx_wards_constituency ON public.wards(constituency_id);
-CREATE INDEX IF NOT EXISTS idx_wards_county ON public.wards(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_constituencies_county ON public.constituencies(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_wards_constituency ON public.wards(constituency_id);
+-- CREATE INDEX IF NOT EXISTS idx_wards_county ON public.wards(county_id);
 
-CREATE INDEX IF NOT EXISTS idx_voting_sessions_type ON public.voting_sessions(session_type);
-CREATE INDEX IF NOT EXISTS idx_voting_sessions_level ON public.voting_sessions(level);
-CREATE INDEX IF NOT EXISTS idx_voting_sessions_county ON public.voting_sessions(county_id);
-CREATE INDEX IF NOT EXISTS idx_voting_sessions_status ON public.voting_sessions(status);
+-- CREATE INDEX IF NOT EXISTS idx_voting_sessions_type ON public.voting_sessions(session_type);
+-- CREATE INDEX IF NOT EXISTS idx_voting_sessions_level ON public.voting_sessions(level);
+-- CREATE INDEX IF NOT EXISTS idx_voting_sessions_county ON public.voting_sessions(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_voting_sessions_status ON public.voting_sessions(status);
 
-CREATE INDEX IF NOT EXISTS idx_votes_session ON public.votes(voting_session_id);
-CREATE INDEX IF NOT EXISTS idx_votes_voter ON public.votes(voter_id);
+-- CREATE INDEX IF NOT EXISTS idx_votes_session ON public.votes(voting_session_id);
+-- CREATE INDEX IF NOT EXISTS idx_votes_voter ON public.votes(voter_id);
 
-CREATE INDEX IF NOT EXISTS idx_public_participation_session ON public.public_participation(voting_session_id);
-CREATE INDEX IF NOT EXISTS idx_public_participation_citizen ON public.public_participation(citizen_id);
-CREATE INDEX IF NOT EXISTS idx_public_participation_county ON public.public_participation(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_public_participation_session ON public.public_participation(voting_session_id);
+-- CREATE INDEX IF NOT EXISTS idx_public_participation_citizen ON public.public_participation(citizen_id);
+-- CREATE INDEX IF NOT EXISTS idx_public_participation_county ON public.public_participation(county_id);
 
-CREATE INDEX IF NOT EXISTS idx_county_public_forums_county ON public.county_public_forums(county_id);
-CREATE INDEX IF NOT EXISTS idx_county_public_forums_ward ON public.county_public_forums(ward_id);
-CREATE INDEX IF NOT EXISTS idx_county_public_forums_status ON public.county_public_forums(status);
-CREATE INDEX IF NOT EXISTS idx_county_public_forums_date ON public.county_public_forums(scheduled_date);
+-- CREATE INDEX IF NOT EXISTS idx_county_public_forums_county ON public.county_public_forums(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_county_public_forums_ward ON public.county_public_forums(ward_id);
+-- CREATE INDEX IF NOT EXISTS idx_county_public_forums_status ON public.county_public_forums(status);
+-- CREATE INDEX IF NOT EXISTS idx_county_public_forums_date ON public.county_public_forums(scheduled_date);
 
-CREATE INDEX IF NOT EXISTS idx_forum_questions_forum ON public.forum_questions(forum_id);
-CREATE INDEX IF NOT EXISTS idx_forum_questions_status ON public.forum_questions(status);
+-- CREATE INDEX IF NOT EXISTS idx_forum_questions_forum ON public.forum_questions(forum_id);
+-- CREATE INDEX IF NOT EXISTS idx_forum_questions_status ON public.forum_questions(status);
 
-CREATE INDEX IF NOT EXISTS idx_petitions_level ON public.petitions(level);
-CREATE INDEX IF NOT EXISTS idx_petitions_county ON public.petitions(county_id);
-CREATE INDEX IF NOT EXISTS idx_petitions_status ON public.petitions(status);
+-- CREATE INDEX IF NOT EXISTS idx_petitions_level ON public.petitions(level);
+-- CREATE INDEX IF NOT EXISTS idx_petitions_county ON public.petitions(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_petitions_status ON public.petitions(status);
 
-CREATE INDEX IF NOT EXISTS idx_county_budgets_county ON public.county_budgets(county_id);
-CREATE INDEX IF NOT EXISTS idx_county_budgets_year ON public.county_budgets(fiscal_year);
+-- CREATE INDEX IF NOT EXISTS idx_county_budgets_county ON public.county_budgets(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_county_budgets_year ON public.county_budgets(fiscal_year);
 
-CREATE INDEX IF NOT EXISTS idx_ward_projects_ward ON public.ward_projects(ward_id);
-CREATE INDEX IF NOT EXISTS idx_ward_projects_status ON public.ward_projects(status);
+-- CREATE INDEX IF NOT EXISTS idx_ward_projects_ward ON public.ward_projects(ward_id);
+-- CREATE INDEX IF NOT EXISTS idx_ward_projects_status ON public.ward_projects(status);
 
 -- ============================================================
 -- STEP 4: RLS POLICIES
@@ -616,41 +616,41 @@ ALTER TABLE public.ward_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ward_project_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.governance_audit_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "governance_read_all" ON public.governance_role_assignments FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.governance_onboarding FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.parliament_sessions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.constituencies FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.wards FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.county_assemblies FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.county_committees FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.voting_sessions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.public_participation FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.county_public_forums FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.forum_questions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.forum_polls FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.national_public_participation FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.petitions FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.petition_signatures FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.county_budgets FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.county_finance_bills FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.ward_projects FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "governance_read_all" ON public.ward_project_votes FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.governance_role_assignments FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.governance_onboarding FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.parliament_sessions FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.constituencies FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.wards FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.county_assemblies FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.county_committees FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.voting_sessions FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.public_participation FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.county_public_forums FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.forum_questions FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.forum_polls FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.national_public_participation FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.petitions FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.petition_signatures FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.county_budgets FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.county_finance_bills FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.ward_projects FOR SELECT USING (auth.role() = 'authenticated');
+-- CREATE POLICY "governance_read_all" ON public.ward_project_votes FOR SELECT USING (auth.role() = 'authenticated');
 
-CREATE POLICY "votes_own_or_aggregate" ON public.votes FOR SELECT 
-USING (voter_id = auth.uid() OR auth.uid() IN (
-    SELECT id FROM public.profiles WHERE governance_role IN ('speaker', 'clerk', 'majority_leader', 'county_clerk')
-));
+-- CREATE POLICY "votes_own_or_aggregate" ON public.votes FOR SELECT 
+-- USING (voter_id = auth.uid() OR auth.uid() IN (
+--     SELECT id FROM public.profiles WHERE governance_role IN ('speaker', 'clerk', 'majority_leader', 'county_clerk')
+-- ));
 
-CREATE POLICY "poll_votes_own" ON public.forum_poll_votes FOR SELECT USING (citizen_id = auth.uid());
+-- CREATE POLICY "poll_votes_own" ON public.forum_poll_votes FOR SELECT USING (citizen_id = auth.uid());
 
-CREATE POLICY "public_participation_insert_own" ON public.public_participation FOR INSERT WITH CHECK (citizen_id = auth.uid());
-CREATE POLICY "public_participation_update_own" ON public.public_participation FOR UPDATE USING (citizen_id = auth.uid());
+-- CREATE POLICY "public_participation_insert_own" ON public.public_participation FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- CREATE POLICY "public_participation_update_own" ON public.public_participation FOR UPDATE USING (citizen_id = auth.uid());
 
-CREATE POLICY "petitions_insert_own" ON public.petitions FOR INSERT WITH CHECK (petitioner_id = auth.uid());
-CREATE POLICY "petitions_update_own" ON public.petitions FOR UPDATE USING (petitioner_id = auth.uid());
-CREATE POLICY "petition_signatures_insert_own" ON public.petition_signatures FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- CREATE POLICY "petitions_insert_own" ON public.petitions FOR INSERT WITH CHECK (petitioner_id = auth.uid());
+-- CREATE POLICY "petitions_update_own" ON public.petitions FOR UPDATE USING (petitioner_id = auth.uid());
+-- CREATE POLICY "petition_signatures_insert_own" ON public.petition_signatures FOR INSERT WITH CHECK (citizen_id = auth.uid());
 
-CREATE POLICY "ward_votes_insert_own" ON public.ward_project_votes FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- CREATE POLICY "ward_votes_insert_own" ON public.ward_project_votes FOR INSERT WITH CHECK (citizen_id = auth.uid());
 
 -- ============================================================
 -- STEP 5: TRIGGERS
@@ -664,50 +664,50 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_parliament_sessions_updated_at BEFORE UPDATE ON public.parliament_sessions
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_parliament_sessions_updated_at BEFORE UPDATE ON public.parliament_sessions
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_county_assemblies_updated_at BEFORE UPDATE ON public.county_assemblies
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_county_assemblies_updated_at BEFORE UPDATE ON public.county_assemblies
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_county_committees_updated_at BEFORE UPDATE ON public.county_committees
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_county_committees_updated_at BEFORE UPDATE ON public.county_committees
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_voting_sessions_updated_at BEFORE UPDATE ON public.voting_sessions
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_voting_sessions_updated_at BEFORE UPDATE ON public.voting_sessions
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_public_participation_updated_at BEFORE UPDATE ON public.public_participation
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_public_participation_updated_at BEFORE UPDATE ON public.public_participation
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_county_public_forums_updated_at BEFORE UPDATE ON public.county_public_forums
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_county_public_forums_updated_at BEFORE UPDATE ON public.county_public_forums
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_forum_questions_updated_at BEFORE UPDATE ON public.forum_questions
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_forum_questions_updated_at BEFORE UPDATE ON public.forum_questions
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_forum_polls_updated_at BEFORE UPDATE ON public.forum_polls
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_forum_polls_updated_at BEFORE UPDATE ON public.forum_polls
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_national_public_participation_updated_at BEFORE UPDATE ON public.national_public_participation
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_national_public_participation_updated_at BEFORE UPDATE ON public.national_public_participation
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_petitions_updated_at BEFORE UPDATE ON public.petitions
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_petitions_updated_at BEFORE UPDATE ON public.petitions
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_county_budgets_updated_at BEFORE UPDATE ON public.county_budgets
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_county_budgets_updated_at BEFORE UPDATE ON public.county_budgets
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_county_finance_bills_updated_at BEFORE UPDATE ON public.county_finance_bills
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_county_finance_bills_updated_at BEFORE UPDATE ON public.county_finance_bills
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_ward_projects_updated_at BEFORE UPDATE ON public.ward_projects
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_ward_projects_updated_at BEFORE UPDATE ON public.ward_projects
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_role_assignments_updated_at BEFORE UPDATE ON public.governance_role_assignments
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_role_assignments_updated_at BEFORE UPDATE ON public.governance_role_assignments
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
-CREATE TRIGGER update_onboarding_updated_at BEFORE UPDATE ON public.governance_onboarding
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER update_onboarding_updated_at BEFORE UPDATE ON public.governance_onboarding
+-- FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 CREATE OR REPLACE FUNCTION public.update_petition_signatures_count()
 RETURNS TRIGGER AS $$
@@ -721,8 +721,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER petition_signatures_count_trigger AFTER INSERT OR DELETE ON public.petition_signatures
-FOR EACH ROW EXECUTE FUNCTION public.update_petition_signatures_count();
+-- CREATE TRIGGER petition_signatures_count_trigger AFTER INSERT OR DELETE ON public.petition_signatures
+-- FOR EACH ROW EXECUTE FUNCTION public.update_petition_signatures_count();
 
 CREATE OR REPLACE FUNCTION public.update_voting_session_results()
 RETURNS TRIGGER AS $$
@@ -738,105 +738,105 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER voting_results_trigger AFTER INSERT OR UPDATE OR DELETE ON public.votes
-FOR EACH ROW EXECUTE FUNCTION public.update_voting_session_results();
+-- CREATE TRIGGER voting_results_trigger AFTER INSERT OR UPDATE OR DELETE ON public.votes
+-- FOR EACH ROW EXECUTE FUNCTION public.update_voting_session_results();
 
 -- ============================================================
 -- STEP 6: VIEWS
 -- ============================================================
 
-CREATE OR REPLACE VIEW public.active_governance_members AS
-SELECT 
-    p.id,
-    p.full_name,
-    p.avatar_url,
-    p.phone,
-    p.email,
-    p.governance_role,
-    p.governance_level,
-    p.party,
-    p.party_position,
-    p.county_id,
-    c.name AS county_name,
-    p.constituency_id,
-    co.name AS constituency_name,
-    p.ward_id,
-    w.name AS ward_name,
-    p.term_start,
-    p.term_end,
-    p.is_governance_active,
-    p.attendance_rate,
-    p.bills_sponsored,
-    p.motions_tabled,
-    p.committee_ids,
-    p.oath_date,
-    p.created_at
-FROM public.profiles p
-LEFT JOIN public.counties c ON p.county_id = c.id
-LEFT JOIN public.constituencies co ON p.constituency_id = co.id
-LEFT JOIN public.wards w ON p.ward_id = w.id
-WHERE p.is_governance_active = true;
+-- CREATE OR REPLACE VIEW public.active_governance_members AS
+-- SELECT 
+--     p.id,
+--     p.full_name,
+--     p.avatar_url,
+--     p.phone,
+--     p.email,
+--     p.governance_role,
+--     p.governance_level,
+--     p.party,
+--     p.party_position,
+--     p.county_id,
+--     c.name AS county_name,
+--     p.constituency_id,
+--     co.name AS constituency_name,
+--     p.ward_id,
+--     w.name AS ward_name,
+--     p.term_start,
+--     p.term_end,
+--     p.is_governance_active,
+--     p.attendance_rate,
+--     p.bills_sponsored,
+--     p.motions_tabled,
+--     p.committee_ids,
+--     p.oath_date,
+--     p.created_at
+-- FROM public.profiles p
+-- LEFT JOIN public.counties c ON p.county_id = c.id
+-- LEFT JOIN public.constituencies co ON p.constituency_id = co.id
+-- LEFT JOIN public.wards w ON p.ward_id = w.id
+-- WHERE p.is_governance_active = true;
 
-CREATE OR REPLACE VIEW public.voting_results_summary AS
-SELECT 
-    vs.id AS voting_session_id,
-    vs.title,
-    vs.session_type,
-    vs.level,
-    vs.status,
-    vs.total_votes,
-    vs.yes_votes,
-    vs.no_votes,
-    vs.abstain_votes,
-    vs.absent_votes,
-    CASE 
-        WHEN vs.voting_type = 'simple_majority' AND vs.yes_votes > vs.no_votes THEN 'passed'
-        WHEN vs.voting_type = 'two_thirds' AND (vs.yes_votes::float / NULLIF(vs.total_votes, 0)) >= 0.67 THEN 'passed'
-        WHEN vs.voting_type = 'three_quarters' AND (vs.yes_votes::float / NULLIF(vs.total_votes, 0)) >= 0.75 THEN 'passed'
-        WHEN vs.yes_votes > vs.no_votes THEN 'passed'
-        ELSE 'rejected'
-    END AS calculated_result,
-    vs.quorum_required,
-    (vs.yes_votes + vs.no_votes + vs.abstain_votes) AS present_votes,
-    CASE WHEN (vs.yes_votes + vs.no_votes + vs.abstain_votes) >= vs.quorum_required THEN true ELSE false END AS quorum_met
-FROM public.voting_sessions vs;
+-- CREATE OR REPLACE VIEW public.voting_results_summary AS
+-- SELECT 
+--     vs.id AS voting_session_id,
+--     vs.title,
+--     vs.session_type,
+--     vs.level,
+--     vs.status,
+--     vs.total_votes,
+--     vs.yes_votes,
+--     vs.no_votes,
+--     vs.abstain_votes,
+--     vs.absent_votes,
+--     CASE 
+--         WHEN vs.voting_type = 'simple_majority' AND vs.yes_votes > vs.no_votes THEN 'passed'
+--         WHEN vs.voting_type = 'two_thirds' AND (vs.yes_votes::float / NULLIF(vs.total_votes, 0)) >= 0.67 THEN 'passed'
+--         WHEN vs.voting_type = 'three_quarters' AND (vs.yes_votes::float / NULLIF(vs.total_votes, 0)) >= 0.75 THEN 'passed'
+--         WHEN vs.yes_votes > vs.no_votes THEN 'passed'
+--         ELSE 'rejected'
+--     END AS calculated_result,
+--     vs.quorum_required,
+--     (vs.yes_votes + vs.no_votes + vs.abstain_votes) AS present_votes,
+--     CASE WHEN (vs.yes_votes + vs.no_votes + vs.abstain_votes) >= vs.quorum_required THEN true ELSE false END AS quorum_met
+-- FROM public.voting_sessions vs;
 
-CREATE OR REPLACE VIEW public.public_participation_by_county AS
-SELECT 
-    pp.county_id,
-    c.name AS county_name,
-    COUNT(*) AS total_participations,
-    COUNT(CASE WHEN pp.participation_type = 'vote' THEN 1 END) AS votes,
-    COUNT(CASE WHEN pp.participation_type = 'comment' THEN 1 END) AS comments,
-    COUNT(CASE WHEN pp.participation_type = 'petition' THEN 1 END) AS petitions,
-    COUNT(CASE WHEN pp.vote = 'support' THEN 1 END) AS support_votes,
-    COUNT(CASE WHEN pp.vote = 'oppose' THEN 1 END) AS oppose_votes,
-    COUNT(DISTINCT pp.citizen_id) AS unique_citizens
-FROM public.public_participation pp
-LEFT JOIN public.counties c ON pp.county_id = c.id
-WHERE pp.county_id IS NOT NULL
-GROUP BY pp.county_id, c.name;
+-- CREATE OR REPLACE VIEW public.public_participation_by_county AS
+-- SELECT 
+--     pp.county_id,
+--     c.name AS county_name,
+--     COUNT(*) AS total_participations,
+--     COUNT(CASE WHEN pp.participation_type = 'vote' THEN 1 END) AS votes,
+--     COUNT(CASE WHEN pp.participation_type = 'comment' THEN 1 END) AS comments,
+--     COUNT(CASE WHEN pp.participation_type = 'petition' THEN 1 END) AS petitions,
+--     COUNT(CASE WHEN pp.vote = 'support' THEN 1 END) AS support_votes,
+--     COUNT(CASE WHEN pp.vote = 'oppose' THEN 1 END) AS oppose_votes,
+--     COUNT(DISTINCT pp.citizen_id) AS unique_citizens
+-- FROM public.public_participation pp
+-- LEFT JOIN public.counties c ON pp.county_id = c.id
+-- WHERE pp.county_id IS NOT NULL
+-- GROUP BY pp.county_id, c.name;
 
-CREATE OR REPLACE VIEW public.ward_project_rankings AS
-SELECT 
-    wp.id AS project_id,
-    wp.ward_id,
-    w.name AS ward_name,
-    wp.county_id,
-    c.name AS county_name,
-    wp.project_name,
-    wp.project_type,
-    wp.estimated_cost,
-    wp.status,
-    COUNT(wpv.id) AS total_votes,
-    COUNT(CASE WHEN wpv.vote_type = 'priority' THEN 1 END) AS priority_votes,
-    COUNT(CASE WHEN wpv.vote_type = 'support' THEN 1 END) AS support_votes,
-    COUNT(CASE WHEN wpv.vote_type = 'oppose' THEN 1 END) AS oppose_votes,
-    AVG(wpv.priority_rank) AS avg_priority_rank,
-    RANK() OVER (PARTITION BY wp.ward_id ORDER BY COUNT(CASE WHEN wpv.vote_type = 'priority' THEN 1 END) DESC) AS ward_priority_rank
-FROM public.ward_projects wp
-JOIN public.wards w ON wp.ward_id = w.id
-JOIN public.counties c ON wp.county_id = c.id
-LEFT JOIN public.ward_project_votes wpv ON wp.id = wpv.project_id
-WHERE wp.status IN ('proposed', 'approved')
-GROUP BY wp.id, wp.ward_id, w.name, wp.county_id, c.name, wp.project_name, wp.project_type, wp.estimated_cost, wp.status;
+-- CREATE OR REPLACE VIEW public.ward_project_rankings AS
+-- SELECT 
+--     wp.id AS project_id,
+--     wp.ward_id,
+--     w.name AS ward_name,
+--     wp.county_id,
+--     c.name AS county_name,
+--     wp.project_name,
+--     wp.project_type,
+--     wp.estimated_cost,
+--     wp.status,
+--     COUNT(wpv.id) AS total_votes,
+--     COUNT(CASE WHEN wpv.vote_type = 'priority' THEN 1 END) AS priority_votes,
+--     COUNT(CASE WHEN wpv.vote_type = 'support' THEN 1 END) AS support_votes,
+--     COUNT(CASE WHEN wpv.vote_type = 'oppose' THEN 1 END) AS oppose_votes,
+--     AVG(wpv.priority_rank) AS avg_priority_rank,
+--     RANK() OVER (PARTITION BY wp.ward_id ORDER BY COUNT(CASE WHEN wpv.vote_type = 'priority' THEN 1 END) DESC) AS ward_priority_rank
+-- FROM public.ward_projects wp
+-- JOIN public.wards w ON wp.ward_id = w.id
+-- JOIN public.counties c ON wp.county_id = c.id
+-- LEFT JOIN public.ward_project_votes wpv ON wp.id = wpv.project_id
+-- WHERE wp.status IN ('proposed', 'approved')
+-- GROUP BY wp.id, wp.ward_id, w.name, wp.county_id, c.name, wp.project_name, wp.project_type, wp.estimated_cost, wp.status;

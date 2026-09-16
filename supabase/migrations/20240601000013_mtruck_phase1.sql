@@ -180,49 +180,49 @@ ALTER TABLE public.mtruck_heavy_equipment ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mtruck_equipment_bookings ENABLE ROW LEVEL SECURITY;
 
 -- mtruck_shipper_requests: shipper sees own, carriers see pending
-CREATE POLICY "Shippers can manage own requests" ON public.mtruck_shipper_requests
-    FOR ALL USING (auth.uid() = shipper_id);
+-- CREATE POLICY "Shippers can manage own requests" ON public.mtruck_shipper_requests
+--     FOR ALL USING (auth.uid() = shipper_id);
 
-CREATE POLICY "Carriers can view pending requests" ON public.mtruck_shipper_requests
-    FOR SELECT USING (status = 'pending');
+-- CREATE POLICY "Carriers can view pending requests" ON public.mtruck_shipper_requests
+--     FOR SELECT USING (status = 'pending');
 
 -- mtruck_haul_quotes: fleet sees own quotes, shipper sees quotes on their requests
-CREATE POLICY "Fleets can manage own quotes" ON public.mtruck_haul_quotes
-    FOR ALL USING (auth.uid() = fleet_id);
+-- CREATE POLICY "Fleets can manage own quotes" ON public.mtruck_haul_quotes
+--     FOR ALL USING (auth.uid() = fleet_id);
 
-CREATE POLICY "Shippers can view quotes on their requests" ON public.mtruck_haul_quotes
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.mtruck_shipper_requests r
-            WHERE r.id = request_id AND r.shipper_id = auth.uid()
-        )
-    );
+-- CREATE POLICY "Shippers can view quotes on their requests" ON public.mtruck_haul_quotes
+--     FOR SELECT USING (
+--         EXISTS (
+--             SELECT 1 FROM public.mtruck_shipper_requests r
+--             WHERE r.id = request_id AND r.shipper_id = auth.uid()
+--         )
+--     );
 
 -- mtruck_jobs: shipper and assigned driver can view
-CREATE POLICY "Shippers can view own jobs" ON public.mtruck_jobs
-    FOR ALL USING (auth.uid() = shipper_id);
+-- CREATE POLICY "Shippers can view own jobs" ON public.mtruck_jobs
+--     FOR ALL USING (auth.uid() = shipper_id);
 
-CREATE POLICY "Drivers can view assigned jobs" ON public.mtruck_jobs
-    FOR SELECT USING (auth.uid() = assigned_driver_id);
+-- CREATE POLICY "Drivers can view assigned jobs" ON public.mtruck_jobs
+--     FOR SELECT USING (auth.uid() = assigned_driver_id);
 
 -- mtruck_heavy_equipment: owners manage, everyone can view available
-CREATE POLICY "Owners can manage own equipment" ON public.mtruck_heavy_equipment
-    FOR ALL USING (auth.uid() = owner_id);
+-- CREATE POLICY "Owners can manage own equipment" ON public.mtruck_heavy_equipment
+--     FOR ALL USING (auth.uid() = owner_id);
 
-CREATE POLICY "Anyone can view available equipment" ON public.mtruck_heavy_equipment
-    FOR SELECT USING (status = 'available');
+-- CREATE POLICY "Anyone can view available equipment" ON public.mtruck_heavy_equipment
+--     FOR SELECT USING (status = 'available');
 
 -- mtruck_equipment_bookings: requester and owner can view
-CREATE POLICY "Requesters can manage own bookings" ON public.mtruck_equipment_bookings
-    FOR ALL USING (auth.uid() = requester_id);
+-- CREATE POLICY "Requesters can manage own bookings" ON public.mtruck_equipment_bookings
+--     FOR ALL USING (auth.uid() = requester_id);
 
-CREATE POLICY "Equipment owners can view bookings" ON public.mtruck_equipment_bookings
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.mtruck_heavy_equipment e
-            WHERE e.id = equipment_id AND e.owner_id = auth.uid()
-        )
-    );
+-- CREATE POLICY "Equipment owners can view bookings" ON public.mtruck_equipment_bookings
+--     FOR SELECT USING (
+--         EXISTS (
+--             SELECT 1 FROM public.mtruck_heavy_equipment e
+--             WHERE e.id = equipment_id AND e.owner_id = auth.uid()
+--         )
+--     );
 
 -- ============================================================
 -- TRIGGERS: Auto-update updated_at

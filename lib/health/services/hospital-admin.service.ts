@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export const hospitalAdminService = {
@@ -19,7 +18,6 @@ export const hospitalAdminService = {
       todayRevenue: revenue?.reduce((sum: number, r: any) => sum + (r.amount || 0), 0) || 0,
     };
   },
-
   async getBeds(facilityId: string) {
     const { data, error } = await supabase
       .from('health_beds')
@@ -34,17 +32,14 @@ export const hospitalAdminService = {
       patient_name: b.health_admissions?.[0]?.patient?.name,
     }));
   },
-
   async addBed(bedData: any) {
     const { error } = await supabase.from('health_beds').insert(bedData);
     if (error) throw error;
   },
-
   async updateBedStatus(bedId: string, status: string) {
     const { error } = await supabase.from('health_beds').update({ status }).eq('id', bedId);
     if (error) throw error;
   },
-
   async getAdmissions(facilityId: string) {
     const { data, error } = await supabase
       .from('health_admissions')
@@ -59,7 +54,6 @@ export const hospitalAdminService = {
       admission_date: a.admission_date, status: a.status,
     }));
   },
-
   async admitPatient(admitData: any) {
     const { data, error } = await supabase.from('health_admissions').insert(admitData).select().maybeSingle();
     if (error) throw error;
@@ -68,10 +62,9 @@ export const hospitalAdminService = {
     }
     return data;
   },
-
   async getDischarges(facilityId: string) {
     const { data, error } = await supabase
-      .from('health_beds')
+      .from('health_discharges')
       .select('*, patient:patient_id(name), bed:bed_id(bed_number, ward)')
       .eq('facility_id', facilityId)
       .order('discharge_date', { ascending: false });
@@ -83,9 +76,8 @@ export const hospitalAdminService = {
       discharge_type: d.discharge_type, medications: d.medications,
     }));
   },
-
   async dischargePatient(admissionId: string, patientId: string, facilityId: string, dischargeData: any) {
-    const { error: dErr } = await supabase.from('health_beds').insert({
+    const { error: dErr } = await supabase.from('health_discharges').insert({
       admission_id: admissionId, patient_id: patientId, facility_id: facilityId,
       ...dischargeData, discharge_date: new Date().toISOString(),
     });
@@ -96,13 +88,11 @@ export const hospitalAdminService = {
       await supabase.from('health_beds').update({ status: 'available' }).eq('id', adm.bed_id);
     }
   },
-
   async getStaff(facilityId: string) {
     const { data, error } = await supabase.from('health_staff').select('*').eq('facility_id', facilityId).order('name');
     if (error) throw error;
     return data || [];
   },
-
   async inviteStaff(staffData: any) {
     const { error } = await supabase.from('health_staff').insert(staffData);
     if (error) throw error;

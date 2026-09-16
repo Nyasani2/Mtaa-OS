@@ -33,11 +33,11 @@ CREATE TABLE IF NOT EXISTS public.businesses (
   approved_by uuid REFERENCES auth.users(id)
 );
 
-CREATE INDEX idx_businesses_owner ON public.businesses(owner_id);
-CREATE INDEX idx_businesses_till ON public.businesses(till_number) WHERE till_number IS NOT NULL;
-CREATE INDEX idx_businesses_paybill ON public.businesses(paybill_number) WHERE paybill_number IS NOT NULL;
-CREATE INDEX idx_businesses_status ON public.businesses(status);
-CREATE INDEX idx_businesses_county ON public.businesses(county);
+-- CREATE INDEX idx_businesses_owner ON public.businesses(owner_id);
+-- CREATE INDEX idx_businesses_till ON public.businesses(till_number) WHERE till_number IS NOT NULL;
+-- CREATE INDEX idx_businesses_paybill ON public.businesses(paybill_number) WHERE paybill_number IS NOT NULL;
+-- CREATE INDEX idx_businesses_status ON public.businesses(status);
+-- CREATE INDEX idx_businesses_county ON public.businesses(county);
 
 CREATE TABLE IF NOT EXISTS public.till_payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,12 +63,12 @@ CREATE TABLE IF NOT EXISTS public.till_payments (
   completed_at timestamptz
 );
 
-CREATE INDEX idx_till_payments_till ON public.till_payments(till_number);
-CREATE INDEX idx_till_payments_business ON public.till_payments(business_id);
-CREATE INDEX idx_till_payments_sender ON public.till_payments(sender_phone);
-CREATE INDEX idx_till_payments_status ON public.till_payments(status);
-CREATE INDEX idx_till_payments_settled ON public.till_payments(settled) WHERE settled = false;
-CREATE INDEX idx_till_payments_created ON public.till_payments(created_at DESC);
+-- CREATE INDEX idx_till_payments_till ON public.till_payments(till_number);
+-- CREATE INDEX idx_till_payments_business ON public.till_payments(business_id);
+-- CREATE INDEX idx_till_payments_sender ON public.till_payments(sender_phone);
+-- CREATE INDEX idx_till_payments_status ON public.till_payments(status);
+-- CREATE INDEX idx_till_payments_settled ON public.till_payments(settled) WHERE settled = false;
+-- CREATE INDEX idx_till_payments_created ON public.till_payments(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.paybill_payments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -95,12 +95,12 @@ CREATE TABLE IF NOT EXISTS public.paybill_payments (
   completed_at timestamptz
 );
 
-CREATE INDEX idx_paybill_payments_paybill ON public.paybill_payments(paybill_number);
-CREATE INDEX idx_paybill_payments_business ON public.paybill_payments(business_id);
-CREATE INDEX idx_paybill_payments_account ON public.paybill_payments(account_number);
-CREATE INDEX idx_paybill_payments_status ON public.paybill_payments(status);
-CREATE INDEX idx_paybill_payments_settled ON public.paybill_payments(settled) WHERE settled = false;
-CREATE INDEX idx_paybill_payments_created ON public.paybill_payments(created_at DESC);
+-- CREATE INDEX idx_paybill_payments_paybill ON public.paybill_payments(paybill_number);
+-- CREATE INDEX idx_paybill_payments_business ON public.paybill_payments(business_id);
+-- CREATE INDEX idx_paybill_payments_account ON public.paybill_payments(account_number);
+-- CREATE INDEX idx_paybill_payments_status ON public.paybill_payments(status);
+-- CREATE INDEX idx_paybill_payments_settled ON public.paybill_payments(settled) WHERE settled = false;
+-- CREATE INDEX idx_paybill_payments_created ON public.paybill_payments(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.phone_registry (
   phone text PRIMARY KEY,
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS public.phone_registry (
   usage_count integer DEFAULT 1
 );
 
-CREATE INDEX idx_phone_registry_name ON public.phone_registry(name);
+-- CREATE INDEX idx_phone_registry_name ON public.phone_registry(name);
 
 CREATE TABLE IF NOT EXISTS public.business_audit_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,9 +126,9 @@ CREATE TABLE IF NOT EXISTS public.business_audit_logs (
   created_at timestamptz DEFAULT now()
 );
 
-CREATE INDEX idx_business_audit_business ON public.business_audit_logs(business_id);
-CREATE INDEX idx_business_audit_action ON public.business_audit_logs(action);
-CREATE INDEX idx_business_audit_created ON public.business_audit_logs(created_at DESC);
+-- CREATE INDEX idx_business_audit_business ON public.business_audit_logs(business_id);
+-- CREATE INDEX idx_business_audit_action ON public.business_audit_logs(action);
+-- CREATE INDEX idx_business_audit_created ON public.business_audit_logs(created_at DESC);
 
 ALTER TABLE public.businesses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.till_payments ENABLE ROW LEVEL SECURITY;
@@ -136,22 +136,22 @@ ALTER TABLE public.paybill_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phone_registry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_audit_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Business owners can view own business" ON public.businesses FOR SELECT USING (owner_id = auth.uid());
-CREATE POLICY "Business owners can update own business" ON public.businesses FOR UPDATE USING (owner_id = auth.uid());
-CREATE POLICY "Admins can view all businesses" ON public.businesses FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
-CREATE POLICY "Admins can update all businesses" ON public.businesses FOR UPDATE USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- CREATE POLICY "Business owners can view own business" ON public.businesses FOR SELECT USING (owner_id = auth.uid());
+-- -- CREATE POLICY "Business owners can update own business" ON public.businesses FOR UPDATE USING (owner_id = auth.uid());
+-- -- CREATE POLICY "Admins can view all businesses" ON public.businesses FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- CREATE POLICY "Admins can update all businesses" ON public.businesses FOR UPDATE USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
 
-CREATE POLICY "Business owners can view own till payments" ON public.till_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
-CREATE POLICY "Edge functions can insert till payments" ON public.till_payments FOR INSERT WITH CHECK (true);
+-- -- CREATE POLICY "Business owners can view own till payments" ON public.till_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- CREATE POLICY "Edge functions can insert till payments" ON public.till_payments FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Business owners can view own paybill payments" ON public.paybill_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
-CREATE POLICY "Edge functions can insert paybill payments" ON public.paybill_payments FOR INSERT WITH CHECK (true);
+-- -- CREATE POLICY "Business owners can view own paybill payments" ON public.paybill_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- CREATE POLICY "Edge functions can insert paybill payments" ON public.paybill_payments FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Anyone can read phone registry" ON public.phone_registry FOR SELECT USING (true);
-CREATE POLICY "Edge functions can insert phone registry" ON public.phone_registry FOR INSERT WITH CHECK (true);
+-- -- CREATE POLICY "Anyone can read phone registry" ON public.phone_registry FOR SELECT USING (true);
+-- -- CREATE POLICY "Edge functions can insert phone registry" ON public.phone_registry FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Business owners can view own audit logs" ON public.business_audit_logs FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
-CREATE POLICY "Admins can view all audit logs" ON public.business_audit_logs FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- CREATE POLICY "Business owners can view own audit logs" ON public.business_audit_logs FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- CREATE POLICY "Admins can view all audit logs" ON public.business_audit_logs FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 

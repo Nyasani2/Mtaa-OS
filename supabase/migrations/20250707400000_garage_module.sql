@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. GARAGES — Core garage registration
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garages (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name text NOT NULL,
   description text,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS garages (
 -- 2. GARAGE_INVENTORY — Parts, supplies, stock
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garage_inventory (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   garage_id uuid NOT NULL REFERENCES garages(id) ON DELETE CASCADE,
   sku text,
   name text NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS garage_inventory (
 -- 3. GARAGE_VEHICLES — Vehicles under garage care
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garage_vehicles (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   garage_id uuid NOT NULL REFERENCES garages(id) ON DELETE CASCADE,
   owner_id uuid REFERENCES auth.users(id),
   owner_name text,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS garage_vehicles (
 -- 4. GARAGE_WORK_ORDERS — Jobs/appointments
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garage_work_orders (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   garage_id uuid NOT NULL REFERENCES garages(id) ON DELETE CASCADE,
   vehicle_id uuid REFERENCES garage_vehicles(id),
   customer_id uuid REFERENCES auth.users(id),
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS garage_work_orders (
 -- 5. GARAGE_FLEET_CONTRACTS — Fleet management
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garage_fleet_contracts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   garage_id uuid NOT NULL REFERENCES garages(id) ON DELETE CASCADE,
   fleet_owner_id uuid REFERENCES auth.users(id),
   company_name text NOT NULL,
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS garage_fleet_contracts (
 -- 6. GARAGE_MECHANICS — Staff management
 -- ============================================================
 CREATE TABLE IF NOT EXISTS garage_mechanics (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   garage_id uuid NOT NULL REFERENCES garages(id) ON DELETE CASCADE,
   user_id uuid REFERENCES auth.users(id),
   full_name text NOT NULL,
@@ -191,107 +191,107 @@ CREATE TABLE IF NOT EXISTS garage_mechanics (
 -- Garages RLS
 ALTER TABLE garages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "garages_select_all" ON garages
-  FOR SELECT USING (true);
+-- CREATE POLICY "garages_select_all" ON garages
+--   FOR SELECT USING (true);
 
-CREATE POLICY "garages_insert_own" ON garages
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+-- CREATE POLICY "garages_insert_own" ON garages
+--   FOR INSERT WITH CHECK (auth.uid() = owner_id);
 
-CREATE POLICY "garages_update_own" ON garages
-  FOR UPDATE USING (auth.uid() = owner_id);
+-- CREATE POLICY "garages_update_own" ON garages
+--   FOR UPDATE USING (auth.uid() = owner_id);
 
-CREATE POLICY "garages_delete_own" ON garages
-  FOR DELETE USING (auth.uid() = owner_id);
+-- CREATE POLICY "garages_delete_own" ON garages
+--   FOR DELETE USING (auth.uid() = owner_id);
 
 -- Garage Inventory RLS
 ALTER TABLE garage_inventory ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "inventory_select_garage" ON garage_inventory
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id)
-  );
+-- CREATE POLICY "inventory_select_garage" ON garage_inventory
+--   FOR SELECT USING (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id)
+--   );
 
-CREATE POLICY "inventory_insert_garage_owner" ON garage_inventory
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "inventory_insert_garage_owner" ON garage_inventory
+--   FOR INSERT WITH CHECK (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
+--   );
 
-CREATE POLICY "inventory_update_garage_owner" ON garage_inventory
-  FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "inventory_update_garage_owner" ON garage_inventory
+--   FOR UPDATE USING (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
+--   );
 
 -- Garage Vehicles RLS
 ALTER TABLE garage_vehicles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "vehicles_select_garage" ON garage_vehicles
-  FOR SELECT USING (true);
+-- CREATE POLICY "vehicles_select_garage" ON garage_vehicles
+--   FOR SELECT USING (true);
 
-CREATE POLICY "vehicles_insert_garage_owner" ON garage_vehicles
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_vehicles.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "vehicles_insert_garage_owner" ON garage_vehicles
+--   FOR INSERT WITH CHECK (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_vehicles.garage_id AND garages.owner_id = auth.uid())
+--   );
 
 -- Work Orders RLS
 ALTER TABLE garage_work_orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "work_orders_select_all" ON garage_work_orders
-  FOR SELECT USING (true);
+-- CREATE POLICY "work_orders_select_all" ON garage_work_orders
+--   FOR SELECT USING (true);
 
-CREATE POLICY "work_orders_insert_garage_owner" ON garage_work_orders
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_work_orders.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "work_orders_insert_garage_owner" ON garage_work_orders
+--   FOR INSERT WITH CHECK (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_work_orders.garage_id AND garages.owner_id = auth.uid())
+--   );
 
 -- Fleet Contracts RLS
 ALTER TABLE garage_fleet_contracts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "fleet_select_garage" ON garage_fleet_contracts
-  FOR SELECT USING (true);
+-- CREATE POLICY "fleet_select_garage" ON garage_fleet_contracts
+--   FOR SELECT USING (true);
 
-CREATE POLICY "fleet_insert_garage_owner" ON garage_fleet_contracts
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_fleet_contracts.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "fleet_insert_garage_owner" ON garage_fleet_contracts
+--   FOR INSERT WITH CHECK (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_fleet_contracts.garage_id AND garages.owner_id = auth.uid())
+--   );
 
 -- Mechanics RLS
 ALTER TABLE garage_mechanics ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "mechanics_select_garage" ON garage_mechanics
-  FOR SELECT USING (true);
+-- CREATE POLICY "mechanics_select_garage" ON garage_mechanics
+--   FOR SELECT USING (true);
 
-CREATE POLICY "mechanics_insert_garage_owner" ON garage_mechanics
-  FOR INSERT WITH CHECK (
-    EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_mechanics.garage_id AND garages.owner_id = auth.uid())
-  );
+-- CREATE POLICY "mechanics_insert_garage_owner" ON garage_mechanics
+--   FOR INSERT WITH CHECK (
+--     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_mechanics.garage_id AND garages.owner_id = auth.uid())
+--   );
 
 -- ============================================================
 -- INDEXES
 -- ============================================================
-CREATE INDEX IF NOT EXISTS idx_garages_owner ON garages(owner_id);
-CREATE INDEX IF NOT EXISTS idx_garages_status ON garages(status);
-CREATE INDEX IF NOT EXISTS idx_inventory_garage ON garage_inventory(garage_id);
-CREATE INDEX IF NOT EXISTS idx_inventory_category ON garage_inventory(category);
-CREATE INDEX IF NOT EXISTS idx_inventory_low_stock ON garage_inventory(quantity, reorder_level) WHERE quantity <= reorder_level;
-CREATE INDEX IF NOT EXISTS idx_vehicles_garage ON garage_vehicles(garage_id);
-CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON garage_vehicles(registration_plate);
-CREATE INDEX IF NOT EXISTS idx_work_orders_garage ON garage_work_orders(garage_id);
-CREATE INDEX IF NOT EXISTS idx_work_orders_status ON garage_work_orders(status);
-CREATE INDEX IF NOT EXISTS idx_fleet_garage ON garage_fleet_contracts(garage_id);
-CREATE INDEX IF NOT EXISTS idx_fleet_status ON garage_fleet_contracts(status);
-CREATE INDEX IF NOT EXISTS idx_mechanics_garage ON garage_mechanics(garage_id);
+-- CREATE INDEX IF NOT EXISTS idx_garages_owner ON garages(owner_id);
+-- CREATE INDEX IF NOT EXISTS idx_garages_status ON garages(status);
+-- CREATE INDEX IF NOT EXISTS idx_inventory_garage ON garage_inventory(garage_id);
+-- CREATE INDEX IF NOT EXISTS idx_inventory_category ON garage_inventory(category);
+-- CREATE INDEX IF NOT EXISTS idx_inventory_low_stock ON garage_inventory(quantity, reorder_level) WHERE quantity <= reorder_level;
+-- CREATE INDEX IF NOT EXISTS idx_vehicles_garage ON garage_vehicles(garage_id);
+-- CREATE INDEX IF NOT EXISTS idx_vehicles_plate ON garage_vehicles(registration_plate);
+-- CREATE INDEX IF NOT EXISTS idx_work_orders_garage ON garage_work_orders(garage_id);
+-- CREATE INDEX IF NOT EXISTS idx_work_orders_status ON garage_work_orders(status);
+-- CREATE INDEX IF NOT EXISTS idx_fleet_garage ON garage_fleet_contracts(garage_id);
+-- CREATE INDEX IF NOT EXISTS idx_fleet_status ON garage_fleet_contracts(status);
+-- CREATE INDEX IF NOT EXISTS idx_mechanics_garage ON garage_mechanics(garage_id);
 
 -- ============================================================
 -- SEED DATA — Default services
 -- ============================================================
-INSERT INTO garages (owner_id, name, description, address, city, services_offered, status, verification_status)
-SELECT 
-  auth.uid(),
-  'Demo Garage',
-  'Sample garage for testing',
-  '123 Test Street',
-  'Nairobi',
-  ARRAY['General Repairs', 'Oil Change', 'Brake Service', 'Engine Diagnostics'],
-  'active',
-  'verified'
-WHERE NOT EXISTS (SELECT 1 FROM garages LIMIT 1);
+-- INSERT INTO garages (owner_id, name, description, address, city, services_offered, status, verification_status)
+-- SELECT 
+--   auth.uid(),
+--   'Demo Garage',
+--   'Sample garage for testing',
+--   '123 Test Street',
+--   'Nairobi',
+--   ARRAY['General Repairs', 'Oil Change', 'Brake Service', 'Engine Diagnostics'],
+--   'active',
+--   'verified'
+-- WHERE NOT EXISTS (SELECT 1 FROM garages LIMIT 1);

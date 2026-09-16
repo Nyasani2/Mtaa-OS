@@ -14,11 +14,8 @@ export function useNetworkStatus() {
 
   const retry = async (retryFn: () => Promise<void>) => {
     setIsRetrying(true);
-    try {
-      await retryFn();
-    } finally {
-      setIsRetrying(false);
-    }
+    try { await retryFn(); }
+    finally { setIsRetrying(false); }
   };
 
   return { isOnline, isRetrying, retry };

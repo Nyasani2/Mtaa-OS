@@ -16,20 +16,20 @@ CREATE TABLE IF NOT EXISTS payment_requests (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_payment_requests_requester ON payment_requests(requester_id);
-CREATE INDEX IF NOT EXISTS idx_payment_requests_payer ON payment_requests(payer_id);
-CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status);
+-- CREATE INDEX IF NOT EXISTS idx_payment_requests_requester ON payment_requests(requester_id);
+-- CREATE INDEX IF NOT EXISTS idx_payment_requests_payer ON payment_requests(payer_id);
+-- CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status);
 
-ALTER TABLE payment_requests ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE payment_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Requesters can manage their requests"
-    ON payment_requests FOR ALL
-    USING (auth.uid() = requester_id)
-    WITH CHECK (auth.uid() = requester_id);
+-- CREATE POLICY "Requesters can manage their requests"
+--     ON payment_requests FOR ALL
+--     USING (auth.uid() = requester_id)
+--     WITH CHECK (auth.uid() = requester_id);
 
-CREATE POLICY "Payers can view requests to them"
-    ON payment_requests FOR SELECT
-    USING (auth.uid() = payer_id OR auth.uid() = requester_id);
+-- CREATE POLICY "Payers can view requests to them"
+--     ON payment_requests FOR SELECT
+--     USING (auth.uid() = payer_id OR auth.uid() = requester_id);
 
 -- ============================================================
 -- AGENTS
@@ -53,20 +53,20 @@ CREATE TABLE IF NOT EXISTS agents (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_agents_owner ON agents(owner_id);
-CREATE INDEX IF NOT EXISTS idx_agents_active ON agents(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_agents_location ON agents(lat, lng);
+-- CREATE INDEX IF NOT EXISTS idx_agents_owner ON agents(owner_id);
+-- CREATE INDEX IF NOT EXISTS idx_agents_active ON agents(is_active) WHERE is_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_agents_location ON agents(lat, lng);
 
-ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE agents ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Owners can manage their agent profile"
-    ON agents FOR ALL
-    USING (auth.uid() = owner_id)
-    WITH CHECK (auth.uid() = owner_id);
+-- CREATE POLICY "Owners can manage their agent profile"
+--     ON agents FOR ALL
+--     USING (auth.uid() = owner_id)
+--     WITH CHECK (auth.uid() = owner_id);
 
-CREATE POLICY "Anyone can view active agents"
-    ON agents FOR SELECT
-    USING (is_active = true);
+-- CREATE POLICY "Anyone can view active agents"
+--     ON agents FOR SELECT
+--     USING (is_active = true);
 
 -- ============================================================
 -- BANK ACCOUNTS
@@ -86,15 +86,15 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_bank_accounts_user ON bank_accounts(user_id);
-CREATE INDEX IF NOT EXISTS idx_bank_accounts_default ON bank_accounts(is_default) WHERE is_default = true;
+-- CREATE INDEX IF NOT EXISTS idx_bank_accounts_user ON bank_accounts(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_bank_accounts_default ON bank_accounts(is_default) WHERE is_default = true;
 
-ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage their bank accounts"
-    ON bank_accounts FOR ALL
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can manage their bank accounts"
+--     ON bank_accounts FOR ALL
+--     USING (auth.uid() = user_id)
+--     WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================
 -- SAVINGS ACCOUNTS
@@ -111,15 +111,15 @@ CREATE TABLE IF NOT EXISTS savings_accounts (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_savings_user ON savings_accounts(user_id);
-CREATE INDEX IF NOT EXISTS idx_savings_status ON savings_accounts(status);
+-- CREATE INDEX IF NOT EXISTS idx_savings_user ON savings_accounts(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_savings_status ON savings_accounts(status);
 
-ALTER TABLE savings_accounts ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE savings_accounts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can manage their savings"
-    ON savings_accounts FOR ALL
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can manage their savings"
+--     ON savings_accounts FOR ALL
+--     USING (auth.uid() = user_id)
+--     WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================
 -- LOANS
@@ -141,18 +141,18 @@ CREATE TABLE IF NOT EXISTS loans (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_loans_user ON loans(user_id);
-CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
+-- CREATE INDEX IF NOT EXISTS idx_loans_user ON loans(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_loans_status ON loans(status);
 
-ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their loans"
-    ON loans FOR SELECT
-    USING (auth.uid() = user_id);
+-- CREATE POLICY "Users can view their loans"
+--     ON loans FOR SELECT
+--     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can apply for loans"
-    ON loans FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Users can apply for loans"
+--     ON loans FOR INSERT
+--     WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================
 -- TRIGGER: updated_at for all new tables
@@ -166,13 +166,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_agents_updated_at ON agents;
-CREATE TRIGGER trg_agents_updated_at BEFORE UPDATE ON agents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- CREATE TRIGGER trg_agents_updated_at BEFORE UPDATE ON agents FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS trg_bank_accounts_updated_at ON bank_accounts;
-CREATE TRIGGER trg_bank_accounts_updated_at BEFORE UPDATE ON bank_accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- CREATE TRIGGER trg_bank_accounts_updated_at BEFORE UPDATE ON bank_accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS trg_savings_updated_at ON savings_accounts;
-CREATE TRIGGER trg_savings_updated_at BEFORE UPDATE ON savings_accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- CREATE TRIGGER trg_savings_updated_at BEFORE UPDATE ON savings_accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 DROP TRIGGER IF EXISTS trg_loans_updated_at ON loans;
-CREATE TRIGGER trg_loans_updated_at BEFORE UPDATE ON loans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- CREATE TRIGGER trg_loans_updated_at BEFORE UPDATE ON loans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

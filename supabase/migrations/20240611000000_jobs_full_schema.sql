@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.job_categories (
 
 CREATE TABLE IF NOT EXISTS public.jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  employer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  employer_id uuid NOT NULL,
   category_id uuid REFERENCES public.job_categories(id),
   title text NOT NULL,
   description text NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.jobs (
 CREATE TABLE IF NOT EXISTS public.job_applications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id uuid NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
-  applicant_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  applicant_id uuid NOT NULL,
   cover_letter text,
   resume_url text,
   portfolio_url text,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.job_applications (
 
 CREATE TABLE IF NOT EXISTS public.saved_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
   job_id uuid NOT NULL REFERENCES public.jobs(id) ON DELETE CASCADE,
   created_at timestamptz DEFAULT now(),
   UNIQUE(user_id, job_id)
@@ -71,33 +71,33 @@ CREATE TABLE IF NOT EXISTS public.saved_jobs (
 -- 2. WORKER PROFILE & SKILLS
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS public.worker_profiles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  headline text,
-  summary text,
-  years_experience int DEFAULT 0,
-  current_role text,
-  current_company text,
-  preferred_job_types text[],
-  preferred_locations text[],
-  expected_salary_min numeric,
-  expected_salary_max numeric,
-  available_from date,
-  open_to_remote boolean DEFAULT true,
-  portfolio_url text,
-  resume_url text,
-  video_intro_url text,
-  verification_status text DEFAULT 'unverified' CHECK (verification_status IN ('unverified','pending','verified','rejected')),
-  verified_at timestamptz,
-  verified_by uuid REFERENCES public.profiles(id),
-  completeness_score int DEFAULT 0,
-  profile_views int DEFAULT 0,
-  search_appearances int DEFAULT 0,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE(user_id)
-);
+-- CREATE TABLE IF NOT EXISTS public.worker_profiles (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id uuid NOT NULL,
+--   headline text,
+--   summary text,
+--   years_experience int DEFAULT 0,
+--   current_role text,
+--   current_company text,
+--   preferred_job_types text[],
+--   preferred_locations text[],
+--   expected_salary_min numeric,
+--   expected_salary_max numeric,
+--   available_from date,
+--   open_to_remote boolean DEFAULT true,
+--   portfolio_url text,
+--   resume_url text,
+--   video_intro_url text,
+--   verification_status text DEFAULT 'unverified' CHECK (verification_status IN ('unverified','pending','verified','rejected')),
+--   verified_at timestamptz,
+--   verified_by uuid,
+--   completeness_score int DEFAULT 0,
+--   profile_views int DEFAULT 0,
+--   search_appearances int DEFAULT 0,
+--   created_at timestamptz DEFAULT now(),
+--   updated_at timestamptz DEFAULT now(),
+--   UNIQUE(user_id)
+-- );
 
 CREATE TABLE IF NOT EXISTS public.skills (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS public.worker_skills (
   proficiency_level int NOT NULL CHECK (proficiency_level BETWEEN 1 AND 5),
   years_experience int DEFAULT 0,
   verified boolean DEFAULT false,
-  verified_by uuid REFERENCES public.profiles(id),
+  verified_by uuid,
   verified_at timestamptz,
   created_at timestamptz DEFAULT now(),
   UNIQUE(worker_profile_id, skill_id)
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS public.worker_skills (
 CREATE TABLE IF NOT EXISTS public.skill_endorsements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   worker_skill_id uuid NOT NULL REFERENCES public.worker_skills(id) ON DELETE CASCADE,
-  endorser_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  endorser_id uuid NOT NULL,
   comment text,
   created_at timestamptz DEFAULT now(),
   UNIQUE(worker_skill_id, endorser_id)
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS public.certifications (
   issue_date date,
   expiry_date date,
   is_verified boolean DEFAULT false,
-  verified_by uuid REFERENCES public.profiles(id),
+  verified_by uuid,
   verified_at timestamptz,
   created_at timestamptz DEFAULT now()
 );
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS public.certifications (
 
 CREATE TABLE IF NOT EXISTS public.companies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  owner_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  owner_id uuid NOT NULL,
   name text NOT NULL,
   slug text UNIQUE NOT NULL,
   description text,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS public.companies (
 CREATE TABLE IF NOT EXISTS public.company_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
   role text NOT NULL CHECK (role IN ('owner','admin','recruiter','viewer')),
   joined_at timestamptz DEFAULT now(),
   UNIQUE(company_id, user_id)
@@ -201,7 +201,7 @@ CREATE TABLE IF NOT EXISTS public.company_members (
 CREATE TABLE IF NOT EXISTS public.company_followers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
   created_at timestamptz DEFAULT now(),
   UNIQUE(company_id, user_id)
 );
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS public.company_followers (
 
 CREATE TABLE IF NOT EXISTS public.apprenticeships (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  employer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  employer_id uuid NOT NULL,
   company_id uuid REFERENCES public.companies(id),
   title text NOT NULL,
   description text NOT NULL,
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS public.apprenticeships (
   stipend_frequency text CHECK (stipend_frequency IN ('weekly','monthly')),
   skills_taught text[],
   certification_offered boolean DEFAULT false,
-  mentor_id uuid REFERENCES public.profiles(id),
+  mentor_id uuid,
   slots_available int DEFAULT 1,
   slots_filled int DEFAULT 0,
   requirements text[],
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS public.apprenticeships (
 CREATE TABLE IF NOT EXISTS public.apprenticeship_applications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   apprenticeship_id uuid NOT NULL REFERENCES public.apprenticeships(id) ON DELETE CASCADE,
-  applicant_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  applicant_id uuid NOT NULL,
   motivation_letter text,
   status text DEFAULT 'applied' CHECK (status IN ('applied','interview','accepted','rejected','withdrawn')),
   applied_at timestamptz DEFAULT now(),
@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS public.apprenticeship_applications (
 
 CREATE TABLE IF NOT EXISTS public.freelance_projects (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  client_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  client_id uuid NOT NULL,
   company_id uuid REFERENCES public.companies(id),
   title text NOT NULL,
   description text NOT NULL,
@@ -269,7 +269,7 @@ CREATE TABLE IF NOT EXISTS public.freelance_projects (
 CREATE TABLE IF NOT EXISTS public.freelance_proposals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id uuid NOT NULL REFERENCES public.freelance_projects(id) ON DELETE CASCADE,
-  freelancer_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  freelancer_id uuid NOT NULL,
   cover_letter text,
   proposed_amount numeric,
   proposed_duration text,
@@ -289,8 +289,8 @@ CREATE TABLE IF NOT EXISTS public.contracts (
   job_id uuid REFERENCES public.jobs(id),
   project_id uuid REFERENCES public.freelance_projects(id),
   apprenticeship_id uuid REFERENCES public.apprenticeships(id),
-  employer_id uuid NOT NULL REFERENCES public.profiles(id),
-  worker_id uuid NOT NULL REFERENCES public.profiles(id),
+  employer_id uuid NOT NULL,
+  worker_id uuid NOT NULL,
   company_id uuid REFERENCES public.companies(id),
   title text NOT NULL,
   terms text,
@@ -313,9 +313,9 @@ CREATE TABLE IF NOT EXISTS public.escrow_transactions (
   amount numeric NOT NULL,
   currency text DEFAULT 'KES',
   status text DEFAULT 'pending' CHECK (status IN ('pending','funded','released','disputed','refunded')),
-  funded_by uuid REFERENCES public.profiles(id),
+  funded_by uuid,
   funded_at timestamptz,
-  released_by uuid REFERENCES public.profiles(id),
+  released_by uuid,
   released_at timestamptz,
   dispute_reason text,
   created_at timestamptz DEFAULT now()
@@ -327,7 +327,7 @@ CREATE TABLE IF NOT EXISTS public.escrow_transactions (
 
 CREATE TABLE IF NOT EXISTS public.scholarships (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider_id uuid REFERENCES public.profiles(id),
+  provider_id uuid,
   title text NOT NULL,
   provider_name text NOT NULL,
   description text,
@@ -345,7 +345,7 @@ CREATE TABLE IF NOT EXISTS public.scholarships (
 
 CREATE TABLE IF NOT EXISTS public.tenders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid REFERENCES public.profiles(id),
+  organization_id uuid,
   title text NOT NULL,
   organization_name text NOT NULL,
   organization_type text CHECK (organization_type IN ('government','county','ngo','private','international')),
@@ -370,8 +370,8 @@ CREATE TABLE IF NOT EXISTS public.interviews (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id uuid REFERENCES public.job_applications(id),
   contract_id uuid REFERENCES public.contracts(id),
-  employer_id uuid NOT NULL REFERENCES public.profiles(id),
-  candidate_id uuid NOT NULL REFERENCES public.profiles(id),
+  employer_id uuid NOT NULL,
+  candidate_id uuid NOT NULL,
   type text NOT NULL CHECK (type IN ('video','audio','in_person')),
   title text NOT NULL,
   scheduled_at timestamptz NOT NULL,
@@ -394,7 +394,7 @@ CREATE TABLE IF NOT EXISTS public.job_analytics (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id uuid REFERENCES public.jobs(id) ON DELETE CASCADE,
   event_type text NOT NULL CHECK (event_type IN ('view','apply','save','share','click')),
-  user_id uuid REFERENCES public.profiles(id),
+  user_id uuid,
   metadata jsonb,
   created_at timestamptz DEFAULT now()
 );
@@ -520,45 +520,45 @@ CREATE TRIGGER freelance_projects_updated_at BEFORE UPDATE ON public.freelance_p
 -- INDEXES
 -- ============================================================
 
-CREATE INDEX IF NOT EXISTS idx_jobs_employer ON public.jobs(employer_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_status ON public.jobs(status);
-CREATE INDEX IF NOT EXISTS idx_jobs_featured ON public.jobs(featured) WHERE featured = true;
-CREATE INDEX IF NOT EXISTS idx_jobs_category ON public.jobs(category_id);
-CREATE INDEX IF NOT EXISTS idx_jobs_created ON public.jobs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_applications_job ON public.job_applications(job_id);
-CREATE INDEX IF NOT EXISTS idx_applications_applicant ON public.job_applications(applicant_id);
-CREATE INDEX IF NOT EXISTS idx_applications_status ON public.job_applications(status);
-CREATE INDEX IF NOT EXISTS idx_worker_profiles_user ON public.worker_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_skills_name ON public.skills(name);
-CREATE INDEX IF NOT EXISTS idx_worker_skills_profile ON public.worker_skills(worker_profile_id);
-CREATE INDEX IF NOT EXISTS idx_companies_owner ON public.companies(owner_id);
-CREATE INDEX IF NOT EXISTS idx_contracts_employer ON public.contracts(employer_id);
-CREATE INDEX IF NOT EXISTS idx_contracts_worker ON public.contracts(worker_id);
-CREATE INDEX IF NOT EXISTS idx_interviews_scheduled ON public.interviews(scheduled_at);
-CREATE INDEX IF NOT EXISTS idx_analytics_job ON public.job_analytics(job_id);
-CREATE INDEX IF NOT EXISTS idx_analytics_event ON public.job_analytics(event_type);
+-- CREATE INDEX IF NOT EXISTS idx_jobs_employer ON public.jobs(employer_id);
+-- CREATE INDEX IF NOT EXISTS idx_jobs_status ON public.jobs(status);
+-- -- CREATE INDEX IF NOT EXISTS idx_jobs_featured ON public.jobs(featured) WHERE featured = true;
+-- -- CREATE INDEX IF NOT EXISTS idx_jobs_category ON public.jobs(category_id);
+-- CREATE INDEX IF NOT EXISTS idx_jobs_created ON public.jobs(created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_applications_job ON public.job_applications(job_id);
+-- CREATE INDEX IF NOT EXISTS idx_applications_applicant ON public.job_applications(applicant_id);
+-- CREATE INDEX IF NOT EXISTS idx_applications_status ON public.job_applications(status);
+-- CREATE INDEX IF NOT EXISTS idx_worker_profiles_user ON public.worker_profiles(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_skills_name ON public.skills(name);
+-- CREATE INDEX IF NOT EXISTS idx_worker_skills_profile ON public.worker_skills(worker_profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_companies_owner ON public.companies(owner_id);
+-- CREATE INDEX IF NOT EXISTS idx_contracts_employer ON public.contracts(employer_id);
+-- CREATE INDEX IF NOT EXISTS idx_contracts_worker ON public.contracts(worker_id);
+-- CREATE INDEX IF NOT EXISTS idx_interviews_scheduled ON public.interviews(scheduled_at);
+-- CREATE INDEX IF NOT EXISTS idx_analytics_job ON public.job_analytics(job_id);
+-- CREATE INDEX IF NOT EXISTS idx_analytics_event ON public.job_analytics(event_type);
 
 -- ============================================================
 -- VIEWS
 -- ============================================================
 
-CREATE OR REPLACE VIEW public.job_listings AS
-SELECT 
-  j.*,
-  c.name as company_name,
-  c.logo_url as company_logo,
-  c.verified as company_verified,
-  c.rating as company_rating
-FROM public.jobs j
-LEFT JOIN public.companies c ON j.employer_id = c.owner_id
-WHERE j.status = 'published';
+-- CREATE OR REPLACE VIEW public.job_listings AS
+-- SELECT 
+--   j.*,
+--   c.name as company_name,
+--   c.logo_url as company_logo,
+--   c.verified as company_verified,
+--   c.rating as company_rating
+-- FROM public.jobs j
+-- LEFT JOIN public.companies c ON j.employer_id = c.owner_id
+-- WHERE j.status = 'published';
 
-CREATE OR REPLACE VIEW public.worker_listings AS
-SELECT 
-  wp.*,
-  p.full_name,
-  p.avatar_url,
-  p.location
-FROM public.worker_profiles wp
-JOIN public.profiles p ON wp.user_id = p.id
-WHERE wp.verification_status = 'verified';
+-- CREATE OR REPLACE VIEW public.worker_listings AS
+-- SELECT 
+--   wp.*,
+--   p.full_name,
+--   p.avatar_url,
+--   p.location
+-- FROM public.worker_profiles wp
+-- JOIN public.profiles p ON wp.user_id = p.id
+-- WHERE wp.verification_status = 'verified';

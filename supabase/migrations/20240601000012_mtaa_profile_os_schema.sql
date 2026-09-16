@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- ============================================================================
 -- MTAA Profile OS — Complete Database Schema
 -- Phase 0: Chassis — All tables, enums, RLS, triggers, indexes
@@ -114,32 +116,32 @@ END $$;
 -- ============================================================================
 
 -- Add missing columns to existing profiles table
-ALTER TABLE profiles
-    ADD COLUMN IF NOT EXISTS cover_photo_url TEXT,
-    ADD COLUMN IF NOT EXISTS bio TEXT,
-    ADD COLUMN IF NOT EXISTS short_bio TEXT,
-    ADD COLUMN IF NOT EXISTS mission TEXT,
-    ADD COLUMN IF NOT EXISTS vision TEXT,
-    ADD COLUMN IF NOT EXISTS skills TEXT[],
-    ADD COLUMN IF NOT EXISTS languages TEXT[],
-    ADD COLUMN IF NOT EXISTS availability_status availability_status DEFAULT 'available',
-    ADD COLUMN IF NOT EXISTS profession TEXT,
-    ADD COLUMN IF NOT EXISTS specialties TEXT[],
-    ADD COLUMN IF NOT EXISTS interests TEXT[],
-    ADD COLUMN IF NOT EXISTS website_url TEXT,
-    ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}',
-    ADD COLUMN IF NOT EXISTS profile_type profile_type DEFAULT 'personal',
-    ADD COLUMN IF NOT EXISTS headline TEXT,
-    ADD COLUMN IF NOT EXISTS years_of_experience INTEGER,
-    ADD COLUMN IF NOT EXISTS education_level TEXT,
-    ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT true,
-    ADD COLUMN IF NOT EXISTS allow_messages BOOLEAN DEFAULT true,
-    ADD COLUMN IF NOT EXISTS allow_calls BOOLEAN DEFAULT false,
-    ADD COLUMN IF NOT EXISTS profile_completeness INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS search_vector TSVECTOR;
+-- ALTER TABLE profiles
+--     ADD COLUMN IF NOT EXISTS cover_photo_url TEXT,
+--     ADD COLUMN IF NOT EXISTS bio TEXT,
+--     ADD COLUMN IF NOT EXISTS short_bio TEXT,
+--     ADD COLUMN IF NOT EXISTS mission TEXT,
+--     ADD COLUMN IF NOT EXISTS vision TEXT,
+--     ADD COLUMN IF NOT EXISTS skills TEXT[],
+--     ADD COLUMN IF NOT EXISTS languages TEXT[],
+--     ADD COLUMN IF NOT EXISTS availability_status availability_status DEFAULT 'available',
+--     ADD COLUMN IF NOT EXISTS profession TEXT,
+--     ADD COLUMN IF NOT EXISTS specialties TEXT[],
+--     ADD COLUMN IF NOT EXISTS interests TEXT[],
+--     ADD COLUMN IF NOT EXISTS website_url TEXT,
+--     ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}',
+--     ADD COLUMN IF NOT EXISTS profile_type profile_type DEFAULT 'personal',
+--     ADD COLUMN IF NOT EXISTS headline TEXT,
+--     ADD COLUMN IF NOT EXISTS years_of_experience INTEGER,
+--     ADD COLUMN IF NOT EXISTS education_level TEXT,
+--     ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT true,
+--     ADD COLUMN IF NOT EXISTS allow_messages BOOLEAN DEFAULT true,
+--     ADD COLUMN IF NOT EXISTS allow_calls BOOLEAN DEFAULT false,
+--     ADD COLUMN IF NOT EXISTS profile_completeness INTEGER DEFAULT 0,
+--     ADD COLUMN IF NOT EXISTS search_vector TSVECTOR;
 
--- Create index for full-text search
-CREATE INDEX IF NOT EXISTS idx_profiles_search ON profiles USING GIN(search_vector);
+-- -- Create index for full-text search
+-- CREATE INDEX IF NOT EXISTS idx_profiles_search ON profiles USING GIN(search_vector);
 
 -- Update search vector trigger
 CREATE OR REPLACE FUNCTION update_profile_search_vector()
@@ -160,106 +162,106 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_update_profile_search ON profiles;
-CREATE TRIGGER trigger_update_profile_search
-    BEFORE INSERT OR UPDATE ON profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_profile_search_vector();
+-- CREATE TRIGGER trigger_update_profile_search
+--     BEFORE INSERT OR UPDATE ON profiles
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_profile_search_vector();
 
 -- Update existing rows
-UPDATE profiles SET search_vector = 
-    setweight(to_tsvector('simple', COALESCE(display_name, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(full_name, '')), 'A') ||
-    setweight(to_tsvector('simple', COALESCE(bio, '')), 'B') ||
-    setweight(to_tsvector('simple', COALESCE(profession, '')), 'B') ||
-    setweight(to_tsvector('simple', COALESCE(short_bio, '')), 'C') ||
-    setweight(to_tsvector('simple', COALESCE(city, '')), 'C') ||
-    setweight(to_tsvector('simple', COALESCE(country, '')), 'C')
-WHERE search_vector IS NULL;
+-- UPDATE profiles SET search_vector = 
+--     setweight(to_tsvector('simple', COALESCE(display_name, '')), 'A') ||
+--     setweight(to_tsvector('simple', COALESCE(full_name, '')), 'A') ||
+--     setweight(to_tsvector('simple', COALESCE(bio, '')), 'B') ||
+--     setweight(to_tsvector('simple', COALESCE(profession, '')), 'B') ||
+--     setweight(to_tsvector('simple', COALESCE(short_bio, '')), 'C') ||
+--     setweight(to_tsvector('simple', COALESCE(city, '')), 'C') ||
+--     setweight(to_tsvector('simple', COALESCE(country, '')), 'C')
+-- WHERE search_vector IS NULL;
 
 -- ============================================================================
 -- SECTION 3: PROFILE ROLES
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_roles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     role_type profile_type NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT true,
     is_primary BOOLEAN NOT NULL DEFAULT false,
     started_at TIMESTAMPTZ,
     ended_at TIMESTAMPTZ,
     verified_at TIMESTAMPTZ,
-    verified_by UUID REFERENCES profiles(id),
+    verified_by UUID,
     metadata JSONB DEFAULT '{}',
     UNIQUE(profile_id, role_type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_roles_profile ON profile_roles(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_roles_type ON profile_roles(role_type);
-CREATE INDEX IF NOT EXISTS idx_profile_roles_active ON profile_roles(is_active);
+-- CREATE INDEX IF NOT EXISTS idx_profile_roles_profile ON profile_roles(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_roles_type ON profile_roles(role_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_roles_active ON profile_roles(is_active);
 
 ALTER TABLE profile_roles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_roles_select_own" ON profile_roles
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_roles_select_own" ON profile_roles
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_roles_insert_own" ON profile_roles
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_roles_insert_own" ON profile_roles
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_roles_update_own" ON profile_roles
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_roles_update_own" ON profile_roles
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_roles_delete_own" ON profile_roles
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_roles_delete_own" ON profile_roles
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 4: PROFILE VERIFICATIONS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_verifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     verification_type verification_type NOT NULL,
     status verification_status NOT NULL DEFAULT 'pending',
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     reviewed_at TIMESTAMPTZ,
-    reviewed_by UUID REFERENCES profiles(id),
+    reviewed_by UUID,
     rejection_reason TEXT,
     expiry_date DATE,
     documents JSONB DEFAULT '[]',
     notes TEXT,
     metadata JSONB DEFAULT '{}',
-    UNIQUE(profile_id, verification_type, status) WHERE status IN ('pending', 'in_review', 'approved')
+    UNIQUE(profile_id, verification_type, status)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_verifications_profile ON profile_verifications(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_verifications_type ON profile_verifications(verification_type);
-CREATE INDEX IF NOT EXISTS idx_profile_verifications_status ON profile_verifications(status);
+-- CREATE INDEX IF NOT EXISTS idx_profile_verifications_profile ON profile_verifications(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_verifications_type ON profile_verifications(verification_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_verifications_status ON profile_verifications(status);
 
 ALTER TABLE profile_verifications ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_verifications_select_own" ON profile_verifications
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_verifications_select_own" ON profile_verifications
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_verifications_insert_own" ON profile_verifications
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_verifications_insert_own" ON profile_verifications
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_verifications_update_own" ON profile_verifications
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_verifications_update_own" ON profile_verifications
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 5: PROFILE REPUTATION
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_reputation (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     overall_score INTEGER NOT NULL DEFAULT 50 CHECK (overall_score >= 0 AND overall_score <= 100),
     verification_score INTEGER NOT NULL DEFAULT 0 CHECK (verification_score >= 0 AND verification_score <= 100),
     activity_score INTEGER NOT NULL DEFAULT 0 CHECK (activity_score >= 0 AND activity_score <= 100),
@@ -280,27 +282,27 @@ CREATE TABLE IF NOT EXISTS profile_reputation (
     UNIQUE(profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_reputation_profile ON profile_reputation(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_reputation_overall ON profile_reputation(overall_score DESC);
-CREATE INDEX IF NOT EXISTS idx_profile_reputation_trust ON profile_reputation(trust_score DESC);
+-- CREATE INDEX IF NOT EXISTS idx_profile_reputation_profile ON profile_reputation(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_reputation_overall ON profile_reputation(overall_score DESC);
+-- CREATE INDEX IF NOT EXISTS idx_profile_reputation_trust ON profile_reputation(trust_score DESC);
 
 ALTER TABLE profile_reputation ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_reputation_select_all" ON profile_reputation
-    FOR SELECT USING (true);
+-- CREATE POLICY "profile_reputation_select_all" ON profile_reputation
+--     FOR SELECT USING (true);
 
-CREATE POLICY "profile_reputation_update_system" ON profile_reputation
-    FOR ALL USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_reputation_update_system" ON profile_reputation
+--     FOR ALL USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 6: PROFILE ACHIEVEMENTS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_achievements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     achievement_type achievement_type NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
@@ -312,46 +314,46 @@ CREATE TABLE IF NOT EXISTS profile_achievements (
     badge_image_url TEXT,
     is_verified BOOLEAN NOT NULL DEFAULT false,
     verified_at TIMESTAMPTZ,
-    verified_by UUID REFERENCES profiles(id),
+    verified_by UUID,
     metadata JSONB DEFAULT '{}',
     visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'connections', 'private'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_achievements_profile ON profile_achievements(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_achievements_type ON profile_achievements(achievement_type);
-CREATE INDEX IF NOT EXISTS idx_profile_achievements_verified ON profile_achievements(is_verified);
+-- CREATE INDEX IF NOT EXISTS idx_profile_achievements_profile ON profile_achievements(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_achievements_type ON profile_achievements(achievement_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_achievements_verified ON profile_achievements(is_verified);
 
 ALTER TABLE profile_achievements ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_achievements_select_public" ON profile_achievements
-    FOR SELECT USING (
-        visibility = 'public' OR
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
-        (visibility = 'connections' AND EXISTS (
-            SELECT 1 FROM profile_connections 
-            WHERE (profile_id = profile_achievements.profile_id AND connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()))
-            OR (connected_profile_id = profile_achievements.profile_id AND profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()))
-        ))
-    );
+-- CREATE POLICY "profile_achievements_select_public" ON profile_achievements
+--     FOR SELECT USING (
+--         visibility = 'public' OR
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
+--         (visibility = 'connections' AND EXISTS (
+--             SELECT 1 FROM profile_connections 
+--             WHERE (profile_id = profile_achievements.profile_id AND connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()))
+--             OR (connected_profile_id = profile_achievements.profile_id AND profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()))
+--         ))
+--     );
 
-CREATE POLICY "profile_achievements_insert_own" ON profile_achievements
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_achievements_insert_own" ON profile_achievements
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_achievements_update_own" ON profile_achievements
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_achievements_update_own" ON profile_achievements
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_achievements_delete_own" ON profile_achievements
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_achievements_delete_own" ON profile_achievements
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 7: PROFILE PORTFOLIOS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_portfolios (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     portfolio_type portfolio_type NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
@@ -369,34 +371,34 @@ CREATE TABLE IF NOT EXISTS profile_portfolios (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_portfolios_profile ON profile_portfolios(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_portfolios_type ON profile_portfolios(portfolio_type);
-CREATE INDEX IF NOT EXISTS idx_profile_portfolios_featured ON profile_portfolios(is_featured) WHERE is_featured = true;
+-- CREATE INDEX IF NOT EXISTS idx_profile_portfolios_profile ON profile_portfolios(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_portfolios_type ON profile_portfolios(portfolio_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_portfolios_featured ON profile_portfolios(is_featured) WHERE is_featured = true;
 
 ALTER TABLE profile_portfolios ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_portfolios_select_public" ON profile_portfolios
-    FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_portfolios_select_public" ON profile_portfolios
+--     FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_portfolios_insert_own" ON profile_portfolios
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_portfolios_insert_own" ON profile_portfolios
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_portfolios_update_own" ON profile_portfolios
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_portfolios_update_own" ON profile_portfolios
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_portfolios_delete_own" ON profile_portfolios
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_portfolios_delete_own" ON profile_portfolios
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 8: PROFILE PROJECTS (detailed portfolio items)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_projects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     portfolio_id UUID REFERENCES profile_portfolios(id) ON DELETE CASCADE,
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     role TEXT,
@@ -411,34 +413,34 @@ CREATE TABLE IF NOT EXISTS profile_projects (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_projects_portfolio ON profile_projects(portfolio_id);
-CREATE INDEX IF NOT EXISTS idx_profile_projects_profile ON profile_projects(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_projects_portfolio ON profile_projects(portfolio_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_projects_profile ON profile_projects(profile_id);
 
 ALTER TABLE profile_projects ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_projects_select_public" ON profile_projects
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR EXISTS (
-        SELECT 1 FROM profile_portfolios WHERE id = profile_projects.portfolio_id AND is_public = true
-    ));
+-- CREATE POLICY "profile_projects_select_public" ON profile_projects
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR EXISTS (
+--         SELECT 1 FROM profile_portfolios WHERE id = profile_projects.portfolio_id AND is_public = true
+--     ));
 
-CREATE POLICY "profile_projects_insert_own" ON profile_projects
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_projects_insert_own" ON profile_projects
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_projects_update_own" ON profile_projects
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_projects_update_own" ON profile_projects
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_projects_delete_own" ON profile_projects
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_projects_delete_own" ON profile_projects
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 9: PROFILE SKILLS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_skills (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     skill_name TEXT NOT NULL,
     proficiency_level skill_level NOT NULL DEFAULT 'beginner',
     years_of_experience INTEGER,
@@ -450,32 +452,32 @@ CREATE TABLE IF NOT EXISTS profile_skills (
     UNIQUE(profile_id, skill_name)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_skills_profile ON profile_skills(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_skills_name ON profile_skills(skill_name);
+-- CREATE INDEX IF NOT EXISTS idx_profile_skills_profile ON profile_skills(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_skills_name ON profile_skills(skill_name);
 
 ALTER TABLE profile_skills ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_skills_select_all" ON profile_skills
-    FOR SELECT USING (true);
+-- CREATE POLICY "profile_skills_select_all" ON profile_skills
+--     FOR SELECT USING (true);
 
-CREATE POLICY "profile_skills_insert_own" ON profile_skills
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_skills_insert_own" ON profile_skills
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_skills_update_own" ON profile_skills
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_skills_update_own" ON profile_skills
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_skills_delete_own" ON profile_skills
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_skills_delete_own" ON profile_skills
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 10: PROFILE CERTIFICATIONS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_certifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     name TEXT NOT NULL,
     issuer TEXT NOT NULL,
     issue_date DATE NOT NULL,
@@ -485,38 +487,38 @@ CREATE TABLE IF NOT EXISTS profile_certifications (
     document_url TEXT,
     is_verified BOOLEAN NOT NULL DEFAULT false,
     verified_at TIMESTAMPTZ,
-    verified_by UUID REFERENCES profiles(id),
+    verified_by UUID,
     skills TEXT[],
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_certifications_profile ON profile_certifications(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_certifications_expiry ON profile_certifications(expiry_date) WHERE expiry_date IS NOT NULL;
+-- CREATE INDEX IF NOT EXISTS idx_profile_certifications_profile ON profile_certifications(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_certifications_expiry ON profile_certifications(expiry_date) WHERE expiry_date IS NOT NULL;
 
 ALTER TABLE profile_certifications ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_certifications_select_all" ON profile_certifications
-    FOR SELECT USING (true);
+-- CREATE POLICY "profile_certifications_select_all" ON profile_certifications
+--     FOR SELECT USING (true);
 
-CREATE POLICY "profile_certifications_insert_own" ON profile_certifications
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_certifications_insert_own" ON profile_certifications
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_certifications_update_own" ON profile_certifications
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_certifications_update_own" ON profile_certifications
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_certifications_delete_own" ON profile_certifications
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_certifications_delete_own" ON profile_certifications
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 11: PROFILE REFERENCES
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_references (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    referrer_profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
+    referrer_profile_id UUID NOT NULL,
     relationship TEXT NOT NULL,
     recommendation TEXT NOT NULL,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
@@ -526,32 +528,32 @@ CREATE TABLE IF NOT EXISTS profile_references (
     UNIQUE(profile_id, referrer_profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_references_profile ON profile_references(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_references_referrer ON profile_references(referrer_profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_references_profile ON profile_references(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_references_referrer ON profile_references(referrer_profile_id);
 
 ALTER TABLE profile_references ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_references_select_public" ON profile_references
-    FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_references_select_public" ON profile_references
+--     FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_references_insert_own" ON profile_references
-    FOR INSERT WITH CHECK (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_references_insert_own" ON profile_references
+--     FOR INSERT WITH CHECK (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_references_update_own" ON profile_references
-    FOR UPDATE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_references_update_own" ON profile_references
+--     FOR UPDATE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_references_delete_own" ON profile_references
-    FOR DELETE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_references_delete_own" ON profile_references
+--     FOR DELETE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 12: PROFILE LINKS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_links (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     platform TEXT NOT NULL,
     url TEXT NOT NULL,
     title TEXT,
@@ -560,78 +562,78 @@ CREATE TABLE IF NOT EXISTS profile_links (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_links_profile ON profile_links(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_links_profile ON profile_links(profile_id);
 
 ALTER TABLE profile_links ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_links_select_all" ON profile_links
-    FOR SELECT USING (true);
+-- CREATE POLICY "profile_links_select_all" ON profile_links
+--     FOR SELECT USING (true);
 
-CREATE POLICY "profile_links_insert_own" ON profile_links
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_links_insert_own" ON profile_links
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_links_update_own" ON profile_links
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_links_update_own" ON profile_links
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_links_delete_own" ON profile_links
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_links_delete_own" ON profile_links
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 13: PROFILE CONNECTIONS (Network)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_connections (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    connected_profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
+    connected_profile_id UUID NOT NULL,
     connection_type connection_type NOT NULL DEFAULT 'contact',
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('pending', 'active', 'blocked', 'removed')),
-    initiated_by UUID NOT NULL REFERENCES profiles(id),
+    initiated_by UUID NOT NULL,
     notes TEXT,
     metadata JSONB DEFAULT '{}',
     UNIQUE(profile_id, connected_profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_connections_profile ON profile_connections(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_connections_connected ON profile_connections(connected_profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_connections_type ON profile_connections(connection_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_connections_profile ON profile_connections(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_connections_connected ON profile_connections(connected_profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_connections_type ON profile_connections(connection_type);
 
 ALTER TABLE profile_connections ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_connections_select_own" ON profile_connections
-    FOR SELECT USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
-        connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "profile_connections_select_own" ON profile_connections
+--     FOR SELECT USING (
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
+--         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_connections_insert_own" ON profile_connections
-    FOR INSERT WITH CHECK (
-        initiated_by IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "profile_connections_insert_own" ON profile_connections
+--     FOR INSERT WITH CHECK (
+--         initiated_by IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_connections_update_own" ON profile_connections
-    FOR UPDATE USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
-        connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "profile_connections_update_own" ON profile_connections
+--     FOR UPDATE USING (
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
+--         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_connections_delete_own" ON profile_connections
-    FOR DELETE USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
-        connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "profile_connections_delete_own" ON profile_connections
+--     FOR DELETE USING (
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
+--         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
 -- ============================================================================
 -- SECTION 14: PROFILE QR CODES
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_qr_codes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     qr_type TEXT NOT NULL CHECK (qr_type IN ('identity', 'contact', 'business', 'portfolio', 'payment', 'job', 'service')),
     qr_data TEXT NOT NULL,
     qr_image_url TEXT,
@@ -642,32 +644,32 @@ CREATE TABLE IF NOT EXISTS profile_qr_codes (
     UNIQUE(profile_id, qr_type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_qr_codes_profile ON profile_qr_codes(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_qr_codes_type ON profile_qr_codes(qr_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_qr_codes_profile ON profile_qr_codes(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_qr_codes_type ON profile_qr_codes(qr_type);
 
 ALTER TABLE profile_qr_codes ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_qr_codes_select_own" ON profile_qr_codes
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_qr_codes_select_own" ON profile_qr_codes
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_qr_codes_insert_own" ON profile_qr_codes
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_qr_codes_insert_own" ON profile_qr_codes
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_qr_codes_update_own" ON profile_qr_codes
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_qr_codes_update_own" ON profile_qr_codes
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_qr_codes_delete_own" ON profile_qr_codes
-    FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_qr_codes_delete_own" ON profile_qr_codes
+--     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 15: PROFILE ANALYTICS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_analytics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     date DATE NOT NULL DEFAULT CURRENT_DATE,
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     profile_views INTEGER NOT NULL DEFAULT 0,
     portfolio_views INTEGER NOT NULL DEFAULT 0,
     business_views INTEGER NOT NULL DEFAULT 0,
@@ -684,28 +686,28 @@ CREATE TABLE IF NOT EXISTS profile_analytics (
     UNIQUE(profile_id, date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_analytics_profile_date ON profile_analytics(profile_id, date DESC);
+-- CREATE INDEX IF NOT EXISTS idx_profile_analytics_profile_date ON profile_analytics(profile_id, date DESC);
 
 ALTER TABLE profile_analytics ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_analytics_select_own" ON profile_analytics
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_analytics_select_own" ON profile_analytics
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_analytics_insert_system" ON profile_analytics
-    FOR INSERT WITH CHECK (true);
+-- CREATE POLICY "profile_analytics_insert_system" ON profile_analytics
+--     FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "profile_analytics_update_system" ON profile_analytics
-    FOR UPDATE USING (true);
+-- CREATE POLICY "profile_analytics_update_system" ON profile_analytics
+--     FOR UPDATE USING (true);
 
 -- ============================================================================
 -- SECTION 16: PROFILE SETTINGS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     is_profile_public BOOLEAN NOT NULL DEFAULT true,
     is_portfolio_public BOOLEAN NOT NULL DEFAULT true,
     is_achievements_public BOOLEAN NOT NULL DEFAULT true,
@@ -726,27 +728,27 @@ CREATE TABLE IF NOT EXISTS profile_settings (
     UNIQUE(profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_settings_profile ON profile_settings(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_settings_profile ON profile_settings(profile_id);
 
 ALTER TABLE profile_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_settings_select_own" ON profile_settings
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_settings_select_own" ON profile_settings
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_settings_insert_own" ON profile_settings
-    FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_settings_insert_own" ON profile_settings
+--     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_settings_update_own" ON profile_settings
-    FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_settings_update_own" ON profile_settings
+--     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
 -- SECTION 17: PROFILE ACTIVITY LOG
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_activity_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     activity_type TEXT NOT NULL,
     activity_description TEXT,
     related_entity_type TEXT,
@@ -756,17 +758,17 @@ CREATE TABLE IF NOT EXISTS profile_activity_log (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_activity_log_profile ON profile_activity_log(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_activity_log_created ON profile_activity_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_profile_activity_log_type ON profile_activity_log(activity_type);
+-- CREATE INDEX IF NOT EXISTS idx_profile_activity_log_profile ON profile_activity_log(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_activity_log_created ON profile_activity_log(created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_profile_activity_log_type ON profile_activity_log(activity_type);
 
 ALTER TABLE profile_activity_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_activity_log_select_own" ON profile_activity_log
-    FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "profile_activity_log_select_own" ON profile_activity_log
+--     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "profile_activity_log_insert_system" ON profile_activity_log
-    FOR INSERT WITH CHECK (true);
+-- CREATE POLICY "profile_activity_log_insert_system" ON profile_activity_log
+--     FOR INSERT WITH CHECK (true);
 
 -- ============================================================================
 -- SECTION 18: EXTEND BUSINESSES TABLE
@@ -800,16 +802,16 @@ ALTER TABLE businesses
     ADD COLUMN IF NOT EXISTS average_rating NUMERIC(2,1) DEFAULT 0,
     ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}';
 
-CREATE INDEX IF NOT EXISTS idx_businesses_type ON businesses(business_type);
-CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status);
-CREATE INDEX IF NOT EXISTS idx_businesses_owner ON businesses(owner_id);
+-- CREATE INDEX IF NOT EXISTS idx_businesses_type ON businesses(business_type);
+-- CREATE INDEX IF NOT EXISTS idx_businesses_status ON businesses(status);
+-- CREATE INDEX IF NOT EXISTS idx_businesses_owner ON businesses(owner_id);
 
 -- ============================================================================
 -- SECTION 19: BUSINESS BRANCHES
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS business_branches (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
@@ -830,38 +832,38 @@ CREATE TABLE IF NOT EXISTS business_branches (
     metadata JSONB DEFAULT '{}'
 );
 
-CREATE INDEX IF NOT EXISTS idx_business_branches_business ON business_branches(business_id);
-CREATE INDEX IF NOT EXISTS idx_business_branches_main ON business_branches(business_id, is_main_branch) WHERE is_main_branch = true;
+-- CREATE INDEX IF NOT EXISTS idx_business_branches_business ON business_branches(business_id);
+-- CREATE INDEX IF NOT EXISTS idx_business_branches_main ON business_branches(business_id, is_main_branch) WHERE is_main_branch = true;
 
 ALTER TABLE business_branches ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "business_branches_select_all" ON business_branches
-    FOR SELECT USING (true);
+-- CREATE POLICY "business_branches_select_all" ON business_branches
+--     FOR SELECT USING (true);
 
-CREATE POLICY "business_branches_insert_owner" ON business_branches
-    FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "business_branches_insert_owner" ON business_branches
+--     FOR INSERT WITH CHECK (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
+--     );
 
-CREATE POLICY "business_branches_update_owner" ON business_branches
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "business_branches_update_owner" ON business_branches
+--     FOR UPDATE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
+--     );
 
-CREATE POLICY "business_branches_delete_owner" ON business_branches
-    FOR DELETE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "business_branches_delete_owner" ON business_branches
+--     FOR DELETE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
+--     );
 
 -- ============================================================================
 -- SECTION 20: PROFILE BUSINESSES (Junction)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS profile_businesses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
     role staff_role NOT NULL DEFAULT 'owner',
     is_primary_owner BOOLEAN NOT NULL DEFAULT false,
@@ -873,45 +875,45 @@ CREATE TABLE IF NOT EXISTS profile_businesses (
     UNIQUE(profile_id, business_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_profile_businesses_profile ON profile_businesses(profile_id);
-CREATE INDEX IF NOT EXISTS idx_profile_businesses_business ON profile_businesses(business_id);
-CREATE INDEX IF NOT EXISTS idx_profile_businesses_active ON profile_businesses(is_active) WHERE is_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_profile_businesses_profile ON profile_businesses(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_businesses_business ON profile_businesses(business_id);
+-- CREATE INDEX IF NOT EXISTS idx_profile_businesses_active ON profile_businesses(is_active) WHERE is_active = true;
 
 ALTER TABLE profile_businesses ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "profile_businesses_select_own" ON profile_businesses
-    FOR SELECT USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
-        EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "profile_businesses_select_own" ON profile_businesses
+--     FOR SELECT USING (
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
+--         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_businesses_insert_owner" ON profile_businesses
-    FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "profile_businesses_insert_owner" ON profile_businesses
+--     FOR INSERT WITH CHECK (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_businesses_update_owner" ON profile_businesses
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid()) OR
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "profile_businesses_update_owner" ON profile_businesses
+--     FOR UPDATE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid()) OR
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
-CREATE POLICY "profile_businesses_delete_owner" ON profile_businesses
-    FOR DELETE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "profile_businesses_delete_owner" ON profile_businesses
+--     FOR DELETE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
+--     );
 
 -- ============================================================================
 -- SECTION 21: BUSINESS STAFF
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS business_staff (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
     branch_id UUID REFERENCES business_branches(id) ON DELETE SET NULL,
-    profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    profile_id UUID NOT NULL,
     role staff_role NOT NULL DEFAULT 'staff',
     status staff_status NOT NULL DEFAULT 'active',
     permissions JSONB DEFAULT '{}',
@@ -927,30 +929,30 @@ CREATE TABLE IF NOT EXISTS business_staff (
     UNIQUE(business_id, profile_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_business_staff_business ON business_staff(business_id);
-CREATE INDEX IF NOT EXISTS idx_business_staff_profile ON business_staff(profile_id);
-CREATE INDEX IF NOT EXISTS idx_business_staff_status ON business_staff(status);
+-- CREATE INDEX IF NOT EXISTS idx_business_staff_business ON business_staff(business_id);
+-- CREATE INDEX IF NOT EXISTS idx_business_staff_profile ON business_staff(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_business_staff_status ON business_staff(status);
 
 ALTER TABLE business_staff ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "business_staff_select_all" ON business_staff
-    FOR SELECT USING (true);
+-- CREATE POLICY "business_staff_select_all" ON business_staff
+--     FOR SELECT USING (true);
 
-CREATE POLICY "business_staff_insert_owner" ON business_staff
-    FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "business_staff_insert_owner" ON business_staff
+--     FOR INSERT WITH CHECK (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
+--     );
 
-CREATE POLICY "business_staff_update_owner" ON business_staff
-    FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid()) OR
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
+-- CREATE POLICY "business_staff_update_owner" ON business_staff
+--     FOR UPDATE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid()) OR
+--         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
+--     );
 
-CREATE POLICY "business_staff_delete_owner" ON business_staff
-    FOR DELETE USING (
-        EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
-    );
+-- CREATE POLICY "business_staff_delete_owner" ON business_staff
+--     FOR DELETE USING (
+--         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
+--     );
 
 -- ============================================================================
 -- SECTION 22: TRIGGERS
@@ -1000,10 +1002,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_create_profile_settings ON profiles;
-CREATE TRIGGER trigger_create_profile_settings
-    AFTER INSERT ON profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION create_profile_settings();
+-- CREATE TRIGGER trigger_create_profile_settings
+--     AFTER INSERT ON profiles
+--     FOR EACH ROW
+--     EXECUTE FUNCTION create_profile_settings();
 
 -- Auto-create profile_reputation on profile creation
 CREATE OR REPLACE FUNCTION create_profile_reputation()
@@ -1017,10 +1019,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_create_profile_reputation ON profiles;
-CREATE TRIGGER trigger_create_profile_reputation
-    AFTER INSERT ON profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION create_profile_reputation();
+-- CREATE TRIGGER trigger_create_profile_reputation
+--     AFTER INSERT ON profiles
+--     FOR EACH ROW
+--     EXECUTE FUNCTION create_profile_reputation();
 
 -- Auto-log profile activity
 CREATE OR REPLACE FUNCTION log_profile_activity()
@@ -1063,16 +1065,16 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_profile_completeness()
 RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE profiles SET profile_completeness = calculate_profile_completeness(NEW.id) WHERE id = NEW.id;
+    -- UPDATE profiles SET profile_completeness = calculate_profile_completeness(NEW.id) WHERE id = NEW.id;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trigger_update_completeness ON profiles;
-CREATE TRIGGER trigger_update_completeness
-    AFTER UPDATE OF avatar_url, cover_photo_url, bio, display_name, phone, city, profession, skills, is_verified ON profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_profile_completeness();
+-- CREATE TRIGGER trigger_update_completeness
+--     AFTER UPDATE OF avatar_url, cover_photo_url, bio, display_name, phone, city, profession, skills, is_verified ON profiles
+--     FOR EACH ROW
+--     EXECUTE FUNCTION update_profile_completeness();
 
 -- Get public profile summary
 CREATE OR REPLACE FUNCTION get_public_profile(p_id UUID)

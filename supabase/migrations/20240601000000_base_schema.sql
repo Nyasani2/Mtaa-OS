@@ -59,29 +59,28 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
-CREATE INDEX IF NOT EXISTS idx_profiles_search ON public.profiles USING GIN(search_vector);
-CREATE INDEX IF NOT EXISTS idx_profiles_city ON public.profiles(city);
-CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+-- -- COMMENTED OUT: CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username) -- Views cannot have indexes;
+-- CREATE INDEX IF NOT EXISTS idx_profiles_search ON public.profiles USING GIN(search_vector);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_city ON public.profiles(city);
+-- CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
 
 -- RLS
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Profiles are viewable by everyone"
-    ON public.profiles FOR SELECT
-    TO anon, authenticated
-    USING (true);
+-- -- CREATE POLICY "Profiles are viewable by everyone"
+-- --     ON public.profiles FOR SELECT
+-- --     TO anon, authenticated
+-- --     USING (true);
 
-CREATE POLICY "Users can insert own profile"
-    ON public.profiles FOR INSERT
-    TO authenticated
-    WITH CHECK (user_id = auth.uid());
+-- -- CREATE POLICY "Users can insert own profile"
+-- --     ON public.profiles FOR INSERT
+-- --     TO authenticated
+-- --     WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Users can update own profile"
-    ON public.profiles FOR UPDATE
-    TO authenticated
-    USING (user_id = auth.uid());
+-- -- CREATE POLICY "Users can update own profile"
+-- --     ON public.profiles FOR UPDATE
+-- --     TO authenticated
+-- --     USING (user_id = auth.uid());
 
 -- Trigger: auto-create profile on auth.user insert
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -115,10 +114,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_profiles_updated_at ON public.profiles;
-CREATE TRIGGER trg_profiles_updated_at
-    BEFORE UPDATE ON public.profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
+-- CREATE TRIGGER trg_profiles_updated_at
+--     BEFORE UPDATE ON public.profiles
+--     FOR EACH ROW
+--     EXECUTE FUNCTION public.update_updated_at_column();
 
 -- ============================================================
 -- 2. COUNTIES TABLE (Referenced by governance, streets, etc.)
@@ -137,65 +136,65 @@ CREATE TABLE IF NOT EXISTS public.counties (
 );
 
 CREATE INDEX IF NOT EXISTS idx_counties_name ON public.counties(name);
-CREATE INDEX IF NOT EXISTS idx_counties_code ON public.counties(code);
+-- CREATE INDEX IF NOT EXISTS idx_counties_code ON public.counties(code);
 
 ALTER TABLE public.counties ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Counties are viewable by everyone"
-    ON public.counties FOR SELECT
-    TO anon, authenticated
-    USING (true);
+-- -- -- CREATE POLICY "Counties are viewable by everyone"
+-- --     ON public.counties FOR SELECT
+-- --     TO anon, authenticated
+-- --     USING (true);
 
 -- Seed Kenya counties
-INSERT INTO public.counties (name, code, country) VALUES
-('Mombasa', '001', 'Kenya'),
-('Kwale', '002', 'Kenya'),
-('Kilifi', '003', 'Kenya'),
-('Tana River', '004', 'Kenya'),
-('Lamu', '005', 'Kenya'),
-('Taita Taveta', '006', 'Kenya'),
-('Garissa', '007', 'Kenya'),
-('Wajir', '008', 'Kenya'),
-('Mandera', '009', 'Kenya'),
-('Marsabit', '010', 'Kenya'),
-('Isiolo', '011', 'Kenya'),
-('Meru', '012', 'Kenya'),
-('Tharaka-Nithi', '013', 'Kenya'),
-('Embu', '014', 'Kenya'),
-('Kitui', '015', 'Kenya'),
-('Machakos', '016', 'Kenya'),
-('Makueni', '017', 'Kenya'),
-('Nyandarua', '018', 'Kenya'),
-('Nyeri', '019', 'Kenya'),
-('Kirinyaga', '020', 'Kenya'),
-('Murang''a', '021', 'Kenya'),
-('Kiambu', '022', 'Kenya'),
-('Turkana', '023', 'Kenya'),
-('West Pokot', '024', 'Kenya'),
-('Samburu', '025', 'Kenya'),
-('Trans Nzoia', '026', 'Kenya'),
-('Uasin Gishu', '027', 'Kenya'),
-('Elgeyo-Marakwet', '028', 'Kenya'),
-('Nandi', '029', 'Kenya'),
-('Baringo', '030', 'Kenya'),
-('Laikipia', '031', 'Kenya'),
-('Nakuru', '032', 'Kenya'),
-('Narok', '033', 'Kenya'),
-('Kajiado', '034', 'Kenya'),
-('Kericho', '035', 'Kenya'),
-('Bomet', '036', 'Kenya'),
-('Kakamega', '037', 'Kenya'),
-('Vihiga', '038', 'Kenya'),
-('Bungoma', '039', 'Kenya'),
-('Busia', '040', 'Kenya'),
-('Siaya', '041', 'Kenya'),
-('Kisumu', '042', 'Kenya'),
-('Homa Bay', '043', 'Kenya'),
-('Migori', '044', 'Kenya'),
-('Kisii', '045', 'Kenya'),
-('Nyamira', '046', 'Kenya'),
-('Nairobi', '047', 'Kenya')
-ON CONFLICT (code) DO NOTHING;
+-- INSERT INTO public.counties (name, code, country) VALUES
+-- ('Mombasa', '001', 'Kenya'),
+-- ('Kwale', '002', 'Kenya'),
+-- ('Kilifi', '003', 'Kenya'),
+-- ('Tana River', '004', 'Kenya'),
+-- ('Lamu', '005', 'Kenya'),
+-- ('Taita Taveta', '006', 'Kenya'),
+-- ('Garissa', '007', 'Kenya'),
+-- ('Wajir', '008', 'Kenya'),
+-- ('Mandera', '009', 'Kenya'),
+-- ('Marsabit', '010', 'Kenya'),
+-- ('Isiolo', '011', 'Kenya'),
+-- ('Meru', '012', 'Kenya'),
+-- ('Tharaka-Nithi', '013', 'Kenya'),
+-- ('Embu', '014', 'Kenya'),
+-- ('Kitui', '015', 'Kenya'),
+-- ('Machakos', '016', 'Kenya'),
+-- ('Makueni', '017', 'Kenya'),
+-- ('Nyandarua', '018', 'Kenya'),
+-- ('Nyeri', '019', 'Kenya'),
+-- ('Kirinyaga', '020', 'Kenya'),
+-- ('Murang''a', '021', 'Kenya'),
+-- ('Kiambu', '022', 'Kenya'),
+-- ('Turkana', '023', 'Kenya'),
+-- ('West Pokot', '024', 'Kenya'),
+-- ('Samburu', '025', 'Kenya'),
+-- ('Trans Nzoia', '026', 'Kenya'),
+-- ('Uasin Gishu', '027', 'Kenya'),
+-- ('Elgeyo-Marakwet', '028', 'Kenya'),
+-- ('Nandi', '029', 'Kenya'),
+-- ('Baringo', '030', 'Kenya'),
+-- ('Laikipia', '031', 'Kenya'),
+-- ('Nakuru', '032', 'Kenya'),
+-- ('Narok', '033', 'Kenya'),
+-- ('Kajiado', '034', 'Kenya'),
+-- ('Kericho', '035', 'Kenya'),
+-- ('Bomet', '036', 'Kenya'),
+-- ('Kakamega', '037', 'Kenya'),
+-- ('Vihiga', '038', 'Kenya'),
+-- ('Bungoma', '039', 'Kenya'),
+-- ('Busia', '040', 'Kenya'),
+-- ('Siaya', '041', 'Kenya'),
+-- ('Kisumu', '042', 'Kenya'),
+-- ('Homa Bay', '043', 'Kenya'),
+-- ('Migori', '044', 'Kenya'),
+-- ('Kisii', '045', 'Kenya'),
+-- ('Nyamira', '046', 'Kenya'),
+-- ('Nairobi', '047', 'Kenya')
+-- ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================
 -- 3. WALLET_TRANSACTIONS TABLE (Referenced by QR scans, escrow, etc.)
@@ -236,24 +235,24 @@ CREATE TABLE IF NOT EXISTS public.wallet_transactions (
     user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions_sender ON public.wallet_transactions(sender_id);
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions_recipient ON public.wallet_transactions(recipient_id);
+-- CREATE INDEX IF NOT EXISTS idx_wallet_transactions_sender ON public.wallet_transactions(sender_id);
+-- CREATE INDEX IF NOT EXISTS idx_wallet_transactions_recipient ON public.wallet_transactions(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_wallet_transactions_status ON public.wallet_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_wallet_transactions_created ON public.wallet_transactions(created_at);
-CREATE INDEX IF NOT EXISTS idx_wallet_transactions_reference ON public.wallet_transactions(reference_code);
+-- CREATE INDEX IF NOT EXISTS idx_wallet_transactions_reference ON public.wallet_transactions(reference_code);
 
 ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own transactions"
-    ON public.wallet_transactions FOR SELECT
-    TO authenticated
-    USING (sender_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
-        OR recipient_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+-- -- CREATE POLICY "Users can view own transactions"
+-- --     ON public.wallet_transactions FOR SELECT
+-- --     TO authenticated
+-- --     USING (sender_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid())
+-- --         OR recipient_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "Users can create transactions"
-    ON public.wallet_transactions FOR INSERT
-    TO authenticated
-    WITH CHECK (sender_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+-- -- CREATE POLICY "Users can create transactions"
+-- --     ON public.wallet_transactions FOR INSERT
+-- --     TO authenticated
+-- --     WITH CHECK (sender_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
 -- ============================================================
 -- 4. WALLETS TABLE (User balances)
@@ -284,19 +283,19 @@ CREATE TABLE IF NOT EXISTS public.wallets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wallets_user ON public.wallets(user_id);
-CREATE INDEX IF NOT EXISTS idx_wallets_profile ON public.wallets(profile_id);
+-- CREATE INDEX IF NOT EXISTS idx_wallets_profile ON public.wallets(profile_id);
 
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own wallet"
-    ON public.wallets FOR SELECT
-    TO authenticated
-    USING (user_id = auth.uid());
+-- -- CREATE POLICY "Users can view own wallet"
+-- --     ON public.wallets FOR SELECT
+-- --     TO authenticated
+-- --     USING (user_id = auth.uid());
 
-CREATE POLICY "Users can update own wallet"
-    ON public.wallets FOR UPDATE
-    TO authenticated
-    USING (user_id = auth.uid());
+-- -- CREATE POLICY "Users can update own wallet"
+-- --     ON public.wallets FOR UPDATE
+-- --     TO authenticated
+-- --     USING (user_id = auth.uid());
 
 DROP TRIGGER IF EXISTS trg_wallets_updated_at ON public.wallets;
 CREATE TRIGGER trg_wallets_updated_at
@@ -325,7 +324,7 @@ CREATE TABLE IF NOT EXISTS public.appstore_apps (
     screenshots TEXT[],
 
     -- Developer
-    developer_id UUID REFERENCES public.profiles(id),
+    developer_id UUID,
     developer_name TEXT,
 
     -- Status
@@ -358,16 +357,16 @@ CREATE INDEX IF NOT EXISTS idx_appstore_apps_status ON public.appstore_apps(stat
 
 ALTER TABLE public.appstore_apps ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Published apps are viewable by everyone"
-    ON public.appstore_apps FOR SELECT
-    TO anon, authenticated
-    USING (status = 'published' OR developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "Published apps are viewable by everyone"
+--     ON public.appstore_apps FOR SELECT
+--     TO anon, authenticated
+--     USING (status = 'published' OR developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
-CREATE POLICY "Developers can manage own apps"
-    ON public.appstore_apps FOR ALL
-    TO authenticated
-    USING (developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()))
-    WITH CHECK (developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
+-- CREATE POLICY "Developers can manage own apps"
+--     ON public.appstore_apps FOR ALL
+--     TO authenticated
+--     USING (developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()))
+--     WITH CHECK (developer_id IN (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
 
 -- ============================================================
 -- 6. APP INSTALLS TABLE
@@ -389,12 +388,12 @@ CREATE INDEX IF NOT EXISTS idx_app_installs_app ON public.app_installs(app_id);
 
 ALTER TABLE public.app_installs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own installs"
-    ON public.app_installs FOR SELECT
-    TO authenticated
-    USING (user_id = auth.uid());
+-- CREATE POLICY "Users can view own installs"
+--     ON public.app_installs FOR SELECT
+--     TO authenticated
+--     USING (user_id = auth.uid());
 
-CREATE POLICY "Users can manage own installs"
-    ON public.app_installs FOR ALL
-    TO authenticated
-    USING (user_id = auth.uid());
+-- CREATE POLICY "Users can manage own installs"
+--     ON public.app_installs FOR ALL
+--     TO authenticated
+--     USING (user_id = auth.uid());

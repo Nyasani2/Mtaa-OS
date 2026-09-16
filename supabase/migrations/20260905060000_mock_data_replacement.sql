@@ -67,9 +67,9 @@ alter table public.location_checkins enable row level security;
 alter table public.order_items enable row level security;
 alter table public.browsing_history enable row level security;
 
-drop policy if exists ls_sel on public.live_streams; create policy ls_sel on public.live_streams for select to authenticated using (true);
-drop policy if exists tx_rw on public.transactions; create policy tx_rw on public.transactions for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-drop policy if exists nc_rw on public.network_contacts; create policy nc_rw on public.network_contacts for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-drop policy if exists lc_rw on public.location_checkins; create policy lc_rw on public.location_checkins for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-drop policy if exists oi_sel on public.order_items; create policy oi_sel on public.order_items for select to authenticated using (true);
-drop policy if exists bh_rw on public.browsing_history; create policy bh_rw on public.browsing_history for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists ls_sel on public.live_streams; -- create policy ls_sel on public.live_streams for select to authenticated using (true);
+drop policy if exists tx_rw on public.transactions; -- create policy tx_rw on public.transactions for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists nc_rw on public.network_contacts; -- create policy nc_rw on public.network_contacts for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists lc_rw on public.location_checkins; -- create policy lc_rw on public.location_checkins for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists oi_sel on public.order_items; -- create policy oi_sel on public.order_items for select to authenticated using (true);
+drop policy if exists bh_rw on public.browsing_history; -- create policy bh_rw on public.browsing_history for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);

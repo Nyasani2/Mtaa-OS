@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { PatientService } from "../services/patient.service";
 import { appointmentService as AppointmentService } from "../services/appointment.service";
+
 export class HealthController {
   static async registerPatient(userId: string, patientData: any): Promise<any> {
     let patient = await PatientService.getPatientByUserId(userId);
@@ -12,6 +12,7 @@ export class HealthController {
     }
     return patient;
   }
+
   static async getPatientDashboard(patientId: string): Promise<any> {
     const [records, appointments, labTests] = await Promise.all([
       PatientService.getPatientRecords(patientId),
@@ -25,12 +26,15 @@ export class HealthController {
       stats: { totalAppointments: appointments.length, totalRecords: records.length, pendingLabs: labTests.filter((t: any) => t.result_status === "pending").length },
     };
   }
+
   static async getDashboardStats(userId: string, role: string): Promise<any> {
     return { upcomingAppointments: 0, pendingLabTests: 0, unreadNotifications: 0, totalPatients: 0, activeQueues: 0 };
   }
+
   static async createAppointment(appointmentData: any): Promise<any> {
     return (AppointmentService as any).create(appointmentData);
   }
+
   static async checkInPatient(appointmentId: string, queueData: any): Promise<any> {
     await (AppointmentService as any).updateStatus(appointmentId, "checked_in");
     return (AppointmentService as any).addToQueue(queueData);

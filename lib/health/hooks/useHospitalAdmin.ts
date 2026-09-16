@@ -74,65 +74,32 @@ export function useHospitalAdmin(facilityId: string | null) {
   const isMounted = useRef(true);
 
   const fetchData = useCallback(async () => {
-    // CRITICAL FIX: Set loading=false immediately if no facilityId
     if (!facilityId || !user?.id) {
       setLoading(false);
       setError(facilityId ? null : 'No facility selected. Please select a facility first.');
       return;
     }
-
     setLoading(true);
     setError(null);
     try {
       const today = new Date().toISOString().split('T')[0];
-
-      // Stats
-      const { data: bedsData } = await supabase
-        .from('health_beds')
-        .select('status')
-        .eq('facility_id', facilityId);
+      const { data: bedsData } = await supabase.from('health_beds').select('status').eq('facility_id', facilityId);
       const totalBeds = bedsData?.length || 0;
       const occupiedBeds = bedsData?.filter((b: any) => b.status === 'occupied').length || 0;
-
-      const { data: staffData } = await supabase
-        .from('health_staff')
-        .select('status')
-        .eq('facility_id', facilityId);
+      const { data: staffData } = await supabase.from('health_staff').select('status').eq('facility_id', facilityId);
       const totalStaff = staffData?.length || 0;
       const staffOnDutyCount = staffData?.filter((s: any) => s.status === 'active').length || 0;
-
-      // Use health_admissions table for today admissions, not health_beds
-      const { data: admData } = await supabase
-        .from('health_admissions')
-        .select('id')
-        .eq('facility_id', facilityId)
-        .gte('admission_date', today);
+      const { data: admData } = await supabase.from('health_admissions').select('id').eq('facility_id', facilityId).gte('admission_date', today);
       const todayAdmissions = admData?.length || 0;
-
-      const { data: revData } = await supabase
-        .from('health_billing')
-        .select('amount')
-        .eq('facility_id', facilityId)
-        .gte('created_at', today);
+      const { data: revData } = await supabase.from('health_billing').select('amount').eq('facility_id', facilityId).gte('created_at', today);
       const todayRevenue = revData?.reduce((sum: number, r: any) => sum + (r.amount || 0), 0) || 0;
-
       if (isMounted.current) {
         setStats({ totalBeds, occupiedBeds, totalStaff, staffOnDuty: staffOnDutyCount, todayAdmissions, todayRevenue });
       }
-
-      // Beds
-      const { data: bedsList } = await supabase
-        .from('health_beds')
-        .select('*, health_admissions!inner(patient_id, patient:patient_id(name))')
-        .eq('facility_id', facilityId)
-        .order('bed_number');
+      const { data: bedsList } = await supabase.from('health_beds').select('*, health_admissions!inner(patient_id, patient:patient_id(name))').eq('facility_id', facilityId).order('bed_number');
       const mappedBeds = (bedsList || []).map((b: any) => ({
-        id: b.id,
-        bed_number: b.bed_number,
-        ward: b.ward,
-        room_type: b.room_type,
-        floor: b.floor,
-        status: b.status,
+        id: b.id, bed_number: b.bed_number, ward: b.ward, room_type: b.room_type,
+        floor: b.floor, status: b.status,
         patient_id: b.health_admissions?.[0]?.patient_id,
         patient_name: b.health_admissions?.[0]?.patient?.name,
       }));
@@ -140,67 +107,36 @@ export function useHospitalAdmin(facilityId: string | null) {
         setBeds(mappedBeds);
         setAvailableBeds(mappedBeds.filter((b: Bed) => b.status === 'available'));
       }
-
-      // Admissions — query health_admissions table, not health_beds
-      const { data: admissionsList } = await supabase
-        .from('health_admissions')
-        .select(`
-          id, patient_id, bed_id, diagnosis, doctor_id, admission_date, status,
-          patient:patient_id(name),
-          bed:bed_id(bed_number, ward),
-          doctor:doctor_id(name)
-        `)
-        .eq('facility_id', facilityId)
-        .order('admission_date', { ascending: false });
+      const { data: admissionsList } = await supabase.from('health_admissions').select(`
+        id, patient_id, bed_id, diagnosis, doctor_id, admission_date, status,
+        patient:patient_id(name), bed:bed_id(bed_number, ward), doctor:doctor_id(name)
+      `).eq('facility_id', facilityId).order('admission_date', { ascending: false });
       const mappedAdmissions = (admissionsList || []).map((a: any) => ({
-        id: a.id,
-        patient_id: a.patient_id,
-        patient_name: a.patient?.name || 'Unknown',
-        bed_number: a.bed?.bed_number || '',
-        ward: a.bed?.ward || '',
-        diagnosis: a.diagnosis || '',
-        doctor_name: a.doctor?.name,
-        admission_date: a.admission_date,
-        status: a.status,
+        id: a.id, patient_id: a.patient_id, patient_name: a.patient?.name || 'Unknown',
+        bed_number: a.bed?.bed_number || '', ward: a.bed?.ward || '',
+        diagnosis: a.diagnosis || '', doctor_name: a.doctor?.name,
+        admission_date: a.admission_date, status: a.status,
       }));
       if (isMounted.current) {
         setAdmissions(mappedAdmissions);
         setActiveAdmissions(mappedAdmissions.filter((a: Admission) => a.status === 'active'));
         setRecentAdmissions(mappedAdmissions.slice(0, 5));
       }
-
-      // Discharges — query health_discharges table
-      const { data: dischargesList } = await supabase
-        .from('health_discharges')
-        .select(`
-          id, patient_id, bed_id, diagnosis, discharge_date, discharge_type, medications,
-          patient:patient_id(name),
-          bed:bed_id(bed_number, ward)
-        `)
-        .eq('facility_id', facilityId)
-        .order('discharge_date', { ascending: false });
+      const { data: dischargesList } = await supabase.from('health_discharges').select(`
+        id, patient_id, bed_id, diagnosis, discharge_date, discharge_type, medications,
+        patient:patient_id(name), bed:bed_id(bed_number, ward)
+      `).eq('facility_id', facilityId).order('discharge_date', { ascending: false });
       const mappedDischarges = (dischargesList || []).map((d: any) => ({
-        id: d.id,
-        patient_id: d.patient_id,
-        patient_name: d.patient?.name || 'Unknown',
-        bed_number: d.bed?.bed_number || '',
-        ward: d.bed?.ward || '',
-        diagnosis: d.diagnosis || '',
-        discharge_date: d.discharge_date,
-        discharge_type: d.discharge_type,
-        medications: d.medications,
+        id: d.id, patient_id: d.patient_id, patient_name: d.patient?.name || 'Unknown',
+        bed_number: d.bed?.bed_number || '', ward: d.bed?.ward || '',
+        diagnosis: d.diagnosis || '', discharge_date: d.discharge_date,
+        discharge_type: d.discharge_type, medications: d.medications,
       }));
       if (isMounted.current) {
         setDischarges(mappedDischarges);
         setRecentDischarges(mappedDischarges.slice(0, 5));
       }
-
-      // Staff
-      const { data: staffList } = await supabase
-        .from('health_staff')
-        .select('*')
-        .eq('facility_id', facilityId)
-        .order('name');
+      const { data: staffList } = await supabase.from('health_staff').select('*').eq('facility_id', facilityId).order('name');
       if (isMounted.current) {
         setStaff(staffList || []);
         setStaffOnDuty((staffList || []).filter((s: StaffMember) => s.status === 'active').slice(0, 5));
@@ -242,11 +178,8 @@ export function useHospitalAdmin(facilityId: string | null) {
 
   const dischargePatient = useCallback(async (admissionId: string, patientId: string, dischargeData: any) => {
     const { error: dischargeError } = await supabase.from('health_discharges').insert({
-      admission_id: admissionId,
-      patient_id: patientId,
-      facility_id: facilityId,
-      ...dischargeData,
-      discharge_date: new Date().toISOString(),
+      admission_id: admissionId, patient_id: patientId, facility_id: facilityId,
+      ...dischargeData, discharge_date: new Date().toISOString(),
     });
     if (dischargeError) throw dischargeError;
     await supabase.from('health_admissions').update({ status: 'discharged' }).eq('id', admissionId);

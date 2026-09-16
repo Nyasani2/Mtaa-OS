@@ -175,9 +175,9 @@ EXCEPTION WHEN duplicate_object THEN RAISE NOTICE 'device_logs already in public
 -- ============================================
 -- INDEXES
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_bodycam_officer ON bodycam_sessions(officer_id, status);
-CREATE INDEX IF NOT EXISTS idx_bodycam_device ON bodycam_sessions(device_id, started_at DESC);
-CREATE INDEX IF NOT EXISTS idx_shift_officer ON shift_assignments(officer_id, shift_start DESC);
-CREATE INDEX IF NOT EXISTS idx_driver_scores_driver ON driver_scores(driver_id, period_start DESC);
-CREATE INDEX IF NOT EXISTS idx_device_logs_device ON device_logs(device_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_firmware_type ON firmware_versions(device_type, is_latest);
+-- CREATE INDEX IF NOT EXISTS idx_bodycam_officer ON bodycam_sessions(officer_id, status);
+-- CREATE INDEX IF NOT EXISTS idx_bodycam_device ON bodycam_sessions(device_id, started_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_shift_officer ON shift_assignments(officer_id, shift_start DESC);
+-- CREATE INDEX IF NOT EXISTS idx_driver_scores_driver ON driver_scores(driver_id, period_start DESC);
+-- CREATE INDEX IF NOT EXISTS idx_device_logs_device ON device_logs(device_id, created_at DESC);
+-- CREATE INDEX IF NOT EXISTS idx_firmware_type ON firmware_versions(device_type, is_latest);

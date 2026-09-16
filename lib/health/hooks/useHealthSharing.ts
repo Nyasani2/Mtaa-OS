@@ -43,13 +43,8 @@ export function useHealthSharing(patientId?: string) {
       const { data, error } = await supabase
         .from('health_sharing_grants')
         .insert({
-          patient_id: patientId,
-          hospital_id: hospitalId,
-          hospital_name: hospitalName,
-          scope,
-          expires_at: expiresAt,
-          status: 'active',
-          created_at: new Date().toISOString(),
+          patient_id: patientId, hospital_id: hospitalId, hospital_name: hospitalName,
+          scope, expires_at: expiresAt, status: 'active', created_at: new Date().toISOString(),
         })
         .select()
         .maybeSingle();
@@ -76,13 +71,8 @@ export function useHealthSharing(patientId?: string) {
 
 function mapDb(row: any): ShareGrant {
   return {
-    id: row.id,
-    patientId: row.patient_id,
-    hospitalId: row.hospital_id,
-    hospitalName: row.hospital_name,
-    scope: row.scope,
-    expiresAt: row.expires_at,
-    status: row.status,
-    createdAt: row.created_at,
+    id: row.id, patientId: row.patient_id, hospitalId: row.hospital_id,
+    hospitalName: row.hospital_name, scope: row.scope, expiresAt: row.expires_at,
+    status: row.status, createdAt: row.created_at,
   };
 }

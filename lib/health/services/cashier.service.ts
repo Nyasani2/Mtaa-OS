@@ -21,7 +21,7 @@ export async function rejectClaim(claimId: string, reason: string) {
 }
 
 export async function getInvoices(status: string, range: { from: number; to: number }) {
-  let q = supabase.from("health_pos_transactions").select("*, items:health_invoice_items(*)", { count: "exact" }).order("created_at", { ascending: false });
+  let q = supabase.from("health_invoices").select("*, items:health_invoice_items(*)", { count: "exact" }).order("created_at", { ascending: false });
   if (status !== "all") q = q.eq("status", status);
   const { data, error, count } = await q.range(range.from, range.to);
   if (error) throw error;
@@ -29,7 +29,7 @@ export async function getInvoices(status: string, range: { from: number; to: num
 }
 
 export async function createInvoice(payload: any) {
-  const { data, error } = await supabase.from("health_pos_transactions").insert([payload]).select().maybeSingle();
+  const { data, error } = await supabase.from("health_invoices").insert([payload]).select().maybeSingle();
   if (error) throw error;
   return data;
 }

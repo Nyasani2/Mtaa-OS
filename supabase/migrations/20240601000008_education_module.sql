@@ -460,48 +460,48 @@ CREATE TABLE IF NOT EXISTS public.education_payroll (
 -- INDEXES
 -- ============================================================
 
-CREATE INDEX IF NOT EXISTS idx_edu_institutions_type ON public.education_institutions(type);
-CREATE INDEX IF NOT EXISTS idx_edu_institutions_county ON public.education_institutions(county);
-CREATE INDEX IF NOT EXISTS idx_edu_institutions_status ON public.education_institutions(status);
-CREATE INDEX IF NOT EXISTS idx_edu_institutions_verified ON public.education_institutions(verification_status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_institutions_type ON public.education_institutions(type);
+-- CREATE INDEX IF NOT EXISTS idx_edu_institutions_county ON public.education_institutions(county);
+-- CREATE INDEX IF NOT EXISTS idx_edu_institutions_status ON public.education_institutions(status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_institutions_verified ON public.education_institutions(verification_status);
 
-CREATE INDEX IF NOT EXISTS idx_edu_teachers_user ON public.education_teachers(user_id);
-CREATE INDEX IF NOT EXISTS idx_edu_teachers_institution ON public.education_teachers(institution_id);
-CREATE INDEX IF NOT EXISTS idx_edu_teachers_kyc ON public.education_teachers(kyc_status);
-CREATE INDEX IF NOT EXISTS idx_edu_teachers_active ON public.education_teachers(is_active);
+-- CREATE INDEX IF NOT EXISTS idx_edu_teachers_user ON public.education_teachers(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_teachers_institution ON public.education_teachers(institution_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_teachers_kyc ON public.education_teachers(kyc_status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_teachers_active ON public.education_teachers(is_active);
 
-CREATE INDEX IF NOT EXISTS idx_edu_students_user ON public.education_students(user_id);
-CREATE INDEX IF NOT EXISTS idx_edu_students_institution ON public.education_students(institution_id);
-CREATE INDEX IF NOT EXISTS idx_edu_students_class ON public.education_students(current_class_id);
-CREATE INDEX IF NOT EXISTS idx_edu_students_minor ON public.education_students(is_minor);
-CREATE INDEX IF NOT EXISTS idx_edu_students_status ON public.education_students(enrollment_status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_students_user ON public.education_students(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_students_institution ON public.education_students(institution_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_students_class ON public.education_students(current_class_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_students_minor ON public.education_students(is_minor);
+-- CREATE INDEX IF NOT EXISTS idx_edu_students_status ON public.education_students(enrollment_status);
 
-CREATE INDEX IF NOT EXISTS idx_edu_classes_institution ON public.education_classes(institution_id);
-CREATE INDEX IF NOT EXISTS idx_edu_classes_level ON public.education_classes(level);
-CREATE INDEX IF NOT EXISTS idx_edu_classes_teacher ON public.education_classes(class_teacher_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_classes_institution ON public.education_classes(institution_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_classes_level ON public.education_classes(level);
+-- CREATE INDEX IF NOT EXISTS idx_edu_classes_teacher ON public.education_classes(class_teacher_id);
 
-CREATE INDEX IF NOT EXISTS idx_edu_lessons_class ON public.education_lessons(class_id);
-CREATE INDEX IF NOT EXISTS idx_edu_lessons_teacher ON public.education_lessons(teacher_id);
-CREATE INDEX IF NOT EXISTS idx_edu_lessons_status ON public.education_lessons(status);
-CREATE INDEX IF NOT EXISTS idx_edu_lessons_scheduled ON public.education_lessons(scheduled_at);
+-- CREATE INDEX IF NOT EXISTS idx_edu_lessons_class ON public.education_lessons(class_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_lessons_teacher ON public.education_lessons(teacher_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_lessons_status ON public.education_lessons(status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_lessons_scheduled ON public.education_lessons(scheduled_at);
 
-CREATE INDEX IF NOT EXISTS idx_edu_attendance_student ON public.education_attendance(student_id);
-CREATE INDEX IF NOT EXISTS idx_edu_attendance_date ON public.education_attendance(date);
-CREATE INDEX IF NOT EXISTS idx_edu_attendance_lesson ON public.education_attendance(lesson_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_attendance_student ON public.education_attendance(student_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_attendance_date ON public.education_attendance(date);
+-- CREATE INDEX IF NOT EXISTS idx_edu_attendance_lesson ON public.education_attendance(lesson_id);
 
-CREATE INDEX IF NOT EXISTS idx_edu_feeds_institution ON public.education_feeds(institution_id);
-CREATE INDEX IF NOT EXISTS idx_edu_feeds_author ON public.education_feeds(author_id);
-CREATE INDEX IF NOT EXISTS idx_edu_feeds_type ON public.education_feeds(type);
-CREATE INDEX IF NOT EXISTS idx_edu_feeds_junior ON public.education_feeds(is_junior_safe);
-CREATE INDEX IF NOT EXISTS idx_edu_feeds_created ON public.education_feeds(created_at);
+-- CREATE INDEX IF NOT EXISTS idx_edu_feeds_institution ON public.education_feeds(institution_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_feeds_author ON public.education_feeds(author_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_feeds_type ON public.education_feeds(type);
+-- CREATE INDEX IF NOT EXISTS idx_edu_feeds_junior ON public.education_feeds(is_junior_safe);
+-- CREATE INDEX IF NOT EXISTS idx_edu_feeds_created ON public.education_feeds(created_at);
 
-CREATE INDEX IF NOT EXISTS idx_edu_messages_institution ON public.education_messages(institution_id);
-CREATE INDEX IF NOT EXISTS idx_edu_messages_receiver ON public.education_messages(receiver_id);
-CREATE INDEX IF NOT EXISTS idx_edu_messages_class ON public.education_messages(class_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_messages_institution ON public.education_messages(institution_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_messages_receiver ON public.education_messages(receiver_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_messages_class ON public.education_messages(class_id);
 
-CREATE INDEX IF NOT EXISTS idx_edu_payroll_teacher ON public.education_payroll(teacher_id);
-CREATE INDEX IF NOT EXISTS idx_edu_payroll_month ON public.education_payroll(month);
-CREATE INDEX IF NOT EXISTS idx_edu_payroll_status ON public.education_payroll(status);
+-- CREATE INDEX IF NOT EXISTS idx_edu_payroll_teacher ON public.education_payroll(teacher_id);
+-- CREATE INDEX IF NOT EXISTS idx_edu_payroll_month ON public.education_payroll(month);
+-- CREATE INDEX IF NOT EXISTS idx_edu_payroll_status ON public.education_payroll(status);
 
 -- ============================================================
 -- RLS POLICIES
@@ -562,128 +562,128 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Institutions: viewable by all, manageable by admin
-CREATE POLICY "Institutions viewable by all" ON public.education_institutions
-  FOR SELECT USING (true);
-CREATE POLICY "Institutions manageable by admin" ON public.education_institutions
-  FOR ALL USING (head_teacher_id = auth.uid());
+-- CREATE POLICY "Institutions viewable by all" ON public.education_institutions
+--   FOR SELECT USING (true);
+-- CREATE POLICY "Institutions manageable by admin" ON public.education_institutions
+--   FOR ALL USING (head_teacher_id = auth.uid());
 
 -- Teachers: viewable by school members, manageable by self/admin
-CREATE POLICY "Teachers viewable by school" ON public.education_teachers
-  FOR SELECT USING (user_id = auth.uid() OR is_school_admin(institution_id, auth.uid()));
-CREATE POLICY "Teachers manageable by self" ON public.education_teachers
-  FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY "Teachers viewable by school" ON public.education_teachers
+--   FOR SELECT USING (user_id = auth.uid() OR is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Teachers manageable by self" ON public.education_teachers
+--   FOR ALL USING (user_id = auth.uid());
 
 -- Students: viewable by teachers/admin, self/parent
-CREATE POLICY "Students viewable by school" ON public.education_students
-  FOR SELECT USING (
-    user_id = auth.uid() 
-    OR parent_guardian_id = auth.uid()
-    OR is_school_teacher(institution_id, auth.uid())
-    OR is_school_admin(institution_id, auth.uid())
-  );
-CREATE POLICY "Students manageable by admin" ON public.education_students
-  FOR ALL USING (is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Students viewable by school" ON public.education_students
+--   FOR SELECT USING (
+--     user_id = auth.uid() 
+--     OR parent_guardian_id = auth.uid()
+--     OR is_school_teacher(institution_id, auth.uid())
+--     OR is_school_admin(institution_id, auth.uid())
+--   );
+-- CREATE POLICY "Students manageable by admin" ON public.education_students
+--   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Classes: viewable by school members
-CREATE POLICY "Classes viewable by school" ON public.education_classes
-  FOR SELECT USING (is_school_admin(institution_id, auth.uid()) OR is_school_teacher(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
-CREATE POLICY "Classes manageable by admin" ON public.education_classes
-  FOR ALL USING (is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Classes viewable by school" ON public.education_classes
+--   FOR SELECT USING (is_school_admin(institution_id, auth.uid()) OR is_school_teacher(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
+-- CREATE POLICY "Classes manageable by admin" ON public.education_classes
+--   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Lessons: viewable by class members
-CREATE POLICY "Lessons viewable by class" ON public.education_lessons
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.education_classes c
-      WHERE c.id = class_id AND (
-        is_school_admin(c.institution_id, auth.uid())
-        OR is_school_teacher(c.institution_id, auth.uid())
-        OR EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())
-      )
-    )
-  );
-CREATE POLICY "Lessons manageable by teacher" ON public.education_lessons
-  FOR ALL USING (teacher_id IN (SELECT id FROM public.education_teachers WHERE user_id = auth.uid()));
+-- CREATE POLICY "Lessons viewable by class" ON public.education_lessons
+--   FOR SELECT USING (
+--     EXISTS (
+--       SELECT 1 FROM public.education_classes c
+--       WHERE c.id = class_id AND (
+--         is_school_admin(c.institution_id, auth.uid())
+--         OR is_school_teacher(c.institution_id, auth.uid())
+--         OR EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())
+--       )
+--     )
+--   );
+-- CREATE POLICY "Lessons manageable by teacher" ON public.education_lessons
+--   FOR ALL USING (teacher_id IN (SELECT id FROM public.education_teachers WHERE user_id = auth.uid()));
 
 -- Attendance: viewable by teacher/student/parent
-CREATE POLICY "Attendance viewable by related" ON public.education_attendance
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid())
-  );
-CREATE POLICY "Attendance manageable by teacher" ON public.education_attendance
-  FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid()));
+-- CREATE POLICY "Attendance viewable by related" ON public.education_attendance
+--   FOR SELECT USING (
+--     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
+--     OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid())
+--   );
+-- CREATE POLICY "Attendance manageable by teacher" ON public.education_attendance
+--   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid()));
 
 -- Assignments: viewable by class, manageable by teacher
-CREATE POLICY "Assignments viewable by class" ON public.education_assignments
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.education_classes c
-      WHERE c.id = class_id AND (
-        is_school_teacher(c.institution_id, auth.uid())
-        OR EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())
-      )
-    )
-  );
-CREATE POLICY "Assignments manageable by teacher" ON public.education_assignments
-  FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()));
+-- CREATE POLICY "Assignments viewable by class" ON public.education_assignments
+--   FOR SELECT USING (
+--     EXISTS (
+--       SELECT 1 FROM public.education_classes c
+--       WHERE c.id = class_id AND (
+--         is_school_teacher(c.institution_id, auth.uid())
+--         OR EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())
+--       )
+--     )
+--   );
+-- CREATE POLICY "Assignments manageable by teacher" ON public.education_assignments
+--   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()));
 
 -- Submissions: viewable by student/teacher
-CREATE POLICY "Submissions viewable by related" ON public.education_submissions
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid())
-    OR EXISTS (SELECT 1 FROM public.education_assignments a WHERE a.id = assignment_id AND EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = a.teacher_id AND t.user_id = auth.uid()))
-  );
-CREATE POLICY "Submissions manageable by student" ON public.education_submissions
-  FOR ALL USING (EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid()));
+-- CREATE POLICY "Submissions viewable by related" ON public.education_submissions
+--   FOR SELECT USING (
+--     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid())
+--     OR EXISTS (SELECT 1 FROM public.education_assignments a WHERE a.id = assignment_id AND EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = a.teacher_id AND t.user_id = auth.uid()))
+--   );
+-- CREATE POLICY "Submissions manageable by student" ON public.education_submissions
+--   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid()));
 
 -- Grades: viewable by student/parent/teacher
-CREATE POLICY "Grades viewable by related" ON public.education_grades
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
-    OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid())
-  );
+-- CREATE POLICY "Grades viewable by related" ON public.education_grades
+--   FOR SELECT USING (
+--     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
+--     OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid())
+--   );
 
 -- Messages: viewable by sender/receiver/class
-CREATE POLICY "Messages viewable by participants" ON public.education_messages
-  FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid() OR EXISTS (SELECT 1 FROM public.education_classes c WHERE c.id = class_id AND EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())));
-CREATE POLICY "Messages insertable by school" ON public.education_messages
-  FOR INSERT WITH CHECK (is_school_teacher(institution_id, auth.uid()) OR is_school_admin(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
+-- CREATE POLICY "Messages viewable by participants" ON public.education_messages
+--   FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid() OR EXISTS (SELECT 1 FROM public.education_classes c WHERE c.id = class_id AND EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())));
+-- CREATE POLICY "Messages insertable by school" ON public.education_messages
+--   FOR INSERT WITH CHECK (is_school_teacher(institution_id, auth.uid()) OR is_school_admin(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
 
 -- Feeds: viewable by all (with junior filter applied in app)
-CREATE POLICY "Feeds viewable by all" ON public.education_feeds
-  FOR SELECT USING (is_active = true);
-CREATE POLICY "Feeds manageable by author" ON public.education_feeds
-  FOR ALL USING (author_id = auth.uid());
+-- CREATE POLICY "Feeds viewable by all" ON public.education_feeds
+--   FOR SELECT USING (is_active = true);
+-- CREATE POLICY "Feeds manageable by author" ON public.education_feeds
+--   FOR ALL USING (author_id = auth.uid());
 
 -- Feed comments/likes: standard
-CREATE POLICY "Feed comments viewable" ON public.education_feed_comments
-  FOR SELECT USING (is_active = true);
-CREATE POLICY "Feed comments manageable" ON public.education_feed_comments
-  FOR ALL USING (author_id = auth.uid());
+-- CREATE POLICY "Feed comments viewable" ON public.education_feed_comments
+--   FOR SELECT USING (is_active = true);
+-- CREATE POLICY "Feed comments manageable" ON public.education_feed_comments
+--   FOR ALL USING (author_id = auth.uid());
 
-CREATE POLICY "Feed likes viewable" ON public.education_feed_likes
-  FOR SELECT USING (true);
-CREATE POLICY "Feed likes manageable" ON public.education_feed_likes
-  FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY "Feed likes viewable" ON public.education_feed_likes
+--   FOR SELECT USING (true);
+-- CREATE POLICY "Feed likes manageable" ON public.education_feed_likes
+--   FOR ALL USING (user_id = auth.uid());
 
 -- Events: viewable by all, manageable by admin
-CREATE POLICY "Events viewable" ON public.education_events
-  FOR SELECT USING (true);
-CREATE POLICY "Events manageable by admin" ON public.education_events
-  FOR ALL USING (is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Events viewable" ON public.education_events
+--   FOR SELECT USING (true);
+-- CREATE POLICY "Events manageable by admin" ON public.education_events
+--   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Alumni: viewable by all alumni of school
-CREATE POLICY "Alumni viewable by school" ON public.education_alumni
-  FOR SELECT USING (is_active = true);
-CREATE POLICY "Alumni manageable by self" ON public.education_alumni
-  FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY "Alumni viewable by school" ON public.education_alumni
+--   FOR SELECT USING (is_active = true);
+-- CREATE POLICY "Alumni manageable by self" ON public.education_alumni
+--   FOR ALL USING (user_id = auth.uid());
 
 -- Payroll: viewable by teacher/admin
-CREATE POLICY "Payroll viewable by teacher" ON public.education_payroll
-  FOR SELECT USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()) OR is_school_admin(institution_id, auth.uid()));
-CREATE POLICY "Payroll manageable by admin" ON public.education_payroll
-  FOR ALL USING (is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Payroll viewable by teacher" ON public.education_payroll
+--   FOR SELECT USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()) OR is_school_admin(institution_id, auth.uid()));
+-- CREATE POLICY "Payroll manageable by admin" ON public.education_payroll
+--   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- ============================================================
 -- TRIGGERS

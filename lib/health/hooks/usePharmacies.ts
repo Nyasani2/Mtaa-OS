@@ -29,12 +29,8 @@ interface UsePharmaciesOptions {
 
 export function usePharmacies(options: UsePharmaciesOptions = {}) {
   const {
-    filter = 'all',
-    search = '',
-    limit = 100,
-    nearLat,
-    nearLng,
-    radiusKm = 50,
+    filter = 'all', search = '', limit = 100,
+    nearLat, nearLng, radiusKm = 50,
   } = options;
 
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
@@ -49,46 +45,30 @@ export function usePharmacies(options: UsePharmaciesOptions = {}) {
         .from('health_pharmacies')
         .select('id, name, type, latitude, longitude, address, phone, email, is_open, rating, hours, license_number, created_at')
         .order('name', { ascending: true });
-
       if (filter !== 'all') {
         q = q.eq('type', filter);
       }
       if (search.trim()) {
         q = q.ilike('name', `%${search.trim()}%`);
       }
-
       const { data, error: dbError } = await q.limit(limit);
       if (dbError) throw dbError;
-
       let results: Pharmacy[] = (data || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        type: p.type || 'pharmacy',
-        latitude: p.latitude,
-        longitude: p.longitude,
-        address: p.address,
-        phone: p.phone,
-        email: p.email,
-        is_open: p.is_open,
-        rating: p.rating,
-        hours: p.hours,
-        license_number: p.license_number,
-        created_at: p.created_at,
+        id: p.id, name: p.name, type: p.type || 'pharmacy',
+        latitude: p.latitude, longitude: p.longitude,
+        address: p.address, phone: p.phone, email: p.email,
+        is_open: p.is_open, rating: p.rating, hours: p.hours,
+        license_number: p.license_number, created_at: p.created_at,
       }));
-
-      // Compute distances if location provided
       if (nearLat !== undefined && nearLng !== undefined) {
         results = results.map((p) => {
           if (!p.latitude || !p.longitude) return p;
           return { ...p, distance_km: haversine(nearLat, nearLng, p.latitude, p.longitude) };
         }).sort((a, b) => (a.distance_km ?? 99999) - (b.distance_km ?? 99999));
-
-        // Filter by radius
         if (radiusKm) {
           results = results.filter((p) => (p.distance_km ?? 99999) <= radiusKm);
         }
       }
-
       setPharmacies(results);
     } catch (err: any) {
       setError(err?.message || 'Failed to fetch pharmacies');
@@ -98,10 +78,7 @@ export function usePharmacies(options: UsePharmaciesOptions = {}) {
     }
   }, [filter, search, limit, nearLat, nearLng, radiusKm]);
 
-  useEffect(() => {
-    fetchPharmacies();
-  }, [fetchPharmacies]);
-
+  useEffect(() => { fetchPharmacies(); }, [fetchPharmacies]);
   return { pharmacies, loading, error, refetch: fetchPharmacies };
 }
 
@@ -112,9 +89,9 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }

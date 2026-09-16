@@ -1,11 +1,13 @@
-// @ts-nocheck
-"use client";
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { useAppointments } from "../hooks/useAppointments";
+
 interface Props { userId: string; role: string; }
+
 export function AppointmentList({ userId, role }: Props) {
   const { data: appointments, isLoading } = useAppointments(userId);
+
   if (isLoading) return <Text style={styles.loading}>Loading...</Text>;
+
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <Text style={styles.type}>{item.appointment_type || item.type}</Text>
@@ -15,11 +17,13 @@ export function AppointmentList({ userId, role }: Props) {
       {item.symptoms && <Text style={styles.symptoms}>Symptoms: {item.symptoms.join(", ")}</Text>}
     </View>
   );
+
   return (
     <FlatList data={appointments || []} renderItem={renderItem} keyExtractor={(item) => item.id}
       ListEmptyComponent={<Text style={styles.empty}>No appointments</Text>} />
   );
 }
+
 const styles = StyleSheet.create({
   loading: { color: "#9CA3AF", padding: 16 },
   card: { backgroundColor: "#1F1F1F", padding: 16, borderRadius: 12, marginBottom: 12 },

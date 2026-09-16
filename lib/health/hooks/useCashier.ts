@@ -26,7 +26,6 @@ export function useCashier(facilityId: string | null) {
         .eq('facility_id', facilityId)
         .order('created_at', { ascending: false })
         .limit(50);
-
       if (error) throw error;
       return (data || []).map((inv: any) => ({
         id: inv.id,

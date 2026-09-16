@@ -18,11 +18,11 @@ DROP TABLE IF EXISTS call_logs CASCADE;
 DROP TABLE IF EXISTS contacts CASCADE;
 
 -- Drop policies (they get dropped with CASCADE on table, but just in case)
-DROP POLICY IF EXISTS "call_logs_select_own" ON call_logs;
-DROP POLICY IF EXISTS "call_logs_insert_own" ON call_logs;
-DROP POLICY IF EXISTS "call_logs_update_own" ON call_logs;
-DROP POLICY IF EXISTS "call_logs_delete_own" ON call_logs;
-DROP POLICY IF EXISTS "contacts_select_own" ON contacts;
-DROP POLICY IF EXISTS "contacts_insert_own" ON contacts;
-DROP POLICY IF EXISTS "contacts_update_own" ON contacts;
-DROP POLICY IF EXISTS "contacts_delete_own" ON contacts;
+-- DROP POLICY IF EXISTS "call_logs_select_own" ON call_logs;
+-- DROP POLICY IF EXISTS "call_logs_insert_own" ON call_logs;
+-- DROP POLICY IF EXISTS "call_logs_update_own" ON call_logs;
+-- DROP POLICY IF EXISTS "call_logs_delete_own" ON call_logs;
+-- DROP POLICY IF EXISTS "contacts_select_own" ON contacts;
+-- DROP POLICY IF EXISTS "contacts_insert_own" ON contacts;
+-- DROP POLICY IF EXISTS "contacts_update_own" ON contacts;
+-- DROP POLICY IF EXISTS "contacts_delete_own" ON contacts;

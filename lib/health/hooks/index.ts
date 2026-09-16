@@ -37,3 +37,4 @@ export * from './useTraditionalHealer';
 export * from './useTraditionalMedicine';
 export * from './usePatientConsent';
 export * from './useAmbulanceDispatch';
+export * from './useAppointmentBooking';

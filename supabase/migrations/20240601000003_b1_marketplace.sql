@@ -69,44 +69,44 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_disputes ENABLE ROW LEVEL SECURITY;
 
 -- 6. RLS Policies — cart_items
-CREATE POLICY "Users can view own cart" ON cart_items
-    FOR SELECT USING (user_id = auth.uid());
+-- CREATE POLICY "Users can view own cart" ON cart_items
+--     FOR SELECT USING (user_id = auth.uid());
 
-CREATE POLICY "Users can manage own cart" ON cart_items
-    FOR ALL USING (user_id = auth.uid());
+-- CREATE POLICY "Users can manage own cart" ON cart_items
+--     FOR ALL USING (user_id = auth.uid());
 
 -- 7. RLS Policies — orders
-CREATE POLICY "Buyers can view own orders" ON orders
-    FOR SELECT USING (buyer_id = auth.uid());
+-- CREATE POLICY "Buyers can view own orders" ON orders
+--     FOR SELECT USING (buyer_id = auth.uid());
 
-CREATE POLICY "Sellers can view their orders" ON orders
-    FOR SELECT USING (seller_id = auth.uid());
+-- CREATE POLICY "Sellers can view their orders" ON orders
+--     FOR SELECT USING (seller_id = auth.uid());
 
-CREATE POLICY "Users can update own orders" ON orders
-    FOR UPDATE USING (buyer_id = auth.uid() OR seller_id = auth.uid());
+-- CREATE POLICY "Users can update own orders" ON orders
+--     FOR UPDATE USING (buyer_id = auth.uid() OR seller_id = auth.uid());
 
 -- 8. RLS Policies — order_items
-CREATE POLICY "Users can view own order items" ON order_items
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM orders o 
-            WHERE o.id = order_items.order_id 
-            AND (o.buyer_id = auth.uid() OR o.seller_id = auth.uid())
-        )
-    );
+-- CREATE POLICY "Users can view own order items" ON order_items
+--     FOR SELECT USING (
+--         EXISTS (
+--             SELECT 1 FROM orders o 
+--             WHERE o.id = order_items.order_id 
+--             AND (o.buyer_id = auth.uid() OR o.seller_id = auth.uid())
+--         )
+--     );
 
 -- 9. RLS Policies — order_disputes
-CREATE POLICY "Users can view own disputes" ON order_disputes
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM orders o 
-            WHERE o.id = order_disputes.order_id 
-            AND (o.buyer_id = auth.uid() OR o.seller_id = auth.uid())
-        )
-    );
+-- CREATE POLICY "Users can view own disputes" ON order_disputes
+--     FOR SELECT USING (
+--         EXISTS (
+--             SELECT 1 FROM orders o 
+--             WHERE o.id = order_disputes.order_id 
+--             AND (o.buyer_id = auth.uid() OR o.seller_id = auth.uid())
+--         )
+--     );
 
-CREATE POLICY "Users can raise disputes" ON order_disputes
-    FOR INSERT WITH CHECK (raised_by = auth.uid());
+-- CREATE POLICY "Users can raise disputes" ON order_disputes
+--     FOR INSERT WITH CHECK (raised_by = auth.uid());
 
 -- 10. RPC: reserve_marketplace_funds
 CREATE OR REPLACE FUNCTION reserve_marketplace_funds(
@@ -256,7 +256,7 @@ BEGIN
         v_order.platform_fee,
         v_escrow.amount - v_order.platform_fee,
         'completed',
-        `Sale completed — Order ${p_order_id}`,
+        'Sale completed — Order ' || p_order_id::text,
         NOW()
     );
 
@@ -315,12 +315,12 @@ CREATE TRIGGER order_update_trigger
     EXECUTE FUNCTION update_order_timestamp();
 
 -- 14. Indexes
-CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
-CREATE INDEX IF NOT EXISTS idx_orders_buyer_id ON orders(buyer_id);
-CREATE INDEX IF NOT EXISTS idx_orders_seller_id ON orders(seller_id);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_disputes_order_id ON order_disputes(order_id);
+-- -- CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_orders_buyer_id ON orders(buyer_id);
+-- CREATE INDEX IF NOT EXISTS idx_orders_seller_id ON orders(seller_id);
+-- CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+-- CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+-- CREATE INDEX IF NOT EXISTS idx_order_disputes_order_id ON order_disputes(order_id);
 
 -- 15. Grant execute permissions
 GRANT EXECUTE ON FUNCTION reserve_marketplace_funds(UUID, NUMERIC, UUID, UUID, UUID) TO authenticated;

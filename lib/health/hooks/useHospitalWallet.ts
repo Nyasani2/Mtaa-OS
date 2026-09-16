@@ -12,29 +12,16 @@ export function useHospitalWallet(facilityId?: string | null) {
     if (!facilityId) return;
     setLoading(true);
     try {
-      const { data } = await supabase
-        .from('wallet_accounts')
-        .select('*')
-        .eq('user_id', facilityId)
-        .maybeSingle();
+      const { data } = await supabase.from('wallet_accounts').select('*').eq('user_id', facilityId).maybeSingle();
       setWallet(data);
       setBalance(data?.balance || 0);
-
-      const { data: txs } = await supabase
-        .from('wallet_transactions')
-        .select('*')
-        .eq('user_id', facilityId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const { data: txs } = await supabase.from('wallet_transactions').select('*').eq('user_id', facilityId).order('created_at', { ascending: false }).limit(20);
       setTransactions(txs || []);
-
       setStats({
-        commissionRate: 2.5,
-        netRevenue: data?.balance || 0,
+        commissionRate: 2.5, netRevenue: data?.balance || 0,
         todayRevenue: Math.floor((data?.balance || 0) * 0.05),
         monthRevenue: data?.balance || 0,
-        totalTransactions: txs?.length || 0,
-        commissionPaid: 0,
+        totalTransactions: txs?.length || 0, commissionPaid: 0,
       });
     } catch (e) { console.error(e); }
     finally { setLoading(false); }

@@ -13,6 +13,8 @@ export type StaffStatus = 'active' | 'inactive' | 'on_leave' | 'terminated';
 
 export class HealthRoleService {
   static async getRoles(): Promise<HealthRole[]> {
-    return [];
+    const { data, error } = await supabase.from('health_roles').select('name').order('name');
+    if (error) throw error;
+    return data?.map(r => r.name) || [];
   }
 }

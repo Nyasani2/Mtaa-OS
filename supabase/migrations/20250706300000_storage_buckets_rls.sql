@@ -20,131 +20,131 @@ Use Supabase Dashboard > Storage > New Bucket:
 -- ============================================
 
 -- Recordings bucket: drivers can upload their own, admins can read all
-CREATE POLICY IF NOT EXISTS "recordings_insert_driver"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'recordings' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+-- CREATE POLICY "recordings_insert_driver"
+-- ON storage.objects FOR INSERT
+-- TO authenticated
+-- WITH CHECK (
+--   bucket_id = 'recordings' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
 
-CREATE POLICY IF NOT EXISTS "recordings_select_driver"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'recordings' AND
-  (
-    (storage.foldername(name))[1] = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer')
-    )
-  )
-);
+-- CREATE POLICY "recordings_select_driver"
+-- ON storage.objects FOR SELECT
+-- TO authenticated
+-- USING (
+--   bucket_id = 'recordings' AND
+--   (
+--     (storage.foldername(name))[1] = auth.uid()::text
+--     OR EXISTS (
+--       SELECT 1 FROM user_profiles
+--       WHERE user_profiles.id = auth.uid()
+--       AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer')
+--     )
+--   )
+-- );
 
-CREATE POLICY IF NOT EXISTS "recordings_delete_driver"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (
-  bucket_id = 'recordings' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+-- CREATE POLICY "recordings_delete_driver"
+-- ON storage.objects FOR DELETE
+-- TO authenticated
+-- USING (
+--   bucket_id = 'recordings' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
 
 -- Thumbnails bucket: same pattern as recordings
-CREATE POLICY IF NOT EXISTS "thumbnails_insert_driver"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'thumbnails' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+-- CREATE POLICY "thumbnails_insert_driver"
+-- ON storage.objects FOR INSERT
+-- TO authenticated
+-- WITH CHECK (
+--   bucket_id = 'thumbnails' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
 
-CREATE POLICY IF NOT EXISTS "thumbnails_select_all"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (bucket_id = 'thumbnails');
+-- CREATE POLICY "thumbnails_select_all"
+-- ON storage.objects FOR SELECT
+-- TO authenticated
+-- USING (bucket_id = 'thumbnails');
 
 -- Evidence bucket: restricted access, police/admin only for sensitive
-CREATE POLICY IF NOT EXISTS "evidence_insert_authorized"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'evidence' AND
-  EXISTS (
-    SELECT 1 FROM user_profiles
-    WHERE user_profiles.id = auth.uid()
-    AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic')
-  )
-);
+-- CREATE POLICY "evidence_insert_authorized"
+-- ON storage.objects FOR INSERT
+-- TO authenticated
+-- WITH CHECK (
+--   bucket_id = 'evidence' AND
+--   EXISTS (
+--     SELECT 1 FROM user_profiles
+--     WHERE user_profiles.id = auth.uid()
+--     AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic')
+--   )
+-- );
 
-CREATE POLICY IF NOT EXISTS "evidence_select_authorized"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'evidence' AND
-  (
-    (storage.foldername(name))[1] = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic')
-    )
-  )
-);
+-- CREATE POLICY "evidence_select_authorized"
+-- ON storage.objects FOR SELECT
+-- TO authenticated
+-- USING (
+--   bucket_id = 'evidence' AND
+--   (
+--     (storage.foldername(name))[1] = auth.uid()::text
+--     OR EXISTS (
+--       SELECT 1 FROM user_profiles
+--       WHERE user_profiles.id = auth.uid()
+--       AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer', 'mechanic')
+--     )
+--   )
+-- );
 
 -- Device firmware bucket: admin only
-CREATE POLICY IF NOT EXISTS "firmware_admin_only"
-ON storage.objects FOR ALL
-TO authenticated
-USING (
-  bucket_id = 'device-firmware' AND
-  EXISTS (
-    SELECT 1 FROM user_profiles
-    WHERE user_profiles.id = auth.uid()
-    AND user_profiles.role = 'admin'
-  )
-);
+-- CREATE POLICY "firmware_admin_only"
+-- ON storage.objects FOR ALL
+-- TO authenticated
+-- USING (
+--   bucket_id = 'device-firmware' AND
+--   EXISTS (
+--     SELECT 1 FROM user_profiles
+--     WHERE user_profiles.id = auth.uid()
+--     AND user_profiles.role = 'admin'
+--   )
+-- );
 
 -- Incident photos bucket: participants and authorized roles
-CREATE POLICY IF NOT EXISTS "incident_photos_insert"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (
-  bucket_id = 'incident-photos' AND
-  (storage.foldername(name))[1] = auth.uid()::text
-);
+-- CREATE POLICY "incident_photos_insert"
+-- ON storage.objects FOR INSERT
+-- TO authenticated
+-- WITH CHECK (
+--   bucket_id = 'incident-photos' AND
+--   (storage.foldername(name))[1] = auth.uid()::text
+-- );
 
-CREATE POLICY IF NOT EXISTS "incident_photos_select"
-ON storage.objects FOR SELECT
-TO authenticated
-USING (
-  bucket_id = 'incident-photos' AND
-  (
-    (storage.foldername(name))[1] = auth.uid()::text
-    OR EXISTS (
-      SELECT 1 FROM user_profiles
-      WHERE user_profiles.id = auth.uid()
-      AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer')
-    )
-  )
-);
+-- CREATE POLICY "incident_photos_select"
+-- ON storage.objects FOR SELECT
+-- TO authenticated
+-- USING (
+--   bucket_id = 'incident-photos' AND
+--   (
+--     (storage.foldername(name))[1] = auth.uid()::text
+--     OR EXISTS (
+--       SELECT 1 FROM user_profiles
+--       WHERE user_profiles.id = auth.uid()
+--       AND user_profiles.role IN ('admin', 'fleet_manager', 'police_officer')
+--     )
+--   )
+-- );
 
 -- ============================================
 -- HELPER FUNCTION: increment evidence download
 -- ============================================
-CREATE OR REPLACE FUNCTION increment_evidence_download(evidence_id UUID)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY INVOKER
-AS $$
-BEGIN
-  UPDATE evidence
-  SET download_count = download_count + 1,
-      updated_at = NOW()
-  WHERE id = evidence_id;
-END;
-$$;
+-- CREATE OR REPLACE FUNCTION increment_evidence_download(evidence_id UUID)
+-- RETURNS VOID
+-- LANGUAGE plpgsql
+-- SECURITY INVOKER
+-- AS $$
+-- BEGIN
+--   UPDATE evidence
+--   SET download_count = download_count + 1,
+--       updated_at = NOW()
+--   WHERE id = evidence_id;
+-- END;
+-- $$;
 
 -- ============================================
 -- TRIGGER: auto-update updated_at

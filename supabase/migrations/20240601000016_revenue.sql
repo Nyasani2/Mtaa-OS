@@ -390,34 +390,34 @@ CREATE TABLE IF NOT EXISTS revenue_procurement (
 -- ============================================
 -- INDEXES
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_taxpayers_pin ON revenue_taxpayers(pin);
-CREATE INDEX IF NOT EXISTS idx_taxpayers_type ON revenue_taxpayers(taxpayer_type);
-CREATE INDEX IF NOT EXISTS idx_taxpayers_compliance ON revenue_taxpayers(compliance_status);
-CREATE INDEX IF NOT EXISTS idx_taxpayers_risk ON revenue_taxpayers(risk_score);
-CREATE INDEX IF NOT EXISTS idx_obligations_taxpayer ON revenue_tax_obligations(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_obligations_type ON revenue_tax_obligations(tax_type);
-CREATE INDEX IF NOT EXISTS idx_obligations_status ON revenue_obligations(status);
-CREATE INDEX IF NOT EXISTS idx_obligations_due ON revenue_tax_obligations(due_date);
-CREATE INDEX IF NOT EXISTS idx_returns_taxpayer ON revenue_returns(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_returns_status ON revenue_returns(status);
-CREATE INDEX IF NOT EXISTS idx_payments_taxpayer ON revenue_payments(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_payments_obligation ON revenue_payments(obligation_id);
-CREATE INDEX IF NOT EXISTS idx_payments_date ON revenue_payments(payment_date);
-CREATE INDEX IF NOT EXISTS idx_payments_receipt ON revenue_payments(receipt_number);
-CREATE INDEX IF NOT EXISTS idx_invoices_taxpayer ON revenue_invoices(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_number ON revenue_invoices(invoice_number);
-CREATE INDEX IF NOT EXISTS idx_licenses_taxpayer ON revenue_licenses(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_licenses_status ON revenue_licenses(status);
-CREATE INDEX IF NOT EXISTS idx_licenses_expiry ON revenue_licenses(expiry_date);
-CREATE INDEX IF NOT EXISTS idx_audits_taxpayer ON revenue_audits(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_audits_status ON revenue_audits(status);
-CREATE INDEX IF NOT EXISTS idx_debts_taxpayer ON revenue_debts(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_debts_stage ON revenue_debts(collection_stage);
-CREATE INDEX IF NOT EXISTS idx_objections_taxpayer ON revenue_objections(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_refunds_taxpayer ON revenue_refunds(taxpayer_id);
-CREATE INDEX IF NOT EXISTS idx_staff_workstation ON revenue_staff(workstation_id);
-CREATE INDEX IF NOT EXISTS idx_attendance_date ON revenue_staff_attendance(shift_date);
-CREATE INDEX IF NOT EXISTS idx_payroll_period ON revenue_payroll(pay_period_start, pay_period_end);
+-- CREATE INDEX IF NOT EXISTS idx_taxpayers_pin ON revenue_taxpayers(pin);
+-- CREATE INDEX IF NOT EXISTS idx_taxpayers_type ON revenue_taxpayers(taxpayer_type);
+-- CREATE INDEX IF NOT EXISTS idx_taxpayers_compliance ON revenue_taxpayers(compliance_status);
+-- CREATE INDEX IF NOT EXISTS idx_taxpayers_risk ON revenue_taxpayers(risk_score);
+-- CREATE INDEX IF NOT EXISTS idx_obligations_taxpayer ON revenue_tax_obligations(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_obligations_type ON revenue_tax_obligations(tax_type);
+-- CREATE INDEX IF NOT EXISTS idx_obligations_status ON revenue_obligations(status);
+-- CREATE INDEX IF NOT EXISTS idx_obligations_due ON revenue_tax_obligations(due_date);
+-- CREATE INDEX IF NOT EXISTS idx_returns_taxpayer ON revenue_returns(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_returns_status ON revenue_returns(status);
+-- CREATE INDEX IF NOT EXISTS idx_payments_taxpayer ON revenue_payments(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_payments_obligation ON revenue_payments(obligation_id);
+-- CREATE INDEX IF NOT EXISTS idx_payments_date ON revenue_payments(payment_date);
+-- CREATE INDEX IF NOT EXISTS idx_payments_receipt ON revenue_payments(receipt_number);
+-- CREATE INDEX IF NOT EXISTS idx_invoices_taxpayer ON revenue_invoices(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_invoices_number ON revenue_invoices(invoice_number);
+-- CREATE INDEX IF NOT EXISTS idx_licenses_taxpayer ON revenue_licenses(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_licenses_status ON revenue_licenses(status);
+-- CREATE INDEX IF NOT EXISTS idx_licenses_expiry ON revenue_licenses(expiry_date);
+-- CREATE INDEX IF NOT EXISTS idx_audits_taxpayer ON revenue_audits(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_audits_status ON revenue_audits(status);
+-- CREATE INDEX IF NOT EXISTS idx_debts_taxpayer ON revenue_debts(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_debts_stage ON revenue_debts(collection_stage);
+-- CREATE INDEX IF NOT EXISTS idx_objections_taxpayer ON revenue_objections(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_refunds_taxpayer ON revenue_refunds(taxpayer_id);
+-- CREATE INDEX IF NOT EXISTS idx_staff_workstation ON revenue_staff(workstation_id);
+-- CREATE INDEX IF NOT EXISTS idx_attendance_date ON revenue_staff_attendance(shift_date);
+-- CREATE INDEX IF NOT EXISTS idx_payroll_period ON revenue_payroll(pay_period_start, pay_period_end);
 
 -- ============================================
 -- RLS POLICIES

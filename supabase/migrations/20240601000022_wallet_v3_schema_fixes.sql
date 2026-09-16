@@ -73,7 +73,7 @@ END $$;
 -- ============================================================
 -- INDEXES for new tables
 -- ============================================================
-CREATE INDEX IF NOT EXISTS idx_savings_members_savings ON wallet_savings_members(savings_id);
+-- CREATE INDEX IF NOT EXISTS idx_savings_members_savings ON wallet_savings_members(savings_id);
 CREATE INDEX IF NOT EXISTS idx_savings_members_user ON wallet_savings_members(user_id);
 
 SELECT 'Schema fixes applied successfully' AS status;

@@ -4,39 +4,39 @@
 -- ============================================
 
 -- 1. Ensure transactions table has all needed columns for withdrawals
-DO $$
-BEGIN
-    -- Add fee column if missing
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'transactions' AND column_name = 'fee') THEN
-        ALTER TABLE transactions ADD COLUMN fee NUMERIC(20, 2) DEFAULT 0;
-    END IF;
-
-    -- Add net_amount column if missing
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'transactions' AND column_name = 'net_amount') THEN
-        ALTER TABLE transactions ADD COLUMN net_amount NUMERIC(20, 2);
-    END IF;
-
-    -- Add method column if missing (for withdrawal method: bank_transfer, mobile_money, crypto)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'transactions' AND column_name = 'method') THEN
-        ALTER TABLE transactions ADD COLUMN method TEXT;
-    END IF;
-
-    -- Add destination column if missing (JSONB for bank details, crypto address, etc.)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'transactions' AND column_name = 'destination') THEN
-        ALTER TABLE transactions ADD COLUMN destination JSONB;
-    END IF;
-
-    -- Ensure metadata is JSONB
-    IF EXISTS (SELECT 1 FROM information_schema.columns 
-               WHERE table_name = 'transactions' AND column_name = 'metadata' 
-               AND data_type = 'json') THEN
-        ALTER TABLE transactions ALTER COLUMN metadata TYPE JSONB USING metadata::JSONB;
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     -- Add fee column if missing
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+--                    WHERE table_name = 'transactions' AND column_name = 'fee') THEN
+--         ALTER TABLE transactions ADD COLUMN fee NUMERIC(20, 2) DEFAULT 0;
+--     END IF;
+-- 
+--     -- Add net_amount column if missing
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+--                    WHERE table_name = 'transactions' AND column_name = 'net_amount') THEN
+--         ALTER TABLE transactions ADD COLUMN net_amount NUMERIC(20, 2);
+--     END IF;
+-- 
+--     -- Add method column if missing (for withdrawal method: bank_transfer, mobile_money, crypto)
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+--                    WHERE table_name = 'transactions' AND column_name = 'method') THEN
+--         ALTER TABLE transactions ADD COLUMN method TEXT;
+--     END IF;
+-- 
+--     -- Add destination column if missing (JSONB for bank details, crypto address, etc.)
+--     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+--                    WHERE table_name = 'transactions' AND column_name = 'destination') THEN
+--         ALTER TABLE transactions ADD COLUMN destination JSONB;
+--     END IF;
+-- 
+--     -- Ensure metadata is JSONB
+--     IF EXISTS (SELECT 1 FROM information_schema.columns 
+--                WHERE table_name = 'transactions' AND column_name = 'metadata' 
+--                AND data_type = 'json') THEN
+--         ALTER TABLE transactions ALTER COLUMN metadata TYPE JSONB USING metadata::JSONB;
+--     END IF;
+-- END $$;
 
 -- 2. Create RPC function: reserve_withdrawal_funds
 -- This atomically debits wallet and creates escrow record
@@ -283,27 +283,27 @@ END;
 $$;
 
 -- 5. Add RLS policies for escrow_accounts if not present
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE schemaname = 'public' 
-        AND tablename = 'escrow_accounts' 
-        AND policyname = 'Users can view own escrow'
-    ) THEN
-        CREATE POLICY "Users can view own escrow" ON escrow_accounts
-            FOR SELECT USING (user_id = auth.uid());
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1 FROM pg_policies 
+--         WHERE schemaname = 'public' 
+--         AND tablename = 'escrow_accounts' 
+--         AND policyname = 'Users can view own escrow'
+--     ) THEN
+--         CREATE POLICY "Users can view own escrow" ON escrow_accounts
+--             FOR SELECT USING (user_id = auth.uid());
+--     END IF;
+-- END $$;
 
 -- 6. Add withdrawal method to transactions type enum if using enum
 -- (If transactions.type is TEXT, no change needed. If ENUM, uncomment below:)
--- DO $$
--- BEGIN
---     IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'transaction_type') THEN
---         ALTER TYPE transaction_type ADD VALUE IF NOT EXISTS 'withdrawal';
---     END IF;
--- END $$;
+-- -- DO $$
+-- -- BEGIN
+-- --     IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'transaction_type') THEN
+-- --         ALTER TYPE transaction_type ADD VALUE IF NOT EXISTS 'withdrawal';
+-- --     END IF;
+-- -- END $$;
 
 -- 7. Grant execute permissions
 GRANT EXECUTE ON FUNCTION reserve_withdrawal_funds(UUID, NUMERIC, UUID) TO authenticated;

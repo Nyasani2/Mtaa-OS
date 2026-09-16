@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -114,7 +107,6 @@ export default function PharmacyMap({
           />
         ))}
       </MapView>
-
       {selectedId && (
         <View style={styles.overlayCard}>
           {(() => {
@@ -146,11 +138,9 @@ export default function PharmacyMap({
           })()}
         </View>
       )}
-
       <TouchableOpacity style={styles.recenterBtn} onPress={recenter}>
         <Ionicons name="locate" size={22} color="#0ea5e9" />
       </TouchableOpacity>
-
       <View style={styles.legend}>
         {Object.entries(TYPE_COLORS).map(([type, color]) => (
           <View key={type} style={styles.legendItem}>

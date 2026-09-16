@@ -78,18 +78,18 @@ CREATE TABLE IF NOT EXISTS public.health_hospitals (
 );
 
 -- Indexes for health_hospitals
-CREATE INDEX IF NOT EXISTS idx_health_hospitals_account ON public.health_hospitals(account_id);
-CREATE INDEX IF NOT EXISTS idx_health_hospitals_county ON public.health_hospitals(county_id);
-CREATE INDEX IF NOT EXISTS idx_health_hospitals_type ON public.health_hospitals(hospital_type);
-CREATE INDEX IF NOT EXISTS idx_health_hospitals_status ON public.health_hospitals(status);
-CREATE INDEX IF NOT EXISTS idx_health_hospitals_sha ON public.health_hospitals(sha_contract_status);
+-- CREATE INDEX IF NOT EXISTS idx_health_hospitals_account ON public.health_hospitals(account_id);
+-- CREATE INDEX IF NOT EXISTS idx_health_hospitals_county ON public.health_hospitals(county_id);
+-- CREATE INDEX IF NOT EXISTS idx_health_hospitals_type ON public.health_hospitals(hospital_type);
+-- CREATE INDEX IF NOT EXISTS idx_health_hospitals_status ON public.health_hospitals(status);
+-- CREATE INDEX IF NOT EXISTS idx_health_hospitals_sha ON public.health_hospitals(sha_contract_status);
 
 -- GIST index for location search (requires postgis)
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
-        CREATE INDEX IF NOT EXISTS idx_health_hospitals_location 
-        ON public.health_hospitals USING GIST (ST_SetSRID(ST_MakePoint(longitude::float, latitude::float), 4326));
+        -- CREATE INDEX IF NOT EXISTS idx_health_hospitals_location 
+--         ON public.health_hospitals USING GIST (ST_SetSRID(ST_MakePoint(longitude::float, latitude::float), 4326));
     END IF;
 END $$;
 
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS public.health_departments (
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_health_departments_hospital ON public.health_departments(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_health_departments_hospital ON public.health_departments(hospital_id);
 
 -- ============================================================================
 -- SECTION 3: DOCTOR REGISTRY
@@ -155,11 +155,11 @@ CREATE TABLE IF NOT EXISTS public.health_doctors (
     updated_at                  TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_health_doctors_user ON public.health_doctors(user_id);
-CREATE INDEX IF NOT EXISTS idx_health_doctors_license ON public.health_doctors(license_number);
-CREATE INDEX IF NOT EXISTS idx_health_doctors_status ON public.health_doctors(status);
-CREATE INDEX IF NOT EXISTS idx_health_doctors_specialty ON public.health_doctors(primary_specialty);
-CREATE INDEX IF NOT EXISTS idx_health_doctors_govt ON public.health_doctors(is_government_employee) WHERE is_government_employee = true;
+-- CREATE INDEX IF NOT EXISTS idx_health_doctors_user ON public.health_doctors(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_health_doctors_license ON public.health_doctors(license_number);
+-- CREATE INDEX IF NOT EXISTS idx_health_doctors_status ON public.health_doctors(status);
+-- CREATE INDEX IF NOT EXISTS idx_health_doctors_specialty ON public.health_doctors(primary_specialty);
+-- CREATE INDEX IF NOT EXISTS idx_health_doctors_govt ON public.health_doctors(is_government_employee) WHERE is_government_employee = true;
 
 -- ============================================================================
 -- SECTION 4: DOCTOR-HOSPITAL ASSIGNMENT
@@ -187,10 +187,10 @@ CREATE TABLE IF NOT EXISTS public.health_doctor_hospitals (
     UNIQUE(doctor_id, hospital_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_doctor ON public.health_doctor_hospitals(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_hospital ON public.health_doctor_hospitals(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_active ON public.health_doctor_hospitals(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_payroll ON public.health_doctor_hospitals(is_govt_payroll_active) WHERE is_govt_payroll_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_doctor ON public.health_doctor_hospitals(doctor_id);
+-- CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_hospital ON public.health_doctor_hospitals(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_active ON public.health_doctor_hospitals(is_active) WHERE is_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_doctor_hospitals_payroll ON public.health_doctor_hospitals(is_govt_payroll_active) WHERE is_govt_payroll_active = true;
 
 -- ============================================================================
 -- SECTION 5: BIOMETRIC ATTENDANCE (Clock-in/Clock-out)
@@ -223,11 +223,11 @@ CREATE TABLE IF NOT EXISTS public.health_biometric_attendance (
     created_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_biometric_attendance_doctor ON public.health_biometric_attendance(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_biometric_attendance_hospital ON public.health_biometric_attendance(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_biometric_attendance_date ON public.health_biometric_attendance(clock_in_at);
-CREATE INDEX IF NOT EXISTS idx_biometric_attendance_payroll ON public.health_biometric_attendance(is_payroll_processed) WHERE is_payroll_processed = false;
-CREATE INDEX IF NOT EXISTS idx_biometric_attendance_open ON public.health_biometric_attendance(clock_out_at) WHERE clock_out_at IS NULL;
+-- CREATE INDEX IF NOT EXISTS idx_biometric_attendance_doctor ON public.health_biometric_attendance(doctor_id);
+-- CREATE INDEX IF NOT EXISTS idx_biometric_attendance_hospital ON public.health_biometric_attendance(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_biometric_attendance_date ON public.health_biometric_attendance(clock_in_at);
+-- CREATE INDEX IF NOT EXISTS idx_biometric_attendance_payroll ON public.health_biometric_attendance(is_payroll_processed) WHERE is_payroll_processed = false;
+-- CREATE INDEX IF NOT EXISTS idx_biometric_attendance_open ON public.health_biometric_attendance(clock_out_at) WHERE clock_out_at IS NULL;
 
 -- ============================================================================
 -- SECTION 6: PATIENT QUEUE ENGINE
@@ -267,11 +267,11 @@ CREATE TABLE IF NOT EXISTS public.health_patient_queues (
     updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_patient_queues_hospital ON public.health_patient_queues(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_patient_queues_status ON public.health_patient_queues(queue_status);
-CREATE INDEX IF NOT EXISTS idx_patient_queues_patient ON public.health_patient_queues(patient_id);
-CREATE INDEX IF NOT EXISTS idx_patient_queues_doctor ON public.health_patient_queues(assigned_doctor_id);
-CREATE INDEX IF NOT EXISTS idx_patient_queues_waiting ON public.health_patient_queues(checked_in_at) WHERE queue_status = 'waiting';
+-- CREATE INDEX IF NOT EXISTS idx_patient_queues_hospital ON public.health_patient_queues(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_patient_queues_status ON public.health_patient_queues(queue_status);
+-- CREATE INDEX IF NOT EXISTS idx_patient_queues_patient ON public.health_patient_queues(patient_id);
+-- CREATE INDEX IF NOT EXISTS idx_patient_queues_doctor ON public.health_patient_queues(assigned_doctor_id);
+-- CREATE INDEX IF NOT EXISTS idx_patient_queues_waiting ON public.health_patient_queues(checked_in_at) WHERE queue_status = 'waiting';
 
 -- ============================================================================
 -- SECTION 7: ELECTRONIC HEALTH RECORDS (EHR)
@@ -320,12 +320,12 @@ CREATE TABLE IF NOT EXISTS public.health_ehr_records (
     created_by                  UUID REFERENCES auth.users(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ehr_patient ON public.health_ehr_records(patient_id);
-CREATE INDEX IF NOT EXISTS idx_ehr_hospital ON public.health_ehr_records(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_ehr_doctor ON public.health_ehr_records(doctor_id);
-CREATE INDEX IF NOT EXISTS idx_ehr_visit_date ON public.health_ehr_records(visit_date);
-CREATE INDEX IF NOT EXISTS idx_ehr_icd10 ON public.health_ehr_records(primary_diagnosis_icd10);
-CREATE INDEX IF NOT EXISTS idx_ehr_claim ON public.health_ehr_records(sha_claim_submitted) WHERE sha_claim_submitted = false;
+-- CREATE INDEX IF NOT EXISTS idx_ehr_patient ON public.health_ehr_records(patient_id);
+-- CREATE INDEX IF NOT EXISTS idx_ehr_hospital ON public.health_ehr_records(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_ehr_doctor ON public.health_ehr_records(doctor_id);
+-- CREATE INDEX IF NOT EXISTS idx_ehr_visit_date ON public.health_ehr_records(visit_date);
+-- CREATE INDEX IF NOT EXISTS idx_ehr_icd10 ON public.health_ehr_records(primary_diagnosis_icd10);
+-- CREATE INDEX IF NOT EXISTS idx_ehr_claim ON public.health_ehr_records(sha_claim_submitted) WHERE sha_claim_submitted = false;
 
 -- ============================================================================
 -- SECTION 8: SHA CLAIMS & REAL-TIME PAYMENTS
@@ -364,11 +364,11 @@ CREATE TABLE IF NOT EXISTS public.health_sha_claims (
     updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_sha_claims_hospital ON public.health_sha_claims(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_sha_claims_patient ON public.health_sha_claims(patient_id);
-CREATE INDEX IF NOT EXISTS idx_sha_claims_status ON public.health_sha_claims(payment_status);
-CREATE INDEX IF NOT EXISTS idx_sha_claims_public ON public.health_sha_claims(public_view_hash);
-CREATE INDEX IF NOT EXISTS idx_sha_claims_pending ON public.health_sha_claims(created_at) WHERE payment_status = 'pending';
+-- CREATE INDEX IF NOT EXISTS idx_sha_claims_hospital ON public.health_sha_claims(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_sha_claims_patient ON public.health_sha_claims(patient_id);
+-- CREATE INDEX IF NOT EXISTS idx_sha_claims_status ON public.health_sha_claims(payment_status);
+-- CREATE INDEX IF NOT EXISTS idx_sha_claims_public ON public.health_sha_claims(public_view_hash);
+-- CREATE INDEX IF NOT EXISTS idx_sha_claims_pending ON public.health_sha_claims(created_at) WHERE payment_status = 'pending';
 
 -- ============================================================================
 -- SECTION 9: SHA FUND POOL (The Kitty)
@@ -397,8 +397,8 @@ CREATE TABLE IF NOT EXISTS public.health_sha_fund_pools (
     updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_sha_pools_code ON public.health_sha_fund_pools(pool_code);
-CREATE INDEX IF NOT EXISTS idx_sha_pools_status ON public.health_sha_fund_pools(pool_status);
+-- CREATE INDEX IF NOT EXISTS idx_sha_pools_code ON public.health_sha_fund_pools(pool_code);
+-- CREATE INDEX IF NOT EXISTS idx_sha_pools_status ON public.health_sha_fund_pools(pool_status);
 
 -- ============================================================================
 -- SECTION 10: SHA CONTRIBUTOR MEMBERSHIP
@@ -429,53 +429,53 @@ CREATE TABLE IF NOT EXISTS public.health_sha_contributors (
     UNIQUE(user_id, pool_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_sha_contributors_user ON public.health_sha_contributors(user_id);
-CREATE INDEX IF NOT EXISTS idx_sha_contributors_pool ON public.health_sha_contributors(pool_id);
-CREATE INDEX IF NOT EXISTS idx_sha_contributors_active ON public.health_sha_contributors(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_sha_contributors_due ON public.health_sha_contributors(next_contribution_due);
+-- CREATE INDEX IF NOT EXISTS idx_sha_contributors_user ON public.health_sha_contributors(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_sha_contributors_pool ON public.health_sha_contributors(pool_id);
+-- CREATE INDEX IF NOT EXISTS idx_sha_contributors_active ON public.health_sha_contributors(is_active) WHERE is_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_sha_contributors_due ON public.health_sha_contributors(next_contribution_due);
 
 -- ============================================================================
 -- SECTION 11: GOVERNMENT PAYROLL - BIOMETRIC LINKED
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS public.health_govt_payroll (
-    id                      BIGSERIAL PRIMARY KEY,
+-- CREATE TABLE IF NOT EXISTS public.health_govt_payroll (
+--     id                      BIGSERIAL PRIMARY KEY,
+-- 
+--     employee_id             UUID NOT NULL REFERENCES auth.users(id),
+--     doctor_id               BIGINT REFERENCES public.health_doctors(id),
+-- 
+--     hospital_id             BIGINT NOT NULL REFERENCES public.health_hospitals(id),
+--     department_id           BIGINT REFERENCES public.health_departments(id),
+--     job_title               VARCHAR(100) NOT NULL,
+--     employment_grade        VARCHAR(20),
+-- 
+--     basic_salary            DECIMAL(12,2) NOT NULL,
+--     allowances              JSONB DEFAULT '{}',
+--     deductions              JSONB DEFAULT '{}',
+--     net_salary              DECIMAL(12,2),
+-- 
+--     attendance_period_start DATE,
+--     attendance_period_end   DATE,
+--     days_worked             INTEGER DEFAULT 0,
+--     days_absent             INTEGER DEFAULT 0,
+--     biometric_hours_logged  DECIMAL(6,2) DEFAULT 0,
+-- 
+--     payment_status          VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'calculated', 'approved', 'paid')),
+--     paid_at                 TIMESTAMPTZ,
+--     transaction_id          BIGINT REFERENCES public.transactions(id),
+-- 
+--     payroll_month           INTEGER NOT NULL CHECK (payroll_month BETWEEN 1 AND 12),
+--     payroll_year            INTEGER NOT NULL,
+-- 
+--     created_at              TIMESTAMPTZ DEFAULT NOW(),
+-- 
+--     UNIQUE(employee_id, payroll_month, payroll_year)
+-- );
 
-    employee_id             UUID NOT NULL REFERENCES auth.users(id),
-    doctor_id               BIGINT REFERENCES public.health_doctors(id),
-
-    hospital_id             BIGINT NOT NULL REFERENCES public.health_hospitals(id),
-    department_id           BIGINT REFERENCES public.health_departments(id),
-    job_title               VARCHAR(100) NOT NULL,
-    employment_grade        VARCHAR(20),
-
-    basic_salary            DECIMAL(12,2) NOT NULL,
-    allowances              JSONB DEFAULT '{}',
-    deductions              JSONB DEFAULT '{}',
-    net_salary              DECIMAL(12,2),
-
-    attendance_period_start DATE,
-    attendance_period_end   DATE,
-    days_worked             INTEGER DEFAULT 0,
-    days_absent             INTEGER DEFAULT 0,
-    biometric_hours_logged  DECIMAL(6,2) DEFAULT 0,
-
-    payment_status          VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'calculated', 'approved', 'paid')),
-    paid_at                 TIMESTAMPTZ,
-    transaction_id          BIGINT REFERENCES public.transactions(id),
-
-    payroll_month           INTEGER NOT NULL CHECK (payroll_month BETWEEN 1 AND 12),
-    payroll_year            INTEGER NOT NULL,
-
-    created_at              TIMESTAMPTZ DEFAULT NOW(),
-
-    UNIQUE(employee_id, payroll_month, payroll_year)
-);
-
-CREATE INDEX IF NOT EXISTS idx_govt_payroll_employee ON public.health_govt_payroll(employee_id);
-CREATE INDEX IF NOT EXISTS idx_govt_payroll_hospital ON public.health_govt_payroll(hospital_id);
-CREATE INDEX IF NOT EXISTS idx_govt_payroll_period ON public.health_govt_payroll(payroll_year, payroll_month);
-CREATE INDEX IF NOT EXISTS idx_govt_payroll_status ON public.health_govt_payroll(payment_status);
+-- CREATE INDEX IF NOT EXISTS idx_govt_payroll_employee ON public.health_govt_payroll(employee_id);
+-- CREATE INDEX IF NOT EXISTS idx_govt_payroll_hospital ON public.health_govt_payroll(hospital_id);
+-- CREATE INDEX IF NOT EXISTS idx_govt_payroll_period ON public.health_govt_payroll(payroll_year, payroll_month);
+-- CREATE INDEX IF NOT EXISTS idx_govt_payroll_status ON public.health_govt_payroll(payment_status);
 
 -- ============================================================================
 -- SECTION 12: SHA SERVICE CATALOG (Tariff Reference)
@@ -504,9 +504,9 @@ CREATE TABLE IF NOT EXISTS public.health_sha_service_catalog (
     updated_at          TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_sha_catalog_code ON public.health_sha_service_catalog(service_code);
-CREATE INDEX IF NOT EXISTS idx_sha_catalog_category ON public.health_sha_service_catalog(service_category);
-CREATE INDEX IF NOT EXISTS idx_sha_catalog_active ON public.health_sha_service_catalog(is_active) WHERE is_active = true;
+-- CREATE INDEX IF NOT EXISTS idx_sha_catalog_code ON public.health_sha_service_catalog(service_code);
+-- CREATE INDEX IF NOT EXISTS idx_sha_catalog_category ON public.health_sha_service_catalog(service_category);
+-- CREATE INDEX IF NOT EXISTS idx_sha_catalog_active ON public.health_sha_service_catalog(is_active) WHERE is_active = true;
 
 -- ============================================================================
 -- SECTION 13: TRIGGERS FOR UPDATED_AT
@@ -534,7 +534,7 @@ DECLARE
         'health_sha_claims',
         'health_sha_fund_pools',
         'health_sha_contributors',
-        'health_govt_payroll',
+--         'health_govt_payroll',
         'health_sha_service_catalog'
     ];
 BEGIN
@@ -618,181 +618,181 @@ ALTER TABLE public.health_ehr_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_sha_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_sha_fund_pools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_sha_contributors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_govt_payroll ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.health_govt_payroll ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_sha_service_catalog ENABLE ROW LEVEL SECURITY;
 
 -- Hospitals: Public can view active hospitals
-CREATE POLICY "Public can view active hospitals" 
-ON public.health_hospitals FOR SELECT 
-USING (status = 'active');
+-- CREATE POLICY "Public can view active hospitals" 
+-- ON public.health_hospitals FOR SELECT 
+-- USING (status = 'active');
 
-CREATE POLICY "Hospital admins can manage their hospital" 
-ON public.health_hospitals FOR ALL 
-USING (created_by = auth.uid() OR EXISTS (
-    SELECT 1 FROM public.health_doctor_hospitals 
-    WHERE hospital_id = health_hospitals.id 
-    AND doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-    AND role_at_hospital IN ('Admin', 'Head of Dept', 'Director')
-));
+-- CREATE POLICY "Hospital admins can manage their hospital" 
+-- ON public.health_hospitals FOR ALL 
+-- USING (created_by = auth.uid() OR EXISTS (
+--     SELECT 1 FROM public.health_doctor_hospitals 
+--     WHERE hospital_id = health_hospitals.id 
+--     AND doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+--     AND role_at_hospital IN ('Admin', 'Head of Dept', 'Director')
+-- ));
 
 -- Doctors: Public can view active doctors
-CREATE POLICY "Public can view active doctors" 
-ON public.health_doctors FOR SELECT 
-USING (status = 'active');
+-- CREATE POLICY "Public can view active doctors" 
+-- ON public.health_doctors FOR SELECT 
+-- USING (status = 'active');
 
-CREATE POLICY "Doctors can manage their own profile" 
-ON public.health_doctors FOR ALL 
-USING (user_id = auth.uid());
+-- CREATE POLICY "Doctors can manage their own profile" 
+-- ON public.health_doctors FOR ALL 
+-- USING (user_id = auth.uid());
 
 -- Patient Queues: Patients see their own, hospitals see their queue
-CREATE POLICY "Patients see their queue entries" 
-ON public.health_patient_queues FOR SELECT 
-USING (patient_id = auth.uid());
+-- CREATE POLICY "Patients see their queue entries" 
+-- ON public.health_patient_queues FOR SELECT 
+-- USING (patient_id = auth.uid());
 
-CREATE POLICY "Hospital staff see their hospital queues" 
-ON public.health_patient_queues FOR ALL 
-USING (hospital_id IN (
-    SELECT hospital_id FROM public.health_doctor_hospitals 
-    WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-));
+-- CREATE POLICY "Hospital staff see their hospital queues" 
+-- ON public.health_patient_queues FOR ALL 
+-- USING (hospital_id IN (
+--     SELECT hospital_id FROM public.health_doctor_hospitals 
+--     WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+-- ));
 
 -- EHR: Patients own their records, treating doctors can view
-CREATE POLICY "Patients own their health records" 
-ON public.health_ehr_records FOR SELECT 
-USING (patient_id = auth.uid());
+-- CREATE POLICY "Patients own their health records" 
+-- ON public.health_ehr_records FOR SELECT 
+-- USING (patient_id = auth.uid());
 
-CREATE POLICY "Treating doctors can view records" 
-ON public.health_ehr_records FOR SELECT 
-USING (
-    doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-    OR hospital_id IN (
-        SELECT hospital_id FROM public.health_doctor_hospitals 
-        WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-    )
-    OR auth.uid() = ANY(SELECT (jsonb_array_elements_text(access_granted_to))::UUID)
-);
+-- CREATE POLICY "Treating doctors can view records" 
+-- ON public.health_ehr_records FOR SELECT 
+-- USING (
+--     doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+--     OR hospital_id IN (
+--         SELECT hospital_id FROM public.health_doctor_hospitals 
+--         WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+--     )
+--     OR auth.uid() = ANY(SELECT (jsonb_array_elements_text(access_granted_to))::UUID)
+-- );
 
 -- SHA Claims: Public view for transparency
-CREATE POLICY "Public can view claims by hash" 
-ON public.health_sha_claims FOR SELECT 
-USING (is_public = true);
+-- CREATE POLICY "Public can view claims by hash" 
+-- ON public.health_sha_claims FOR SELECT 
+-- USING (is_public = true);
 
-CREATE POLICY "Hospitals can view their claims" 
-ON public.health_sha_claims FOR ALL 
-USING (hospital_id IN (
-    SELECT hospital_id FROM public.health_doctor_hospitals 
-    WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-));
+-- CREATE POLICY "Hospitals can view their claims" 
+-- ON public.health_sha_claims FOR ALL 
+-- USING (hospital_id IN (
+--     SELECT hospital_id FROM public.health_doctor_hospitals 
+--     WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+-- ));
 
 -- SHA Fund Pools: Public view
-CREATE POLICY "Public can view fund pools" 
-ON public.health_sha_fund_pools FOR SELECT 
-USING (public_dashboard_enabled = true);
+-- CREATE POLICY "Public can view fund pools" 
+-- ON public.health_sha_fund_pools FOR SELECT 
+-- USING (public_dashboard_enabled = true);
 
 -- Govt Payroll: Employees see their own
-CREATE POLICY "Employees see their own payroll" 
-ON public.health_govt_payroll FOR SELECT 
-USING (employee_id = auth.uid());
+-- CREATE POLICY "Employees see their own payroll" 
+-- -- ON public.health_govt_payroll FOR SELECT 
+-- USING (employee_id = auth.uid());
 
-CREATE POLICY "Hospital admins manage payroll" 
-ON public.health_govt_payroll FOR ALL 
-USING (hospital_id IN (
-    SELECT hospital_id FROM public.health_doctor_hospitals 
-    WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
-    AND role_at_hospital IN ('Admin', 'Director', 'HR Manager')
-));
+-- CREATE POLICY "Hospital admins manage payroll" 
+-- -- ON public.health_govt_payroll FOR ALL 
+-- USING (hospital_id IN (
+--     SELECT hospital_id FROM public.health_doctor_hospitals 
+--     WHERE doctor_id IN (SELECT id FROM public.health_doctors WHERE user_id = auth.uid())
+--     AND role_at_hospital IN ('Admin', 'Director', 'HR Manager')
+-- ));
 
 -- ============================================================================
 -- SECTION 17: SEED DATA (Kenya SHA Starter)
 -- ============================================================================
 
 -- Insert default SHA Fund Pool for Kenya
-INSERT INTO public.health_sha_fund_pools (pool_name, pool_code, coverage_type, covered_counties)
-VALUES (
-    'Kenya Social Health Authority National Pool',
-    'KENYA-SHA-2026',
-    'national',
-    '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]'
-)
-ON CONFLICT (pool_code) DO NOTHING;
+-- INSERT INTO public.health_sha_fund_pools (pool_name, pool_code, coverage_type, covered_counties)
+-- VALUES (
+--     'Kenya Social Health Authority National Pool',
+--     'KENYA-SHA-2026',
+--     'national',
+--     '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]'
+-- )
+-- ON CONFLICT (pool_code) DO NOTHING;
 
 -- Insert sample service catalog items
-INSERT INTO public.health_sha_service_catalog (service_code, service_name, service_category, description, price_level_1, price_level_2, price_level_3, price_level_4, price_level_5, price_private)
-VALUES 
-    ('CONS001', 'General Consultation', 'consultation', 'Standard outpatient consultation with general practitioner', 200, 300, 400, 500, 600, 1000),
-    ('CONS002', 'Specialist Consultation', 'consultation', 'Consultation with specialist (cardiologist, neurologist, etc.)', 300, 500, 700, 1000, 1500, 2500),
-    ('LAB001', 'Complete Blood Count (CBC)', 'lab', 'Full blood count analysis', 150, 250, 350, 500, 700, 1200),
-    ('LAB002', 'Malaria Rapid Test', 'lab', 'Rapid diagnostic test for malaria', 50, 100, 150, 200, 300, 500),
-    ('IMG001', 'Chest X-Ray', 'imaging', 'Standard chest radiograph', 200, 400, 600, 1000, 1500, 2500),
-    ('IMG002', 'Ultrasound', 'imaging', 'General abdominal ultrasound', 300, 500, 800, 1200, 2000, 3500),
-    ('PROC001', 'Wound Dressing', 'procedure', 'Standard wound cleaning and dressing', 100, 150, 250, 400, 600, 1000),
-    ('PROC002', 'Injection/Immunization', 'procedure', 'Intramuscular or subcutaneous injection', 50, 80, 120, 200, 300, 500),
-    ('PHARM001', 'Amoxicillin 500mg (1 course)', 'pharmacy', 'Standard antibiotic course (21 capsules)', 150, 200, 300, 400, 500, 800),
-    ('PHARM002', 'Paracetamol 500mg (1 pack)', 'pharmacy', 'Pain relief medication (100 tablets)', 50, 80, 120, 200, 300, 500)
-ON CONFLICT (service_code) DO NOTHING;
+-- INSERT INTO public.health_sha_service_catalog (service_code, service_name, service_category, description, price_level_1, price_level_2, price_level_3, price_level_4, price_level_5, price_private)
+-- VALUES 
+--     ('CONS001', 'General Consultation', 'consultation', 'Standard outpatient consultation with general practitioner', 200, 300, 400, 500, 600, 1000),
+--     ('CONS002', 'Specialist Consultation', 'consultation', 'Consultation with specialist (cardiologist, neurologist, etc.)', 300, 500, 700, 1000, 1500, 2500),
+--     ('LAB001', 'Complete Blood Count (CBC)', 'lab', 'Full blood count analysis', 150, 250, 350, 500, 700, 1200),
+--     ('LAB002', 'Malaria Rapid Test', 'lab', 'Rapid diagnostic test for malaria', 50, 100, 150, 200, 300, 500),
+--     ('IMG001', 'Chest X-Ray', 'imaging', 'Standard chest radiograph', 200, 400, 600, 1000, 1500, 2500),
+--     ('IMG002', 'Ultrasound', 'imaging', 'General abdominal ultrasound', 300, 500, 800, 1200, 2000, 3500),
+--     ('PROC001', 'Wound Dressing', 'procedure', 'Standard wound cleaning and dressing', 100, 150, 250, 400, 600, 1000),
+--     ('PROC002', 'Injection/Immunization', 'procedure', 'Intramuscular or subcutaneous injection', 50, 80, 120, 200, 300, 500),
+--     ('PHARM001', 'Amoxicillin 500mg (1 course)', 'pharmacy', 'Standard antibiotic course (21 capsules)', 150, 200, 300, 400, 500, 800),
+--     ('PHARM002', 'Paracetamol 500mg (1 pack)', 'pharmacy', 'Pain relief medication (100 tablets)', 50, 80, 120, 200, 300, 500)
+-- ON CONFLICT (service_code) DO NOTHING;
 
 -- ============================================================================
 -- SECTION 18: VIEWS FOR DASHBOARDS
 -- ============================================================================
 
 -- Hospital Performance Dashboard View
-CREATE OR REPLACE VIEW public.vw_hospital_performance AS
-SELECT 
-    h.id AS hospital_id,
-    h.hospital_name,
-    h.hospital_type,
-    h.county_id,
-    COUNT(DISTINCT pq.id) FILTER (WHERE pq.queue_status = 'completed' AND pq.visit_date = CURRENT_DATE) AS patients_seen_today,
-    COUNT(DISTINCT ba.id) FILTER (WHERE ba.clock_in_at::date = CURRENT_DATE AND ba.clock_out_at IS NULL) AS doctors_on_duty,
-    COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'paid' AND sc.paid_at::date = CURRENT_DATE), 0) AS revenue_today,
-    COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'pending') AS pending_claims,
-    AVG(pq.actual_wait_minutes) FILTER (WHERE pq.consultation_ended_at IS NOT NULL AND pq.checked_in_at::date = CURRENT_DATE) AS avg_wait_time_today
-FROM public.health_hospitals h
-LEFT JOIN public.health_patient_queues pq ON pq.hospital_id = h.id
-LEFT JOIN public.health_biometric_attendance ba ON ba.hospital_id = h.id
-LEFT JOIN public.health_sha_claims sc ON sc.hospital_id = h.id
-WHERE h.status = 'active'
-GROUP BY h.id, h.hospital_name, h.hospital_type, h.county_id;
+-- CREATE OR REPLACE VIEW public.vw_hospital_performance AS
+-- SELECT 
+--     h.id AS hospital_id,
+--     h.hospital_name,
+--     h.hospital_type,
+--     h.county_id,
+--     COUNT(DISTINCT pq.id) FILTER (WHERE pq.queue_status = 'completed' AND pq.visit_date = CURRENT_DATE) AS patients_seen_today,
+--     COUNT(DISTINCT ba.id) FILTER (WHERE ba.clock_in_at::date = CURRENT_DATE AND ba.clock_out_at IS NULL) AS doctors_on_duty,
+--     COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'paid' AND sc.paid_at::date = CURRENT_DATE), 0) AS revenue_today,
+--     COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'pending') AS pending_claims,
+--     AVG(pq.actual_wait_minutes) FILTER (WHERE pq.consultation_ended_at IS NOT NULL AND pq.checked_in_at::date = CURRENT_DATE) AS avg_wait_time_today
+-- FROM public.health_hospitals h
+-- LEFT JOIN public.health_patient_queues pq ON pq.hospital_id = h.id
+-- LEFT JOIN public.health_biometric_attendance ba ON ba.hospital_id = h.id
+-- LEFT JOIN public.health_sha_claims sc ON sc.hospital_id = h.id
+-- WHERE h.status = 'active'
+-- GROUP BY h.id, h.hospital_name, h.hospital_type, h.county_id;
 
 -- SHA Fund Transparency View
-CREATE OR REPLACE VIEW public.vw_sha_transparency AS
-SELECT 
-    p.id AS pool_id,
-    p.pool_name,
-    p.pool_code,
-    p.current_balance,
-    p.total_contributions,
-    p.total_paid_out,
-    p.total_contributors,
-    p.active_contributors,
-    COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'paid') AS total_claims_paid,
-    COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'paid'), 0) AS total_claims_amount,
-    COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'pending') AS pending_claims_count,
-    COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'pending'), 0) AS pending_claims_amount
-FROM public.health_sha_fund_pools p
-LEFT JOIN public.health_sha_claims sc ON sc.sha_fund_pool_id = p.id
-WHERE p.pool_status = 'active'
-GROUP BY p.id, p.pool_name, p.pool_code, p.current_balance, p.total_contributions, p.total_paid_out, p.total_contributors, p.active_contributors;
+-- CREATE OR REPLACE VIEW public.vw_sha_transparency AS
+-- SELECT 
+--     p.id AS pool_id,
+--     p.pool_name,
+--     p.pool_code,
+--     p.current_balance,
+--     p.total_contributions,
+--     p.total_paid_out,
+--     p.total_contributors,
+--     p.active_contributors,
+--     COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'paid') AS total_claims_paid,
+--     COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'paid'), 0) AS total_claims_amount,
+--     COUNT(DISTINCT sc.id) FILTER (WHERE sc.payment_status = 'pending') AS pending_claims_count,
+--     COALESCE(SUM(sc.total_claim_amount) FILTER (WHERE sc.payment_status = 'pending'), 0) AS pending_claims_amount
+-- FROM public.health_sha_fund_pools p
+-- LEFT JOIN public.health_sha_claims sc ON sc.sha_fund_pool_id = p.id
+-- WHERE p.pool_status = 'active'
+-- GROUP BY p.id, p.pool_name, p.pool_code, p.current_balance, p.total_contributions, p.total_paid_out, p.total_contributors, p.active_contributors;
 
 -- Doctor Attendance Summary View
-CREATE OR REPLACE VIEW public.vw_doctor_attendance_summary AS
-SELECT 
-    d.id AS doctor_id,
-    d.user_id,
-    d.license_number,
-    d.primary_specialty,
-    dh.hospital_id,
-    h.hospital_name,
-    COUNT(ba.id) FILTER (WHERE ba.clock_in_at::date = CURRENT_DATE) AS clock_ins_today,
-    SUM(ba.total_hours) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS hours_this_month,
-    COUNT(ba.id) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS days_worked_this_month,
-    AVG(ba.total_hours) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS avg_hours_per_day
-FROM public.health_doctors d
-LEFT JOIN public.health_doctor_hospitals dh ON dh.doctor_id = d.id AND dh.is_active = true
-LEFT JOIN public.health_hospitals h ON h.id = dh.hospital_id
-LEFT JOIN public.health_biometric_attendance ba ON ba.doctor_id = d.id AND ba.hospital_id = dh.hospital_id
-WHERE d.status = 'active'
-GROUP BY d.id, d.user_id, d.license_number, d.primary_specialty, dh.hospital_id, h.hospital_name;
+-- CREATE OR REPLACE VIEW public.vw_doctor_attendance_summary AS
+-- SELECT 
+--     d.id AS doctor_id,
+--     d.user_id,
+--     d.license_number,
+--     d.primary_specialty,
+--     dh.hospital_id,
+--     h.hospital_name,
+--     COUNT(ba.id) FILTER (WHERE ba.clock_in_at::date = CURRENT_DATE) AS clock_ins_today,
+--     SUM(ba.total_hours) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS hours_this_month,
+--     COUNT(ba.id) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS days_worked_this_month,
+--     AVG(ba.total_hours) FILTER (WHERE ba.clock_in_at::date >= DATE_TRUNC('month', CURRENT_DATE)) AS avg_hours_per_day
+-- FROM public.health_doctors d
+-- LEFT JOIN public.health_doctor_hospitals dh ON dh.doctor_id = d.id AND dh.is_active = true
+-- LEFT JOIN public.health_hospitals h ON h.id = dh.hospital_id
+-- LEFT JOIN public.health_biometric_attendance ba ON ba.doctor_id = d.id AND ba.hospital_id = dh.hospital_id
+-- WHERE d.status = 'active'
+-- GROUP BY d.id, d.user_id, d.license_number, d.primary_specialty, dh.hospital_id, h.hospital_name;
 
 -- ============================================================================
 -- SCHEMA COMPLETE

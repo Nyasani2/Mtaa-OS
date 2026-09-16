@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -69,18 +68,12 @@ export function usePharmacy(facilityId: string | null) {
 
   const processSale = useCallback(async (saleData: any) => {
     const { data: sale, error: saleError } = await supabase.from('health_pos_transactions').insert({
-      facility_id: saleData.facility_id,
-      cashier_id: saleData.cashier_id,
-      customer_name: saleData.customer_name,
-      customer_phone: saleData.customer_phone,
-      total: saleData.total,
-      payment_method: saleData.payment_method,
-      status: 'completed',
-      created_at: new Date().toISOString(),
+      facility_id: saleData.facility_id, cashier_id: saleData.cashier_id,
+      customer_name: saleData.customer_name, customer_phone: saleData.customer_phone,
+      total: saleData.total, payment_method: saleData.payment_method,
+      status: 'completed', created_at: new Date().toISOString(),
     }).select().maybeSingle();
     if (saleError) throw saleError;
-
-    // Insert sale items and update inventory
     for (const item of saleData.items) {
       await supabase.from('health_pos_transactions').insert({
         sale_id: sale.id, inventory_id: item.id, name: item.name,
@@ -97,7 +90,6 @@ export function usePharmacy(facilityId: string | null) {
       dispensed_at: new Date().toISOString(), dispense_notes: dispenseData.notes,
     }).eq('id', prescriptionId);
     if (error) throw error;
-    // Decrement inventory for each item
     const { data: pres } = await supabase.from('health_prescriptions').select('items:health_prescription_items(*)').eq('id', prescriptionId).maybeSingle();
     for (const item of pres?.items || []) {
       const { data: inv } = await supabase.from('health_pharmacy_inventory').select('id, quantity').eq('facility_id', facilityId).ilike('name', item.medication_name).maybeSingle();
@@ -109,14 +101,12 @@ export function usePharmacy(facilityId: string | null) {
   }, [facilityId, fetchData]);
 
   const checkInteraction = useCallback(async (drugA: string, drugB: string) => {
-    // Query the interactions table
     const { data } = await supabase
       .from('health_pharmacy_inventory')
       .select('*')
       .or(`and(drug_a.ilike.${drugA},drug_b.ilike.${drugB}),and(drug_a.ilike.${drugB},drug_b.ilike.${drugA})`)
       .maybeSingle();
     if (data) return data;
-    // Fallback: check if both exist in known interaction pairs
     return { severity: 'none', description: `No known interaction between ${drugA} and ${drugB}.`, recommendation: 'Continue monitoring patient.' };
   }, []);
 

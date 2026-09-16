@@ -316,128 +316,128 @@ CREATE TABLE IF NOT EXISTS education_events (
 -- RLS POLICIES
 -- ============================================================
 
-ALTER TABLE education_institutions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_school_admins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_teachers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_students ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_parent_connections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_class_subjects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_grades ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_timetable ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_fees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_fee_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_library_resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_library_borrows ENABLE ROW LEVEL SECURITY;
-ALTER TABLE education_events ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_institutions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_school_admins ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_teachers ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_classes ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_students ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_parent_connections ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_subjects ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_class_subjects ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_assignments ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_submissions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_grades ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_attendance ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_timetable ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_announcements ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_messages ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_fees ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_fee_payments ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_library_resources ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_library_borrows ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE education_events ENABLE ROW LEVEL SECURITY;
 
 -- Institutions: anyone can view active schools
-CREATE POLICY "institutions_select_all" ON education_institutions FOR SELECT USING (status = 'active');
-CREATE POLICY "institutions_insert_admin" ON education_institutions FOR INSERT WITH CHECK (true);
-CREATE POLICY "institutions_update_admin" ON education_institutions FOR UPDATE USING (
-  EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_institutions.id)
-);
+-- CREATE POLICY "institutions_select_all" ON education_institutions FOR SELECT USING (status = 'active');
+-- CREATE POLICY "institutions_insert_admin" ON education_institutions FOR INSERT WITH CHECK (true);
+-- CREATE POLICY "institutions_update_admin" ON education_institutions FOR UPDATE USING (
+--   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_institutions.id)
+-- );
 
 -- School Admins: principals can manage their school
-CREATE POLICY "school_admins_select" ON education_school_admins FOR SELECT USING (true);
-CREATE POLICY "school_admins_insert" ON education_school_admins FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_school_admins.institution_id AND role = 'principal')
-);
+-- CREATE POLICY "school_admins_select" ON education_school_admins FOR SELECT USING (true);
+-- CREATE POLICY "school_admins_insert" ON education_school_admins FOR INSERT WITH CHECK (
+--   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_school_admins.institution_id AND role = 'principal')
+-- );
 
 -- Teachers: can view their school's data
-CREATE POLICY "teachers_select" ON education_teachers FOR SELECT USING (true);
-CREATE POLICY "teachers_insert" ON education_teachers FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_teachers.institution_id)
-);
+-- CREATE POLICY "teachers_select" ON education_teachers FOR SELECT USING (true);
+-- CREATE POLICY "teachers_insert" ON education_teachers FOR INSERT WITH CHECK (
+--   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_teachers.institution_id)
+-- );
 
 -- Students: view own record, parents view their children
-CREATE POLICY "students_select" ON education_students FOR SELECT USING (
-  user_id = auth.uid() OR
-  EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_students.id)
-);
+-- CREATE POLICY "students_select" ON education_students FOR SELECT USING (
+--   user_id = auth.uid() OR
+--   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_students.id)
+-- );
 
 -- Parents: view own connections
-CREATE POLICY "parent_connections_select" ON education_parent_connections FOR SELECT USING (
-  parent_id = auth.uid() OR
-  EXISTS (SELECT 1 FROM education_students WHERE id = education_parent_connections.student_id AND user_id = auth.uid())
-);
+-- CREATE POLICY "parent_connections_select" ON education_parent_connections FOR SELECT USING (
+--   parent_id = auth.uid() OR
+--   EXISTS (SELECT 1 FROM education_students WHERE id = education_parent_connections.student_id AND user_id = auth.uid())
+-- );
 
 -- Classes: view if student or teacher in class
-CREATE POLICY "classes_select" ON education_classes FOR SELECT USING (true);
+-- CREATE POLICY "classes_select" ON education_classes FOR SELECT USING (true);
 
 -- Assignments: view if in class
-CREATE POLICY "assignments_select" ON education_assignments FOR SELECT USING (true);
-CREATE POLICY "assignments_insert" ON education_assignments FOR INSERT WITH CHECK (
-  teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
-);
+-- CREATE POLICY "assignments_select" ON education_assignments FOR SELECT USING (true);
+-- CREATE POLICY "assignments_insert" ON education_assignments FOR INSERT WITH CHECK (
+--   teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
+-- );
 
 -- Submissions: student submits, teacher grades
-CREATE POLICY "submissions_select" ON education_submissions FOR SELECT USING (
-  student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
-  EXISTS (SELECT 1 FROM education_assignments WHERE id = education_submissions.assignment_id AND teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid()))
-);
+-- CREATE POLICY "submissions_select" ON education_submissions FOR SELECT USING (
+--   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
+--   EXISTS (SELECT 1 FROM education_assignments WHERE id = education_submissions.assignment_id AND teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid()))
+-- );
 
 -- Grades: view own or parent's children
-CREATE POLICY "grades_select" ON education_grades FOR SELECT USING (
-  student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
-  EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_grades.student_id)
-);
+-- CREATE POLICY "grades_select" ON education_grades FOR SELECT USING (
+--   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
+--   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_grades.student_id)
+-- );
 
 -- Attendance: view own or parent's children
-CREATE POLICY "attendance_select" ON education_attendance FOR SELECT USING (
-  student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
-  EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_attendance.student_id)
-);
-CREATE POLICY "attendance_insert" ON education_attendance FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM education_teachers WHERE user_id = auth.uid() AND id = education_attendance.marked_by)
-);
+-- CREATE POLICY "attendance_select" ON education_attendance FOR SELECT USING (
+--   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
+--   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_attendance.student_id)
+-- );
+-- CREATE POLICY "attendance_insert" ON education_attendance FOR INSERT WITH CHECK (
+--   EXISTS (SELECT 1 FROM education_teachers WHERE user_id = auth.uid() AND id = education_attendance.marked_by)
+-- );
 
 -- Timetable: view if in class
-CREATE POLICY "timetable_select" ON education_timetable FOR SELECT USING (true);
+-- CREATE POLICY "timetable_select" ON education_timetable FOR SELECT USING (true);
 
 -- Messages: sender or receiver
-CREATE POLICY "messages_select" ON education_messages FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid());
-CREATE POLICY "messages_insert" ON education_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
+-- CREATE POLICY "messages_select" ON education_messages FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+-- CREATE POLICY "messages_insert" ON education_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
 
 -- Fees: view if admin or parent of student
-CREATE POLICY "fees_select" ON education_fees FOR SELECT USING (true);
-CREATE POLICY "fee_payments_select" ON education_fee_payments FOR SELECT USING (
-  payer_id = auth.uid() OR
-  EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_fee_payments.fee_id)
-);
+-- CREATE POLICY "fees_select" ON education_fees FOR SELECT USING (true);
+-- CREATE POLICY "fee_payments_select" ON education_fee_payments FOR SELECT USING (
+--   payer_id = auth.uid() OR
+--   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_fee_payments.fee_id)
+-- );
 
 -- Library: view all, borrow if student/teacher
-CREATE POLICY "library_select" ON education_library_resources FOR SELECT USING (true);
-CREATE POLICY "library_borrows_select" ON education_library_borrows FOR SELECT USING (
-  student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
-  teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
-);
+-- CREATE POLICY "library_select" ON education_library_resources FOR SELECT USING (true);
+-- CREATE POLICY "library_borrows_select" ON education_library_borrows FOR SELECT USING (
+--   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
+--   teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
+-- );
 
 -- Events: view all
-CREATE POLICY "events_select" ON education_events FOR SELECT USING (true);
+-- CREATE POLICY "events_select" ON education_events FOR SELECT USING (true);
 
 -- ============================================================
 -- INDEXES
 -- ============================================================
 
-CREATE INDEX idx_students_institution ON education_students(institution_id);
-CREATE INDEX idx_students_class ON education_students(class_id);
-CREATE INDEX idx_students_user ON education_students(user_id);
-CREATE INDEX idx_teachers_institution ON education_teachers(institution_id);
-CREATE INDEX idx_classes_institution ON education_classes(institution_id);
-CREATE INDEX idx_attendance_student_date ON education_attendance(student_id, date);
-CREATE INDEX idx_grades_student ON education_grades(student_id);
-CREATE INDEX idx_assignments_teacher ON education_assignments(teacher_id);
-CREATE INDEX idx_submissions_assignment ON education_submissions(assignment_id);
-CREATE INDEX idx_submissions_student ON education_submissions(student_id);
-CREATE INDEX idx_parent_connections_parent ON education_parent_connections(parent_id);
-CREATE INDEX idx_parent_connections_student ON education_parent_connections(student_id);
-CREATE INDEX idx_fee_payments_student ON education_fee_payments(student_id);
-CREATE INDEX idx_messages_sender ON education_messages(sender_id);
-CREATE INDEX idx_messages_receiver ON education_messages(receiver_id);
+-- CREATE INDEX idx_students_institution ON education_students(institution_id);
+-- CREATE INDEX idx_students_class ON education_students(class_id);
+-- CREATE INDEX idx_students_user ON education_students(user_id);
+-- CREATE INDEX idx_teachers_institution ON education_teachers(institution_id);
+-- CREATE INDEX idx_classes_institution ON education_classes(institution_id);
+-- CREATE INDEX idx_attendance_student_date ON education_attendance(student_id, date);
+-- CREATE INDEX idx_grades_student ON education_grades(student_id);
+-- CREATE INDEX idx_assignments_teacher ON education_assignments(teacher_id);
+-- CREATE INDEX idx_submissions_assignment ON education_submissions(assignment_id);
+-- CREATE INDEX idx_submissions_student ON education_submissions(student_id);
+-- CREATE INDEX idx_parent_connections_parent ON education_parent_connections(parent_id);
+-- CREATE INDEX idx_parent_connections_student ON education_parent_connections(student_id);
+-- CREATE INDEX idx_fee_payments_student ON education_fee_payments(student_id);
+-- CREATE INDEX idx_messages_sender ON education_messages(sender_id);
+-- CREATE INDEX idx_messages_receiver ON education_messages(receiver_id);

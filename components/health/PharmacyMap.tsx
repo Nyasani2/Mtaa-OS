@@ -1,7 +1,3 @@
-// components/health/PharmacyMap.tsx
-// Pharmacy location map component for MTAA Health
-// Imported by: app/(os)/health/herbal-pharmacy/index.tsx, app/(os)/health/pharmacy/map.tsx
-
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -55,14 +51,11 @@ export default function PharmacyMap({
         .from('health_facilities')
         .select('id, name, latitude, longitude, address, phone, type, is_open')
         .eq('status', 'active');
-
       if (filterType !== 'all') {
         query = query.eq('type', filterType);
       }
-
       const { data, error: err } = await query;
       if (err) throw err;
-
       const mapped: PharmacyLocation[] = (data || []).map((f: any) => ({
         id: f.id,
         name: f.name,
@@ -73,7 +66,6 @@ export default function PharmacyMap({
         isOpen: f.is_open ?? true,
         type: f.type || 'pharmacy',
       }));
-
       setLocations(mapped);
     } catch (e: any) {
       setError(e.message);
@@ -99,7 +91,6 @@ export default function PharmacyMap({
     );
   }
 
-  // Placeholder map view — replace with react-native-maps when available
   return (
     <View style={styles.container}>
       <View style={styles.mapPlaceholder}>
@@ -117,7 +108,7 @@ export default function PharmacyMap({
             <Text style={styles.locationAddress}>{loc.address}</Text>
             <Text style={styles.locationMeta}>
               {loc.isOpen ? '🟢 Open' : '🔴 Closed'}
-              {loc.phone ? `  |  📞 ${loc.phone}` : ''}
+              {loc.phone ? `  |   ${loc.phone}` : ''}
             </Text>
           </View>
         ))}
@@ -127,59 +118,18 @@ export default function PharmacyMap({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  mapPlaceholder: {
-    flex: 1,
-    padding: 16,
-  },
-  mapTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  mapSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  mapPlaceholder: { flex: 1, padding: 16 },
+  mapTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  mapSubtitle: { fontSize: 14, color: '#6b7280', marginBottom: 16 },
   locationCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: '#e5e7eb',
   },
-  locationCardSelected: {
-    borderColor: '#2563eb',
-    borderWidth: 2,
-    backgroundColor: '#eff6ff',
-  },
-  locationName: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  locationAddress: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginBottom: 6,
-  },
-  locationMeta: {
-    fontSize: 12,
-    color: '#374151',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  locationCardSelected: { borderColor: '#2563eb', borderWidth: 2, backgroundColor: '#eff6ff' },
+  locationName: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  locationAddress: { fontSize: 13, color: '#6b7280', marginBottom: 6 },
+  locationMeta: { fontSize: 12, color: '#374151' },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#6b7280' },
+  errorText: { color: '#ef4444', fontSize: 14, textAlign: 'center' },
 });

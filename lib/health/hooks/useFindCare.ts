@@ -37,7 +37,6 @@ export function useFindCare() {
     let q = supabase
       .from('health_facilities')
       .select(FACILITY_SELECT);
-
     if (query) {
       q = q.or(`name.ilike.%${query}%,address.ilike.%${query}%,city.ilike.%${query}%`);
     }
@@ -47,7 +46,6 @@ export function useFindCare() {
     if (filters?.city) {
       q = q.eq('city', filters.city);
     }
-
     const { data, error } = await q.order('name');
     if (error) throw error;
     return (data || []) as Facility[];

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -18,7 +17,6 @@ export function useNurse(facilityId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      // Get active patients (admissions)
       const { data: admissionsData } = await supabase
         .from('health_admissions')
         .select('patient_id, patient:patient_id(id, name)')
@@ -27,7 +25,6 @@ export function useNurse(facilityId: string | null) {
       const activePatients = (admissionsData || []).map((a: any) => ({ id: a.patient_id, name: a.patient?.name || 'Unknown' }));
       if (isMounted.current) setPatients(activePatients);
 
-      // Medications
       const { data: medsData } = await supabase
         .from('health_medications')
         .select('*, patient:patient_id(name)')
@@ -35,7 +32,6 @@ export function useNurse(facilityId: string | null) {
         .order('scheduled_time');
       if (isMounted.current) setMedications((medsData || []).map((m: any) => ({ ...m, patient_name: m.patient?.name })));
 
-      // Vitals
       const { data: vitalsData } = await supabase
         .from('health_vitals')
         .select('*, patient:patient_id(name)')
@@ -43,7 +39,6 @@ export function useNurse(facilityId: string | null) {
         .order('recorded_at', { ascending: false });
       if (isMounted.current) setVitals((vitalsData || []).map((v: any) => ({ ...v, patient_name: v.patient?.name })));
 
-      // Handovers
       const { data: handoverData } = await supabase
         .from('health_staff_assignments')
         .select('*, patient:patient_id(name), created_by:created_by(name)')
