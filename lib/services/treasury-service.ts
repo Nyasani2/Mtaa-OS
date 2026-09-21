@@ -80,3 +80,10 @@ export class TreasuryService {
   }
 }
 export const treasuryService = new TreasuryService();
+
+// Stub exports to satisfy treasury-hub.tsx imports
+export const getTreasuryDashboard = async () => ({});
+export const getRevenueCollections = async (opts?: any) => ({ collections: [] });
+export const getExpenditures = async (opts?: any) => ({ expenditures: [] });
+export const getBudgets = async () => ({ budgets: [] });
+export const getMtaaTreasury = async () => ({ total_raised: 0 });
