@@ -128,6 +128,12 @@ export function ASISCSEProvider({
         }
 
         console.log('[ASIS Provider] v3.6 initialized with Local Qwen & Auto-Fix');
+        
+        // ONBOARDING CHECK
+        const { user } = require('@/lib/auth/store/auth.store').useAuthStore.getState();
+        if (user && !user.metadata?.onboarding_complete) {
+           console.warn('[ASIS] User onboarding incomplete. ASIS will prompt user.');
+        }
       } catch (err: any) {
         console.error('[ASIS Provider] Initialization failed:', err);
         setSystemStatus(`Error: ${err.message}`);
@@ -273,6 +279,12 @@ export function ASISCSEProvider({
         updateConversation(finalConv);
 
         setActiveEngines(['LocalQwen', 'ReasoningV2', 'SynthesisV2']);
+
+        // Trigger TTS when ASIS responds
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(result.response);
+          window.speechSynthesis.speak(utterance);
+        }
         setSystemStatus('Online • Local Qwen');
         setHealth(computeHealth());
 

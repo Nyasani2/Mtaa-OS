@@ -8,7 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useASIS } from '@/lib/asis-cse/asis-cse-provider';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -22,6 +22,36 @@ export function GlobalASISOverlay() {
   const { sendMessage, currentConversation, isProcessing } = useASIS();
   const { user } = useAuthStore();
   const scrollViewRef = useRef(null);
+  const router = useRouter();
+
+  // TEXT-TO-SPEECH (TTS) - ASIS speaks back to you
+  const speak = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Stop previous
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // INTENT RECOGNITION - Hands-free navigation
+  const processIntents = (text) => {
+    const lowerText = text.toLowerCase();
+    if (lowerText.includes('open mstudio') || lowerText.includes('go to studio')) {
+      router.push('/mstudio');
+      return true;
+    }
+    if (lowerText.includes('open wallet') || lowerText.includes('check balance')) {
+      router.push('/(os)/wallet');
+      return true;
+    }
+    if (lowerText.includes('open mtaxi') || lowerText.includes('book a taxi')) {
+      router.push('/(os)/mtaxi');
+      return true;
+    }
+    return false;
+  };
   const recognitionRef = useRef<any>(null);
 
   // 2. Conditional return AFTER hooks
@@ -107,7 +137,14 @@ export function GlobalASISOverlay() {
 
   const handleSend = useCallback(async () => {
     if (!inputText.trim() || isProcessing) return;
-    await sendMessage(inputText.trim());
+    const textToSend = inputText.trim();
+      const intentTriggered = processIntents(textToSend);
+      if (!intentTriggered) {
+        await sendMessage(textToSend);
+        // ASIS will speak the response after it's generated (handled in provider)
+      } else {
+        speak("Opening that for you now.");
+      }
     setInputText('');
   }, [inputText, isProcessing, sendMessage]);
 

@@ -431,7 +431,8 @@ const INTENT_PATTERNS: IntentPattern[] = [
   requiredTools: ['search', 'knowledge_base'],
   confidenceBoost: 0.9,
   contextHints: ['wallet_app_open'],
-},\n// ─── System Command ──────────────────────────────────────────
+},
+// ─── System Command ──────────────────────────────────────────
   {
     category: 'system_command',
     keywords: ['restart', 'reboot', 'shutdown', 'update', 'settings', 'configure', 'reset', 'clear', 'delete', 'backup', 'restore', 'sync'],
