@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase/config';
+import { supabase } from '@/lib/supabase';
 import { mtaaFee, fmtKES, TX_LIMIT } from '@/lib/wallet/fees';
 
 export default function WithdrawScreen() {

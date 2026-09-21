@@ -48,7 +48,7 @@ export default function CreditRegulatoryView() {
     try {
       // Get loan products
       const { data: products } = await supabase
-        .from('loan_products')
+        .from('credit_loan_products')
         .select('*');
       if (products) setLoanProducts(products);
 
@@ -66,12 +66,12 @@ export default function CreditRegulatoryView() {
         .select('*', { count: 'exact', head: true });
 
       const { count: loanCount } = await supabase
-        .from('loans')
+        .from('credit_loans')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
 
       const { data: loans } = await supabase
-        .from('loans')
+        .from('credit_loans')
         .select('amount');
       const volume = loans?.reduce((sum, l) => sum + (l.amount || 0), 0) || 0;
 

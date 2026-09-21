@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const QR_BASE_URL = 'https://mtaa.app/u';
 

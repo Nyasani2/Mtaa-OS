@@ -36,6 +36,7 @@ export default function CreateAnnouncementScreen() {
   const handleChange = (field: string, value: any) => setForm(prev => ({ ...prev, [field]: value }));
 
   const handleSubmit = async () => {
+  if (!institutionId) { Alert.alert("Error", "Institution profile not loaded. Please refresh."); return; }
     if (!user?.id) { Alert.alert('Error', 'Please sign in'); return; }
     if (!form.title.trim()) { Alert.alert('Missing', 'Title is required'); return; }
     if (!form.content.trim()) { Alert.alert('Missing', 'Content is required'); return; }

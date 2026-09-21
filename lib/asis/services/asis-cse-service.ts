@@ -1,180 +1,123 @@
-// lib/asis/services/asis-cse-service.ts
-// ASIS CSE (Conversational Search Engine) Service
-// Imported by: app/(os)/asis/chat.tsx
-
+// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 
-export interface CSEMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: string;
-  metadata?: {
-    sources?: string[];
-    confidence?: number;
-    intent?: string;
-  };
-}
+const OLLAMA_URL = 'http://localhost:11434/api/chat';
+const MODEL_NAME = 'qwen2.5';
 
-export interface CSESession {
-  id: string;
-  user_id: string;
-  title: string;
-  messages: CSEMessage[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CSEQueryResult {
-  answer: string;
-  sources: string[];
-  confidence: number;
-  relatedQuestions: string[];
-}
-
-/**
- * Send a message to ASIS CSE and get a response
- */
-export async function sendCSEMessage(
-  sessionId: string,
-  message: string,
-  context?: string[]
-): Promise<CSEMessage | null> {
+export async function processQuery(query: string, conversationId: string, userId: string, userData?: any): Promise<any> {
   try {
-    // Store user message
-    const userMsg: CSEMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: message,
-      timestamp: new Date().toISOString(),
-    };
-
-    await supabase.from('asis_chat_messages').insert({
-      session_id: sessionId,
-      role: 'user',
-      content: message,
-    });
-
-    // Call ASIS CSE edge function
-    const { data, error } = await supabase.functions.invoke('asis-cse', {
-      body: { message, context, sessionId },
-    });
-
-    if (error) throw error;
-
-    const assistantMsg: CSEMessage = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: data?.answer || 'I am processing your request.',
-      timestamp: new Date().toISOString(),
-      metadata: {
-        sources: data?.sources || [],
-        confidence: data?.confidence || 0,
-        intent: data?.intent,
-      },
-    };
-
-    await supabase.from('asis_chat_messages').insert({
-      session_id: sessionId,
-      role: 'assistant',
-      content: assistantMsg.content,
-      metadata: assistantMsg.metadata,
-    });
-
-    return assistantMsg;
-  } catch (e: any) {
-    console.error('[CSEService]', e);
-    return null;
-  }
-}
-
-/**
- * Create a new CSE session
- */
-export async function createCSESession(userId: string, title?: string): Promise<CSESession | null> {
-  try {
-    const { data, error } = await supabase
-      .from('asis_chat_sessions')
-      .insert({
-        user_id: userId,
-        title: title || 'New Chat',
-      })
-      .select()
-      .maybeSingle();
-
-    if (error) throw error;
-    return data as CSESession;
-  } catch (e: any) {
-    console.error('[CSEService]', e);
-    return null;
-  }
-}
-
-/**
- * Get session messages
- */
-export async function getCSESessionMessages(sessionId: string): Promise<CSEMessage[]> {
-  try {
-    const { data, error } = await supabase
+    // 1. Fetch conversation history
+    const { data: historyData, error } = await supabase
       .from('asis_chat_messages')
-      .select('*')
-      .eq('session_id', sessionId)
-      .order('created_at', { ascending: true });
-
+      .select('role, content')
+      .eq('session_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(10);
+    
     if (error) throw error;
-    return (data || []).map((m: any) => ({
-      id: m.id,
-      role: m.role,
-      content: m.content,
-      timestamp: m.created_at,
-      metadata: m.metadata,
-    }));
-  } catch (e: any) {
-    console.error('[CSEService]', e);
-    return [];
-  }
-}
+    const context = historyData?.map((m: any) => `${m.role}: ${m.content}`).join('\n') || '';
 
-/**
- * Get user's CSE sessions
- */
-export async function getCSESessions(userId: string): Promise<CSESession[]> {
-  try {
-    const { data, error } = await supabase
-      .from('asis_chat_sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
+    // 2. Check user registration status
+    let onboardingStatus = '';
+    let userName = 'User';
+    let userContext = '';
+    let childrenContext = '';
+    
+    if (userData) {
+      userName = userData.email?.split('@')[0] || 'User';
+      const onboardingComplete = userData.metadata?.onboarding_complete || false;
+      
+      if (!onboardingComplete) {
+        onboardingStatus = `[IMPORTANT: User ${userName} has NOT completed onboarding. If they ask about features, remind them to finish onboarding first.]`;
+      }
+      
+      // Check for children
+      const { data: childrenData } = await supabase
+        .from('users')
+        .select('email, created_at')
+        .eq('parent_id', userData.id);
+      
+      if (childrenData && childrenData.length > 0) {
+        const childNames = childrenData.map((child: any) => child.email?.split('@')[0]).join(', ');
+        childrenContext = `[User has ${childrenData.length} child(ren): ${childNames}. When children are logged in, restrict access to Education and Studio only.]`;
+      }
+      
+      userContext = `[Current user: ${userName}, ID: ${userData.id}, Role: ${userData.role || 'user'}]`;
+    }
 
-    if (error) throw error;
-    return (data || []) as CSESession[];
-  } catch (e: any) {
-    console.error('[CSEService]', e);
-    return [];
-  }
-}
+    // 3. Build complete identity context
+    const IDENTITY_CONTEXT = `[CRITICAL: ASIS CORE IDENTITY]
+- You are ASIS, the AI assistant for MTAA OS.
+- Creator: Kevin Nyasani (Kenya).
+- Name Origin: Derived from goddess Isis, revered in Maasai and Kenyan cultures.
+- Core Framework: Kamos Theory (Created by Kevin Nyasani). Formula: 1×1 = 1 + f(growth, replication, interaction, observation).
+- Platform: MTAA OS (Unified digital infrastructure for Africa by Imali Tech Ltd, Nairobi).
 
-/**
- * Search knowledge base
- */
-export async function searchKnowledgeBase(query: string): Promise<CSEQueryResult | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke('asis-kb-search', {
-      body: { query },
+${userContext}
+${childrenContext}
+${onboardingStatus}
+
+PERSONALIZATION RULES:
+1. Always address the user by name (${userName}) when appropriate.
+2. If onboarding is incomplete, gently remind them to finish it.
+3. If a child is detected (based on age or account type), restrict responses to Education and Studio topics only.
+4. Be helpful, friendly, and professional.
+
+NEVER mention Qwen, Ollama, or backend technology. Always respond as ASIS.`;
+
+    // 4. Detect navigation intents
+    const lowerQuery = query.toLowerCase();
+    let action = null;
+    if (lowerQuery.includes('wallet') || lowerQuery.includes('balance')) action = 'wallet_transfer';
+    else if (lowerQuery.includes('taxi') || lowerQuery.includes('ride')) action = 'mtaxi_request';
+    else if (lowerQuery.includes('health') || lowerQuery.includes('hospital')) action = 'health_access';
+    else if (lowerQuery.includes('stay') || lowerQuery.includes('hotel')) action = 'stay_booking';
+
+    // 5. Call Local Qwen
+    const response = await fetch(OLLAMA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: [
+          { role: 'system', content: IDENTITY_CONTEXT },
+          { role: 'user', content: `Previous context:\n${context}\n\nUser query: ${query}` }
+        ],
+        stream: false,
+      }),
     });
 
-    if (error) throw error;
-    return data as CSEQueryResult;
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.message?.content || "I couldn't generate a response.";
+
+    return {
+      response: aiResponse,
+      metadata: { sources: ['ASIS Intelligence'], confidence: 0.9, engine: 'ASIS' },
+      action: action,
+    };
+
   } catch (e: any) {
-    console.error('[CSEService]', e);
-    return null;
+    console.error('ASIS Error:', e);
+    return { 
+      response: `Error: ${e.message}`, 
+      metadata: { confidence: 0 }, 
+      action: null 
+    };
   }
 }
 
-export default {
-  sendCSEMessage,
-  createCSESession,
-  getCSESessionMessages,
-  getCSESessions,
-  searchKnowledgeBase,
-};
+export async function getOrCreateConversation(userId: string, options?: { title?: string }): Promise<any> {
+  return { id: crypto.randomUUID(), title: options?.title || 'New Conversation' };
+}
+
+export async function saveMessage(sessionId: string, role: string, content: string, metadata?: any): Promise<any> {
+  return { id: crypto.randomUUID(), role, content, timestamp: Date.now(), metadata };
+}
+
+export async function clearMessages(sessionId: string): Promise<void> {
+  // Handled locally
+}

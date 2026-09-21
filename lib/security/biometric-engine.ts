@@ -79,7 +79,7 @@ export async function authenticateBiometric(): Promise<{ success: boolean; error
 }
 
 export async function setBiometricEnabled(userId: string, enabled: boolean): Promise<void> {
-  const { supabase } = await import('@/lib/supabase/client');
+  const { supabase } = await import('@/lib/supabase');
   await supabase.from('user_profiles').update({ biometric_enabled: enabled }).eq('user_id', userId);
 }
 

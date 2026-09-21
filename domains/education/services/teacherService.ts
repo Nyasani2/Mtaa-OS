@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 // teacherService.ts - Education Teacher Service
-// FIXED: import path corrected from @/lib/supabase to @/lib/supabase/client
+// FIXED: import path corrected from @/lib/supabase to @/lib/supabase
 
 export interface Teacher {
   id: string;

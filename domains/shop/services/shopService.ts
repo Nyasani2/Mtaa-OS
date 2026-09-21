@@ -2,7 +2,7 @@
 // MTAA Shop Service — Canonical domain service
 // Aligned with supabase/migrations/20240601000018_shop_module.sql
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 // ============================================================
 // INTERFACES — Aligned with database schema

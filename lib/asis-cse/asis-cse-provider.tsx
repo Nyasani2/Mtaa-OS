@@ -1,36 +1,37 @@
 // @ts-nocheck
-/**
- * ASIS CSE — React Context Provider v3.2
- * Fixed: generateError crash, added localStorage chat persistence
- */
-
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-
 import {
   initializeASIS,
-  getActiveASIS,
-  getASISHealth,
   shutdownASIS,
   ASISSystem,
 } from './asis-cse-init';
 
-import {
-  processResponse,
-  ResponseEngineInput,
-} from './asis-cse-response-engine-v2';
+import { processQuery } from '@/lib/asis/services/asis-cse-service';
+import { voiceEngine } from './asis-cse-voice';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 const STORAGE_KEY = 'asis_conversations_v1';
 
 import {
   ASISMessage,
   ASISConversation,
-  ASISState,
-  ASISActions,
   ASISProviderValue,
   ASISHealth,
 } from './asis-cse-types';
 
-// ─── Context ─────────────────────────────────
+// Generate proper UUID v4
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// AUTO-FIX: Validate UUID to prevent poisoned cache from crashing the app
+function isValidUUID(uuid: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+}
 
 const ASISContext = createContext<ASISProviderValue | null>(null);
 
@@ -40,12 +41,14 @@ export function useASIS(): ASISProviderValue {
   return ctx;
 }
 
-// ─── localStorage helpers ──────────────────
-
 function loadConversations(): ASISConversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // AUTO-FIX: Filter out any corrupted conversations with invalid UUIDs (like "conv_12345")
+      return parsed.filter((conv: any) => isValidUUID(conv.id));
+    }
   } catch {}
   return [];
 }
@@ -56,8 +59,6 @@ function saveConversations(convs: ASISConversation[]) {
   } catch {}
 }
 
-// ─── Provider ────────────────────────────────
-
 interface ASISCSEProviderProps {
   children: ReactNode;
   userId?: string;
@@ -67,7 +68,7 @@ interface ASISCSEProviderProps {
 
 export function ASISCSEProvider({
   children,
-  userId,
+  userId = 'anonymous',
   userName,
   autoInitialize = true,
 }: ASISCSEProviderProps) {
@@ -85,7 +86,6 @@ export function ASISCSEProvider({
   const processingRef = useRef(false);
   const healthIntervalRef = useRef<any>(null);
 
-  // ─── Health Score Computation ─────────────
   const computeHealth = useCallback((): ASISHealth => {
     if (!systemRef.current) return { score: 0, status: 'Offline' };
     const state = systemRef.current.getState();
@@ -96,8 +96,6 @@ export function ASISCSEProvider({
       status: score > 0.8 ? 'Healthy' : score > 0.5 ? 'Degraded' : 'Critical',
     };
   }, []);
-
-  // ─── Initialization ───────────────────────
 
   useEffect(() => {
     if (!autoInitialize || isInitialized) return;
@@ -111,10 +109,9 @@ export function ASISCSEProvider({
         });
 
         setIsInitialized(true);
-        setSystemStatus('Online');
+        setSystemStatus('Online • Local Qwen');
         setHealth(computeHealth());
 
-        // Start health polling
         healthIntervalRef.current = setInterval(() => {
           if (systemRef.current) {
             setToolHealth(systemRef.current.toolRegistry.generateHealthReport());
@@ -122,7 +119,6 @@ export function ASISCSEProvider({
           }
         }, 5000);
 
-        // Load or create conversation
         const loaded = loadConversations();
         if (loaded.length > 0) {
           setConversations(loaded);
@@ -131,7 +127,7 @@ export function ASISCSEProvider({
           newConversation();
         }
 
-        console.log('[ASIS Provider] CSE v3.2 initialized');
+        console.log('[ASIS Provider] v3.6 initialized with Local Qwen & Auto-Fix');
       } catch (err: any) {
         console.error('[ASIS Provider] Initialization failed:', err);
         setSystemStatus(`Error: ${err.message}`);
@@ -147,24 +143,21 @@ export function ASISCSEProvider({
     };
   }, [autoInitialize, userId, computeHealth]);
 
-  // ─── Persist conversations on change ────────
   useEffect(() => {
     if (conversations.length > 0) {
       saveConversations(conversations);
     }
   }, [conversations]);
 
-  // ─── Conversation Management ──────────────
-
   const newConversation = useCallback(() => {
     const conv: ASISConversation = {
-      id: `conv_${Date.now()}`,
+      id: generateUUID(),
       title: 'New Conversation',
       messages: [
         {
-          id: `sys_${Date.now()}`,
+          id: generateUUID(),
           role: 'system',
-          content: 'ASIS CSE v2 online. How can I assist you today?',
+          content: 'ASIS CSE v3.6 online (Local Qwen). How can I assist you today?',
           timestamp: Date.now(),
         },
       ],
@@ -211,18 +204,22 @@ export function ASISCSEProvider({
     setCurrentConversation(conv);
   }, []);
 
-  // ─── Message Processing ───────────────────
-
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!systemRef.current || !currentConversation || processingRef.current) return;
+      if (!systemRef.current || !currentConversation || processingRef.current) {
+        console.warn('[ASIS] Cannot send message');
+        return;
+      }
 
+      console.log('[ASIS] Sending message:', content);
+      console.log('[ASIS] Conversation ID:', currentConversation.id);
+      
       processingRef.current = true;
       setIsProcessing(true);
       setSystemStatus('Processing...');
 
       const userMsg: ASISMessage = {
-        id: `msg_${Date.now()}_user`,
+        id: generateUUID(),
         role: 'user',
         content,
         timestamp: Date.now(),
@@ -239,26 +236,29 @@ export function ASISCSEProvider({
         const system = systemRef.current;
         const cycle = system.clock.getCycleNumber();
 
-        const engineInput: ResponseEngineInput = {
-          query: content,
-          userId,
-          userName,
-          conversationTurn: convWithUser.messages.length,
-        };
+        console.log('[ASIS] Calling Local Qwen...');
+        
+        // CALL LOCAL QWEN DIRECTLY
+        // Get user data from auth store
+        const { user } = useAuthStore.getState();
+        const result = await processQuery(content, currentConversation.id, userId, user);
+        
+        console.log('[ASIS] Received response:', result);
 
-        const response = await processResponse(engineInput);
+        if (!result.response) {
+          throw new Error('No response from Local Qwen');
+        }
 
         const asisMsg: ASISMessage = {
-          id: `msg_${Date.now()}_asis`,
+          id: generateUUID(),
           role: 'asis',
-          content: response.text,
+          content: result.response,
           timestamp: Date.now(),
           metadata: {
-            engineName: 'ResponseEngineV2',
-            confidence: response.tone === 'confident' ? 0.9 : response.tone === 'informative' ? 0.75 : 0.5,
-            sources: response.sources,
-            executionTimeMs: response.latencyMs,
-            cycleNumber: cycle,
+            engineName: result.metadata?.engine || 'Local Qwen',
+            confidence: result.metadata?.confidence || 0.9,
+            sources: result.metadata?.sources || [],
+            action: result.action,
           },
         };
 
@@ -272,17 +272,17 @@ export function ASISCSEProvider({
         };
         updateConversation(finalConv);
 
-        setActiveEngines(['WebResearch', 'ReasoningV2', 'SynthesisV2']);
-        setSystemStatus('Online');
+        setActiveEngines(['LocalQwen', 'ReasoningV2', 'SynthesisV2']);
+        setSystemStatus('Online • Local Qwen');
         setHealth(computeHealth());
 
       } catch (err: any) {
-        console.error('[ASIS Provider] Processing error:', err);
-
+        console.error('[ASIS] Processing error:', err);
+        
         const errorMsg: ASISMessage = {
-          id: `msg_${Date.now()}_error`,
+          id: generateUUID(),
           role: 'system',
-          content: `I encountered an error: ${err.message}. Please try again.`,
+          content: `Error: ${err.message}`,
           timestamp: Date.now(),
           metadata: { engineName: 'ErrorHandler', confidence: 0 },
         };
@@ -300,10 +300,8 @@ export function ASISCSEProvider({
         setIsProcessing(false);
       }
     },
-    [currentConversation, userId, userName, updateConversation, computeHealth]
+    [currentConversation, userId, updateConversation, computeHealth]
   );
-
-  // ─── Diagnostic Reports ───────────────────
 
   const getDiagnostics = useCallback(() => {
     return systemRef.current?.diagnostic.generateReport() ?? 'ASIS not initialized';
@@ -329,8 +327,6 @@ export function ASISCSEProvider({
     setHealth({ score: 0, status: 'Offline' });
   }, []);
 
-  // ─── Value ─────────────────────────────────
-
   const value: ASISProviderValue = {
     isInitialized,
     isProcessing,
@@ -349,7 +345,7 @@ export function ASISCSEProvider({
     getMetrics,
     getClockReport,
     getToolHealth,
-    shutdown: () => {},
+    shutdown,
   };
 
   return (

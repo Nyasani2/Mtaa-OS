@@ -422,7 +422,16 @@ const INTENT_PATTERNS: IntentPattern[] = [
     confidenceBoost: 0.7,
     contextHints: [],
   },
-  // ─── System Command ──────────────────────────────────────────
+  // ─── Crypto / Trade Query ──────────────────────────────────────
+{
+  category: 'crypto_query',
+  keywords: ['crypto', 'bitcoin', 'btc', 'eth', 'trade', 'long', 'short', 'kamos score', 'should i buy', 'should i sell'],
+  phrases: ['should i trade', 'what is the kamos score', 'analyze the market', 'crypto advice'],
+  entityTypes: ['app_name', 'location'], // location used as symbol placeholder for now
+  requiredTools: ['search', 'knowledge_base'],
+  confidenceBoost: 0.9,
+  contextHints: ['wallet_app_open'],
+},\n// ─── System Command ──────────────────────────────────────────
   {
     category: 'system_command',
     keywords: ['restart', 'reboot', 'shutdown', 'update', 'settings', 'configure', 'reset', 'clear', 'delete', 'backup', 'restore', 'sync'],

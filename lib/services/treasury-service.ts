@@ -1,144 +1,82 @@
-// lib/services/treasury-service.ts
-// Treasury Service -- integrates with treasury-router edge function
-// v1.0: Revenue collection, expenditure tracking, budget monitoring
-
+// @ts-nocheck
 import { supabase } from '@/lib/supabase';
 
-export interface TreasuryRevenue {
-  id: string;
-  source: string;
-  amount: number;
-  currency: string;
-  collected_at: string;
-  status: 'pending' | 'confirmed' | 'reconciled';
-  metadata?: Record<string, any>;
+export interface DepositRequest {
+  userId: string;
+  mtaaAmount: number;
+  targetCurrency: 'USD' | 'BTC' | 'ETH';
 }
 
-export interface TreasuryExpenditure {
-  id: string;
-  category: string;
-  amount: number;
-  description: string;
-  spent_at: string;
-  approved_by?: string;
-  status: 'pending' | 'approved' | 'spent' | 'reconciled';
+export interface TreasuryResult {
+  success: boolean;
+  mtaaDeducted: number;
+  treasuryFee: number;
+  usdCredited: number;
+  exchangeRate: number;
+  transactionId: string;
+  error?: string;
 }
 
-export interface TreasuryBudget {
-  id: string;
-  fiscal_year: number;
-  department: string;
-  allocated: number;
-  spent: number;
-  remaining: number;
-  currency: string;
-}
+export class TreasuryService {
+  async getLiveRate(base: string, target: string): Promise<number> {
+    // In production, replace with real API call (e.g., CoinGecko)
+    if (base === 'KES' && target === 'USD') return 130.0;
+    return 1.0;
+  }
 
-export async function getTreasuryDashboard() {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'dashboard' },
-  });
-  if (error) throw error;
-  return data;
-}
+  async processDeposit(request: DepositRequest): Promise<TreasuryResult> {
+    const TREASURY_FEE_PERCENT = 0.02; // 2% fee to MTAA Treasury
+    try {
+      const rate = await this.getLiveRate('KES', 'USD');
+      const fee = request.mtaaAmount * TREASURY_FEE_PERCENT;
+      const netMtaa = request.mtaaAmount - fee;
+      const usdAmount = netMtaa / rate;
 
-export async function getRevenueCollections(params?: { startDate?: string; endDate?: string; limit?: number }) {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'revenue_collections', ...params },
-  });
-  if (error) throw error;
-  return data as { collections: TreasuryRevenue[]; total: number };
-}
+      // 1. Deduct from user wallet (Adapt to your actual wallet RPC/function)
+      const { error: walletError } = await supabase.rpc('deduct_wallet_balance', {
+        p_user_id: request.userId,
+        p_amount: request.mtaaAmount,
+        p_currency: 'KES'
+      });
+      if (walletError) throw new Error('Insufficient funds or wallet error');
 
-export async function getExpenditures(params?: { category?: string; status?: string; limit?: number }) {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'expenditures', ...params },
-  });
-  if (error) throw error;
-  return data as { expenditures: TreasuryExpenditure[]; total: number };
-}
+      // 2. Credit MTAA Treasury
+      await supabase.rpc('credit_treasury', {
+        p_amount: fee,
+        p_currency: 'KES'
+      });
 
-export async function getBudgets(fiscalYear?: number) {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'budgets', fiscalYear },
-  });
-  if (error) throw error;
-  return data as { budgets: TreasuryBudget[] };
-}
+      // 3. Credit User Trading Ledger
+      const { error: ledgerError } = await supabase.from('trading_ledgers').upsert({
+        user_id: request.userId,
+        currency: request.targetCurrency,
+        balance: supabase.rpc('increment_balance', { p_amount: usdAmount })
+      }, { onConflict: 'user_id,currency' });
 
-export async function recordRevenue(payload: {
-  source: string;
-  amount: number;
-  currency?: string;
-  metadata?: Record<string, any>;
-}) {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'record_revenue', ...payload },
-  });
-  if (error) throw error;
-  return data;
-}
+      if (ledgerError) throw new Error('Failed to update trading ledger');
 
-export async function requestExpenditure(payload: {
-  category: string;
-  amount: number;
-  description: string;
-  requested_by: string;
-}) {
-  const { data, error } = await supabase.functions.invoke('treasury-router', {
-    body: { action: 'request_expenditure', ...payload },
-  });
-  if (error) throw error;
-  return data;
-}
+      // 4. Log Transaction
+      const { data: tx } = await supabase.from('treasury_transactions').insert({
+        user_id: request.userId,
+        type: 'deposit',
+        mtaa_amount: request.mtaaAmount,
+        usd_amount: usdAmount,
+        exchange_rate: rate,
+        fee_amount: fee,
+        status: 'completed'
+      }).select().single();
 
-export async function getPlatformFees() {
-  const { data, error } = await supabase
-    .from('platform_fees')
-    .select('*')
-    .eq('active', true);
-  if (error) throw error;
-  return data;
+      return {
+        success: true,
+        mtaaDeducted: request.mtaaAmount,
+        treasuryFee: fee,
+        usdCredited: usdAmount,
+        exchangeRate: rate,
+        transactionId: tx.id
+      };
+    } catch (error: any) {
+      return { success: false, mtaaDeducted: 0, treasuryFee: 0, usdCredited: 0, exchangeRate: 0, transactionId: '', error: error.message };
+    }
+  }
 }
-
-export async function getMtaaTreasury() {
-  const { data, error } = await supabase
-    .from('mtaa_treasury')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function getTreasuryRevenueCollectionsDirect(limit = 50) {
-  const { data, error } = await supabase
-    .from('treasury_revenue_collections')
-    .select('*')
-    .order('collected_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data as TreasuryRevenue[];
-}
-
-export async function getTreasuryExpendituresDirect(limit = 50) {
-  const { data, error } = await supabase
-    .from('treasury_expenditures')
-    .select('*')
-    .order('spent_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data as TreasuryExpenditure[];
-}
-
-export async function getTreasuryBudgetsDirect(fiscalYear?: number) {
-  let q = supabase
-    .from('treasury_budgets')
-    .select('*')
-    .order('fiscal_year', { ascending: false });
-  if (fiscalYear) q = q.eq('fiscal_year', fiscalYear);
-  const { data, error } = await q;
-  if (error) throw error;
-  return data as TreasuryBudget[];
-}
+export const treasuryService = new TreasuryService();

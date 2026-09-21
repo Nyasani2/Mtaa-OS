@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { Platform } from 'react-native';
 
 export interface UnifiedContentItem {

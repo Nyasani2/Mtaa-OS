@@ -3,7 +3,7 @@
 // shop_orders is a VIEW on orders table with limited columns
 // All delivery-specific data lives in shop_delivery_requests
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface DeliveryAgent {
   id: string;

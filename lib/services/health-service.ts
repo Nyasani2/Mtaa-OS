@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { handleServiceError } from '@/lib/utils';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type {
   Patient, Doctor, Appointment, Prescription, MedicalRecord,
   HealthFacility, LabResult, InsuranceClaim, AmbulanceRequest,

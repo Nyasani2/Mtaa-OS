@@ -1,0 +1,23 @@
+// MTAA OS Configuration Constants
+export const MTRUCK_CONFIG = {
+  ACTIVATION_FEE: 5000, // KES
+  MIN_DISTANCE_KM: 1,
+  MAX_DISTANCE_KM: 500,
+};
+
+export const MTAXI_CONFIG = {
+  BASE_FARE: 100, // KES
+  PER_KM_RATE: 50, // KES
+  MIN_FARE: 150, // KES
+};
+
+export const WALLET_CONFIG = {
+  MIN_BALANCE: 0,
+  MAX_TRANSACTION: 150000, // KES
+  DAILY_LIMIT: 500000, // KES
+};
+
+export const EDUCATION_CONFIG = {
+  MAX_STUDENTS_PER_CLASS: 45,
+  MIN_AGE_ENROLLMENT: 4,
+};

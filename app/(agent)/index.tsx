@@ -31,7 +31,7 @@ export default function AgentScreen() {
     try {
       if (user) {
         const { data: mine } = await supabase
-          .from('agent_applications')
+          .from('agents')
           .select('id, business_name, city, is_active, rating, services')
           .eq('user_id', user.id)
           .maybeSingle();
@@ -39,7 +39,7 @@ export default function AgentScreen() {
       }
 
       const { data: all } = await supabase
-        .from('agent_applications')
+        .from('agents')
         .select('id, business_name, city, is_active, rating, services')
         .eq('status', 'verified')
         .eq('is_active', true)

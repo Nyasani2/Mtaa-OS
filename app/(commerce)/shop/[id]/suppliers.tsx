@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface Supplier { id: string; name: string; contact_name?: string; phone?: string; email?: string; status: 'active' | 'inactive'; products_count: number; }
 
@@ -110,7 +110,7 @@ export default function ShopSuppliersScreen() {
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreateModal(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.submitBtn} onPress={handleCreateSupplier} disabled={loading}>
+              <TouchableOpacity style={styles.submitBtn} onPress={() => {}} disabled={loading}>
                 <Text style={styles.submitBtnText}>{loading ? 'Creating...' : 'Create'}</Text>
               </TouchableOpacity>
             </View>

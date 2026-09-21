@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator } 
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Search } from 'lucide-react-native';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export default function NewMessageScreen() {
   const router = useRouter();

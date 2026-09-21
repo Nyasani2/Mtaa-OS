@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useWalletStore } from '@/hooks/useWalletStore';
-import { supabase } from '@/lib/supabase/config';
+import { supabase } from '@/lib/supabase';
 
 export default function WalletHomeScreen() {
   const router = useRouter();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { supabase } from '@/lib/supabase/config';
+import { supabase } from '@/lib/supabase';
 
 export default function HistoryScreen() {
   const [rows, setRows] = useState<any[]>([]);

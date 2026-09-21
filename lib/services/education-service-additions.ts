@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export async function getTeacherByUserId(userId: string) {
   const { data: teacher, error } = await supabase

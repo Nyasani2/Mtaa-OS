@@ -3,7 +3,7 @@
 // MTAA Shop Payment — Wallet-to-shop with escrow
 // Reuses existing wallet-service.ts + auth pinEngine — NO duplicates
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 import {
   getWalletAccountByUserId,
   createWalletTransaction,

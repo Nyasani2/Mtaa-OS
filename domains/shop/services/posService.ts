@@ -2,7 +2,7 @@
 // MTAA Shop POS — Staff PIN auth + Session management
 // Uses existing shop_staff.pin_code — NO duplicate PIN system
 
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface POSSession {
   id: string;

@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Agent, AgentDashboardData, AgentOnboardingForm } from '../types/agent';
 
-const EDGE_URL = 'https://exfmzfrgsxnwwwliatva.supabase.co/functions/v1';
+const EDGE_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
 
 export class AgentService {
   static async onboard(data: AgentOnboardingForm & { userId: string }): Promise<{ success: boolean; agent?: Agent; error?: string }> {
