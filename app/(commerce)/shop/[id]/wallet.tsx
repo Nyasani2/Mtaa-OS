@@ -92,6 +92,7 @@ export default function ShopWalletScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Payment QR Code</Text>
             <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            {shop?.pay_id && <Text style={styles.payIdDisplay}>MTAA Pay ID: {shop.pay_id}</Text>}
             <View style={styles.qrContainer}>
               <QRCode value={qrValue} size={250} />
             </View>
@@ -150,6 +151,7 @@ export default function ShopWalletScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Payment QR Code</Text>
             <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            {shop?.pay_id && <Text style={styles.payIdDisplay}>MTAA Pay ID: {shop.pay_id}</Text>}
             <View style={styles.qrContainer}>
               <QRCode value={qrValue} size={250} />
             </View>
@@ -175,13 +177,9 @@ export default function ShopWalletScreen() {
         <TouchableOpacity
               style={styles.qrButton}
               onPress={() => {
-                const paymentData = JSON.stringify({
-                  type: 'shop_payment',
-                  shop_id: shopId,
-                  amount: 0,
-                  currency: 'KES',
-                  timestamp: Date.now(),
-                });
+                // Use MTAA Pay ID for universal scanning
+                const payId = shop?.pay_id || shopId.slice(0, 6);
+                const paymentData = `mtaa://pay?pay_id=${payId}&name=${encodeURIComponent(shop?.name || 'Business')}`;
                 setQrValue(paymentData);
                 setShowQRCode(true);
               }}
@@ -199,6 +197,7 @@ export default function ShopWalletScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Payment QR Code</Text>
             <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            {shop?.pay_id && <Text style={styles.payIdDisplay}>MTAA Pay ID: {shop.pay_id}</Text>}
             <View style={styles.qrContainer}>
               <QRCode value={qrValue} size={250} />
             </View>
@@ -254,6 +253,7 @@ export default function ShopWalletScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Payment QR Code</Text>
             <Text style={styles.modalSubtitle}>Scan to pay this shop</Text>
+            {shop?.pay_id && <Text style={styles.payIdDisplay}>MTAA Pay ID: {shop.pay_id}</Text>}
             <View style={styles.qrContainer}>
               <QRCode value={qrValue} size={250} />
             </View>
@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       marginVertical: 20,
     },
+    payIdDisplay: { fontSize: 24, fontWeight: '800', color: '#0ea5e9', textAlign: 'center', marginVertical: 12, letterSpacing: 2 },
     qrHint: {
       fontSize: 13,
       color: '#64748b',

@@ -78,7 +78,7 @@ export type IntentCategory =
   | 'complaint'
   | 'small_talk'
   | 'system_command'
-  | 'unknown';
+  | 'unknown' | 'crypto_query';
 
 export interface Entity {
   type: EntityType;

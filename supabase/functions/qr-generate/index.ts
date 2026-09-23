@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,78 +12,69 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
     const body = await req.json();
-    const {
-      entity_type,
-      entity_id,
-      owner_id,
-      qr_name,
-      is_static = true,
-      default_action,
-      prefilled_amount,
-      prefilled_currency = "KES",
-      prefilled_description,
-      prefilled_metadata = {},
-      expires_at,
-      max_scans,
-    } = body;
-
-    const validTypes = [
-      "user", "shop", "agent", "matatu", "hospital",
-      "government", "county", "department", "escrow",
-      "goods", "business", "creator", "transport"
-    ];
-    if (!validTypes.includes(entity_type)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid entity_type" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const user_id = body.user_id;
+    console.log("🔔 qr-generate called with user_id:", user_id);
+    
+    if (!user_id || typeof user_id !== 'string') {
+      return new Response(JSON.stringify({ error: "user_id is required and must be a string" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    if (is_static) {
-      await supabase
-        .from("qr_codes")
-        .update({ is_active: false })
-        .eq("entity_type", entity_type)
-        .eq("entity_id", entity_id)
-        .eq("is_static", true)
-        .eq("is_active", true);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("❌ Missing Supabase environment variables");
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { data, error } = await supabase
-      .from("qr_codes")
+    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+
+    const nonce = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60000);
+
+    console.log("📝 Attempting database insert...");
+    const { data, error } = await supabaseAdmin
+      .from('qr_idempotency_keys')
       .insert({
-        entity_type,
-        entity_id,
-        owner_id,
-        qr_name,
-        is_static,
-        default_action,
-        prefilled_amount,
-        prefilled_currency,
-        prefilled_description,
-        prefilled_metadata,
-        expires_at,
-        max_scans,
+        nonce,
+        user_id,
+        amount: 0.0, // Ensure it's a decimal
+        expires_at: expiresAt.toISOString(),
+        status: 'pending'
       })
-      .select()
-      .single();
+      .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Database insert failed:", error);
+      return new Response(JSON.stringify({ 
+        error: "Database error", 
+        details: error.message,
+        hint: error.hint
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    return new Response(
-      JSON.stringify({ success: true, qr_code: data }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err: any) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.log("✅ QR code generated successfully");
+    return new Response(JSON.stringify({ 
+      success: true, 
+      payload: { type: 'mtaa_pay', nonce, exp: expiresAt.toISOString(), uid: user_id } 
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    console.error("❌ Function crashed:", error);
+    return new Response(JSON.stringify({ error: "Internal server error: " + error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

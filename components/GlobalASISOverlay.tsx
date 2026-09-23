@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 // @ts-nocheck
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {

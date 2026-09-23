@@ -91,6 +91,8 @@
     "hooks/useUser.ts",
     "hooks/usePhoneStore.ts",
     "index.tsx",
-    "replacements"
+    "replacements",
+    "roast-and-sip-site",
+    "roast-and-sip-site/**/*"
   ]
 }

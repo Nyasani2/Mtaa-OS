@@ -133,3 +133,6 @@ supabase/functions/revenue-*
 
 # ARCHIVED MODULES (not in active build)
 archive/
+roast-and-sip-site/
+DEPLOYMENT_READINESS.md
+check_deployment.sh

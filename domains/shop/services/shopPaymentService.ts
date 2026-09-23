@@ -190,18 +190,24 @@ export class ShopPaymentService {
           .eq('id', order.id);
       }
     } else {
-      // Direct payment — credit shop owner wallet immediately
-      const shopOwnerWallet = await ensureWallet(shop.owner_id);
-      if (shopOwnerWallet) {
+      // Direct payment — credit the BUSINESS wallet immediately (not personal)
+      const { data: businessWallet } = await supabase
+        .from('wallet_accounts')
+        .select('*')
+        .eq('business_id', shopId) // Assumes shopId maps to business_id in unified system
+        .single();
+
+      if (businessWallet) {
         await supabase
           .from('wallet_transactions')
           .insert({
-            user_id: shop.owner_id,
-            wallet_id: shopOwnerWallet.id,
+            user_id: businessWallet.user_id,
+            wallet_id: businessWallet.id,
+            business_id: shopId,
             amount: totalAmount,
             type: 'credit',
             status: 'completed',
-            description: `Sale from ${shop.name} — Order #${orderNumber}`,
+            description: `Sale to ${shop.name} — Order #${orderNumber}`,
             reference_id: order.id,
             reference_type: 'shop_order',
             currency: settings.currency || 'KES',
@@ -209,8 +215,8 @@ export class ShopPaymentService {
 
         await supabase
           .from('wallet_accounts')
-          .update({ balance: (shopOwnerWallet.balance || 0) + totalAmount })
-          .eq('id', shopOwnerWallet.id);
+          .update({ balance: (businessWallet.balance || 0) + totalAmount })
+          .eq('id', businessWallet.id);
       }
 
       // Mark order as paid

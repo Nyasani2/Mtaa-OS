@@ -1,8 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-// app/(os)/wallet/index.tsx — My Wallet (full feature dashboard)
-
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -13,6 +11,7 @@ export default function WalletHomeScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const wallet = useWalletStore();
+  
   const [dbBalance, setDbBalance] = useState<number | null>(null);
   const [dbTx, setDbTx] = useState<any[]>([]);
 
@@ -20,21 +19,76 @@ export default function WalletHomeScreen() {
     let alive = true;
     const load = async () => {
       if (!user?.id) return;
-      const { data: w } = await supabase
-        .from('wallet_accounts').select('balance').eq('user_id', user.id).limit(1).maybeSingle();
-      const { data: wt } = await supabase
-        .from('wallet_transactions').select('*').eq('user_id', user.id)
-        .order('created_at', { ascending: false }).limit(5);
-      const { data: mt } = await supabase
-        .from('mpesa_transactions').select('*').eq('user_id', user.id)
-        .order('created_at', { ascending: false }).limit(5);
-      if (!alive) return;
-      if (w) setDbBalance(Number(w.balance) || 0);
-      setDbTx([
-        ...(wt || []).map((t: any) => ({ id: t.id, type: t.direction || t.transaction_type || 'credit', description: t.description || 'Wallet transaction', created_at: t.created_at, amount: t.amount, code: t.reference || String(t.id).replace(/-/g,'').slice(0, 8).toUpperCase() })),
-        ...(mt || []).map((t: any) => ({ id: t.id, type: 'deposit', description: 'M-Pesa Deposit', created_at: t.created_at, amount: t.amount, code: t.mpesa_receipt || String(t.checkout_request_id || t.id).replace(/-/g,'').slice(-8).toUpperCase() })),
-      ].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5));
+      
+      try {
+        const { data: w, error: wError } = await supabase
+          .from('wallet_accounts')
+          .select('balance, currency, status')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .maybeSingle();
+        
+        if (wError) console.error('Wallet fetch error:', wError);
+        
+        const { data: wt } = await supabase
+          .from('wallet_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        const { data: mt } = await supabase
+          .from('mpesa_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (!alive) return;
+        
+        if (w) {
+          setDbBalance(Number(w.balance) || 0);
+        } else {
+          const { data: newWallet } = await supabase
+            .from('wallet_accounts')
+            .insert({
+              user_id: user.id,
+              balance: 0,
+              currency: 'KES',
+              is_default: true,
+              status: 'active'
+            })
+            .select()
+            .single();
+          setDbBalance(0);
+        }
+        
+        setDbTx([
+          ...(wt || []).map((t: any) => ({
+            id: t.id,
+            type: t.type || 'credit',
+            description: t.description || 'Wallet transaction',
+            created_at: t.created_at,
+            amount: t.amount,
+            code: t.reference || String(t.id).replace(/-/g,'').slice(0, 8).toUpperCase()
+          })),
+          ...(mt || []).map((t: any) => ({
+            id: t.id,
+            type: 'deposit',
+            description: 'M-Pesa Deposit',
+            created_at: t.created_at,
+            amount: t.amount,
+            code: t.mpesa_receipt || String(t.checkout_request_id || t.id).replace(/-/g,'').slice(-8).toUpperCase()
+          })),
+        ].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5));
+        
+      } catch (err) {
+        console.error('Load error:', err);
+      }
     };
+    
     load();
     const iv = setInterval(load, 15000);
     return () => { alive = false; clearInterval(iv); };
@@ -45,9 +99,8 @@ export default function WalletHomeScreen() {
   const currency = wallet.currency ?? 'KES';
   const loading = wallet.loading ?? false;
   const transactions = dbTx.length ? dbTx : (wallet.transactions ?? []);
-
+  
   const [refreshing, setRefreshing] = useState(false);
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     if (user?.id) {
@@ -65,10 +118,16 @@ export default function WalletHomeScreen() {
   }, [user]);
 
   const quickActions = [
-    { label: 'Send', icon: 'arrow-up', color: '#007AFF', route: '/(os)/wallet/send' },
+    { label: 'Send', icon: 'send', color: '#007AFF', route: '/(os)/wallet/send' },
+    { label: 'Pay Business', icon: 'storefront', color: '#10b981', route: '/(os)/wallet/pay-business' },
     { label: 'Withdraw', icon: 'arrow-down', color: '#34C759', route: '/(os)/wallet/withdraw' },
     { label: 'Deposit', icon: 'download', color: '#5856D6', route: '/(os)/wallet/deposit' },
     { label: 'History', icon: 'time', color: '#FF9500', route: '/(os)/wallet/history' },
+  ];
+
+  const qrActions = [
+    { label: 'My QR Code', icon: 'qr-code', color: '#8b5cf6', route: '/(os)/wallet/qr' },
+    { label: 'Scan QR', icon: 'scan', color: '#06b6d4', route: '/(os)/wallet/qr-scan' },
   ];
 
   const services = [
@@ -85,7 +144,6 @@ export default function WalletHomeScreen() {
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />}
     >
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Wallet</Text>
         <TouchableOpacity onPress={() => router.push('/(os)/wallet/settings')}>
@@ -93,145 +151,119 @@ export default function WalletHomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Balance Card */}
       <View style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>Available Balance</Text>
         <Text style={styles.balanceAmount}>{currency} {balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
         {heldBalance > 0 && (
-          <Text style={styles.heldText}>Held: {currency} {heldBalance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</Text>
+          <Text style={styles.heldBalance}>Held: {currency} {heldBalance.toFixed(2)}</Text>
         )}
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickRow}>
-        {quickActions.map((action) => (
-          <TouchableOpacity
-            key={action.label}
-            style={styles.quickBtn}
-            onPress={() => router.push(action.route as any)}
-          >
-            <View style={[styles.quickIcon, { backgroundColor: action.color + '20' }]}>
-              <Ionicons name={action.icon as any} size={22} color={action.color} />
-            </View>
-            <Text style={styles.quickLabel}>{action.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Recent Transactions */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <TouchableOpacity onPress={() => router.push('/(os)/wallet/history')}>
-          <Text style={styles.seeAll}>See All</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading && transactions.length === 0 ? (
-        <ActivityIndicator color="#007AFF" style={{ marginVertical: 20 }} />
-      ) : transactions.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Ionicons name="receipt-outline" size={40} color="#8E8E93" />
-          <Text style={styles.emptyText}>No transactions yet</Text>
-        </View>
-      ) : (
-        <View style={styles.txCard}>
-          {transactions.slice(0, 5).map((tx: any) => (
-            <View key={tx.id} style={styles.txRow}>
-              <View style={[styles.txIcon, { backgroundColor: tx.type === 'credit' || tx.type === 'deposit' ? '#34C75920' : '#FF3B3020' }]}>
-                <Ionicons
-                  name={tx.type === 'credit' || tx.type === 'deposit' ? 'arrow-down' : 'arrow-up'}
-                  size={16}
-                  color={tx.type === 'credit' || tx.type === 'deposit' ? '#34C759' : '#FF3B30'}
-                />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.actionGrid}>
+          {quickActions.map((action, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.actionButton}
+              onPress={() => router.push(action.route as any)}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
+                <Ionicons name={action.icon as any} size={24} color="#fff" />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.txDesc}>{tx.description || tx.type}</Text>
-                <Text style={styles.txDate}>{tx.code ? '#' + tx.code + ' \u2022 ' : ''}{tx.created_at ? new Date(tx.created_at).toLocaleString('en-KE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}</Text>
-              </View>
-              <Text style={[styles.txAmount, { color: tx.type === 'credit' || tx.type === 'deposit' ? '#34C759' : '#FF3B30' }]}>
-                {tx.type === 'credit' || tx.type === 'deposit' ? '+' : '-'}{currency} {tx.amount?.toLocaleString('en-KE')}
-              </Text>
-            </View>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </TouchableOpacity>
           ))}
         </View>
-      )}
+      </View>
 
-      {/* Services Grid */}
-      <Text style={[styles.sectionTitle, { marginTop: 8 }]}>Services</Text>
-      <View style={styles.grid}>
-        {services.map((svc) => (
-          <TouchableOpacity
-            key={svc.label}
-            style={styles.gridItem}
-            onPress={() => router.push(svc.route as any)}
-          >
-            <View style={[styles.gridIcon, { backgroundColor: svc.color + '20' }]}>
-              <Ionicons name={svc.icon as any} size={22} color={svc.color} />
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>QR Payments</Text>
+        <View style={styles.actionGrid}>
+          {qrActions.map((action, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.actionButton}
+              onPress={() => router.push(action.route as any)}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
+                <Ionicons name={action.icon as any} size={24} color="#fff" />
+              </View>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Services</Text>
+        <View style={styles.serviceList}>
+          {services.map((service, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={styles.serviceButton}
+              onPress={() => router.push(service.route as any)}
+            >
+              <View style={[styles.serviceIcon, { backgroundColor: service.color }]}>
+                <Ionicons name={service.icon as any} size={20} color="#fff" />
+              </View>
+              <Text style={styles.serviceLabel}>{service.label}</Text>
+              <Ionicons name="chevron-forward" size={20} color="#64748b" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Recent Transactions</Text>
+        {transactions.length === 0 ? (
+          <Text style={styles.emptyText}>No transactions yet</Text>
+        ) : (
+          transactions.map((tx: any) => (
+            <View key={tx.id} style={styles.transactionItem}>
+              <View style={styles.transactionLeft}>
+                <View style={[styles.transactionIcon, { backgroundColor: (tx.type === 'credit' || tx.type === 'deposit') ? '#34C759' : '#FF3B30' }]}>
+                  <Ionicons name={(tx.type === 'credit' || tx.type === 'deposit') ? 'arrow-down' : 'arrow-up'} size={16} color="#fff" />
+                </View>
+                <View>
+                  <Text style={styles.transactionDesc}>{tx.description}</Text>
+                  <Text style={styles.transactionDate}>{new Date(tx.created_at).toLocaleDateString()}</Text>
+                </View>
+              </View>
+              <Text style={[styles.transactionAmount, { color: (tx.type === 'credit' || tx.type === 'deposit') ? '#34C759' : '#FF3B30' }]}>
+                {(tx.type === 'credit' || tx.type === 'deposit') ? '+' : '-'}{currency} {Number(tx.amount).toFixed(2)}
+              </Text>
             </View>
-            <Text style={styles.gridLabel}>{svc.label}</Text>
-          </TouchableOpacity>
-        ))}
+          ))
+        )}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0F' },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 60, paddingBottom: 16
-  },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
   headerTitle: { fontSize: 28, fontWeight: '800', color: '#fff' },
-  balanceCard: {
-    backgroundColor: '#1C1C1E', borderRadius: 20, marginHorizontal: 16,
-    padding: 24, alignItems: 'center', marginBottom: 16
-  },
-  balanceLabel: { fontSize: 13, color: '#8E8E93', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
+  balanceCard: { backgroundColor: '#1e293b', margin: 20, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: '#334155' },
+  balanceLabel: { fontSize: 14, color: '#94a3b8', marginBottom: 8 },
   balanceAmount: { fontSize: 36, fontWeight: '800', color: '#fff' },
-  heldText: { fontSize: 13, color: '#8E8E93', marginTop: 6 },
-  quickRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingHorizontal: 16, marginBottom: 24
-  },
-  quickBtn: { width: '23%', alignItems: 'center' },
-  quickIcon: {
-    width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 8
-  },
-  quickLabel: { fontSize: 12, color: '#fff', fontWeight: '600' },
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, marginBottom: 12
-  },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', paddingHorizontal: 16, marginBottom: 12 },
-  seeAll: { fontSize: 14, color: '#007AFF', fontWeight: '600' },
-  emptyCard: {
-    backgroundColor: '#1C1C1E', borderRadius: 16, marginHorizontal: 16,
-    padding: 40, alignItems: 'center', marginBottom: 16
-  },
-  emptyText: { fontSize: 14, color: '#8E8E93', marginTop: 8 },
-  txCard: {
-    backgroundColor: '#1C1C1E', borderRadius: 16, marginHorizontal: 16,
-    padding: 16, marginBottom: 16
-  },
-  txRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2C2C2E'
-  },
-  txIcon: {
-    width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12
-  },
-  txDesc: { fontSize: 15, fontWeight: '600', color: '#fff' },
-  txDate: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  txAmount: { fontSize: 15, fontWeight: '700' },
-  grid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 12, paddingBottom: 40
-  },
-  gridItem: {
-    width: '25%', alignItems: 'center', paddingVertical: 14
-  },
-  gridIcon: {
-    width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 6
-  },
-  gridLabel: { fontSize: 11, color: '#fff', fontWeight: '500', textAlign: 'center' },
+  heldBalance: { fontSize: 12, color: '#f59e0b', marginTop: 8 },
+  section: { paddingHorizontal: 20, marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  actionButton: { width: '48%', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
+  actionIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  actionLabel: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  serviceList: { backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#334155' },
+  serviceButton: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  serviceIcon: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  serviceLabel: { flex: 1, color: '#fff', fontSize: 15, fontWeight: '500' },
+  transactionItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, backgroundColor: '#1e293b', borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: '#334155' },
+  transactionLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  transactionIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  transactionDesc: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  transactionDate: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  transactionAmount: { fontSize: 14, fontWeight: '700' },
+  emptyText: { color: '#64748b', fontSize: 14, textAlign: 'center', padding: 20 },
 });
