@@ -379,6 +379,12 @@ async function executeTool(
       };
     }
 
+    case 'kernel_launch_app': {
+      const { launchApp } = require('@/lib/asis/tools/kernel-tools');
+      const appId = intent.entities.find((e: any) => e.type === 'app_name')?.value || query;
+      const result = launchApp(appId);
+      return { tool: 'kernel_launch_app', success: result.success, data: result, executionTime: Date.now() - startTime };
+    }
     default:
       return null;
   }
@@ -390,4 +396,13 @@ function getTimeOfDay(): 'morning' | 'afternoon' | 'evening' | 'night' {
   if (hour >= 12 && hour < 17) return 'afternoon';
   if (hour >= 17 && hour < 21) return 'evening';
   return 'night';
+}
+
+// ── ASIS NAVIGATION INTERCEPTOR ───────────────────────────────
+// This function is called by the UI when ASIS returns a tool output with a route.
+export function handleAsisNavigation(route: string, router: any) {
+  if (route && router) {
+    console.log('[ASIS Navigator] Navigating to:', route);
+    router.push(route);
+  }
 }

@@ -1,8 +1,9 @@
 // @ts-nocheck
 import { supabase } from '@/lib/supabase';
 
-const OLLAMA_URL = 'http://localhost:11434/api/chat';
-const MODEL_NAME = 'qwen2.5';
+const OPENROUTER_API_KEY = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY || 'YOUR_OPENROUTER_API_KEY';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL_NAME = 'qwen/qwen-2.5-72b-instruct'; // Or your preferred model
 
 export async function processQuery(query: string, conversationId: string, userId: string, userData?: any): Promise<any> {
   try {
@@ -21,27 +22,13 @@ export async function processQuery(query: string, conversationId: string, userId
     let onboardingStatus = '';
     let userName = 'User';
     let userContext = '';
-    let childrenContext = '';
-    
+
     if (userData) {
       userName = userData.email?.split('@')[0] || 'User';
       const onboardingComplete = userData.metadata?.onboarding_complete || false;
-      
       if (!onboardingComplete) {
-        onboardingStatus = `[IMPORTANT: User ${userName} has NOT completed onboarding. If they ask about features, remind them to finish onboarding first.]`;
+        onboardingStatus = `[IMPORTANT: User ${userName} has NOT completed onboarding. If they ask about features, gently remind them to finish it first.]`;
       }
-      
-      // Check for children
-      const { data: childrenData } = await supabase
-        .from('users')
-        .select('email, created_at')
-        .eq('parent_id', userData.id);
-      
-      if (childrenData && childrenData.length > 0) {
-        const childNames = childrenData.map((child: any) => child.email?.split('@')[0]).join(', ');
-        childrenContext = `[User has ${childrenData.length} child(ren): ${childNames}. When children are logged in, restrict access to Education and Studio only.]`;
-      }
-      
       userContext = `[Current user: ${userName}, ID: ${userData.id}, Role: ${userData.role || 'user'}]`;
     }
 
@@ -49,21 +36,15 @@ export async function processQuery(query: string, conversationId: string, userId
     const IDENTITY_CONTEXT = `[CRITICAL: ASIS CORE IDENTITY]
 - You are ASIS, the AI assistant for MTAA OS.
 - Creator: Kevin Nyasani (Kenya).
-- Name Origin: Derived from goddess Isis, revered in Maasai and Kenyan cultures.
-- Core Framework: Kamos Theory (Created by Kevin Nyasani). Formula: 1×1 = 1 + f(growth, replication, interaction, observation).
+- Core Framework: Kamos Theory. Formula: 1×1 = 1 + f(growth, replication, interaction, observation).
 - Platform: MTAA OS (Unified digital infrastructure for Africa by Imali Tech Ltd, Nairobi).
-
 ${userContext}
-${childrenContext}
 ${onboardingStatus}
-
 PERSONALIZATION RULES:
 1. Always address the user by name (${userName}) when appropriate.
 2. If onboarding is incomplete, gently remind them to finish it.
-3. If a child is detected (based on age or account type), restrict responses to Education and Studio topics only.
-4. Be helpful, friendly, and professional.
-
-NEVER mention Qwen, Ollama, or backend technology. Always respond as ASIS.`;
+3. Be helpful, friendly, and professional.
+4. NEVER mention Qwen, OpenRouter, or backend technology. Always respond as ASIS.`;
 
     // 4. Detect navigation intents
     const lowerQuery = query.toLowerCase();
@@ -73,39 +54,48 @@ NEVER mention Qwen, Ollama, or backend technology. Always respond as ASIS.`;
     else if (lowerQuery.includes('health') || lowerQuery.includes('hospital')) action = 'health_access';
     else if (lowerQuery.includes('stay') || lowerQuery.includes('hotel')) action = 'stay_booking';
 
-    // 5. Call Local Qwen
-    const response = await fetch(OLLAMA_URL, {
+    // 5. Validate API Key
+    if (OPENROUTER_API_KEY === 'YOUR_OPENROUTER_API_KEY') {
+      throw new Error('OpenRouter API key is not configured. Please set EXPO_PUBLIC_OPENROUTER_API_KEY in your .env file.');
+    }
+
+    // 6. Call OpenRouter API
+    const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://mtaa.app', // Replace with your actual domain
+        'X-Title': 'MTAA ASIS',
+      },
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: IDENTITY_CONTEXT },
           { role: 'user', content: `Previous context:\n${context}\n\nUser query: ${query}` }
         ],
-        stream: false,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenRouter API returned ${response.status}: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    const aiResponse = data.message?.content || "I couldn't generate a response.";
+    const aiResponse = data.choices?.[0]?.message?.content || "I couldn't generate a response.";
 
     return {
       response: aiResponse,
       metadata: { sources: ['ASIS Intelligence'], confidence: 0.9, engine: 'ASIS' },
       action: action,
     };
-
   } catch (e: any) {
     console.error('ASIS Error:', e);
-    return { 
-      response: `Error: ${e.message}`, 
-      metadata: { confidence: 0 }, 
-      action: null 
+    return {
+      response: `I encountered a connection error: ${e.message}. Please check your network and try again.`,
+      metadata: { confidence: 0 },
+      action: null
     };
   }
 }
@@ -119,5 +109,5 @@ export async function saveMessage(sessionId: string, role: string, content: stri
 }
 
 export async function clearMessages(sessionId: string): Promise<void> {
-  // Handled locally
+  // Handled locally or via Supabase delete
 }

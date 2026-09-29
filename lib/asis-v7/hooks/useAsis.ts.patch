@@ -1,0 +1,2 @@
+// NOTE: This is a patch instruction. 
+// Open lib/asis-v7/hooks/useAsis.ts and add these cases to the `executeTool` switch statement:

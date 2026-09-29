@@ -1,112 +1,110 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-
-const MOCK_FEED = [
-  { id: '1', title: 'School Reopens', desc: 'Term 2 begins next Monday. Please ensure uniforms are ready.', time: '2h ago', icon: 'school', color: '#3B82F6' },
-  { id: '2', title: 'Transport Update', desc: 'Bus Route 4 will be delayed by 15 mins due to traffic.', time: '5h ago', icon: 'bus', color: '#F59E0B' },
-  { id: '3', title: 'Parent-Teacher Meeting', desc: 'Scheduled for Friday at 3:00 PM in the main hall.', time: '1d ago', icon: 'people', color: '#10B981' },
-];
+import EducationShell from '@/lib/components/education/EducationShell';
 
 export default function EducationDashboard() {
   const router = useRouter();
-  const { user } = useAuthStore();
+
+  const sections = [
+    {
+      label: 'Dashboard',
+      icon: 'grid',
+      route: '/(education)',
+    },
+    {
+      label: 'Academics',
+      icon: 'school',
+      route: '/(education)/academics',
+      children: [
+        { label: 'My Classes', icon: 'people', route: '/(education)/classes' },
+        { label: 'Timetable', icon: 'calendar', route: '/(education)/timetable' },
+        { label: 'Assignments', icon: 'clipboard', route: '/(education)/assignments' },
+        { label: 'Grades', icon: 'trophy', route: '/(education)/results' },
+        { label: 'Library', icon: 'book', route: '/(education)/library' },
+      ],
+    },
+    {
+      label: 'Communication',
+      icon: 'chatbubbles',
+      route: '/(education)/messages',
+      children: [
+        { label: 'Messages', icon: 'mail', route: '/(education)/messages' },
+        { label: 'Announcements', icon: 'megaphone', route: '/(education)/announcements' },
+        { label: 'Live Class', icon: 'videocam', route: '/(education)/live-class' },
+      ],
+    },
+    {
+      label: 'Transport',
+      icon: 'bus',
+      route: '/(education)/transport/track',
+    },
+    {
+      label: 'Settings',
+      icon: 'settings',
+      route: '/(education)/settings',
+    },
+  ];
+
+  const donutItems = [
+    { label: 'Scan QR', icon: 'qr-code', color: '#8b5cf6', route: '/(education)/student/qr-display' },
+    { label: 'Live Class', icon: 'videocam', color: '#ef4444', route: '/(education)/live-class' },
+    { label: 'Assignment', icon: 'clipboard', color: '#f59e0b', route: '/(education)/assignments' },
+    { label: 'Transport', icon: 'bus', color: '#0ea5e9', route: '/(education)/transport/track' },
+    { label: 'Messages', icon: 'mail', color: '#10b981', route: '/(education)/messages' },
+  ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello, {user?.email?.split('@')[0] || 'Parent'} 👋</Text>
-          <Text style={styles.subGreeting}>Here's what's happening in Education</Text>
+    <EducationShell
+      title="Education"
+      logo=""
+      sections={sections}
+      donutItems={donutItems}
+      donutColor="#8b5cf6"
+    >
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+        {/* Stats Row */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
+          <StatCard label="Classes" value="6" color="#3b82f6" icon="people" />
+          <StatCard label="Pending" value="3" color="#f59e0b" icon="clipboard" />
+          <StatCard label="GPA" value="3.8" color="#10b981" icon="trophy" />
         </View>
-        <TouchableOpacity style={styles.profileBtn}>
-          <Ionicons name="person-circle" size={40} color="#3B82F6" />
-        </TouchableOpacity>
-      </View>
 
-      {/* Live Transport Map CTA */}
-      <TouchableOpacity 
-        style={styles.mapCard} 
-        onPress={() => router.push('/(education)/transport/map')}
-      >
-        <View style={styles.mapIconBox}>
-          <Ionicons name="map" size={28} color="#fff" />
+        {/* Today's Classes */}
+        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 }}>Today's Classes</Text>
+        <View style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16 }}>
+          <ClassRow name="Mathematics" time="09:00 - 10:30" room="Room 204" />
+          <View style={{ height: 1, backgroundColor: '#334155', marginVertical: 12 }} />
+          <ClassRow name="Physics" time="11:00 - 12:30" room="Lab 3" />
+          <View style={{ height: 1, backgroundColor: '#334155', marginVertical: 12 }} />
+          <ClassRow name="English" time="14:00 - 15:30" room="Room 101" />
         </View>
-        <View style={styles.mapInfo}>
-          <Text style={styles.mapTitle}>Live Transport Map</Text>
-          <Text style={styles.mapDesc}>Track your child's bus in real-time</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(education)/transport/scan')}>
-          <Ionicons name="qr-code" size={24} color="#3B82F6" />
-          <Text style={styles.actionText}>Scan QR</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(education)/attendance')}>
-          <Ionicons name="clipboard" size={24} color="#10B981" />
-          <Text style={styles.actionText}>Attendance</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(education)/fees')}>
-          <Ionicons name="card" size={24} color="#F59E0B" />
-          <Text style={styles.actionText}>Fees</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Education Feed */}
-      <View style={styles.feedSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Education Feed</Text>
-          <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
-        </View>
-        {MOCK_FEED.map((item) => (
-          <View key={item.id} style={styles.feedCard}>
-            <View style={[styles.feedIcon, { backgroundColor: item.color + '20' }]}>
-              <Ionicons name={item.icon as any} size={20} color={item.color} />
-            </View>
-            <View style={styles.feedContent}>
-              <Text style={styles.feedTitle}>{item.title}</Text>
-              <Text style={styles.feedDesc} numberOfLines={2}>{item.desc}</Text>
-              <Text style={styles.feedTime}>{item.time}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </EducationShell>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
-  greeting: { fontSize: 22, fontWeight: '800', color: '#0F172A' },
-  subGreeting: { fontSize: 14, color: '#64748B', marginTop: 4 },
-  profileBtn: { padding: 4 },
-  
-  mapCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3B82F6', marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20 },
-  mapIconBox: { width: 50, height: 50, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  mapInfo: { flex: 1 },
-  mapTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
-  mapDesc: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  
-  quickActions: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 20, marginBottom: 24 },
-  actionBtn: { alignItems: 'center', gap: 8 },
-  actionText: { fontSize: 12, fontWeight: '600', color: '#334155' },
-  
-  feedSection: { paddingHorizontal: 20, paddingBottom: 40 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  seeAll: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
-  feedCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  feedIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  feedContent: { flex: 1 },
-  feedTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
-  feedDesc: { fontSize: 13, color: '#64748B', lineHeight: 18 },
-  feedTime: { fontSize: 11, color: '#94A3B8', marginTop: 6 },
-});
+function StatCard({ label, value, color, icon }: any) {
+  return (
+    <View style={{ flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 14 }}>
+      <Ionicons name={icon} size={20} color={color} />
+      <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 8 }}>{value}</Text>
+      <Text style={{ color: '#94a3b8', fontSize: 12 }}>{label}</Text>
+    </View>
+  );
+}
+
+function ClassRow({ name, time, room }: any) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
+      <View style={{ width: 4, height: 36, backgroundColor: '#3b82f6', borderRadius: 2, marginRight: 12 }} />
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{name}</Text>
+        <Text style={{ color: '#94a3b8', fontSize: 12 }}>{time} · {room}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color="#64748b" />
+    </View>
+  );
+}
