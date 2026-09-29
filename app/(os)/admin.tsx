@@ -383,7 +383,7 @@ export default function AdminDiagnosticsScreen() {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+</ScrollView>
 
       {/* Action Bar */}
       <View style={styles.actionBar}>
@@ -438,7 +438,7 @@ export default function AdminDiagnosticsScreen() {
             <Text style={styles.emptyText}>Tap "Run" to test Layer {activeLayer}</Text>
           </View>
         )}
-      </ScrollView>
+</ScrollView>
 
       {/* Footer */}
       <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>

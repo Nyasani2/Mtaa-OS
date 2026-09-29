@@ -31,8 +31,8 @@ export default function ProfileIndex() {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Log out', style: 'destructive', onPress: async () => {
-        await accountService.logout();
-        router.replace('/' as any);
+        await logout();
+        router.replace('/login');
       }},
     ]);
   };
@@ -156,7 +156,7 @@ export default function ProfileIndex() {
           ))}
           <Pressable style={st.menuItem} onPress={() => { setMenuOpen(false); Alert.alert('Log out?', '', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Log Out', style: 'destructive', onPress: () => logout() },
+            { text: 'Log Out', style: 'destructive', onPress: async () => { await logout(); router.replace('/login'); } },
           ])}}>
             <Text style={[st.menuLabel, { color: '#ef4444' }]}>Log Out</Text>
             <LogOut size={16} color="#ef4444" />

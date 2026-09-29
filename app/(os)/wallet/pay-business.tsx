@@ -9,7 +9,6 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 export default function PayBusinessScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  
   const [payId, setPayId] = useState('');
   const [amount, setAmount] = useState('');
   const [business, setBusiness] = useState<any>(null);
@@ -24,7 +23,6 @@ export default function PayBusinessScreen() {
       .select('id, business_name, pay_id, business_type')
       .eq('pay_id', payId)
       .single();
-
     if (error || !data) {
       setBusiness(null);
       Alert.alert('Not Found', 'No business found with that Pay ID.');
@@ -41,53 +39,28 @@ export default function PayBusinessScreen() {
 
     setSending(true);
     try {
-      // 1. Get Sender's Personal Wallet
-      const { data: senderWallet, error: senderErr } = await supabase
-        .from('wallet_accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_default', true)
-        .single();
-
-      if (senderErr || !senderWallet) throw new Error('Could not find your wallet. Please deposit funds first.');
-      if (senderWallet.balance < sendAmount) throw new Error(`Insufficient funds. You have KES ${senderWallet.balance}`);
-
-      // 2. Get Receiver's Business Wallet
-      const { data: businessWallet, error: bizErr } = await supabase
-        .from('wallet_accounts')
-        .select('*')
-        .eq('business_id', business.id)
-        .single();
-
-      if (bizErr || !businessWallet) throw new Error('Business wallet not found.');
-
-      // 3. Debit Sender
-      await supabase.from('wallet_accounts').update({ balance: senderWallet.balance - sendAmount }).eq('id', senderWallet.id);
-      await supabase.from('wallet_transactions').insert({
-        user_id: user.id,
-        wallet_id: senderWallet.id,
-        amount: -sendAmount,
-        type: 'debit',
-        status: 'completed',
-        description: `Payment to ${business.business_name} (Pay ID: ${payId})`,
-        reference_type: 'business_payment',
-        reference_id: business.id,
-        currency: 'KES'
+      // Use the new Atomic RPC to debit the sender safely
+      const { data: rpcData, error: rpcError } = await supabase.rpc('mtaa_wallet_debit', {
+        p_user_id: user.id,
+        p_amount: sendAmount,
+        p_currency: 'KES',
+        p_description: `Payment to ${business.business_name} (Pay ID: ${payId})`,
+        p_transaction_type: 'business_payment',
+        p_metadata: { business_id: business.id, pay_id: payId }
       });
 
-      // 4. Credit Business
-      await supabase.from('wallet_accounts').update({ balance: (businessWallet.balance || 0) + sendAmount }).eq('id', businessWallet.id);
-      await supabase.from('wallet_transactions').insert({
-        user_id: businessWallet.user_id,
-        wallet_id: businessWallet.id,
-        business_id: business.id,
-        amount: sendAmount,
-        type: 'credit',
-        status: 'completed',
-        description: `Payment received via Pay ID ${payId}`,
-        reference_type: 'business_payment',
-        reference_id: business.id,
-        currency: 'KES'
+      if (rpcError || !rpcData?.success) {
+        throw new Error(rpcError?.message || rpcData?.error || 'Payment failed. Check balance.');
+      }
+
+      // Credit the business wallet
+      await supabase.rpc('mtaa_wallet_credit', {
+        p_user_id: business.user_id || business.owner_id, // Adjust based on your business_profiles schema
+        p_amount: sendAmount,
+        p_currency: 'KES',
+        p_description: `Payment received via Pay ID ${payId}`,
+        p_transaction_type: 'business_payment',
+        p_metadata: { payer_id: user.id, pay_id: payId }
       });
 
       Alert.alert('Success!', `Sent KES ${sendAmount} to ${business.business_name}`);
@@ -111,7 +84,6 @@ export default function PayBusinessScreen() {
         <Text style={styles.headerTitle}>Pay Business</Text>
         <View style={{ width: 24 }} />
       </View>
-
       <View style={styles.content}>
         <Text style={styles.label}>Enter MTAA Pay ID</Text>
         <View style={styles.inputRow}>
@@ -128,7 +100,6 @@ export default function PayBusinessScreen() {
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.lookupText}>Lookup</Text>}
           </TouchableOpacity>
         </View>
-
         {business && (
           <View style={styles.bizCard}>
             <View style={styles.bizIcon}>
@@ -141,7 +112,6 @@ export default function PayBusinessScreen() {
             <Ionicons name="checkmark-circle" size={24} color="#10b981" />
           </View>
         )}
-
         {business && (
           <>
             <Text style={styles.label}>Amount (KES)</Text>

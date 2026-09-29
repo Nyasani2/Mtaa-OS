@@ -130,7 +130,7 @@ export async function createWalletTransaction(payload: any) {
 // Delegate to domains/wallet/services/walletService.ts for complex operations
 export async function sendMoney(p: any) { 
   try {
-    const { sendMoney: realSend } = await import('@/domains/wallet/services/walletService');
+    const { sendMoney: realSend } = (await import('@/domains/wallet/services/walletService')) as any;
     return realSend(p.senderId || p.user_id, p);
   } catch (e) {
     console.error('[sendMoney] Delegation error:', e);
@@ -140,7 +140,7 @@ export async function sendMoney(p: any) {
 
 export async function createReceiveRequest(p: any) { 
   try {
-    const { createReceiveRequest: realReq } = await import('@/domains/wallet/services/walletService');
+    const { createReceiveRequest: realReq } = (await import('@/domains/wallet/services/walletService')) as any;
     return realReq(p.user_id, p);
   } catch (e) {
     console.error('[createReceiveRequest] Delegation error:', e);
@@ -150,7 +150,7 @@ export async function createReceiveRequest(p: any) {
 
 export async function initiateDeposit(p: any) { 
   try {
-    const { initiateDeposit: realDep } = await import('@/domains/wallet/services/walletService');
+    const { initiateDeposit: realDep } = (await import('@/domains/wallet/services/walletService')) as any;
     return realDep(p.user_id, p.amount, p.provider, p.providerRef);
   } catch (e) {
     console.error('[initiateDeposit] Delegation error:', e);
@@ -160,7 +160,7 @@ export async function initiateDeposit(p: any) {
 
 export async function initiateWithdrawal(p: any) { 
   try {
-    const { initiateWithdrawal: realWith} = await import('@/domains/wallet/services/walletService');
+    const { initiateWithdrawal: realWith} = (await import('@/domains/wallet/services/walletService')) as any;
     return realWith(p.user_id, p.amount, p.provider, p.accountRef);
   } catch (e) {
     console.error('[initiateWithdrawal] Delegation error:', e);

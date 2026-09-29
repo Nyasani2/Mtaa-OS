@@ -61,6 +61,7 @@ export interface AuthState {
   lockApp: () => void;
   unlockApp: () => void;
   updateLastActive: () => void;
+  hardReset: () => Promise<void>;
 }
 
 const AUTH_STORAGE_KEY = 'mtaa-auth-storage';
@@ -190,14 +191,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signOut: async () => {
-        await supabase.auth.signOut();
-        await pinEngine.clearAll();
-        await biometricEngine.clearAll();
+        console.log('🔥 [Auth Store] signOut function triggered!');
+        try { await supabase.auth.signOut(); } catch (e) { console.log('Supabase signout error:', e); }
+        try { await pinEngine.clearAll(); } catch (e) {}
+        try { await biometricEngine.clearAll(); } catch (e) {}
+        
         await AsyncStorage.multiRemove([
           AUTH_STORAGE_KEY,
           LAST_ACTIVE_KEY,
           'supabase.auth.token',
         ]);
+        
         set({
           user: null,
           session: null,
@@ -330,6 +334,24 @@ export const useAuthStore = create<AuthState>()(
         AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
         set({ lastActiveAt: now });
       },
+      hardReset: async () => {
+        await supabase.auth.signOut();
+        await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+        await AsyncStorage.removeItem(LAST_ACTIVE_KEY);
+        // Clear any other app-specific caches if needed
+        set({
+          user: null,
+          profile: null,
+          session: null,
+          isAuthenticated: false,
+          isEmailVerified: false,
+          pinSet: false,
+          biometricEnabled: false,
+          isAppLocked: false,
+          lockTimestamp: null,
+        });
+      },
+
     }),
     {
       name: AUTH_STORAGE_KEY,

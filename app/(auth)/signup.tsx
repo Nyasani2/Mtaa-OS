@@ -13,6 +13,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export default function SignupScreen() {
     const { error: signupError } = await signUp(email.trim(), password, {
       full_name: fullName.trim(),
       username: username.trim().toLowerCase(),
+      phone: phone.trim(),
     });
     setLoading(false);
     if (signupError) {
@@ -83,6 +85,8 @@ export default function SignupScreen() {
           value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
         <TextInput style={styles.input} placeholder="Email address" placeholderTextColor="rgba(255,255,255,0.4)"
           value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+        <TextInput style={styles.input} placeholder="Phone Number (e.g., +254...)" placeholderTextColor="rgba(255,255,255,0.4)"
+          value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
         <View style={styles.passwordWrap}>
           <TextInput style={[styles.input, styles.passwordInput]} placeholder="Password (min 6 chars)"
             placeholderTextColor="rgba(255,255,255,0.4)" value={password} onChangeText={setPassword}

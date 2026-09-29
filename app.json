@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "MTAA OS",
+    "slug": "mtaa-os",
+    "plugins": [
+      "react-native-compressor",
+      "expo-updates"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/YOUR_PROJECT_ID",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
+  }
+}

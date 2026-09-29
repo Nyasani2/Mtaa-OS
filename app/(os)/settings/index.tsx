@@ -1,14 +1,13 @@
 // @ts-nocheck
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { accountService } from '@/lib/auth/account-service';
-// @ts-nocheck
 // app/(os)/settings/index.tsx — MTAA OS Settings v4.1
 // Device/OS-level settings only. Security features moved to Profile → Privacy & Security.
 
 import { useState, useEffect } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface SettingsItem {
@@ -22,13 +21,17 @@ interface SettingsItem {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const { user, profile, signOut } = useAuthStore();
 
-  const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
+
+  const handleSignOutAction = async () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: async () => {
-        await accountService.logout();
-        router.replace('/' as any);
+      { text: 'Sign Out', style: 'destructive', onPress: async () => {
+        await signOut();
+        router.dismissAll();
+          router.replace('/login');
       }},
     ]);
   };
@@ -38,13 +41,11 @@ export default function SettingsScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         await accountService.deleteAccount();
-        router.replace('/' as any);
+        router.dismissAll();
+          router.replace('/login');
       }},
     ]);
   };
-
-  const router = useRouter();
-  const { user, profile, signOut } = useAuthStore();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [networkType, setNetworkType] = useState('Unknown');
@@ -144,7 +145,15 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.email}>{email}</Text>
           {user && (
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout}>
+            <TouchableOpacity 
+              style={styles.signOutBtn} 
+              onPress={async () => {
+                console.log('🔴 SIGN OUT PRESSED');
+                await signOut();
+                console.log('🔴 Navigating to login...');
+                router.replace('/login');
+              }}
+            >
               <Text style={styles.signOutText}>Sign Out</Text>
             </TouchableOpacity>
           )}
@@ -187,7 +196,17 @@ export default function SettingsScreen() {
           </View>
         ))}
 
+
+        <View style={styles.dangerZone}>
+          <Text style={styles.dangerTitle}>Danger Zone</Text>
+          <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
+            <Ionicons name="trash-outline" size={20} color="#EF4444" />
+            <Text style={styles.deleteText}>Delete Account Permanently</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.footer}>
+
           <Text style={styles.footerText}>MTAA OS v1.0.0</Text>
           <Text style={styles.footerSub}>© 2026 MTAA Technologies</Text>
         </View>
@@ -217,4 +236,9 @@ const styles = StyleSheet.create({
   footer: { alignItems: 'center', paddingVertical: 32 },
   footerText: { color: '#475569', fontSize: 13, fontWeight: '600' },
   footerSub: { color: '#334155', fontSize: 11, marginTop: 4 },
+
+  dangerZone: { marginTop: 20, paddingHorizontal: 16, paddingBottom: 16 },
+  dangerTitle: { fontSize: 12, fontWeight: '700', color: '#EF4444', marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EF444420', borderWidth: 1, borderColor: '#EF444440', borderRadius: 12, paddingVertical: 14 },
+  deleteText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
 });

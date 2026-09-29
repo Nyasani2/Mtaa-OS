@@ -98,6 +98,9 @@ export const ALL_APPS: AppTile[] = [
   { id: 'jobs', name: 'Jobs', icon: 'briefcase', iconSet: 'Ionicons', route: '/(work)/jobs', color: '#fff', bgColor: '#6366f1', ownerOnly: false, category: 'WORK', status: 'live' },
   { id: 'studio', name: 'Studio', icon: 'videocam', iconSet: 'Ionicons', route: '/(os)/studio', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'WORK', status: 'live' },
   { id: 'tasks', name: 'Tasks', icon: 'checkmark-circle', iconSet: 'Ionicons', route: '/(work)/tasks', color: '#fff', bgColor: '#10b981', ownerOnly: false, category: 'WORK', status: 'live' },
+  // ─── SOCIAL (1 app) ───
+  { id: 'hookup', name: 'Hookup', icon: 'heart', iconSet: 'Ionicons', route: '/(os)/hookup', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'SOCIAL', status: 'live' },
+
   { id: 'workspace', name: 'Workspace', icon: 'desktop', iconSet: 'Ionicons', route: '/(work)/workspace', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'WORK', status: 'live' },
 
   // ─── SOCIAL (5 apps) ───
@@ -112,16 +115,16 @@ export const ALL_APPS: AppTile[] = [
   { id: 'podcast', name: 'Podcast', icon: 'mic', iconSet: 'Ionicons', route: '/(media)/podcast', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'MEDIA', status: 'live' },
   { id: 'video', name: 'Video', icon: 'play-circle', iconSet: 'Ionicons', route: '/(media)/video', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'MEDIA', status: 'live' },
 
-  // ─── ADMIN (3 apps) ───
+  // ─── ADMIN (3 apps) ───────────────────────────────────
   { id: 'admin', name: 'Admin', icon: 'shield', iconSet: 'Ionicons', route: '/(os)/admin', color: '#fff', bgColor: '#7c3aed', ownerOnly: true, category: 'ADMIN', status: 'live' },
   { id: 'analytics', name: 'Analytics', icon: 'bar-chart', iconSet: 'Ionicons', route: '/(os)/analytics', color: '#fff', bgColor: '#3b82f6', ownerOnly: true, category: 'ADMIN', status: 'live' },
   { id: 'kernel', name: 'Kernel', icon: 'hardware-chip', iconSet: 'Ionicons', route: '/(os)/kernel-audit', color: '#fff', bgColor: '#1e3a5f', ownerOnly: true, category: 'ADMIN', status: 'live' },
-
-  // ─── UTILITY (4 apps) ───
+  { id: 'command', name: 'Command', icon: 'terminal', iconSet: 'Ionicons', route: '/(os)/command', color: '#fff', bgColor: '#334155', ownerOnly: false, category: 'ADMIN', status: 'live' },
+  { id: 'live-ledger', name: 'Live Ledger', icon: 'activity', iconSet: 'Ionicons', route: '/(admin)/command-centre/live-ledger', color: '#fff', bgColor: '#10b981', ownerOnly: false, category: 'ADMIN', status: 'live' },
+  { id: 'central-bank', name: 'Central Bank', icon: 'globe', iconSet: 'Ionicons', route: '/(admin)/command-centre/central-bank', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'ADMIN', status: 'live' },
   { id: 'reader', name: 'Reader', icon: 'book', iconSet: 'Ionicons', route: '/(os)/reader', color: '#fff', bgColor: '#8b5cf6', ownerOnly: false, category: 'UTILITY', status: 'live' },
   { id: 'upload', name: 'Upload', icon: 'cloud-upload', iconSet: 'Ionicons', route: '/(os)/upload', color: '#fff', bgColor: '#06b6d4', ownerOnly: false, category: 'UTILITY', status: 'live' },
   { id: 'wifi', name: 'WiFi', icon: 'wifi', iconSet: 'Ionicons', route: '/(os)/wifi', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'UTILITY', status: 'live' },
-  { id: 'command', name: 'Command', icon: 'terminal', iconSet: 'Ionicons', route: '/(os)/command', color: '#fff', bgColor: '#334155', ownerOnly: false, category: 'UTILITY', status: 'live' },
 ];
 
 // ─── PUBLIC_APPS: All non-owner apps (used by launcher when no category selected) ───

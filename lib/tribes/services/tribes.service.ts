@@ -59,7 +59,23 @@ export async function setMemberRole(tribeId: string, targetId: string, role: str
   if (error) throw error;
 }
 export async function getPosts(tribeId: string) {
-  const { data, error } = await supabase.from('tribe_posts').select('*').eq('tribe_id', tribeId).order('created_at', { ascending: false }).limit(50);
+  // PostgREST translates this into a single, highly optimized SQL JOIN.
+  // No manual JS mapping, no N+1 queries.
+  const { data, error } = await supabase
+    .from('tribe_posts')
+    .select(`
+      *,
+      author_profile:user_profiles (
+        user_id,
+        full_name,
+        avatar_url,
+        username
+      )
+    `)
+    .eq('tribe_id', tribeId)
+    .order('created_at', { ascending: false })
+    .limit(50); // Note: In Phase 2, we will upgrade this to cursor-based pagination
+    
   if (error) throw error;
   return data || [];
 }
@@ -240,4 +256,27 @@ export async function uploadTribeMedia(file: any, userId: string): Promise<{ url
   if (error) throw error;
   const { data } = supabase.storage.from('tribe-media').getPublicUrl(path);
   return { url: data.publicUrl };
+}
+
+// --- ALIGNED WITH REAL SCHEMA ---
+export async function deletePost(postId: string, userId: string) {
+  const { error } = await supabase.from('tribe_posts').delete().eq('id', postId).eq('author_id', userId);
+  if (error) throw error;
+}
+
+export async function shareToStudio(post: any, userId: string) {
+  const { data, error } = await supabase.from('studio_posts').insert({
+    creator_id: userId, content: post.content, media_url: post.media_url, 
+    media_type: post.media_type, source: 'tribe', source_id: post.id
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function startLiveStream(tribeId: string, userId: string) {
+  const { data, error } = await supabase.from('tribe_live_rooms').insert({
+    tribe_id: tribeId, host_id: userId, status: 'live', started_at: new Date().toISOString()
+  }).select().single();
+  if (error) throw error;
+  return data;
 }

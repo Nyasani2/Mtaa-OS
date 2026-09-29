@@ -1,3 +1,4 @@
+import DeviceSecurityCard from '@/lib/components/DeviceSecurityCard';
 // @ts-nocheck
 // app/(os)/wallet/settings.tsx — Wallet Settings (null-safe)
 import React, { useState, useEffect } from 'react';
@@ -13,8 +14,8 @@ export default function WalletSettingsScreen() {
   const wallet = useWalletStore();
 
   // Null-safe destructuring — every array defaults to []
-  const linkedBanks = wallet.linkedBanks ?? [];
-  const linkedCards = wallet.linkedCards ?? [];
+  const linkedBanks = wallet.linked_banks ?? [];
+  const linkedCards = wallet.linked_cards ?? [];
   const agents = wallet.agents ?? [];
   const notifications = wallet.notifications ?? [];
   const loading = wallet.loading ?? false;
@@ -43,6 +44,8 @@ export default function WalletSettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+          <DeviceSecurityCard />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -59,7 +62,7 @@ export default function WalletSettingsScreen() {
             <Ionicons name="person" size={28} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{user?.email || user?.phone || 'Wallet User'}</Text>
+            <Text style={styles.name}>{user?.email || (user as any)?.phone || 'Wallet User'}</Text>
             <Text style={styles.meta}>ID: {user?.id?.slice(0, 12) || '---'}...</Text>
           </View>
           <TouchableOpacity onPress={() => router.push('/(os)/wallet/email-verify')}>

@@ -1,3 +1,10 @@
+
+// 🔒 GRAPHENEOS-INSPIRED PRIVACY: 
+// When implementing file uploads in Education module, always use:
+// import { stripExifData } from '@/lib/services/privacy-service';
+// const strippedUri = await stripExifData(originalUri);
+// This ensures student/teacher photos don't leak GPS location data.
+
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
