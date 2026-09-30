@@ -28,9 +28,7 @@ export default {
           action: "VIEW",
           autoVerify: true,
           data: [
-            {
-              scheme: "mtaa",
-            },
+            { scheme: "mtaa" },
             {
               scheme: "https",
               host: "mtaa-os.vercel.app",
@@ -47,7 +45,8 @@ export default {
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
-      "expo-secure-store",],
+      "expo-secure-store"
+    ],
     experiments: {
       typedRoutes: true,
       tsconfigPaths: true,
