@@ -6,9 +6,9 @@ export default {
     orientation: "portrait",
     scheme: "mtaa",
     userInterfaceStyle: "automatic",
-    icon: "./assets/images/mtaa_home.jpg",
+    icon: "./assets/images/mtaa_icon.png",
     splash: {
-      image: "./assets/images/mtaa_splash.jpg",
+      image: "./assets/images/mtaa_splash.png",
       resizeMode: "contain",
       backgroundColor: "#000000",
     },
@@ -20,7 +20,7 @@ export default {
     android: {
       package: "com.mtaa.os",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/mtaa_home.jpg",
+        foregroundImage: "./assets/images/mtaa_icon.png",
         backgroundColor: "#000000",
       },
       intentFilters: [
@@ -47,9 +47,7 @@ export default {
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
-      "expo-secure-store",
-      "@sentry/react-native"
-    ],
+      "expo-secure-store",],
     experiments: {
       typedRoutes: true,
       tsconfigPaths: true,
@@ -57,9 +55,7 @@ export default {
     updates: {
       url: "https://u.expo.dev/67589048-d14b-4c80-8ce3-4955651494d9",
     },
-    runtimeVersion: {
-      policy: "appVersion",
-    },
+    runtimeVersion: "1.0.0",
     extra: {
       eas: {
         projectId: "67589048-d14b-4c80-8ce3-4955651494d9",
