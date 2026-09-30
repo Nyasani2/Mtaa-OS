@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
@@ -28,12 +29,13 @@ export function OSGate({ children }: { children: React.ReactNode }) {
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
 
     const inRecovery =
+      Platform.OS === 'web' &&
       typeof window !== 'undefined' &&
-      sessionStorage.getItem('mtaa_in_recovery') === 'true';
+      (window as any).sessionStorage?.getItem('mtaa_in_recovery') === 'true';
 
     if (inRecovery) {
       if (pathname !== '/update-password') {
-        sessionStorage.removeItem('mtaa_in_recovery');
+        (window as any).sessionStorage?.removeItem('mtaa_in_recovery');
       } else {
         return;
       }

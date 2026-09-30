@@ -1,10 +1,11 @@
 // Set recovery flag IMMEDIATELY on module load — before any auth listeners fire
-if (typeof window !== 'undefined') {
-  sessionStorage.setItem('mtaa_in_recovery', 'true');
+if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).sessionStorage) {
+  (window as any).sessionStorage.setItem('mtaa_in_recovery', 'true');
 }
 
 import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Platform, Alert, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+;
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
@@ -83,8 +84,8 @@ export default function UpdatePasswordScreen() {
       mounted = false;
       listener.subscription.unsubscribe();
       // Clean up recovery flag on unmount
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('mtaa_in_recovery');
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).sessionStorage) {
+        (window as any).sessionStorage.removeItem('mtaa_in_recovery');
       }
     };
   }, []);
@@ -109,8 +110,8 @@ export default function UpdatePasswordScreen() {
     }
 
     // Clear recovery flag — user is done
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('mtaa_in_recovery');
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).sessionStorage) {
+      (window as any).sessionStorage.removeItem('mtaa_in_recovery');
     }
     setStep('success');
   };
