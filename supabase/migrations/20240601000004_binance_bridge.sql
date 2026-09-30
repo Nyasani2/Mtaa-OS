@@ -189,32 +189,42 @@ ALTER TABLE public.binance_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.binance_webhooks ENABLE ROW LEVEL SECURITY;
 
 -- Config: viewable by all, manageable by admin only
--- CREATE POLICY "Config viewable" ON public.binance_bridge_config FOR SELECT USING (true);
--- CREATE POLICY "Config admin only" ON public.binance_bridge_config FOR ALL USING (false);
+-- DROP POLICY IF EXISTS "Config viewable" ON public;
+CREATE POLICY "Config viewable" ON public.binance_bridge_config FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "Config admin only" ON public;
+CREATE POLICY "Config admin only" ON public.binance_bridge_config FOR ALL USING (false);
 
 -- Conversions: viewable by owner
--- CREATE POLICY "Conversions viewable by user" ON public.binance_conversions
+-- DROP POLICY IF EXISTS "Conversions viewable by user" ON public;
+CREATE POLICY "Conversions viewable by user" ON public.binance_conversions
 --   FOR SELECT USING (user_id = auth.uid());
--- CREATE POLICY "Conversions insertable by user" ON public.binance_conversions
+-- DROP POLICY IF EXISTS "Conversions insertable by user" ON public;
+CREATE POLICY "Conversions insertable by user" ON public.binance_conversions
 --   FOR INSERT WITH CHECK (user_id = auth.uid());
--- CREATE POLICY "Conversions updatable by system" ON public.binance_conversions
+-- DROP POLICY IF EXISTS "Conversions updatable by system" ON public;
+CREATE POLICY "Conversions updatable by system" ON public.binance_conversions
 --   FOR UPDATE USING (user_id = auth.uid());
 
 -- User links: viewable/manageable by owner
--- CREATE POLICY "Links viewable by owner" ON public.binance_user_links
+-- DROP POLICY IF EXISTS "Links viewable by owner" ON public;
+CREATE POLICY "Links viewable by owner" ON public.binance_user_links
 --   FOR SELECT USING (user_id = auth.uid());
--- CREATE POLICY "Links manageable by owner" ON public.binance_user_links
+-- DROP POLICY IF EXISTS "Links manageable by owner" ON public;
+CREATE POLICY "Links manageable by owner" ON public.binance_user_links
 --   FOR ALL USING (user_id = auth.uid());
 
 -- Rate history: viewable by all
--- CREATE POLICY "Rates viewable" ON public.binance_rate_history FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "Rates viewable" ON public;
+CREATE POLICY "Rates viewable" ON public.binance_rate_history FOR SELECT USING (true);
 
 -- Limits: viewable by owner
--- CREATE POLICY "Limits viewable by user" ON public.binance_limits
+-- DROP POLICY IF EXISTS "Limits viewable by user" ON public;
+CREATE POLICY "Limits viewable by user" ON public.binance_limits
 --   FOR SELECT USING (user_id = auth.uid());
 
 -- Webhooks: system only
--- CREATE POLICY "Webhooks system" ON public.binance_webhooks FOR ALL USING (false);
+-- DROP POLICY IF EXISTS "Webhooks system" ON public;
+CREATE POLICY "Webhooks system" ON public.binance_webhooks FOR ALL USING (false);
 
 -- ============================================================
 -- TRIGGERS

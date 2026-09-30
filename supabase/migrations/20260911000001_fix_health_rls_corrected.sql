@@ -45,18 +45,21 @@ ALTER TABLE public.health_emergency_cases ENABLE ROW LEVEL SECURITY;
 
 -- 6. Create RLS Policies for health_facilities
 DROP POLICY IF EXISTS "Allow public read access to facilities" ON public.health_facilities;
+DROP POLICY IF EXISTS "Allow public read access to facilities" ON public;
 CREATE POLICY "Allow public read access to facilities"
 ON public.health_facilities FOR SELECT
 TO authenticated
 USING (true);
 
 DROP POLICY IF EXISTS "Allow authenticated insert facilities" ON public.health_facilities;
+DROP POLICY IF EXISTS "Allow authenticated insert facilities" ON public;
 CREATE POLICY "Allow authenticated insert facilities"
 ON public.health_facilities FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "Allow facility admin update" ON public.health_facilities;
+DROP POLICY IF EXISTS "Allow facility admin update" ON public;
 CREATE POLICY "Allow facility admin update"
 ON public.health_facilities FOR UPDATE
 TO authenticated
@@ -64,12 +67,14 @@ USING (admin_user_id = auth.uid());
 
 -- 7. RLS Policies for health_staff
 DROP POLICY IF EXISTS "Allow public read staff" ON public.health_staff;
+DROP POLICY IF EXISTS "Allow public read staff" ON public;
 CREATE POLICY "Allow public read staff"
 ON public.health_staff FOR SELECT
 TO authenticated
 USING (true);
 
 DROP POLICY IF EXISTS "Allow staff self update" ON public.health_staff;
+DROP POLICY IF EXISTS "Allow staff self update" ON public;
 CREATE POLICY "Allow staff self update"
 ON public.health_staff FOR UPDATE
 TO authenticated
@@ -77,6 +82,7 @@ USING (user_id = auth.uid());
 
 -- 8. RLS Policies for health_appointments
 DROP POLICY IF EXISTS "Allow patients to view own appointments" ON public.health_appointments;
+DROP POLICY IF EXISTS "Allow patients to view own appointments" ON public;
 CREATE POLICY "Allow patients to view own appointments"
 ON public.health_appointments FOR SELECT
 TO authenticated
@@ -85,6 +91,7 @@ USING (patient_id = auth.uid() OR staff_id IN (
 ));
 
 DROP POLICY IF EXISTS "Allow patients to book appointments" ON public.health_appointments;
+DROP POLICY IF EXISTS "Allow patients to book appointments" ON public;
 CREATE POLICY "Allow patients to book appointments"
 ON public.health_appointments FOR INSERT
 TO authenticated
@@ -92,12 +99,14 @@ WITH CHECK (patient_id = auth.uid());
 
 -- 9. RLS Policies for health_emergency_cases
 DROP POLICY IF EXISTS "Allow emergency read" ON public.health_emergency_cases;
+DROP POLICY IF EXISTS "Allow emergency read" ON public;
 CREATE POLICY "Allow emergency read"
 ON public.health_emergency_cases FOR SELECT
 TO authenticated
 USING (true);
 
 DROP POLICY IF EXISTS "Allow emergency insert" ON public.health_emergency_cases;
+DROP POLICY IF EXISTS "Allow emergency insert" ON public;
 CREATE POLICY "Allow emergency insert"
 ON public.health_emergency_cases FOR INSERT
 TO authenticated

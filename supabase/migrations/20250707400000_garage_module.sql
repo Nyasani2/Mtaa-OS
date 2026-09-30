@@ -191,32 +191,39 @@ CREATE TABLE IF NOT EXISTS garage_mechanics (
 -- Garages RLS
 ALTER TABLE garages ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "garages_select_all" ON garages
+-- DROP POLICY IF EXISTS "garages_select_all" ON garages;
+CREATE POLICY "garages_select_all" ON garages
 --   FOR SELECT USING (true);
 
--- CREATE POLICY "garages_insert_own" ON garages
+-- DROP POLICY IF EXISTS "garages_insert_own" ON garages;
+CREATE POLICY "garages_insert_own" ON garages
 --   FOR INSERT WITH CHECK (auth.uid() = owner_id);
 
--- CREATE POLICY "garages_update_own" ON garages
+-- DROP POLICY IF EXISTS "garages_update_own" ON garages;
+CREATE POLICY "garages_update_own" ON garages
 --   FOR UPDATE USING (auth.uid() = owner_id);
 
--- CREATE POLICY "garages_delete_own" ON garages
+-- DROP POLICY IF EXISTS "garages_delete_own" ON garages;
+CREATE POLICY "garages_delete_own" ON garages
 --   FOR DELETE USING (auth.uid() = owner_id);
 
 -- Garage Inventory RLS
 ALTER TABLE garage_inventory ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "inventory_select_garage" ON garage_inventory
+-- DROP POLICY IF EXISTS "inventory_select_garage" ON garage_inventory;
+CREATE POLICY "inventory_select_garage" ON garage_inventory
 --   FOR SELECT USING (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id)
 --   );
 
--- CREATE POLICY "inventory_insert_garage_owner" ON garage_inventory
+-- DROP POLICY IF EXISTS "inventory_insert_garage_owner" ON garage_inventory;
+CREATE POLICY "inventory_insert_garage_owner" ON garage_inventory
 --   FOR INSERT WITH CHECK (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
 --   );
 
--- CREATE POLICY "inventory_update_garage_owner" ON garage_inventory
+-- DROP POLICY IF EXISTS "inventory_update_garage_owner" ON garage_inventory;
+CREATE POLICY "inventory_update_garage_owner" ON garage_inventory
 --   FOR UPDATE USING (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_inventory.garage_id AND garages.owner_id = auth.uid())
 --   );
@@ -224,10 +231,12 @@ ALTER TABLE garage_inventory ENABLE ROW LEVEL SECURITY;
 -- Garage Vehicles RLS
 ALTER TABLE garage_vehicles ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "vehicles_select_garage" ON garage_vehicles
+-- DROP POLICY IF EXISTS "vehicles_select_garage" ON garage_vehicles;
+CREATE POLICY "vehicles_select_garage" ON garage_vehicles
 --   FOR SELECT USING (true);
 
--- CREATE POLICY "vehicles_insert_garage_owner" ON garage_vehicles
+-- DROP POLICY IF EXISTS "vehicles_insert_garage_owner" ON garage_vehicles;
+CREATE POLICY "vehicles_insert_garage_owner" ON garage_vehicles
 --   FOR INSERT WITH CHECK (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_vehicles.garage_id AND garages.owner_id = auth.uid())
 --   );
@@ -235,10 +244,12 @@ ALTER TABLE garage_vehicles ENABLE ROW LEVEL SECURITY;
 -- Work Orders RLS
 ALTER TABLE garage_work_orders ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "work_orders_select_all" ON garage_work_orders
+-- DROP POLICY IF EXISTS "work_orders_select_all" ON garage_work_orders;
+CREATE POLICY "work_orders_select_all" ON garage_work_orders
 --   FOR SELECT USING (true);
 
--- CREATE POLICY "work_orders_insert_garage_owner" ON garage_work_orders
+-- DROP POLICY IF EXISTS "work_orders_insert_garage_owner" ON garage_work_orders;
+CREATE POLICY "work_orders_insert_garage_owner" ON garage_work_orders
 --   FOR INSERT WITH CHECK (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_work_orders.garage_id AND garages.owner_id = auth.uid())
 --   );
@@ -246,10 +257,12 @@ ALTER TABLE garage_work_orders ENABLE ROW LEVEL SECURITY;
 -- Fleet Contracts RLS
 ALTER TABLE garage_fleet_contracts ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "fleet_select_garage" ON garage_fleet_contracts
+-- DROP POLICY IF EXISTS "fleet_select_garage" ON garage_fleet_contracts;
+CREATE POLICY "fleet_select_garage" ON garage_fleet_contracts
 --   FOR SELECT USING (true);
 
--- CREATE POLICY "fleet_insert_garage_owner" ON garage_fleet_contracts
+-- DROP POLICY IF EXISTS "fleet_insert_garage_owner" ON garage_fleet_contracts;
+CREATE POLICY "fleet_insert_garage_owner" ON garage_fleet_contracts
 --   FOR INSERT WITH CHECK (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_fleet_contracts.garage_id AND garages.owner_id = auth.uid())
 --   );
@@ -257,10 +270,12 @@ ALTER TABLE garage_fleet_contracts ENABLE ROW LEVEL SECURITY;
 -- Mechanics RLS
 ALTER TABLE garage_mechanics ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "mechanics_select_garage" ON garage_mechanics
+-- DROP POLICY IF EXISTS "mechanics_select_garage" ON garage_mechanics;
+CREATE POLICY "mechanics_select_garage" ON garage_mechanics
 --   FOR SELECT USING (true);
 
--- CREATE POLICY "mechanics_insert_garage_owner" ON garage_mechanics
+-- DROP POLICY IF EXISTS "mechanics_insert_garage_owner" ON garage_mechanics;
+CREATE POLICY "mechanics_insert_garage_owner" ON garage_mechanics
 --   FOR INSERT WITH CHECK (
 --     EXISTS (SELECT 1 FROM garages WHERE garages.id = garage_mechanics.garage_id AND garages.owner_id = auth.uid())
 --   );

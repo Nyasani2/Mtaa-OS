@@ -104,9 +104,11 @@ ALTER TABLE health_lab_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE health_critical_alerts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow authenticated lab results" ON health_lab_results;
+DROP POLICY IF EXISTS "Allow authenticated lab results" ON health_lab_results;
 CREATE POLICY "Allow authenticated lab results" ON health_lab_results
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow authenticated critical alerts" ON health_critical_alerts;
 DROP POLICY IF EXISTS "Allow authenticated critical alerts" ON health_critical_alerts;
 CREATE POLICY "Allow authenticated critical alerts" ON health_critical_alerts
   FOR ALL TO authenticated USING (true) WITH CHECK (true);

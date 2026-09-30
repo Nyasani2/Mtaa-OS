@@ -10,8 +10,10 @@ create table if not exists public.health_population_records (
   created_at timestamptz default now()
 );
 alter table public.health_population_records enable row level security;
--- create policy "Allow authenticated insert" on public.health_population_records for insert to authenticated with check (true);
--- create policy "Allow authenticated select" on public.health_population_records for select to authenticated using (true);
+-- DROP POLICY IF EXISTS "Allow authenticated insert" ON public;
+create policy "Allow authenticated insert" on public.health_population_records for insert to authenticated with check (true);
+-- DROP POLICY IF EXISTS "Allow authenticated select" ON public;
+create policy "Allow authenticated select" on public.health_population_records for select to authenticated using (true);
 
 -- Data sharing grants/consents
 create table if not exists public.health_sharing_grants (
@@ -25,5 +27,7 @@ create table if not exists public.health_sharing_grants (
   created_at timestamptz default now()
 );
 alter table public.health_sharing_grants enable row level security;
--- create policy "Allow authenticated insert" on public.health_sharing_grants for insert to authenticated with check (auth.uid() = grantor_id);
--- create policy "Allow authenticated select" on public health_sharing_grants for select to authenticated using (auth.uid() = grantor_id);
+-- DROP POLICY IF EXISTS "Allow authenticated insert" ON public;
+create policy "Allow authenticated insert" on public.health_sharing_grants for insert to authenticated with check (auth.uid() = grantor_id);
+-- DROP POLICY IF EXISTS "Allow authenticated select" ON public;
+create policy "Allow authenticated select" on public health_sharing_grants for select to authenticated using (auth.uid() = grantor_id);

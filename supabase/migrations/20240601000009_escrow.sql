@@ -32,14 +32,17 @@ CREATE INDEX idx_escrow_created ON escrow_transactions(created_at);
 
 ALTER TABLE escrow_transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Buyers and sellers can view their escrows" ON escrow_transactions;
 CREATE POLICY "Buyers and sellers can view their escrows"
     ON escrow_transactions FOR SELECT
     USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
 
+DROP POLICY IF EXISTS "Buyers can create escrows" ON escrow_transactions;
 CREATE POLICY "Buyers can create escrows"
     ON escrow_transactions FOR INSERT
     WITH CHECK (auth.uid() = buyer_id);
 
+DROP POLICY IF EXISTS "Buyers can update their escrows" ON escrow_transactions;
 CREATE POLICY "Buyers can update their escrows"
     ON escrow_transactions FOR UPDATE
     USING (auth.uid() = buyer_id OR auth.uid() = seller_id)

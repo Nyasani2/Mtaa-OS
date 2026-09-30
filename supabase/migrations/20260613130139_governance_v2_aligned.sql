@@ -616,41 +616,68 @@ ALTER TABLE public.ward_projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ward_project_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.governance_audit_log ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "governance_read_all" ON public.governance_role_assignments FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.governance_onboarding FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.parliament_sessions FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.constituencies FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.wards FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.county_assemblies FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.county_committees FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.voting_sessions FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.public_participation FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.county_public_forums FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.forum_questions FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.forum_polls FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.national_public_participation FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.petitions FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.petition_signatures FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.county_budgets FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.county_finance_bills FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.ward_projects FOR SELECT USING (auth.role() = 'authenticated');
--- CREATE POLICY "governance_read_all" ON public.ward_project_votes FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.governance_role_assignments FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.governance_onboarding FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.parliament_sessions FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.constituencies FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.wards FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.county_assemblies FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.county_committees FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.voting_sessions FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.public_participation FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.county_public_forums FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.forum_questions FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.forum_polls FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.national_public_participation FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.petitions FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.petition_signatures FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.county_budgets FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.county_finance_bills FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.ward_projects FOR SELECT USING (auth.role() = 'authenticated');
+-- DROP POLICY IF EXISTS "governance_read_all" ON public;
+CREATE POLICY "governance_read_all" ON public.ward_project_votes FOR SELECT USING (auth.role() = 'authenticated');
 
--- CREATE POLICY "votes_own_or_aggregate" ON public.votes FOR SELECT 
+-- DROP POLICY IF EXISTS "votes_own_or_aggregate" ON public;
+CREATE POLICY "votes_own_or_aggregate" ON public.votes FOR SELECT 
 -- USING (voter_id = auth.uid() OR auth.uid() IN (
 --     SELECT id FROM public.profiles WHERE governance_role IN ('speaker', 'clerk', 'majority_leader', 'county_clerk')
 -- ));
 
--- CREATE POLICY "poll_votes_own" ON public.forum_poll_votes FOR SELECT USING (citizen_id = auth.uid());
+-- DROP POLICY IF EXISTS "poll_votes_own" ON public;
+CREATE POLICY "poll_votes_own" ON public.forum_poll_votes FOR SELECT USING (citizen_id = auth.uid());
 
--- CREATE POLICY "public_participation_insert_own" ON public.public_participation FOR INSERT WITH CHECK (citizen_id = auth.uid());
--- CREATE POLICY "public_participation_update_own" ON public.public_participation FOR UPDATE USING (citizen_id = auth.uid());
+-- DROP POLICY IF EXISTS "public_participation_insert_own" ON public;
+CREATE POLICY "public_participation_insert_own" ON public.public_participation FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- DROP POLICY IF EXISTS "public_participation_update_own" ON public;
+CREATE POLICY "public_participation_update_own" ON public.public_participation FOR UPDATE USING (citizen_id = auth.uid());
 
--- CREATE POLICY "petitions_insert_own" ON public.petitions FOR INSERT WITH CHECK (petitioner_id = auth.uid());
--- CREATE POLICY "petitions_update_own" ON public.petitions FOR UPDATE USING (petitioner_id = auth.uid());
--- CREATE POLICY "petition_signatures_insert_own" ON public.petition_signatures FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- DROP POLICY IF EXISTS "petitions_insert_own" ON public;
+CREATE POLICY "petitions_insert_own" ON public.petitions FOR INSERT WITH CHECK (petitioner_id = auth.uid());
+-- DROP POLICY IF EXISTS "petitions_update_own" ON public;
+CREATE POLICY "petitions_update_own" ON public.petitions FOR UPDATE USING (petitioner_id = auth.uid());
+-- DROP POLICY IF EXISTS "petition_signatures_insert_own" ON public;
+CREATE POLICY "petition_signatures_insert_own" ON public.petition_signatures FOR INSERT WITH CHECK (citizen_id = auth.uid());
 
--- CREATE POLICY "ward_votes_insert_own" ON public.ward_project_votes FOR INSERT WITH CHECK (citizen_id = auth.uid());
+-- DROP POLICY IF EXISTS "ward_votes_insert_own" ON public;
+CREATE POLICY "ward_votes_insert_own" ON public.ward_project_votes FOR INSERT WITH CHECK (citizen_id = auth.uid());
 
 -- ============================================================
 -- STEP 5: TRIGGERS

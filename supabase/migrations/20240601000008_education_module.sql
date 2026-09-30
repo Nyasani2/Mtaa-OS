@@ -562,36 +562,45 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Institutions: viewable by all, manageable by admin
--- CREATE POLICY "Institutions viewable by all" ON public.education_institutions
+-- DROP POLICY IF EXISTS "Institutions viewable by all" ON public;
+CREATE POLICY "Institutions viewable by all" ON public.education_institutions
 --   FOR SELECT USING (true);
--- CREATE POLICY "Institutions manageable by admin" ON public.education_institutions
+-- DROP POLICY IF EXISTS "Institutions manageable by admin" ON public;
+CREATE POLICY "Institutions manageable by admin" ON public.education_institutions
 --   FOR ALL USING (head_teacher_id = auth.uid());
 
 -- Teachers: viewable by school members, manageable by self/admin
--- CREATE POLICY "Teachers viewable by school" ON public.education_teachers
+-- DROP POLICY IF EXISTS "Teachers viewable by school" ON public;
+CREATE POLICY "Teachers viewable by school" ON public.education_teachers
 --   FOR SELECT USING (user_id = auth.uid() OR is_school_admin(institution_id, auth.uid()));
--- CREATE POLICY "Teachers manageable by self" ON public.education_teachers
+-- DROP POLICY IF EXISTS "Teachers manageable by self" ON public;
+CREATE POLICY "Teachers manageable by self" ON public.education_teachers
 --   FOR ALL USING (user_id = auth.uid());
 
 -- Students: viewable by teachers/admin, self/parent
--- CREATE POLICY "Students viewable by school" ON public.education_students
+-- DROP POLICY IF EXISTS "Students viewable by school" ON public;
+CREATE POLICY "Students viewable by school" ON public.education_students
 --   FOR SELECT USING (
 --     user_id = auth.uid() 
 --     OR parent_guardian_id = auth.uid()
 --     OR is_school_teacher(institution_id, auth.uid())
 --     OR is_school_admin(institution_id, auth.uid())
 --   );
--- CREATE POLICY "Students manageable by admin" ON public.education_students
+-- DROP POLICY IF EXISTS "Students manageable by admin" ON public;
+CREATE POLICY "Students manageable by admin" ON public.education_students
 --   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Classes: viewable by school members
--- CREATE POLICY "Classes viewable by school" ON public.education_classes
+-- DROP POLICY IF EXISTS "Classes viewable by school" ON public;
+CREATE POLICY "Classes viewable by school" ON public.education_classes
 --   FOR SELECT USING (is_school_admin(institution_id, auth.uid()) OR is_school_teacher(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
--- CREATE POLICY "Classes manageable by admin" ON public.education_classes
+-- DROP POLICY IF EXISTS "Classes manageable by admin" ON public;
+CREATE POLICY "Classes manageable by admin" ON public.education_classes
 --   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Lessons: viewable by class members
--- CREATE POLICY "Lessons viewable by class" ON public.education_lessons
+-- DROP POLICY IF EXISTS "Lessons viewable by class" ON public;
+CREATE POLICY "Lessons viewable by class" ON public.education_lessons
 --   FOR SELECT USING (
 --     EXISTS (
 --       SELECT 1 FROM public.education_classes c
@@ -602,20 +611,24 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 --       )
 --     )
 --   );
--- CREATE POLICY "Lessons manageable by teacher" ON public.education_lessons
+-- DROP POLICY IF EXISTS "Lessons manageable by teacher" ON public;
+CREATE POLICY "Lessons manageable by teacher" ON public.education_lessons
 --   FOR ALL USING (teacher_id IN (SELECT id FROM public.education_teachers WHERE user_id = auth.uid()));
 
 -- Attendance: viewable by teacher/student/parent
--- CREATE POLICY "Attendance viewable by related" ON public.education_attendance
+-- DROP POLICY IF EXISTS "Attendance viewable by related" ON public;
+CREATE POLICY "Attendance viewable by related" ON public.education_attendance
 --   FOR SELECT USING (
 --     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
 --     OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid())
 --   );
--- CREATE POLICY "Attendance manageable by teacher" ON public.education_attendance
+-- DROP POLICY IF EXISTS "Attendance manageable by teacher" ON public;
+CREATE POLICY "Attendance manageable by teacher" ON public.education_attendance
 --   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = marked_by AND t.user_id = auth.uid()));
 
 -- Assignments: viewable by class, manageable by teacher
--- CREATE POLICY "Assignments viewable by class" ON public.education_assignments
+-- DROP POLICY IF EXISTS "Assignments viewable by class" ON public;
+CREATE POLICY "Assignments viewable by class" ON public.education_assignments
 --   FOR SELECT USING (
 --     EXISTS (
 --       SELECT 1 FROM public.education_classes c
@@ -625,64 +638,82 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 --       )
 --     )
 --   );
--- CREATE POLICY "Assignments manageable by teacher" ON public.education_assignments
+-- DROP POLICY IF EXISTS "Assignments manageable by teacher" ON public;
+CREATE POLICY "Assignments manageable by teacher" ON public.education_assignments
 --   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()));
 
 -- Submissions: viewable by student/teacher
--- CREATE POLICY "Submissions viewable by related" ON public.education_submissions
+-- DROP POLICY IF EXISTS "Submissions viewable by related" ON public;
+CREATE POLICY "Submissions viewable by related" ON public.education_submissions
 --   FOR SELECT USING (
 --     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid())
 --     OR EXISTS (SELECT 1 FROM public.education_assignments a WHERE a.id = assignment_id AND EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = a.teacher_id AND t.user_id = auth.uid()))
 --   );
--- CREATE POLICY "Submissions manageable by student" ON public.education_submissions
+-- DROP POLICY IF EXISTS "Submissions manageable by student" ON public;
+CREATE POLICY "Submissions manageable by student" ON public.education_submissions
 --   FOR ALL USING (EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND s.user_id = auth.uid()));
 
 -- Grades: viewable by student/parent/teacher
--- CREATE POLICY "Grades viewable by related" ON public.education_grades
+-- DROP POLICY IF EXISTS "Grades viewable by related" ON public;
+CREATE POLICY "Grades viewable by related" ON public.education_grades
 --   FOR SELECT USING (
 --     EXISTS (SELECT 1 FROM public.education_students s WHERE s.id = student_id AND (s.user_id = auth.uid() OR s.parent_guardian_id = auth.uid()))
 --     OR EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid())
 --   );
 
 -- Messages: viewable by sender/receiver/class
--- CREATE POLICY "Messages viewable by participants" ON public.education_messages
+-- DROP POLICY IF EXISTS "Messages viewable by participants" ON public;
+CREATE POLICY "Messages viewable by participants" ON public.education_messages
 --   FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid() OR EXISTS (SELECT 1 FROM public.education_classes c WHERE c.id = class_id AND EXISTS (SELECT 1 FROM public.education_students s WHERE s.current_class_id = c.id AND s.user_id = auth.uid())));
--- CREATE POLICY "Messages insertable by school" ON public.education_messages
+-- DROP POLICY IF EXISTS "Messages insertable by school" ON public;
+CREATE POLICY "Messages insertable by school" ON public.education_messages
 --   FOR INSERT WITH CHECK (is_school_teacher(institution_id, auth.uid()) OR is_school_admin(institution_id, auth.uid()) OR is_school_student(institution_id, auth.uid()));
 
 -- Feeds: viewable by all (with junior filter applied in app)
--- CREATE POLICY "Feeds viewable by all" ON public.education_feeds
+-- DROP POLICY IF EXISTS "Feeds viewable by all" ON public;
+CREATE POLICY "Feeds viewable by all" ON public.education_feeds
 --   FOR SELECT USING (is_active = true);
--- CREATE POLICY "Feeds manageable by author" ON public.education_feeds
+-- DROP POLICY IF EXISTS "Feeds manageable by author" ON public;
+CREATE POLICY "Feeds manageable by author" ON public.education_feeds
 --   FOR ALL USING (author_id = auth.uid());
 
 -- Feed comments/likes: standard
--- CREATE POLICY "Feed comments viewable" ON public.education_feed_comments
+-- DROP POLICY IF EXISTS "Feed comments viewable" ON public;
+CREATE POLICY "Feed comments viewable" ON public.education_feed_comments
 --   FOR SELECT USING (is_active = true);
--- CREATE POLICY "Feed comments manageable" ON public.education_feed_comments
+-- DROP POLICY IF EXISTS "Feed comments manageable" ON public;
+CREATE POLICY "Feed comments manageable" ON public.education_feed_comments
 --   FOR ALL USING (author_id = auth.uid());
 
--- CREATE POLICY "Feed likes viewable" ON public.education_feed_likes
+-- DROP POLICY IF EXISTS "Feed likes viewable" ON public;
+CREATE POLICY "Feed likes viewable" ON public.education_feed_likes
 --   FOR SELECT USING (true);
--- CREATE POLICY "Feed likes manageable" ON public.education_feed_likes
+-- DROP POLICY IF EXISTS "Feed likes manageable" ON public;
+CREATE POLICY "Feed likes manageable" ON public.education_feed_likes
 --   FOR ALL USING (user_id = auth.uid());
 
 -- Events: viewable by all, manageable by admin
--- CREATE POLICY "Events viewable" ON public.education_events
+-- DROP POLICY IF EXISTS "Events viewable" ON public;
+CREATE POLICY "Events viewable" ON public.education_events
 --   FOR SELECT USING (true);
--- CREATE POLICY "Events manageable by admin" ON public.education_events
+-- DROP POLICY IF EXISTS "Events manageable by admin" ON public;
+CREATE POLICY "Events manageable by admin" ON public.education_events
 --   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- Alumni: viewable by all alumni of school
--- CREATE POLICY "Alumni viewable by school" ON public.education_alumni
+-- DROP POLICY IF EXISTS "Alumni viewable by school" ON public;
+CREATE POLICY "Alumni viewable by school" ON public.education_alumni
 --   FOR SELECT USING (is_active = true);
--- CREATE POLICY "Alumni manageable by self" ON public.education_alumni
+-- DROP POLICY IF EXISTS "Alumni manageable by self" ON public;
+CREATE POLICY "Alumni manageable by self" ON public.education_alumni
 --   FOR ALL USING (user_id = auth.uid());
 
 -- Payroll: viewable by teacher/admin
--- CREATE POLICY "Payroll viewable by teacher" ON public.education_payroll
+-- DROP POLICY IF EXISTS "Payroll viewable by teacher" ON public;
+CREATE POLICY "Payroll viewable by teacher" ON public.education_payroll
 --   FOR SELECT USING (EXISTS (SELECT 1 FROM public.education_teachers t WHERE t.id = teacher_id AND t.user_id = auth.uid()) OR is_school_admin(institution_id, auth.uid()));
--- CREATE POLICY "Payroll manageable by admin" ON public.education_payroll
+-- DROP POLICY IF EXISTS "Payroll manageable by admin" ON public;
+CREATE POLICY "Payroll manageable by admin" ON public.education_payroll
 --   FOR ALL USING (is_school_admin(institution_id, auth.uid()));
 
 -- ============================================================

@@ -45,6 +45,7 @@ END $$;
 
 -- recordings bucket policies
 DROP POLICY IF EXISTS "recordings_insert_driver" ON storage.objects;
+DROP POLICY IF EXISTS "recordings_insert_driver" ON storage;
 CREATE POLICY "recordings_insert_driver" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'recordings'
@@ -52,6 +53,7 @@ CREATE POLICY "recordings_insert_driver" ON storage.objects
   );
 
 DROP POLICY IF EXISTS "recordings_select_driver" ON storage.objects;
+DROP POLICY IF EXISTS "recordings_select_driver" ON storage;
 CREATE POLICY "recordings_select_driver" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'recordings'
@@ -59,6 +61,7 @@ CREATE POLICY "recordings_select_driver" ON storage.objects
   );
 
 DROP POLICY IF EXISTS "recordings_delete_driver" ON storage.objects;
+DROP POLICY IF EXISTS "recordings_delete_driver" ON storage;
 CREATE POLICY "recordings_delete_driver" ON storage.objects
   FOR DELETE USING (
     bucket_id = 'recordings'
@@ -67,6 +70,7 @@ CREATE POLICY "recordings_delete_driver" ON storage.objects
 
 -- thumbnails bucket policies
 DROP POLICY IF EXISTS "thumbnails_insert_driver" ON storage.objects;
+DROP POLICY IF EXISTS "thumbnails_insert_driver" ON storage;
 CREATE POLICY "thumbnails_insert_driver" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'thumbnails'
@@ -74,11 +78,13 @@ CREATE POLICY "thumbnails_insert_driver" ON storage.objects
   );
 
 DROP POLICY IF EXISTS "thumbnails_select_all" ON storage.objects;
+DROP POLICY IF EXISTS "thumbnails_select_all" ON storage;
 CREATE POLICY "thumbnails_select_all" ON storage.objects
   FOR SELECT USING (bucket_id = 'thumbnails');
 
 -- evidence bucket policies
 DROP POLICY IF EXISTS "evidence_insert_authorized" ON storage.objects;
+DROP POLICY IF EXISTS "evidence_insert_authorized" ON storage;
 CREATE POLICY "evidence_insert_authorized" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'evidence'
@@ -86,6 +92,7 @@ CREATE POLICY "evidence_insert_authorized" ON storage.objects
   );
 
 DROP POLICY IF EXISTS "evidence_select_authorized" ON storage.objects;
+DROP POLICY IF EXISTS "evidence_select_authorized" ON storage;
 CREATE POLICY "evidence_select_authorized" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'evidence'
@@ -97,6 +104,7 @@ CREATE POLICY "evidence_select_authorized" ON storage.objects
 
 -- device-firmware bucket policies
 DROP POLICY IF EXISTS "firmware_admin_only" ON storage.objects;
+DROP POLICY IF EXISTS "firmware_admin_only" ON storage;
 CREATE POLICY "firmware_admin_only" ON storage.objects
   FOR ALL USING (
     bucket_id = 'device-firmware'
@@ -105,6 +113,7 @@ CREATE POLICY "firmware_admin_only" ON storage.objects
 
 -- incident-photos bucket policies
 DROP POLICY IF EXISTS "incident_photos_insert" ON storage.objects;
+DROP POLICY IF EXISTS "incident_photos_insert" ON storage;
 CREATE POLICY "incident_photos_insert" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'incident-photos'
@@ -112,6 +121,7 @@ CREATE POLICY "incident_photos_insert" ON storage.objects
   );
 
 DROP POLICY IF EXISTS "incident_photos_select" ON storage.objects;
+DROP POLICY IF EXISTS "incident_photos_select" ON storage;
 CREATE POLICY "incident_photos_select" ON storage.objects
   FOR SELECT USING (
     bucket_id = 'incident-photos'

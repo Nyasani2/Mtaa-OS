@@ -171,22 +171,28 @@ ALTER TABLE tribe_donations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tribe_invites ENABLE ROW LEVEL SECURITY;
 
 -- 12. RLS Policies — tribes
+DROP POLICY IF EXISTS "Tribes are viewable by all" ON tribes;
 CREATE POLICY "Tribes are viewable by all" ON tribes
     FOR SELECT USING (status = 'active');
 
+DROP POLICY IF EXISTS "Creators can update their tribes" ON tribes;
 CREATE POLICY "Creators can update their tribes" ON tribes
     FOR UPDATE USING (creator_id = auth.uid());
 
+DROP POLICY IF EXISTS "Creators can delete their tribes" ON tribes;
 CREATE POLICY "Creators can delete their tribes" ON tribes
     FOR DELETE USING (creator_id = auth.uid());
 
+DROP POLICY IF EXISTS "Authenticated users can create tribes" ON tribes;
 CREATE POLICY "Authenticated users can create tribes" ON tribes
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- 13. RLS Policies — tribe_members
+DROP POLICY IF EXISTS "Members can view their memberships" ON tribe_members;
 CREATE POLICY "Members can view their memberships" ON tribe_members
     FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can join public tribes" ON tribe_members;
 CREATE POLICY "Users can join public tribes" ON tribe_members
     FOR INSERT WITH CHECK (
         user_id = auth.uid() AND
@@ -198,9 +204,11 @@ CREATE POLICY "Users can join public tribes" ON tribe_members
         )
     );
 
+DROP POLICY IF EXISTS "Users can leave tribes" ON tribe_members;
 CREATE POLICY "Users can leave tribes" ON tribe_members
     FOR DELETE USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Admins can manage tribe members" ON tribe_members;
 CREATE POLICY "Admins can manage tribe members" ON tribe_members
     FOR ALL USING (
         EXISTS (
@@ -213,6 +221,7 @@ CREATE POLICY "Admins can manage tribe members" ON tribe_members
     );
 
 -- 14. RLS Policies — tribe_posts
+DROP POLICY IF EXISTS "Posts viewable by tribe members" ON tribe_posts;
 CREATE POLICY "Posts viewable by tribe members" ON tribe_posts
     FOR SELECT USING (
         status = 'published' AND
@@ -224,6 +233,7 @@ CREATE POLICY "Posts viewable by tribe members" ON tribe_posts
         )
     );
 
+DROP POLICY IF EXISTS "Members can create posts" ON tribe_posts;
 CREATE POLICY "Members can create posts" ON tribe_posts
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -234,17 +244,21 @@ CREATE POLICY "Members can create posts" ON tribe_posts
         )
     );
 
+DROP POLICY IF EXISTS "Authors can update their posts" ON tribe_posts;
 CREATE POLICY "Authors can update their posts" ON tribe_posts
     FOR UPDATE USING (author_id = auth.uid());
 
+DROP POLICY IF EXISTS "Authors can delete their posts" ON tribe_posts;
 CREATE POLICY "Authors can delete their posts" ON tribe_posts
     FOR DELETE USING (author_id = auth.uid());
 
 -- 15. RLS Policies — tribe_post_likes
+DROP POLICY IF EXISTS "Users can manage own likes" ON tribe_post_likes;
 CREATE POLICY "Users can manage own likes" ON tribe_post_likes
     FOR ALL USING (user_id = auth.uid());
 
 -- 16. RLS Policies — tribe_post_comments
+DROP POLICY IF EXISTS "Comments viewable by tribe members" ON tribe_post_comments;
 CREATE POLICY "Comments viewable by tribe members" ON tribe_post_comments
     FOR SELECT USING (
         status = 'active' AND
@@ -257,6 +271,7 @@ CREATE POLICY "Comments viewable by tribe members" ON tribe_post_comments
         )
     );
 
+DROP POLICY IF EXISTS "Members can comment" ON tribe_post_comments;
 CREATE POLICY "Members can comment" ON tribe_post_comments
     FOR INSERT WITH CHECK (
         author_id = auth.uid() AND
@@ -269,10 +284,12 @@ CREATE POLICY "Members can comment" ON tribe_post_comments
         )
     );
 
+DROP POLICY IF EXISTS "Authors can delete comments" ON tribe_post_comments;
 CREATE POLICY "Authors can delete comments" ON tribe_post_comments
     FOR DELETE USING (author_id = auth.uid());
 
 -- 17. RLS Policies — tribe_events
+DROP POLICY IF EXISTS "Events viewable by tribe members" ON tribe_events;
 CREATE POLICY "Events viewable by tribe members" ON tribe_events
     FOR SELECT USING (
         EXISTS (
@@ -283,6 +300,7 @@ CREATE POLICY "Events viewable by tribe members" ON tribe_events
         )
     );
 
+DROP POLICY IF EXISTS "Members can create events" ON tribe_events;
 CREATE POLICY "Members can create events" ON tribe_events
     FOR INSERT WITH CHECK (
         EXISTS (
@@ -294,13 +312,16 @@ CREATE POLICY "Members can create events" ON tribe_events
     );
 
 -- 18. RLS Policies — tribe_event_attendees
+DROP POLICY IF EXISTS "Users can manage own attendance" ON tribe_event_attendees;
 CREATE POLICY "Users can manage own attendance" ON tribe_event_attendees
     FOR ALL USING (user_id = auth.uid());
 
 -- 19. RLS Policies — tribe_donations
+DROP POLICY IF EXISTS "Donors can view own donations" ON tribe_donations;
 CREATE POLICY "Donors can view own donations" ON tribe_donations
     FOR SELECT USING (donor_id = auth.uid());
 
+DROP POLICY IF EXISTS "Tribe admins can view all donations" ON tribe_donations;
 CREATE POLICY "Tribe admins can view all donations" ON tribe_donations
     FOR SELECT USING (
         EXISTS (
@@ -312,10 +333,12 @@ CREATE POLICY "Tribe admins can view all donations" ON tribe_donations
         )
     );
 
+DROP POLICY IF EXISTS "Users can donate" ON tribe_donations;
 CREATE POLICY "Users can donate" ON tribe_donations
     FOR INSERT WITH CHECK (donor_id = auth.uid());
 
 -- 20. RLS Policies — tribe_invites
+DROP POLICY IF EXISTS "Invites viewable by inviter or tribe admin" ON tribe_invites;
 CREATE POLICY "Invites viewable by inviter or tribe admin" ON tribe_invites
     FOR SELECT USING (
         inviter_id = auth.uid() OR
@@ -328,6 +351,7 @@ CREATE POLICY "Invites viewable by inviter or tribe admin" ON tribe_invites
         )
     );
 
+DROP POLICY IF EXISTS "Members can invite" ON tribe_invites;
 CREATE POLICY "Members can invite" ON tribe_invites
     FOR INSERT WITH CHECK (
         inviter_id = auth.uid() AND

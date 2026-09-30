@@ -399,17 +399,28 @@ CREATE TABLE IF NOT EXISTS shop_reviews (
 -- ALTER TABLE shop_messages ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE shop_reviews ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "Shops owner full access" ON shops FOR ALL USING (owner_id = auth.uid());
--- CREATE POLICY "Shops public view" ON shops FOR SELECT USING (status = 'active');
--- CREATE POLICY "Shop staff access" ON shop_staff FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()) OR user_id = auth.uid());
--- CREATE POLICY "Products shop manage" ON shop_products FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
--- CREATE POLICY "Products public view" ON shop_products FOR SELECT USING (shop_id IN (SELECT id FROM shops WHERE status = 'active') AND is_active = true);
--- CREATE POLICY "Orders shop manage" ON shop_orders FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
--- CREATE POLICY "Orders customer view" ON shop_orders FOR SELECT USING (customer_id = auth.uid());
--- CREATE POLICY "Messages participants" ON shop_messages FOR ALL USING (customer_id = auth.uid() OR shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
--- CREATE POLICY "Affiliates user view" ON shop_affiliates FOR ALL USING (user_id = auth.uid());
--- CREATE POLICY "Reviews public view" ON shop_reviews FOR SELECT USING (is_visible = true);
--- CREATE POLICY "Reviews customer manage" ON shop_reviews FOR ALL USING (customer_id = auth.uid());
+-- DROP POLICY IF EXISTS "Shops owner full access" ON shops;
+CREATE POLICY "Shops owner full access" ON shops FOR ALL USING (owner_id = auth.uid());
+-- DROP POLICY IF EXISTS "Shops public view" ON shops;
+CREATE POLICY "Shops public view" ON shops FOR SELECT USING (status = 'active');
+-- DROP POLICY IF EXISTS "Shop staff access" ON shop_staff;
+CREATE POLICY "Shop staff access" ON shop_staff FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()) OR user_id = auth.uid());
+-- DROP POLICY IF EXISTS "Products shop manage" ON shop_products;
+CREATE POLICY "Products shop manage" ON shop_products FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
+-- DROP POLICY IF EXISTS "Products public view" ON shop_products;
+CREATE POLICY "Products public view" ON shop_products FOR SELECT USING (shop_id IN (SELECT id FROM shops WHERE status = 'active') AND is_active = true);
+-- DROP POLICY IF EXISTS "Orders shop manage" ON shop_orders;
+CREATE POLICY "Orders shop manage" ON shop_orders FOR ALL USING (shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
+-- DROP POLICY IF EXISTS "Orders customer view" ON shop_orders;
+CREATE POLICY "Orders customer view" ON shop_orders FOR SELECT USING (customer_id = auth.uid());
+-- DROP POLICY IF EXISTS "Messages participants" ON shop_messages;
+CREATE POLICY "Messages participants" ON shop_messages FOR ALL USING (customer_id = auth.uid() OR shop_id IN (SELECT id FROM shops WHERE owner_id = auth.uid()));
+-- DROP POLICY IF EXISTS "Affiliates user view" ON shop_affiliates;
+CREATE POLICY "Affiliates user view" ON shop_affiliates FOR ALL USING (user_id = auth.uid());
+-- DROP POLICY IF EXISTS "Reviews public view" ON shop_reviews;
+CREATE POLICY "Reviews public view" ON shop_reviews FOR SELECT USING (is_visible = true);
+-- DROP POLICY IF EXISTS "Reviews customer manage" ON shop_reviews;
+CREATE POLICY "Reviews customer manage" ON shop_reviews FOR ALL USING (customer_id = auth.uid());
 
 -- ============================================================
 -- TRIGGERS

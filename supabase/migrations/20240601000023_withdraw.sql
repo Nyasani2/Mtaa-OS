@@ -291,7 +291,8 @@ $$;
 --         AND tablename = 'escrow_accounts' 
 --         AND policyname = 'Users can view own escrow'
 --     ) THEN
---         CREATE POLICY "Users can view own escrow" ON escrow_accounts
+--         DROP POLICY IF EXISTS "Users can view own escrow" ON escrow_accounts;
+CREATE POLICY "Users can view own escrow" ON escrow_accounts
 --             FOR SELECT USING (user_id = auth.uid());
 --     END IF;
 -- END $$;

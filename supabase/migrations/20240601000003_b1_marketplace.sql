@@ -69,24 +69,30 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_disputes ENABLE ROW LEVEL SECURITY;
 
 -- 6. RLS Policies — cart_items
--- CREATE POLICY "Users can view own cart" ON cart_items
+-- DROP POLICY IF EXISTS "Users can view own cart" ON cart_items;
+CREATE POLICY "Users can view own cart" ON cart_items
 --     FOR SELECT USING (user_id = auth.uid());
 
--- CREATE POLICY "Users can manage own cart" ON cart_items
+-- DROP POLICY IF EXISTS "Users can manage own cart" ON cart_items;
+CREATE POLICY "Users can manage own cart" ON cart_items
 --     FOR ALL USING (user_id = auth.uid());
 
 -- 7. RLS Policies — orders
--- CREATE POLICY "Buyers can view own orders" ON orders
+-- DROP POLICY IF EXISTS "Buyers can view own orders" ON orders;
+CREATE POLICY "Buyers can view own orders" ON orders
 --     FOR SELECT USING (buyer_id = auth.uid());
 
--- CREATE POLICY "Sellers can view their orders" ON orders
+-- DROP POLICY IF EXISTS "Sellers can view their orders" ON orders;
+CREATE POLICY "Sellers can view their orders" ON orders
 --     FOR SELECT USING (seller_id = auth.uid());
 
--- CREATE POLICY "Users can update own orders" ON orders
+-- DROP POLICY IF EXISTS "Users can update own orders" ON orders;
+CREATE POLICY "Users can update own orders" ON orders
 --     FOR UPDATE USING (buyer_id = auth.uid() OR seller_id = auth.uid());
 
 -- 8. RLS Policies — order_items
--- CREATE POLICY "Users can view own order items" ON order_items
+-- DROP POLICY IF EXISTS "Users can view own order items" ON order_items;
+CREATE POLICY "Users can view own order items" ON order_items
 --     FOR SELECT USING (
 --         EXISTS (
 --             SELECT 1 FROM orders o 
@@ -96,7 +102,8 @@ ALTER TABLE order_disputes ENABLE ROW LEVEL SECURITY;
 --     );
 
 -- 9. RLS Policies — order_disputes
--- CREATE POLICY "Users can view own disputes" ON order_disputes
+-- DROP POLICY IF EXISTS "Users can view own disputes" ON order_disputes;
+CREATE POLICY "Users can view own disputes" ON order_disputes
 --     FOR SELECT USING (
 --         EXISTS (
 --             SELECT 1 FROM orders o 
@@ -105,7 +112,8 @@ ALTER TABLE order_disputes ENABLE ROW LEVEL SECURITY;
 --         )
 --     );
 
--- CREATE POLICY "Users can raise disputes" ON order_disputes
+-- DROP POLICY IF EXISTS "Users can raise disputes" ON order_disputes;
+CREATE POLICY "Users can raise disputes" ON order_disputes
 --     FOR INSERT WITH CHECK (raised_by = auth.uid());
 
 -- 10. RPC: reserve_marketplace_funds

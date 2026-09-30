@@ -426,57 +426,91 @@ ALTER TABLE public.interviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_analytics ENABLE ROW LEVEL SECURITY;
 
 -- Jobs: anyone can view published, employer can manage own
+DROP POLICY IF EXISTS "jobs_select_public" ON public;
 CREATE POLICY "jobs_select_public" ON public.jobs FOR SELECT USING (status = 'published');
+DROP POLICY IF EXISTS "jobs_select_owner" ON public;
 CREATE POLICY "jobs_select_owner" ON public.jobs FOR SELECT USING (employer_id = auth.uid());
+DROP POLICY IF EXISTS "jobs_insert" ON public;
 CREATE POLICY "jobs_insert" ON public.jobs FOR INSERT WITH CHECK (employer_id = auth.uid());
+DROP POLICY IF EXISTS "jobs_update" ON public;
 CREATE POLICY "jobs_update" ON public.jobs FOR UPDATE USING (employer_id = auth.uid());
+DROP POLICY IF EXISTS "jobs_delete" ON public;
 CREATE POLICY "jobs_delete" ON public.jobs FOR DELETE USING (employer_id = auth.uid());
 
 -- Applications: applicant can manage own, employer can view for their jobs
+DROP POLICY IF EXISTS "apps_select_applicant" ON public;
 CREATE POLICY "apps_select_applicant" ON public.job_applications FOR SELECT USING (applicant_id = auth.uid());
+DROP POLICY IF EXISTS "apps_select_employer" ON public;
 CREATE POLICY "apps_select_employer" ON public.job_applications FOR SELECT USING (EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid()));
+DROP POLICY IF EXISTS "apps_insert" ON public;
 CREATE POLICY "apps_insert" ON public.job_applications FOR INSERT WITH CHECK (applicant_id = auth.uid());
+DROP POLICY IF EXISTS "apps_update_applicant" ON public;
 CREATE POLICY "apps_update_applicant" ON public.job_applications FOR UPDATE USING (applicant_id = auth.uid());
+DROP POLICY IF EXISTS "apps_update_employer" ON public;
 CREATE POLICY "apps_update_employer" ON public.job_applications FOR UPDATE USING (EXISTS (SELECT 1 FROM public.jobs WHERE id = job_id AND employer_id = auth.uid()));
 
 -- Saved jobs
+DROP POLICY IF EXISTS "saved_select" ON public;
 CREATE POLICY "saved_select" ON public.saved_jobs FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "saved_insert" ON public;
 CREATE POLICY "saved_insert" ON public.saved_jobs FOR INSERT WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "saved_delete" ON public;
 CREATE POLICY "saved_delete" ON public.saved_jobs FOR DELETE USING (user_id = auth.uid());
 
 -- Worker profiles: public read, owner write
+DROP POLICY IF EXISTS "worker_select_public" ON public;
 CREATE POLICY "worker_select_public" ON public.worker_profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "worker_select_owner" ON public;
 CREATE POLICY "worker_select_owner" ON public.worker_profiles FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "worker_insert" ON public;
 CREATE POLICY "worker_insert" ON public.worker_profiles FOR INSERT WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS "worker_update" ON public;
 CREATE POLICY "worker_update" ON public.worker_profiles FOR UPDATE USING (user_id = auth.uid());
 
 -- Companies: public read, members write
+DROP POLICY IF EXISTS "company_select_public" ON public;
 CREATE POLICY "company_select_public" ON public.companies FOR SELECT USING (true);
+DROP POLICY IF EXISTS "company_select_member" ON public;
 CREATE POLICY "company_select_member" ON public.companies FOR SELECT USING (EXISTS (SELECT 1 FROM public.company_members WHERE company_id = id AND user_id = auth.uid()));
+DROP POLICY IF EXISTS "company_insert" ON public;
 CREATE POLICY "company_insert" ON public.companies FOR INSERT WITH CHECK (owner_id = auth.uid());
+DROP POLICY IF EXISTS "company_update" ON public;
 CREATE POLICY "company_update" ON public.companies FOR UPDATE USING (EXISTS (SELECT 1 FROM public.company_members WHERE company_id = id AND user_id = auth.uid() AND role IN ('owner','admin')));
 
 -- Freelance projects: public read open, owner manage
+DROP POLICY IF EXISTS "fp_select_public" ON public;
 CREATE POLICY "fp_select_public" ON public.freelance_projects FOR SELECT USING (status = 'open');
+DROP POLICY IF EXISTS "fp_select_owner" ON public;
 CREATE POLICY "fp_select_owner" ON public.freelance_projects FOR SELECT USING (client_id = auth.uid());
+DROP POLICY IF EXISTS "fp_insert" ON public;
 CREATE POLICY "fp_insert" ON public.freelance_projects FOR INSERT WITH CHECK (client_id = auth.uid());
+DROP POLICY IF EXISTS "fp_update" ON public;
 CREATE POLICY "fp_update" ON public.freelance_projects FOR UPDATE USING (client_id = auth.uid());
 
 -- Contracts: both parties can view
+DROP POLICY IF EXISTS "contract_select_party" ON public;
 CREATE POLICY "contract_select_party" ON public.contracts FOR SELECT USING (employer_id = auth.uid() OR worker_id = auth.uid());
+DROP POLICY IF EXISTS "contract_insert" ON public;
 CREATE POLICY "contract_insert" ON public.contracts FOR INSERT WITH CHECK (employer_id = auth.uid());
+DROP POLICY IF EXISTS "contract_update_party" ON public;
 CREATE POLICY "contract_update_party" ON public.contracts FOR UPDATE USING (employer_id = auth.uid() OR worker_id = auth.uid());
 
 -- Interviews: both parties
+DROP POLICY IF EXISTS "interview_select" ON public;
 CREATE POLICY "interview_select" ON public.interviews FOR SELECT USING (employer_id = auth.uid() OR candidate_id = auth.uid());
+DROP POLICY IF EXISTS "interview_insert" ON public;
 CREATE POLICY "interview_insert" ON public.interviews FOR INSERT WITH CHECK (employer_id = auth.uid());
+DROP POLICY IF EXISTS "interview_update" ON public;
 CREATE POLICY "interview_update" ON public.interviews FOR UPDATE USING (employer_id = auth.uid() OR candidate_id = auth.uid());
 
 -- Scholarships & Tenders: public read
+DROP POLICY IF EXISTS "scholarship_select" ON public;
 CREATE POLICY "scholarship_select" ON public.scholarships FOR SELECT USING (true);
+DROP POLICY IF EXISTS "tender_select" ON public;
 CREATE POLICY "tender_select" ON public.tenders FOR SELECT USING (true);
 
 -- Analytics: insert by anyone, select by admin
+DROP POLICY IF EXISTS "analytics_insert" ON public;
 CREATE POLICY "analytics_insert" ON public.job_analytics FOR INSERT WITH CHECK (true);
 
 -- ============================================================

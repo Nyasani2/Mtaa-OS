@@ -105,20 +105,24 @@ ALTER TABLE qr_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE qr_scans ENABLE ROW LEVEL SECURITY;
 
 -- QR Codes: owners can manage their own, anyone can view active ones
+DROP POLICY IF EXISTS "Owners can manage their QR codes" ON qr_codes;
 CREATE POLICY "Owners can manage their QR codes"
     ON qr_codes FOR ALL
     USING (auth.uid() = owner_id)
     WITH CHECK (auth.uid() = owner_id);
 
+DROP POLICY IF EXISTS "Anyone can view active QR codes" ON qr_codes;
 CREATE POLICY "Anyone can view active QR codes"
     ON qr_codes FOR SELECT
     USING (is_active = true);
 
 -- QR Scans: scanners can see their own scans, QR owners can see scans of their QRs
+DROP POLICY IF EXISTS "Scanners can view their scans" ON qr_scans;
 CREATE POLICY "Scanners can view their scans"
     ON qr_scans FOR SELECT
     USING (auth.uid() = scanner_id);
 
+DROP POLICY IF EXISTS "QR owners can view scans of their codes" ON qr_scans;
 CREATE POLICY "QR owners can view scans of their codes"
     ON qr_scans FOR SELECT
     USING (
@@ -129,6 +133,7 @@ CREATE POLICY "QR owners can view scans of their codes"
         )
     );
 
+DROP POLICY IF EXISTS "Authenticated users can create scans" ON qr_scans;
 CREATE POLICY "Authenticated users can create scans"
     ON qr_scans FOR INSERT
     WITH CHECK (auth.uid() = scanner_id);

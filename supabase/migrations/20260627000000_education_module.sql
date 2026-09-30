@@ -338,89 +338,113 @@ CREATE TABLE IF NOT EXISTS education_events (
 -- ALTER TABLE education_events ENABLE ROW LEVEL SECURITY;
 
 -- Institutions: anyone can view active schools
--- CREATE POLICY "institutions_select_all" ON education_institutions FOR SELECT USING (status = 'active');
--- CREATE POLICY "institutions_insert_admin" ON education_institutions FOR INSERT WITH CHECK (true);
--- CREATE POLICY "institutions_update_admin" ON education_institutions FOR UPDATE USING (
+-- DROP POLICY IF EXISTS "institutions_select_all" ON education_institutions;
+CREATE POLICY "institutions_select_all" ON education_institutions FOR SELECT USING (status = 'active');
+-- DROP POLICY IF EXISTS "institutions_insert_admin" ON education_institutions;
+CREATE POLICY "institutions_insert_admin" ON education_institutions FOR INSERT WITH CHECK (true);
+-- DROP POLICY IF EXISTS "institutions_update_admin" ON education_institutions;
+CREATE POLICY "institutions_update_admin" ON education_institutions FOR UPDATE USING (
 --   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_institutions.id)
 -- );
 
 -- School Admins: principals can manage their school
--- CREATE POLICY "school_admins_select" ON education_school_admins FOR SELECT USING (true);
--- CREATE POLICY "school_admins_insert" ON education_school_admins FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "school_admins_select" ON education_school_admins;
+CREATE POLICY "school_admins_select" ON education_school_admins FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "school_admins_insert" ON education_school_admins;
+CREATE POLICY "school_admins_insert" ON education_school_admins FOR INSERT WITH CHECK (
 --   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_school_admins.institution_id AND role = 'principal')
 -- );
 
 -- Teachers: can view their school's data
--- CREATE POLICY "teachers_select" ON education_teachers FOR SELECT USING (true);
--- CREATE POLICY "teachers_insert" ON education_teachers FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "teachers_select" ON education_teachers;
+CREATE POLICY "teachers_select" ON education_teachers FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "teachers_insert" ON education_teachers;
+CREATE POLICY "teachers_insert" ON education_teachers FOR INSERT WITH CHECK (
 --   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_teachers.institution_id)
 -- );
 
 -- Students: view own record, parents view their children
--- CREATE POLICY "students_select" ON education_students FOR SELECT USING (
+-- DROP POLICY IF EXISTS "students_select" ON education_students;
+CREATE POLICY "students_select" ON education_students FOR SELECT USING (
 --   user_id = auth.uid() OR
 --   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_students.id)
 -- );
 
 -- Parents: view own connections
--- CREATE POLICY "parent_connections_select" ON education_parent_connections FOR SELECT USING (
+-- DROP POLICY IF EXISTS "parent_connections_select" ON education_parent_connections;
+CREATE POLICY "parent_connections_select" ON education_parent_connections FOR SELECT USING (
 --   parent_id = auth.uid() OR
 --   EXISTS (SELECT 1 FROM education_students WHERE id = education_parent_connections.student_id AND user_id = auth.uid())
 -- );
 
 -- Classes: view if student or teacher in class
--- CREATE POLICY "classes_select" ON education_classes FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "classes_select" ON education_classes;
+CREATE POLICY "classes_select" ON education_classes FOR SELECT USING (true);
 
 -- Assignments: view if in class
--- CREATE POLICY "assignments_select" ON education_assignments FOR SELECT USING (true);
--- CREATE POLICY "assignments_insert" ON education_assignments FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "assignments_select" ON education_assignments;
+CREATE POLICY "assignments_select" ON education_assignments FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "assignments_insert" ON education_assignments;
+CREATE POLICY "assignments_insert" ON education_assignments FOR INSERT WITH CHECK (
 --   teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
 -- );
 
 -- Submissions: student submits, teacher grades
--- CREATE POLICY "submissions_select" ON education_submissions FOR SELECT USING (
+-- DROP POLICY IF EXISTS "submissions_select" ON education_submissions;
+CREATE POLICY "submissions_select" ON education_submissions FOR SELECT USING (
 --   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
 --   EXISTS (SELECT 1 FROM education_assignments WHERE id = education_submissions.assignment_id AND teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid()))
 -- );
 
 -- Grades: view own or parent's children
--- CREATE POLICY "grades_select" ON education_grades FOR SELECT USING (
+-- DROP POLICY IF EXISTS "grades_select" ON education_grades;
+CREATE POLICY "grades_select" ON education_grades FOR SELECT USING (
 --   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
 --   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_grades.student_id)
 -- );
 
 -- Attendance: view own or parent's children
--- CREATE POLICY "attendance_select" ON education_attendance FOR SELECT USING (
+-- DROP POLICY IF EXISTS "attendance_select" ON education_attendance;
+CREATE POLICY "attendance_select" ON education_attendance FOR SELECT USING (
 --   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
 --   EXISTS (SELECT 1 FROM education_parent_connections WHERE parent_id = auth.uid() AND student_id = education_attendance.student_id)
 -- );
--- CREATE POLICY "attendance_insert" ON education_attendance FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "attendance_insert" ON education_attendance;
+CREATE POLICY "attendance_insert" ON education_attendance FOR INSERT WITH CHECK (
 --   EXISTS (SELECT 1 FROM education_teachers WHERE user_id = auth.uid() AND id = education_attendance.marked_by)
 -- );
 
 -- Timetable: view if in class
--- CREATE POLICY "timetable_select" ON education_timetable FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "timetable_select" ON education_timetable;
+CREATE POLICY "timetable_select" ON education_timetable FOR SELECT USING (true);
 
 -- Messages: sender or receiver
--- CREATE POLICY "messages_select" ON education_messages FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid());
--- CREATE POLICY "messages_insert" ON education_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
+-- DROP POLICY IF EXISTS "messages_select" ON education_messages;
+CREATE POLICY "messages_select" ON education_messages FOR SELECT USING (sender_id = auth.uid() OR receiver_id = auth.uid());
+-- DROP POLICY IF EXISTS "messages_insert" ON education_messages;
+CREATE POLICY "messages_insert" ON education_messages FOR INSERT WITH CHECK (sender_id = auth.uid());
 
 -- Fees: view if admin or parent of student
--- CREATE POLICY "fees_select" ON education_fees FOR SELECT USING (true);
--- CREATE POLICY "fee_payments_select" ON education_fee_payments FOR SELECT USING (
+-- DROP POLICY IF EXISTS "fees_select" ON education_fees;
+CREATE POLICY "fees_select" ON education_fees FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "fee_payments_select" ON education_fee_payments;
+CREATE POLICY "fee_payments_select" ON education_fee_payments FOR SELECT USING (
 --   payer_id = auth.uid() OR
 --   EXISTS (SELECT 1 FROM education_school_admins WHERE user_id = auth.uid() AND institution_id = education_fee_payments.fee_id)
 -- );
 
 -- Library: view all, borrow if student/teacher
--- CREATE POLICY "library_select" ON education_library_resources FOR SELECT USING (true);
--- CREATE POLICY "library_borrows_select" ON education_library_borrows FOR SELECT USING (
+-- DROP POLICY IF EXISTS "library_select" ON education_library_resources;
+CREATE POLICY "library_select" ON education_library_resources FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "library_borrows_select" ON education_library_borrows;
+CREATE POLICY "library_borrows_select" ON education_library_borrows FOR SELECT USING (
 --   student_id IN (SELECT id FROM education_students WHERE user_id = auth.uid()) OR
 --   teacher_id IN (SELECT id FROM education_teachers WHERE user_id = auth.uid())
 -- );
 
 -- Events: view all
--- CREATE POLICY "events_select" ON education_events FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "events_select" ON education_events;
+CREATE POLICY "events_select" ON education_events FOR SELECT USING (true);
 
 -- ============================================================
 -- INDEXES

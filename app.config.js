@@ -54,6 +54,12 @@ export default {
       typedRoutes: true,
       tsconfigPaths: true,
     },
+    updates: {
+      url: "https://u.expo.dev/67589048-d14b-4c80-8ce3-4955651494d9",
+    },
+    runtimeVersion: {
+      policy: "appVersion",
+    },
     extra: {
       eas: {
         projectId: "67589048-d14b-4c80-8ce3-4955651494d9",

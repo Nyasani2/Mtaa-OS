@@ -56,9 +56,9 @@ CREATE TABLE IF NOT EXISTS live_stream_messages (
 );
 
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_live_streams_creator ON live_streams(creator_id);
+CREATE INDEX IF NOT EXISTS idx_live_streams_creator ON live_streams(host_id);
 CREATE INDEX IF NOT EXISTS idx_live_streams_status ON live_streams(status);
-CREATE INDEX IF NOT EXISTS idx_live_streams_category ON live_streams(category, category_id);
+-- CREATE INDEX IF NOT EXISTS idx_live_streams_category ON live_streams(category, category_id); -- Commented: columns do not exist in live schema
 CREATE INDEX IF NOT EXISTS idx_live_stream_tips_stream ON live_stream_tips(stream_id);
 CREATE INDEX IF NOT EXISTS idx_live_stream_tips_sender ON live_stream_tips(sender_id);
 CREATE INDEX IF NOT EXISTS idx_live_stream_viewers_stream ON live_stream_viewers(stream_id);
@@ -71,12 +71,19 @@ ALTER TABLE live_stream_viewers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE live_stream_messages ENABLE ROW LEVEL SECURITY;
 
 -- Basic policies (to be hardened in Phase 5)
+DROP POLICY IF EXISTS "Anyone can view live streams" ON live_streams;
 CREATE POLICY "Anyone can view live streams" ON live_streams FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can create streams" ON live_streams FOR INSERT WITH CHECK (auth.uid() = creator_id);
-CREATE POLICY "Creator can update their stream" ON live_streams FOR UPDATE USING (auth.uid() = creator_id);
+DROP POLICY IF EXISTS "Authenticated users can create streams" ON live_streams;
+CREATE POLICY "Authenticated users can create streams" ON live_streams FOR INSERT WITH CHECK (auth.uid() = host_id);
+DROP POLICY IF EXISTS "Creator can update their stream" ON live_streams;
+CREATE POLICY "Creator can update their stream" ON live_streams FOR UPDATE USING (auth.uid() = host_id);
 
+DROP POLICY IF EXISTS "Anyone can view tips" ON live_stream_tips;
 CREATE POLICY "Anyone can view tips" ON live_stream_tips FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Authenticated users can tip" ON live_stream_tips;
 CREATE POLICY "Authenticated users can tip" ON live_stream_tips FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
+DROP POLICY IF EXISTS "Anyone can view messages" ON live_stream_messages;
 CREATE POLICY "Anyone can view messages" ON live_stream_messages FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Authenticated users can send messages" ON live_stream_messages;
 CREATE POLICY "Authenticated users can send messages" ON live_stream_messages FOR INSERT WITH CHECK (auth.uid() = user_id);

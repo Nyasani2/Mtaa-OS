@@ -30,18 +30,21 @@ CREATE TABLE IF NOT EXISTS obd_diagnostics (
 ALTER TABLE obd_diagnostics ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "obd_select_mechanic" ON obd_diagnostics;
--- CREATE POLICY "obd_select_mechanic" ON obd_diagnostics FOR SELECT USING (
+-- DROP POLICY IF EXISTS "obd_select_mechanic" ON obd_diagnostics;
+CREATE POLICY "obd_select_mechanic" ON obd_diagnostics FOR SELECT USING (
 --   auth.uid() = mechanic_id
 --   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
 -- );
 
 DROP POLICY IF EXISTS "obd_insert_mechanic" ON obd_diagnostics;
--- CREATE POLICY "obd_insert_mechanic" ON obd_diagnostics FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "obd_insert_mechanic" ON obd_diagnostics;
+CREATE POLICY "obd_insert_mechanic" ON obd_diagnostics FOR INSERT WITH CHECK (
 --   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'mechanic'))
 -- );
 
 DROP POLICY IF EXISTS "obd_update_mechanic" ON obd_diagnostics;
--- CREATE POLICY "obd_update_mechanic" ON obd_diagnostics FOR UPDATE USING (
+-- DROP POLICY IF EXISTS "obd_update_mechanic" ON obd_diagnostics;
+CREATE POLICY "obd_update_mechanic" ON obd_diagnostics FOR UPDATE USING (
 --   auth.uid() = mechanic_id
 --   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'mechanic'))
 -- );
@@ -74,13 +77,15 @@ CREATE TABLE IF NOT EXISTS repair_records (
 ALTER TABLE repair_records ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "repair_select_participants" ON repair_records;
--- CREATE POLICY "repair_select_participants" ON repair_records FOR SELECT USING (
+-- DROP POLICY IF EXISTS "repair_select_participants" ON repair_records;
+CREATE POLICY "repair_select_participants" ON repair_records FOR SELECT USING (
 --   auth.uid() = mechanic_id
 --   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
 -- );
 
 DROP POLICY IF EXISTS "repair_insert_mechanic" ON repair_records;
--- CREATE POLICY "repair_insert_mechanic" ON repair_records FOR INSERT WITH CHECK (
+-- DROP POLICY IF EXISTS "repair_insert_mechanic" ON repair_records;
+CREATE POLICY "repair_insert_mechanic" ON repair_records FOR INSERT WITH CHECK (
 --   auth.uid() = mechanic_id
 --   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'mechanic'))
 -- );
@@ -109,15 +114,18 @@ CREATE TABLE IF NOT EXISTS fleet_alerts (
 ALTER TABLE fleet_alerts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "fleet_alerts_select_all" ON fleet_alerts;
--- CREATE POLICY "fleet_alerts_select_all" ON fleet_alerts FOR SELECT USING (
+-- DROP POLICY IF EXISTS "fleet_alerts_select_all" ON fleet_alerts;
+CREATE POLICY "fleet_alerts_select_all" ON fleet_alerts FOR SELECT USING (
 --   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
 -- );
 
 DROP POLICY IF EXISTS "fleet_alerts_insert_system" ON fleet_alerts;
--- CREATE POLICY "fleet_alerts_insert_system" ON fleet_alerts FOR INSERT WITH CHECK (true);
+-- DROP POLICY IF EXISTS "fleet_alerts_insert_system" ON fleet_alerts;
+CREATE POLICY "fleet_alerts_insert_system" ON fleet_alerts FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "fleet_alerts_ack_admin" ON fleet_alerts;
--- CREATE POLICY "fleet_alerts_ack_admin" ON fleet_alerts FOR UPDATE USING (
+-- DROP POLICY IF EXISTS "fleet_alerts_ack_admin" ON fleet_alerts;
+CREATE POLICY "fleet_alerts_ack_admin" ON fleet_alerts FOR UPDATE USING (
 --   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager', 'mechanic'))
 -- );
 

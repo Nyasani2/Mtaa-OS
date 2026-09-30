@@ -136,22 +136,34 @@ ALTER TABLE public.paybill_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.phone_registry ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_audit_logs ENABLE ROW LEVEL SECURITY;
 
--- -- CREATE POLICY "Business owners can view own business" ON public.businesses FOR SELECT USING (owner_id = auth.uid());
--- -- CREATE POLICY "Business owners can update own business" ON public.businesses FOR UPDATE USING (owner_id = auth.uid());
--- -- CREATE POLICY "Admins can view all businesses" ON public.businesses FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
--- -- CREATE POLICY "Admins can update all businesses" ON public.businesses FOR UPDATE USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- DROP POLICY IF EXISTS "Business owners can view own business" ON public;
+CREATE POLICY "Business owners can view own business" ON public.businesses FOR SELECT USING (owner_id = auth.uid());
+-- -- DROP POLICY IF EXISTS "Business owners can update own business" ON public;
+CREATE POLICY "Business owners can update own business" ON public.businesses FOR UPDATE USING (owner_id = auth.uid());
+-- -- DROP POLICY IF EXISTS "Admins can view all businesses" ON public;
+CREATE POLICY "Admins can view all businesses" ON public.businesses FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- DROP POLICY IF EXISTS "Admins can update all businesses" ON public;
+CREATE POLICY "Admins can update all businesses" ON public.businesses FOR UPDATE USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
 
--- -- CREATE POLICY "Business owners can view own till payments" ON public.till_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
--- -- CREATE POLICY "Edge functions can insert till payments" ON public.till_payments FOR INSERT WITH CHECK (true);
+-- -- DROP POLICY IF EXISTS "Business owners can view own till payments" ON public;
+CREATE POLICY "Business owners can view own till payments" ON public.till_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- DROP POLICY IF EXISTS "Edge functions can insert till payments" ON public;
+CREATE POLICY "Edge functions can insert till payments" ON public.till_payments FOR INSERT WITH CHECK (true);
 
--- -- CREATE POLICY "Business owners can view own paybill payments" ON public.paybill_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
--- -- CREATE POLICY "Edge functions can insert paybill payments" ON public.paybill_payments FOR INSERT WITH CHECK (true);
+-- -- DROP POLICY IF EXISTS "Business owners can view own paybill payments" ON public;
+CREATE POLICY "Business owners can view own paybill payments" ON public.paybill_payments FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- DROP POLICY IF EXISTS "Edge functions can insert paybill payments" ON public;
+CREATE POLICY "Edge functions can insert paybill payments" ON public.paybill_payments FOR INSERT WITH CHECK (true);
 
--- -- CREATE POLICY "Anyone can read phone registry" ON public.phone_registry FOR SELECT USING (true);
--- -- CREATE POLICY "Edge functions can insert phone registry" ON public.phone_registry FOR INSERT WITH CHECK (true);
+-- -- DROP POLICY IF EXISTS "Anyone can read phone registry" ON public;
+CREATE POLICY "Anyone can read phone registry" ON public.phone_registry FOR SELECT USING (true);
+-- -- DROP POLICY IF EXISTS "Edge functions can insert phone registry" ON public;
+CREATE POLICY "Edge functions can insert phone registry" ON public.phone_registry FOR INSERT WITH CHECK (true);
 
--- -- CREATE POLICY "Business owners can view own audit logs" ON public.business_audit_logs FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
--- -- CREATE POLICY "Admins can view all audit logs" ON public.business_audit_logs FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
+-- -- DROP POLICY IF EXISTS "Business owners can view own audit logs" ON public;
+CREATE POLICY "Business owners can view own audit logs" ON public.business_audit_logs FOR SELECT USING (business_id IN (SELECT id FROM public.businesses WHERE owner_id = auth.uid()));
+-- -- DROP POLICY IF EXISTS "Admins can view all audit logs" ON public;
+CREATE POLICY "Admins can view all audit logs" ON public.business_audit_logs FOR SELECT USING (EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND raw_user_meta_data->>'role' = 'admin'));
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column() RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = now(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 

@@ -32,8 +32,11 @@ ALTER TABLE public.health_facilities ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow authenticated insert facilities" ON public.health_facilities;
 DROP POLICY IF EXISTS "Allow authenticated read facilities" ON public.health_facilities;
 
+DROP POLICY IF EXISTS "Allow authenticated insert facilities" ON public;
 CREATE POLICY "Allow authenticated insert facilities" ON public.health_facilities FOR INSERT TO authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow authenticated read facilities" ON public;
 CREATE POLICY "Allow authenticated read facilities" ON public.health_facilities FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Allow authenticated update facilities" ON public;
 CREATE POLICY "Allow authenticated update facilities" ON public.health_facilities FOR UPDATE TO authenticated USING (true);
 
 -- ==========================================

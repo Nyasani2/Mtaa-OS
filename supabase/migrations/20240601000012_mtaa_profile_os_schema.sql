@@ -204,16 +204,20 @@ CREATE TABLE IF NOT EXISTS profile_roles (
 
 ALTER TABLE profile_roles ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_roles_select_own" ON profile_roles
+-- DROP POLICY IF EXISTS "profile_roles_select_own" ON profile_roles;
+CREATE POLICY "profile_roles_select_own" ON profile_roles
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_roles_insert_own" ON profile_roles
+-- DROP POLICY IF EXISTS "profile_roles_insert_own" ON profile_roles;
+CREATE POLICY "profile_roles_insert_own" ON profile_roles
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_roles_update_own" ON profile_roles
+-- DROP POLICY IF EXISTS "profile_roles_update_own" ON profile_roles;
+CREATE POLICY "profile_roles_update_own" ON profile_roles
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_roles_delete_own" ON profile_roles
+-- DROP POLICY IF EXISTS "profile_roles_delete_own" ON profile_roles;
+CREATE POLICY "profile_roles_delete_own" ON profile_roles
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -244,13 +248,16 @@ CREATE TABLE IF NOT EXISTS profile_verifications (
 
 ALTER TABLE profile_verifications ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_verifications_select_own" ON profile_verifications
+-- DROP POLICY IF EXISTS "profile_verifications_select_own" ON profile_verifications;
+CREATE POLICY "profile_verifications_select_own" ON profile_verifications
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_verifications_insert_own" ON profile_verifications
+-- DROP POLICY IF EXISTS "profile_verifications_insert_own" ON profile_verifications;
+CREATE POLICY "profile_verifications_insert_own" ON profile_verifications
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_verifications_update_own" ON profile_verifications
+-- DROP POLICY IF EXISTS "profile_verifications_update_own" ON profile_verifications;
+CREATE POLICY "profile_verifications_update_own" ON profile_verifications
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -288,10 +295,12 @@ CREATE TABLE IF NOT EXISTS profile_reputation (
 
 ALTER TABLE profile_reputation ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_reputation_select_all" ON profile_reputation
+-- DROP POLICY IF EXISTS "profile_reputation_select_all" ON profile_reputation;
+CREATE POLICY "profile_reputation_select_all" ON profile_reputation
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "profile_reputation_update_system" ON profile_reputation
+-- DROP POLICY IF EXISTS "profile_reputation_update_system" ON profile_reputation;
+CREATE POLICY "profile_reputation_update_system" ON profile_reputation
 --     FOR ALL USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -325,7 +334,8 @@ CREATE TABLE IF NOT EXISTS profile_achievements (
 
 ALTER TABLE profile_achievements ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_achievements_select_public" ON profile_achievements
+-- DROP POLICY IF EXISTS "profile_achievements_select_public" ON profile_achievements;
+CREATE POLICY "profile_achievements_select_public" ON profile_achievements
 --     FOR SELECT USING (
 --         visibility = 'public' OR
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
@@ -336,13 +346,16 @@ ALTER TABLE profile_achievements ENABLE ROW LEVEL SECURITY;
 --         ))
 --     );
 
--- CREATE POLICY "profile_achievements_insert_own" ON profile_achievements
+-- DROP POLICY IF EXISTS "profile_achievements_insert_own" ON profile_achievements;
+CREATE POLICY "profile_achievements_insert_own" ON profile_achievements
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_achievements_update_own" ON profile_achievements
+-- DROP POLICY IF EXISTS "profile_achievements_update_own" ON profile_achievements;
+CREATE POLICY "profile_achievements_update_own" ON profile_achievements
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_achievements_delete_own" ON profile_achievements
+-- DROP POLICY IF EXISTS "profile_achievements_delete_own" ON profile_achievements;
+CREATE POLICY "profile_achievements_delete_own" ON profile_achievements
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -377,16 +390,20 @@ CREATE TABLE IF NOT EXISTS profile_portfolios (
 
 ALTER TABLE profile_portfolios ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_portfolios_select_public" ON profile_portfolios
+-- DROP POLICY IF EXISTS "profile_portfolios_select_public" ON profile_portfolios;
+CREATE POLICY "profile_portfolios_select_public" ON profile_portfolios
 --     FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_portfolios_insert_own" ON profile_portfolios
+-- DROP POLICY IF EXISTS "profile_portfolios_insert_own" ON profile_portfolios;
+CREATE POLICY "profile_portfolios_insert_own" ON profile_portfolios
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_portfolios_update_own" ON profile_portfolios
+-- DROP POLICY IF EXISTS "profile_portfolios_update_own" ON profile_portfolios;
+CREATE POLICY "profile_portfolios_update_own" ON profile_portfolios
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_portfolios_delete_own" ON profile_portfolios
+-- DROP POLICY IF EXISTS "profile_portfolios_delete_own" ON profile_portfolios;
+CREATE POLICY "profile_portfolios_delete_own" ON profile_portfolios
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -418,18 +435,22 @@ CREATE TABLE IF NOT EXISTS profile_projects (
 
 ALTER TABLE profile_projects ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_projects_select_public" ON profile_projects
+-- DROP POLICY IF EXISTS "profile_projects_select_public" ON profile_projects;
+CREATE POLICY "profile_projects_select_public" ON profile_projects
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR EXISTS (
 --         SELECT 1 FROM profile_portfolios WHERE id = profile_projects.portfolio_id AND is_public = true
 --     ));
 
--- CREATE POLICY "profile_projects_insert_own" ON profile_projects
+-- DROP POLICY IF EXISTS "profile_projects_insert_own" ON profile_projects;
+CREATE POLICY "profile_projects_insert_own" ON profile_projects
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_projects_update_own" ON profile_projects
+-- DROP POLICY IF EXISTS "profile_projects_update_own" ON profile_projects;
+CREATE POLICY "profile_projects_update_own" ON profile_projects
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_projects_delete_own" ON profile_projects
+-- DROP POLICY IF EXISTS "profile_projects_delete_own" ON profile_projects;
+CREATE POLICY "profile_projects_delete_own" ON profile_projects
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -457,16 +478,20 @@ CREATE TABLE IF NOT EXISTS profile_skills (
 
 ALTER TABLE profile_skills ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_skills_select_all" ON profile_skills
+-- DROP POLICY IF EXISTS "profile_skills_select_all" ON profile_skills;
+CREATE POLICY "profile_skills_select_all" ON profile_skills
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "profile_skills_insert_own" ON profile_skills
+-- DROP POLICY IF EXISTS "profile_skills_insert_own" ON profile_skills;
+CREATE POLICY "profile_skills_insert_own" ON profile_skills
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_skills_update_own" ON profile_skills
+-- DROP POLICY IF EXISTS "profile_skills_update_own" ON profile_skills;
+CREATE POLICY "profile_skills_update_own" ON profile_skills
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_skills_delete_own" ON profile_skills
+-- DROP POLICY IF EXISTS "profile_skills_delete_own" ON profile_skills;
+CREATE POLICY "profile_skills_delete_own" ON profile_skills
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -497,16 +522,20 @@ CREATE TABLE IF NOT EXISTS profile_certifications (
 
 ALTER TABLE profile_certifications ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_certifications_select_all" ON profile_certifications
+-- DROP POLICY IF EXISTS "profile_certifications_select_all" ON profile_certifications;
+CREATE POLICY "profile_certifications_select_all" ON profile_certifications
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "profile_certifications_insert_own" ON profile_certifications
+-- DROP POLICY IF EXISTS "profile_certifications_insert_own" ON profile_certifications;
+CREATE POLICY "profile_certifications_insert_own" ON profile_certifications
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_certifications_update_own" ON profile_certifications
+-- DROP POLICY IF EXISTS "profile_certifications_update_own" ON profile_certifications;
+CREATE POLICY "profile_certifications_update_own" ON profile_certifications
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_certifications_delete_own" ON profile_certifications
+-- DROP POLICY IF EXISTS "profile_certifications_delete_own" ON profile_certifications;
+CREATE POLICY "profile_certifications_delete_own" ON profile_certifications
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -533,16 +562,20 @@ CREATE TABLE IF NOT EXISTS profile_references (
 
 ALTER TABLE profile_references ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_references_select_public" ON profile_references
+-- DROP POLICY IF EXISTS "profile_references_select_public" ON profile_references;
+CREATE POLICY "profile_references_select_public" ON profile_references
 --     FOR SELECT USING (is_public = true OR profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_references_insert_own" ON profile_references
+-- DROP POLICY IF EXISTS "profile_references_insert_own" ON profile_references;
+CREATE POLICY "profile_references_insert_own" ON profile_references
 --     FOR INSERT WITH CHECK (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_references_update_own" ON profile_references
+-- DROP POLICY IF EXISTS "profile_references_update_own" ON profile_references;
+CREATE POLICY "profile_references_update_own" ON profile_references
 --     FOR UPDATE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_references_delete_own" ON profile_references
+-- DROP POLICY IF EXISTS "profile_references_delete_own" ON profile_references;
+CREATE POLICY "profile_references_delete_own" ON profile_references
 --     FOR DELETE USING (referrer_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -566,16 +599,20 @@ CREATE TABLE IF NOT EXISTS profile_links (
 
 ALTER TABLE profile_links ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_links_select_all" ON profile_links
+-- DROP POLICY IF EXISTS "profile_links_select_all" ON profile_links;
+CREATE POLICY "profile_links_select_all" ON profile_links
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "profile_links_insert_own" ON profile_links
+-- DROP POLICY IF EXISTS "profile_links_insert_own" ON profile_links;
+CREATE POLICY "profile_links_insert_own" ON profile_links
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_links_update_own" ON profile_links
+-- DROP POLICY IF EXISTS "profile_links_update_own" ON profile_links;
+CREATE POLICY "profile_links_update_own" ON profile_links
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_links_delete_own" ON profile_links
+-- DROP POLICY IF EXISTS "profile_links_delete_own" ON profile_links;
+CREATE POLICY "profile_links_delete_own" ON profile_links
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -602,24 +639,28 @@ CREATE TABLE IF NOT EXISTS profile_connections (
 
 ALTER TABLE profile_connections ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_connections_select_own" ON profile_connections
+-- DROP POLICY IF EXISTS "profile_connections_select_own" ON profile_connections;
+CREATE POLICY "profile_connections_select_own" ON profile_connections
 --     FOR SELECT USING (
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
 --         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_connections_insert_own" ON profile_connections
+-- DROP POLICY IF EXISTS "profile_connections_insert_own" ON profile_connections;
+CREATE POLICY "profile_connections_insert_own" ON profile_connections
 --     FOR INSERT WITH CHECK (
 --         initiated_by IN (SELECT id FROM profiles WHERE user_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_connections_update_own" ON profile_connections
+-- DROP POLICY IF EXISTS "profile_connections_update_own" ON profile_connections;
+CREATE POLICY "profile_connections_update_own" ON profile_connections
 --     FOR UPDATE USING (
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
 --         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_connections_delete_own" ON profile_connections
+-- DROP POLICY IF EXISTS "profile_connections_delete_own" ON profile_connections;
+CREATE POLICY "profile_connections_delete_own" ON profile_connections
 --     FOR DELETE USING (
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
 --         connected_profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
@@ -649,16 +690,20 @@ CREATE TABLE IF NOT EXISTS profile_qr_codes (
 
 ALTER TABLE profile_qr_codes ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_qr_codes_select_own" ON profile_qr_codes
+-- DROP POLICY IF EXISTS "profile_qr_codes_select_own" ON profile_qr_codes;
+CREATE POLICY "profile_qr_codes_select_own" ON profile_qr_codes
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_qr_codes_insert_own" ON profile_qr_codes
+-- DROP POLICY IF EXISTS "profile_qr_codes_insert_own" ON profile_qr_codes;
+CREATE POLICY "profile_qr_codes_insert_own" ON profile_qr_codes
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_qr_codes_update_own" ON profile_qr_codes
+-- DROP POLICY IF EXISTS "profile_qr_codes_update_own" ON profile_qr_codes;
+CREATE POLICY "profile_qr_codes_update_own" ON profile_qr_codes
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_qr_codes_delete_own" ON profile_qr_codes
+-- DROP POLICY IF EXISTS "profile_qr_codes_delete_own" ON profile_qr_codes;
+CREATE POLICY "profile_qr_codes_delete_own" ON profile_qr_codes
 --     FOR DELETE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -690,13 +735,16 @@ CREATE TABLE IF NOT EXISTS profile_analytics (
 
 ALTER TABLE profile_analytics ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_analytics_select_own" ON profile_analytics
+-- DROP POLICY IF EXISTS "profile_analytics_select_own" ON profile_analytics;
+CREATE POLICY "profile_analytics_select_own" ON profile_analytics
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_analytics_insert_system" ON profile_analytics
+-- DROP POLICY IF EXISTS "profile_analytics_insert_system" ON profile_analytics;
+CREATE POLICY "profile_analytics_insert_system" ON profile_analytics
 --     FOR INSERT WITH CHECK (true);
 
--- CREATE POLICY "profile_analytics_update_system" ON profile_analytics
+-- DROP POLICY IF EXISTS "profile_analytics_update_system" ON profile_analytics;
+CREATE POLICY "profile_analytics_update_system" ON profile_analytics
 --     FOR UPDATE USING (true);
 
 -- ============================================================================
@@ -732,13 +780,16 @@ CREATE TABLE IF NOT EXISTS profile_settings (
 
 ALTER TABLE profile_settings ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_settings_select_own" ON profile_settings
+-- DROP POLICY IF EXISTS "profile_settings_select_own" ON profile_settings;
+CREATE POLICY "profile_settings_select_own" ON profile_settings
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_settings_insert_own" ON profile_settings
+-- DROP POLICY IF EXISTS "profile_settings_insert_own" ON profile_settings;
+CREATE POLICY "profile_settings_insert_own" ON profile_settings
 --     FOR INSERT WITH CHECK (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_settings_update_own" ON profile_settings
+-- DROP POLICY IF EXISTS "profile_settings_update_own" ON profile_settings;
+CREATE POLICY "profile_settings_update_own" ON profile_settings
 --     FOR UPDATE USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
 -- ============================================================================
@@ -764,10 +815,12 @@ CREATE TABLE IF NOT EXISTS profile_activity_log (
 
 ALTER TABLE profile_activity_log ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_activity_log_select_own" ON profile_activity_log
+-- DROP POLICY IF EXISTS "profile_activity_log_select_own" ON profile_activity_log;
+CREATE POLICY "profile_activity_log_select_own" ON profile_activity_log
 --     FOR SELECT USING (profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()));
 
--- CREATE POLICY "profile_activity_log_insert_system" ON profile_activity_log
+-- DROP POLICY IF EXISTS "profile_activity_log_insert_system" ON profile_activity_log;
+CREATE POLICY "profile_activity_log_insert_system" ON profile_activity_log
 --     FOR INSERT WITH CHECK (true);
 
 -- ============================================================================
@@ -837,20 +890,24 @@ CREATE TABLE IF NOT EXISTS business_branches (
 
 ALTER TABLE business_branches ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "business_branches_select_all" ON business_branches
+-- DROP POLICY IF EXISTS "business_branches_select_all" ON business_branches;
+CREATE POLICY "business_branches_select_all" ON business_branches
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "business_branches_insert_owner" ON business_branches
+-- DROP POLICY IF EXISTS "business_branches_insert_owner" ON business_branches;
+CREATE POLICY "business_branches_insert_owner" ON business_branches
 --     FOR INSERT WITH CHECK (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
 --     );
 
--- CREATE POLICY "business_branches_update_owner" ON business_branches
+-- DROP POLICY IF EXISTS "business_branches_update_owner" ON business_branches;
+CREATE POLICY "business_branches_update_owner" ON business_branches
 --     FOR UPDATE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
 --     );
 
--- CREATE POLICY "business_branches_delete_owner" ON business_branches
+-- DROP POLICY IF EXISTS "business_branches_delete_owner" ON business_branches;
+CREATE POLICY "business_branches_delete_owner" ON business_branches
 --     FOR DELETE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_branches.business_id AND owner_id = auth.uid())
 --     );
@@ -881,24 +938,28 @@ CREATE TABLE IF NOT EXISTS profile_businesses (
 
 ALTER TABLE profile_businesses ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "profile_businesses_select_own" ON profile_businesses
+-- DROP POLICY IF EXISTS "profile_businesses_select_own" ON profile_businesses;
+CREATE POLICY "profile_businesses_select_own" ON profile_businesses
 --     FOR SELECT USING (
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid()) OR
 --         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_businesses_insert_owner" ON profile_businesses
+-- DROP POLICY IF EXISTS "profile_businesses_insert_owner" ON profile_businesses;
+CREATE POLICY "profile_businesses_insert_owner" ON profile_businesses
 --     FOR INSERT WITH CHECK (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_businesses_update_owner" ON profile_businesses
+-- DROP POLICY IF EXISTS "profile_businesses_update_owner" ON profile_businesses;
+CREATE POLICY "profile_businesses_update_owner" ON profile_businesses
 --     FOR UPDATE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid()) OR
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
 --     );
 
--- CREATE POLICY "profile_businesses_delete_owner" ON profile_businesses
+-- DROP POLICY IF EXISTS "profile_businesses_delete_owner" ON profile_businesses;
+CREATE POLICY "profile_businesses_delete_owner" ON profile_businesses
 --     FOR DELETE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = profile_businesses.business_id AND owner_id = auth.uid())
 --     );
@@ -935,21 +996,25 @@ CREATE TABLE IF NOT EXISTS business_staff (
 
 ALTER TABLE business_staff ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "business_staff_select_all" ON business_staff
+-- DROP POLICY IF EXISTS "business_staff_select_all" ON business_staff;
+CREATE POLICY "business_staff_select_all" ON business_staff
 --     FOR SELECT USING (true);
 
--- CREATE POLICY "business_staff_insert_owner" ON business_staff
+-- DROP POLICY IF EXISTS "business_staff_insert_owner" ON business_staff;
+CREATE POLICY "business_staff_insert_owner" ON business_staff
 --     FOR INSERT WITH CHECK (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
 --     );
 
--- CREATE POLICY "business_staff_update_owner" ON business_staff
+-- DROP POLICY IF EXISTS "business_staff_update_owner" ON business_staff;
+CREATE POLICY "business_staff_update_owner" ON business_staff
 --     FOR UPDATE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid()) OR
 --         profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
 --     );
 
--- CREATE POLICY "business_staff_delete_owner" ON business_staff
+-- DROP POLICY IF EXISTS "business_staff_delete_owner" ON business_staff;
+CREATE POLICY "business_staff_delete_owner" ON business_staff
 --     FOR DELETE USING (
 --         EXISTS (SELECT 1 FROM businesses WHERE id = business_staff.business_id AND owner_id = auth.uid())
 --     );

@@ -24,14 +24,17 @@ CREATE TABLE IF NOT EXISTS bodycam_sessions (
 ALTER TABLE bodycam_sessions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "bodycam_select_officer" ON bodycam_sessions;
+DROP POLICY IF EXISTS "bodycam_select_officer" ON bodycam_sessions;
 CREATE POLICY "bodycam_select_officer" ON bodycam_sessions FOR SELECT USING (
   auth.uid() = officer_id
   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'police_officer', 'supervisor'))
 );
 
 DROP POLICY IF EXISTS "bodycam_insert_officer" ON bodycam_sessions;
+DROP POLICY IF EXISTS "bodycam_insert_officer" ON bodycam_sessions;
 CREATE POLICY "bodycam_insert_officer" ON bodycam_sessions FOR INSERT WITH CHECK (auth.uid() = officer_id);
 
+DROP POLICY IF EXISTS "bodycam_update_officer" ON bodycam_sessions;
 DROP POLICY IF EXISTS "bodycam_update_officer" ON bodycam_sessions;
 CREATE POLICY "bodycam_update_officer" ON bodycam_sessions FOR UPDATE USING (
   auth.uid() = officer_id
@@ -57,12 +60,14 @@ CREATE TABLE IF NOT EXISTS shift_assignments (
 ALTER TABLE shift_assignments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "shift_select_officer" ON shift_assignments;
+DROP POLICY IF EXISTS "shift_select_officer" ON shift_assignments;
 CREATE POLICY "shift_select_officer" ON shift_assignments FOR SELECT USING (
   auth.uid() = officer_id
   OR auth.uid() = supervisor_id
   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'supervisor'))
 );
 
+DROP POLICY IF EXISTS "shift_insert_admin" ON shift_assignments;
 DROP POLICY IF EXISTS "shift_insert_admin" ON shift_assignments;
 CREATE POLICY "shift_insert_admin" ON shift_assignments FOR INSERT WITH CHECK (
   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'supervisor'))
@@ -101,11 +106,13 @@ CREATE TABLE IF NOT EXISTS driver_scores (
 ALTER TABLE driver_scores ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "driver_scores_select" ON driver_scores;
+DROP POLICY IF EXISTS "driver_scores_select" ON driver_scores;
 CREATE POLICY "driver_scores_select" ON driver_scores FOR SELECT USING (
   auth.uid() = driver_id
   OR auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
 );
 
+DROP POLICY IF EXISTS "driver_scores_insert_system" ON driver_scores;
 DROP POLICY IF EXISTS "driver_scores_insert_system" ON driver_scores;
 CREATE POLICY "driver_scores_insert_system" ON driver_scores FOR INSERT WITH CHECK (true);
 
@@ -126,10 +133,12 @@ CREATE TABLE IF NOT EXISTS device_logs (
 ALTER TABLE device_logs ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "device_logs_select_admin" ON device_logs;
+DROP POLICY IF EXISTS "device_logs_select_admin" ON device_logs;
 CREATE POLICY "device_logs_select_admin" ON device_logs FOR SELECT USING (
   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role IN ('admin', 'fleet_manager'))
 );
 
+DROP POLICY IF EXISTS "device_logs_insert_any" ON device_logs;
 DROP POLICY IF EXISTS "device_logs_insert_any" ON device_logs;
 CREATE POLICY "device_logs_insert_any" ON device_logs FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
@@ -153,8 +162,10 @@ CREATE TABLE IF NOT EXISTS firmware_versions (
 ALTER TABLE firmware_versions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "firmware_select_all" ON firmware_versions;
+DROP POLICY IF EXISTS "firmware_select_all" ON firmware_versions;
 CREATE POLICY "firmware_select_all" ON firmware_versions FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "firmware_insert_admin" ON firmware_versions;
 DROP POLICY IF EXISTS "firmware_insert_admin" ON firmware_versions;
 CREATE POLICY "firmware_insert_admin" ON firmware_versions FOR INSERT WITH CHECK (
   auth.uid() IN (SELECT user_id FROM user_profiles WHERE role = 'admin')

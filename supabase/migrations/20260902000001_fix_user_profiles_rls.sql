@@ -32,14 +32,17 @@ DROP POLICY IF EXISTS "Enable delete access for own profile" ON user_profiles;
 
 -- 6. Create correct policies (works for both uuid and text user_id)
 -- Using ::text cast ensures compatibility regardless of column type
+DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
 CREATE POLICY "Users can view own profile"
   ON user_profiles FOR SELECT
   USING (auth.uid()::text = user_id::text);
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
 CREATE POLICY "Users can insert own profile"
   ON user_profiles FOR INSERT
   WITH CHECK (auth.uid()::text = user_id::text);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
 CREATE POLICY "Users can update own profile"
   ON user_profiles FOR UPDATE
   USING (auth.uid()::text = user_id::text)

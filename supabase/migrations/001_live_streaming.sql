@@ -1,8 +1,7 @@
-
 -- MTAA LIVE STREAMING MIGRATION
 CREATE TABLE IF NOT EXISTS live_streams (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  creator_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  host_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   module_type TEXT DEFAULT 'tribes',
   module_id UUID,
   title TEXT NOT NULL,
@@ -56,16 +55,23 @@ DROP POLICY IF EXISTS "Users can send messages" ON live_stream_messages;
 DROP POLICY IF EXISTS "Users can view tips" ON live_stream_tips;
 DROP POLICY IF EXISTS "Users can send tips" ON live_stream_tips;
 
--- CREATE POLICY "Users can view all streams" ON live_streams FOR SELECT USING (true);  -- Commented out: table already exists with different schema
--- CREATE POLICY "Users can create streams" ON live_streams FOR INSERT WITH CHECK (auth.uid() = user_id);  -- Commented out: table already exists with different schema
--- CREATE POLICY "Creators can update their streams" ON live_streams FOR UPDATE USING (auth.uid() = user_id);  -- Commented out: table already exists with different schema
+-- DROP POLICY IF EXISTS "Users can view all streams" ON live_streams;
+CREATE POLICY "Users can view all streams" ON live_streams FOR SELECT USING (true);  -- Commented out: table already exists with different schema
+-- DROP POLICY IF EXISTS "Users can create streams" ON live_streams;
+CREATE POLICY "Users can create streams" ON live_streams FOR INSERT WITH CHECK (auth.uid() = host_id);  -- Commented out: table already exists with different schema
+-- DROP POLICY IF EXISTS "Creators can update their streams" ON live_streams;
+CREATE POLICY "Creators can update their streams" ON live_streams FOR UPDATE USING (auth.uid() = host_id);  -- Commented out: table already exists with different schema
+-- DROP POLICY IF EXISTS "Users can view messages" ON live_stream_messages;
 CREATE POLICY "Users can view messages" ON live_stream_messages FOR SELECT USING (true);
-CREATE POLICY "Users can send messages" ON live_stream_messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- DROP POLICY IF EXISTS "Users can send messages" ON live_stream_messages;
+CREATE POLICY "Users can send messages" ON live_stream_messages FOR INSERT WITH CHECK (auth.uid() = host_id);
+-- DROP POLICY IF EXISTS "Users can view tips" ON live_stream_tips;
 CREATE POLICY "Users can view tips" ON live_stream_tips FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "Users can send tips" ON live_stream_tips;
 CREATE POLICY "Users can send tips" ON live_stream_tips FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
 CREATE INDEX IF NOT EXISTS idx_live_streams_status ON live_streams(status);
-CREATE INDEX IF NOT EXISTS idx_live_streams_creator ON live_streams(creator_id);
+CREATE INDEX IF NOT EXISTS idx_live_streams_creator ON live_streams(host_id);
 CREATE INDEX IF NOT EXISTS idx_live_messages_stream ON live_stream_messages(stream_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_live_tips_stream ON live_stream_tips(stream_id, created_at DESC);
 
@@ -93,4 +99,4 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'transaction_id', v_transaction_id);
 END; $$;
 
-GRANT EXECUTE ON FUNCTION send_live_stream_tip TO authenticated;
+-- GRANT EXECUTE ON FUNCTION send_live_stream_tip TO authenticated; -- Commented: ambiguous due to function overloading

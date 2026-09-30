@@ -27,17 +27,21 @@ CREATE TABLE IF NOT EXISTS kyc_submissions (
 ALTER TABLE kyc_submissions ENABLE ROW LEVEL SECURITY;
 
 -- 3. RLS Policies
--- CREATE POLICY "Users can view own KYC submissions" ON kyc_submissions
+-- DROP POLICY IF EXISTS "Users can view own KYC submissions" ON kyc_submissions;
+CREATE POLICY "Users can view own KYC submissions" ON kyc_submissions
 --     FOR SELECT USING (user_id = auth.uid());
 
--- CREATE POLICY "Users can insert own KYC submissions" ON kyc_submissions
+-- DROP POLICY IF EXISTS "Users can insert own KYC submissions" ON kyc_submissions;
+CREATE POLICY "Users can insert own KYC submissions" ON kyc_submissions
 --     FOR INSERT WITH CHECK (user_id = auth.uid());
 
--- CREATE POLICY "Users can update own draft submissions" ON kyc_submissions
+-- DROP POLICY IF EXISTS "Users can update own draft submissions" ON kyc_submissions;
+CREATE POLICY "Users can update own draft submissions" ON kyc_submissions
 --     FOR UPDATE USING (user_id = auth.uid() AND status = 'draft');
 
 -- Admin can view all (for review portal)
--- CREATE POLICY "Admins can view all KYC" ON kyc_submissions
+-- DROP POLICY IF EXISTS "Admins can view all KYC" ON kyc_submissions;
+CREATE POLICY "Admins can view all KYC" ON kyc_submissions
 --     FOR SELECT USING (
 --         EXISTS (
 --             SELECT 1 FROM profiles 
@@ -45,7 +49,8 @@ ALTER TABLE kyc_submissions ENABLE ROW LEVEL SECURITY;
 --         )
 --     );
 
--- CREATE POLICY "Admins can update KYC status" ON kyc_submissions
+-- DROP POLICY IF EXISTS "Admins can update KYC status" ON kyc_submissions;
+CREATE POLICY "Admins can update KYC status" ON kyc_submissions
 --     FOR UPDATE USING (
 --         EXISTS (
 --             SELECT 1 FROM profiles 
@@ -121,21 +126,24 @@ CREATE TRIGGER kyc_approval_trigger
 
 -- 7. Storage policies for KYC documents
 -- Users can upload to their own folder
--- CREATE POLICY "Users can upload own KYC docs" ON storage.objects
+-- DROP POLICY IF EXISTS "Users can upload own KYC docs" ON storage;
+CREATE POLICY "Users can upload own KYC docs" ON storage.objects
 --     FOR INSERT WITH CHECK (
 --         bucket_id = 'documents' 
 --         AND (storage.foldername(name))[1] = auth.uid()::text
 --     );
 
 -- Users can read their own docs
--- CREATE POLICY "Users can read own KYC docs" ON storage.objects
+-- DROP POLICY IF EXISTS "Users can read own KYC docs" ON storage;
+CREATE POLICY "Users can read own KYC docs" ON storage.objects
 --     FOR SELECT USING (
 --         bucket_id = 'documents'
 --         AND (storage.foldername(name))[1] = auth.uid()::text
 --     );
 
 -- Admins can read all docs
--- CREATE POLICY "Admins can read all KYC docs" ON storage.objects
+-- DROP POLICY IF EXISTS "Admins can read all KYC docs" ON storage;
+CREATE POLICY "Admins can read all KYC docs" ON storage.objects
 --     FOR SELECT USING (
 --         bucket_id = 'documents'
 --         AND EXISTS (

@@ -33,5 +33,7 @@ ALTER TABLE public.health_ambulances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_dispatches ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS Policies
+DROP POLICY IF EXISTS "Allow all for ambulances" ON public;
 CREATE POLICY "Allow all for ambulances" ON public.health_ambulances FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow all for dispatches" ON public;
 CREATE POLICY "Allow all for dispatches" ON public.health_dispatches FOR ALL TO authenticated USING (true) WITH CHECK (true);

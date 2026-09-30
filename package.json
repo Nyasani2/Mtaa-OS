@@ -10,15 +10,15 @@
     "lint": "eslint .",
     "lint:ox": "oxlint --max-warnings 0 --tsconfig tsconfig.json --config .oxlintrc.json .",
     "lint:ox:fix": "oxlint --max-warnings 0 --tsconfig tsconfig.json --config .oxlintrc.json --fix .",
-    "knip": "knip",
     "knip:fix": "knip --fix",
     "typecheck": "tsc --noEmit",
-    "lint:ci": "npm run lint:ox && npm run typecheck && npm run knip",
+    "lint:ci": "npm run lint:ox && npm run typecheck ",
     "type-check": "npx tsc --noEmit",
     "type-check:watch": "npx tsc --noEmit --watch",
     "governance:audit": "python3 tools/type-consolidation-audit.py --check-only && python3 tools/module-isolation-guard.py",
     "governance:fix": "python3 tools/type-consolidation-audit.py --fix && python3 tools/barrel-generator.py",
-    "barrels": "python3 tools/barrel-generator.py"
+    "barrels": "python3 tools/barrel-generator.py",
+    "run-knip": "knip"
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",

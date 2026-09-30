@@ -202,18 +202,30 @@ ALTER TABLE prison_staff_attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prison_payroll ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prison_procurement ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "prison_read_all" ON prison_cells;
 CREATE POLICY "prison_read_all" ON prison_cells FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "prison_read_all" ON prison_incidents;
 CREATE POLICY "prison_read_all" ON prison_incidents FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "prison_read_all" ON prison_parole_reviews;
 CREATE POLICY "prison_read_all" ON prison_parole_reviews FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "prison_read_all" ON prison_staff_attendance;
 CREATE POLICY "prison_read_all" ON prison_staff_attendance FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "prison_read_all" ON prison_payroll;
 CREATE POLICY "prison_read_all" ON prison_payroll FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "prison_read_all" ON prison_procurement;
 CREATE POLICY "prison_read_all" ON prison_procurement FOR SELECT TO authenticated USING (true);
 
+DROP POLICY IF EXISTS "prison_write_all" ON prison_cells;
 CREATE POLICY "prison_write_all" ON prison_cells FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "prison_write_all" ON prison_incidents;
 CREATE POLICY "prison_write_all" ON prison_incidents FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "prison_write_all" ON prison_parole_reviews;
 CREATE POLICY "prison_write_all" ON prison_parole_reviews FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "prison_write_all" ON prison_staff_attendance;
 CREATE POLICY "prison_write_all" ON prison_staff_attendance FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "prison_write_all" ON prison_payroll;
 CREATE POLICY "prison_write_all" ON prison_payroll FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "prison_write_all" ON prison_procurement;
 CREATE POLICY "prison_write_all" ON prison_procurement FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- ============================================

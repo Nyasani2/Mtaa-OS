@@ -93,7 +93,11 @@ DO $$ BEGIN DROP POLICY IF EXISTS "Sellers manage" ON marketplace_listings; EXCE
 DO $$ BEGIN DROP POLICY IF EXISTS "Buyers and sellers orders" ON marketplace_orders; EXCEPTION WHEN undefined_object THEN NULL; END $$;
 DO $$ BEGIN DROP POLICY IF EXISTS "Users own trust" ON marketplace_trust; EXCEPTION WHEN undefined_object THEN NULL; END $$;
 
-DO $$ BEGIN CREATE POLICY "Public listings" ON marketplace_listings FOR SELECT USING (status = 'active'); EXCEPTION WHEN undefined_table THEN NULL; END $$;
-DO $$ BEGIN CREATE POLICY "Sellers manage" ON marketplace_listings FOR ALL USING (auth.uid() = seller_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;
-DO $$ BEGIN CREATE POLICY "Buyers and sellers orders" ON marketplace_orders FOR ALL USING (auth.uid() = buyer_id OR auth.uid() = seller_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;
-DO $$ BEGIN CREATE POLICY "Users own trust" ON marketplace_trust FOR ALL USING (auth.uid() = user_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "Public listings" ON marketplace_listings;
+CREATE POLICY "Public listings" ON marketplace_listings FOR SELECT USING (status = 'active'); EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "Sellers manage" ON marketplace_listings;
+CREATE POLICY "Sellers manage" ON marketplace_listings FOR ALL USING (auth.uid() = seller_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "Buyers and sellers orders" ON marketplace_orders;
+CREATE POLICY "Buyers and sellers orders" ON marketplace_orders FOR ALL USING (auth.uid() = buyer_id OR auth.uid() = seller_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;
+DO $$ BEGIN DROP POLICY IF EXISTS "Users own trust" ON marketplace_trust;
+CREATE POLICY "Users own trust" ON marketplace_trust FOR ALL USING (auth.uid() = user_id); EXCEPTION WHEN undefined_table THEN NULL; END $$;

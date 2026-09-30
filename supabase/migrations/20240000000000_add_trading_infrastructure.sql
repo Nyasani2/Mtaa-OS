@@ -46,9 +46,11 @@ ALTER TABLE treasury_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_exchange_accounts ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can view own transactions" ON treasury_transactions;
 CREATE POLICY "Users can view own transactions" ON treasury_transactions
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can view own exchange accounts" ON user_exchange_accounts;
 CREATE POLICY "Users can view own exchange accounts" ON user_exchange_accounts
   FOR ALL USING (auth.uid() = user_id);
 
