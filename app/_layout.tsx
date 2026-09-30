@@ -22,8 +22,16 @@ function RootLayoutContent() {
   const backgroundTime = useRef<number | null>(null);
   const { initialize, lockApp, updateLastActive, isAuthenticated, pinSet, user } = useAuthStore();
 
+  // SAFE INITIALIZATION: Prevents unhandled promise rejections from crashing the app
   useEffect(() => {
-    initialize();
+    const safeInitialize = async () => {
+      try {
+        await initialize();
+      } catch (error) {
+        console.error("CRITICAL: Auth initialization failed, but preventing crash:", error);
+      }
+    };
+    safeInitialize();
   }, []);
 
   useEffect(() => {
@@ -62,7 +70,6 @@ function RootLayoutContent() {
         </IdentityProvider>
         <StatusBar style="light" />
         <LockScreen />
-        {/* Only show GlobalASISOverlay if NOT on /asis route */}
         {pathname !== '/asis' && <GlobalASISOverlay />}
       </ASISCSEProvider>
     </SafeAreaProvider>
