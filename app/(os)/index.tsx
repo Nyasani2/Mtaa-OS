@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
  
-const MTAA_HOME_BG = require('@/assets/images/mtaa_home.png');
+const MTAA_HOME_BG = require('@/assets/images/mtaa_home.jpg');
 
 import {
   ALL_APPS,
