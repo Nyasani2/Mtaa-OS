@@ -23,6 +23,15 @@ export default {
         foregroundImage: "./assets/images/mtaa_icon.png",
         backgroundColor: "#000000",
       },
+      permissions: [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_CONTACTS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "SEND_SMS"
+      ],
       intentFilters: [
         {
           action: "VIEW",
@@ -45,7 +54,34 @@ export default {
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MTAA OS to use your location for transport and delivery services."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow MTAA OS to access your contacts to easily call or message them."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow MTAA OS to access your camera for QR scanning, profile photos, and verification."
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "isIosMapEnabled": true,
+          "isAndroidMapEnabled": true,
+          "enableGoogleMaps": false,
+          "enableAppleMaps": true
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
