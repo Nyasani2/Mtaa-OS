@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Linking } from 'expo-linking';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -170,7 +171,7 @@ export default function PhoneScreen() {
         <Text style={styles.contactName}>{item.name || 'Unknown'}</Text>
         <Text style={styles.contactPhone}>{item.phone}</Text>
       </View>
-      <TouchableOpacity style={styles.callBtn} onPress={() => {}}>
+      <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
         <Ionicons name="call" size={20} color="#4CAF50" />
       </TouchableOpacity>
     </TouchableOpacity>

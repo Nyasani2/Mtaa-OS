@@ -538,8 +538,8 @@ export default function StreetsFeedScreen() {
 
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const observer = new IntersectionObserver(
+    if (typeof window === 'undefined' || !window.IntersectionObserver) return;
+    const observer = new window.IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const postId = entry.target.getAttribute('data-post-id');

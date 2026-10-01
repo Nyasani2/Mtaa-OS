@@ -15,7 +15,7 @@ export async function depositToWallet(userId: string, amount: number, descriptio
     user_id: userId,
     amount,
     type: 'credit',
-    status: 'completed',
+    status: 'pending_provider_verification', // SECURITY: Client cannot mark as completed
     description: description || `Deposit via ${method || 'unknown'}`,
     currency: 'KES',
     metadata: metadata || {},
