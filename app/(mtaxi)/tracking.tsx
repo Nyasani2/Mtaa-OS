@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useTransport } from '@/lib/transport/hooks/useTransport';
 import { supabase } from '@/lib/supabase';
+import { mtaxiOperation } from '@/lib/services/mtaxi-service';
 
 export default function TrackingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -106,7 +107,12 @@ export default function TrackingScreen() {
       const platformFee = Number(r.platform_fee || 0);
       const driverPayout = Number(r.payee_net || 0);
       const whtAmt = Number(r.wht || 0);
-      await supabase.from('mtaxi_rides').update({ status: 'completed', payment_status: 'paid', platform_fee: platformFee, driver_payout: driverPayout, withholding_tax: whtAmt, country_code: driver.country_code || 'KE', completed_at: new Date().toISOString() }).eq('id', ride.id);
+      // SECURITY: Do not calculate fees on the client. Invoke Edge Function to handle secure split.
+      const result = await mtaxiOperation('complete_ride', { ride_id: ride.id });
+      if (result?.error) {
+        Alert.alert('Error', result.error);
+        return;
+      }
       Alert.alert('✅ Ride Complete', 'You paid: KES ' + total.toLocaleString() + '\n\nDriver net: KES ' + driverPayout.toLocaleString() + '\nPlatform fee: KES ' + platformFee + ' (3%)\nWithholding tax (' + (wht?.tax_authority || 'govt') + '): KES ' + whtAmt + ' (' + Math.round(whtRate*100) + '%)');
       loadRide();
     } catch (e) { Alert.alert('Payment failed', String(e?.message || e)); }

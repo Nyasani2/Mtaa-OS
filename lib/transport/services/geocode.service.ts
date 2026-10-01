@@ -1,5 +1,3 @@
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-
 export interface GeocodeResult {
   address: string;
   lat: number;
@@ -7,31 +5,37 @@ export interface GeocodeResult {
   placeId: string;
 }
 
+// Using free OpenStreetMap Nominatim API
 export async function geocodeAddress(query: string): Promise<GeocodeResult[]> {
-  if (!GOOGLE_API_KEY) {
-    console.warn('MTAA: EXPO_PUBLIC_GOOGLE_MAPS_API_KEY not set');
-    throw new Error('Google Maps API key not configured. Add EXPO_PUBLIC_GOOGLE_MAPS_API_KEY to your .env');
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'MTAA-OS/1.0 (kevin@mtaa.africa)' }
+    });
+    const data = await res.json();
+    return data.map((r: any) => ({
+      address: r.display_name,
+      lat: parseFloat(r.lat),
+      lng: parseFloat(r.lon),
+      placeId: r.place_id,
+    }));
+  } catch (error) {
+    console.error('Nominatim geocoding failed:', error);
+    return [];
   }
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${GOOGLE_API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status === 'ZERO_RESULTS') return [];
-  if (data.status !== 'OK') throw new Error(data.error_message || `Geocoding failed: ${data.status}`);
-  return data.results.map((r: any) => ({
-    address: r.formatted_address,
-    lat: r.geometry.location.lat,
-    lng: r.geometry.location.lng,
-    placeId: r.place_id,
-  }));
 }
 
+// Using free OpenStreetMap Nominatim Reverse Geocoding
 export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  if (!GOOGLE_API_KEY) return null;
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'MTAA-OS/1.0 (kevin@mtaa.africa)' }
+    });
     const data = await res.json();
-    if (data.status === 'OK' && data.results.length > 0) return data.results[0].formatted_address;
+    return data.display_name || null;
+  } catch (error) {
+    console.error('Nominatim reverse geocoding failed:', error);
     return null;
-  } catch { return null; }
+  }
 }
