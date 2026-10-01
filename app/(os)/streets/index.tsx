@@ -549,7 +549,7 @@ export default function StreetsFeedScreen() {
       { threshold: 0.6 }
     );
     Object.values(itemRefs.current).forEach((el) => { if (el) observer.observe(el); });
-    return () => observer.disconnect();
+    return () => { try { observer.disconnect(); } catch (e) {} };
   }, [posts]);
 
   const handleLike = useCallback(async (postId: string) => {
