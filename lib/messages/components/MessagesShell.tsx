@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Modal, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as SMS from 'expo-sms';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
@@ -62,7 +63,7 @@ export default function MessagesShell() {
   useEffect(() => { load(); }, [load]);
 
   const loadUsers = async (q) => {
-    let req = supabase.from('user_profiles').select('user_id, first_name, last_name').neq('user_id', user?.id).limit(20);
+    let req = supabase.from('user_profiles').select('user_id, first_name, last_name, phone').neq('user_id', user?.id).limit(20);
     if (q) req = req.or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`);
     const { data } = await req;
     setUsers(data || []);
@@ -79,6 +80,20 @@ export default function MessagesShell() {
     ]);
     setShowNew(false);
     router.push(`/messages/${conv.id}`);
+  };
+
+  
+  const sendNativeSMS = async (phoneNumber: string) => {
+    if (!phoneNumber) {
+      Alert.alert('Error', 'No phone number available for this user.');
+      return;
+    }
+    const isAvailable = await SMS.isAvailableAsync();
+    if (isAvailable) {
+      await SMS.sendSMSAsync(phoneNumber, "Hey, let's chat on MTAA! Download the app.");
+    } else {
+      Alert.alert('Not Supported', 'SMS is not available on this device.');
+    }
   };
 
   const filtered = rows.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()) || r.preview.toLowerCase().includes(query.toLowerCase()));
@@ -131,10 +146,17 @@ export default function MessagesShell() {
               keyExtractor={(u) => u.user_id}
               style={{ marginTop: 12 }}
               renderItem={({ item }) => (
-                <TouchableOpacity style={s.userRow} onPress={() => startChat(item)}>
-                  <View style={s.avatar}><Ionicons name="person" size={20} color="#94a3b8" /></View>
-                  <Text style={s.name}>{item.first_name} {item.last_name}</Text>
-                </TouchableOpacity>
+                <View style={s.userRow}>
+                  <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }} onPress={() => startChat(item)}>
+                    <View style={s.avatar}><Ionicons name="person" size={20} color="#94a3b8" /></View>
+                    <Text style={s.name}>{item.first_name} {item.last_name}</Text>
+                  </TouchableOpacity>
+                  {item.phone && (
+                    <TouchableOpacity onPress={() => sendNativeSMS(item.phone)} style={{ padding: 8 }}>
+                      <Ionicons name="chatbubble-ellipses" size={20} color="#22c55e" />
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             />
             <TouchableOpacity style={s.closeBtn} onPress={() => setShowNew(false)}><Text style={s.closeText}>Close</Text></TouchableOpacity>

@@ -3,6 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, RefreshControl, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Linking } from 'expo-linking';
+import * as Contacts from 'expo-contacts';
+import * as SMS from 'expo-sms';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -102,6 +104,33 @@ async function safeFetchCallLogs(userId: string): Promise<CallLog[]> {
   return fetchCallLogsFallback(userId);
 }
 
+
+// ─── Native Contact Sync ──────────────────────────────────────
+async function syncNativeContacts(userId: string) {
+  try {
+    const { status } = await Contacts.requestPermissionsAsync();
+    if (status === 'granted') {
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+      });
+      if (data && data.length > 0) {
+        const contactsToInsert = data
+          .filter((c: any) => c.phoneNumbers && c.phoneNumbers.length > 0)
+          .map((c: any) => ({
+            user_id: userId,
+            name: c.name || 'Unknown',
+            phone: c.phoneNumbers[0].number,
+            created_at: new Date().toISOString(),
+          }));
+        console.log(`[Phone] Found ${contactsToInsert.length} native contacts to sync`);
+        // Note: Actual upsert to Supabase can be added here if needed
+      }
+    }
+  } catch (e) {
+    console.warn('[Phone] Native contact sync failed:', e);
+  }
+}
+
 // ─── Main Screen ────────────────────────────────────────────
 export default function PhoneScreen() {
   const router = useRouter();
@@ -121,6 +150,8 @@ export default function PhoneScreen() {
         safeFetchContacts(user.id),
         safeFetchCallLogs(user.id),
       ]);
+      // Sync native contacts in background
+      syncNativeContacts(user.id);
       setContacts(c);
       setCallLogs(l);
     } catch (e) {
@@ -171,9 +202,14 @@ export default function PhoneScreen() {
         <Text style={styles.contactName}>{item.name || 'Unknown'}</Text>
         <Text style={styles.contactPhone}>{item.phone}</Text>
       </View>
-      <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
-        <Ionicons name="call" size={20} color="#4CAF50" />
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`tel:${item.phone}`)}>
+          <Ionicons name="call" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL(`https://meet.jit.si/MTAA-${item.phone.replace(/[^0-9]/g, '')}`)}>
+          <Ionicons name="videocam" size={20} color="#0ea5e9" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
