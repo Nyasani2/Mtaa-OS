@@ -10,6 +10,7 @@ export default function LoginScreen() {
   const { signIn, user, session, isAuthenticated, pinSet, biometricEnabled } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,7 +41,8 @@ export default function LoginScreen() {
         promptMessage: 'Unlock MTAA',
         cancelLabel: 'Use Password',
       });
-      if (result.success && session) { setTimeout(() => router.replace('/(os)'), 100);
+      if (result.success && session) { 
+        setTimeout(() => router.replace('/(os)'), 100);
       } else {
         setError('Biometric authentication failed');
       }
@@ -54,8 +56,10 @@ export default function LoginScreen() {
   // Redirect logic after successful auth
   React.useEffect(() => {
     if (isAuthenticated) {
-      if (!pinSet) { setTimeout(() => router.replace('/create-pin'), 100);
-      } else { setTimeout(() => router.replace('/(os)'), 100);
+      if (!pinSet) { 
+        setTimeout(() => router.replace('/create-pin'), 100);
+      } else { 
+        setTimeout(() => router.replace('/(os)'), 100);
       }
     }
   }, [isAuthenticated, pinSet]);
@@ -90,14 +94,23 @@ export default function LoginScreen() {
             onChangeText={setEmail}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="rgba(255,255,255,0.4)"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={24} color="rgba(255,255,255,0.5)" />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
             {isLoading ? (
@@ -173,6 +186,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     color: '#ffffff',
     fontSize: 15,
+  },
+  passwordContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    padding: 8,
   },
   button: {
     height: 52,
