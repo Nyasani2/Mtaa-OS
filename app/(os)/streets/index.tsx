@@ -1,11 +1,41 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
 import type { StreetsPost } from '@/lib/services/streets-service';
+
+// SAFE POLYFILL: Prevents ReferenceError on Android/iOS
+if (typeof globalThis !== 'undefined' && !globalThis.IntersectionObserver) {
+  (globalThis as any).IntersectionObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() { return []; }
+    root = null;
+    rootMargin = '';
+    thresholds = [];
+  };
+}
+
+
+// SAFE POLYFILL: Prevents ReferenceError on Android/iOS where IntersectionObserver doesn't exist
+if (Platform.OS !== 'web') {
+  if (typeof globalThis !== 'undefined' && !globalThis.IntersectionObserver) {
+    (globalThis as any).IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return []; }
+      root = null;
+      rootMargin = '';
+      thresholds = [];
+    };
+  }
+}
+
 
 // ── Video Player ───────────────────────────────────────────
 function VideoPlayer({
