@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 // lib/os/app-lifecycle.ts
 const STORAGE_KEY = 'mtaa_app_lifecycle';
 
@@ -10,7 +11,8 @@ export interface AppLifecycleState {
 export function getLifecycleState(): AppLifecycleState | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const storage = typeof window !== 'undefined' && window.localStorage ? window.localStorage : null;
+  const raw = storage?.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -20,7 +22,8 @@ export function getLifecycleState(): AppLifecycleState | null {
 export function setLifecycleState(data: AppLifecycleState): void {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const storageSet = typeof window !== 'undefined' && window.localStorage ? window.localStorage : null;
+  storageSet?.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
     // silent fail
   }

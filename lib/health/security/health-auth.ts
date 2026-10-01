@@ -49,7 +49,7 @@ let _sessionTimer: ReturnType<typeof setTimeout> | null = null;
 const webStore = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
-      try { return localStorage.getItem(key); } catch (e: any) { console.error("[HealthAuth] Storage read failed:", e?.message || e); return null; }
+      try { return (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(key) : null; } catch (e: any) { console.error("[HealthAuth] Storage read failed:", e?.message || e); return null; }
     }
     if (SecureStore?.getItemAsync) {
       try { return await SecureStore.getItemAsync(key); } catch (e: any) { console.error("[HealthAuth] Storage read failed:", e?.message || e); return null; }
@@ -58,7 +58,7 @@ const webStore = {
   },
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.setItem(key, value); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
+      try { (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.setItem(key, value); } catch (e: any) { console.error("[HealthAuth] Storage write failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.setItemAsync) {
@@ -67,7 +67,7 @@ const webStore = {
   },
   async deleteItem(key: string): Promise<void> {
     if (Platform.OS === 'web') {
-      try { localStorage.removeItem(key); } catch (e: any) { console.error("[HealthAuth] Storage delete failed:", e?.message || e); }
+      try { (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.removeItem(key); } catch (e: any) { console.error("[HealthAuth] Storage delete failed:", e?.message || e); }
       return;
     }
     if (SecureStore?.deleteItemAsync) {

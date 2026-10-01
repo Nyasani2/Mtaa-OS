@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 // @ts-nocheck
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 import {
@@ -16,7 +17,6 @@ import {
   ASISMessage,
   ASISConversation,
   ASISProviderValue,
-  ASISHealth,
 } from './asis-cse-types';
 
 // Generate proper UUID v4
@@ -43,7 +43,7 @@ export function useASIS(): ASISProviderValue {
 
 function loadConversations(): ASISConversation[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       // AUTO-FIX: Filter out any corrupted conversations with invalid UUIDs (like "conv_12345")
@@ -55,7 +55,7 @@ function loadConversations(): ASISConversation[] {
 
 function saveConversations(convs: ASISConversation[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+    (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.setItem(STORAGE_KEY, JSON.stringify(convs));
   } catch {}
 }
 
@@ -77,7 +77,7 @@ export function ASISCSEProvider({
   const [systemStatus, setSystemStatus] = useState('Standby');
   const [activeEngines, setActiveEngines] = useState<string[]>([]);
   const [toolHealth, setToolHealth] = useState('No tools registered');
-  const [health, setHealth] = useState<ASISHealth>({ score: 1.0, status: 'Healthy' });
+  const [health, setHealth] = useState<any>({ score: 1.0, status: 'Healthy' });
 
   const [conversations, setConversations] = useState<ASISConversation[]>(() => loadConversations());
   const [currentConversation, setCurrentConversation] = useState<ASISConversation | null>(null);
@@ -86,10 +86,10 @@ export function ASISCSEProvider({
   const processingRef = useRef(false);
   const healthIntervalRef = useRef<any>(null);
 
-  const computeHealth = useCallback((): ASISHealth => {
+  const computeHealth = useCallback((): any => {
     if (!systemRef.current) return { score: 0, status: 'Offline' };
     const state = systemRef.current.getState();
-    const msgCount = state.messageCount || 0;
+    const msgCount = (state as any).messageCount || 0;
     const score = Math.max(0.3, 1.0 - (msgCount * 0.001));
     return {
       score,

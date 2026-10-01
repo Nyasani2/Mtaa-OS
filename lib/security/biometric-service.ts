@@ -56,11 +56,11 @@ export async function checkBiometricAvailability(): Promise<{
 function getDeviceId(): string {
   // Use a combination of platform + stored UUID
   // Never use actual biometric data
-  const stored = localStorage?.getItem?.('mtaa_device_id');
+  const stored = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('mtaa_device_id') : null;
   if (stored) return stored;
 
   const newId = `${Platform.OS}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  localStorage?.setItem?.('mtaa_device_id', newId);
+  if (typeof window !== 'undefined' && window.localStorage) { window.localStorage.setItem('mtaa_device_id', newId); }
   return newId;
 }
 
@@ -146,7 +146,7 @@ export async function enrollBiometric(userId: string): Promise<{
 
     // 6. Store local token
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(BIOMETRIC_STORAGE_KEY, JSON.stringify({
+      (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.setItem(BIOMETRIC_STORAGE_KEY, JSON.stringify({
         enrolled: true,
         deviceId,
         enrolledAt: newDevice.enrolledAt,
@@ -224,7 +224,7 @@ export async function revokeAllBiometric(userId: string): Promise<{
 
     // Clear local token
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(BIOMETRIC_STORAGE_KEY);
+      (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.removeItem(BIOMETRIC_STORAGE_KEY);
     }
 
     return { success: true };
@@ -264,7 +264,7 @@ export async function removeThisDevice(userId: string): Promise<{
     if (error) throw error;
 
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem(BIOMETRIC_STORAGE_KEY);
+      (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.removeItem(BIOMETRIC_STORAGE_KEY);
     }
 
     return { success: true };

@@ -1,4 +1,5 @@
 import { osEvents } from "./os-events";
+import { Platform } from 'react-native';
 
 export type AppState = "inactive" | "active" | "background";
 
@@ -14,7 +15,8 @@ const STORAGE_KEY = "mtaa_running_apps";
 const getStore = (): Record<string, RunningApp> => {
   if (typeof window === "undefined") return memory;
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const storage = typeof window !== 'undefined' && window.localStorage ? window.localStorage : null;
+  const raw = storage?.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : {};
 };
 
@@ -24,7 +26,8 @@ const saveStore = (data: Record<string, RunningApp>) => {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const storageSet = typeof window !== 'undefined' && window.localStorage ? window.localStorage : null;
+  storageSet?.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
 export const AppLifecycle = {
