@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Camera } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { uploadMedia, createPost } from '@/lib/services/streets-service';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -27,40 +28,32 @@ const [isPublic, setIsPublic] = useState(true);
 const [selectedFile, setSelectedFile] = useState(null);
 const [mediaType, setMediaType] = useState('image');
 const [filter, setFilter] = useState(FILTERS[0]);
-const [cameraOpen, setCameraOpen] = useState(false);
 const [recording, setRecording] = useState(false);
 const [posting, setPosting] = useState(false);
 const [localError, setLocalError] = useState(null);
 const fileInputRef = useRef(null);
-const camVideoRef = useRef(null);
-const streamRef = useRef(null);
-const recRef = useRef(null);
-const chunksRef = useRef([]);
 const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : null;
 
 const openCamera = async () => {
-try {
-const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-streamRef.current = stream; setCameraOpen(true);
-setTimeout(() => { if (camVideoRef.current) { camVideoRef.current.srcObject = stream; camVideoRef.current.play(); } }, 120);
-} catch (e) { setLocalError('Camera not available in this browser.'); }
-};
-
-const stopCamera = () => { streamRef.current?.getTracks().forEach((t) => t.stop()); streamRef.current = null; setCameraOpen(false); setRecording(false); };
-
-const toggleRecord = () => {
-if (!streamRef.current) return;
-if (!recording) {
-chunksRef.current = [];
-const rec = new MediaRecorder(streamRef.current);
-rec.ondataavailable = (ev) => chunksRef.current.push(ev.data);
-rec.onstop = () => {
-const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-setSelectedFile(new File([blob], 'mtaa-rec-' + Date.now() + '.webm', { type: 'video/webm' }));
-setMediaType('video'); stopCamera();
-};
-rec.start(); recRef.current = rec; setRecording(true);
-} else { recRef.current?.stop(); setRecording(false); }
+  try {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      setLocalError('Camera permission not granted.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'camera-capture' });
+      setMediaType(asset.type?.startsWith('video') ? 'video' : 'image');
+    }
+  } catch (e) {
+    setLocalError('Failed to open camera.');
+  }
 };
 
 const pick = (type) => { setMediaType(type); if (fileInputRef.current) { fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*'; fileInputRef.current.click(); } };
@@ -173,19 +166,7 @@ return (
 <Text style={{ color: '#666', fontSize: 11, marginTop: 8 }}>🔒 Privacy: GPS & device metadata automatically stripped from photos</Text>
 <View style={{ height: 40 }} />
 </ScrollView>
-{cameraOpen && (
-<View style={{ position: 'absolute', inset: 0, backgroundColor: '#000', zIndex: 50, justifyContent: 'center', alignItems: 'center' }}>
-<video ref={camVideoRef} muted playsInline style={{ width: '100%', maxHeight: '70%' }} />
-<View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
-<TouchableOpacity onPress={toggleRecord} style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: recording ? '#ff3b30' : '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
-<Text style={{ color: '#fff', fontWeight: '700' }}>{recording ? 'Stop' : 'Rec'}</Text>
-</TouchableOpacity>
-<TouchableOpacity onPress={stopCamera} style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' }}>
-<X size={22} color="#fff" />
-</TouchableOpacity>
-</View>
-</View>
-)}
+
 </View>
 );
 }

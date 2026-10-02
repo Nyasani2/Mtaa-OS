@@ -116,12 +116,16 @@ async function syncNativeContacts(userId: string) {
       if (data && data.length > 0) {
         const contactsToInsert = data
           .filter((c: any) => c.phoneNumbers && c.phoneNumbers.length > 0)
-          .map((c: any) => ({
-            user_id: userId,
-            name: c.name || 'Unknown',
-            phone: c.phoneNumbers[0].number,
-            created_at: new Date().toISOString(),
-          }));
+          .map((c: any) => {
+            // Clean phone number: remove spaces, dashes, parentheses for consistent upsert
+            const cleanPhone = c.phoneNumbers[0].number.replace(/[^0-9+]/g, '');
+            return {
+              user_id: userId,
+              name: c.name || 'Unknown',
+              phone: cleanPhone,
+              created_at: new Date().toISOString(),
+            };
+          });
         
         // Actually save them to Supabase
         const { error } = await supabase

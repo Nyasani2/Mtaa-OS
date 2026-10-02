@@ -2,7 +2,9 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform, Image, Share, Alert } from 'react-native';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video, Menu } from 'lucide-react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
@@ -50,85 +52,68 @@ function VideoPlayer({
   isVisible: boolean;
   onView: () => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<ExpoVideo>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (isVisible) {
-      video.muted = false;
-      setIsMuted(false);
-      video.play().then(() => {
-        setIsPlaying(true);
-        onView();
-      }).catch(() => setIsPlaying(false));
-    } else {
-      video.pause();
-      video.muted = true;
-      setIsMuted(true);
+    if (isVisible && !isPlaying) {
+      videoRef.current?.playAsync();
+      setIsPlaying(true);
+      onView();
+    } else if (!isVisible && isPlaying) {
+      videoRef.current?.pauseAsync();
       setIsPlaying(false);
     }
-  }, [isVisible, onView]);
+  }, [isVisible, isPlaying, onView]);
 
-  useEffect(() => () => {
-    const v = videoRef.current;
-    if (v) { v.pause(); v.muted = true; }
-  }, []);
-
-  const togglePlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused) {
-      video.play();
-      setIsPlaying(true);
-      if (!hasInteracted) { setHasInteracted(true); onView(); }
-    } else {
-      video.pause();
+  const togglePlay = async () => {
+    if (isPlaying) {
+      await videoRef.current?.pauseAsync();
       setIsPlaying(false);
+    } else {
+      await videoRef.current?.playAsync();
+      setIsPlaying(true);
     }
   };
 
-  const toggleMute = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setIsMuted(video.muted);
+  const toggleMute = async () => {
+    const newMuted = !isMuted;
+    await videoRef.current?.setIsMutedAsync(newMuted);
+    setIsMuted(newMuted);
   };
 
   return (
-    <div
-      style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}
-      onClick={togglePlay}
-    >
-      <video
+    <View style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' }}>
+      <ExpoVideo
         ref={videoRef}
-        src={uri}
-        poster={thumbnailUri}
-        muted={isMuted}
-        loop
-        playsInline
-        preload="metadata"
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        source={{ uri }}
+        posterSource={thumbnailUri ? { uri: thumbnailUri } : undefined}
+        usePoster={!!thumbnailUri}
+        resizeMode={ResizeMode.COVER}
+        isMuted={isMuted}
+        isLooping
+        shouldPlay={isVisible}
+        style={{ width: '100%', height: '100%' }}
       />
       {!isPlaying && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+        <TouchableOpacity 
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}
+          onPress={togglePlay}
+        >
           <Play size={48} color="#fff" />
-        </div>
+        </TouchableOpacity>
       )}
-      <button
-        onClick={toggleMute}
-        style={{ position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: 20, padding: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      <TouchableOpacity
+        onPress={toggleMute}
+        style={{ position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 8 }}
       >
         {isMuted ? <VolumeX size={18} color="#fff" /> : <Volume2 size={18} color="#fff" />}
-      </button>
-      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, padding: '4px 10px' }}>
-          <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>MTAA OS</Text>
-        </div>
-    </div>
+      </TouchableOpacity>
+      <View style={{ position: 'absolute', top: 10, left: 10, zIndex: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10 }}>
+        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>MTAA OS</Text>
+      </View>
+    </View>
   );
 }
 
@@ -196,18 +181,18 @@ function PostCard({
 
           {/* Right action rail (TikTok-style) */}
           <View style={{ position: 'absolute', right: 6, bottom: 12, flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 6 }}>
-            <div style={{ position: 'relative', marginBottom: 8 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 22, border: '2px solid #fff', overflow: 'hidden', backgroundColor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ position: 'relative', marginBottom: 8 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#fff', overflow: 'hidden', backgroundColor: '#333', alignItems: 'center', justifyContent: 'center' }}>
                 {author?.avatar_url ? (
-                  <img src={author.avatar_url} alt="" style={{ width: 44, height: 44, objectFit: 'cover' }} />
+                  <Image source={{ uri: author.avatar_url }} style={{ width: 44, height: 44 }} resizeMode="cover" />
                 ) : (
                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{displayName.charAt(0).toUpperCase()}</Text>
                 )}
-              </div>
-              <div style={{ position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: 9, backgroundColor: '#e91e63', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              </View>
+              <View style={{ position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -9 }], width: 18, height: 18, borderRadius: 9, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>+</Text>
-              </div>
-            </div>
+              </View>
+            </View>
             <TouchableOpacity onPress={() => onLike(post.id)} style={{ alignItems: 'center' }}>
               <Heart size={26} color={isLiked ? '#e91e63' : '#fff'} fill={isLiked ? '#e91e63' : 'none'} />
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>{post.likes_count || 0}</Text>
@@ -343,7 +328,7 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
   const WATERMARK = ' · via MTAA OS 🌍';
   const shareSocial = (kind: string) => {
     if (!post) return;
-    const url = `${window.location.origin}/streets/post/${post.id}`;
+    const url = `https://mtaa-os.vercel.app/streets/post/${post.id}`;
     const text = encodeURIComponent((post.content || post.caption || 'Watch this on MTAA Streets') + WATERMARK);
     const u = encodeURIComponent(url);
     const links: any = {
@@ -353,18 +338,18 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
       telegram: `https://t.me/share/url?url=${u}&text=${text}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
     };
-    if (links[kind]) window.open(links[kind], '_blank');
+    if (links[kind]) Linking.openURL(links[kind]);
   };
 
   const handleCopyLink = async () => {
     if (!post) return;
-    const url = `${window.location.origin}/streets/post/${post.id}`;
-    try { await navigator.clipboard.writeText(url); alert('Link copied!'); } catch { alert('Could not copy'); }
+    const url = `https://mtaa-os.vercel.app/streets/post/${post.id}`;
+    try { await Clipboard.setStringAsync(url); Alert.alert('Success', 'Link copied!'); } catch { Alert.alert('Error', 'Could not copy'); }
   };
 
   const handleNativeShare = async () => {
     if (!post) return;
-    try { await navigator.share({ title: 'MTAA Streets', text: (post.content || '') + WATERMARK, url: `${window.location.origin}/streets/post/${post.id}` }); } catch { /* cancelled */ }
+    try { await Share.share({ message: (post.content || '') + WATERMARK + ' ' + `https://mtaa-os.vercel.app/streets/post/${post.id}` }); } catch { /* cancelled */ }
   };
 
   if (!visible || !post) return null;
@@ -528,6 +513,7 @@ export default function StreetsFeedScreen() {
   const [sharePostState, setSharePostState] = useState<StreetsPost | null>(null);
   const [boostPostState, setBoostPostState] = useState<StreetsPost | null>(null);
   const [visiblePostId, setVisiblePostId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -537,21 +523,7 @@ export default function StreetsFeedScreen() {
     });
   }, [posts, user?.id, isLiked]);
 
-  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.IntersectionObserver) return;
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const postId = entry.target.getAttribute('data-post-id');
-          if (entry.isIntersecting && postId) setVisiblePostId(postId);
-        });
-      },
-      { threshold: 0.6 }
-    );
-    Object.values(itemRefs.current).forEach((el) => { if (el) observer.observe(el); });
-    return () => { try { observer.disconnect(); } catch (e) {} };
-  }, [posts]);
+  
 
   const handleLike = useCallback(async (postId: string) => {
     const result = await likePost(postId);
@@ -573,54 +545,57 @@ export default function StreetsFeedScreen() {
 
   const isWeb = typeof window !== 'undefined';
   const visibleIndex = posts.findIndex((pp) => pp.id === visiblePostId);
-  const scrollToPost = (dir: number) => {
-    const idx = posts.findIndex((pp) => pp.id === visiblePostId);
-    const target = posts[idx + dir];
-    if (!target) return;
-    const el: any = itemRefs.current[target.id];
-    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
+  
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a', flexDirection: 'row' }}>
-      {isWeb && (
-        <View style={{ width: 68, paddingTop: 46, alignItems: 'center', gap: 16, borderRightWidth: 1, borderRightColor: '#1f1f1f', backgroundColor: '#0a0a0a' }}>
-          <TouchableOpacity onPress={() => scrollToPost(-visibleIndex)} style={{ alignItems: 'center' }}>
+      {isSidebarOpen && (
+        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 220, backgroundColor: '#0a0a0a', zIndex: 100, paddingTop: 50, borderRightWidth: 1, borderRightColor: '#1f1f1f' }}>
+          <TouchableOpacity onPress={() => setIsSidebarOpen(false)} style={{ position: 'absolute', right: -40, top: 50, width: 40, height: 40, backgroundColor: '#1f1f1f', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 8, borderBottomRightRadius: 8 }}>
+            <X size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { router.push('/'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Home size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Home</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/streets/explore')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/streets/explore'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Search size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Explore</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Explore</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/streets/create')} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={22} color="#fff" />
+          <TouchableOpacity onPress={() => { router.push('/streets/create'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+            <Plus size={22} color="#e91e63" />
+            <Text style={{ color: '#e91e63', fontSize: 16, fontWeight: '600' }}>Create Post</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/studio/live-active')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/studio/live-active'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Video size={22} color="#ff4d6d" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Live</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Live</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/notifications')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/notifications'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Bell size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Alerts</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Alerts</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/messages')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/messages'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <MessageCircle size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Messages</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Messages</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile/followers')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/profile/followers'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <Users size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Followers</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Followers</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')} style={{ alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => { router.push('/profile'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
             <User size={22} color="#fff" />
-            <Text style={{ color: '#888', fontSize: 10 }}>Profile</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Profile</Text>
           </TouchableOpacity>
         </View>
       )}
       <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#0a0a0a' }}>
-        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity onPress={() => setIsSidebarOpen(true)} style={{ padding: 4 }}>
+            <Menu size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
+        </View>
         <TouchableOpacity onPress={() => router.push('/streets/create')} style={{ backgroundColor: '#e91e63', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '300' }}>+</Text>
         </TouchableOpacity>
@@ -652,8 +627,8 @@ export default function StreetsFeedScreen() {
               onBoost={handleBoostPress}
               isVisible={isFocused && visiblePostId === item.id}
               onView={() => handleView(item.id)}
-              onPrev={() => scrollToPost(-1)}
-              onNext={() => scrollToPost(1)}
+              onPrev={() => {}}
+              onNext={() => {}}
               hasPrev={visibleIndex > 0}
               hasNext={visibleIndex >= 0 && visibleIndex < posts.length - 1}
             />
