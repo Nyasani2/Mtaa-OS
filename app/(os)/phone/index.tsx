@@ -122,8 +122,14 @@ async function syncNativeContacts(userId: string) {
             phone: c.phoneNumbers[0].number,
             created_at: new Date().toISOString(),
           }));
-        console.log(`[Phone] Found ${contactsToInsert.length} native contacts to sync`);
-        // Note: Actual upsert to Supabase can be added here if needed
+        
+        // Actually save them to Supabase
+        const { error } = await supabase
+          .from('phone_contacts')
+          .upsert(contactsToInsert, { onConflict: 'user_id,phone' });
+          
+        if (error) console.error('[Phone] Sync error:', error);
+        else console.log(`[Phone] Synced ${contactsToInsert.length} contacts`);
       }
     }
   } catch (e) {

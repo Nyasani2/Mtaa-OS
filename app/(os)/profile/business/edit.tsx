@@ -45,7 +45,7 @@ export default function BusinessEditScreen() {
       const payload = {
         user_id: user.id, name: name.trim(), business_type: type || null, description: description.trim() || null,
         location: location.trim() || null, phone: phone.trim() || null, email: email.trim() || null,
-        website: website.trim() || null, is_public: isPublic, updated_at: new Date().toISOString(),
+        is_public: isPublic, updated_at: new Date().toISOString(),
       };
       const { error } = await supabase.from('business_profiles').upsert(payload, { onConflict: 'user_id' });
       if (error) throw error;
