@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { logEvent } from '@/lib/utils/event-logger';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignupScreen() {
@@ -40,6 +41,7 @@ export default function SignupScreen() {
     setLoading(false);
     if (signupError) {
       setError(signupError.message || 'Failed to create account. Please try again.');
+      await logEvent('SIGNUP_FAILED', { error: signupError.message, email: email.trim() });
     } else {
       setSuccess(true);
     }

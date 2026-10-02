@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 interface MapMarker {
   id: string;
@@ -40,7 +40,7 @@ export default function UnifiedMap({
   return (
     <View style={[styles.container, style]}>
       <MapView
-        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        provider={undefined} // Let react-native-maps use the default free/native provider
         style={StyleSheet.absoluteFill}
         initialRegion={{ latitude, longitude, latitudeDelta: delta, longitudeDelta: delta }}
         showsUserLocation={showUserLocation}

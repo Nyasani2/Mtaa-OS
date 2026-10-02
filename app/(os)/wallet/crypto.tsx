@@ -112,7 +112,8 @@ export default function CryptoScreen() {
       if (error) throw error;
 
       setTimeout(async () => {
-        await supabase.from('wallet_transactions').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', tx.id);
+        await supabase.from('wallet_transactions').update({ status: 'pending_network_confirmation', updated_at: new Date().toISOString() }).eq('id', tx.id);
+        // NOTE: Status must only be set to 'completed' by backend webhook/Edge Function verification
         setCryptoBalances(prev => ({ ...prev, [selectedAsset]: (prev[selectedAsset] || 0) - numAmount }));
         addTransaction({
           id: tx.id,
