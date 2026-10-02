@@ -48,7 +48,11 @@ export function GlobalASISOverlay() {
       router.push('/(os)/wallet');
       return true;
     }
-    if (lowerText.includes('open mtaxi') || lowerText.includes('book a taxi')) {
+    if (lowerText.includes('open admin') || lowerText.includes('admin dashboard') || lowerText.includes('command center')) {
+      router.push('/(os)/admin');
+      return true;
+    }
+        if (lowerText.includes('open mtaxi') || lowerText.includes('book a taxi')) {
       router.push('/(os)/mtaxi');
       return true;
     }

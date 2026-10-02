@@ -77,17 +77,16 @@ interface ASISTool {
 const toolRegistry: Record<string, ASISTool> = {
   imageGeneration: {
     name: 'ImageGenerationAgent',
-    description: 'Generates images based on text prompts using OpenRouter.',
+    description: 'Generates high-quality images based on text prompts.',
     execute: async (params: { prompt: string }) => {
       console.log('[ASIS Agent] Generating image for:', params.prompt);
-      // TODO: Replace with actual OpenRouter Image Generation API call (e.g., DALL-E 3 or Stable Diffusion)
-      // For now, we return a structured response that the UI can render as a placeholder.
-      return {
-        success: true,
-        type: 'image_generation',
-        url: 'https://via.placeholder.com/512x512.png?text=Image+Generated', // Placeholder
-        prompt: params.prompt,
-      };
+      try {
+        const encodedPrompt = encodeURIComponent(params.prompt + ", high quality, highly detailed, 4k resolution, masterpiece");
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 10000)}`;
+        return { success: true, type: 'image_generation', url: imageUrl, prompt: params.prompt };
+      } catch (error) {
+        return { success: false, type: 'error', message: 'Failed to generate image.' };
+      }
     }
   },
   eventLogger: {
