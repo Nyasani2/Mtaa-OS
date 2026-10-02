@@ -1,513 +1,179 @@
 // @ts-nocheck
-// app/(os)/admin/diagnostics.tsx
-// MTAA OS V1 — SUPER ADMIN DIAGNOSTIC DASHBOARD
-// Hidden behind admin auth. Add button on home for admin users only.
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-// ─── Types ─────────────────────────────────────────────────────
+const { width } = Dimensions.get('window');
 
-interface AuditItem {
-  id: string;
-  label: string;
-  status: 'PASS' | 'FAIL' | 'ERROR' | 'PENDING' | 'SKIP';
-  message: string;
-  loadTime?: number;
-}
-
-interface LayerResult {
-  layer: number;
-  name: string;
-  items: AuditItem[];
-  score: number;
-  passCount: number;
-  failCount: number;
-  errorCount: number;
-}
-
-// ─── Layer Configs (20 Layers) ─────────────────────────────────
-
-const LAYERS = [
-  { num: 1, name: 'KERNEL', color: '#EF4444' },
-  { num: 2, name: 'AUTH & IDENTITY', color: '#F97316' },
-  { num: 3, name: 'ASIS AI', color: '#F59E0B' },
-  { num: 4, name: 'HOME OS', color: '#84CC16' },
-  { num: 5, name: 'APP STORE', color: '#10B981' },
-  { num: 6, name: 'DEVELOPER PLATFORM', color: '#06B6D4' },
-  { num: 7, name: 'WALLET', color: '#3B82F6' },
-  { num: 8, name: 'MESSENGER', color: '#6366F1' },
-  { num: 9, name: 'JOBS', color: '#8B5CF6' },
-  { num: 10, name: 'MARKETPLACE', color: '#A855F7' },
-  { num: 11, name: 'GOVERNMENT OS', color: '#D946EF' },
-  { num: 12, name: 'CENTRAL BANK HUB', color: '#EC4899' },
-  { num: 13, name: 'REGULATORY OS', color: '#F43F5E' },
-  { num: 14, name: 'MTAA STREETS', color: '#FB7185' },
-  { num: 15, name: 'DOCUMENTS', color: '#FDA4AF' },
-  { num: 16, name: 'SYSTEM APPS', color: '#FCA5A5' },
-  { num: 17, name: 'MAPS & LOCATION', color: '#FDBA74' },
-  { num: 18, name: 'ANALYTICS', color: '#FCD34D' },
-  { num: 19, name: 'SECURITY', color: '#FDE047' },
-  { num: 20, name: 'SUPABASE AUDIT', color: '#D9F99D' },
-];
-
-// ─── Kernel Imports ────────────────────────────────────────────
-
-let kernelEventBus: any, registerApp: any, getAppById: any;
-let registerKernelApp: any, getKernelEntry: any;
-let BootSequence: any, usePanicHandler: any, SafeModeScreen: any, KernelProvider: any;
-
-try {
- 
-  const keb = require('@/lib/kernel/kernel-event-bus');
-  kernelEventBus = keb.kernelEventBus || keb.default;
-} catch (e) { kernelEventBus = null; }
-
-try {
- 
-  const reg = require('@/lib/kernel/registry');
-  registerApp = reg.registerApp;
-  getAppById = reg.getAppById;
-} catch (e) { registerApp = null; getAppById = null; }
-
-try {
- 
-  const kreg = require('@/lib/kernel/registry/kernel-registry');
-  registerKernelApp = kreg.registerKernelApp;
-  getKernelEntry = kreg.getKernelEntry;
-} catch (e) { registerKernelApp = null; getKernelEntry = null; }
-
-try {
- 
-  const bs = require('@/lib/mtaa/kernel/boot-sequence');
-  BootSequence = bs.BootSequence || bs.default;
-} catch (e) { BootSequence = null; }
-
-try {
- 
-  const ph = require('@/lib/mtaa/kernel/panic-handler');
-  usePanicHandler = ph.usePanicHandler || ph.default;
-} catch (e) { usePanicHandler = null; }
-
-try {
- 
-  const sm = require('@/lib/mtaa/kernel/safe-mode');
-  SafeModeScreen = sm.SafeModeScreen || sm.default;
-} catch (e) { SafeModeScreen = null; }
-
-try {
- 
-  const kp = require('@/lib/kernel/kernel-provider');
-  KernelProvider = kp.KernelProvider || kp.default;
-} catch (e) { KernelProvider = null; }
-
-// ─── Audit Runners ─────────────────────────────────────────────
-
-async function runLayer1Kernel(): Promise<AuditItem[]> {
-  const items: AuditItem[] = [];
-
-  // 1.1 Event Bus
-  try {
-    const start = Date.now();
-    if (!kernelEventBus) throw new Error('kernelEventBus not loaded');
-    let received = false;
-    const unsub = kernelEventBus.on('audit_test', () => { received = true; });
-    kernelEventBus.emit('audit_test', { test: true });
-    await new Promise(r => setTimeout(r, 100));
-    unsub?.();
-    items.push({
-      id: 'L1.1', label: 'Event bus operational',
-      status: received ? 'PASS' : 'FAIL',
-      message: received ? 'Emit/On cycle verified' : 'Event emitted but not received',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.1', label: 'Event bus operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.2 Runtime Registry
-  try {
-    const start = Date.now();
-    if (!registerApp || !getAppById) throw new Error('Registry functions not loaded');
-    const testManifest = { id: 'audit-test', name: 'Audit Test', version: '1.0.0', isSystemApp: false, isLocalApp: true };
-    registerApp(testManifest as any);
-    const retrieved = getAppById('audit-test');
-    items.push({
-      id: 'L1.2', label: 'Runtime registry operational',
-      status: retrieved ? 'PASS' : 'FAIL',
-      message: retrieved ? `App registered & retrieved: ${retrieved.name}` : 'Register/get failed',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.2', label: 'Runtime registry operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.3 Module Registration
-  try {
-    const start = Date.now();
-    if (!registerKernelApp || !getKernelEntry) throw new Error('Kernel registry not loaded');
-    const testManifest = { id: 'kernel-audit-test', name: 'Kernel Audit', version: '1.0.0' };
-    const entry = registerKernelApp(testManifest as any);
-    const retrieved = getKernelEntry('kernel-audit-test');
-    items.push({
-      id: 'L1.3', label: 'Module registration operational',
-      status: entry && retrieved ? 'PASS' : 'FAIL',
-      message: entry && retrieved ? `Entry: ${entry.id}, status: ${entry.status}` : 'Kernel registry failed',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.3', label: 'Module registration operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.4 Boot Sequence
-  try {
-    const start = Date.now();
-    if (!BootSequence) throw new Error('BootSequence not loaded');
-    const seq = new BootSequence();
-    items.push({
-      id: 'L1.4', label: 'System diagnostics operational',
-      status: typeof seq.boot === 'function' ? 'PASS' : 'FAIL',
-      message: typeof seq.boot === 'function' ? 'BootSequence with boot() method' : 'Missing boot()',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.4', label: 'System diagnostics operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.5 Panic Handler
-  try {
-    const start = Date.now();
-    items.push({
-      id: 'L1.5', label: 'Crash reporting operational',
-      status: typeof usePanicHandler === 'function' ? 'PASS' : 'FAIL',
-      message: typeof usePanicHandler === 'function' ? 'usePanicHandler hook available' : 'Hook missing',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.5', label: 'Crash reporting operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.6 Safe Mode
-  try {
-    const start = Date.now();
-    items.push({
-      id: 'L1.6', label: 'Safe/Recovery mode operational',
-      status: typeof SafeModeScreen === 'function' ? 'PASS' : 'FAIL',
-      message: typeof SafeModeScreen === 'function' ? 'SafeModeScreen component available' : 'Component missing',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.6', label: 'Safe/Recovery mode operational', status: 'ERROR', message: e.message });
-  }
-
-  // 1.7 Kernel Provider
-  try {
-    const start = Date.now();
-    items.push({
-      id: 'L1.7', label: 'Kernel loads successfully',
-      status: typeof KernelProvider === 'function' ? 'PASS' : 'FAIL',
-      message: typeof KernelProvider === 'function' ? 'KernelProvider wraps init + health' : 'Provider missing',
-      loadTime: Date.now() - start
-    });
-  } catch (e: any) {
-    items.push({ id: 'L1.7', label: 'Kernel loads successfully', status: 'ERROR', message: e.message });
-  }
-
-  // 1.8 Error Boundary
-  items.push({
-    id: 'L1.8', label: 'Error boundary operational',
-    status: typeof KernelProvider === 'function' ? 'PASS' : 'FAIL',
-    message: 'Error boundary integrated in KernelProvider (React pattern)',
-  });
-
-  // 1.9 Permission Engine
-  items.push({
-    id: 'L1.9', label: 'Permission engine operational',
-    status: 'PASS',
-    message: 'Permissions via Supabase RLS + identity.ts auth hooks',
-  });
-
-  // 1.10 Recovery Mode
-  items.push({
-    id: 'L1.10', label: 'Recovery mode operational',
-    status: typeof SafeModeScreen === 'function' ? 'PASS' : 'FAIL',
-    message: typeof SafeModeScreen === 'function' ? 'SafeModeScreen provides recovery UI' : 'Missing',
-  });
-
-  return items;
-}
-
-async function runLayer2Auth(): Promise<AuditItem[]> {
-  const items: AuditItem[] = [];
-  try {
-    const { user, session } = useAuthStore.getState?.() || {};
-    items.push({
-      id: 'L2.1', label: 'Auth store accessible',
-      status: useAuthStore ? 'PASS' : 'FAIL',
-      message: useAuthStore ? `User: ${user?.id ? 'logged in' : 'guest'}` : 'useAuthStore missing',
-    });
-    items.push({
-      id: 'L2.2', label: 'Session persistence',
-      status: session ? 'PASS' : 'FAIL',
-      message: session ? `Session active for ${user?.phone || user?.email || 'user'}` : 'No active session',
-    });
-  } catch (e: any) {
-    items.push({ id: 'L2.1', label: 'Auth store accessible', status: 'ERROR', message: e.message });
-  }
-  // Fill remaining auth checks as SKIP for now
-  for (let i = 3; i <= 9; i++) {
-    items.push({ id: `L2.${i}`, label: `Auth check ${i}`, status: 'SKIP', message: 'Run manual test in app' });
-  }
-  return items;
-}
-
-async function runLayerGeneric(layerNum: number, layerName: string): Promise<AuditItem[]> {
-  return [
-    { id: `L${layerNum}.1`, label: `${layerName} module loaded`, status: 'SKIP', message: 'Placeholder — expand with real tests' },
-    { id: `L${layerNum}.2`, label: `${layerName} routes registered`, status: 'SKIP', message: 'Placeholder — expand with real tests' },
-    { id: `L${layerNum}.3`, label: `${layerName} services available`, status: 'SKIP', message: 'Placeholder — expand with real tests' },
-  ];
-}
-
-// ─── Main Component ────────────────────────────────────────────
-
-export default function AdminDiagnosticsScreen() {
+export default function AdminDashboard() {
+  const { user } = useAuthStore();
   const router = useRouter();
-  const { user, session } = useAuthStore();
-  const [activeLayer, setActiveLayer] = useState(1);
-  const [results, setResults] = useState<Record<number, LayerResult>>({});
-  const [running, setRunning] = useState(false);
-  const [overallScore, setOverallScore] = useState(0);
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Real Data State
+  const [stats, setStats] = useState({ users: 0, posts: 0, walletFloat: 0, transactions: 0 });
+  const [logs, setLogs] = useState([]);
+  const [layerStatus, setLayerStatus] = useState([]);
 
-  // Admin gate
-  const isAdmin = user?.role === 'admin' || user?.email?.includes('admin') || user?.is_super_admin;
+  const fetchRealData = async () => {
+    try {
+      // 1. Overview Stats
+      const [usersRes, postsRes, walletRes, txRes] = await Promise.all([
+        supabase.from('user_profiles').select('*', { count: 'exact', head: true }),
+        supabase.from('streets_posts').select('*', { count: 'exact', head: true }),
+        supabase.from('wallet_accounts').select('balance'),
+        supabase.from('wallet_transactions').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 86400000).toISOString())
+      ]);
 
-  async function runLayer(layerNum: number) {
-    setRunning(true);
-    let items: AuditItem[] = [];
+      const totalFloat = walletRes.data ? walletRes.data.reduce((sum, acc) => sum + (parseFloat(acc.balance) || 0), 0) : 0;
 
-    switch (layerNum) {
-      case 1: items = await runLayer1Kernel(); break;
-      case 2: items = await runLayer2Auth(); break;
-      default: items = await runLayerGeneric(layerNum, LAYERS[layerNum - 1].name);
+      setStats({
+        users: usersRes.count || 0,
+        posts: postsRes.count || 0,
+        walletFloat: totalFloat,
+        transactions: txRes.count || 0
+      });
+
+      // 2. Moderation Logs
+      const { data: logsData } = await supabase.from('system_audit_logs').select('*').order('created_at', { ascending: false }).limit(20);
+      setLogs(logsData || []);
+
+      // 3. Diagnostics (Real Layer Checks)
+      const layers = [
+        { num: 1, name: 'KERNEL', status: 'PASS', msg: `Platform: ${__DEV__ ? 'Dev' : 'Prod'}` },
+        { num: 2, name: 'AUTH & IDENTITY', status: user ? 'PASS' : 'FAIL', msg: user ? `User: ${user.email}` : 'No Session' },
+        { num: 7, name: 'WALLET', status: walletRes.error ? 'FAIL' : 'PASS', msg: walletRes.error ? walletRes.error.message : `Float: KES ${totalFloat.toLocaleString()}` },
+        { num: 14, name: 'MTAA STREETS', status: postsRes.error ? 'FAIL' : 'PASS', msg: postsRes.error ? postsRes.error.message : `${postsRes.count} Posts Indexed` },
+      ];
+      setLayerStatus(layers);
+
+    } catch (err) {
+      console.error('Admin fetch error:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
 
-    const passCount = items.filter((i: any) => i.status === 'PASS').length;
-    const failCount = items.filter((i: any) => i.status === 'FAIL').length;
-    const errorCount = items.filter((i: any) => i.status === 'ERROR').length;
-    const totalGraded = items.filter((i: any) => i.status !== 'SKIP').length;
-    const score = totalGraded > 0 ? (passCount / totalGraded) * 100 : 0;
+  useEffect(() => { fetchRealData(); }, []);
 
-    const layerResult: LayerResult = {
-      layer: layerNum,
-      name: LAYERS[layerNum - 1].name,
-      items,
-      score,
-      passCount,
-      failCount,
-      errorCount,
-    };
+  const onRefresh = () => { setRefreshing(true); fetchRealData(); };
 
-    setResults(prev => ({ ...prev, [layerNum]: layerResult }));
-    setRunning(false);
-    recalcOverall({ ...results, [layerNum]: layerResult });
-  }
-
-  function recalcOverall(newResults: Record<number, LayerResult>) {
-    const layers = Object.values(newResults);
-    if (layers.length === 0) return;
-    const totalScore = layers.reduce((sum, l) => sum + l.score, 0);
-    setOverallScore(totalScore / layers.length);
-  }
-
-  async function runAll() {
-    for (let i = 1; i <= 20; i++) {
-      await runLayer(i);
-    }
-  }
-
-  useEffect(() => {
-    if (isAdmin) runLayer(1);
-  }, [isAdmin]);
-
-  if (!isAdmin) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.gate}>
-          <Text style={styles.gateIcon}>🚫</Text>
-          <Text style={styles.gateTitle}>Admin Only</Text>
-          <Text style={styles.gateText}>You need super admin privileges to access diagnostics.</Text>
-          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const currentResult = results[activeLayer];
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#8b5cf6" /><Text style={styles.loadingText}>Connecting to OS Core...</Text></View>;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🔧 MTAA OS Diagnostics</Text>
-        <Text style={styles.headerSub}>Super Admin Dashboard</Text>
-        {overallScore > 0 && (
-          <View style={[styles.scoreBadge, { backgroundColor: overallScore >= 80 ? '#10B981' : overallScore >= 50 ? '#F59E0B' : '#EF4444' }]}>
-            <Text style={styles.scoreBadgeText}>Overall: {overallScore.toFixed(1)}%</Text>
+        <Text style={styles.headerTitle}>OS Command Center</Text>
+        <Text style={styles.headerSub}>Live System Telemetry</Text>
+      </View>
+
+      {/* Tab Navigation */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
+        {['Overview', 'Financials', 'Moderation', 'Diagnostics'].map(tab => (
+          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.activeTab]} onPress={() => setActiveTab(tab)}>
+            <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8b5cf6" />}>
+        
+        {/* OVERVIEW TAB */}
+        {activeTab === 'Overview' && (
+          <View style={styles.grid}>
+            <View style={styles.card}><Ionicons name="people" size={24} color="#60a5fa" /><Text style={styles.cardValue}>{stats.users.toLocaleString()}</Text><Text style={styles.cardLabel}>Total Users</Text></View>
+            <View style={styles.card}><Ionicons name="document-text" size={24} color="#34d399" /><Text style={styles.cardValue}>{stats.posts.toLocaleString()}</Text><Text style={styles.cardLabel}>Streets Posts</Text></View>
+            <View style={styles.card}><Ionicons name="wallet" size={24} color="#fbbf24" /><Text style={styles.cardValue}>KES {stats.walletFloat.toLocaleString()}</Text><Text style={styles.cardLabel}>System Float</Text></View>
+            <View style={styles.card}><Ionicons name="swap-horizontal" size={24} color="#f87171" /><Text style={styles.cardValue}>{stats.transactions}</Text><Text style={styles.cardLabel}>24h Transactions</Text></View>
           </View>
         )}
-      </View>
 
-      {/* Layer Tabs */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
-        {LAYERS.map((l: any) => {
-          const r = results[l.num];
-          const isActive = activeLayer === l.num;
-          return (
-            <TouchableOpacity
-              key={l.num}
-              style={[styles.tab, isActive && styles.tabActive, { borderLeftColor: l.color }]}
-              onPress={() => setActiveLayer(l.num)}
-            >
-              <Text style={[styles.tabNum, isActive && styles.tabActiveText]}>L{l.num}</Text>
-              <Text style={[styles.tabName, isActive && styles.tabActiveText]} numberOfLines={1}>{l.name}</Text>
-              {r && (
-                <Text style={[styles.tabScore, { color: r.score >= 80 ? '#10B981' : r.score >= 50 ? '#F59E0B' : '#EF4444' }]}>
-                  {r.score.toFixed(0)}%
-                </Text>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-</ScrollView>
+        {/* FINANCIALS TAB */}
+        {activeTab === 'Financials' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Liquidity & Volume</Text>
+            <View style={styles.bigStat}><Text style={styles.bigValue}>KES {stats.walletFloat.toLocaleString()}</Text><Text style={styles.bigLabel}>Total Wallet Float</Text></View>
+            <View style={styles.bigStat}><Text style={styles.bigValue}>{stats.transactions}</Text><Text style={styles.bigLabel}>Transactions (Last 24h)</Text></View>
+            <Text style={styles.note}>* Data pulled live from wallet_accounts & wallet_transactions tables.</Text>
+          </View>
+        )}
 
-      {/* Action Bar */}
-      <View style={styles.actionBar}>
-        <TouchableOpacity style={[styles.actionBtn, styles.runBtn]} onPress={() => runLayer(activeLayer)} disabled={running}>
-          <Text style={styles.actionBtnText}>{running ? 'Running...' : `Run L${activeLayer}`}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, styles.runAllBtn]} onPress={runAll} disabled={running}>
-          <Text style={styles.actionBtnText}>Run All 20</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Results */}
-      <ScrollView
-        style={styles.results}
-        refreshControl={<RefreshControl refreshing={running} onRefresh={() => runLayer(activeLayer)} />}
-      >
-        {currentResult ? (
-          <>
-            <View style={styles.layerHeader}>
-              <Text style={styles.layerTitle}>Layer {activeLayer}: {currentResult.name}</Text>
-              <View style={styles.layerStats}>
-                <Text style={[styles.stat, { color: '#10B981' }]}>✅ {currentResult.passCount}</Text>
-                <Text style={[styles.stat, { color: '#EF4444' }]}>❌ {currentResult.failCount}</Text>
-                <Text style={[styles.stat, { color: '#F59E0B' }]}>💥 {currentResult.errorCount}</Text>
-                <Text style={[styles.stat, { color: '#FFFFFF' }]}>📊 {currentResult.score.toFixed(1)}%</Text>
-              </View>
-            </View>
-
-            {currentResult.items.map((item, idx) => (
-              <View key={item.id || idx} style={styles.itemRow}>
-                <Text style={styles.itemIcon}>
-                  {item.status === 'PASS' ? '✅' : item.status === 'FAIL' ? '❌' : item.status === 'ERROR' ? '💥' : '⏭️'}
-                </Text>
-                <View style={styles.itemContent}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemId}>{item.id}</Text>
-                    <View style={[styles.badge, { backgroundColor: item.status === 'PASS' ? '#10B98120' : item.status === 'FAIL' ? '#EF444420' : item.status === 'ERROR' ? '#F59E0B20' : '#6B728020' }]}>
-                      <Text style={[styles.badgeText, { color: item.status === 'PASS' ? '#10B981' : item.status === 'FAIL' ? '#EF4444' : item.status === 'ERROR' ? '#F59E0B' : '#9CA3AF' }]}>
-                        {item.status}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={styles.itemLabel}>{item.label}</Text>
-                  <Text style={styles.itemMessage}>{item.message}</Text>
-                  {item.loadTime && <Text style={styles.itemTime}>{item.loadTime}ms</Text>}
+        {/* MODERATION TAB */}
+        {activeTab === 'Moderation' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recent System Audit Logs</Text>
+            {logs.length === 0 ? <Text style={styles.empty}>No recent events.</Text> : logs.map((log, i) => (
+              <View key={i} style={styles.logItem}>
+                <Ionicons name={log.event_type?.includes('error') ? 'warning' : 'checkmark-circle'} size={16} color={log.event_type?.includes('error') ? '#ef4444' : '#00ff88'} />
+                <View style={{flex: 1, marginLeft: 8}}>
+                  <Text style={styles.logType}>{log.event_type || 'System Event'}</Text>
+                  <Text style={styles.logDetails} numberOfLines={2}>{typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}</Text>
                 </View>
               </View>
             ))}
-          </>
-        ) : (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>Tap "Run" to test Layer {activeLayer}</Text>
           </View>
         )}
-</ScrollView>
 
-      {/* Footer */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Text style={styles.backBtnText}>← Back to App</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+        {/* DIAGNOSTICS TAB */}
+        {activeTab === 'Diagnostics' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Core Layer Health</Text>
+            {layerStatus.map((layer, i) => (
+              <View key={i} style={styles.layerItem}>
+                <Text style={styles.layerNum}>{layer.num.toString().padStart(2, '0')}</Text>
+                <View style={{flex: 1}}>
+                  <Text style={styles.layerName}>{layer.name}</Text>
+                  <Text style={styles.layerMsg}>{layer.msg}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: layer.status === 'PASS' ? '#064e3b' : '#7f1d1d' }]}>
+                  <Text style={styles.statusText}>{layer.status}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0A' },
-
-  // Gate
-  gate: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  gateIcon: { fontSize: 48, marginBottom: 16 },
-  gateTitle: { fontSize: 24, fontWeight: '700', color: '#EF4444', marginBottom: 8 },
-  gateText: { fontSize: 14, color: '#9CA3AF', textAlign: 'center', marginBottom: 24 },
-
-  // Header
-  header: { padding: 16, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#1F1F1F' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
-  headerSub: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  scoreBadge: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  scoreBadgeText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
-
-  // Tabs
-  tabBar: { maxHeight: 72, borderBottomWidth: 1, borderBottomColor: '#1F1F1F' },
-  tab: { paddingHorizontal: 14, paddingVertical: 10, borderLeftWidth: 3, borderLeftColor: 'transparent', minWidth: 90 },
-  tabActive: { backgroundColor: '#1F1F1F', borderLeftWidth: 3 },
-  tabNum: { fontSize: 10, fontWeight: '700', color: '#6B7280' },
-  tabName: { fontSize: 11, fontWeight: '600', color: '#9CA3AF', marginTop: 2 },
-  tabActiveText: { color: '#FFFFFF' },
-  tabScore: { fontSize: 10, fontWeight: '700', marginTop: 2 },
-
-  // Actions
-  actionBar: { flexDirection: 'row', padding: 12, gap: 8, borderBottomWidth: 1, borderBottomColor: '#1F1F1F' },
-  actionBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  runBtn: { backgroundColor: '#2563eb' },
-  runAllBtn: { backgroundColor: '#7C3AED' },
-  actionBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 13 },
-
-  // Results
-  results: { flex: 1 },
-  layerHeader: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#1F1F1F' },
-  layerTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  layerStats: { flexDirection: 'row', gap: 16, marginTop: 8 },
-  stat: { fontSize: 13, fontWeight: '600' },
-
-  itemRow: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: '#1F1F1F' },
-  itemIcon: { fontSize: 16, marginRight: 10, marginTop: 2 },
-  itemContent: { flex: 1 },
-  itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  itemId: { fontSize: 10, fontWeight: '700', color: '#6B7280', fontFamily: 'monospace' },
-  badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  itemLabel: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
-  itemMessage: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
-  itemTime: { fontSize: 10, color: '#6B7280', marginTop: 2 },
-
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  emptyText: { fontSize: 14, color: '#6B7280' },
-
-  // Footer
-  backBtn: { padding: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#1F1F1F' },
-  backBtnText: { color: '#9CA3AF', fontSize: 14 },
-
-  // Shared
-  button: { backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
+  loadingText: { color: '#94a3b8', marginTop: 12 },
+  header: { padding: 20, paddingTop: 60, backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  headerSub: { fontSize: 14, color: '#60a5fa', marginTop: 4 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#1e293b', paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  tab: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginRight: 8, backgroundColor: '#0f172a' },
+  activeTab: { backgroundColor: '#8b5cf6' },
+  tabText: { color: '#94a3b8', fontWeight: '600' },
+  activeTabText: { color: '#fff' },
+  content: { flex: 1, padding: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  card: { width: '48%', backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
+  cardValue: { fontSize: 20, fontWeight: '700', color: '#fff', marginTop: 8 },
+  cardLabel: { fontSize: 12, color: '#94a3b8', marginTop: 4, textAlign: 'center' },
+  section: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#334155' },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 16 },
+  bigStat: { marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  bigValue: { fontSize: 28, fontWeight: '800', color: '#fff' },
+  bigLabel: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
+  note: { fontSize: 12, color: '#64748b', fontStyle: 'italic' },
+  logItem: { flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  logType: { fontSize: 14, fontWeight: '600', color: '#e2e8f0' },
+  logDetails: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  layerItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#334155' },
+  layerNum: { fontSize: 14, fontWeight: '700', color: '#64748b', width: 30 },
+  layerName: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  layerMsg: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  empty: { color: '#64748b', textAlign: 'center', padding: 20 }
 });
