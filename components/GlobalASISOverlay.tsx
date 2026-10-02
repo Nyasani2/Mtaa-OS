@@ -7,6 +7,7 @@ import {
   PanResponder, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'react-native';
 import { useASIS } from '@/lib/asis-cse/asis-cse-provider';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { usePathname, useRouter } from 'expo-router';
@@ -198,6 +199,19 @@ export function GlobalASISOverlay() {
                 )}
                 <View style={styles.messageContent}>
                   <Text style={styles.messageText}>{msg.content}</Text>
+                  {msg.metadata?.type === 'image_generation' && msg.metadata?.url && (
+                    <Image 
+                      source={{ uri: msg.metadata.url }} 
+                      style={{ width: '100%', height: 200, borderRadius: 12, marginTop: 8 }} 
+                      resizeMode="cover"
+                    />
+                  )}
+                  {msg.metadata?.type === 'video_generation_placeholder' && (
+                    <View style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 12, marginTop: 8, borderWidth: 1, borderColor: '#334155' }}>
+                      <Ionicons name="videocam-outline" size={24} color="#60a5fa" style={{ marginBottom: 8 }} />
+                      <Text style={{ color: '#94a3b8', fontSize: 12 }}>{msg.metadata.message}</Text>
+                    </View>
+                  )}
                   <Text style={styles.messageTime}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>
               </View>
