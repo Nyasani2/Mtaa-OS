@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User } from 'lucide-react-native';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
+import { Image, Share, Alert } from 'react-native';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
@@ -186,7 +188,7 @@ function PostCard({
           {post.media_url && post.media_type === 'video' ? (
             <VideoPlayer uri={post.media_url} thumbnailUri={post.thumbnail_url} isVisible={isVisible} onView={onView} />
           ) : post.media_url ? (
-            <img src={post.media_url} alt="" style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', borderRadius: 12, display: 'block' }} />
+            <Image source={{ uri: post.media_url }} style={{ width: '100%', aspectRatio: '9/16', borderRadius: 12 }} resizeMode="cover" />
           ) : (
             <View style={{ width: '100%', aspectRatio: '9/16', backgroundColor: '#1a1a1a', borderRadius: 12, justifyContent: 'center', padding: 16 }}>
               <Text style={{ color: '#fff', fontSize: 16, lineHeight: 24 }}>{post.content}</Text>
@@ -194,7 +196,7 @@ function PostCard({
           )}
 
           {/* Right action rail (TikTok-style) */}
-          <div style={{ position: 'absolute', right: 6, bottom: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 6 }}>
+          <View style={{ position: 'absolute', right: 6, bottom: 12, flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 6 }}>
             <div style={{ position: 'relative', marginBottom: 8 }}>
               <div style={{ width: 44, height: 44, borderRadius: 22, border: '2px solid #fff', overflow: 'hidden', backgroundColor: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {author?.avatar_url ? (
@@ -227,20 +229,20 @@ function PostCard({
               <TrendingUp size={26} color="#ffd143" />
               <Text style={{ color: '#ffd143', fontSize: 11, fontWeight: '600' }}>Boost</Text>
             </TouchableOpacity>
-          </div>
+          </View>
 
           {/* Up / down navigation arrows */}
-          <div style={{ position: 'absolute', right: -48, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <View style={{ position: 'absolute', right: -48, top: '40%', flexDirection: 'column', gap: 10 }}>
             <TouchableOpacity onPress={onPrev} disabled={!hasPrev} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center', opacity: hasPrev ? 1 : 0.35 }}>
               <ChevronUp size={22} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity onPress={onNext} disabled={!hasNext} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center', opacity: hasNext ? 1 : 0.35 }}>
               <ChevronDown size={22} color="#fff" />
             </TouchableOpacity>
-          </div>
+          </View>
 
           {/* Bottom-left author + caption overlay */}
-          <div style={{ position: 'absolute', left: 12, bottom: 12, right: 64, zIndex: 5 }}>
+          <View style={{ position: 'absolute', left: 12, bottom: 12, right: 64, zIndex: 5 }}>
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>@{username}</Text>
             {post.caption ? <Text style={{ color: '#eee', fontSize: 13, marginTop: 4 }} numberOfLines={2}>{post.caption}</Text> : null}
             {post.hashtags && post.hashtags.length > 0 && (
@@ -248,7 +250,7 @@ function PostCard({
                 {post.hashtags.map((t) => '#' + t).join(' ')}
               </Text>
             )}
-          </div>
+          </View>
         </View>
 
         {post.content && post.media_url ? (
@@ -563,6 +565,13 @@ export default function StreetsFeedScreen() {
   const handleBoostPress = useCallback((post: StreetsPost) => setBoostPostState(post), []);
   const handleView = useCallback((postId: string) => markViewed(postId), [markViewed]);
 
+  const viewabilityConfig = { itemVisiblePercentThreshold: 60 };
+  const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setVisiblePostId(viewableItems[0].item.id);
+    }
+  }, []);
+
   const isWeb = typeof window !== 'undefined';
   const visibleIndex = posts.findIndex((pp) => pp.id === visiblePostId);
   const scrollToPost = (dir: number) => {
@@ -629,8 +638,10 @@ export default function StreetsFeedScreen() {
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadPosts(true)} tintColor="#e91e63" />}
         contentContainerStyle={{ paddingBottom: 100, alignItems: 'center' }}
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
         renderItem={({ item }) => (
-          <div ref={(el) => { itemRefs.current[item.id] = el; }} data-post-id={item.id}>
+          <View>
             <PostCard
               post={item}
               author={authors[item.creator_id]}
@@ -647,7 +658,7 @@ export default function StreetsFeedScreen() {
               hasPrev={visibleIndex > 0}
               hasNext={visibleIndex >= 0 && visibleIndex < posts.length - 1}
             />
-          </div>
+          </View>
         )}
         ListEmptyComponent={
           loading ? (

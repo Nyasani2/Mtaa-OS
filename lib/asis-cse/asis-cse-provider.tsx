@@ -109,7 +109,7 @@ export function ASISCSEProvider({
         });
 
         setIsInitialized(true);
-        setSystemStatus('Online • Local Qwen');
+        setSystemStatus('Online');
         setHealth(computeHealth());
 
         healthIntervalRef.current = setInterval(() => {
@@ -127,7 +127,7 @@ export function ASISCSEProvider({
           newConversation();
         }
 
-        console.log('[ASIS Provider] v3.6 initialized with Local Qwen & Auto-Fix');
+        console.log('[ASIS Provider] v3.6 initialized & Auto-Fix ready');
         
         // ONBOARDING CHECK
         const { user } = require('@/lib/auth/store/auth.store').useAuthStore.getState();
@@ -163,7 +163,7 @@ export function ASISCSEProvider({
         {
           id: generateUUID(),
           role: 'system',
-          content: 'ASIS CSE v3.6 online (Local Qwen). How can I assist you today?',
+          content: 'ASIS online. How can I assist you today?',
           timestamp: Date.now(),
         },
       ],
@@ -242,7 +242,7 @@ export function ASISCSEProvider({
         const system = systemRef.current;
         const cycle = system.clock.getCycleNumber();
 
-        console.log('[ASIS] Calling Local Qwen...');
+        console.log('[ASIS] Processing request...');
         
         // CALL LOCAL QWEN DIRECTLY
         // Get user data from auth store
@@ -252,7 +252,7 @@ export function ASISCSEProvider({
         console.log('[ASIS] Received response:', result);
 
         if (!result.response) {
-          throw new Error('No response from Local Qwen');
+          throw new Error('No response received');
         }
 
         const asisMsg: ASISMessage = {
@@ -261,7 +261,7 @@ export function ASISCSEProvider({
           content: result.response,
           timestamp: Date.now(),
           metadata: {
-            engineName: result.metadata?.engine || 'Local Qwen',
+            engineName: result.metadata?.engine || 'ASIS Core',
             confidence: result.metadata?.confidence || 0.9,
             sources: result.metadata?.sources || [],
             action: result.action,
@@ -285,7 +285,7 @@ export function ASISCSEProvider({
           const utterance = new SpeechSynthesisUtterance(result.response);
           window.speechSynthesis.speak(utterance);
         }
-        setSystemStatus('Online • Local Qwen');
+        setSystemStatus('Online');
         setHealth(computeHealth());
 
       } catch (err: any) {
