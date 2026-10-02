@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform, Image, Share, Alert } from 'react-native';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video } from 'lucide-react-native';
-import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
