@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Platform } from 'react-native';
+import { Camera } from 'expo-camera';
 
 export type CameraPermissionState = 'prompt' | 'granted' | 'denied' | 'unknown';
 
@@ -23,9 +24,11 @@ export function useCameraPermission() {
       setPermissionState('unknown');
       return 'unknown';
     } else {
-      // Native — would use expo-camera or expo-image-picker permissions
-      setPermissionState('unknown');
-      return 'unknown';
+      // Native: Actually check permission using expo-camera
+      const { status } = await Camera.getCameraPermissionsAsync();
+      const state = status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'prompt';
+      setPermissionState(state);
+      return state;
     }
   }, []);
 
@@ -45,17 +48,15 @@ export function useCameraPermission() {
         setIsLoading(false);
         return true;
       } else {
-        // Native — would use expo-camera
-        setPermissionState('granted');
+        // Native: Actually request permission using expo-camera
+        const { status } = await Camera.requestCameraPermissionsAsync();
+        const state = status === 'granted' ? 'granted' : 'denied';
+        setPermissionState(state);
         setIsLoading(false);
-        return true;
+        return status === 'granted';
       }
     } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setPermissionState('denied');
-      } else {
-        setPermissionState('denied');
-      }
+      setPermissionState('denied');
       setIsLoading(false);
       return false;
     }
