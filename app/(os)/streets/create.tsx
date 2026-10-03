@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Camera } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -32,7 +32,7 @@ const [recording, setRecording] = useState(false);
 const [posting, setPosting] = useState(false);
 const [localError, setLocalError] = useState(null);
 const fileInputRef = useRef(null);
-const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : null;
+const previewUrl = selectedFile ? selectedFile.uri : null;
 
 const openCamera = async () => {
   try {
@@ -62,10 +62,9 @@ const onFile = async (e) => {
 const f = e.target.files?.[0]; 
 if (f) { 
   // Strip EXIF data from images before upload
-  if (f.type.startsWith('image/')) {
+  if (Platform.OS === 'web' && f.type.startsWith('image/')) {
     try {
       const strippedUri = await stripExifData(URL.createObjectURL(f));
-      // Convert back to blob for upload
       const response = await fetch(strippedUri);
       const strippedBlob = await response.blob();
       const strippedFile = new File([strippedBlob], f.name, { type: f.type });
@@ -75,7 +74,8 @@ if (f) {
       setSelectedFile(f);
     }
   } else {
-    setSelectedFile(f);
+    // On native, ImagePicker already handles the file/uri safely
+    setSelectedFile({ uri: f.uri || URL.createObjectURL(f), type: f.type, name: f.name });
   }
   setMediaType(f.type.startsWith('video') ? 'video' : 'image'); 
 } 

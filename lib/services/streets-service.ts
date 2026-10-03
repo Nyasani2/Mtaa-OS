@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { supabase } from '@/lib/supabase';
+import { Platform } from 'react-native';
 // @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore
@@ -364,7 +365,9 @@ export async function fetchUserAdverts(userId: string) {
 
 // ── Video Thumbnail Generator ──────────────────────────────
 export async function generateVideoThumbnail(file: File): Promise<string | null> {
+  if (Platform.OS !== 'web') return Promise.resolve(null);
   return new Promise((resolve) => {
+    if (Platform.OS !== 'web') return null;
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.muted = true;
@@ -375,7 +378,8 @@ export async function generateVideoThumbnail(file: File): Promise<string | null>
     };
 
     video.onseeked = () => {
-      const canvas = document.createElement('canvas');
+      if (Platform.OS !== 'web') return null;
+    const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
@@ -398,18 +402,21 @@ export async function generateVideoThumbnail(file: File): Promise<string | null>
 
 // ── Video Compression ──────────────────────────────────────
 async function compressVideoWeb(file: File): Promise<File> {
+  if (Platform.OS !== 'web') return Promise.resolve(file);
   return new Promise((resolve) => {
     if (file.size < 5 * 1024 * 1024) {
       resolve(file);
       return;
     }
 
+    if (Platform.OS !== 'web') return null;
     const video = document.createElement('video');
     video.src = URL.createObjectURL(file);
     video.muted = true;
 
     video.onloadedmetadata = () => {
-      const canvas = document.createElement('canvas');
+      if (Platform.OS !== 'web') return null;
+    const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         URL.revokeObjectURL(video.src);

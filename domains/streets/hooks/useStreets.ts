@@ -1,3 +1,6 @@
+import { Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Share } from 'react-native';
 import { useState, useCallback, useEffect } from 'react';
 import {
   fetchStreetsPosts,
@@ -136,9 +139,9 @@ export function useStreets() {
       };
 
       if (navigator.share && navigator.canShare?.(shareData)) {
-        await navigator.share(shareData);
+        if (Platform.OS === 'web') { await navigator.share(shareData); } else { await Share.share({ message: `${shareData.text || ''} ${shareData.url || ''}` }); }
       } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(shareData.url || '');
+        if (Platform.OS === 'web') { await navigator.clipboard.writeText(shareData.url || ''); } else { await Clipboard.setStringAsync(shareData.url || ''); }
       }
       return result;
     } catch (e: any) {
@@ -286,7 +289,8 @@ export function useStreets() {
 
 function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
-    const video = document.createElement('video');
+    if (Platform.OS !== 'web') return null;
+  const video = document.createElement('video');
     video.preload = 'metadata';
     video.src = URL.createObjectURL(file);
     video.onloadedmetadata = () => {

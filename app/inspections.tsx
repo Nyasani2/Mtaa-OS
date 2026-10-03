@@ -156,7 +156,22 @@ export default function InspectionsScreen() {
             <Text style={{ color: '#666', marginBottom: 8 }}>Earn 50% of every inspection: Boda +500 · Taxi +1,000 · Truck +2,500</Text>
             <TextInput style={inp} placeholder="Full name" value={iName} onChangeText={setIName} />
             <TextInput style={inp} placeholder="National ID" value={iNid} onChangeText={setINid} />
-            <TouchableOpacity onPress={() => { const i = document.createElement('input'); i.type = 'file'; i.onchange = (e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setIGC(String(r.result)); r.readAsDataURL(f); }; i.click(); }} style={[inp, { alignItems: 'center' }]}>
+            <TouchableOpacity onPress={() => {
+              if (Platform.OS === 'web') {
+                const i = document.createElement('input'); 
+                i.type = 'file'; 
+                i.onchange = (e: any) => { 
+                  const f = e.target.files?.[0]; 
+                  if (!f) return; 
+                  const r = new FileReader(); 
+                  r.onload = () => setIGC(String(r.result)); 
+                  r.readAsDataURL(f); 
+                }; 
+                i.click(); 
+              } else {
+                Alert.alert('Web Only', 'Document upload is currently only supported on the web version.');
+              }
+            }} style={[inp, { alignItems: 'center' }]}>
               <Text style={{ color: iGC ? '#16a34a' : '#0284c7' }}>{iGC ? '✅ Good Conduct uploaded' : '📄 Certificate of Good Conduct *'}</Text>
             </TouchableOpacity>
           </View>
