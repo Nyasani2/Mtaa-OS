@@ -5,7 +5,7 @@ import { Dimensions, View, Text, FlatList, TouchableOpacity, RefreshControl, Mod
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video as VideoIcon } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video as VideoIcon, Menu } from 'lucide-react-native';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 
 import { useStreets } from '@/domains/streets/hooks/useStreets';
@@ -527,6 +527,7 @@ export default function StreetsFeedScreen() {
   const [sharePostState, setSharePostState] = useState<StreetsPost | null>(null);
   const [boostPostState, setBoostPostState] = useState<StreetsPost | null>(null);
   const [visiblePostId, setVisiblePostId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -591,7 +592,7 @@ export default function StreetsFeedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a', flexDirection: 'row' }}>
-      {isWeb && (
+      {isSidebarOpen && (
         <View style={{ width: 68, paddingTop: 46, alignItems: 'center', gap: 16, borderRightWidth: 1, borderRightColor: '#1f1f1f', backgroundColor: '#0a0a0a' }}>
           <TouchableOpacity onPress={() => scrollToPost(-visibleIndex)} style={{ alignItems: 'center' }}>
             <Home size={22} color="#fff" />
@@ -628,7 +629,12 @@ export default function StreetsFeedScreen() {
       )}
       <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#0a0a0a' }}>
-        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity onPress={() => setIsSidebarOpen(!isSidebarOpen)} style={{ padding: 4 }}>
+            <Menu size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
+        </View>
         <TouchableOpacity onPress={() => router.push('/streets/create')} style={{ backgroundColor: '#e91e63', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '300' }}>+</Text>
         </TouchableOpacity>
