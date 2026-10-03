@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, useWindowDimensions, P
 import { useRouter } from 'expo-router';
 import { Heart, MessageCircle, Bookmark, Share2, Zap, Flag, Music } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Video, ResizeMode } from 'expo-av';
 
 interface PostCardProps {
   post: any;
@@ -19,7 +20,7 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
   const isWeb = Platform.OS === 'web';
   const isDesktop = isWeb && width > 900;
 
-  const maxVideoHeight = isWeb ? Math.min(height * 0.78, 720) : width * 1.15;
+  const maxVideoHeight = isWeb ? Math.min(height * 0.78, 720) : width * (9 / 16);
   const videoWidth = isWeb ? maxVideoHeight * (9 / 16) : width;
 
   const creator = post.creator || {};
@@ -29,22 +30,34 @@ export default function PostCard({ post, onLike, onSave, onBoost, onReport, onSh
   return (
     <View style={[
       styles.container,
-      { height: isWeb ? height - (isDesktop ? 0 : 60) : width * 1.35 },
+      { height: height, width: '100%' },
       isWeb && styles.containerWeb
     ]}>
       <View style={[
         styles.contentRow,
-        isWeb && { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }
+        { flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }
       ]}>
         <View style={[
           styles.mediaWrap,
-          isWeb && { width: videoWidth, height: maxVideoHeight, borderRadius: 12, overflow: 'hidden' }
+          { width: '100%', height: '100%' }
         ]}>
-          <Image
-            source={{ uri: post.thumbnail_url || post.media_url || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' }}
-            style={{ width: '100%', height: '100%' }}
-            resizeMode="cover"
-          />
+          {post.media_type === 'video' && post.media_url ? (
+            <Video
+              source={{ uri: post.media_url }}
+              posterSource={post.thumbnail_url ? { uri: post.thumbnail_url } : undefined}
+              usePoster={!!post.thumbnail_url}
+              resizeMode={ResizeMode.COVER}
+              isLooping
+              shouldPlay={false}
+              style={{ width: '100%', height: '100%' }}
+            />
+          ) : (
+            <Image
+              source={{ uri: post.thumbnail_url || post.media_url || 'https://via.placeholder.com/400x700?text=No+Media' }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          )}
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
             style={styles.gradient}

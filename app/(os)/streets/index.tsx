@@ -1,10 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform, Image, Share, Alert } from 'react-native';
-import { Video as ExpoVideo, ResizeMode } from 'expo-av';
+
 import { useRouter } from 'expo-router';
+import { Dimensions, View, Text, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, ScrollView, ActivityIndicator, Platform, Image, Share, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video, Menu } from 'lucide-react-native';
+
+import { Heart, MessageCircle, Share2, Volume2, VolumeX, Play, Pause, Send, X, Repeat, TrendingUp, Eye, ChevronUp, ChevronDown, Bell, Users, Home, Search, Plus, User, Video as VideoIcon } from 'lucide-react-native';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
+
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
@@ -52,9 +55,10 @@ function VideoPlayer({
   isVisible: boolean;
   onView: () => void;
 }) {
-  const videoRef = useRef<ExpoVideo>(null);
+  const videoRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     if (isVisible && !isPlaying) {
@@ -74,6 +78,10 @@ function VideoPlayer({
     } else {
       await videoRef.current?.playAsync();
       setIsPlaying(true);
+      if (!hasInteracted) {
+        setHasInteracted(true);
+        onView();
+      }
     }
   };
 
@@ -84,7 +92,11 @@ function VideoPlayer({
   };
 
   return (
-    <View style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' }}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={togglePlay}
+      style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000', borderRadius: 12, overflow: 'hidden' }}
+    >
       <ExpoVideo
         ref={videoRef}
         source={{ uri }}
@@ -97,15 +109,15 @@ function VideoPlayer({
         style={{ width: '100%', height: '100%' }}
       />
       {!isPlaying && (
-        <TouchableOpacity 
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}
-          onPress={togglePlay}
-        >
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
           <Play size={48} color="#fff" />
-        </TouchableOpacity>
+        </View>
       )}
       <TouchableOpacity
-        onPress={toggleMute}
+        onPress={(e) => {
+          e.stopPropagation();
+          toggleMute();
+        }}
         style={{ position: 'absolute', bottom: 12, right: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 20, padding: 8 }}
       >
         {isMuted ? <VolumeX size={18} color="#fff" /> : <Volume2 size={18} color="#fff" />}
@@ -113,7 +125,7 @@ function VideoPlayer({
       <View style={{ position: 'absolute', top: 10, left: 10, zIndex: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10 }}>
         <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>MTAA OS</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -165,10 +177,13 @@ function PostCard({
   const username = author?.username || 'user';
   const isLiked = likedMap[post.id] || false;
 
+  const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
+  const isWeb = Platform.OS === 'web';
+  const cardWidth = isWeb ? Math.min(screenWidth * 0.45, 420) : screenWidth;
+  
   return (
-    <View style={{ marginBottom: 24, alignItems: 'center', width: '100%' }}>
-      <View style={{ width: '100%', maxWidth: 420 }}>
-        <View style={{ position: 'relative' }}>
+    <View style={{ width: cardWidth, height: screenHeight, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}>
+        <View style={{ position: 'relative', width: '100%', height: '100%' }}>
           {post.media_url && post.media_type === 'video' ? (
             <VideoPlayer uri={post.media_url} thumbnailUri={post.thumbnail_url} isVisible={isVisible} onView={onView} />
           ) : post.media_url ? (
@@ -184,12 +199,12 @@ function PostCard({
             <View style={{ position: 'relative', marginBottom: 8 }}>
               <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#fff', overflow: 'hidden', backgroundColor: '#333', alignItems: 'center', justifyContent: 'center' }}>
                 {author?.avatar_url ? (
-                  <Image source={{ uri: author.avatar_url }} style={{ width: 44, height: 44 }} resizeMode="cover" />
+                  <Image source={{ uri: author.avatar_url }} style={{ width: 44, height: 44, borderRadius: 22 }} resizeMode="cover" />
                 ) : (
                   <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{displayName.charAt(0).toUpperCase()}</Text>
                 )}
               </View>
-              <View style={{ position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -9 }], width: 18, height: 18, borderRadius: 9, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: 9, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>+</Text>
               </View>
             </View>
@@ -215,13 +230,13 @@ function PostCard({
             </TouchableOpacity>
           </View>
 
-          {/* Up / down navigation arrows */}
-          <View style={{ position: 'absolute', right: -48, top: '40%', flexDirection: 'column', gap: 10 }}>
-            <TouchableOpacity onPress={onPrev} disabled={!hasPrev} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center', opacity: hasPrev ? 1 : 0.35 }}>
-              <ChevronUp size={22} color="#fff" />
+                    {/* Up / down navigation arrows */}
+          <View style={{ position: 'absolute', right: 10, top: '40%', flexDirection: 'column', gap: 12, zIndex: 20 }}>
+            <TouchableOpacity onPress={() => onPrev()} disabled={!hasPrev} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', opacity: hasPrev ? 1 : 0.3 }}>
+              <ChevronUp size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={onNext} disabled={!hasNext} style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center', opacity: hasNext ? 1 : 0.35 }}>
-              <ChevronDown size={22} color="#fff" />
+            <TouchableOpacity onPress={() => onNext()} disabled={!hasNext} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', opacity: hasNext ? 1 : 0.3 }}>
+              <ChevronDown size={24} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -243,7 +258,6 @@ function PostCard({
 
         <AnalyticsOverlay post={post} />
       </View>
-    </View>
   );
 }
 
@@ -328,7 +342,7 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
   const WATERMARK = ' · via MTAA OS 🌍';
   const shareSocial = (kind: string) => {
     if (!post) return;
-    const url = `https://mtaa-os.vercel.app/streets/post/${post.id}`;
+    const url = `${window.location.origin}/streets/post/${post.id}`;
     const text = encodeURIComponent((post.content || post.caption || 'Watch this on MTAA Streets') + WATERMARK);
     const u = encodeURIComponent(url);
     const links: any = {
@@ -343,13 +357,13 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
 
   const handleCopyLink = async () => {
     if (!post) return;
-    const url = `https://mtaa-os.vercel.app/streets/post/${post.id}`;
-    try { await Clipboard.setStringAsync(url); Alert.alert('Success', 'Link copied!'); } catch { Alert.alert('Error', 'Could not copy'); }
+    const url = `${window.location.origin}/streets/post/${post.id}`;
+    try { await Clipboard.setString(url); alert('Link copied!'); } catch { alert('Could not copy'); }
   };
 
   const handleNativeShare = async () => {
     if (!post) return;
-    try { await Share.share({ message: (post.content || '') + WATERMARK + ' ' + `https://mtaa-os.vercel.app/streets/post/${post.id}` }); } catch { /* cancelled */ }
+    try { await Share.share({ message: (post.content || '') + WATERMARK, url: `${window.location.origin}/streets/post/${post.id}` }); } catch { /* cancelled */ }
   };
 
   if (!visible || !post) return null;
@@ -513,7 +527,7 @@ export default function StreetsFeedScreen() {
   const [sharePostState, setSharePostState] = useState<StreetsPost | null>(null);
   const [boostPostState, setBoostPostState] = useState<StreetsPost | null>(null);
   const [visiblePostId, setVisiblePostId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -523,7 +537,21 @@ export default function StreetsFeedScreen() {
     });
   }, [posts, user?.id, isLiked]);
 
-  
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.IntersectionObserver) return;
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const postId = entry.target.getAttribute('data-post-id');
+          if (entry.isIntersecting && postId) setVisiblePostId(postId);
+        });
+      },
+      { threshold: 0.6 }
+    );
+    Object.values(itemRefs.current).forEach((el) => { if (el) observer.observe(el); });
+    return () => { try { observer.disconnect(); } catch (e) {} };
+  }, [posts]);
 
   const handleLike = useCallback(async (postId: string) => {
     const result = await likePost(postId);
@@ -536,7 +564,7 @@ export default function StreetsFeedScreen() {
   const handleBoostPress = useCallback((post: StreetsPost) => setBoostPostState(post), []);
   const handleView = useCallback((postId: string) => markViewed(postId), [markViewed]);
 
-  const viewabilityConfig = { itemVisiblePercentThreshold: 60 };
+  const viewabilityConfig = { itemVisiblePercentThreshold: 50, minimumViewTime: 100 };
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       setVisiblePostId(viewableItems[0].item.id);
@@ -544,58 +572,63 @@ export default function StreetsFeedScreen() {
   }, []);
 
   const isWeb = typeof window !== 'undefined';
+  
+  const scrollToPost = (dir: number) => {
+    if (!flatListRef.current) return;
+    const idx = posts.findIndex((pp) => pp.id === visiblePostId);
+    if (idx === -1) return;
+    const nextIdx = idx + dir;
+    if (nextIdx >= 0 && nextIdx < posts.length) {
+      flatListRef.current.scrollToIndex({ index: nextIdx, animated: true });
+    }
+  };
+
   const visibleIndex = posts.findIndex((pp) => pp.id === visiblePostId);
+
+  
+
   
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0a0a0a', flexDirection: 'row' }}>
-      {isSidebarOpen && (
-        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 220, backgroundColor: '#0a0a0a', zIndex: 100, paddingTop: 50, borderRightWidth: 1, borderRightColor: '#1f1f1f' }}>
-          <TouchableOpacity onPress={() => setIsSidebarOpen(false)} style={{ position: 'absolute', right: -40, top: 50, width: 40, height: 40, backgroundColor: '#1f1f1f', justifyContent: 'center', alignItems: 'center', borderTopRightRadius: 8, borderBottomRightRadius: 8 }}>
-            <X size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+      {isWeb && (
+        <View style={{ width: 68, paddingTop: 46, alignItems: 'center', gap: 16, borderRightWidth: 1, borderRightColor: '#1f1f1f', backgroundColor: '#0a0a0a' }}>
+          <TouchableOpacity onPress={() => scrollToPost(-visibleIndex)} style={{ alignItems: 'center' }}>
             <Home size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Home</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/streets/explore'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.push('/streets/explore')} style={{ alignItems: 'center' }}>
             <Search size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Explore</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Explore</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/streets/create'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-            <Plus size={22} color="#e91e63" />
-            <Text style={{ color: '#e91e63', fontSize: 16, fontWeight: '600' }}>Create Post</Text>
+          <TouchableOpacity onPress={() => router.push('/streets/create')} style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#e91e63', alignItems: 'center', justifyContent: 'center' }}>
+            <Plus size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/studio/live-active'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-            <Video size={22} color="#ff4d6d" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Live</Text>
+          <TouchableOpacity onPress={() => router.push('/studio/live-active')} style={{ alignItems: 'center' }}>
+            <VideoIcon size={22} color="#ff4d6d" />
+            <Text style={{ color: '#888', fontSize: 10 }}>Live</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/notifications'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.push('/notifications')} style={{ alignItems: 'center' }}>
             <Bell size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Alerts</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Alerts</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/messages'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.push('/messages')} style={{ alignItems: 'center' }}>
             <MessageCircle size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Messages</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Messages</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/profile/followers'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.push('/profile/followers')} style={{ alignItems: 'center' }}>
             <Users size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Followers</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Followers</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { router.push('/profile'); setIsSidebarOpen(false); }} style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+          <TouchableOpacity onPress={() => router.push('/profile')} style={{ alignItems: 'center' }}>
             <User size={22} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>Profile</Text>
+            <Text style={{ color: '#888', fontSize: 10 }}>Profile</Text>
           </TouchableOpacity>
         </View>
       )}
       <View style={{ flex: 1 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12, backgroundColor: '#0a0a0a' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <TouchableOpacity onPress={() => setIsSidebarOpen(true)} style={{ padding: 4 }}>
-            <Menu size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
-        </View>
+        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700' }}>Streets</Text>
         <TouchableOpacity onPress={() => router.push('/streets/create')} style={{ backgroundColor: '#e91e63', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 24, fontWeight: '300' }}>+</Text>
         </TouchableOpacity>
@@ -608,14 +641,25 @@ export default function StreetsFeedScreen() {
       )}
 
       <FlatList
+        ref={flatListRef}
         data={posts}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadPosts(true)} tintColor="#e91e63" />}
-        contentContainerStyle={{ paddingBottom: 100, alignItems: 'center' }}
+        contentContainerStyle={{ paddingBottom: 0 }}
+        pagingEnabled
+        showsVerticalScrollIndicator={false}
+        snapToInterval={Dimensions.get('window').height}
+        snapToAlignment="start"
+        decelerationRate="fast"
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
-        renderItem={({ item }) => (
-          <View>
+        getItemLayout={(data, index) => ({
+          length: Dimensions.get('window').height,
+          offset: Dimensions.get('window').height * index,
+          index,
+        })}
+        renderItem={({ item, index }) => (
+          <View style={{ width: '100%', height: Dimensions.get('window').height, backgroundColor: '#000' }}>
             <PostCard
               post={item}
               author={authors[item.creator_id]}
@@ -627,8 +671,8 @@ export default function StreetsFeedScreen() {
               onBoost={handleBoostPress}
               isVisible={isFocused && visiblePostId === item.id}
               onView={() => handleView(item.id)}
-              onPrev={() => {}}
-              onNext={() => {}}
+              onPrev={() => scrollToPost(-1)}
+              onNext={() => scrollToPost(1)}
               hasPrev={visibleIndex > 0}
               hasNext={visibleIndex >= 0 && visibleIndex < posts.length - 1}
             />
