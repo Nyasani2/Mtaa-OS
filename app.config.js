@@ -72,6 +72,12 @@ export default {
         {
           "cameraPermission": "Allow MTAA OS to access your camera for QR scanning, profile photos, and verification."
         }
+      ],
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "AIzaSyBLqDDKu-DStNUDcYuLTjl5pIGdzJ2Pm8w"
+        }
       ]
     ],
     experiments: {

@@ -29,6 +29,8 @@ export interface MtaxiRide {
     vehicle_type?: string;
     rating?: number;
     photo_url?: string;
+    current_lat?: number;
+    current_lng?: number;
   };
 }
 

@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MapPin, Navigation, Phone, MessageSquare, CheckCircle, Flag, AlertTriangle } from "lucide-react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+
 import { useDriver } from "../hooks/useDriver";
 import { useAuthStore as useAuth } from "@/lib/auth/store/auth.store";
 import { supabase } from "@/lib/supabase";
@@ -86,10 +88,34 @@ export default function DriverRide() {
         <Text style={styles.statusLabel}>{currentRide.status.replace("_", " ").toUpperCase()}</Text>
       </View>
 
-      <View style={styles.mapPlaceholder}>
-        <Navigation size={48} color="#3b82f6" />
-        <Text style={styles.mapText}>Navigation View</Text>
-        <Text style={styles.mapSub}>Turn-by-turn directions</Text>
+      <View style={styles.mapContainer}>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: currentRide.pickup_lat || -1.2921,
+            longitude: currentRide.pickup_lng || 36.8219,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+        >
+          <Marker coordinate={{ latitude: currentRide.pickup_lat, longitude: currentRide.pickup_lng }} title="Pickup" pinColor="#10b981" />
+          <Marker coordinate={{ latitude: currentRide.dropoff_lat, longitude: currentRide.dropoff_lng }} title="Destination" pinColor="#ef4444" />
+          {currentRide.driver?.current_lat && currentRide.driver?.current_lng && (
+            <Marker
+              coordinate={{ latitude: currentRide.driver.current_lat, longitude: currentRide.driver.current_lng }}
+              title={currentRide.driver.full_name}
+            >
+              <View style={styles.vehicleMarker}>
+                <Text style={styles.vehicleEmoji}>
+                  {currentRide.ride_type === 'boda' ? '🏍️' : currentRide.ride_type === 'truck' ? '🚛' : '🚗'}
+                </Text>
+              </View>
+            </Marker>
+          )}
+        </MapView>
       </View>
 
       <View style={styles.rideInfo}>
@@ -165,4 +191,9 @@ const styles = StyleSheet.create({
   safetyText: { marginLeft: 8, fontSize: 14, color: "#94a3b8" },
   backBtn: { marginTop: 16, padding: 12, backgroundColor: "#f59e0b", borderRadius: 10 },
   backBtnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+
+  mapContainer: { height: 350, width: '100%', borderRadius: 12, overflow: 'hidden', marginVertical: 10 },
+  map: { width: '100%', height: '100%' },
+  vehicleMarker: { position: "absolute", top: "50%", left: "50%", marginTop: -20, marginLeft: -20, width: 40, height: 40, borderRadius: 20, backgroundColor: "#2563eb", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#fff" },
+  vehicleEmoji: { fontSize: 20 },
 });
