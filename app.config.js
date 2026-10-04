@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   expo: {
     name: "MTAA OS",
     slug: "mtaa-os",
