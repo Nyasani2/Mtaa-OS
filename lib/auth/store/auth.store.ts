@@ -178,14 +178,8 @@ export const useAuthStore = create<AuthState>()(
         if (error) return { error };
 
         if (data.user) {
-          await supabase.from('user_profiles').insert({
-            user_id: data.user.id,
-            email,
-            email_verified: false,
-            pin_set: false,
-            biometric_enabled: false,
-            created_at: new Date().toISOString(),
-          });
+          // Profile is automatically created by the handle_new_user database trigger
+
         }
         return { data };
       },
