@@ -56,8 +56,8 @@ export default function SignupScreen() {
           <Text style={styles.successText}>
             We sent a confirmation link to {email}. Tap the link in your email to activate your account.
           </Text>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/login')}>
-            <Text style={styles.primaryBtnText}>Go to Login</Text>
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/(auth)/onboarding')}>
+            <Text style={styles.primaryBtnText}>Continue Setup</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/verify-email')}>
             <Text style={styles.secondaryBtnText}>I already verified</Text>
