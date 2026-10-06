@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Switch, ActivityIndicator, Platform, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { X, Image as ImageIcon, Video, Camera } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -56,7 +56,34 @@ const openCamera = async () => {
   }
 };
 
-const pick = (type) => { setMediaType(type); if (fileInputRef.current) { fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*'; if (Platform.OS === 'web' && fileInputRef.current) { if (Platform.OS === 'web' && fileInputRef.current) { fileInputRef.current.click(); } else { Alert.alert('Web Only', 'File upload is currently only supported on the web version.'); }; } else { Alert.alert('Web Only', 'File upload is currently only supported on the web version.'); }; } };
+const pick = async (type: string) => {
+  setMediaType(type);
+  if (Platform.OS === 'web') {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*';
+      fileInputRef.current.click();
+    }
+  } else {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        setLocalError('Media library permission not granted.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: type === 'video' ? ImagePicker.MediaTypeOptions.Videos : ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'library-pick' });
+      }
+    } catch (e) {
+      setLocalError('Failed to pick media.');
+    }
+  }
+};
 
 const onFile = async (e) => { 
 const f = e.target.files?.[0]; 
@@ -117,9 +144,13 @@ return (
 {localError && <View style={{ backgroundColor: '#3a1a1a', borderRadius: 8, padding: 12, marginBottom: 12 }}><Text style={{ color: '#ff6b6b', fontSize: 13 }}>{localError}</Text></View>}
 {selectedFile ? (
 <View style={{ marginBottom: 12 }}>
-{mediaType === 'video'
-? <video src={previewUrl} controls muted style={{ width: '100%', maxHeight: 420, borderRadius: 12, filter: filter.css }} />
-: <img src={previewUrl} alt="" style={{ width: '100%', maxHeight: 420, objectFit: 'cover', borderRadius: 12, filter: filter.css }} />}
+{Platform.OS === 'web' ? (
+  mediaType === 'video' ? 
+    <video src={previewUrl} controls muted style={{ width: '100%', maxHeight: 420, borderRadius: 12, filter: filter.css }} /> : 
+    <img src={previewUrl} alt="" style={{ width: '100%', maxHeight: 420, objectFit: 'cover', borderRadius: 12, filter: filter.css }} />
+) : (
+  <Image source={{ uri: previewUrl }} style={{ width: '100%', height: 240, borderRadius: 12 }} />
+)}
 <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
 {FILTERS.map((f) => (
 <TouchableOpacity key={f.id} onPress={() => setFilter(f)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14, backgroundColor: filter.id === f.id ? '#e91e63' : '#2a2a2a' }}>
