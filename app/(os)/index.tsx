@@ -174,7 +174,20 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          
+          {/* ADMIN COMMAND CENTER - Only visible to admins */}
+          {profile?.role === 'admin' && (
+            <TouchableOpacity style={{ margin: 16, padding: 16, backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#f59e0b', flexDirection: 'row', alignItems: 'center' }} onPress={() => router.push('/(admin)' as any)}>
+              <Ionicons name="shield-checkmark" size={24} color="#f59e0b" />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>MTAA Admin Command Center</Text>
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>Manage treasury, users, and modules</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#f59e0b" />
+            </TouchableOpacity>
+          )}
+
+        </ScrollView>
 
           {/* App Grid */}
           <ScrollView
@@ -200,7 +213,20 @@ export default function HomeScreen() {
             )}
 
             <View style={styles.footer} />
-          </ScrollView>
+          
+          {/* ADMIN COMMAND CENTER - Only visible to admins */}
+          {profile?.role === 'admin' && (
+            <TouchableOpacity style={{ margin: 16, padding: 16, backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#f59e0b', flexDirection: 'row', alignItems: 'center' }} onPress={() => router.push('/(admin)' as any)}>
+              <Ionicons name="shield-checkmark" size={24} color="#f59e0b" />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>MTAA Admin Command Center</Text>
+                <Text style={{ color: '#94a3b8', fontSize: 12 }}>Manage treasury, users, and modules</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#f59e0b" />
+            </TouchableOpacity>
+          )}
+
+        </ScrollView>
         </View>
       </LinearGradient>
     </ImageBackground>
