@@ -56,7 +56,7 @@ const openCamera = async () => {
   }
 };
 
-const pick = (type) => { setMediaType(type); if (fileInputRef.current) { fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*'; fileInputRef.current.click(); } };
+const pick = (type) => { setMediaType(type); if (fileInputRef.current) { fileInputRef.current.accept = type === 'video' ? 'video/*' : 'image/*'; if (Platform.OS === 'web' && fileInputRef.current) { if (Platform.OS === 'web' && fileInputRef.current) { fileInputRef.current.click(); } else { Alert.alert('Web Only', 'File upload is currently only supported on the web version.'); }; } else { Alert.alert('Web Only', 'File upload is currently only supported on the web version.'); }; } };
 
 const onFile = async (e) => { 
 const f = e.target.files?.[0]; 
@@ -105,7 +105,7 @@ console.log('[Create] background upload complete');
 
 return (
 <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
-<input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={onFile} />
+{Platform.OS === 'web' && <input ref={fileInputRef} type="file" style={{ display: 'none' }} onChange={onFile} />}
 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12 }}>
 <TouchableOpacity onPress={() => router.back()}><X size={24} color="#fff" /></TouchableOpacity>
 <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>New Post</Text>
