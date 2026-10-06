@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import WalletPinGuard from '@/lib/components/wallet-pin-guard';
 
 export default function SendMoneyScreen() {
   const router = useRouter();
@@ -10,54 +11,73 @@ export default function SendMoneyScreen() {
   const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPinGuard, setShowPinGuard] = useState(false);
+  const [pendingTx, setPendingTx] = useState<any>(null);
 
-  const handleSend = async () => {
-    if (!recipient || !amount) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+  const executeTransaction = async () => {
+    if (!pendingTx) return;
     setLoading(true);
     try {
-      // TODO: Implement actual send logic
-      Alert.alert('Success', `Sent KES ${amount} to ${recipient}`);
+      // TODO: Replace with your actual send logic (e.g., supabase.functions.invoke)
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      Alert.alert('Success', `Sent KES ${pendingTx.amount} to ${pendingTx.recipient}`);
       router.back();
     } catch (err) {
       Alert.alert('Error', 'Failed to send money');
     } finally {
       setLoading(false);
+      setPendingTx(null);
     }
   };
 
+  const handleSend = () => {
+    if (!recipient || !amount) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    setPendingTx({ recipient, amount });
+    setShowPinGuard(true);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Send Money</Text>
-      <Text style={styles.sub}>Transfer to another user</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Recipient phone or username"
-        placeholderTextColor="#8E8E93"
-        value={recipient}
-        onChangeText={setRecipient}
+    <>
+      <WalletPinGuard 
+        isOpen={showPinGuard} 
+        onClose={() => { setShowPinGuard(false); setPendingTx(null); }} 
+        onVerified={executeTransaction}
+        amount={parseFloat(pendingTx?.amount || '0')}
+        recipientName={pendingTx?.recipient || 'Recipient'}
       />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Amount (KES)"
-        placeholderTextColor="#8E8E93"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
-      
-      <TouchableOpacity style={styles.btn} onPress={handleSend} disabled={loading}>
-        <Text style={styles.btnText}>{loading ? 'Sending...' : 'Send Money'}</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.cancel}>Cancel</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>Send Money</Text>
+        <Text style={styles.sub}>Transfer to another user</Text>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Recipient phone or username"
+          placeholderTextColor="#8E8E93"
+          value={recipient}
+          onChangeText={setRecipient}
+        />
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Amount (KES)"
+          placeholderTextColor="#8E8E93"
+          keyboardType="numeric"
+          value={amount}
+          onChangeText={setAmount}
+        />
+        
+        <TouchableOpacity style={styles.btn} onPress={handleSend} disabled={loading}>
+          <Text style={styles.btnText}>{loading ? 'Sending...' : 'Send Money'}</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={styles.cancel}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 }
 
