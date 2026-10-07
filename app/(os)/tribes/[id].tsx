@@ -15,7 +15,8 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function TribeHome() {
-const { id } = useLocalSearchParams();
+const params = useLocalSearchParams();
+const tribeId = Array.isArray(params.id) ? params.id[0] : String(params.id || '');
 const router = useRouter();
 const { user } = useAuthStore();
 const [tribe, setTribe] = useState(null);
@@ -36,13 +37,13 @@ const [posting, setPosting] = useState(false);
 
 const load = useCallback(async () => {
 try {
-const t = await T.getTribe(id);
+const t = await T.getTribe(tribeId);
 if (!t) return;
 const [p, c, r, m, k] = await Promise.all([
-T.getPosts(id), T.memberCount(id), user ? T.myRole(id, user.id) : 'none', T.getMembers(id), T.getKnowledge(id)
+T.getPosts(tribeId), T.memberCount(tribeId), user ? T.myRole(tribeId, user.id) : 'none', T.getMembers(tribeId), T.getKnowledge(tribeId)
 ]);
 setTribe(t); setPosts(p); setCount(c); setRole(r || 'none'); setMembers(m); setKnowledge(k);
-} catch (e) { console.error('[TribeHome]', e); }
+} catch (e) { console.error('[TribeHome] Load error:', e); Alert.alert('Load Error', 'Failed to load tribe: ' + (e.message || 'Unknown error')); }
 setLoading(false);
 }, [id, user?.id]);
 
@@ -75,7 +76,7 @@ if (!previewMedia || !user?.id) return;
 setPosting(true);
 try {
 await T.createPost({ 
-tribe_id: id, author_id: user.id, content: caption || 'Shared a memory',
+tribe_id: tribeId, author_id: user.id, content: caption || 'Shared a memory',
 media_url: previewMedia.uri, media_type: previewMedia.type
 });
 setEditorOpen(false); setPreviewMedia(null); setCaption('');
