@@ -30,8 +30,10 @@ export default function CreateTribeScreen() {
     if (!session) { setErr('Session expired. Log out and log back in, then retry.'); setBusy(false); return; }
     try {
       const tribe = await tribesService.createTribe({
-        name: name.trim(), description, category, country: country || null, language: language || null,
-        visibility, membership_type: paid ? 'paid' : 'free', creator_id: user.id,
+        name: name.trim(), 
+        description: description.trim() || undefined, 
+        category: category || undefined, 
+        creator_id: user.id,
       });
       router.replace(`/tribes/${tribe.id}`);
     } catch (e) { console.error('[CreateTribe]', e); setErr(e?.message || String(e)); }

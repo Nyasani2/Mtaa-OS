@@ -40,15 +40,9 @@ export default function CreateTribeScreen() {
     setCreating(true);
     const res = await tribesService.createTribe({
       name: name.trim(),
-      description: description.trim(),
+      description: description.trim() || undefined,
       category_id: categoryId || undefined,
-      is_paid: isPaid,
-      membership_fee: isPaid ? parseFloat(fee) || 0 : 0,
-      membership_currency: currency,
       is_private: isPrivate,
-      rules: rules.trim() || undefined,
-      location: location.trim() || undefined,
-      tags: tags.split(',').map((t: any) => t.trim()).filter(Boolean),
     });
     setCreating(false);
 

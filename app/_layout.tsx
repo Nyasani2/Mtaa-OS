@@ -1,15 +1,17 @@
-import React, { Component, ErrorInfo, ReactNode, useEffect, useRef } from 'react';
+import React, { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AppState } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { IdentityProvider } from '@/lib/auth/identity-provider';
 import { OSGate } from '@/lib/auth/os-gate';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { LockScreen } from '@/components/os/LockScreen';
 import { ASISCSEProvider } from '@/lib/asis-cse/asis-cse-provider';
 import { GlobalASISOverlay } from '@/components/GlobalASISOverlay';
+import { OfflineWarning } from '@/lib/components/OfflineWarning';
 import { ThemeProvider } from '@/lib/theme/ThemeContext';
 
 const AUTO_LOCK_SECONDS = 30;
@@ -49,6 +51,7 @@ function RootLayoutContent() {
   const pathname = usePathname();
   const appState = useRef(AppState.currentState);
   const backgroundTime = useRef<number | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const { initialize, lockApp, updateLastActive, isAuthenticated, pinSet, user } = useAuthStore();
 
   useEffect(() => {
@@ -84,6 +87,14 @@ function RootLayoutContent() {
     return () => subscription.remove();
   }, [isAuthenticated, pinSet, lockApp, updateLastActive]);
 
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOffline(!state.isConnected);
+    });
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     updateLastActive();
   }, [segments]);
@@ -97,6 +108,7 @@ function RootLayoutContent() {
           </OSGate>
         </IdentityProvider>
         <StatusBar style="light" />
+        {isOffline && <OfflineWarning />}
         <LockScreen />
         {pathname !== '/asis' && <GlobalASISOverlay />}
       </ASISCSEProvider>

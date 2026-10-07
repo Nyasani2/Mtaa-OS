@@ -571,11 +571,8 @@ export async function createPost(params: {
       media_url: params.mediaUrl || null,
       thumbnail_url: params.thumbnailUrl || null,
       media_type: params.mediaType || 'image',
-      content_type: 'post',
       hashtags: params.hashtags || [],
       is_public: params.isPublic !== false,
-      is_live: false,
-      duration_seconds: params.durationSeconds || null,
     })
     .select()
     .single();

@@ -3,31 +3,46 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { createNotification } from '@/lib/services/notification-service';
 
-// Mock notification service
-const sendNotification = (type: string, childName: string, location: string) => {
-  const messages = {
-    pickup_home: `🚌 ${childName} has been picked up from home. Track the bus: mtaa://education/transport/map`,
+// Real notification service
+const sendNotification = async (type: string, childName: string, parentId: string) => {
+  const messages: Record<string, string> = {
+    pickup_home: `🚌 ${childName} has been picked up from home. Track the bus live.`,
     dropoff_school: `🏫 ${childName} has arrived at school safely. Gate scan confirmed.`,
     attendance_in: `✅ ${childName} is marked present in class by the teacher.`,
     pickup_school: `🎒 ${childName} has left school. Pickup confirmed.`,
   };
-  console.log("🔔 NOTIFICATION SENT:", messages[type]);
-  // In production: Expo Notifications or Supabase Realtime to parent's device
+  
+  const title = "School Transport Update";
+  const body = messages[type] || "Status updated.";
+
+  try {
+    await createNotification({
+      user_id: parentId,
+      title: title,
+      body: body,
+      type: 'education_transport',
+      read: false,
+    });
+    console.log("✅ Notification saved to database for parent:", parentId);
+  } catch (err) {
+    console.error("❌ Failed to save notification:", err);
+  }
 };
 
 export default function EducationQRScanner() {
   const router = useRouter();
   const [scanContext, setScanContext] = useState<'pickup_home' | 'dropoff_school' | 'attendance_in' | 'pickup_school' | null>(null);
 
-  const handleScan = (context: typeof scanContext) => {
+  const handleScan = async (context: typeof scanContext) => {
     setScanContext(context);
     // Simulate QR scan success
-    setTimeout(() => {
+    setTimeout(async () => {
       const childName = "Kevin Jr."; // Mock data, would come from QR payload
-      const location = context === 'pickup_home' ? 'Home' : 'School';
+      const parentId = "00000000-0000-0000-0000-000000000000"; // Mock parent ID (replace with actual QR payload data)
       
-      sendNotification(context, childName, location);
+      await sendNotification(context, childName, parentId);
       
       Alert.alert(
         "Scan Successful",

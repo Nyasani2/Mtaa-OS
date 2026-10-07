@@ -21,14 +21,20 @@ export async function getMyTribes(userId: string) {
 }
 export async function createTribe(input: any) {
   const slug = ((input.name || 'tribe').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'tribe') + '-' + Date.now().toString(36);
-  const payload = {
-    ...input,
+  // Explicitly pick safe fields to avoid schema cache errors
+  const payload: any = {
+    name: input.name,
     slug: input.slug || slug,
-    short_description: input.short_description || input.description || null,
+    description: input.description || input.short_description || null,
+    category: input.category || null,
+    creator_id: input.creator_id,
     status: input.status || 'active',
   };
   const { data, error } = await supabase.from('tribes').insert(payload).select().single();
-  if (error) throw error;
+  if (error) {
+    console.error('Tribe creation error:', error);
+    throw error;
+  }
   return data;
 }
 export async function joinTribe(tribeId: string, userId: string) {

@@ -41,12 +41,12 @@ export default function MTAAAdminCenter() {
   };
 
   const modules = [
-    { id: 'transport', name: 'MTaxi / MBoda / MTruck', icon: 'car', color: '#3B82F6', route: '/(admin)/transport' },
-    { id: 'finance', name: 'Wallet & Treasury', icon: 'wallet', color: '#10B981', route: '/(admin)/finance' },
-    { id: 'health', name: 'Health System', icon: 'heartbeat', color: '#EF4444', route: '/(admin)/health' },
-    { id: 'education', name: 'Education Portal', icon: 'graduation-cap', color: '#F59E0B', route: '/(admin)/education' },
-    { id: 'garage', name: 'Garage Network', icon: 'tools', color: '#8B5CF6', route: '/(admin)/garage' },
-    { id: 'users', name: 'User Management', icon: 'users', color: '#06B6D4', route: '/(admin)/users' },
+    { id: 'transport', name: 'MTaxi / MBoda / MTruck', icon: 'car', color: '#3B82F6', route: '/(mtaxi)/driver/dashboard' },
+    { id: 'finance', name: 'Wallet & Treasury', icon: 'wallet', color: '#10B981', route: '/(os)/wallet/transactions' },
+    { id: 'health', name: 'Health System', icon: 'heartbeat', color: '#EF4444', route: '/(os)/health/facility-admin' },
+    { id: 'education', name: 'Education Portal', icon: 'graduation-cap', color: '#F59E0B', route: '/(education)/admin-dashboard' },
+    { id: 'garage', name: 'Garage Network', icon: 'tools', color: '#8B5CF6', route: '/(garage)/dashboard' },
+    { id: 'users', name: 'User Management', icon: 'users', color: '#06B6D4', route: '/(os)/settings' },
   ];
 
   if (loading) {

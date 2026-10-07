@@ -103,7 +103,11 @@ export const useAuthStore = create<AuthState>()(
               .eq('user_id', user.id)
               .single();
 
-            const hasPin = await pinEngine.hasPin(user.id);
+            if (!profile?.email_verified) {
+            await supabase.auth.signOut();
+            throw new Error('Please verify your email address before logging in.');
+          }
+          const hasPin = await pinEngine.hasPin(user.id);
             const bioEnabled = await biometricEngine.isBiometricEnabled(user.id);
 
             set({

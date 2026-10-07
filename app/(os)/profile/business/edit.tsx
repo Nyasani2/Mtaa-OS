@@ -45,8 +45,7 @@ export default function BusinessEditScreen() {
       const payload = {
         user_id: user.id, name: name.trim(), business_type: type || null, description: description.trim() || null,
         location: location.trim() || null, phone: phone.trim() || null, email: email.trim() || null,
-        is_public: isPublic, updated_at: new Date().toISOString(),
-      };
+        is_public: isPublic, updated_at: new Date().toISOString() };
       const { error } = await supabase.from('business_profiles').upsert(payload, { onConflict: 'user_id' });
       if (error) throw error;
       Alert.alert('Success', 'Business profile saved');
@@ -101,5 +100,4 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
   chipText: { color: '#94a3b8', fontSize: 13 },
   chipTextActive: { color: '#fff', fontWeight: '600' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, paddingVertical: 8 },
-});
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, paddingVertical: 8 } });
