@@ -478,45 +478,55 @@ async function compressVideoWeb(file: File): Promise<File> {
 
 // ── Upload Media ───────────────────────────────────────────
 export async function uploadMedia(
-  file: File,
+  file: any, // Can be Web File or Native { uri, type, name }
   userId: string,
   onProgress?: (percent: number) => void
 ): Promise<{ url: string; thumbnailUrl?: string }> {
   if (!file) throw new Error('No file provided');
 
   let thumbnailUrl: string | undefined;
+  let blobToUpload: Blob | File = file;
+  let contentType = file.type || 'application/octet-stream';
+  let fileName = file.name || `upload_${Date.now()}`;
 
-  // Generate thumbnail for videos
-  if (file.type.startsWith('video/') && typeof document !== 'undefined') {
-  // SESSION GUARD: uploads require a valid login token
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error('Session expired. Log out and log back in, then retry.');
-  }
-
-    onProgress?.(3);
-    thumbnailUrl = await generateVideoThumbnail(file) || undefined;
-    onProgress?.(5);
-
-    try {
-      const compressed = await compressVideoWeb(file);
-      file = compressed;
-    } catch (e) {
-      console.warn('[Streets] Video compression failed, uploading original:', e);
+  // 1. Handle Native Uploads (convert URI to Blob)
+  if (Platform.OS !== 'web' && file.uri) {
+    const response = await fetch(file.uri);
+    blobToUpload = await response.blob();
+    contentType = file.type || blobToUpload.type || 'application/octet-stream';
+    fileName = file.name || `upload_${Date.now()}`;
+  } 
+  // 2. Handle Web Uploads (compression & thumbnails)
+  else if (Platform.OS === 'web' && file instanceof File) {
+    if (file.type.startsWith('video/')) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expired. Log out and log back in, then retry.');
+      
+      onProgress?.(3);
+      try {
+        thumbnailUrl = await generateVideoThumbnail(file) || undefined;
+        onProgress?.(5);
+        const compressed = await compressVideoWeb(file);
+        blobToUpload = compressed;
+        fileName = compressed.name;
+        contentType = compressed.type;
+      } catch (e) {
+        console.warn('[Streets] Video compression failed, uploading original:', e);
+      }
     }
   }
 
-  const ext = file.name.split('.').pop() || 'bin';
+  const ext = fileName.split('.').pop() || 'bin';
   const path = `${userId}/${uuidv4()}.${ext}`;
 
   onProgress?.(10);
 
   const { error: uploadError } = await supabase.storage
     .from('streets-media')
-    .upload(path, file, {
+    .upload(path, blobToUpload, {
       cacheControl: '3600',
       upsert: false,
-      contentType: file.type,
+      contentType: contentType,
     });
 
   onProgress?.(80);
