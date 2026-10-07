@@ -42,7 +42,7 @@ export const uploadToStorage = async (fileUri: string, fileName: string, userId:
 
 export const saveTrackMetadata = async (userId: string, title: string, genre: string, videoUrl: string, duration?: number, adSlots?: any[]) => {
   const { error } = await supabase.from('studio_tracks').insert({
-    creator_id: userId, title: title, genre: genre, media_url: videoUrl, duration: duration || 0, ad_slots: adSlots || [], status: 'published', created_at: new Date().toISOString(),
+    creator_id: userId, title: title, genre: genre, audio_url: videoUrl, duration_seconds: duration || 0,  status: 'published', created_at: new Date().toISOString(),
   });
   if (error) throw error;
 };

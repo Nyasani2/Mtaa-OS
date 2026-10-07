@@ -60,6 +60,8 @@ export const pinEngine = {
   },
 
   async setPin(userId: string, pin: string): Promise<void> {
+    if (!userId) throw new Error('User ID is required to set PIN');
+    if (!pin || pin.length !== 4) throw new Error('PIN must be exactly 4 digits');
     const salt = generateSalt();
     const hash = hashPin(pin, salt);
     await secureSet(`${PIN_PREFIX}${userId}`, hash);

@@ -35,6 +35,17 @@ export async function createTribe(input: any) {
     console.error('Tribe creation error:', error);
     throw error;
   }
+  
+  // Automatically add creator to tribe_members to satisfy RLS for posting
+  if (data && payload.creator_id) {
+    await supabase.from('tribe_members').insert({
+      tribe_id: data.id,
+      user_id: payload.creator_id,
+      role: 'admin',
+      status: 'active'
+    });
+  }
+  
   return data;
 }
 export async function joinTribe(tribeId: string, userId: string) {

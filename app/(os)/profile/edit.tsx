@@ -10,12 +10,12 @@ try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; 
 
 interface ProfileForm {
   display_name: string; username: string; full_name: string; bio: string;
-  country: string; region: string; city: string; website: string; avatar_url: string | null;
+  country: string; region: string; city: string; avatar_url: string | null;
 }
 
 const EMPTY_FORM: ProfileForm = {
   display_name: '', username: '', full_name: '', bio: '',
-  country: '', region: '', city: '', website: '', avatar_url: null,
+  country: '', region: '', city: '', avatar_url: null,
 };
 
 function normalizeProfile(raw: any): ProfileForm {
@@ -28,7 +28,7 @@ function normalizeProfile(raw: any): ProfileForm {
     country: String(raw.country || ''),
     region: String(raw.region || ''),
     city: String(raw.city || ''),
-    website: String(raw.website || ''),
+    
     avatar_url: raw.avatar_url || null,
   };
 }
@@ -122,7 +122,6 @@ export default function EditProfileScreen() {
         country: form.country.trim() || null,
         region: form.region.trim() || null,
         city: form.city.trim() || null,
-        website: form.website.trim() || null,
         avatar_url: form.avatar_url,
         updated_at: new Date().toISOString(),
       }).eq('user_id', user.id);
@@ -184,7 +183,6 @@ export default function EditProfileScreen() {
         <Input label="Country" value={form.country} onChange={(t: string) => setForm({ ...form, country: t })} />
         <Input label="Region" value={form.region} onChange={(t: string) => setForm({ ...form, region: t })} placeholder="e.g. Nairobi" />
         <Input label="City" value={form.city} onChange={(t: string) => setForm({ ...form, city: t })} />
-        <Input label="Website" value={form.website} onChange={(t: string) => setForm({ ...form, website: t })} autoCapitalize="none" keyboardType="url" />
       </ScrollView>
     </KeyboardAvoidingView>
   );
