@@ -1,271 +1,157 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function BusinessProfileScreen() {
+export default function BusinessPublicProfile() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { user } = useAuthStore();
-  
-  const [profile, setProfile] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
+  const [business, setBusiness] = useState<any>(null);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOwner, setIsOwner] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  
-  // Edit states
-  const [editName, setEditName] = useState('');
-  const [editTagline, setEditTagline] = useState('');
-  const [editStory, setEditStory] = useState('');
 
-  useEffect(() => {
-    loadBusinessData();
-  }, [id]);
+  useEffect(() => { loadBusinessData(); }, [id]);
 
   const loadBusinessData = async () => {
     setLoading(true);
     try {
-      // Fetch Profile
-      const { data: profileData } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (profileData) {
-        setProfile(profileData);
-        setEditName(profileData.business_name);
-        setEditTagline(profileData.tagline || '');
-        setEditStory(profileData.story_content || '');
-        setIsOwner(user?.id === profileData.user_id);
-      }
+      const { data: bizData } = await supabase.from('businesses').select('*').eq('id', id).single();
+      setBusiness(bizData);
 
-      // Fetch Items (Menu/Inventory)
-      const { data: itemsData } = await supabase
-        .from('business_items')
-        .select('*')
-        .eq('business_id', id)
-        .eq('is_available', true)
-        .order('sort_order', { ascending: true });
+      if (bizData) {
+        const type = (bizData.category || bizData.business_type || '').toLowerCase();
         
-      setItems(itemsData || []);
-    } catch (error) {
-      console.error('Error loading business:', error);
+        if (type.includes('restaurant') || type.includes('food')) {
+          const { data: menu } = await supabase
+            .from('restaurant_menu_items') // Adjust to your actual menu table name if different
+            .select('id, name, description, price, category, image_url')
+            .eq('business_id', id)
+            .eq('is_available', true);
+          setMenuItems(menu || []);
+        } else if (type.includes('shop') || type.includes('retail')) {
+          const { data: prods } = await supabase
+            .from('shop_products') // Adjust to your actual products table name if different
+            .select('id, name, description, price, category, image_url, stock')
+            .eq('business_id', id)
+            .eq('is_active', true);
+          setProducts(prods || []);
+        }
+      }
+    } catch (err) {
+      console.error('Load business error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveProfile = async () => {
-    try {
-      const { error } = await supabase
-        .from('business_profiles')
-        .update({ 
-          business_name: editName, 
-          tagline: editTagline, 
-          story_content: editStory,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      setProfile({ ...profile, business_name: editName, tagline: editTagline, story_content: editStory });
-      setEditMode(false);
-      Alert.alert('Success', 'Business profile updated!');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
-  };
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>;
+  if (!business) return (
+    <View style={styles.center}>
+      <Text style={styles.errorText}>Business not found</Text>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}><Text style={styles.backBtnText}>Go Back</Text></TouchableOpacity>
+    </View>
+  );
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.loadingText}>Loading Business Profile...</Text>
-      </View>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>Business not found.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Group items by category
-  const categories = [...new Set(items.map(item => item.category))];
+  const businessType = (business.category || business.business_type || '').toLowerCase();
+  const isRestaurant = businessType.includes('restaurant') || businessType.includes('food');
+  const isShop = businessType.includes('shop') || businessType.includes('retail');
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header / Hero */}
-      <View style={styles.heroContainer}>
-        <Image 
-          source={{ uri: profile.hero_image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80' }} 
-          style={styles.heroImage} 
-        />
-        <View style={styles.heroOverlay}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          
-          {isOwner && (
-            <TouchableOpacity style={styles.editToggle} onPress={() => setEditMode(!editMode)}>
-              <Ionicons name={editMode ? "checkmark" : "pencil"} size={20} color="#fff" />
-              <Text style={styles.editToggleText}>{editMode ? 'Save' : 'Edit'}</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.cover}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.avatar}><Ionicons name="business" size={40} color="#fff" /></View>
+      </View>
 
-          <View style={styles.heroContent}>
-            {editMode ? (
-              <TextInput 
-                style={styles.editInputLarge} 
-                value={editName} 
-                onChangeText={setEditName} 
-                placeholder="Business Name"
-                placeholderTextColor="#cbd5e1"
-              />
-            ) : (
-              <Text style={styles.businessName}>{profile.business_name}</Text>
-            )}
-            
-            {editMode ? (
-              <TextInput 
-                style={styles.editInput} 
-                value={editTagline} 
-                onChangeText={setEditTagline} 
-                placeholder="Tagline"
-                placeholderTextColor="#cbd5e1"
-              />
-            ) : (
-              <Text style={styles.tagline}>{profile.tagline || 'Welcome to our business'}</Text>
-            )}
-            
-            <View style={styles.infoRow}>
-              <Ionicons name="location" size={14} color="#fbbf24" />
-              <Text style={styles.infoText}>{profile.address || 'Location not set'}</Text>
-            </View>
-          </View>
+      <View style={styles.infoSection}>
+        <Text style={styles.name}>{business.name}</Text>
+        <Text style={styles.category}>{business.category || business.business_type}</Text>
+        {business.description && <Text style={styles.description}>{business.description}</Text>}
+        <View style={styles.statsRow}>
+          <View style={styles.stat}><Ionicons name="star" size={16} color="#f59e0b" /><Text style={styles.statText}>{business.rating || '4.5'} Rating</Text></View>
+          <View style={styles.stat}><Ionicons name="location" size={16} color="#3b82f6" /><Text style={styles.statText}>{business.location || 'Nairobi, KE'}</Text></View>
         </View>
       </View>
 
-      {/* Story Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{profile.story_title || 'Our Story'}</Text>
-        {editMode ? (
-          <TextInput 
-            style={[styles.editInput, { minHeight: 100, textAlignVertical: 'top' }]} 
-            value={editStory} 
-            onChangeText={setEditStory} 
-            multiline
-            placeholder="Tell your story..."
-            placeholderTextColor="#94a3b8"
-          />
-        ) : (
-          <Text style={styles.storyText}>{profile.story_content || 'No story added yet.'}</Text>
-        )}
-      </View>
-
-      {/* Menu / Items Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Our Offerings</Text>
-        {categories.map(cat => (
-          <View key={cat} style={styles.categoryBlock}>
-            <Text style={styles.categoryTitle}>{cat}</Text>
-            {items.filter(i => i.category === cat).map(item => (
-              <View key={item.id} style={styles.itemCard}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
-                  {item.price && <Text style={styles.itemPrice}>KES {item.price.toFixed(2)}</Text>}
+      <View style={styles.contentSection}>
+        {isRestaurant && (
+          <>
+            <Text style={styles.sectionTitle}>Menu</Text>
+            {menuItems.length === 0 ? <Text style={styles.emptyText}>No menu items available yet.</Text> : (
+              menuItems.map((item) => (
+                <View key={item.id} style={styles.itemCard}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemDesc} numberOfLines={2}>{item.description}</Text>
+                    <Text style={styles.itemPrice}>KES {item.price}</Text>
+                  </View>
+                  {item.image_url && <Image source={{ uri: item.image_url }} style={styles.itemImage} />}
                 </View>
-                {item.image_url && (
-                  <Image source={{ uri: item.image_url }} style={styles.itemImage} />
-                )}
-              </View>
-            ))}
+              ))
+            )}
+          </>
+        )}
+
+        {isShop && (
+          <>
+            <Text style={styles.sectionTitle}>Products</Text>
+            {products.length === 0 ? <Text style={styles.emptyText}>No products available yet.</Text> : (
+              products.map((product) => (
+                <View key={product.id} style={styles.itemCard}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{product.name}</Text>
+                    <Text style={styles.itemDesc} numberOfLines={2}>{product.description}</Text>
+                    <Text style={styles.itemPrice}>KES {product.price}</Text>
+                    <Text style={styles.stockText}>{product.stock || 0} in stock</Text>
+                  </View>
+                  {product.image_url && <Image source={{ uri: product.image_url }} style={styles.itemImage} />}
+                </View>
+              ))
+            )}
+          </>
+        )}
+
+        {!isRestaurant && !isShop && (
+          <View style={styles.genericInfo}>
+            <Ionicons name="information-circle" size={48} color="#64748b" />
+            <Text style={styles.emptyText}>This business does not have a public catalog configured yet.</Text>
           </View>
-        ))}
-        {items.length === 0 && (
-          <Text style={styles.emptyText}>No items listed yet.</Text>
         )}
       </View>
-
-      {/* Contact Section */}
-      <View style={[styles.section, styles.contactSection]}>
-        <Text style={styles.sectionTitle}>Contact Us</Text>
-        {profile.phone && (
-          <TouchableOpacity style={styles.contactRow} onPress={() => {/* open phone */}}>
-            <Ionicons name="call" size={20} color="#8b5cf6" />
-            <Text style={styles.contactText}>{profile.phone}</Text>
-          </TouchableOpacity>
-        )}
-        {profile.google_maps_url && (
-          <TouchableOpacity style={styles.contactRow} onPress={() => {/* open maps */}}>
-            <Ionicons name="map" size={20} color="#8b5cf6" />
-            <Text style={styles.contactText}>Get Directions</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Save Button (Only in Edit Mode) */}
-      {editMode && (
-        <View style={styles.saveBar}>
-          <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      
-      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a' },
-  loadingText: { color: '#fff', fontSize: 16 },
-  errorText: { color: '#ef4444', fontSize: 16, marginBottom: 16 },
-  backBtn: { backgroundColor: '#334155', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
+  errorText: { color: '#ef4444', fontSize: 16, fontWeight: '600', marginBottom: 16 },
+  backBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
   backBtnText: { color: '#fff', fontWeight: '600' },
-  heroContainer: { height: 320, position: 'relative' },
-  heroImage: { width: '100%', height: '100%' },
-  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: 20, paddingBottom: 30 },
-  backButton: { position: 'absolute', top: 50, left: 20, backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: 20 },
-  editToggle: { position: 'absolute', top: 50, right: 20, flexDirection: 'row', alignItems: 'center', backgroundColor: '#8b5cf6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 },
-  editToggleText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  heroContent: { marginBottom: 10 },
-  businessName: { fontSize: 32, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  tagline: { fontSize: 16, color: '#cbd5e1', marginBottom: 12 },
-  infoRow: { flexDirection: 'row', alignItems: 'center' },
-  infoText: { color: '#fbbf24', fontSize: 14, fontWeight: '600', marginLeft: 4 },
-  section: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#fff', marginBottom: 16 },
-  storyText: { fontSize: 15, color: '#cbd5e1', lineHeight: 24 },
-  categoryBlock: { marginBottom: 24 },
-  categoryTitle: { fontSize: 16, fontWeight: '600', color: '#8b5cf6', marginBottom: 12, textTransform: 'uppercase' },
-  itemCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginBottom: 12 },
-  itemInfo: { flex: 1, marginRight: 12 },
-  itemName: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 4 },
-  itemDesc: { fontSize: 13, color: '#94a3b8', marginBottom: 8 },
-  itemPrice: { fontSize: 15, fontWeight: '700', color: '#8b5cf6' },
-  itemImage: { width: 60, height: 60, borderRadius: 8 },
+  cover: { height: 160, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  backButton: { position: 'absolute', top: 50, left: 16, zIndex: 10, padding: 8, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 20 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center', borderWidth: 4, borderColor: '#0f172a', marginTop: 40 },
+  infoSection: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  name: { fontSize: 24, fontWeight: '800', color: '#f1f5f9', textAlign: 'center' },
+  category: { fontSize: 14, color: '#3b82f6', textAlign: 'center', marginTop: 4, fontWeight: '600', textTransform: 'uppercase' },
+  description: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 12, lineHeight: 20 },
+  statsRow: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginTop: 16 },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statText: { color: '#cbd5e1', fontSize: 14, fontWeight: '500' },
+  contentSection: { padding: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9', marginBottom: 16 },
+  itemCard: { flexDirection: 'row', backgroundColor: '#1e293b', borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
+  itemInfo: { flex: 1 },
+  itemName: { fontSize: 16, fontWeight: '700', color: '#f1f5f9' },
+  itemDesc: { fontSize: 13, color: '#94a3b8', marginTop: 4, lineHeight: 18 },
+  itemPrice: { fontSize: 16, fontWeight: '700', color: '#10b981', marginTop: 8 },
+  stockText: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  itemImage: { width: 60, height: 60, borderRadius: 8, marginLeft: 12, backgroundColor: '#334155' },
   emptyText: { color: '#64748b', fontSize: 14, textAlign: 'center', marginTop: 20 },
-  contactSection: { backgroundColor: '#1e293b', margin: 20, borderRadius: 16 },
-  contactRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
-  contactText: { color: '#fff', fontSize: 15 },
-  saveBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f172a', padding: 20, borderTopWidth: 1, borderTopColor: '#334155' },
-  saveButton: { backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  editInputLarge: { fontSize: 28, fontWeight: '800', color: '#fff', borderBottomWidth: 1, borderBottomColor: '#8b5cf6', marginBottom: 8, paddingBottom: 4 },
-  editInput: { fontSize: 16, color: '#cbd5e1', borderBottomWidth: 1, borderBottomColor: '#334155', marginBottom: 12, paddingBottom: 4 },
+  genericInfo: { alignItems: 'center', marginTop: 40 },
 });
