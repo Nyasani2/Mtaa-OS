@@ -10,6 +10,7 @@ export default function BillingCodesScreen() {
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState({ code: '', description: '', type: 'cpt', amount: '0' });
 
   const fetch = async () => {
@@ -34,6 +35,11 @@ export default function BillingCodesScreen() {
     } catch (err) { Alert.alert('Error', err.message); }
   };
 
+  const filteredCodes = codes.filter(c => 
+    c.code.toLowerCase().includes(search.toLowerCase()) || 
+    c.description.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -41,14 +47,29 @@ export default function BillingCodesScreen() {
         <Text style={styles.title}>Billing Codes</Text>
         <TouchableOpacity onPress={() => setShowAdd(true)}><Ionicons name="add" size={24} color="#fff" /></TouchableOpacity>
       </View>
+      
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search codes..."
+        placeholderTextColor="#64748b"
+        value={search}
+        onChangeText={setSearch}
+      />
+      
       {loading ? <ActivityIndicator style={{ marginTop: 40 }} color="#06b6d4" /> : (
-        <FlatList data={codes} keyExtractor={i => i.id} renderItem={({item}) => (
-          <View style={styles.card}>
-            <Text style={styles.name}>{item.code}</Text>
-            <Text style={styles.meta}>{item.description} • {item.type}</Text>
-          </View>
-        )} contentContainerStyle={styles.list} />
+        <FlatList 
+          data={filteredCodes} 
+          keyExtractor={i => i.id} 
+          renderItem={({item}) => (
+            <View style={styles.card}>
+              <Text style={styles.name}>{item.code}</Text>
+              <Text style={styles.meta}>{item.description} • {item.type}</Text>
+            </View>
+          )} 
+          contentContainerStyle={styles.list} 
+        />
       )}
+      
       <Modal visible={showAdd} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -64,10 +85,12 @@ export default function BillingCodesScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 50, backgroundColor: '#1e293b' },
   title: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  searchInput: { backgroundColor: '#1e293b', color: '#fff', padding: 12, borderRadius: 8, margin: 16, fontSize: 14, borderWidth: 1, borderColor: '#334155' },
   list: { padding: 16 },
   card: { backgroundColor: '#1e293b', borderRadius: 12, padding: 14, marginBottom: 10 },
   name: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
