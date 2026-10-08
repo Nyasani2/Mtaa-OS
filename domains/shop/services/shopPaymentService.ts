@@ -159,11 +159,21 @@ export class ShopPaymentService {
       return { success: false, message: buyerTxError.message };
     }
 
-    // Update buyer wallet balance
-    await supabase
-      .from('wallet_accounts')
-      .update({ balance: (buyerWallet.balance || 0) - totalAmount })
-      .eq('id', buyerWallet.id);
+    // Secure atomic debit
+    const { error: debitError } = await supabase.rpc('mtaa_wallet_debit', {
+      p_user_id: customerId,
+      p_amount: totalAmount,
+      p_currency: 'KES',
+      p_description: `Shop Order #${orderNumber}`,
+      p_transaction_type: 'purchase',
+      p_metadata: { order_id: order.id }
+    });
+    if (debitError) {
+      // Rollback
+      await supabase.from('shop_order_items').delete().eq('order_id', order.id);
+      await supabase.from('shop_orders').delete().eq('id', order.id);
+      return { success: false, message: debitError.message };
+    }
 
     let escrowId: string | undefined;
 
@@ -213,10 +223,18 @@ export class ShopPaymentService {
             currency: settings.currency || 'KES',
           });
 
-        await supabase
-          .from('wallet_accounts')
-          .update({ balance: (businessWallet.balance || 0) + totalAmount })
-          .eq('id', businessWallet.id);
+        // Secure atomic credit
+        const { error: creditError } = await supabase.rpc('mtaa_wallet_credit', {
+          p_user_id: businessWallet.user_id,
+          p_amount: totalAmount,
+          p_currency: 'KES',
+          p_description: `Sale to ${shop.name} — Order #${orderNumber}`,
+          p_transaction_type: 'sales',
+          p_metadata: { order_id: order.id }
+        });
+        if (creditError) {
+          console.error('Business credit failed:', creditError);
+        }
       }
 
       // Mark order as paid
