@@ -24,7 +24,6 @@ export default function CreateShopScreen() {
   const [name, setName] = useState('');
   const [type, setType] = useState('retail');
   const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -109,11 +108,8 @@ export default function CreateShopScreen() {
         style={{ backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#ddd' }} 
       />
       
-      <Text style={{ fontWeight: '700', color: '#333', marginBottom: 6 }}>Description</Text>
       <TextInput 
         value={description} 
-        onChangeText={setDescription} 
-        placeholder="Describe your business..." 
         multiline 
         style={{ backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 18, minHeight: 90, borderWidth: 1, borderColor: '#ddd' }} 
       />
