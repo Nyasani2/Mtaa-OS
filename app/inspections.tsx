@@ -72,7 +72,7 @@ export default function InspectionsScreen() {
     try {
       if (!iName || !iNid || !iGC) throw new Error('Name, National ID and Good Conduct upload required.');
       await pay(5000, 'Inspector onboarding fee');
-      const { error } = await supabase.from('mtaxi_inspectors').insert({ user_id: user.id, name: iName, national_id: iNid, good_conduct_url: iGC, paid: true, status: 'active' });
+      const { error } = await supabase.from('mtaxi_inspectors').insert({ user_id: user.id, name: iName, national_id: iNid, good_conduct_url: iGC, paid: true, status: 'pending_approval' });
       if (error) throw new Error(error.message);
       Alert.alert('✅ You are now a certified MTAA inspector', 'KES 5,000 paid. You earn 50% of every inspection you complete.');
     } catch (e) { setErr(String(e?.message || e)); }
@@ -83,7 +83,7 @@ export default function InspectionsScreen() {
     setErr(null); setBusy(true);
     try {
       await pay(5000, 'Garage inspection partner fee');
-      const { error } = await supabase.from('mtaxi_garages').update({ inspection_partner: true, partner_fee_paid_at: new Date().toISOString() }).eq('owner_id', user.id);
+      const { error } = await supabase.from('mtaxi_garages').update({ inspection_partner: false, partner_fee_paid_at: new Date().toISOString(), approval_status: 'pending' }).eq('owner_id', user.id);
       if (error) throw new Error(error.message);
       Alert.alert('✅ Garage unlocked for inspection earnings', 'Free tools stay free. You now earn 50% on inspections you perform.');
     } catch (e) { setErr(String(e?.message || e)); }
