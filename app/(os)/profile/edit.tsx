@@ -57,7 +57,7 @@ export default function EditProfileScreen() {
         if (user?.id) {
           const { data, error } = await supabase
             .from('user_profiles')
-            .select('display_name, username, full_name, bio, country, region, city, website, avatar_url')
+            .select('display_name, username, full_name, bio, country, region, city, avatar_url')
             .eq('user_id', user.id)
             .maybeSingle();
           if (!cancelled) {
