@@ -1,4 +1,5 @@
 // @ts-nocheck
+import * as FileSystem from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 import { Platform } from 'react-native';
 // @ts-ignore
@@ -489,12 +490,21 @@ export async function uploadMedia(
   let contentType = file.type || 'application/octet-stream';
   let fileName = file.name || `upload_${Date.now()}`;
 
-  // 1. Handle Native Uploads (convert URI to Blob)
+  // 1. Handle Native Uploads (convert URI to Blob safely for Android content:// URIs)
   if (Platform.OS !== 'web' && file.uri) {
-    const response = await fetch(file.uri);
-    blobToUpload = await response.blob();
-    contentType = file.type || blobToUpload.type || 'application/octet-stream';
-    fileName = file.name || `upload_${Date.now()}`;
+    try {
+      // Read file as base64 to handle content:// URIs reliably on Android
+      const base64 = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const response = await fetch(`data:${contentType};base64,${base64}`);
+      blobToUpload = await response.blob();
+      contentType = file.type || blobToUpload.type || 'application/octet-stream';
+      fileName = file.name || `upload_${Date.now()}`;
+    } catch (err) {
+      console.error('[Streets] Native file read error:', err);
+      throw new Error('Failed to read file from device. Please try again.');
+    }
   } 
   // 2. Handle Web Uploads (compression & thumbnails)
   else if (Platform.OS === 'web' && file instanceof File) {
