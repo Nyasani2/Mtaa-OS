@@ -126,7 +126,13 @@ let mediaUrl, thumbnailUrl;
 if (file) { const up = await uploadMedia(file, user.id, () => {}); mediaUrl = up.url; thumbnailUrl = up.thumbnailUrl; }
 await createPost({ creatorId: user.id, content: payload.content, caption: payload.caption, mediaUrl, thumbnailUrl, mediaType: type, hashtags: payload.hashtags, isPublic: payload.isPublic });
 console.log('[Create] background upload complete');
-} catch (e) { console.error('[Create] background upload failed:', e); }
+} catch (e: any) { 
+  console.error('[Create] background upload failed:', e);
+  // Alert the user even if they navigated back, to prevent silent failure
+  Alert.alert('Post Failed', e.message || 'Could not upload post. Please check your connection and try again.');
+} finally {
+  setPosting(false);
+}
 })();
 };
 
