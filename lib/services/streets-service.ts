@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 import { Platform } from 'react-native';
 // @ts-ignore
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 // @ts-ignore
 
 // ── Types ──────────────────────────────────────────────────
@@ -527,7 +527,7 @@ export async function uploadMedia(
   }
 
   const ext = fileName.split('.').pop() || 'bin';
-  const path = `${userId}/${uuidv4()}.${ext}`;
+  const path = `${userId}/${Crypto.randomUUID()}.${ext}`;
 
   onProgress?.(10);
 
