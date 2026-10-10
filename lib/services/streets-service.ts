@@ -490,20 +490,17 @@ export async function uploadMedia(
   let contentType = file.type || 'application/octet-stream';
   let fileName = file.name || `upload_${Date.now()}`;
 
-  // 1. Handle Native Uploads (convert URI to Blob safely for Android content:// URIs)
+  // 1. Handle Native Uploads (convert URI to Blob)
+  // Note: Robust Android content:// URI handling requires a native build (eas build).
   if (Platform.OS !== 'web' && file.uri) {
     try {
-      // Read file as base64 to handle content:// URIs reliably on Android
-      const base64 = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      const response = await fetch(`data:${contentType};base64,${base64}`);
+      const response = await fetch(file.uri);
       blobToUpload = await response.blob();
       contentType = file.type || blobToUpload.type || 'application/octet-stream';
       fileName = file.name || `upload_${Date.now()}`;
     } catch (err) {
-      console.error('[Streets] Native file read error:', err);
-      throw new Error('Failed to read file from device. Please try again.');
+      console.error('[Streets] Native file fetch error:', err);
+      throw new Error('Failed to read file. A native app rebuild may be required for Android uploads.');
     }
   } 
   // 2. Handle Web Uploads (compression & thumbnails)
