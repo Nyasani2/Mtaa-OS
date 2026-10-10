@@ -114,8 +114,6 @@ const handlePost = async () => {
 setLocalError(null);
 if (!content.trim() && !selectedFile) { setLocalError('Add text or select media.'); return; }
 if (!user?.id) { setLocalError('You must be logged in.'); return; }
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) { setLocalError('Session expired - log in again.'); return; }
 const file = selectedFile, type = mediaType;
 const payload = { content: content.trim(), caption: caption.trim() || undefined, hashtags, isPublic };
 setPosting(true);
