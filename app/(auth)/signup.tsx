@@ -1,3 +1,4 @@
+import { formatPhoneNumber, isValidPhoneNumber } from '@/lib/utils/phone';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,8 @@ export default function SignupScreen() {
     if (!fullName.trim()) { setError('Full name is required'); return false; }
     if (!username.trim()) { setError('Username is required'); return false; }
     if (!email.trim() || !email.includes('@')) { setError('Valid email is required'); return false; }
+    if (!phone.trim()) { setError('Phone number is required'); return false; }
+    if (!isValidPhoneNumber(phone)) { setError('Please enter a valid phone number with country code (e.g., +254...)'); return false; }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return false; }
     if (password !== confirmPassword) { setError('Passwords do not match'); return false; }
     return true;
@@ -33,10 +36,12 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     if (!validate()) return;
     setLoading(true);
+    const formattedPhone = formatPhoneNumber(phone.trim());
     const { error: signupError } = await signUp(email.trim(), password, {
       full_name: fullName.trim(),
       username: username.trim().toLowerCase(),
-      phone: phone.trim(),
+      phone: formattedPhone,
+      country_code: formattedPhone.startsWith('+254') ? 'KE' : 'OTHER', // Basic country detection
     });
     setLoading(false);
     if (signupError) {
