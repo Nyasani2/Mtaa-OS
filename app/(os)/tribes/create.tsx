@@ -4,7 +4,7 @@ import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Switch, Act
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
-import tribesService from '@/lib/tribes/services/tribes.service';
+import * as tribesService from '@/lib/tribes/services/tribes.service';
 
 const CATEGORIES = ['cultural', 'interest', 'professional', 'knowledge', 'civic', 'brand', 'sports', 'technology', 'agricultural', 'automotive', 'education', 'creative'];
 
