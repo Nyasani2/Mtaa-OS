@@ -7,6 +7,8 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -262,7 +264,7 @@ async function confirmDelivery(supabaseAdmin, buyerId, params) {
 
       // FIXED: Credit MTAA Treasury with the platform fee
       await supabaseAdmin.rpc('mtaa_wallet_credit', {
-        p_user_id: '8e41ee2e-ae74-43a5-a550-a1d02a5591a3',
+        p_user_id: TREASURY_USER_ID,
         p_amount: sellerFee,
         p_currency: 'KES',
         p_description: `Platform fee for order ${order.id}`,

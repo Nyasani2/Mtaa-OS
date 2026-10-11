@@ -1,6 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+
+
 serve(async (req) => {
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   
@@ -37,7 +39,7 @@ serve(async (req) => {
 
   // FIXED: Credit MTAA Treasury with the 10% platform fee
   await supabase.rpc('mtaa_wallet_credit', { 
-    p_user_id: '8e41ee2e-ae74-43a5-a550-a1d02a5591a3', 
+    p_user_id: TREASURY_USER_ID, 
     p_amount: platformFee, 
     p_currency: 'KES',
     p_description: 'Platform fee for subscription', 

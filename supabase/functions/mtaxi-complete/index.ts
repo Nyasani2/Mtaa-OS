@@ -1,12 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
+
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// FIXED: Using real UUIDs instead of placeholders
-const TREASURY_USER_ID = '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
-const TAX_AUTHORITY_ID = '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
+
 
 serve(async (req) => {
   try {
