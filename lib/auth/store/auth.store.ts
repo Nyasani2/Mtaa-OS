@@ -188,9 +188,15 @@ export const useAuthStore = create<AuthState>()(
 
       signOut: async () => {
         console.log('🔥 [Auth Store] signOut function triggered!');
+        const userId = get().user?.id; // Capture user ID before clearing state
+        
         try { await supabase.auth.signOut(); } catch (e) { console.log('Supabase signout error:', e); }
-        try { await pinEngine.clearAll(); } catch (e) {}
-        try { await biometricEngine.clearAll(); } catch (e) {}
+        
+        // FIX: Explicitly clear security settings for the current user (fixes native SecureStore cleanup)
+        if (userId) {
+          try { await pinEngine.clearPin(userId); } catch (e) {}
+          try { await biometricEngine.clearBiometric(userId); } catch (e) {}
+        }
         
         await AsyncStorage.multiRemove([
           AUTH_STORAGE_KEY,
