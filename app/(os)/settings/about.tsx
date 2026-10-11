@@ -77,15 +77,15 @@ export default function AboutScreen() {
         <View style={s.section}>
           <Text style={s.sectionTitle}>LEGAL</Text>
           <View style={s.card}>
-            <TouchableOpacity style={s.row} onPress={() => {}}>
+            <TouchableOpacity style={s.row}>
               <Text style={s.rowText}>Terms of Service</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
-            <TouchableOpacity style={s.row} onPress={() => {}}>
+            <TouchableOpacity style={s.row}>
               <Text style={s.rowText}>Privacy Policy</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>
-            <TouchableOpacity style={[s.row, { borderBottomWidth: 0 }]} onPress={() => {}}>
+            <TouchableOpacity style={[s.row, { borderBottomWidth: 0 }]}>
               <Text style={s.rowText}>Open Source Licenses</Text>
               <Ionicons name="chevron-forward" size={18} color="#475569" />
             </TouchableOpacity>

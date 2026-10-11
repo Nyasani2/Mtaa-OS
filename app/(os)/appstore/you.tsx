@@ -20,12 +20,12 @@ export default function AppStoreYou() {
   const updateCount = apps.filter((a: any) => installedApps.includes(a.id) && !a.is_system_app).length;
 
   const menuItems = [
-    { icon: 'download', label: 'Manage downloads', color: '#4ECDC4', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
-    { icon: 'bell', label: 'Notifications', color: '#FFD700', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
-    { icon: 'shield', label: 'App permissions', color: '#FF6B6B', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
-    { icon: 'trash-2', label: 'Clear cache', color: '#888', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
-    { icon: 'help-circle', label: 'Help & support', color: '#85C1E9', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
-    { icon: 'info', label: 'About AppStore', color: '#96CEB4', onPress: () => Alert.alert('Coming Soon', 'This feature will be available in the next update') },
+    { icon: 'download', label: 'Manage downloads', color: '#4ECDC4', onPress: undefined },
+    { icon: 'bell', label: 'Notifications', color: '#FFD700', onPress: undefined },
+    { icon: 'shield', label: 'App permissions', color: '#FF6B6B', onPress: undefined },
+    { icon: 'trash-2', label: 'Clear cache', color: '#888', onPress: undefined },
+    { icon: 'help-circle', label: 'Help & support', color: '#85C1E9', onPress: undefined },
+    { icon: 'info', label: 'About AppStore', color: '#96CEB4', onPress: undefined },
   ];
 
   return (

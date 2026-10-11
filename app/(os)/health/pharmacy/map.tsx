@@ -56,7 +56,7 @@ export default function PharmacyMapScreen() {
       {errorMsg ? (
         <View style={s.errorBox}>
           <Text style={s.errorText}>{errorMsg}</Text>
-          <TouchableOpacity onPress={() => window.location.reload()}>
+          <TouchableOpacity onPress={() => { if (Platform.OS === "web") window.location.reload(); else Alert.alert("Refresh", "Please pull down to refresh on mobile"); } }>
             <Text style={s.retry}>Retry</Text>
           </TouchableOpacity>
         </View>

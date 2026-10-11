@@ -110,7 +110,7 @@ export default function ShopSuppliersScreen() {
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCreateModal(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.submitBtn} onPress={() => {}} disabled={loading}>
+              <TouchableOpacity style={styles.submitBtn} onPress={() => Alert.alert("Feature", "This feature is currently in development")} disabled={loading}>
                 <Text style={styles.submitBtnText}>{loading ? 'Creating...' : 'Create'}</Text>
               </TouchableOpacity>
             </View>

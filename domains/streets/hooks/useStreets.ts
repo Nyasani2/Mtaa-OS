@@ -290,7 +290,11 @@ export function useStreets() {
 function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
     if (Platform.OS !== 'web') return null;
-  const video = document.createElement('video');
+  if (Platform.OS !== 'web') {
+      resolve(0);
+      return;
+    }
+    const video = document.createElement('video');
     video.preload = 'metadata';
     video.src = URL.createObjectURL(file);
     video.onloadedmetadata = () => {

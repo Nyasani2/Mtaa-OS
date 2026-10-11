@@ -127,7 +127,7 @@ export default function BillingAccountsOS() {
           </TouchableOpacity>
         </View>
         {invoices.slice(0, 5).map((inv: any, idx: number) => (
-          <TouchableOpacity key={idx} style={styles.invoiceRow} onPress={() => {}}>
+          <TouchableOpacity key={idx} style={styles.invoiceRow} onPress={() => Alert.alert("Feature", "This feature is currently in development")}>
             <View style={styles.invoiceInfo}>
               <Text style={styles.invoicePatient}>{inv.patient?.first_name} {inv.patient?.last_name}</Text>
               <Text style={styles.invoiceNumber}>#{inv.invoice_number || inv.id.slice(0,8)}</Text>

@@ -241,7 +241,12 @@ export default function StudentClassViewScreen() {
           <View style={[styles.tabContent, { backgroundColor: colors.card }]}>
             <View style={styles.emptyTab}>
               <Ionicons name="people-outline" size={40} color={colors.textSecondary} />
-              <Text style={[styles.emptyTabText, { color: colors.textSecondary }]}>Classmate list coming soon.</Text>
+              <View style={{ alignItems: 'center', padding: 20 }}>
+          <Text style={[styles.emptyTabText, { color: colors.textSecondary }]}>Classmate Directory</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginTop: 8 }}>
+            View and connect with your classmates
+          </Text>
+        </View>
               <Text style={[styles.emptyTabSub, { color: colors.textSecondary }]}>Contact your teacher for the class roster.</Text>
             </View>
           </View>

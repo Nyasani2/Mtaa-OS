@@ -1,7 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 
-import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator , Platform} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import * as StreetsService from '@/lib/services/streets-service';
@@ -25,14 +26,15 @@ export default function ListingDetailScreen() {
 
       const pickVideo = () => {
     if (typeof document === 'undefined') { setMsg('Video upload available on web'); return; }
-    const input = document.createElement('input');
+    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null);
     input.type = 'file'; input.accept = 'video/*';
     input.onchange = async (e) => {
       const file = e.target.files?.[0]; if (!file) return;
       setUploadingVideo(true);
       try {
         const objUrl = URL.createObjectURL(file);
-        const dur = await new Promise((res) => { const v = document.createElement('video'); v.preload='metadata'; v.onloadedmetadata=()=>res(v.duration||0); v.onerror=()=>res(0); v.src=objUrl; });
+        const dur = await new Promise((res) => { const v = (Platform.OS === 'web' ? document.createElement('video') : null); v.preload='metadata'; v.onloadedmetadata=()=>res(v.duration||0); v.onerror=()=>res(0); v.src=objUrl; });
         if (dur > 30.5) { setMsg('Video too long ('+Math.round(dur)+'s). Max 30s.'); setUploadingVideo(false); return; }
         const path = (user?.id||'anon')+'/boost-'+Date.now()+'-'+file.name.replace(/[^a-zA-Z0-9.]+/g,'_');
         const { error } = await supabase.storage.from('streets-media').upload(path, file, { contentType: file.type, upsert: false });

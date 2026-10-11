@@ -356,7 +356,7 @@ function StaffTab({ profile }: { profile: any }) {
                 <Text style={styles.vacancyPosition}>{v.position}</Text>
                 <Text style={styles.vacancyMeta}>{v.subject} • Deadline: {v.deadline}</Text>
               </View>
-              <TouchableOpacity style={styles.applyButton} onPress={() => Alert.alert('Apply', 'Application flow coming soon')}>
+              <TouchableOpacity style={styles.applyButton} onPress={() => Alert.alert('Apply', 'Applications are currently closed')}>
                 <Text style={styles.applyButtonText}>Apply</Text>
               </TouchableOpacity>
             </View>

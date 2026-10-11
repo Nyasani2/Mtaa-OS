@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Image, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -27,7 +28,8 @@ export default function DriverOnboarding() {
 
   const pick = (key: string, into: 'photo' | 'doc') => {
     if (typeof document === 'undefined') return;
-    const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+    if (Platform.OS !== 'web') { Alert.alert('Web Feature', 'This feature is currently only available on the web version.'); return; }
+    const i = (Platform.OS === 'web' ? document.createElement('input') : null); i.type = 'file'; i.accept = 'image/*';
     i.onchange = (e: any) => { const file = e.target.files?.[0]; if (!file) return;
       const r = new FileReader(); r.onload = () => { const d = String(r.result);
         if (into === 'photo') setPhotos(p => ({ ...p, [key]: d })); else setDocs(p => ({ ...p, [key as any]: d })); }; r.readAsDataURL(file); };

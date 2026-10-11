@@ -49,7 +49,7 @@ export default function UploadScreen() {
   const generateThumbnail = async (videoUri: string) => {
     try {
       if (Platform.OS === 'web') {
-        const video = document.createElement('video');
+        const video = (Platform.OS === 'web' ? document.createElement('video') : null);
         video.src = videoUri;
         video.crossOrigin = 'anonymous';
         video.currentTime = 1;
@@ -59,7 +59,7 @@ export default function UploadScreen() {
           video.onerror = () => resolve();
         });
 
-        const canvas = document.createElement('canvas');
+        const canvas = (Platform.OS === 'web' ? document.createElement('canvas') : null);
         canvas.width = 480;
         canvas.height = 640;
         const ctx = canvas.getContext('2d');

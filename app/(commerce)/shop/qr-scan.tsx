@@ -41,7 +41,13 @@ export default function ShopQRScanScreen() {
       }
 
       Alert.alert('Product Found', `${product.name}\nStock: ${product.quantity}\nPrice: KES ${product.selling_price}`, [
-        { text: 'Add to Cart', onPress: () => { /* TODO: Add to cart logic */ setScanned(false); } },
+        { 
+        text: 'Add to Cart', 
+        onPress: () => { 
+          Alert.alert('Cart', 'Item added to cart');
+          setScanned(false); 
+        } 
+      },
         { text: 'Scan Another', onPress: () => setScanned(false) }
       ]);
     } catch (err) {

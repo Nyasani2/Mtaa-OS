@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch , Platform} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,6 +31,16 @@ export default function DisplaySettingsScreen() {
         <Text style={s.headerTitle}>Display & Brightness</Text>
         <View style={{ width: 40 }} />
       </View>
+        {/* System Managed Badge */}
+        <View style={{ backgroundColor: '#1e293b', padding: 12, marginHorizontal: 16, marginTop: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#334155' }}>
+          <Ionicons name="information-circle-outline" size={20} color="#94a3b8" style={{ marginRight: 8 }} />
+          <Text style={{ color: '#94a3b8', fontSize: 13, flex: 1, lineHeight: 18 }}>
+            {Platform.OS === 'android' || Platform.OS === 'ios' 
+              ? 'This setting is managed by your device OS (Android/iOS).' 
+              : 'This setting is managed by MTAA OS.'}
+          </Text>
+        </View>
+
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <Section title="BRIGHTNESS">

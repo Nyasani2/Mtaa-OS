@@ -163,7 +163,9 @@ export default function WalletHomeScreen() {
       <View style={{ marginHorizontal: 16, marginTop: 16, padding: 16, backgroundColor: 'rgba(255, 152, 0, 0.15)', borderRadius: 12, borderWidth: 1, borderColor: '#FF9800', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Ionicons name="construct-outline" size={28} color="#FF9800" />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#FF9800', fontSize: 15, fontWeight: '700' }}>M-Pesa Integration Coming Soon</Text>
+          <TouchableOpacity onPress={() => Alert.alert('M-Pesa', 'M-Pesa integration is in development. You can use bank transfers or card payments for now.')}>
+          <Text style={{ color: '#FF9800', fontSize: 15, fontWeight: '700' }}>M-Pesa Integration (Coming Soon)</Text>
+        </TouchableOpacity>
           <Text style={{ color: '#FFD54F', fontSize: 12, marginTop: 4, lineHeight: 16 }}>We are currently configuring Daraja API credentials. Stay tuned for seamless mobile money deposits and withdrawals!</Text>
         </View>
       </View>

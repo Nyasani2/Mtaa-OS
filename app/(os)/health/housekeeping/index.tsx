@@ -368,7 +368,12 @@ export default function HousekeepingOS() {
           {activeTab !== 'dashboard' && activeTab !== 'rooms' && (
             <View style={styles.center}>
               <Ionicons name="construct" size={48} color="#475569" />
-              <Text style={styles.emptyText}>Module under development</Text>
+              <View style={{ alignItems: 'center', padding: 20 }}>
+          <Text style={styles.emptyText}>Housekeeping Module</Text>
+          <Text style={{ color: '#64748b', fontSize: 14, marginTop: 8 }}>
+            Room cleaning schedules and maintenance tracking coming in next update
+          </Text>
+        </View>
             </View>
           )}
         </>

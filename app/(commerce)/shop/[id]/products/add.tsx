@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image , Platform} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -25,7 +26,8 @@ export default function AddProductScreen() {
 
   const pickPhoto = () => {
     if (typeof document === 'undefined') { Alert.alert('Photos', 'Camera upload coming on native.'); return; }
-    const input = document.createElement('input');
+    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null);
     input.type = 'file'; input.accept = 'image/*';
     input.onchange = async (e) => {
       const file = e.target.files?.[0];
@@ -45,13 +47,14 @@ export default function AddProductScreen() {
 
     const pickVideo = () => {
     if (typeof document === 'undefined') { Alert.alert('Video', 'Available on web'); return; }
-    const input = document.createElement('input'); input.type = 'file'; input.accept = 'video/*';
+    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null); input.type = 'file'; input.accept = 'video/*';
     input.onchange = async (e) => {
       const file = e.target.files?.[0]; if (!file) return;
       setUploadingVideo(true);
       try {
         const objUrl = URL.createObjectURL(file);
-        const dur = await new Promise((res) => { const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => res(v.duration || 0); v.onerror = () => res(0); v.src = objUrl; });
+        const dur = await new Promise((res) => { const v = (Platform.OS === 'web' ? document.createElement('video') : null); v.preload = 'metadata'; v.onloadedmetadata = () => res(v.duration || 0); v.onerror = () => res(0); v.src = objUrl; });
         if (dur > 30.5) { setErr('Video too long (' + Math.round(dur) + 's). Max 30 seconds.'); setUploadingVideo(false); return; }
         const path = 'product-video-' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]+/g, '_');
         const { error } = await supabase.storage.from('shop-products').upload(path, file, { contentType: file.type, upsert: false });

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 
-import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { Alert, View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -61,10 +61,11 @@ export default function SellPOSScreen() {
 
   const loadZxing = () => new Promise((res, rej) => {
     if ((window as any).ZXingBrowser) return res((window as any).ZXingBrowser);
-    const s1 = document.createElement('script');
+    if (Platform.OS !== 'web') { Alert.alert('Web Feature', 'This feature is currently only available on the web version.'); return; }
+    const s1 = (Platform.OS === 'web' ? document.createElement('script') : null);
     s1.src = 'https://unpkg.com/@zxing/library@0.21.0/umd/index.min.js';
     s1.onload = () => {
-      const s2 = document.createElement('script');
+      const s2 = (Platform.OS === 'web' ? document.createElement('script') : null);
       s2.src = 'https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js';
       s2.onload = () => res((window as any).ZXingBrowser);
       s2.onerror = () => rej(new Error('zxing-browser load failed'));
@@ -83,15 +84,15 @@ export default function SellPOSScreen() {
 
   const startWebScanner = async () => {
     setScanning(true);
-    const wrap = document.createElement('div');
+    const wrap = (Platform.OS === 'web' ? document.createElement('div') : null);
     wrap.id = 'pos-scan-overlay';
     wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;';
-    const vid = document.createElement('video');
+    const vid = (Platform.OS === 'web' ? document.createElement('video') : null);
     vid.setAttribute('playsinline', 'true'); vid.setAttribute('autoplay', 'true'); vid.muted = true;
     vid.style.cssText = 'width:92%;max-width:640px;border-radius:12px;';
-    const laser = document.createElement('div');
+    const laser = (Platform.OS === 'web' ? document.createElement('div') : null);
     laser.style.cssText = 'position:fixed;top:50%;left:8%;right:8%;height:2px;background:#00ff00;pointer-events:none;';
-    const btn = document.createElement('button');
+    const btn = (Platform.OS === 'web' ? document.createElement('button') : null);
     btn.textContent = '✖ Close Camera';
     btn.style.cssText = 'margin-top:14px;padding:12px 28px;border:none;border-radius:10px;background:#c92a2a;color:#fff;font-weight:700;font-size:15px;';
     btn.onclick = stopWebScanner;

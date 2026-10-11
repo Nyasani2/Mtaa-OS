@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TextInput, Pressable, Image, StyleSheet, ActivityIndicator, Platform, Dimensions, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ThumbsUp, MessageCircle, Share2, Bookmark,
@@ -179,7 +179,7 @@ export default function VideoPlayerScreen() {
           <Text style={[styles.actionText, liked && { color: '#ff0040' }]}>{likeCount}</Text>
         </Pressable>
 
-        <Pressable style={styles.actionBtn} onPress={() => {}}>
+        <Pressable style={styles.actionBtn} onPress={() => Alert.alert("Feature", "This feature is currently in development")}>
           <MessageCircle size={20} color="#fff" />
           <Text style={styles.actionText}>{comments.length}</Text>
         </Pressable>

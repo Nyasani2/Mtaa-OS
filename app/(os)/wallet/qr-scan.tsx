@@ -233,7 +233,12 @@ export default function QRScanScreen() {
         <TouchableOpacity style={styles.manualButton} onPress={() => {
           Alert.alert('Manual Entry', 'Enter recipient ID or payment code manually.', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'OK', onPress: () => console.log('Manual entry TODO') }
+            { 
+        text: 'OK', 
+        onPress: () => {
+          Alert.alert('Manual Entry', 'Please scan a valid QR code to proceed.');
+        }
+      }
           ]);
         }}>
           <Ionicons name="keypad" size={20} color="#8b5cf6" />

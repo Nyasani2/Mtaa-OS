@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Alert, TextInput, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { Alert, TextInput, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl , Platform} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -98,7 +99,8 @@ export default function ShopDashboardScreen() {
   if (loading) {
       const pickCover = () => {
     if (typeof document === 'undefined') return;
-    const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
+    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null); input.type = 'file'; input.accept = 'image/*';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
       const path = 'shop-cover-' + Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]+/g, '_');
@@ -142,7 +144,7 @@ return (
           <View style={[styles.coverImage, styles.coverPlaceholder]}>
             <TouchableOpacity onPress={() => {
                 if (typeof document === 'undefined') return;
-                const inp = document.createElement('input');
+                const inp = (Platform.OS === 'web' ? document.createElement('input') : null);
                 inp.type = 'file'; inp.accept = 'image/*';
                 inp.onchange = async (ev) => {
                   const f = (ev.target as HTMLInputElement).files?.[0]; if (!f) return;

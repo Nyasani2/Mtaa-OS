@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator , Platform} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +27,8 @@ export default function ListPropertyScreen() {
 
   const pickPhotos = () => {
     if (typeof document === 'undefined') { Alert.alert('Photos', 'Photo upload available on web'); return; }
-    const input = document.createElement('input');
+    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null);
     input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
     input.onchange = async (e) => {
       const files = Array.from(e.target.files || []).slice(0, Math.max(0, 6 - photos.length));

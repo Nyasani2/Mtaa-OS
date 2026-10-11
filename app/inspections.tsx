@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
+import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, Image, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -28,7 +29,8 @@ export default function InspectionsScreen() {
   const fee = FEES[vType];
   const pick = (key, label) => {
     if (typeof document === 'undefined') return;
-    const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*,.pdf';
+    if (Platform.OS !== 'web') { Alert.alert('Web Feature', 'This feature is currently only available on the web version.'); return; }
+    const input = (Platform.OS === 'web' ? document.createElement('input') : null); input.type = 'file'; input.accept = 'image/*,.pdf';
     input.onchange = (e) => { const f = e.target.files?.[0]; if (!f) return;
       const r = new FileReader(); r.onload = () => setDocs(d => ({ ...d, [key]: String(r.result) })); r.readAsDataURL(f); };
     input.click();
@@ -158,7 +160,8 @@ export default function InspectionsScreen() {
             <TextInput style={inp} placeholder="National ID" value={iNid} onChangeText={setINid} />
             <TouchableOpacity onPress={() => {
               if (Platform.OS === 'web') {
-                const i = document.createElement('input'); 
+                if (Platform.OS !== 'web') { Alert.alert('Web Feature', 'This feature is currently only available on the web version.'); return; }
+    const i = (Platform.OS === 'web' ? document.createElement('input') : null); 
                 i.type = 'file'; 
                 i.onchange = (e: any) => { 
                   const f = e.target.files?.[0]; 

@@ -17,7 +17,7 @@ export default function ErrorFallback({ error, retry }: { error: Error; retry: (
       <View style={styles.box}>
         <Text style={styles.errorText}>{details}</Text>
       </View>
-      <Button title="Copy to Clipboard (if possible)" onPress={() => {}} />
+      <Button title="Copy to Clipboard (if possible)" onPress={() => console.log("Copy to clipboard attempted")} />
       <View style={{height: 10}} />
       <Button title="Try Again" onPress={retry} color="#3b82f6" />
     </View>

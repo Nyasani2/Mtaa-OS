@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -29,7 +29,7 @@ export default function PortfolioScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}><ArrowLeft size={24} color="#f8fafc" /></TouchableOpacity>
         <Text style={styles.headerTitle}>Portfolio</Text>
-        <TouchableOpacity onPress={() => { /* TODO: add portfolio item */ }}><Plus size={24} color="#f97316" /></TouchableOpacity>
+        <TouchableOpacity onPress={() => Alert.alert("Portfolio", "Portfolio creation coming in next update")}><Plus size={24} color="#f97316" /></TouchableOpacity>
       </View>
       <ScrollView style={styles.scroll}>
         {items.length === 0 ? (

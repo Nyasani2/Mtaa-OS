@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -106,7 +106,9 @@ export default function BiometricScreen() {
 }
 
 function getDeviceId(): string {
-  const stored = typeof localStorage!=='undefined'?localStorage.getItem('mtaa_device_id'):null;
+  const stored = Platform.OS === 'web' && typeof localStorage !== 'undefined' 
+      ? localStorage.getItem('mtaa_device_id') 
+      : null;
   return stored||'unknown';
 }
 
