@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { maskPhoneNumber, maskEmail } from '@/lib/utils/pii';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -140,13 +141,13 @@ export default function FamilyMemberDetailScreen() {
         {member.phone && (
           <View style={styles.detailRow}>
             <Ionicons name="call-outline" size={18} color="#64748b" />
-            <Text style={styles.detailText}>{member.phone}</Text>
+            <Text style={styles.detailText}>{maskPhoneNumber(member.phone)}</Text>  {/* Masked */}
           </View>
         )}
         {member.email && (
           <View style={styles.detailRow}>
             <Ionicons name="mail-outline" size={18} color="#64748b" />
-            <Text style={styles.detailText}>{member.email}</Text>
+            <Text style={styles.detailText}>{maskEmail(member.email)}</Text>  {/* Masked */}
           </View>
         )}
       </View>

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
+import { maskPhoneNumber } from '@/lib/utils/pii';
 
 import { Alert, View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -149,7 +150,7 @@ export default function TrackingScreen() {
         <View style={styles.card}>
           <Text style={styles.label}>Driver</Text>
           <Text style={styles.value}>{driver.full_name}</Text>
-          <Text style={styles.value}>📞 {driver.phone}</Text>
+          <Text style={styles.value}>📞 {maskPhoneNumber(driver.phone)}</Text>  {/* Masked for privacy */}
           <Text style={styles.value}>🚗 {driver.vehicle_plate} • {driver.vehicle_type}</Text>
           <Text style={styles.value}>⭐ {driver.rating}</Text>
         </View>

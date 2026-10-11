@@ -114,7 +114,7 @@ serve(async (req) => {
     // ─── Fetch Stored PIN Hash ────────────────────────────────────────────
     const { data: pinRecord, error: pinError } = await supabase
       .from('user_pin_hashes')
-      .select('pin_hash, salt, created_at')
+      .select('created_at')
       .eq('user_id', p_user_id)
       .single();
 

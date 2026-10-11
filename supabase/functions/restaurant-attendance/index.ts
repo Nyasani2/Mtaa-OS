@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
           const today = new Date().toISOString().split('T')[0]
           const { data, error } = await supabase
             .from('restaurant_attendance')
-            .select('*, staff:restaurant_staff(name, role, phone)')
+            .select('*, staff:restaurant_staff(name, role)') // phone removed
             .gte('clock_in', today)
             .is('clock_out', null)
             .order('clock_in', { ascending: false })

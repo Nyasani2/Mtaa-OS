@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
+import { maskPhoneNumber, maskEmail } from '@/lib/utils/pii';
 import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -48,7 +49,7 @@ export default function ShopSuppliersScreen() {
             <View style={styles.supplierInfo}>
               <Text style={styles.supplierName}>{item.name}</Text>
               {item.contact_name && <Text style={styles.supplierMeta}>Contact: {item.contact_name}</Text>}
-              {item.phone && <Text style={styles.supplierMeta}>📞 {item.phone}</Text>}
+              {item.phone && <Text style={styles.supplierMeta}>📞 {maskPhoneNumber(item.phone)}</Text>}  {/* Masked */}
               <View style={styles.supplierTags}>
                 <View style={[styles.statusTag, { backgroundColor: item.status === 'active' ? '#D1FAE5' : '#F3F4F6' }]}>
                   <Text style={[styles.statusTagText, { color: item.status === 'active' ? '#065F46' : '#6B7280' }]}>{item.status}</Text>

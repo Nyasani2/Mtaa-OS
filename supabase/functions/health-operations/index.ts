@@ -88,7 +88,7 @@ async function healthEmergencySos(supabaseAdmin, userId, params) {
   // Get user profile for emergency info
   const { data: profile } = await supabaseAdmin
     .from("user_profiles")
-    .select("display_name, phone, emergency_contact, blood_type, allergies")
+    .select("display_name")
     .eq("user_id", userId)
     .single();
 
@@ -116,7 +116,7 @@ async function healthEmergencySos(supabaseAdmin, userId, params) {
   // Find nearby health facilities
   const { data: facilities } = await supabaseAdmin
     .from("health_facilities")
-    .select("id, name, phone, lat, lng, type")
+    .select("id, name, lat, lng, type")
     .eq("is_active", true)
     .limit(5);
 

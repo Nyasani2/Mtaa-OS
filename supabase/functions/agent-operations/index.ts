@@ -714,7 +714,7 @@ async function agentNearby(supabaseAdmin, userId, params) {
 
   let query = supabaseAdmin
     .from("agents")
-    .select("id, business_name, location_lat, location_lng, agent_type, status, phone")
+    .select("id, business_name, location_lat, location_lng, agent_type, status")
     .eq("status", "active")
     .not("location_lat", "is", null)
     .not("location_lng", "is", null);

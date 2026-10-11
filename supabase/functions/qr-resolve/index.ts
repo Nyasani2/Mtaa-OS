@@ -85,7 +85,7 @@ serve(async (req) => {
       case "user": {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id, full_name, avatar_url, phone, username")
+          .select("id, full_name, avatar_url, username")
           .eq("id", entityId)
           .single();
         entityDetails = profile || { id: entityId, type: "user" };
