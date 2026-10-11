@@ -1,7 +1,8 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image , Platform} from 'react-native';
+import { Alert, View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image , Platform, Modal} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
@@ -23,26 +24,53 @@ export default function AddProductScreen() {
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
+  const [cameraPerm, requestCameraPerm] = useCameraPermissions();
+  const [showScanner, setShowScanner] = useState(false);
 
-  const pickPhoto = () => {
-    if (typeof document === 'undefined') { Alert.alert('Photos', 'Camera upload coming on native.'); return; }
-    if (Platform.OS !== 'web') { Alert.alert('Upload', 'Please use the mobile camera/gallery button'); return; }
-    const input = (Platform.OS === 'web' ? document.createElement('input') : null);
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      setUploading(true);
-      try {
-        const path = `${id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-        const { error } = await supabase.storage.from('shop-products').upload(path, file, { contentType: file.type, upsert: false });
-        if (error) throw error;
-        const { data } = supabase.storage.from('shop-products').getPublicUrl(path);
-        setImages((p) => [...p, data.publicUrl]);
-      } catch (e2) { Alert.alert('Upload failed', e2?.message || String(e2)); }
-      setUploading(false);
-    };
-    input.click();
+  const pickPhoto = async () => {
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+          const path = `${id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+          const { error } = await supabase.storage.from('shop-products').upload(path, file, { contentType: file.type, upsert: false });
+          if (error) throw error;
+          const { data } = supabase.storage.from('shop-products').getPublicUrl(path);
+          setImages((p: any) => [...p, data.publicUrl]);
+        } catch (e2: any) { Alert.alert('Upload failed', e2?.message || String(e2)); }
+        setUploading(false);
+      };
+      input.click();
+    } else {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (permission.granted) {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          setUploading(true);
+          try {
+            const asset = result.assets[0];
+            const response = await fetch(asset.uri);
+            const blob = await response.blob();
+            const path = `${id}/${Date.now()}-${asset.fileName || 'photo.jpg'}`;
+            const { error } = await supabase.storage.from('shop-products').upload(path, blob, { contentType: asset.mimeType || 'image/jpeg', upsert: false });
+            if (error) throw error;
+            const { data } = supabase.storage.from('shop-products').getPublicUrl(path);
+            setImages((p: any) => [...p, data.publicUrl]);
+          } catch (e2: any) { Alert.alert('Upload failed', e2?.message || String(e2)); }
+          setUploading(false);
+        }
+      } else {
+        Alert.alert('Permission Denied', 'Camera/Gallery permission is required to upload photos.');
+      }
+    }
   };
 
     const pickVideo = () => {
@@ -127,7 +155,12 @@ const submit = async () => {
       <Text style={label}>Category</Text>
       <TextInput value={category} onChangeText={setCategory} placeholder="e.g. Bikes" style={field} />
       <Text style={label}>Barcode / SKU</Text>
-      <TextInput value={barcode} onChangeText={setBarcode} placeholder="Optional" style={field} />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TextInput value={barcode} onChangeText={setBarcode} placeholder="Optional" style={{ ...field, flex: 1 }} />
+        <TouchableOpacity onPress={() => { requestCameraPerm().then((p: any) => { if (p.granted) setShowScanner(true); else Alert.alert('Permission Denied', 'Camera access needed to scan barcodes.'); }); }} style={{ backgroundColor: '#2196f3', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' }}>
+          <Text style={{ color: '#fff', fontWeight: '700' }}>Scan</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={label}>Price (KES) *</Text>
       <TextInput value={price} onChangeText={setPrice} placeholder="15000" keyboardType="numeric" style={field} />
       <Text style={label}>Stock Quantity *</Text>
@@ -138,6 +171,26 @@ const submit = async () => {
       <TouchableOpacity onPress={submit} disabled={busy} style={{ backgroundColor: '#2196f3', borderRadius: 12, paddingVertical: 16, alignItems: 'center' }}>
         {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>Add Product</Text>}
       </TouchableOpacity>
-    </ScrollView>
+    
+      {/* Barcode Scanner Modal */}
+      <Modal visible={showScanner} animationType="slide" transparent>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '90%', height: '60%', borderRadius: 16, overflow: 'hidden', backgroundColor: '#000' }}>
+            <CameraView 
+              style={{ flex: 1 }} 
+              facing="back" 
+              onBarcodeScanned={(e: any) => {
+                setBarcode(e.data);
+                setShowScanner(false);
+                Alert.alert('Scanned', `Barcode: ${e.data}`);
+              }} 
+            />
+          </View>
+          <TouchableOpacity onPress={() => setShowScanner(false)} style={{ marginTop: 20, backgroundColor: '#ef4444', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Close Scanner</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+</ScrollView>
   );
 }
