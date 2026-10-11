@@ -78,7 +78,7 @@ export default function TeacherHome() {
           <QuickBtn icon="checkbox-outline" label="Submissions" color="#10b981" onPress={() => router.push('/(education as any)/submissions' as any)} />
           <QuickBtn icon="trophy-outline" label="Gradebook" color="#8b5cf6" onPress={() => router.push('/(education as any)/grades' as any)} />
           <QuickBtn icon="videocam-outline" label="Go Live" color="#ef4444" onPress={() => router.push('/(education as any)/live-class' as any)} />
-          <QuickBtn icon="create-outline" label="Create Post" color="#3b82f6" onPress={() => router.push('/(education as any)/feed/create' as any)} />
+          <QuickBtn icon="create-outline" label="Create Post" color="#3b82f6" onPress={() => router.push('/(education)/feed/create' as any)} />
           <QuickBtn icon="add-circle-outline" label="Create Event" color="#f59e0b" onPress={() => router.push('/(education as any)/events/create' as any)} />
           <QuickBtn icon="time-outline" label="Timetable" color="#6366f1" onPress={() => router.push('/(education as any)/timetable' as any)} />
           <QuickBtn icon="stats-chart-outline" label="Analytics" color="#059669" onPress={() => router.push('/(education as any)/analytics' as any)} />
