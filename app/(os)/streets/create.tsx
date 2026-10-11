@@ -45,10 +45,11 @@ const openCamera = async () => {
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       quality: 0.8,
+      base64: true,
     });
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
-      setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'camera-capture' });
+      setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'camera-capture', base64: asset.base64 });
       setMediaType(asset.type?.startsWith('video') ? 'video' : 'image');
     }
   } catch (e) {
@@ -74,10 +75,11 @@ const pick = async (type: string) => {
         mediaTypes: type === 'video' ? ImagePicker.MediaTypeOptions.Videos : ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 0.8,
+        base64: true,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'library-pick' });
+        setSelectedFile({ uri: asset.uri, type: asset.type, name: asset.fileName || 'library-pick', base64: asset.base64 });
       }
     } catch (e) {
       setLocalError('Failed to pick media.');

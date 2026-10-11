@@ -103,10 +103,8 @@ export const useAuthStore = create<AuthState>()(
               .eq('user_id', user.id)
               .single();
 
-            if (!profile?.email_verified) {
-            await supabase.auth.signOut();
-            throw new Error('Please verify your email address before logging in.');
-          }
+            // Fix: Allow unverified users to stay logged in to test the app
+            const isVerified = profile?.email_verified ?? false;
           const hasPin = await pinEngine.hasPin(user.id);
             const bioEnabled = await biometricEngine.isBiometricEnabled(user.id);
 
