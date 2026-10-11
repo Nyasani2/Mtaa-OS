@@ -342,7 +342,7 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
   const WATERMARK = ' · via MTAA OS 🌍';
   const shareSocial = (kind: string) => {
     if (!post) return;
-    const url = `${window.location.origin}/streets/post/${post.id}`;
+    const url = (typeof window !== 'undefined' && window.location) ? `${window.location.origin}/streets/post/${post.id}` : '';
     const text = encodeURIComponent((post.content || post.caption || 'Watch this on MTAA Streets') + WATERMARK);
     const u = encodeURIComponent(url);
     const links: any = {
@@ -357,7 +357,7 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
 
   const handleCopyLink = async () => {
     if (!post) return;
-    const url = `${window.location.origin}/streets/post/${post.id}`;
+    const url = (typeof window !== 'undefined' && window.location) ? `${window.location.origin}/streets/post/${post.id}` : '';
     try { await Clipboard.setString(url); alert('Link copied!'); } catch { alert('Could not copy'); }
   };
 

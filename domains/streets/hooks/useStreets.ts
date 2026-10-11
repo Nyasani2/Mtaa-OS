@@ -135,7 +135,7 @@ export function useStreets() {
       const shareData: ShareData = {
         title: 'Check out this post on MTAA Streets',
         text: post?.content || '',
-        url: `${window.location.origin}/streets/post/${postId}`,
+        url: (typeof window !== 'undefined' && window.location) ? `${window.location.origin}/streets/post/${postId}` : '',
       };
 
       if (navigator.share && navigator.canShare?.(shareData)) {
@@ -294,7 +294,8 @@ function getVideoDuration(file: File): Promise<number> {
       resolve(0);
       return;
     }
-    const video = document.createElement('video');
+    if (typeof document === 'undefined') return 0;
+  const video = document.createElement('video');
     video.preload = 'metadata';
     video.src = URL.createObjectURL(file);
     video.onloadedmetadata = () => {
