@@ -1,172 +1,354 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+  Alert,
+  Platform,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
+import { ArrowLeft, Camera, Save } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  
-  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
+  const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
     loadProfile();
-  }, [user?.id]);
+  }, []);
 
-  const loadProfile = async () => {
-    const { data } = await supabase.from('user_profiles').select('full_name, display_name, username, avatar_url').eq('user_id', user.id).single();
-    if (data) {
-      setFullName(data.full_name || '');
-      setDisplayName(data.display_name || '');
-      setUsername(data.username || '');
-      setAvatarUrl(data.avatar_url || '');
-    }
-  };
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-      base64: true, // Required for reliable uploads
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setUploading(true);
-      try {
-        // Upload to Supabase Storage
-        const fileExt = asset.uri.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
-
-        // Convert base64 to blob for upload
-        const response = await fetch(`data:image/jpeg;base64,${asset.base64}`);
-        const blob = await response.blob();
-
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, blob, { contentType: asset.type || 'image/jpeg', upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-        const publicUrl = urlData.publicUrl;
-
-        // Update database
-        const { error: dbError } = await supabase
-          .from('user_profiles')
-          .update({ avatar_url: publicUrl })
-          .eq('user_id', user.id);
-
-        if (dbError) throw dbError;
-
-        setAvatarUrl(publicUrl);
-        Alert.alert('Success', 'Profile picture updated!');
-      } catch (error: any) {
-        Alert.alert('Error', error.message || 'Failed to upload image');
-      } finally {
-        setUploading(false);
-      }
-    }
-  };
-
-  const handleSave = async () => {
-    if (!user?.id) return;
+  async function loadProfile() {
     setLoading(true);
     try {
-      const { error } = await supabase
+      if (!user?.id) {
+        router.replace('/login');
+        return;
+      }
+
+      const { data, error } = await supabase
         .from('user_profiles')
-        .update({ full_name: fullName, display_name: displayName, username: username })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      Alert.alert('Success', 'Profile updated successfully!');
-      router.back();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save profile');
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('[EditProfile] Load error:', error);
+        await createDefaultProfile(user.id);
+        return;
+      }
+
+      if (data) {
+        setDisplayName(data.display_name || '');
+        setUsername(data.username || '');
+        setBio(data.bio || '');
+        setAvatarUrl(data.avatar_url || '');
+      }
+    } catch (err) {
+      console.error('[EditProfile] Error:', err);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function createDefaultProfile(userId: string) {
+    try {
+      const email = user?.email || '';
+      const defaultName = email.split('@')[0] || 'User';
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: userId,
+          display_name: defaultName,
+          username: defaultName.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        });
+
+      if (error) {
+        console.error('[EditProfile] Create profile error:', error);
+      } else {
+        setDisplayName(defaultName);
+      }
+    } catch (err) {
+      console.error('[EditProfile] Create default error:', err);
+    }
+  }
+
+  // FIXED: Added safe base64 image picker logic to prevent Android content:// crash
+  const pickAvatar = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true, // CRITICAL: Prevents Android content:// URI fetch crash
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setUploading(true);
+
+        try {
+          const fileExt = asset.uri.split('.').pop() || 'jpg';
+          const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+          const filePath = `avatars/${fileName}`;
+
+          // Convert base64 to blob for reliable upload
+          const response = await fetch(`data:${asset.type || 'image/jpeg'};base64,${asset.base64}`);
+          const blob = await response.blob();
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, blob, { contentType: asset.type || 'image/jpeg', upsert: true });
+
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+          const publicUrl = urlData.publicUrl;
+
+          setAvatarUrl(publicUrl);
+          Alert.alert('Success', 'Profile picture updated!');
+        } catch (error: any) {
+          Alert.alert('Error', error.message || 'Failed to upload image');
+        } finally {
+          setUploading(false);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
   };
 
-  return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={{ width: 24 }} />
-        </View>
+  async function handleSave() {
+    setSaving(true);
+    try {
+      if (!user?.id) {
+        Alert.alert('Error', 'Not authenticated');
+        return;
+      }
 
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          display_name: displayName.trim(),
+          username: username.trim().toLowerCase(),
+          bio: bio.trim() || null,
+          avatar_url: avatarUrl || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('[EditProfile] Save error:', error);
+        Alert.alert('Error', error.message || 'Failed to save profile');
+        return;
+      }
+
+      Alert.alert('Success', 'Profile updated');
+      router.back();
+    } catch (err: any) {
+      console.error('[EditProfile] Save error:', err);
+      Alert.alert('Error', err.message || 'Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#2196F3" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <TouchableOpacity onPress={handleSave} disabled={saving || uploading}>
+          {saving || uploading ? (
+            <ActivityIndicator size="small" color="#2196F3" />
+          ) : (
+            <Save size={24} color="#2196F3" />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scroll}>
         <View style={styles.avatarSection}>
-          <View style={styles.avatarContainer}>
+          <View style={styles.avatarWrap}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={48} color="#64748b" />
+                <Text style={styles.avatarLetter}>
+                  {(displayName || 'U').charAt(0).toUpperCase()}
+                </Text>
               </View>
             )}
-            {uploading && (
-              <View style={styles.uploadingOverlay}>
-                <ActivityIndicator color="#fff" />
-              </View>
-            )}
+            {/* FIXED: Wired camera button to pickAvatar function */}
+            <TouchableOpacity style={styles.cameraBtn} onPress={pickAvatar} disabled={uploading}>
+              {uploading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Camera size={18} color="#fff" />
+              )}
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.changePhotoBtn} onPress={pickImage} disabled={uploading}>
-            <Ionicons name="camera" size={16} color="#e91e63" />
-            <Text style={styles.changePhotoText}>{uploading ? 'Uploading...' : 'Change Photo'}</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="e.g., Kevin Nyasani" placeholderTextColor="#64748b" />
+          <View style={styles.field}>
+            <Text style={styles.label}>Display Name</Text>
+            <TextInput
+              style={styles.input}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Your display name"
+              placeholderTextColor="#999"
+            />
+          </View>
 
-          <Text style={styles.label}>Display Name</Text>
-          <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName} placeholder="e.g., Kevin" placeholderTextColor="#64748b" />
+          <View style={styles.field}>
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="your_username"
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+            />
+          </View>
 
-          <Text style={styles.label}>Username</Text>
-          <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="e.g., kevin" placeholderTextColor="#64748b" autoCapitalize="none" />
-
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
-          </TouchableOpacity>
+          <View style={styles.field}>
+            <Text style={styles.label}>Bio</Text>
+            <TextInput
+              style={[styles.input, styles.bioInput]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell us about yourself"
+              placeholderTextColor="#999"
+              multiline
+              maxLength={160}
+            />
+            <Text style={styles.charCount}>{bio.length}/160</Text>
+          </View>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f172a' },
-  scroll: { flexGrow: 1, padding: 24, paddingTop: 60 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  avatarSection: { alignItems: 'center', marginBottom: 32 },
-  avatarContainer: { position: 'relative' },
-  avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#e91e63' },
-  avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#334155' },
-  uploadingOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 60, alignItems: 'center', justifyContent: 'center' },
-  changePhotoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1, borderColor: '#334155' },
-  changePhotoText: { color: '#e91e63', fontSize: 14, fontWeight: '600' },
-  form: { gap: 16 },
-  label: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginBottom: -8 },
-  input: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, color: '#fff', fontSize: 15, borderWidth: 1, borderColor: '#334155' },
-  saveBtn: { backgroundColor: '#e91e63', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  scroll: {
+    flex: 1,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  avatarWrap: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FF2D55',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarLetter: {
+    color: '#fff',
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  cameraBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#2196F3',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  form: {
+    paddingHorizontal: 16,
+  },
+  field: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#333',
+  },
+  bioInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  charCount: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    marginTop: 4,
+  },
 });
