@@ -1,225 +1,172 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-
-let ImagePicker: any = null;
-try { ImagePicker = require('expo-image-picker'); } catch { ImagePicker = null; }
-
-interface ProfileForm {
-  display_name: string; username: string; full_name: string; bio: string;
-  country: string; region: string; city: string; avatar_url: string | null;
-}
-
-const EMPTY_FORM: ProfileForm = {
-  display_name: '', username: '', full_name: '', bio: '',
-  country: '', region: '', city: '', avatar_url: null,
-};
-
-function normalizeProfile(raw: any): ProfileForm {
-  if (!raw || typeof raw !== 'object') return EMPTY_FORM;
-  return {
-    display_name: String(raw.display_name || ''),
-    username: String(raw.username || ''),
-    full_name: String(raw.full_name || ''),
-    bio: String(raw.bio || ''),
-    country: String(raw.country || ''),
-    region: String(raw.region || ''),
-    city: String(raw.city || ''),
-    
-    avatar_url: raw.avatar_url || null,
-  };
-}
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const store = useAuthStore() as any;
-  const user = store.user;
-  const storeProfile = store.profile;
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { user } = useAuthStore();
+  
+  const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        // 1. Pre-fill from store profile immediately (no waiting)
-        if (storeProfile && typeof storeProfile === 'object') {
-          const fromStore = normalizeProfile(storeProfile);
-          if (!cancelled) setForm(fromStore);
-        }
-        // 2. Fetch fresh data from DB
-        if (user?.id) {
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('display_name, username, full_name, bio, country, region, city, avatar_url')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (!cancelled) {
-            if (data && !error) {
-              setForm(normalizeProfile(data));
-            } else if (error) {
-              console.error('EditProfile DB error:', error.message);
-            }
-          }
-        }
-      } catch (e: any) {
-        console.error('EditProfile load error:', e?.message || e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
+    if (!user?.id) return;
+    loadProfile();
   }, [user?.id]);
 
-  const pickImage = async () => {
-    if (!ImagePicker) { Alert.alert('Image picker not available'); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, aspect: [1, 1], quality: 0.7,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri) {
-      await uploadAvatar(result.assets[0].uri);
+  const loadProfile = async () => {
+    const { data } = await supabase.from('user_profiles').select('full_name, display_name, username, avatar_url').eq('user_id', user.id).single();
+    if (data) {
+      setFullName(data.full_name || '');
+      setDisplayName(data.display_name || '');
+      setUsername(data.username || '');
+      setAvatarUrl(data.avatar_url || '');
     }
   };
 
-  const uploadAvatar = async (uri: string) => {
-    if (!user?.id) return;
-    setUploading(true);
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const ext = uri.split('.').pop() || 'jpg';
-      const path = `avatars/${user.id}.${ext}`;
-      const { error: upError } = await supabase.storage.from('profiles').upload(path, blob, {
-        upsert: true, contentType: `image/${ext}`,
-      });
-      if (upError) { Alert.alert('Upload failed', upError.message); setUploading(false); return; }
-      const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path);
-      const publicUrl = urlData?.publicUrl;
-      if (publicUrl) {
-        setForm(f => ({ ...f, avatar_url: publicUrl }));
-        await supabase.from('user_profiles').update({ avatar_url: publicUrl }).eq('user_id', user.id);
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+      base64: true, // Required for reliable uploads
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      setUploading(true);
+      try {
+        // Upload to Supabase Storage
+        const fileExt = asset.uri.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+
+        // Convert base64 to blob for upload
+        const response = await fetch(`data:image/jpeg;base64,${asset.base64}`);
+        const blob = await response.blob();
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, blob, { contentType: asset.type || 'image/jpeg', upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+        const publicUrl = urlData.publicUrl;
+
+        // Update database
+        const { error: dbError } = await supabase
+          .from('user_profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('user_id', user.id);
+
+        if (dbError) throw dbError;
+
+        setAvatarUrl(publicUrl);
+        Alert.alert('Success', 'Profile picture updated!');
+      } catch (error: any) {
+        Alert.alert('Error', error.message || 'Failed to upload image');
+      } finally {
+        setUploading(false);
       }
-    } catch (err: any) { Alert.alert('Error', err?.message || 'Upload failed'); }
-    finally { setUploading(false); }
+    }
   };
 
   const handleSave = async () => {
     if (!user?.id) return;
-    setSaving(true);
+    setLoading(true);
     try {
-      const { error } = await supabase.from('user_profiles').update({
-        display_name: form.display_name.trim() || null,
-        username: form.username.trim() || null,
-        full_name: form.full_name.trim() || null,
-        bio: form.bio.trim() || null,
-        country: form.country.trim() || null,
-        region: form.region.trim() || null,
-        city: form.city.trim() || null,
-        avatar_url: form.avatar_url,
-        updated_at: new Date().toISOString(),
-      }).eq('user_id', user.id);
-      if (error) Alert.alert('Error', error.message);
-      else Alert.alert('Success', 'Profile updated', [{ text: 'OK', onPress: () => router.back() }]);
-    } catch (err: any) { Alert.alert('Error', err?.message || 'Failed'); }
-    finally { setSaving(false); }
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ full_name: fullName, display_name: displayName, username: username })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      Alert.alert('Success', 'Profile updated successfully!');
+      router.back();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save profile');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
-
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#f1f5f9" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator size="small" color="#3b82f6" /> : <Text style={styles.saveText}>Save</Text>}
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color="#fff" /></TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <View style={{ width: 24 }} />
+        </View>
+
         <View style={styles.avatarSection}>
-          {form.avatar_url ? (
-            <Image source={{ uri: form.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={40} color="#64748b" />
-            </View>
-          )}
-          <TouchableOpacity style={styles.cameraBtn} onPress={pickImage} disabled={uploading}>
-            {uploading ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="camera" size={16} color="#fff" />}
+          <View style={styles.avatarContainer}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={48} color="#64748b" />
+              </View>
+            )}
+            {uploading && (
+              <View style={styles.uploadingOverlay}>
+                <ActivityIndicator color="#fff" />
+              </View>
+            )}
+          </View>
+          <TouchableOpacity style={styles.changePhotoBtn} onPress={pickImage} disabled={uploading}>
+            <Ionicons name="camera" size={16} color="#e91e63" />
+            <Text style={styles.changePhotoText}>{uploading ? 'Uploading...' : 'Change Photo'}</Text>
           </TouchableOpacity>
-          <Text style={styles.avatarHint}>Tap to change photo</Text>
         </View>
-        <Input label="Display Name" value={form.display_name} onChange={(t: string) => setForm({ ...form, display_name: t })} />
-        <Input label="Username" value={form.username} onChange={(t: string) => setForm({ ...form, username: t })} autoCapitalize="none" />
-        <Input label="Full Name" value={form.full_name} onChange={(t: string) => setForm({ ...form, full_name: t })} />
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Bio</Text>
-          <TextInput
-            style={[styles.input, styles.bioInput]}
-            multiline numberOfLines={4}
-            placeholder="Tell us about yourself..."
-            placeholderTextColor="#64748b"
-            value={form.bio}
-            onChangeText={(t) => setForm({ ...form, bio: t })}
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{form.bio.length}/500</Text>
+
+        <View style={styles.form}>
+          <Text style={styles.label}>Full Name</Text>
+          <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="e.g., Kevin Nyasani" placeholderTextColor="#64748b" />
+
+          <Text style={styles.label}>Display Name</Text>
+          <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName} placeholder="e.g., Kevin" placeholderTextColor="#64748b" />
+
+          <Text style={styles.label}>Username</Text>
+          <TextInput style={styles.input} value={username} onChangeText={setUsername} placeholder="e.g., kevin" placeholderTextColor="#64748b" autoCapitalize="none" />
+
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+          </TouchableOpacity>
         </View>
-        <Input label="Country" value={form.country} onChange={(t: string) => setForm({ ...form, country: t })} />
-        <Input label="Region" value={form.region} onChange={(t: string) => setForm({ ...form, region: t })} placeholder="e.g. Nairobi" />
-        <Input label="City" value={form.city} onChange={(t: string) => setForm({ ...form, city: t })} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function Input({ label, value, onChange, placeholder, autoCapitalize = 'words', keyboardType = 'default' }: any) {
-  return (
-    <View style={styles.inputGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder || ''}
-        placeholderTextColor="#64748b"
-        value={value}
-        onChangeText={onChange}
-        autoCapitalize={autoCapitalize}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#f1f5f9' },
-  saveText: { fontSize: 15, color: '#3b82f6', fontWeight: '600' },
-  form: { padding: 16 },
-  avatarSection: { alignItems: 'center', marginBottom: 24, position: 'relative' },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#3b82f6' },
-  avatarPlaceholder: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#334155' },
-  cameraBtn: { position: 'absolute', bottom: 20, right: '35%', backgroundColor: '#3b82f6', width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#0f172a' },
-  avatarHint: { fontSize: 12, color: '#64748b', marginTop: 8 },
-  inputGroup: { marginBottom: 16 },
-  label: { fontSize: 12, color: '#94a3b8', fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  input: { backgroundColor: '#1e293b', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: '#f1f5f9', fontSize: 15, borderWidth: 1, borderColor: '#334155' },
-  bioInput: { height: 100, textAlignVertical: 'top', paddingTop: 12 },
-  charCount: { fontSize: 11, color: '#64748b', textAlign: 'right', marginTop: 4 },
+  scroll: { flexGrow: 1, padding: 24, paddingTop: 60 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  avatarSection: { alignItems: 'center', marginBottom: 32 },
+  avatarContainer: { position: 'relative' },
+  avatar: { width: 120, height: 120, borderRadius: 60, borderWidth: 3, borderColor: '#e91e63' },
+  avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#334155' },
+  uploadingOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 60, alignItems: 'center', justifyContent: 'center' },
+  changePhotoBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1, borderColor: '#334155' },
+  changePhotoText: { color: '#e91e63', fontSize: 14, fontWeight: '600' },
+  form: { gap: 16 },
+  label: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginBottom: -8 },
+  input: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, color: '#fff', fontSize: 15, borderWidth: 1, borderColor: '#334155' },
+  saveBtn: { backgroundColor: '#e91e63', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
