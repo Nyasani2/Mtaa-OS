@@ -20,6 +20,7 @@ export default function JobsLayout() {
       <Stack.Screen name="details/index" options={{ title: "Job Details" }} />
       <Stack.Screen name="applications/index" options={{ title: "Applications" }} />
       <Stack.Screen name="employer/index" options={{ title: "Employer" }} />
+    <Stack.Screen name="create" options={{ title: "Create Listing", presentation: "modal" }} />
       <Stack.Screen name="talent-search/index" options={{ title: "Find Talent" }} />
       <Stack.Screen name="apprenticeships/index" options={{ title: "Apprenticeships" }} />
       <Stack.Screen name="freelance/index" options={{ title: "Freelance" }} />

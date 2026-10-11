@@ -87,7 +87,7 @@ export default function EmployerScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickBtn}>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => router.push("/(work)/jobs/create" as any)}>
             <Plus size={18} color="#fff" />
             <Text style={styles.quickBtnText}>Post Job</Text>
           </TouchableOpacity>
