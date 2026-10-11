@@ -4,9 +4,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Get treasury IDs from environment variables (set these in Supabase Edge Functions settings)
-const TREASURY_USER_ID = Deno.env.get("TREASURY_USER_ID") || '00000000-0000-0000-0000-000000000000';
-const TAX_AUTHORITY_ID = Deno.env.get("TAX_AUTHORITY_ID") || '00000000-0000-0000-0000-000000000001';
+// FIXED: Using real UUIDs instead of placeholders
+const TREASURY_USER_ID = '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
+const TAX_AUTHORITY_ID = '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
 
 serve(async (req) => {
   try {
@@ -23,11 +23,11 @@ serve(async (req) => {
     if (rideErr || !ride) return new Response(JSON.stringify({ error: "Ride not found or access denied" }), { status: 404 });
     if (ride.status === "completed") return new Response(JSON.stringify({ error: "Ride already completed" }), { status: 409 });
     
-    // SANITY CHECK: Prevent client-side distance/duration spoofing
+    // SANITY CHECK
     const distance = ride.distance_km || 0;
     const duration = ride.duration_minutes || 0;
-    if (duration > 0 && (distance / duration) > 3.0) return new Response(JSON.stringify({ error: "Invalid trip data: Distance/Duration ratio exceeds physical limits" }), { status: 400 });
-    if (distance > 200) return new Response(JSON.stringify({ error: "Invalid trip data: Distance exceeds maximum allowed limit (200km)" }), { status: 400 });
+    if (duration > 0 && (distance / duration) > 3.0) return new Response(JSON.stringify({ error: "Invalid trip data" }), { status: 400 });
+    if (distance > 200) return new Response(JSON.stringify({ error: "Distance exceeds limit" }), { status: 400 });
     
     // SERVER-SIDE FARE CALCULATION
     const BASE_FARE = 100, PER_KM_RATE = 50, PER_MIN_RATE = 5;
@@ -36,12 +36,12 @@ serve(async (req) => {
     let finalFareToCharge = authoritativeFare;
     
     if (client_final_fare) {
-      if (client_final_fare > maxAllowedFare) return new Response(JSON.stringify({ error: "Fare mismatch: Client fare exceeds server-calculated maximum tolerance" }), { status: 403 });
+      if (client_final_fare > maxAllowedFare) return new Response(JSON.stringify({ error: "Fare mismatch" }), { status: 403 });
       finalFareToCharge = Math.min(client_final_fare, authoritativeFare);
     }
     
     const fare = Number(finalFareToCharge.toFixed(2));
-    if (fare <= 0) return new Response(JSON.stringify({ error: "Invalid fare calculated" }), { status: 400 });
+    if (fare <= 0) return new Response(JSON.stringify({ error: "Invalid fare" }), { status: 400 });
     
     const platformFee = Number((fare * 0.02).toFixed(2));
     const withholdingTax = Number((fare * 0.05).toFixed(2));
@@ -49,11 +49,11 @@ serve(async (req) => {
     
     await supabase.from("mtaxi_rides").update({ status: "completed", final_fare: fare, platform_fee: platformFee, withholding_tax: withholdingTax, driver_payout: driverPayout, completed_at: new Date().toISOString() }).eq("id", ride_id);
     
-    // WIRE THE MONEY TRAIL (Secure RPC calls via service_role)
+    // WIRE THE MONEY TRAIL
     await supabase.rpc('mtaa_wallet_debit', { p_user_id: ride.rider_id, p_amount: fare, p_currency: 'KES', p_description: `MTaxi Ride #${ride_id}`, p_transaction_type: 'transport_payment', p_metadata: { ride_id } });
     await supabase.rpc('mtaa_wallet_credit', { p_user_id: user.id, p_amount: driverPayout, p_currency: 'KES', p_description: `Driver Payout for Ride #${ride_id}`, p_transaction_type: 'driver_earning', p_metadata: { ride_id } });
     
-    // Route to treasury and tax authority
+    // Route to treasury and tax authority (FIXED UUIDs)
     await supabase.rpc('mtaa_wallet_credit', { p_user_id: TREASURY_USER_ID, p_amount: platformFee, p_currency: 'KES', p_description: `Platform Fee for Ride #${ride_id}`, p_transaction_type: 'platform_revenue', p_metadata: { ride_id } });
     await supabase.rpc('mtaa_wallet_credit', { p_user_id: TAX_AUTHORITY_ID, p_amount: withholdingTax, p_currency: 'KES', p_description: `Withholding Tax for Ride #${ride_id}`, p_transaction_type: 'government_tax', p_metadata: { ride_id, tax_type: 'withholding' } });
     

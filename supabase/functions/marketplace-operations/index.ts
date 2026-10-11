@@ -260,6 +260,16 @@ async function confirmDelivery(supabaseAdmin, buyerId, params) {
         metadata: { order_id: order.id, escrow_id: escrow.id, fee: sellerFee }
       });
 
+      // FIXED: Credit MTAA Treasury with the platform fee
+      await supabaseAdmin.rpc('mtaa_wallet_credit', {
+        p_user_id: '8e41ee2e-ae74-43a5-a550-a1d02a5591a3',
+        p_amount: sellerFee,
+        p_currency: 'KES',
+        p_description: `Platform fee for order ${order.id}`,
+        p_transaction_type: 'platform_revenue',
+        p_metadata: { order_id: order.id, seller_fee: sellerFee }
+      });
+
       // Record creator earnings
       await supabaseAdmin.from("creator_earnings").insert({
         user_id: item.seller_id,
