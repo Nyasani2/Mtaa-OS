@@ -1,0 +1,10 @@
+{
+  "settings": "Settings",
+  "language": "Language",
+  "select_language": "Select your preferred language",
+  "english": "English",
+  "swahili": "Kiswahili",
+  "french": "Fran\u00e7ais",
+  "save": "Save",
+  "asis_prompt": "Hello! I am ASIS. How can I help you today?"
+}

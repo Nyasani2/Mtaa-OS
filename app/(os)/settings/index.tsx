@@ -1,3 +1,5 @@
+import { useLanguageStore } from '@/lib/stores/language.store';
+import { useTranslation } from 'react-i18next';
 // @ts-nocheck
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -21,6 +23,8 @@ interface SettingsItem {
 }
 
 export default function SettingsScreen() {
+  const { language, setLanguage } = useLanguageStore();
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, profile, signOut } = useAuthStore();
 
@@ -175,12 +179,12 @@ export default function SettingsScreen() {
                   activeOpacity={item.type === 'switch' ? 1 : 0.7}
                   disabled={item.type === 'switch'}
                 >
-                  <View style={[styles.iconWrap, { backgroundColor: item.danger ? '#EF444420' : '#6366f120' }]}>
-                    <Ionicons name={item.icon as any} size={20} color={item.danger ? '#EF4444' : '#6366f1'} />
+                  <View style={[styles.iconWrap, { backgroundColor: (item as any).danger ? '#EF444420' : '#6366f120' }]}>
+                    <Ionicons name={item.icon as any} size={20} color={(item as any).danger ? '#EF4444' : '#6366f1'} />
                   </View>
-                  <Text style={[styles.rowText, item.danger && { color: '#EF4444' }]}>{item.label}</Text>
+                  <Text style={[styles.rowText, (item as any).danger && { color: '#EF4444' }]}>{item.label}</Text>
                   {item.type === 'switch' ? (
-                    <Switch value={item.value as boolean} onValueChange={item.onChange}
+                    <Switch value={item.value as boolean} onValueChange={(item as any).onChange}
                       trackColor={{ false: '#334155', true: '#6366f1' }} thumbColor="#fff" />
                   ) : item.value ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
