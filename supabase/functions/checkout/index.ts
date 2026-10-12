@@ -1,6 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
+
+// ─── SECURITY: Service Role Client for Settlement ───
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,7 +21,7 @@ interface CheckoutItem {
 }
 
 interface CheckoutRequest {
-  buyer_id: string
+  secure_buyer_id: string
   items: CheckoutItem[]
   shipping_address: any
   payment_method: string
@@ -40,10 +46,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { buyer_id, items, shipping_address, payment_method, currency, notes, totals }: CheckoutRequest = await req.json()
+    const { secure_buyer_id, items, shipping_address, payment_method, currency, notes, totals }: CheckoutRequest = await req.json()
 
     // ─── VALIDATION ───
-    if (!buyer_id || !items?.length || !shipping_address || !totals) {
+    if (!secure_buyer_id || !items?.length || !shipping_address || !totals) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields', code: 'INVALID_REQUEST' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -54,7 +60,7 @@ serve(async (req) => {
     const { data: wallet, error: walletError } = await supabaseClient
       .from('wallets')
       .select('id, balance, status')
-      .eq('user_id', buyer_id)
+      .eq('user_id', secure_buyer_id)
       .eq('currency', currency)
       .single()
 
@@ -117,7 +123,7 @@ serve(async (req) => {
         .from('orders')
         .insert({
           id: orderId,
-          buyer_id: buyer_id,
+          secure_buyer_id: secure_buyer_id,
           seller_id: sellerId,
           status: 'pending',
           total_amount: sellerTotal,
@@ -152,7 +158,7 @@ serve(async (req) => {
         p_wallet_id: wallet.id,
         p_amount: sellerTotal,
         p_order_id: orderId,
-        p_buyer_id: buyer_id,
+        p_buyer_id: secure_buyer_id,
         p_seller_id: sellerId,
       })
 
@@ -179,7 +185,7 @@ serve(async (req) => {
     const transactionId = crypto.randomUUID()
     await supabaseClient.from('transactions').insert({
       id: transactionId,
-      user_id: buyer_id,
+      user_id: secure_buyer_id,
       wallet_id: wallet.id,
       type: 'marketplace_purchase',
       amount: totals.total,
@@ -198,7 +204,7 @@ serve(async (req) => {
 
     // ─── AUDIT LOG ───
     await supabaseClient.from('audit_logs').insert({
-      user_id: buyer_id,
+      user_id: secure_buyer_id,
       action: 'marketplace_checkout',
       entity_type: 'order',
       entity_id: orderIds[0],
