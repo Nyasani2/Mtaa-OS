@@ -56,13 +56,47 @@ serve(async (req) => {
       })
     }
 
-    // 💰 4. EXTRACT AMOUNT
-    const amount =
-      callback.CallbackMetadata?.Item?.find(
-        (i: any) => i.Name === 'Amount'
-      )?.Value || tx.amount
+    // 💰 4. EXTRACT & STRICTLY VALIDATE AMOUNT (Prevent manipulation)
+    const callbackAmount = callback.CallbackMetadata?.Item?.find(
+      (i: any) => i.Name === 'Amount'
+    )?.Value;
 
-    // 🔐 5. ATOMIC UPDATE TRANSACTION
+    // Strictly validate that the callback amount matches the expected transaction amount
+    if (Number(callbackAmount) !== Number(tx.amount)) {
+      console.error(`[MPESA] Amount mismatch! Expected: ${tx.amount}, Got: ${callbackAmount}`);
+      await supabase
+        .from('wallet_transactions')
+        .update({
+          status: 'FAILED',
+          metadata: { ...tx.metadata, callback, error: 'Amount mismatch' },
+        })
+        .eq('id', tx.id);
+      
+      return Response.json({ success: false, error: 'Amount mismatch' }, { status: 400 });
+    }
+
+    const amount = Number(callbackAmount);
+
+    // 💳 5. CREDIT WALLET FIRST (Atomic safety: don't mark success until money is actually credited)
+    const { error: rpcError } = await supabase.rpc('update_wallet_balance', {
+      user_id: tx.user_id,
+      amount: amount,
+    });
+
+    if (rpcError) {
+      console.error('[MPESA] Wallet credit RPC failed:', rpcError);
+      await supabase
+        .from('wallet_transactions')
+        .update({
+          status: 'FAILED',
+          metadata: { ...tx.metadata, callback, error: rpcError.message },
+        })
+        .eq('id', tx.id);
+      
+      return Response.json({ success: false, error: 'Wallet credit failed' }, { status: 500 });
+    }
+
+    // 🔐 6. MARK TRANSACTION AS SUCCESS (Only AFTER successful credit)
     await supabase
       .from('wallet_transactions')
       .update({
@@ -73,13 +107,7 @@ serve(async (req) => {
           callback,
         },
       })
-      .eq('id', tx.id)
-
-    // 💳 6. CREDIT WALLET (SAFE + SINGLE SOURCE OF TRUTH)
-    await supabase.rpc('update_wallet_balance', {
-      user_id: tx.user_id,
-      amount: amount,
-    })
+      .eq('id', tx.id);
 
     // 📡 7. EVENT LOG (REALTIME SYSTEM)
     await supabase.from('wallet_deposit_events').insert({
@@ -89,13 +117,13 @@ serve(async (req) => {
         reference: checkoutId,
         amount,
       },
-    })
+    });
 
     return Response.json({
       success: true,
       status: 'SUCCESS',
       checkoutId,
-    })
+    });
 
   } catch (err) {
     return Response.json(

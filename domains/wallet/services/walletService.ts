@@ -60,3 +60,6 @@ export async function sendMoneyLegacy(senderId: string, recipientId: string, amo
 
   return { success: true };
 }
+
+// Alias for backward compatibility with UI wrapper
+export const sendMoney = sendMoneyLegacy;

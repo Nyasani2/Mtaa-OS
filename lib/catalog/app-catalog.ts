@@ -57,6 +57,8 @@ export const ALL_APPS: AppTile[] = [
 
   // ─── HEALTH (13 apps) ───
   { id: 'health', name: 'Health', icon: 'medical', iconSet: 'Ionicons', route: '/(os)/health', color: '#fff', bgColor: '#06b6d4', ownerOnly: false, category: 'HEALTH', status: 'live' },
+  { id: 'child-safety', name: 'Child Safety', icon: 'shield-checkmark', iconSet: 'Ionicons', route: '/(os)/child-safety', color: '#fff', bgColor: '#EF4444', ownerOnly: false, category: 'OS', status: 'live' },
+
 
   // ─── FINANCE (3 apps) ───
   // REMOVED from FINANCE: gofund, onboarding, savings, scan, topup, transfer, withdraw

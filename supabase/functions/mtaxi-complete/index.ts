@@ -3,6 +3,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 
 
+
+// ─── SECURITY: Centralized Treasury & Tax IDs ───
+const TREASURY_USER_ID = Deno.env.get('TREASURY_USER_ID') || '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
+const TAX_AUTHORITY_ID = Deno.env.get('FALLBACK_TAX_USER_ID') || '8e41ee2e-ae74-43a5-a550-a1d02a5591a3';
+
+// ─── SECURITY: Ensure we use Service Role for financial settlement ───
+// If the client passes a user key, we override it for the settlement RPCs to bypass RLS safely
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -50,12 +61,12 @@ serve(async (req) => {
     await supabase.from("mtaxi_rides").update({ status: "completed", final_fare: fare, platform_fee: platformFee, withholding_tax: withholdingTax, driver_payout: driverPayout, completed_at: new Date().toISOString() }).eq("id", ride_id);
     
     // WIRE THE MONEY TRAIL
-    await supabase.rpc('mtaa_wallet_debit', { p_user_id: ride.rider_id, p_amount: fare, p_currency: 'KES', p_description: `MTaxi Ride #${ride_id}`, p_transaction_type: 'transport_payment', p_metadata: { ride_id } });
-    await supabase.rpc('mtaa_wallet_credit', { p_user_id: user.id, p_amount: driverPayout, p_currency: 'KES', p_description: `Driver Payout for Ride #${ride_id}`, p_transaction_type: 'driver_earning', p_metadata: { ride_id } });
+    await supabaseAdmin.rpc('mtaa_wallet_debit', { p_user_id: ride.rider_id, p_amount: fare, p_currency: 'KES', p_description: `MTaxi Ride #${ride_id}`, p_transaction_type: 'transport_payment', p_metadata: { ride_id } });
+    await supabaseAdmin.rpc('mtaa_wallet_credit', { p_user_id: user.id, p_amount: driverPayout, p_currency: 'KES', p_description: `Driver Payout for Ride #${ride_id}`, p_transaction_type: 'driver_earning', p_metadata: { ride_id } });
     
     // Route to treasury and tax authority (FIXED UUIDs)
-    await supabase.rpc('mtaa_wallet_credit', { p_user_id: TREASURY_USER_ID, p_amount: platformFee, p_currency: 'KES', p_description: `Platform Fee for Ride #${ride_id}`, p_transaction_type: 'platform_revenue', p_metadata: { ride_id } });
-    await supabase.rpc('mtaa_wallet_credit', { p_user_id: TAX_AUTHORITY_ID, p_amount: withholdingTax, p_currency: 'KES', p_description: `Withholding Tax for Ride #${ride_id}`, p_transaction_type: 'government_tax', p_metadata: { ride_id, tax_type: 'withholding' } });
+    await supabaseAdmin.rpc('mtaa_wallet_credit', { p_user_id: TREASURY_USER_ID, p_amount: platformFee, p_currency: 'KES', p_description: `Platform Fee for Ride #${ride_id}`, p_transaction_type: 'platform_revenue', p_metadata: { ride_id } });
+    await supabaseAdmin.rpc('mtaa_wallet_credit', { p_user_id: TAX_AUTHORITY_ID, p_amount: withholdingTax, p_currency: 'KES', p_description: `Withholding Tax for Ride #${ride_id}`, p_transaction_type: 'government_tax', p_metadata: { ride_id, tax_type: 'withholding' } });
     
     return new Response(JSON.stringify({ success: true, ride_id, fare, driver_payout: driverPayout, message: "Ride completed successfully" }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (err) {
