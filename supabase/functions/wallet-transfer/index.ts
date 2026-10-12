@@ -20,16 +20,44 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // 🔐 SECURITY: Derive sender_id from the authenticated user's JWT, NOT the request body
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+    
+    const sender_id = user.id
+
     const {
-      sender_id,
       recipient_phone,
       amount,
       description = '',
       currency_code = 'KES'
     } = await req.json()
 
-    if (!sender_id || !recipient_phone || !amount) {
-      return new Response(JSON.stringify({ error: 'sender_id, recipient_phone, amount required' }), {
+    if (!recipient_phone || !amount) {
+      return new Response(JSON.stringify({ error: 'recipient_phone and amount are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 🚨 SECURITY: Reject negative or zero amounts
+    if (amount <= 0) {
+      return new Response(JSON.stringify({ error: 'Amount must be greater than 0' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -78,15 +106,19 @@ serve(async (req) => {
         })
       }
 
-      await supabaseClient
+      // ⚡ ATOMIC-STYLE UPDATE: Debit sender
+      const { error: debitError } = await supabaseClient
         .from("wallet_accounts")
         .update({
           available_balance: senderWallet.available_balance - amount,
           total_outgoing: senderWallet.total_outgoing + amount
         })
         .eq('id', senderWallet.id)
+      
+      if (debitError) throw new Error('Failed to debit sender: ' + debitError.message)
 
-      await supabaseClient
+      // ⚡ ATOMIC-STYLE UPDATE: Credit recipient
+      const { error: creditError } = await supabaseClient
         .from("wallet_accounts")
         .update({
           available_balance: recipientWallet.available_balance + amount,
@@ -94,7 +126,9 @@ serve(async (req) => {
         })
         .eq('id', recipientWallet.id)
 
-      const { data: tx } = await supabaseClient
+      if (creditError) throw new Error('Failed to credit recipient: ' + creditError.message)
+
+      const { data: tx, error: txError1 } = await supabaseClient
         .from('wallet_transactions')
         .insert({
           wallet_id: senderWallet.id,
@@ -112,7 +146,9 @@ serve(async (req) => {
         .select()
         .single()
 
-      await supabaseClient
+      if (txError1) throw new Error('Failed to create debit transaction: ' + txError1.message)
+
+      const { error: txError2 } = await supabaseClient
         .from('wallet_transactions')
         .insert({
           wallet_id: recipientWallet.id,
@@ -127,6 +163,8 @@ serve(async (req) => {
           counterparty_wallet_id: senderWallet.id,
           related_transaction_id: tx.id
         })
+
+      if (txError2) throw new Error('Failed to create credit transaction: ' + txError2.message)
 
       await supabaseClient.from('wallet_notifications').insert({
         user_id: recipientUser.user_id,
