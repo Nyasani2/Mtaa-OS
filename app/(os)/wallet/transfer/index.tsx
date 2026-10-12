@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/lib/auth/useAuth';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,9 +13,11 @@ export default function TransferScreen() {
   const [recipient, setRecipient] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pin, setPin] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [recipientType, setRecipientType] = useState<'wallet' | 'phone' | 'till'>('wallet');
 
-  const handleTransfer = async () => {
+  const handleTransferRequest = () => {
     if (!amount || parseFloat(amount) <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
       return;
@@ -26,6 +28,14 @@ export default function TransferScreen() {
     }
     if (!user) {
       Alert.alert('Error', 'Please sign in first');
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  const executeTransfer = async () => {
+    if (pin.length < 4) {
+      Alert.alert('Invalid PIN', 'Please enter your transaction PIN.');
       return;
     }
 
@@ -39,19 +49,24 @@ export default function TransferScreen() {
         recipientType: recipientType,
         description: note || 'Wallet transfer',
         senderAccountId: user.id,
+        pin: pin, // 🔐 M-Pesa style PIN verification
       });
 
       if (result.success) {
+        setShowConfirmModal(false);
+        setPin('');
         Alert.alert(
-          'Transfer Sent',
+          'Transfer Successful',
           `KSh ${amount} sent to ${recipient}.`,
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
         Alert.alert('Failed', result.message || 'Transfer failed. Please try again.');
+        setPin('');
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Something went wrong');
+      setPin('');
     } finally {
       setLoading(false);
     }
@@ -123,7 +138,7 @@ export default function TransferScreen() {
 
       <TouchableOpacity
         style={[styles.confirmBtn, loading && styles.confirmBtnDisabled]}
-        onPress={handleTransfer}
+        onPress={handleTransferRequest}
         disabled={loading}
       >
         {loading ? (
@@ -132,6 +147,76 @@ export default function TransferScreen() {
           <Text style={styles.confirmText}>Send KSh {amount || '0'}</Text>
         )}
       </TouchableOpacity>
+
+      {/* M-Pesa Style Confirmation Modal */}
+      <Modal
+        visible={showConfirmModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowConfirmModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirm Transfer</Text>
+            
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>To:</Text>
+              <Text style={styles.detailValue}>{recipientType === 'wallet' ? 'Wallet' : recipientType === 'phone' ? 'Phone' : 'Till'}: {recipient}</Text>
+            </View>
+            
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Amount:</Text>
+              <Text style={styles.detailValueAmount}>KSh {amount}</Text>
+            </View>
+            
+            {note && (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Note:</Text>
+                <Text style={styles.detailValue}>{note}</Text>
+              </View>
+            )}
+
+            <View style={styles.pinContainer}>
+              <Text style={styles.pinLabel}>Enter Transaction PIN</Text>
+              <TextInput
+                style={styles.pinInput}
+                placeholder="****"
+                placeholderTextColor="#6b7280"
+                keyboardType="numeric"
+                secureTextEntry={true}
+                maxLength={6}
+                value={pin}
+                onChangeText={setPin}
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnCancel]}
+                onPress={() => {
+                  setShowConfirmModal(false);
+                  setPin('');
+                }}
+              >
+                <Text style={styles.modalBtnTextCancel}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.modalBtnConfirm, loading && styles.modalBtnDisabled]}
+                onPress={executeTransfer}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.modalBtnTextConfirm}>Confirm & Send</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -153,5 +238,22 @@ const styles = StyleSheet.create({
   confirmBtn: { backgroundColor: '#10b981', marginHorizontal: 16, padding: 18, borderRadius: 16, alignItems: 'center', marginTop: 8 },
   confirmBtnDisabled: { opacity: 0.6 },
   confirmText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#1f2937', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff', marginBottom: 20, textAlign: 'center' },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  detailLabel: { fontSize: 14, color: '#9ca3af' },
+  detailValue: { fontSize: 14, color: '#fff', fontWeight: '600' },
+  detailValueAmount: { fontSize: 24, color: '#10b981', fontWeight: 'bold' },
+  pinContainer: { marginTop: 24, marginBottom: 24 },
+  pinLabel: { fontSize: 14, color: '#9ca3af', marginBottom: 8, textAlign: 'center' },
+  pinInput: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, fontSize: 24, color: '#fff', textAlign: 'center', letterSpacing: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  modalActions: { flexDirection: 'row', gap: 12 },
+  modalBtn: { flex: 1, padding: 16, borderRadius: 12, alignItems: 'center' },
+  modalBtnCancel: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  modalBtnConfirm: { backgroundColor: '#10b981' },
+  modalBtnDisabled: { opacity: 0.6 },
+  modalBtnTextCancel: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  modalBtnTextConfirm: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 
