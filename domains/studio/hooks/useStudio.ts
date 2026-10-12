@@ -387,7 +387,7 @@ export function useStudio() {
       .from('studio_videos')
       .select('view_count')
       .eq('creator_id', uid);
-    const totalViews = (vids || []).reduce((sum: number, v: any) => sum + (v.view_count || 0), 0);
+    const totalViews = (vids || []).reduce((sum: number, v: any) => sum + (v.views_count || 0), 0);
 
     const { data: rev } = await supabase
       .from('studio_revenue')
