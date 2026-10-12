@@ -34,6 +34,11 @@ export default function CreateTribeScreen() {
         description: description.trim() || undefined, 
         category: category || undefined, 
         creator_id: user.id,
+        location: country.trim() || undefined,
+        language: language.trim() || undefined,
+        is_private: visibility === 'private',
+        is_paid: paid,
+        membership_fee: paid ? 0 : 0, // Can be extended later to accept a fee input
       });
       router.replace(`/tribes/${tribe.id}`);
     } catch (e) { console.error('[CreateTribe]', e); setErr(e?.message || String(e)); }
