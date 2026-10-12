@@ -3,6 +3,12 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+
+// ─── SECURITY: Service Role Client ───
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -29,7 +35,19 @@ Deno.serve(async (req) => {
       lights,
       brakes,
       notes,
-    } = await req.json();
+    } = await req.json()
+    // ─── SECURITY: Verify Caller Identity ───
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401, headers: corsHeaders });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), { status: 401, headers: corsHeaders });
+    }
+    const caller_id = user.id;
+;
 
     if (!inspection_order_id || !inspector_id) {
       return new Response(JSON.stringify({ error: "Missing inspection_order_id or inspector_id" }), {

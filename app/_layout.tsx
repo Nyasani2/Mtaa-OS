@@ -1,3 +1,4 @@
+import '@/lib/i18n';
 import React, { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments, usePathname } from 'expo-router';
