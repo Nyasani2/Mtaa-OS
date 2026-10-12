@@ -30,8 +30,8 @@ export default function POSScreen() {
   const lookupAndAddToCart = async (barcode: string) => {
     try {
       const { data: item, error } = await supabase
-        .from('shop_inventory')
-        .select('id, name, barcode, selling_price, quantity')
+        .from('shop_products')
+        .select('id, name, barcode, sale_price, stock_quantity')
         .eq('shop_id', shopId)
         .eq('barcode', barcode)
         .single();
@@ -41,7 +41,7 @@ export default function POSScreen() {
         return;
       }
 
-      if (item.quantity <= 0) {
+      if (item.stock_quantity <= 0) {
         Alert.alert('Out of Stock', `${item.name} is currently out of stock.`);
         return;
       }
@@ -50,7 +50,7 @@ export default function POSScreen() {
       setCart(prev => {
         const existing = prev.find((c: any) => c.id === item.id);
         if (existing) {
-          if (existing.qty >= item.quantity) {
+          if (existing.qty >= item.stock_quantity) {
             Alert.alert('Max Stock', 'Cannot add more than available stock.');
             return prev;
           }
@@ -65,12 +65,12 @@ export default function POSScreen() {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
-    const total = cart.reduce((sum: number, item: any) => sum + (item.selling_price * item.qty), 0);
+    const total = cart.reduce((sum: number, item: any) => sum + (item.sale_price * item.qty), 0);
     
     const cartPayload = cart.map((item: any) => ({
       item_id: item.id,
       quantity: item.qty,
-      unit_price: item.selling_price
+      unit_price: item.sale_price
     }));
 
     try {
@@ -136,9 +136,9 @@ export default function POSScreen() {
               <View style={styles.cartItem}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemMeta}>KES {item.selling_price} x {item.qty}</Text>
+                  <Text style={styles.itemMeta}>KES {item.sale_price} x {item.qty}</Text>
                 </View>
-                <Text style={styles.itemTotal}>KES {(item.selling_price * item.qty).toFixed(2)}</Text>
+                <Text style={styles.itemTotal}>KES {(item.sale_price * item.qty).toFixed(2)}</Text>
                 <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.removeBtn}>
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
                 </TouchableOpacity>
@@ -153,7 +153,7 @@ export default function POSScreen() {
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total Amount:</Text>
           <Text style={styles.totalValue}>
-            KES {cart.reduce((sum: number, item: any) => sum + (item.selling_price * item.qty), 0).toFixed(2)}
+            KES {cart.reduce((sum: number, item: any) => sum + (item.sale_price * item.qty), 0).toFixed(2)}
           </Text>
         </View>
         <TouchableOpacity 

@@ -103,12 +103,13 @@ const submit = async () => {
     if (!user?.id) { setErr('Not signed in'); return; }
     setBusy(true);
     try {
-      const { data, error } = await supabase.from('products').insert({
+      const { data, error } = await supabase.from('shop_products').insert({
         shop_id: id,
         name: name.trim(),
         sku: 'SKU-' + Date.now().toString(36).toUpperCase(),
         cost_price: 0,
-        selling_price: Number(price),
+        base_price: Number(price),
+        sale_price: Number(price),
         video_url: videoUrl,
         stock_quantity: Number(stock),
         category: category.trim() || null,

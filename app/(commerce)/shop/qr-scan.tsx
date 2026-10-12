@@ -27,7 +27,7 @@ export default function ShopQRScanScreen() {
 
     try {
       const { data: product, error } = await supabase
-        .from('shop_inventory')
+        .from('shop_products')
         .select('*')
         .eq('shop_id', shopId)
         .eq('barcode', data)
@@ -40,7 +40,7 @@ export default function ShopQRScanScreen() {
         return;
       }
 
-      Alert.alert('Product Found', `${product.name}\nStock: ${product.quantity}\nPrice: KES ${product.selling_price}`, [
+      Alert.alert('Product Found', `${product.name}\nStock: ${product.stock_quantity}\nPrice: KES ${product.sale_price}`, [
         { 
         text: 'Add to Cart', 
         onPress: () => { 
