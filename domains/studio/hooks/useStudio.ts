@@ -77,7 +77,7 @@ export function useStudio() {
     setError(null);
     try {
       let query = supabase
-        .from('studio_videos_with_creator')
+        .from('studio_content')
         .select('*')
         .eq('status', 'published')
         .order('created_at', { ascending: false });
@@ -110,7 +110,7 @@ export function useStudio() {
   const fetchLive = useCallback(async () => {
     try {
       const { data, error: err } = await supabase
-        .from('studio_live_streams_with_creator')
+        .from('live_streams')
         .select('*')
         .eq('status', 'live')
         .order('started_at', { ascending: false });
@@ -190,7 +190,7 @@ export function useStudio() {
     try {
       // Try studio first
       const { data: studioData, error: studioErr } = await supabase
-        .from('studio_videos_with_creator')
+        .from('studio_content')
         .select('*')
         .eq('id', id)
         .single();
@@ -411,7 +411,7 @@ export function useStudio() {
   // ── Creator's videos ──
   const getCreatorVideos = useCallback(async (userId: string) => {
     const { data, error: err } = await supabase
-      .from('studio_videos_with_creator')
+      .from('studio_content')
       .select('*')
       .eq('creator_id', userId)
       .eq('status', 'published')

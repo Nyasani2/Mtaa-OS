@@ -116,7 +116,7 @@ export default function StudioHomeScreen() {
                 <Pressable
                   key={s.id}
                   style={styles.liveCard}
-                  onPress={() => router.push(`/(os)/studio/live-stream?id=${s.id}` as any)}
+                  onPress={() => router.push(`/(os)/streets/live/${s.id}` as any)}
                 >
                   <View style={styles.liveThumb}>
                     <Text style={styles.liveBadge}>● LIVE</Text>
