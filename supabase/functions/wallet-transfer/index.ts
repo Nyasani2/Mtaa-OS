@@ -44,6 +44,7 @@ serve(async (req) => {
     const {
       recipient_phone,
       amount,
+      pin, // 🔐 REQUIRED: M-Pesa style PIN verification
       description = '',
       currency_code = 'KES'
     } = await req.json()
@@ -59,6 +60,44 @@ serve(async (req) => {
     if (amount <= 0) {
       return new Response(JSON.stringify({ error: 'Amount must be greater than 0' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 🔐 SECURITY: M-Pesa Style PIN Verification
+    if (!pin || pin.length < 4) {
+      return new Response(JSON.stringify({ error: 'PIN is required for all transactions' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Fetch user's PIN hash and salt
+    const { data: pinRecord, error: pinError } = await supabaseClient
+      .from('user_pin_hashes')
+      .select('pin_hash, salt')
+      .eq('user_id', sender_id)
+      .single()
+
+    if (pinError || !pinRecord) {
+      return new Response(JSON.stringify({ error: 'PIN not set. Please set up your transaction PIN in Settings.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Hash the provided PIN with the stored salt (SHA-256)
+    const encoder = new TextEncoder()
+    const dataToHash = encoder.encode(pin + pinRecord.salt)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataToHash)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashedPin = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    if (hashedPin !== pinRecord.pin_hash) {
+      // Log failed attempt for security monitoring
+      console.warn(`[SECURITY] Invalid PIN attempt for user: ${sender_id}`)
+      return new Response(JSON.stringify({ error: 'Invalid PIN. Transaction cancelled for your security.' }), {
+        status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
