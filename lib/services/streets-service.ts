@@ -323,28 +323,24 @@ export interface BoostParams {
 
 export async function boostPost(params: BoostParams): Promise<{ success: boolean; advert_id?: string; error?: string }> {
   try {
-    const { data, error } = await supabase
-      .from('streets_adverts')
-      .insert({
-        post_id: params.post_id,
-        user_id: params.user_id,
-        budget: params.budget,
-        duration_days: params.duration_days,
-        target_audience: params.target_audience || null,
-        status: 'pending',
-        spent: 0,
-        impressions: 0,
-        clicks: 0,
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('create_boost_advert', {
+      p_post_id: params.post_id,
+      p_user_id: params.user_id,
+      p_budget: params.budget,
+      p_duration_days: params.duration_days,
+      p_target_audience: params.target_audience || null,
+    });
 
     if (error) {
-      console.error('[Streets] boost post error:', error);
+      console.error('[Streets] boost post RPC error:', error);
       return { success: false, error: error.message };
     }
 
-    return { success: true, advert_id: data.id };
+    if (data && !data.success) {
+      return { success: false, error: data.error || 'Boost failed' };
+    }
+
+    return { success: true, advert_id: data?.advert_id };
   } catch (e: any) {
     return { success: false, error: e.message || 'Boost failed' };
   }

@@ -21,6 +21,7 @@ export default function CreatePostScreen() {
 const router = useRouter();
 const { user } = useAuthStore();
 const [content, setContent] = useState('');
+  const [postType, setPostType] = useState<'post' | 'status'>('post');
 const [caption, setCaption] = useState('');
 const [hashtags, setHashtags] = useState([]);
 const [hashtagInput, setHashtagInput] = useState('');
