@@ -8,6 +8,7 @@ import * as Crypto from 'expo-crypto';
 
 // ── Types ──────────────────────────────────────────────────
 export interface StreetsPost {
+  is_boosted?: number; // 1 if boosted, 0 if organic
   id: string;
   creator_id: string;
   content: string;

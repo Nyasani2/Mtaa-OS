@@ -256,6 +256,13 @@ function PostCard({
           <Text style={{ color: '#ddd', fontSize: 13, marginTop: 8, lineHeight: 19 }}>{post.content}</Text>
         ) : null}
 
+        
+          {post.is_boosted === 1 && (
+            <View style={{ position: 'absolute', top: 12, left: 12, zIndex: 5, backgroundColor: 'rgba(255, 215, 0, 0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}> BOOSTED</Text>
+            </View>
+          )}
+
         <AnalyticsOverlay post={post} />
       </View>
   );
