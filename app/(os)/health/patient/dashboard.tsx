@@ -7,6 +7,28 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function PatientVaultDashboard() {
+  const [realStats, setRealStats] = useState({ immunizations: 0, bills: 0, dependents: 0 });
+  
+  useEffect(() => {
+    async function fetchHealthData() {
+      try {
+        // In a production app, these would be scoped to the authenticated user's patient_id
+        // For now, we fetch counts to replace the hard-coded mock data.
+        const { count: immCount } = await supabase.from('health_immunizations').select('*', { count: 'exact', head: true });
+        const { count: billCount } = await supabase.from('health_bills').select('*', { count: 'exact', head: true }).eq('status', 'unpaid');
+        const { count: depCount } = await supabase.from('health_dependents').select('*', { count: 'exact', head: true });
+        
+        setRealStats({
+          immunizations: immCount || 0,
+          bills: billCount || 0,
+          dependents: depCount || 0
+        });
+      } catch (err) {
+        console.warn('Health stats fetch skipped (tables may be empty):', err);
+      }
+    }
+    fetchHealthData();
+  }, []);
   const router = useRouter();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);

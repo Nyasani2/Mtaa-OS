@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function HealthLanding() {
+  const { profile } = useAuthStore();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
