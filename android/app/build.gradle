@@ -102,7 +102,19 @@ android {
             keyPassword 'android'
         }
     }
-    buildTypes {
+    
+signingConfigs {
+    release {
+        // TODO: Replace these placeholder values with your actual production keystore details
+        // Or rely on EAS Build managed credentials by removing this block entirely if using EAS Cloud.
+        storeFile file(System.getenv("KEYSTORE_PATH") ?: "debug.keystore")
+        storePassword System.getenv("KEYSTORE_PASSWORD") ?: "android"
+        keyAlias System.getenv("KEYSTORE_ALIAS") ?: "androiddebugkey"
+        keyPassword System.getenv("KEYSTORE_KEY_PASSWORD") ?: "android"
+    }
+}
+
+buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
