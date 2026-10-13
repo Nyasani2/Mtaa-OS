@@ -86,6 +86,17 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         set({ isLoading: true });
+
+// Listen to auth state changes to keep store synced
+if (typeof window !== 'undefined') {
+  supabase.auth.onAuthStateChange((event, session) => {
+    useAuthStore.setState({
+      user: session?.user ?? null,
+      session,
+      isAuthenticated: !!session,
+    });
+  });
+}
         try {
           const { data: { session } } = await supabase.auth.getSession();
           // SELF-HEAL: never show logged-in when Supabase has no live session
@@ -177,6 +188,9 @@ export const useAuthStore = create<AuthState>()(
           password,
           options: { data: metadata },
         });
+      if (data.user && data.session) {
+        set({ user: data.user, session: data.session, isAuthenticated: true });
+      }
         if (error) return { error };
 
         if (data.user) {
@@ -319,7 +333,17 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      refreshProfile: async () => {},
+      refreshProfile: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        set({ profile: profile || null });
+      }
+    },
       getDisplayName: () => {
         const p = get().profile;
         const u = get().user;
