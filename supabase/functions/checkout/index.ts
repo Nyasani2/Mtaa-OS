@@ -46,8 +46,11 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'No authorization header' }), { status: 401, headers: corsHeaders })
   }
   
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+  // Initialize client with auth header to get the user
+  const supabaseClient = createClient(supabaseUrl, supabaseKey, { 
+    global: { headers: { Authorization: authHeader } } 
+  })
+  const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
   
   if (userError || !user) {
     return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: corsHeaders })
