@@ -1,11 +1,46 @@
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 // @ts-nocheck
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import EducationShell from '@/lib/components/education/EducationShell';
 
 export default function EducationDashboard() {
+  const { user } = useAuthStore();
+  const [realStats, setRealStats] = useState({ classes: 0, assignments: 0, gpa: '0.0' });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    async function fetchStudentStats() {
+      if (!user?.id) return;
+      try {
+        // Fetch actual enrolled classes count
+        const { count: classCount } = await supabase
+          .from('student_enrollments')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', user.id);
+          
+        // Fetch pending assignments count
+        const { count: pendingAssignments } = await supabase
+          .from('assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending'); // Adjust based on your actual schema
+
+        setRealStats({
+          classes: classCount || 0,
+          assignments: pendingAssignments || 0,
+          gpa: '3.8' // TODO: Calculate real GPA from grades table
+        });
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      } finally {
+        setLoadingStats(false);
+      }
+    }
+    fetchStudentStats();
+  }, [user?.id]);
   const router = useRouter();
 
   const sections = [
@@ -57,13 +92,7 @@ export default function EducationDashboard() {
   ];
 
   return (
-    <EducationShell
-      title="Education"
-      logo=""
-      sections={sections}
-      donutItems={donutItems}
-      donutColor="#8b5cf6"
-    >
+    <EducationShell>
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
         {/* Stats Row */}
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
