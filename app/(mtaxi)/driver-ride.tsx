@@ -86,29 +86,39 @@ export default function DriverActiveRideScreen() {
           onPress: async () => {
             setActionLoading(true);
             try {
-              // 1. Update ride status to completed
-              const { error: updateError } = await supabase
-                .from('mtaxi_rides')
-                .update({ status: 'completed', completed_at: new Date().toISOString() })
-                .eq('id', ride.id);
-              
-              if (updateError) throw updateError;
 
-              // 2. Trigger secure settlement (Driver payout + Platform fee)
-              const { data: settleData, error: settleError } = await supabase.rpc('mtaa_settle', {
-                p_payer_id: ride.user_id,
-                p_payee_id: user.id,
-                p_total: ride.fare_estimate,
-                p_platform_rate_pct: 3, // 3% platform fee
-                p_wht_rate_pct: 0, // Adjust based on country tax laws
-                p_wht_country: 'KE',
-                p_reference: `mtaxi-complete-${ride.id}`,
-                p_tx_pin: null, // In production, prompt driver for PIN or use biometrics
-                p_biometric_ok: true
-              });
+              // 1. Trigger secure settlement (Driver payout + Platform fee)
+              const { data: settleData, error: settleError } = await supabase.rpc('mtaa_settle_ride', {
+      p_ride_id: ride.id,
+      p_driver_id: user.id,
+      p_passenger_id: ride.user_id,
+      p_total_amount: ride.fare_estimate,
+      p_platform_fee_pct: 3,
+      p_tax_pct: 0
+    });
 
               if (settleError) throw settleError;
-              if (!settleData?.ok) throw new Error('Settlement failed');
+              if (!settleData?.success) throw new Error(settleData?.error || 'Settlement failed');
+
+      // 2. ONLY mark completed after money has safely moved
+
+
+      const { error: updateError } = await supabase
+
+
+        .from('mtaxi_rides')
+
+
+        .update({ status: 'completed', completed_at: new Date().toISOString() })
+
+
+        .eq('id', ride.id);
+
+
+      
+
+
+      if (updateError) throw updateError;
 
               Alert.alert(
                 '✅ Ride Completed', 
