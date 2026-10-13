@@ -1,3 +1,4 @@
+import { usePosCartStore } from '@/lib/stores/pos-cart.store';
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, Modal } from 'react-native';
@@ -13,6 +14,7 @@ import { supabase } from '@/lib/supabase';
  * Mode: 'inventory' → Create or edit product by barcode
  */
 export default function ShopScanScreen() {
+  const addToCart = usePosCartStore((state) => state.addItem);
   const router = useRouter();
   const { shopId, mode = 'sell' } = useLocalSearchParams<{ shopId: string; mode: 'sell' | 'inventory' }>();
 
@@ -100,7 +102,7 @@ export default function ShopScanScreen() {
         name: invName.trim(),
         base_price: parseFloat(invPrice),
         stock_quantity: parseInt(invStock || '0', 10),
-        category: invCategory || 'general',
+        category_id: undefined, // Will be set in full product form
         barcode: barcode,
         qr_code: barcode,
         is_active: true,
@@ -178,9 +180,36 @@ export default function ShopScanScreen() {
           {isSellMode && (
             <TouchableOpacity
               style={styles.resultAction}
-              onPress={() => {
-                // Navigate back to POS with this product pre-selected
-                router.back();
+              onPress={async () => {
+                if (!barcode) return;
+                
+                // Fetch product from the Single Source of Truth
+                const { data: product, error } = await supabase
+                  .from('products')
+                  .select('id, name, sku, barcode, selling_price, cost_price')
+                  .eq('barcode', barcode)
+                  .single();
+                
+                if (error || !product) {
+                  Alert.alert('Not Found', 'Product not in database. Please add it in Inventory first.');
+                  return;
+                }
+
+                // Add to unified POS cart
+                addToCart({
+                  product_id: product.id,
+                  name: product.name,
+                  sku: product.sku || undefined,
+                  barcode: product.barcode || undefined,
+                  unit_price: Number(product.selling_price) || 0,
+                  cost_price: Number(product.cost_price) || 0,
+                });
+
+                setScanning(false);
+                setProduct(null);
+                
+                // Navigate to POS
+                router.push('/(commerce)/shop/[id]/pos' as any);
               }}
             >
               <Text style={styles.resultActionText}>Add to POS Cart</Text>
