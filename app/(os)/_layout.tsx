@@ -1,5 +1,7 @@
+import { useRouter } from 'expo-router';
 import { Stack } from 'expo-router';
 export default function OSLayout() {
+  const router = useRouter();
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
