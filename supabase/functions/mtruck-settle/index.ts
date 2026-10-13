@@ -62,7 +62,13 @@ serve(async (req) => {
         });
         platformTxId = txId;
       }
+
+    // --- MTAA SECURITY: DRIVER IDENTITY VERIFICATION ---
+    if (job.assigned_driver_id && job.assigned_driver_id !== authenticatedUserId) {
+      return new Response(JSON.stringify({ error: 'Forbidden: You are not the assigned driver for this job' }), { status: 403, headers: corsHeaders })
     }
+    // ---------------------------------------------------
+        }
     if (taxWithheld > 0) {
       const { data: tw } = await supabase.from("wallets").select("id, user_id").eq("wallet_type", "main").ilike("wallet_name", "%Government Tax%").maybeSingle();
       if (tw?.user_id) {

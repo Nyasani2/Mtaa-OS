@@ -40,6 +40,21 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // --- MTAA SECURITY: JWT VERIFICATION ---
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'No authorization header' }), { status: 401, headers: corsHeaders })
+  }
+  
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+  
+  if (userError || !user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized: Invalid token' }), { status: 401, headers: corsHeaders })
+  }
+  const authenticatedUserId = user.id
+  // ---------------------------------------
+
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
