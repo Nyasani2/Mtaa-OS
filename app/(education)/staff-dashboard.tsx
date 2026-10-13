@@ -98,8 +98,8 @@ export default function StaffDashboard() {
 
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.actionsGrid}>
-        <ActionButton icon="calendar" label="My Schedule" onPress={() => router.push('/(education as any)/timetable' as any)} />
-        <ActionButton icon="mail" label="Messages" onPress={() => router.push('/(education as any)/messages' as any)} />
+        <ActionButton icon="calendar" label="My Schedule" onPress={() => router.push('/(education)/timetable' as any)} />
+        <ActionButton icon="mail" label="Messages" onPress={() => router.push('/(education)/messages' as any)} />
         <ActionButton icon="person" label="My Profile" onPress={() => router.push('/(os as any)/profile' as any)} />
         <ActionButton icon="settings" label="Settings" onPress={() => router.push('/(os as any)/settings' as any)} />
       </View>

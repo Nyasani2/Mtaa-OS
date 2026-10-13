@@ -140,14 +140,14 @@ export default function AdminDashboard() {
 
       {/* Enrollment & Approvals */}
       <View style={styles.rowCards}>
-        <TouchableOpacity style={[styles.rowCard, { backgroundColor: '#1A1A1A' }]} onPress={() => router.push('/(education as any)/enrollments' as any)}>
+        <TouchableOpacity style={[styles.rowCard, { backgroundColor: '#1A1A1A' }]} onPress={() => router.push('/(education)/enrollments' as any)}>
           <Ionicons name="clipboard" size={24} color="#10B981" />
           <View style={{ marginLeft: 12 }}>
             <Text style={styles.rowValue}>{stats?.activeEnrollments || 0}</Text>
             <Text style={styles.rowLabel}>Active Enrollments</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.rowCard, { backgroundColor: '#1A1A1A' }]} onPress={() => router.push('/(education as any)/approvals' as any)}>
+        <TouchableOpacity style={[styles.rowCard, { backgroundColor: '#1A1A1A' }]} onPress={() => router.push('/(education)/approvals' as any)}>
           <Ionicons name="warning" size={24} color="#EF4444" />
           <View style={{ marginLeft: 12 }}>
             <Text style={[styles.rowValue, { color: '#EF4444' }]}>{stats?.pendingApprovals || 0}</Text>
@@ -159,12 +159,12 @@ export default function AdminDashboard() {
       {/* Quick Actions */}
       <Text style={styles.sectionTitle}>Management</Text>
       <View style={styles.actionsGrid}>
-        <ActionButton icon="school" label="Schools" onPress={() => router.push('/(education as any)/schools' as any)} />
-        <ActionButton icon="people" label="Students" onPress={() => router.push('/(education as any)/students' as any)} />
-        <ActionButton icon="person" label="Teachers" onPress={() => router.push('/(education as any)/teachers' as any)} />
-        <ActionButton icon="briefcase" label="Staff" onPress={() => router.push('/(education as any)/staff' as any)} />
-        <ActionButton icon="cash" label="Fees" onPress={() => router.push('/(education as any)/fees' as any)} />
-        <ActionButton icon="settings" label="Settings" onPress={() => router.push('/(education as any)/settings' as any)} />
+        <ActionButton icon="school" label="Schools" onPress={() => router.push('/(education)/schools' as any)} />
+        <ActionButton icon="people" label="Students" onPress={() => router.push('/(education)/students' as any)} />
+        <ActionButton icon="person" label="Teachers" onPress={() => router.push('/(education)/teachers' as any)} />
+        <ActionButton icon="briefcase" label="Staff" onPress={() => router.push('/(education)/staff' as any)} />
+        <ActionButton icon="cash" label="Fees" onPress={() => router.push('/(education)/fees' as any)} />
+        <ActionButton icon="settings" label="Settings" onPress={() => router.push('/(education)/settings' as any)} />
       </View>
 
       {/* Schools List */}

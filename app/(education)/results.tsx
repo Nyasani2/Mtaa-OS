@@ -178,7 +178,7 @@ export default function EducationResults() {
           <View style={styles.emptyBox}>
             <Ionicons name="alert-circle-outline" size={48} color="#cbd5e1" />
             <Text style={styles.emptyText}>You are not enrolled in any education program.</Text>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(education as any)/schools' as any)}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(education)/schools' as any)}>
               <Text style={styles.actionBtnText}>Find a School</Text>
             </TouchableOpacity>
           </View>

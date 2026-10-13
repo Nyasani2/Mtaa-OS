@@ -185,7 +185,7 @@ export default function EducationPortal() {
             <Ionicons name="person-outline" size={48} color="#cbd5e1" />
             <Text style={styles.emptyTitle}>No education roles found</Text>
             <Text style={styles.emptySub}>Contact your school administrator to get enrolled.</Text>
-            <TouchableOpacity style={styles.enrollBtn} onPress={() => router.push('/(education as any)/schools' as any)}>
+            <TouchableOpacity style={styles.enrollBtn} onPress={() => router.push('/(education)/schools' as any)}>
               <Text style={styles.enrollBtnText}>Browse Schools</Text>
             </TouchableOpacity>
           </View>

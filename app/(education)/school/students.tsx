@@ -51,7 +51,7 @@ export default function SchoolStudentsScreen() {
           <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
         </TouchableOpacity>
         <Text style={styles.title}>All Students</Text>
-        <TouchableOpacity onPress={() => router.push("/(education as any)/register/student" as any)}>
+        <TouchableOpacity onPress={() => router.push("/(education)/register/student" as any)}>
           <Ionicons name="add-circle" size={24} color="#60a5fa" />
         </TouchableOpacity>
       </View>

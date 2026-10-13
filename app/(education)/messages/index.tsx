@@ -174,7 +174,7 @@ export default function MessagesScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(education as any)/messages/compose' as any)}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/(education)/messages/compose' as any)}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </View>

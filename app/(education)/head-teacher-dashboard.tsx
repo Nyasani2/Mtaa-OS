@@ -116,15 +116,15 @@ export default function HeadTeacherDashboard() {
 
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
-        <StatCard icon="people" label="Students" value={stats?.totalStudents || 0} color="#3B82F6" onPress={() => router.push('/(education as any)/school/students' as any)} />
-        <StatCard icon="person" label="Teachers" value={stats?.totalTeachers || 0} color="#10B981" onPress={() => router.push('/(education as any)/school/teachers' as any)} />
-        <StatCard icon="school" label="Classes" value={stats?.totalClasses || 0} color="#8B5CF6" onPress={() => router.push('/(education as any)/classes' as any)} />
-        <StatCard icon="checkmark-circle" label="Attendance" value={`${stats?.attendanceRate || 0}%`} color="#F59E0B" onPress={() => router.push('/(education as any)/attendance' as any)} />
+        <StatCard icon="people" label="Students" value={stats?.totalStudents || 0} color="#3B82F6" onPress={() => router.push('/(education)/school/students' as any)} />
+        <StatCard icon="person" label="Teachers" value={stats?.totalTeachers || 0} color="#10B981" onPress={() => router.push('/(education)/school/teachers' as any)} />
+        <StatCard icon="school" label="Classes" value={stats?.totalClasses || 0} color="#8B5CF6" onPress={() => router.push('/(education)/classes' as any)} />
+        <StatCard icon="checkmark-circle" label="Attendance" value={`${stats?.attendanceRate || 0}%`} color="#F59E0B" onPress={() => router.push('/(education)/attendance' as any)} />
       </View>
 
       {/* Pending Approvals Alert */}
       {(stats?.pendingApprovals || 0) > 0 && (
-        <TouchableOpacity style={styles.alertCard} onPress={() => router.push('/(education as any)/school/approvals' as any)}>
+        <TouchableOpacity style={styles.alertCard} onPress={() => router.push('/(education)/school/approvals' as any)}>
           <Ionicons name="warning" size={24} color="#EF4444" />
           <Text style={styles.alertText}>{stats?.pendingApprovals} pending approval(s) require your attention</Text>
           <Ionicons name="chevron-forward" size={20} color="#EF4444" />
@@ -134,12 +134,12 @@ export default function HeadTeacherDashboard() {
       {/* Quick Actions */}
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.actionsGrid}>
-        <ActionButton icon="calendar" label="Timetable" onPress={() => router.push('/(education as any)/timetable' as any)} />
-        <ActionButton icon="clipboard" label="Exams" onPress={() => router.push('/(education as any)/exam' as any)} />
-        <ActionButton icon="cash" label="Fees" onPress={() => router.push('/(education as any)/fees' as any)} />
-        <ActionButton icon="bus" label="Transport" onPress={() => router.push('/(education as any)/transport-admin' as any)} />
-        <ActionButton icon="shield-checkmark" label="Security" onPress={() => router.push('/(education as any)/security' as any)} />
-        <ActionButton icon="notifications" label="Announcements" onPress={() => router.push('/(education as any)/announcements' as any)} />
+        <ActionButton icon="calendar" label="Timetable" onPress={() => router.push('/(education)/timetable' as any)} />
+        <ActionButton icon="clipboard" label="Exams" onPress={() => router.push('/(education)/exam' as any)} />
+        <ActionButton icon="cash" label="Fees" onPress={() => router.push('/(education)/fees' as any)} />
+        <ActionButton icon="bus" label="Transport" onPress={() => router.push('/(education)/transport-admin' as any)} />
+        <ActionButton icon="shield-checkmark" label="Security" onPress={() => router.push('/(education)/security' as any)} />
+        <ActionButton icon="notifications" label="Announcements" onPress={() => router.push('/(education)/announcements' as any)} />
       </View>
 
       {/* Recent Activity */}

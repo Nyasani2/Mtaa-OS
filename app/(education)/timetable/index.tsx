@@ -67,7 +67,7 @@ export default function TimetableScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Timetable</Text>
-        <TouchableOpacity onPress={() => router.push('/(education as any)/timetable/create' as any)}>
+        <TouchableOpacity onPress={() => router.push('/(education)/timetable/create' as any)}>
           <Ionicons name="add-circle" size={24} color="#00d4ff" />
         </TouchableOpacity>
       </View>

@@ -87,7 +87,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         </View>
       </View>
 
-      <Section icon={CreditCard} title="Fee Records" color="#38bdf8" onPress={() => router.push('/(education as any)/fees' as any)}>
+      <Section icon={CreditCard} title="Fee Records" color="#38bdf8" onPress={() => router.push('/(education)/fees' as any)}>
         {fees.length === 0 ? (
           <Text style={styles.empty}>No fee records</Text>
         ) : (
@@ -100,7 +100,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={FileText} title="Recent Payments" color="#34d399" onPress={() => router.push('/(education as any)/fees' as any)}>
+      <Section icon={FileText} title="Recent Payments" color="#34d399" onPress={() => router.push('/(education)/fees' as any)}>
         {payments.length === 0 ? (
           <Text style={styles.empty}>No payments recorded</Text>
         ) : (
@@ -113,7 +113,7 @@ export default function AccountantDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={BarChart3} title="Payroll" color="#a78bfa" onPress={() => router.push('/(education as any)/payroll' as any)}>
+      <Section icon={BarChart3} title="Payroll" color="#a78bfa" onPress={() => router.push('/(education)/payroll' as any)}>
         {payroll.length === 0 ? (
           <Text style={styles.empty}>No payroll records</Text>
         ) : (

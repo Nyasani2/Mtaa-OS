@@ -92,12 +92,12 @@ export default function AccountantDashboard() {
 
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.actionsGrid}>
-        <ActionButton icon="cash" label="Fee Collection" onPress={() => router.push('/(education as any)/fees' as any)} />
-        <ActionButton icon="card" label="Payroll" onPress={() => router.push('/(education as any)/payroll' as any)} />
-        <ActionButton icon="receipt" label="Expenses" onPress={() => router.push('/(education as any)/expenses' as any)} />
-        <ActionButton icon="document-text" label="Reports" onPress={() => router.push('/(education as any)/reports' as any)} />
-        <ActionButton icon="wallet" label="Budget" onPress={() => router.push('/(education as any)/budget' as any)} />
-        <ActionButton icon="download" label="Export" onPress={() => router.push('/(education as any)/export' as any)} />
+        <ActionButton icon="cash" label="Fee Collection" onPress={() => router.push('/(education)/fees' as any)} />
+        <ActionButton icon="card" label="Payroll" onPress={() => router.push('/(education)/payroll' as any)} />
+        <ActionButton icon="receipt" label="Expenses" onPress={() => router.push('/(education)/expenses' as any)} />
+        <ActionButton icon="document-text" label="Reports" onPress={() => router.push('/(education)/reports' as any)} />
+        <ActionButton icon="wallet" label="Budget" onPress={() => router.push('/(education)/budget' as any)} />
+        <ActionButton icon="download" label="Export" onPress={() => router.push('/(education)/export' as any)} />
       </View>
     </ScrollView>
   );

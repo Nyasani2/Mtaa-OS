@@ -85,7 +85,7 @@ export default function ParentDashboard() {
           </View>
 
           {/* Recent Grades */}
-          <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education as any)/grades' as any)}>
+          <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education)/grades' as any)}>
             {grades.length === 0 ? (
               <Text style={styles.emptyText}>No grades yet</Text>
             ) : (
@@ -100,7 +100,7 @@ export default function ParentDashboard() {
           </Section>
 
           {/* Pending Assignments */}
-          <Section title="Pending Assignments" icon="alert-circle-outline" action="View All" onAction={() => router.push('/(education as any)/assignments' as any)}>
+          <Section title="Pending Assignments" icon="alert-circle-outline" action="View All" onAction={() => router.push('/(education)/assignments' as any)}>
             {pendingAssignments.length === 0 ? (
               <Text style={styles.emptyText}>All caught up! 🎉</Text>
             ) : (
@@ -125,10 +125,10 @@ export default function ParentDashboard() {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <QuickAction icon="card-outline" label="Pay Fees" onPress={() => router.push('/(education as any)/fees' as any)} color="#8b5cf6" />
-        <QuickAction icon="chatbubble-outline" label="Message Teacher" onPress={() => router.push('/(education as any)/messages' as any)} color="#6366f1" />
-        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education as any)/transport' as any)} color="#059669" />
-        <QuickAction icon="qr-code-outline" label="QR Check-in" onPress={() => router.push('/(education as any)/qr-checkin' as any)} color="#f59e0b" />
+        <QuickAction icon="card-outline" label="Pay Fees" onPress={() => router.push('/(education)/fees' as any)} color="#8b5cf6" />
+        <QuickAction icon="chatbubble-outline" label="Message Teacher" onPress={() => router.push('/(education)/messages' as any)} color="#6366f1" />
+        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education)/transport' as any)} color="#059669" />
+        <QuickAction icon="qr-code-outline" label="QR Check-in" onPress={() => router.push('/(education)/qr-checkin' as any)} color="#f59e0b" />
       </View>
     </ScrollView>
   );

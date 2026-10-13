@@ -71,7 +71,7 @@ export default function StudentDashboard({ institutionId }: Props) {
         <Text style={styles.headerSub}>{user?.email?.split('@')[0] || 'Student'}</Text>
       </View>
 
-      <Section icon={ClipboardList} title="My Assignments" color="#38bdf8" onPress={() => router.push('/(education as any)/assignments' as any)}>
+      <Section icon={ClipboardList} title="My Assignments" color="#38bdf8" onPress={() => router.push('/(education)/assignments' as any)}>
         {assignments.length === 0 ? (
           <Text style={styles.empty}>No pending assignments</Text>
         ) : (
@@ -84,7 +84,7 @@ export default function StudentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Award} title="My Grades" color="#fbbf24" onPress={() => router.push('/(education as any)/grades' as any)}>
+      <Section icon={Award} title="My Grades" color="#fbbf24" onPress={() => router.push('/(education)/grades' as any)}>
         {grades.length === 0 ? (
           <Text style={styles.empty}>No grades yet</Text>
         ) : (
@@ -97,7 +97,7 @@ export default function StudentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Clock} title="Attendance" color="#34d399" onPress={() => router.push('/(education as any)/attendance' as any)}>
+      <Section icon={Clock} title="Attendance" color="#34d399" onPress={() => router.push('/(education)/attendance' as any)}>
         {attendance.length === 0 ? (
           <Text style={styles.empty}>No attendance records</Text>
         ) : (
@@ -110,7 +110,7 @@ export default function StudentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Calendar} title="Timetable" color="#a78bfa" onPress={() => router.push('/(education as any)/timetable' as any)}>
+      <Section icon={Calendar} title="Timetable" color="#a78bfa" onPress={() => router.push('/(education)/timetable' as any)}>
         {timetable.length === 0 ? (
           <Text style={styles.empty}>No timetable entries</Text>
         ) : (
@@ -123,7 +123,7 @@ export default function StudentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/(education as any)/announcements' as any)}>
+      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/(education)/announcements' as any)}>
         {announcements.length === 0 ? (
           <Text style={styles.empty}>No announcements</Text>
         ) : (

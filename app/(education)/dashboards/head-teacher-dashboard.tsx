@@ -73,38 +73,38 @@ export default function HeadTeacherDashboard({ institutionId }: Props) {
       </View>
 
       <View style={styles.statsRow}>
-        <StatCard icon={Users} label="Teachers" value={stats.teachers} color="#38bdf8" onPress={() => router.push('/(education as any)/participants' as any)} />
-        <StatCard icon={School} label="Students" value={stats.students} color="#34d399" onPress={() => router.push('/(education as any)/participants' as any)} />
-        <StatCard icon={BookOpen} label="Classes" value={stats.classes} color="#fbbf24" onPress={() => router.push('/(education as any)/classes' as any)} />
-        <StatCard icon={BarChart3} label="Staff" value={stats.staff} color="#a78bfa" onPress={() => router.push('/(education as any)/participants' as any)} />
+        <StatCard icon={Users} label="Teachers" value={stats.teachers} color="#38bdf8" onPress={() => router.push('/(education)/participants' as any)} />
+        <StatCard icon={School} label="Students" value={stats.students} color="#34d399" onPress={() => router.push('/(education)/participants' as any)} />
+        <StatCard icon={BookOpen} label="Classes" value={stats.classes} color="#fbbf24" onPress={() => router.push('/(education)/classes' as any)} />
+        <StatCard icon={BarChart3} label="Staff" value={stats.staff} color="#a78bfa" onPress={() => router.push('/(education)/participants' as any)} />
       </View>
 
-      <Section icon={Shield} title="Management" color="#38bdf8" onPress={() => router.push('/(education as any)/admin' as any)}>
+      <Section icon={Shield} title="Management" color="#38bdf8" onPress={() => router.push('/(education)/admin' as any)}>
         <View style={styles.grid2}>
-          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education as any)/participants' as any)}>
+          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education)/participants' as any)}>
             <Users size={18} color="#38bdf8" />
             <Text style={styles.gridBtnText}>Participants</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education as any)/classes' as any)}>
+          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education)/classes' as any)}>
             <BookOpen size={18} color="#34d399" />
             <Text style={styles.gridBtnText}>Classes</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education as any)/payroll' as any)}>
+          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education)/payroll' as any)}>
             <TrendingUp size={18} color="#fbbf24" />
             <Text style={styles.gridBtnText}>Payroll</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education as any)/emergency' as any)}>
+          <TouchableOpacity style={styles.gridBtn} onPress={() => router.push('/(education)/emergency' as any)}>
             <AlertTriangle size={18} color="#ef4444" />
             <Text style={styles.gridBtnText}>Emergency</Text>
           </TouchableOpacity>
         </View>
       </Section>
 
-      <Section icon={BarChart3} title="Reports" color="#a78bfa" onPress={() => router.push('/(education as any)/reports' as any)}>
+      <Section icon={BarChart3} title="Reports" color="#a78bfa" onPress={() => router.push('/(education)/reports' as any)}>
         <Text style={styles.empty}>Tap to view attendance, grade, and enrollment reports.</Text>
       </Section>
 
-      <Section icon={School} title="Announcements" color="#f87171" onPress={() => router.push('/(education as any)/announcements' as any)}>
+      <Section icon={School} title="Announcements" color="#f87171" onPress={() => router.push('/(education)/announcements' as any)}>
         {announcements.length === 0 ? (
           <Text style={styles.empty}>No announcements</Text>
         ) : (

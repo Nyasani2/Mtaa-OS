@@ -154,7 +154,7 @@ export default function SchoolMap() {
             <Ionicons name="shield-checkmark-outline" size={16} color="#64748b" />
             <Text style={styles.infoText}>Status: Normal</Text>
           </View>
-          <TouchableOpacity style={styles.viewCctvBtn} onPress={() => router.push('/(education as any)/ict/cctv' as any)}>
+          <TouchableOpacity style={styles.viewCctvBtn} onPress={() => router.push('/(education)/ict/cctv' as any)}>
             <Ionicons name="videocam-outline" size={16} color="#fff" />
             <Text style={styles.viewCctvText}>View CCTV</Text>
           </TouchableOpacity>

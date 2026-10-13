@@ -76,7 +76,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         <Text style={styles.headerSub}>{user?.email?.split('@')[0] || 'Parent'}</Text>
       </View>
 
-      <Section icon={Baby} title="My Children" color="#38bdf8" onPress={() => router.push('/(education as any)/participants' as any)}>
+      <Section icon={Baby} title="My Children" color="#38bdf8" onPress={() => router.push('/(education)/participants' as any)}>
         {children.length === 0 ? (
           <Text style={styles.empty}>No children linked to your account</Text>
         ) : (
@@ -89,7 +89,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={CreditCard} title="Fee Payments" color="#fbbf24" onPress={() => router.push('/(education as any)/fees' as any)}>
+      <Section icon={CreditCard} title="Fee Payments" color="#fbbf24" onPress={() => router.push('/(education)/fees' as any)}>
         {fees.length === 0 ? (
           <Text style={styles.empty}>No fee records</Text>
         ) : (
@@ -104,7 +104,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/(education as any)/announcements' as any)}>
+      <Section icon={Bell} title="Announcements" color="#f87171" onPress={() => router.push('/(education)/announcements' as any)}>
         {announcements.length === 0 ? (
           <Text style={styles.empty}>No announcements</Text>
         ) : (
@@ -117,7 +117,7 @@ export default function ParentDashboard({ institutionId }: Props) {
         )}
       </Section>
 
-      <Section icon={Bus} title="Transport" color="#34d399" onPress={() => router.push('/(education as any)/transport' as any)}>
+      <Section icon={Bus} title="Transport" color="#34d399" onPress={() => router.push('/(education)/transport' as any)}>
         <Text style={styles.empty}>View transport routes and pickup schedules.</Text>
       </Section>
     </ScrollView>

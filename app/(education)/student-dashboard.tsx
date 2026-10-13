@@ -80,7 +80,7 @@ export default function StudentDashboard() {
       </View>
 
       {/* Today's Classes */}
-      <Section title="Today's Classes" icon="time-outline" action="View Full" onAction={() => router.push('/(education as any)/timetable' as any)}>
+      <Section title="Today's Classes" icon="time-outline" action="View Full" onAction={() => router.push('/(education)/timetable' as any)}>
         {todayTimetable.length === 0 ? (
           <Text style={styles.emptyText}>No classes scheduled today</Text>
         ) : (
@@ -95,7 +95,7 @@ export default function StudentDashboard() {
       </Section>
 
       {/* Pending Assignments */}
-      <Section title="Pending Assignments" icon="document-text-outline" action="View All" onAction={() => router.push('/(education as any)/assignments' as any)}>
+      <Section title="Pending Assignments" icon="document-text-outline" action="View All" onAction={() => router.push('/(education)/assignments' as any)}>
         {pendingAssignments.length === 0 ? (
           <Text style={styles.emptyText}>No pending assignments 🎉</Text>
         ) : (
@@ -114,7 +114,7 @@ export default function StudentDashboard() {
       </Section>
 
       {/* Recent Grades */}
-      <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education as any)/grades' as any)}>
+      <Section title="Recent Grades" icon="trophy-outline" action="View All" onAction={() => router.push('/(education)/grades' as any)}>
         {grades.length === 0 ? (
           <Text style={styles.emptyText}>No grades yet</Text>
         ) : (
@@ -130,10 +130,10 @@ export default function StudentDashboard() {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <QuickAction icon="library-outline" label="Library" onPress={() => router.push('/(education as any)/library' as any)} />
-        <QuickAction icon="chatbubble-outline" label="Messages" onPress={() => router.push('/(education as any)/messages' as any)} />
-        <QuickAction icon="qr-code-outline" label="Check In" onPress={() => router.push('/(education as any)/qr-checkin' as any)} />
-        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education as any)/transport' as any)} />
+        <QuickAction icon="library-outline" label="Library" onPress={() => router.push('/(education)/library' as any)} />
+        <QuickAction icon="chatbubble-outline" label="Messages" onPress={() => router.push('/(education)/messages' as any)} />
+        <QuickAction icon="qr-code-outline" label="Check In" onPress={() => router.push('/(education)/qr-checkin' as any)} />
+        <QuickAction icon="bus-outline" label="Transport" onPress={() => router.push('/(education)/transport' as any)} />
       </View>
     </ScrollView>
   );
