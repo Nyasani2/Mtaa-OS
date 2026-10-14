@@ -1,6 +1,4 @@
-// @ts-nocheck
-// ASIS-CSE Constants
-export const COUPLING = 0.1 as const;
+export const COUPLING = 0.618 as const;
 export const API_TIMEOUT_MS = 10000 as const;
 export const ACTION_TIMEOUT_MS = 10000 as const;
 export const COLLECTIVE_VALIDATION_THRESHOLD = 0.7 as const;
@@ -9,3 +7,18 @@ export const REFLECTION_CONFIDENCE_THRESHOLD = 0.6 as const;
 export const MEMORY_PROMOTION_THRESHOLD = 0.7 as const;
 export const KNOWLEDGE_CONFIDENCE_THRESHOLD = 0.8 as const;
 export const TRUST_DECAY_RATE = 0.02 as const;
+export const UNDERSTANDING_DEPTH_LIMIT = 5 as const;
+export const WISDOM_CONFIDENCE_THRESHOLD = 0.85 as const;
+export const SIMULATION_DEPTH_LIMIT = 3 as const;
+export const SIMULATION_BRANCHING_FACTOR = 3 as const;
+export const PLANNING_MAX_TASKS = 10 as const;
+export const CYCLE_INTERVAL_MS = 5000 as const;
+export const MAX_CONCURRENT_ENGINES = 5 as const;
+export const ENGINE_TIMEOUT_MS = 3000 as const;
+export const MAX_CONSECUTIVE_ERRORS = 3 as const;
+export const ENGINE_RESTART_COOLDOWN_MS = 5000 as const;
+export const CIRCUIT_BREAKER_THRESHOLD = 5 as const;
+export const CIRCUIT_BREAKER_RECOVERY_MS = 10000 as const;
+export const OBSERVATION_THRESHOLD = 0.3 as const;
+export const DEFAULT_TRUST_SCORE = 0.5 as const;
+export const IDENTITY_PERSISTENCE = 0.95 as const;

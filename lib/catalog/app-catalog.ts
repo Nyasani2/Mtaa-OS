@@ -72,7 +72,7 @@ export const ALL_APPS: AppTile[] = [
   { id: 'marketplace', name: 'Market', icon: 'cart', iconSet: 'Ionicons', route: '/(commerce)/marketplace', color: '#fff', bgColor: '#84cc16', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'restaurant', name: 'Restaurant', icon: 'restaurant', iconSet: 'Ionicons', route: '/(os)/restaurant', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'COMMERCE', status: 'live' },
   { id: 'shop', name: 'Shop', icon: 'storefront', iconSet: 'Ionicons', route: '/(commerce)/shop', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'COMMERCE', status: 'live' },
-  { id: 'stay', name: 'Stay', icon: 'home', iconSet: 'Ionicons', route: '/(os)/stay', color: '#fff', bgColor: '#1a5c4b', ownerOnly: false, category: 'COMMERCE', status: 'live' },
+  { id: 'stay', name: 'Stay', icon: 'home', iconSet: 'Ionicons', route: '/(os)/stay', color: '#fff', bgColor: '#1a5c4b', ownerOnly: false, category: 'COMMERCE', status: 'missing' },
 
   // ─── CIVIC ARCHIVED ───
   // { id: 'civic', name: 'Civic', icon: 'shield-check', iconSet: 'MaterialCommunityIcons', route: '/(civic)', color: '#fff', bgColor: '#3b82f6', ownerOnly: false, category: 'CIVIC', status: 'missing' },
@@ -113,13 +113,13 @@ export const ALL_APPS: AppTile[] = [
   { id: 'tribes', name: 'Tribes', icon: 'people', iconSet: 'Ionicons', route: '/(os)/tribes', color: '#fff', bgColor: '#14b8a6', ownerOnly: false, category: 'SOCIAL', status: 'live' },
 
   // ─── MEDIA (3 apps) ───
-  { id: 'music', name: 'Music', icon: 'musical-note', iconSet: 'Ionicons', route: '/(media)/music', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'MEDIA', status: 'live' },
-  { id: 'podcast', name: 'Podcast', icon: 'mic', iconSet: 'Ionicons', route: '/(media)/podcast', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'MEDIA', status: 'live' },
+  { id: 'music', name: 'Music', icon: 'musical-note', iconSet: 'Ionicons', route: '/(media)/music', color: '#fff', bgColor: '#ec4899', ownerOnly: false, category: 'MEDIA', status: 'missing' },
+  { id: 'podcast', name: 'Podcast', icon: 'mic', iconSet: 'Ionicons', route: '/(media)/podcast', color: '#fff', bgColor: '#f59e0b', ownerOnly: false, category: 'MEDIA', status: 'missing' },
   { id: 'video', name: 'Video', icon: 'play-circle', iconSet: 'Ionicons', route: '/(media)/video', color: '#fff', bgColor: '#ef4444', ownerOnly: false, category: 'MEDIA', status: 'live' },
 
   // ─── ADMIN (3 apps) ───────────────────────────────────
   { id: 'admin', name: 'Admin', icon: 'shield', iconSet: 'Ionicons', route: '/(os)/admin', color: '#fff', bgColor: '#7c3aed', ownerOnly: true, category: 'ADMIN', status: 'live' },
-  { id: 'analytics', name: 'Analytics', icon: 'bar-chart', iconSet: 'Ionicons', route: '/(os)/analytics', color: '#fff', bgColor: '#3b82f6', ownerOnly: true, category: 'ADMIN', status: 'live' },
+  { id: 'analytics', name: 'Analytics', icon: 'bar-chart', iconSet: 'Ionicons', route: '/(os)/analytics', color: '#fff', bgColor: '#3b82f6', ownerOnly: true, category: 'ADMIN', status: 'missing' },
   { id: 'kernel', name: 'Kernel', icon: 'hardware-chip', iconSet: 'Ionicons', route: '/(os)/kernel-audit', color: '#fff', bgColor: '#1e3a5f', ownerOnly: true, category: 'ADMIN', status: 'live' },
   { id: 'command', name: 'Command', icon: 'terminal', iconSet: 'Ionicons', route: '/(os)/command', color: '#fff', bgColor: '#334155', ownerOnly: false, category: 'ADMIN', status: 'live' },
   { id: 'live-ledger', name: 'Live Ledger', icon: 'activity', iconSet: 'Ionicons', route: '/(admin)/command-centre/live-ledger', color: '#fff', bgColor: '#10b981', ownerOnly: false, category: 'ADMIN', status: 'live' },

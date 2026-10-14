@@ -1,6 +1,5 @@
-// @ts-nocheck
+import { supabase } from '@/lib/supabase';
 import React, { useState, useEffect } from 'react';
-
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,18 +9,18 @@ import { useAuthStore } from '@/lib/auth/store/auth.store';
 export default function StudentAssignments() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { getStudentByUserId, getStudentAssignments, submitAssignment } = useEducation();
+  const { getStudentByUserId } = useEducation();
   const [student, setStudent] = useState<any>(null);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, pending, submitted, graded
+  const [filter, setFilter] = useState('all');
 
   const loadData = async () => {
     if (!user?.id) return;
     const s = await getStudentByUserId(user.id);
     setStudent(s);
-    if (s) {
-      const a = await getStudentAssignments(s.id);
+    if (s?.data) {
+      const { data: a } = await supabase.from('assignments').select('*').eq('student_id', s.data.id);
       setAssignments(a || []);
     }
   };
@@ -35,9 +34,8 @@ export default function StudentAssignments() {
     return true;
   });
 
-  const handleSubmit = async (assignmentId) => {
-    // Navigate to submission screen
-    router.push(`/(education as any)/assignments/${assignmentId}/submit` as any);
+  const handleSubmit = async (assignmentId: string) => {
+    router.push(`/(education)/assignments/${assignmentId}/submit` as any);
   };
 
   return (
@@ -51,7 +49,7 @@ export default function StudentAssignments() {
       </View>
 
       <View style={styles.filterRow}>
-        {['all','pending','submitted','graded'].map((f: any) => (
+        {['all','pending','submitted','graded'].map((f) => (
           <TouchableOpacity key={f} style={[styles.filterBtn, filter === f && styles.filterBtnActive]} onPress={() => setFilter(f)}>
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f.charAt(0).toUpperCase() + f.slice(1)}</Text>
           </TouchableOpacity>
@@ -66,10 +64,10 @@ export default function StudentAssignments() {
           </View>
         ) : (
           filtered.map((a: any) => (
-            <TouchableOpacity key={a.id} style={styles.card} onPress={() => router.push(`/(education as any)/assignments/${a.id}` as any)}>
+            <TouchableOpacity key={a.id} style={styles.card} onPress={() => router.push(`/(education)/assignments/${a.id}` as any)}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardTitle}>{a.title}</Text>
-                <StatusBadge status={a.status} />
+                <StatusBadge status={a.status || 'pending'} />
               </View>
               <Text style={styles.cardSubject}>{a.subject?.name} • {a.teacher?.full_name}</Text>
               <Text style={styles.cardDesc} numberOfLines={2}>{a.description}</Text>
@@ -91,8 +89,8 @@ export default function StudentAssignments() {
   );
 }
 
-function StatusBadge({ status }) {
-  const colors = {
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, { bg: string; text: string }> = {
     pending: { bg: '#fef3c7', text: '#d97706' },
     submitted: { bg: '#dbeafe', text: '#2563eb' },
     graded: { bg: '#d1fae5', text: '#059669' },
@@ -106,11 +104,11 @@ function StatusBadge({ status }) {
   );
 }
 
-function isOverdue(date) {
-  return date && new Date(date) < new Date();
+function isOverdue(date: string | null | undefined) {
+  return date ? new Date(date) < new Date() : false;
 }
 
-function formatDate(date) {
+function formatDate(date: string | null | undefined) {
   if (!date) return 'No date';
   return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
@@ -139,4 +137,3 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80 },
   emptyText: { color: '#9ca3af', marginTop: 16, fontSize: 16 },
 });
-

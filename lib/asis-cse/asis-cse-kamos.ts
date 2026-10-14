@@ -1,7 +1,6 @@
-// @ts-nocheck
 import type { KAMOSValue } from './asis-cse-types';
 
-export const COUPLING = 0.1 as const;
+export const COUPLING = 0.618 as const;
 
 export function kamosMultiply(a: number, b: number, context?: any): KAMOSValue {
   const growth = context?.dimensions?.growth ?? 0.1;
@@ -40,24 +39,6 @@ export function computeContextDistance(a: any, b: any): number {
   return count === 0 ? 1 : sum / count;
 }
 
-export function buildReasoningChain(research: any, query?: string): Promise<ReasoningChain> {
-  return Promise.resolve({
-    id: `chain_${Date.now()}`,
-    steps: [query || 'inference'],
-    conclusion: research?.conclusion || 'No conclusion',
-    confidence: research?.confidence || 0.5,
-    sources: research?.sources?.map((s: any) => s.name) || [],
-  });
-}
-
 export function emergenceFunction(input: number, context: any): number {
   return input * (1 + COUPLING * (context?.growth || 0.1));
-}
-
-export interface ReasoningChain {
-  id: string;
-  steps: string[];
-  conclusion: string;
-  confidence: number;
-  sources?: string[];
 }

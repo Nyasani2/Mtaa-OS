@@ -28,7 +28,7 @@ export default function MyTribesScreen() {
         joined_at,
         tribes:tribe_id (*, tribe_categories:category_id (name, icon))
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', user.item.id)
       .eq('status', 'active')
       .order('joined_at', { ascending: false });
 

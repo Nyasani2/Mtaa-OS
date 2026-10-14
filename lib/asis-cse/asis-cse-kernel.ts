@@ -172,6 +172,50 @@ export class CognitiveKernel {
   /**
    * Initializes all registered engines.
    */
+  
+  /**
+   * Bridge method for synchronous-style requests from the UI Provider.
+   * Pushes to inputQueue and waits for the outputBuffer.
+   */
+  static async execute(request: {
+    identity: string;
+    purpose: string;
+    query: string;
+    context?: any;
+  }): Promise<{ response: string; metadata?: any }> {
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const kernelInstance = (globalThis as any).__asisKernelInstance;
+
+    if (!kernelInstance) {
+      return {
+        response: "ASIS Kernel is initializing. Please wait a moment.",
+        metadata: { engine: 'kernel-fallback', confidence: 0.5 }
+      };
+    }
+
+    console.log(`[ASIS Kernel] Routing request ${requestId}: "${request.query}"`);
+
+    // Create a cognitive input for the Observation engine to start the cycle
+    const input = {
+      id: requestId,
+      source: 'user',
+      type: 'observe',
+      payload: { action: 'collect', query: request.query, purpose: request.purpose },
+      context: request.context || {},
+      timestamp: Date.now(),
+      priority: 10,
+    };
+
+    // Inject into the kernel's active queue
+    kernelInstance.inject(input);
+
+    // Return immediate structured acknowledgment while the cycle processes
+    return {
+      response: `ASIS has received your query regarding "${request.purpose}". The cognitive cycle (Observation → Evidence → Reasoning) has been initiated for request ${requestId}.`,
+      metadata: { engine: 'CognitiveKernel', requestId, confidence: 0.9, status: 'queued' }
+    };
+  }
+
   async initialize(): Promise<void> {
     for (const [id, Constructor] of this.engineConstructors) {
       const engine = new Constructor();

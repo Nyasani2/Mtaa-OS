@@ -120,7 +120,7 @@ export default function TribesDiscoveryScreen() {
           <TouchableOpacity
             key={cat.id}
             style={[styles.catChip, selectedCategory === cat.id && styles.catChipActive]}
-            onPress={() => setSelectedCategory(cat.id)}
+            onPress={() => setSelectedCategory(cat.item.id)}
           >
             <Text style={styles.catChipIcon}>{cat.icon}</Text>
             <Text style={[selectedCategory === cat.id ? styles.catChipTextActive : styles.catChipText]}>

@@ -117,6 +117,15 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <View style={styles.center}>
+
+        <TouchableOpacity style={{ backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#f97316' }}>
+          <View>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>MTAA Admin Command Center</Text>
+            <Text style={{ color: '#94a3b8', fontSize: 12 }}>Manage treasury, users, and modules</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#f97316" />
+        </TouchableOpacity>
+        
         <ActivityIndicator size="large" color="#8B5CF6" />
         <Text style={styles.loadingText}>Loading admin dashboard...</Text>
       </View>
