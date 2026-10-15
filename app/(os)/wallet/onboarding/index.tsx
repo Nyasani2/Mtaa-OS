@@ -49,7 +49,7 @@ export default function OnboardingLanding() {
 
         <TouchableOpacity 
           style={styles.secondaryButton}
-          onPress={() => router.push('/auth/login')}
+          onPress={() => router.push('/login')}
         >
           <Text style={styles.secondaryButtonText}>I Already Have an Account</Text>
         </TouchableOpacity>

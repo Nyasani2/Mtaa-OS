@@ -11,7 +11,7 @@ export default function StreetsLayout() {
   useEffect(() => {
     if (isLoading) return;
     const isProtected = segments.some(s => s === 'create' || s === 'post');
-    if (isProtected && !user) { router.replace('/(os)/auth/login'); }
+    if (isProtected && !user) { router.replace('/login'); }
   }, [user, isLoading, segments, router]);
 
   return (

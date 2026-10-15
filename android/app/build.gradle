@@ -94,7 +94,6 @@ android {
         versionCode 1
         versionName "1.0.0"
     }
-    signingConfigs {
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -103,7 +102,6 @@ android {
         }
     }
     
-signingConfigs {
     release {
         // TODO: Replace these placeholder values with your actual production keystore details
         // Or rely on EAS Build managed credentials by removing this block entirely if using EAS Cloud.
@@ -114,7 +112,6 @@ signingConfigs {
     }
 }
 
-buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }

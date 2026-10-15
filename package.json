@@ -1,6 +1,6 @@
 {
   "name": "mtaa-os-v10",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "NODE_OPTIONS=--max-old-space-size=8192 expo start",

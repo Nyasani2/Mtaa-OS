@@ -57,7 +57,7 @@ export default function SecurityCenterScreen() {
 
   async function togglePIN(value: boolean) {
     if (!value) { Alert.alert('Disable PIN?', 'This will remove your PIN protection.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Disable', style: 'destructive', onPress: () => setPinEnabled(false) }]); return; }
-    router.push('/auth/set-pin' as any);
+    router.push('/settings/pin' as any);
   }
 
   async function toggle2FA(value: boolean) {
