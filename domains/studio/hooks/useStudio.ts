@@ -384,7 +384,7 @@ export function useStudio() {
       .eq('subscriber_id', uid);
 
     const { data: vids } = await supabase
-      .from('studio_videos')
+      .from('studio_content')
       .select('view_count')
       .eq('creator_id', uid);
     const totalViews = (vids || []).reduce((sum: number, v: any) => sum + (v.views_count || 0), 0);
@@ -468,7 +468,7 @@ export function useStudio() {
   }) => {
     if (!currentUserId) return null;
     const { data, error: err } = await supabase
-      .from('studio_videos')
+      .from('studio_content')
       .insert({
         creator_id: currentUserId,
         title: payload.title,

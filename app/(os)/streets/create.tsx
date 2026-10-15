@@ -114,27 +114,51 @@ if (f) {
 const addHashtag = () => { const t = hashtagInput.trim().replace(/^#/, ''); if (t && !hashtags.includes(t)) setHashtags([...hashtags, t]); setHashtagInput(''); };
 
 const handlePost = async () => {
-setLocalError(null);
-if (!content.trim() && !selectedFile) { setLocalError('Add text or select media.'); return; }
-if (!user?.id) { setLocalError('You must be logged in.'); return; }
-const file = selectedFile, type = mediaType;
-const payload = { content: content.trim(), caption: caption.trim() || undefined, hashtags, isPublic };
-setPosting(true);
-router.back(); // return to feed; upload continues in background
-(async () => {
-try {
-let mediaUrl, thumbnailUrl;
-if (file) { const up = await uploadMedia(file, user.id, () => {}); mediaUrl = up.url; thumbnailUrl = up.thumbnailUrl; }
-await createPost({ creatorId: user.id, content: payload.content, caption: payload.caption, mediaUrl, thumbnailUrl, mediaType: type, hashtags: payload.hashtags, isPublic: payload.isPublic });
-console.log('[Create] background upload complete');
-} catch (e: any) { 
-  console.error('[Create] background upload failed:', e);
-  // Alert the user even if they navigated back, to prevent silent failure
-  Alert.alert('Post Failed', e.message || 'Could not upload post. Please check your connection and try again.');
-} finally {
-  setPosting(false);
-}
-})();
+  setLocalError(null);
+  if (!content.trim() && !selectedFile) { 
+    setLocalError('Add text or select media.'); 
+    return; 
+  }
+  if (!user?.id) { 
+    setLocalError('You must be logged in.'); 
+    return; 
+  }
+  
+  setPosting(true);
+  
+  try {
+    let mediaUrl = null;
+    let thumbnailUrl = null;
+    
+    // 1. Await the media upload FIRST
+    if (selectedFile) { 
+      const up = await uploadMedia(selectedFile, user.id, () => {}); 
+      mediaUrl = up.url; 
+      thumbnailUrl = up.thumbnailUrl; 
+    }
+    
+    // 2. Await the post creation SECOND
+    await createPost({ 
+      creatorId: user.id, 
+      content: content.trim(), 
+      caption: caption.trim() || undefined, 
+      mediaUrl, 
+      thumbnailUrl, 
+      mediaType, 
+      hashtags, 
+      isPublic 
+    });
+    
+    console.log('[Create] Post successfully created');
+    
+    // 3. ONLY navigate back after everything is 100% successful
+    router.back();
+    
+  } catch (e: any) { 
+    console.error('[Create] Post failed:', e);
+    setLocalError(e.message || 'Could not upload post. Please try again.');
+    setPosting(false);
+  }
 };
 
 return (
