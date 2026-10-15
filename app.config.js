@@ -86,7 +86,8 @@ module.exports = {
       "tsconfigPaths": true
     },
     "updates": {
-      "url": "https://u.expo.dev/67589048-d14b-4c80-8ce3-4955651494d9"
+      "url": "https://u.expo.dev/67589048-d14b-4c80-8ce3-4955651494d9",
+      "channel": "production"
     },
     "runtimeVersion": "1.0.0",
     "extra": {
