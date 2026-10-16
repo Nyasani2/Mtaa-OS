@@ -323,9 +323,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'rgba(30,41,59,0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.4)',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -335,7 +332,7 @@ const styles = StyleSheet.create({
   },
   explainerImageContainer: {
     width: '100%',
-    height: 180,
+    height: 140,
     position: 'relative',
   },
   explainerImage: {
