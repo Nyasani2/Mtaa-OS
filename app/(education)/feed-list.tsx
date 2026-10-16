@@ -21,7 +21,7 @@ export default function EducationFeedScreen() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('education_posts')
+        .from('education_feed_posts')
         .select('*, author:user_profiles(full_name, avatar_url)')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -56,7 +56,7 @@ export default function EducationFeedScreen() {
     
     try {
       // Call a Supabase RPC or update the table directly
-      const { error } = await supabase.rpc('toggle_post_like', { 
+      const { error } = await supabase.rpc('toggle_feed_like', { 
         p_post_id: postId, 
         p_user_id: user.id 
       });
