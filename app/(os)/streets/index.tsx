@@ -11,7 +11,7 @@ import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import { useStreets } from '@/domains/streets/hooks/useStreets';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { useIsFocused } from '@react-navigation/native';
-import type { StreetsPost } from '@/lib/services/streets-service';
+import type { StreetPost } from '@/lib/services/streets-service';
 
 // SAFE POLYFILL: Prevents ReferenceError on Android/iOS
 if (typeof globalThis !== 'undefined' && !globalThis.IntersectionObserver) {
@@ -130,12 +130,12 @@ function VideoPlayer({
 }
 
 // ── Analytics Overlay ──────────────────────────────────────
-function AnalyticsOverlay({ post }: { post: StreetsPost }) {
+function AnalyticsOverlay({ post }: { post: StreetPost }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 8, paddingHorizontal: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
         <Eye size={14} color="#888" />
-        <Text style={{ color: '#888', fontSize: 12 }}>{post.view_count || 0}</Text>
+        <Text style={{ color: '#888', fontSize: 12 }}>{post.views_count || 0}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
         <Heart size={14} color="#888" />
@@ -158,14 +158,14 @@ function PostCard({
   post, author, likedMap, onLike, onComment, onShare, onRepost, onBoost,
   isVisible, onView, onPrev, onNext, hasPrev, hasNext,
 }: {
-  post: StreetsPost;
+  post: StreetPost;
   author?: { full_name?: string; username?: string; avatar_url?: string };
   likedMap: Record<string, boolean>;
   onLike: (id: string) => void;
-  onComment: (post: StreetsPost) => void;
-  onShare: (post: StreetsPost) => void;
-  onRepost: (post: StreetsPost) => void;
-  onBoost: (post: StreetsPost) => void;
+  onComment: (post: StreetPost) => void;
+  onShare: (post: StreetPost) => void;
+  onRepost: (post: StreetPost) => void;
+  onBoost: (post: StreetPost) => void;
   isVisible: boolean;
   onView: () => void;
   onPrev: () => void;
@@ -246,7 +246,7 @@ function PostCard({
             {post.caption ? <Text style={{ color: '#eee', fontSize: 13, marginTop: 4 }} numberOfLines={2}>{post.caption}</Text> : null}
             {post.hashtags && post.hashtags.length > 0 && (
               <Text style={{ color: '#fff', fontSize: 13, marginTop: 4, fontWeight: '600' }} numberOfLines={1}>
-                {post.hashtags.map((t) => '#' + t).join(' ')}
+                {post.hashtags.map((t: string) => '#' + t).join(' ')}
               </Text>
             )}
           </View>
@@ -257,7 +257,7 @@ function PostCard({
         ) : null}
 
         
-          {post.is_boosted === 1 && (
+          {post.is_boosted && (
             <View style={{ position: 'absolute', top: 12, left: 12, zIndex: 5, backgroundColor: 'rgba(255, 215, 0, 0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Text style={{ color: '#000', fontSize: 10, fontWeight: '800' }}> BOOSTED</Text>
             </View>
@@ -269,7 +269,7 @@ function PostCard({
 }
 
 // ── Comment Modal ──────────────────────────────────────────
-function CommentModal({ visible, post, onClose }: { visible: boolean; post: StreetsPost | null; onClose: () => void }) {
+function CommentModal({ visible, post, onClose }: { visible: boolean; post: StreetPost | null; onClose: () => void }) {
   const { getComments, postComment, authors } = useStreets();
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -333,7 +333,7 @@ function CommentModal({ visible, post, onClose }: { visible: boolean; post: Stre
 }
 
 // ── Share Modal ────────────────────────────────────────────
-function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; post: StreetsPost | null; onClose: () => void; onRepost: (post: StreetsPost) => void }) {
+function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; post: StreetPost | null; onClose: () => void; onRepost: (post: StreetPost) => void }) {
   const [repostCaption, setRepostCaption] = useState('');
   const [reposting, setReposting] = useState(false);
 
@@ -416,7 +416,7 @@ function ShareModal({ visible, post, onClose, onRepost }: { visible: boolean; po
 }
 
 // ── Boost Modal ────────────────────────────────────────────
-function BoostModal({ visible, post, onClose, onBoost }: { visible: boolean; post: StreetsPost | null; onClose: () => void; onBoost: (postId: string, budget: number, days: number) => Promise<any> }) {
+function BoostModal({ visible, post, onClose, onBoost }: { visible: boolean; post: StreetPost | null; onClose: () => void; onBoost: (postId: string, budget: number, days: number) => Promise<any> }) {
   const [budget, setBudget] = useState('500');
   const [days, setDays] = useState('7');
   const [boosting, setBoosting] = useState(false);
@@ -448,7 +448,7 @@ function BoostModal({ visible, post, onClose, onBoost }: { visible: boolean; pos
           <View style={{ backgroundColor: '#2a2a2a', borderRadius: 12, padding: 12, marginBottom: 16 }}>
             <Text style={{ color: '#fff', fontSize: 14 }} numberOfLines={2}>{post.content || post.caption || 'Media post'}</Text>
             <View style={{ flexDirection: 'row', marginTop: 8, gap: 12 }}>
-              <Text style={{ color: '#888', fontSize: 12 }}><Eye size={12} color="#888" /> {post.view_count || 0} views</Text>
+              <Text style={{ color: '#888', fontSize: 12 }}><Eye size={12} color="#888" /> {post.views_count || 0} views</Text>
               <Text style={{ color: '#888', fontSize: 12 }}><Heart size={12} color="#888" /> {post.likes_count || 0} likes</Text>
             </View>
           </View>
@@ -530,9 +530,9 @@ export default function StreetsFeedScreen() {
   } = useStreets();
 
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
-  const [commentPost, setCommentPost] = useState<StreetsPost | null>(null);
-  const [sharePostState, setSharePostState] = useState<StreetsPost | null>(null);
-  const [boostPostState, setBoostPostState] = useState<StreetsPost | null>(null);
+  const [commentPost, setCommentPost] = useState<StreetPost | null>(null);
+  const [sharePostState, setSharePostState] = useState<StreetPost | null>(null);
+  const [boostPostState, setBoostPostState] = useState<StreetPost | null>(null);
   const [visiblePostId, setVisiblePostId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -566,10 +566,10 @@ export default function StreetsFeedScreen() {
     setLikedMap((prev) => ({ ...prev, [postId]: result.liked }));
   }, [likePost]);
 
-  const handleComment = useCallback((post: StreetsPost) => setCommentPost(post), []);
-  const handleSharePress = useCallback((post: StreetsPost) => { handleShare(post.id); setSharePostState(post); }, [handleShare]);
-  const handleRepostPress = useCallback(async (post: StreetsPost) => { await handleRepost(post.id); }, [handleRepost]);
-  const handleBoostPress = useCallback((post: StreetsPost) => setBoostPostState(post), []);
+  const handleComment = useCallback((post: StreetPost) => setCommentPost(post), []);
+  const handleSharePress = useCallback((post: StreetPost) => { handleShare(post.id); setSharePostState(post); }, [handleShare]);
+  const handleRepostPress = useCallback(async (post: StreetPost) => { await handleRepost(post.id); }, [handleRepost]);
+  const handleBoostPress = useCallback((post: StreetPost) => setBoostPostState(post), []);
   const handleView = useCallback((postId: string) => markViewed(postId), [markViewed]);
 
   const viewabilityConfig = { itemVisiblePercentThreshold: 50, minimumViewTime: 100 };

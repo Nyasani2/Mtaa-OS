@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export interface Institution {
   id: string;
@@ -39,7 +38,7 @@ export async function getInstitutions(filters?: {
       .from('education_institutions')
       .select('*')
       .order('name', { ascending: true });
-
+      
     if (filters?.country) query = query.eq('country', filters.country);
     if (filters?.county) query = query.eq('county', filters.county);
     if (filters?.district) query = query.eq('district', filters.district);
@@ -49,7 +48,7 @@ export async function getInstitutions(filters?: {
     if (filters?.search) query = query.ilike('name', `%${filters.search}%`);
     if (filters?.limit) query = query.limit(filters.limit);
     if (filters?.offset) query = query.range(filters.offset, filters.offset + (filters.limit || 20) - 1);
-
+    
     const { data, error } = await query;
     if (error) throw error;
     return { data: (data || []) as Institution[], error: null };
@@ -74,42 +73,6 @@ export async function getInstitutionById(id: string) {
   }
 }
 
-export async function createInstitution(institution: Partial<Institution>) {
-  try {
-    const userId = useAuthStore.getState().user?.id;
-    if (!userId) throw new Error('Not authenticated');
-
-    const { data, error } = await supabase
-      .from('education_institutions')
-      .insert([institution])
-      .select()
-      .single();
-    if (error) throw error;
-    return { data: data as Institution, error: null };
-  } catch (error: any) {
-    console.error('createInstitution error:', error);
-    return { data: null, error };
-  }
-}
-
-export async function updateInstitution(id: string, updates: Partial<Institution>) {
-  try {
-    const { data, error } = await supabase
-      .from('education_institutions')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return { data: data as Institution, error: null };
-  } catch (error: any) {
-    console.error('updateInstitution error:', error);
-    return { data: null, error };
-  }
-}
-
 // Backward compatibility aliases
 export const getSchools = getInstitutions;
 export const getSchoolById = getInstitutionById;
-export const createSchool = createInstitution;
-export const updateSchool = updateInstitution;

@@ -1,6 +1,3 @@
-// Edge Function: wallet-tax
-// Real-time tax calculation per transaction
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -10,38 +7,24 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseAdmin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
 
-    const {
-      transaction_id,
-      amount,
-      transaction_type,
-      country_code = 'KE',
-      business_wallet_id
-    } = await req.json()
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) return new Response(JSON.stringify({ error: 'No authorization header', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    if (authError || !user) return new Response(JSON.stringify({ error: 'Invalid token', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-    const { data: countryConfig } = await supabaseClient
-      .from('country_configs')
-      .select('*')
-      .eq('country_code', country_code)
-      .single()
+    const { transaction_id, amount, transaction_type, country_code = 'KE', business_wallet_id } = await req.json()
 
-    if (!countryConfig) {
-      return new Response(JSON.stringify({ error: 'Country config not found' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    const { data: countryConfig } = await supabaseAdmin.from('country_configs').select('*').eq('country_code', country_code).single()
+    if (!countryConfig) return new Response(JSON.stringify({ error: 'Country config not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-    const taxes = []
+    const taxes: any[] = []
     let totalTax = 0
 
     if (transaction_type === 'payment' || transaction_type === 'transfer') {
@@ -71,37 +54,11 @@ serve(async (req) => {
     const netAmount = amount - totalTax
 
     for (const tax of taxes) {
-      await supabaseClient.from('tax_transactions').insert({
-        wallet_transaction_id: transaction_id,
-        business_wallet_id,
-        country_code,
-        tax_type: tax.tax_type,
-        taxable_amount: tax.taxable_amount,
-        tax_rate: tax.tax_rate,
-        tax_amount: tax.tax_amount,
-        tax_base_amount: amount,
-        net_amount: netAmount,
-        reporting_period: new Date().toISOString().slice(0, 7)
-      })
+      await supabaseAdmin.from('tax_transactions').insert({ wallet_transaction_id: transaction_id, business_wallet_id, country_code, tax_type: tax.tax_type, taxable_amount: tax.taxable_amount, tax_rate: tax.tax_rate, tax_amount: tax.tax_amount, tax_base_amount: amount, net_amount: netAmount, reporting_period: new Date().toISOString().slice(0, 7) })
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      transaction_id,
-      original_amount: amount,
-      total_tax: totalTax,
-      net_amount: netAmount,
-      taxes,
-      country_code
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
-
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(JSON.stringify({ success: true, transaction_id, original_amount: amount, total_tax: totalTax, net_amount: netAmount, taxes, country_code }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })
-

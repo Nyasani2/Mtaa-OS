@@ -19,11 +19,13 @@ export default function EducationLanding() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: f } = await supabase.from('education_feeds').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(20);
-      const { data: e } = await supabase.from('education_events').select('*').order('date', { ascending: false }).limit(10);
-      setFeeds(f || []);
-      setEvents(e || []);
-    } catch (e) { console.error(e); }
+      const [f, ev] = await Promise.all([
+        supabase.from('education_feed_posts').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('education_events').select('*').order('date', { ascending: false }).limit(10),
+      ]);
+      setFeeds(f.data || []);
+      setEvents(ev.data || []);
+    } catch (e) { console.error('Education load error:', e); }
     finally { setLoading(false); setRefreshing(false); }
   };
 
@@ -34,12 +36,9 @@ export default function EducationLanding() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Education OS</Text>
-          <Text style={styles.headerSub}>National Schooling System</Text>
-        </View>
+        <Text style={styles.headerTitle}>Education OS</Text>
+        <Text style={styles.headerSub}>{user?.email?.split('@')[0] || 'Guest'}</Text>
       </View>
-
       <View style={styles.tabBar}>
         {(['feed', 'events', 'admin'] as const).map((tab) => (
           <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
@@ -47,58 +46,24 @@ export default function EducationLanding() {
           </TouchableOpacity>
         ))}
       </View>
-
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-        {activeTab === 'feed' && (
-          <View>
-            {feeds.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="document-text-outline" size={48} color="#475569" />
-                <Text style={styles.emptyText}>No posts yet</Text>
-              </View>
-            ) : feeds.map((feed: any) => (
-              <View key={feed.id} style={styles.card}>
-                <Text style={styles.cardTitle}>{feed.title || 'Update'}</Text>
-                <Text style={styles.cardContent}>{feed.content}</Text>
-                <Text style={styles.cardMeta}>{new Date(feed.created_at).toLocaleDateString()}</Text>
-              </View>
-            ))}
+        {activeTab === 'feed' && feeds.map((f: any) => (
+          <View key={f.id} style={styles.card}>
+            <Text style={styles.cardTitle}>{f.title || 'Update'}</Text>
+            <Text style={styles.cardContent}>{f.content}</Text>
           </View>
-        )}
-
-        {activeTab === 'events' && (
-          <View>
-            {events.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="calendar-outline" size={48} color="#475569" />
-                <Text style={styles.emptyText}>No upcoming events</Text>
-              </View>
-            ) : events.map((event: any) => (
-              <View key={event.id} style={styles.card}>
-                <Text style={styles.cardTitle}>{event.title}</Text>
-                <Text style={styles.cardMeta}>{event.date ? new Date(event.date).toLocaleDateString() : 'TBD'}</Text>
-              </View>
-            ))}
+        ))}
+        {activeTab === 'events' && events.map((e: any) => (
+          <View key={e.id} style={styles.card}>
+            <Text style={styles.cardTitle}>{e.title}</Text>
+            <Text style={styles.cardContent}>{e.date ? new Date(e.date).toLocaleDateString() : 'TBD'}</Text>
           </View>
-        )}
-
+        ))}
         {activeTab === 'admin' && (
           <View style={styles.adminGrid}>
             <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/schools' as any)}>
               <Ionicons name="school" size={24} color="#3b82f6" />
               <Text style={styles.adminLabel}>Schools</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/teachers' as any)}>
-              <Ionicons name="people" size={24} color="#10b981" />
-              <Text style={styles.adminLabel}>Teachers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/students' as any)}>
-              <Ionicons name="person" size={24} color="#f59e0b" />
-              <Text style={styles.adminLabel}>Students</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/emergency-console' as any)}>
-              <Ionicons name="warning" size={24} color="#ef4444" />
-              <Text style={styles.adminLabel}>Emergency</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -111,20 +76,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
   header: { paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16, backgroundColor: '#1e293b' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
+  headerTitle: { fontSize: 22, fontWeight: '800' as const, color: '#fff' },
+  headerSub: { fontSize: 14, color: '#94a3b8', marginTop: 4 },
   tabBar: { flexDirection: 'row', backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' },
   tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: '#3b82f6' },
-  tabText: { color: '#64748b', fontSize: 14, fontWeight: '600' },
+  tabText: { color: '#64748b', fontSize: 14, fontWeight: '600' as const },
   tabTextActive: { color: '#fff' },
   card: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  cardContent: { color: '#cbd5e1', fontSize: 14, lineHeight: 20 },
-  cardMeta: { color: '#64748b', fontSize: 12, marginTop: 8 },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#64748b', fontSize: 16, marginTop: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700' as const, color: '#fff', marginBottom: 8 },
+  cardContent: { fontSize: 14, color: '#cbd5e1', lineHeight: 20 },
   adminGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  adminCard: { width: '47%', backgroundColor: '#1e293b', borderRadius: 12, padding: 20, alignItems: 'center', gap: 8 },
-  adminLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  adminCard: { width: '47%', backgroundColor: '#1e293b', borderRadius: 12, padding: 16, alignItems: 'center' },
+  adminLabel: { fontSize: 13, color: '#fff', marginTop: 8 },
 });
