@@ -162,7 +162,7 @@ export default function DiscoveryScreen() {
       await supabase.from('hookup_matches').insert({ user_a: uA, user_b: uB });
       Alert.alert("It's a Match!", `You and a user liked each other!`, [
         { text: 'Keep Browsing', style: 'cancel' },
-        { text: 'Message', onPress: () => router.push(`/(os)/messages?recipientId=${profile.user_id}` as any) },
+        { text: 'Message', onPress: () => router.push(`/(os)/hookup/chat?recipientId=${profile.user_id}` as any) },
       ]);
     }
 

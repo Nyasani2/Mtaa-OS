@@ -68,7 +68,7 @@ export default function MatchesScreen() {
   };
 
   const openConversation = (matchId: string) => {
-    router.push(`/(os)/messages?recipientId=${matchId}` as any);
+    router.push(`/(os)/hookup/chat?recipientId=${matchId}` as any);
   };
 
   if (loading) {
