@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import EducationService from "@/lib/services/education-service";
-import { Ionicons } from '@expo/vector-icons';
-
+import { Ionicons } from "@expo/vector-icons";
 export default function SchoolDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -13,7 +11,6 @@ export default function SchoolDetailScreen() {
   const [stats, setStats] = useState({ teachers: 0, students: 0, classes: 0, events: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!schoolId) return;
     const load = async () => {
@@ -35,7 +32,6 @@ export default function SchoolDetailScreen() {
     };
     load();
   }, [schoolId]);
-
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center" }}>
@@ -43,7 +39,6 @@ export default function SchoolDetailScreen() {
       </View>
     );
   }
-
   if (error || !school) {
     return (
       <View style={{ flex: 1, backgroundColor: "#0f172a", justifyContent: "center", alignItems: "center", padding: 24 }}>
@@ -55,21 +50,18 @@ export default function SchoolDetailScreen() {
       </View>
     );
   }
-
   const statCards = [
     { label: "Teachers", count: stats.teachers, icon: "people", color: "#8b5cf6", route: "/teachers" },
     { label: "Students", count: stats.students, icon: "person", color: "#10b981", route: "/students" },
     { label: "Classes", count: stats.classes, icon: "easel", color: "#f59e0b", route: "/classes" },
     { label: "Events", count: stats.events, icon: "calendar", color: "#ec4899", route: "/events" },
   ];
-
   const actions = [
     { label: "Manage Fees", icon: "receipt", route: `/school/fees?id=${schoolId}`, color: "#0ea5e9" },
     { label: "Assign Role", icon: "person-add", route: `/school/assign-role?id=${schoolId}`, color: "#8b5cf6" },
     { label: "Timetable", icon: "calendar", route: "/timetable", color: "#10b981" },
     { label: "Emergency", icon: "warning", route: "/emergency", color: "#ef4444" },
   ];
-
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "#0f172a" }}>
       <View style={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 12 }}>
@@ -92,8 +84,6 @@ export default function SchoolDetailScreen() {
           </View>
         </View>
       </View>
-
-      {/* Contact Info */}
       <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
         <View style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16 }}>
           {school.address && (
@@ -116,15 +106,9 @@ export default function SchoolDetailScreen() {
           )}
         </View>
       </View>
-
-      {/* Stats */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 12, marginBottom: 8 }}>
         {statCards.map((s) => (
-          <TouchableOpacity
-            key={s.label}
-            onPress={() => router.push(s.route as any)}
-            style={{ width: "50%", padding: 4 }}
-          >
+          <TouchableOpacity key={s.label} onPress={() => router.push(s.route as any)} style={{ width: "50%", padding: 4 }}>
             <View style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 14, alignItems: "center" }}>
               <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: s.color + "22", justifyContent: "center", alignItems: "center", marginBottom: 6 }}>
                 <Ionicons name={s.icon as any} size={20} color={s.color} />
@@ -135,16 +119,10 @@ export default function SchoolDetailScreen() {
           </TouchableOpacity>
         ))}
       </View>
-
-      {/* Actions */}
       <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
         <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "700", marginBottom: 12, textTransform: "uppercase" }}>Actions</Text>
         {actions.map((a) => (
-          <TouchableOpacity
-            key={a.label}
-            onPress={() => router.push(a.route as any)}
-            style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center" }}
-          >
+          <TouchableOpacity key={a.label} onPress={() => router.push(a.route as any)} style={{ backgroundColor: "#1e293b", borderRadius: 12, padding: 16, marginBottom: 10, flexDirection: "row", alignItems: "center" }}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: a.color + "22", justifyContent: "center", alignItems: "center" }}>
               <Ionicons name={a.icon as any} size={18} color={a.color} />
             </View>

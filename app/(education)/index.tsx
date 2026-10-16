@@ -1,139 +1,130 @@
-import { useAuthStore } from '@/lib/auth/store/auth.store';
-import { supabase } from '@/lib/supabase';
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import EducationShell from '@/lib/components/education/EducationShell';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { supabase } from '@/lib/supabase';
 
-export default function EducationDashboard() {
-  const { user } = useAuthStore();
-  const [realStats, setRealStats] = useState({ classes: 0, assignments: 0, gpa: '0.0' });
-  const [loadingStats, setLoadingStats] = useState(true);
-
-  useEffect(() => {
-    async function fetchStudentStats() {
-      if (!user?.id) return;
-      try {
-        // Fetch actual enrolled classes count
-        const { count: classCount } = await supabase
-          .from('student_enrollments')
-          .select('*', { count: 'exact', head: true })
-          .eq('student_id', user.id);
-          
-        // Fetch pending assignments count
-        const { count: pendingAssignments } = await supabase
-          .from('assignments')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending'); // Adjust based on your actual schema
-
-        setRealStats({
-          classes: classCount || 0,
-          assignments: pendingAssignments || 0,
-          gpa: '3.8' // TODO: Calculate real GPA from grades table
-        });
-      } catch (err) {
-        console.error('Failed to fetch stats:', err);
-      } finally {
-        setLoadingStats(false);
-      }
-    }
-    fetchStudentStats();
-  }, [user?.id]);
+export default function EducationLanding() {
   const router = useRouter();
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<'feed'|'events'|'admin'>('feed');
+  const [feeds, setFeeds] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const sections = [
-    {
-      label: 'Dashboard',
-      icon: 'grid',
-      route: '/(education)',
-    },
-    {
-      label: 'Academics',
-      icon: 'school',
-      route: '/(education)/academics',
-      children: [
-        { label: 'My Classes', icon: 'people', route: '/(education)/classes' },
-        { label: 'Timetable', icon: 'calendar', route: '/(education)/timetable' },
-        { label: 'Assignments', icon: 'clipboard', route: '/(education)/assignments' },
-        { label: 'Grades', icon: 'trophy', route: '/(education)/results' },
-        { label: 'Library', icon: 'book', route: '/(education)/library' },
-      ],
-    },
-    {
-      label: 'Communication',
-      icon: 'chatbubbles',
-      route: '/(education)/messages',
-      children: [
-        { label: 'Messages', icon: 'mail', route: '/(education)/messages' },
-        { label: 'Announcements', icon: 'megaphone', route: '/(education)/announcements' },
-        { label: 'Live Class', icon: 'videocam', route: '/(education)/live-class' },
-      ],
-    },
-    {
-      label: 'Transport',
-      icon: 'bus',
-      route: '/(education)/transport/track',
-    },
-    {
-      label: 'Settings',
-      icon: 'settings',
-      route: '/(education)/settings',
-    },
-  ];
+  useEffect(() => { loadData(); }, []);
 
-  const donutItems = [
-    { label: 'Scan QR', icon: 'qr-code', color: '#8b5cf6', route: '/(education)/student/qr-display' },
-    { label: 'Live Class', icon: 'videocam', color: '#ef4444', route: '/(education)/live-class' },
-    { label: 'Assignment', icon: 'clipboard', color: '#f59e0b', route: '/(education)/assignments' },
-    { label: 'Transport', icon: 'bus', color: '#0ea5e9', route: '/(education)/transport/track' },
-    { label: 'Messages', icon: 'mail', color: '#10b981', route: '/(education)/messages' },
-  ];
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const { data: f } = await supabase.from('education_feeds').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(20);
+      const { data: e } = await supabase.from('education_events').select('*').order('date', { ascending: false }).limit(10);
+      setFeeds(f || []);
+      setEvents(e || []);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); setRefreshing(false); }
+  };
+
+  const onRefresh = () => { setRefreshing(true); loadData(); };
+
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>;
 
   return (
-    <EducationShell>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        {/* Stats Row */}
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 20 }}>
-          <StatCard label="Classes" value="6" color="#3b82f6" icon="people" />
-          <StatCard label="Pending" value="3" color="#f59e0b" icon="clipboard" />
-          <StatCard label="GPA" value="3.8" color="#10b981" icon="trophy" />
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Education OS</Text>
+          <Text style={styles.headerSub}>National Schooling System</Text>
         </View>
-
-        {/* Today's Classes */}
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 12 }}>Today's Classes</Text>
-        <View style={{ backgroundColor: '#1e293b', borderRadius: 12, padding: 16 }}>
-          <ClassRow name="Mathematics" time="09:00 - 10:30" room="Room 204" />
-          <View style={{ height: 1, backgroundColor: '#334155', marginVertical: 12 }} />
-          <ClassRow name="Physics" time="11:00 - 12:30" room="Lab 3" />
-          <View style={{ height: 1, backgroundColor: '#334155', marginVertical: 12 }} />
-          <ClassRow name="English" time="14:00 - 15:30" room="Room 101" />
-        </View>
-      </ScrollView>
-    </EducationShell>
-  );
-}
-
-function StatCard({ label, value, color, icon }: any) {
-  return (
-    <View style={{ flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 14 }}>
-      <Ionicons name={icon} size={20} color={color} />
-      <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 8 }}>{value}</Text>
-      <Text style={{ color: '#94a3b8', fontSize: 12 }}>{label}</Text>
-    </View>
-  );
-}
-
-function ClassRow({ name, time, room }: any) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}>
-      <View style={{ width: 4, height: 36, backgroundColor: '#3b82f6', borderRadius: 2, marginRight: 12 }} />
-      <View style={{ flex: 1 }}>
-        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{name}</Text>
-        <Text style={{ color: '#94a3b8', fontSize: 12 }}>{time} · {room}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color="#64748b" />
+
+      <View style={styles.tabBar}>
+        {(['feed', 'events', 'admin'] as const).map((tab) => (
+          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        {activeTab === 'feed' && (
+          <View>
+            {feeds.length === 0 ? (
+              <View style={styles.empty}>
+                <Ionicons name="document-text-outline" size={48} color="#475569" />
+                <Text style={styles.emptyText}>No posts yet</Text>
+              </View>
+            ) : feeds.map((feed: any) => (
+              <View key={feed.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{feed.title || 'Update'}</Text>
+                <Text style={styles.cardContent}>{feed.content}</Text>
+                <Text style={styles.cardMeta}>{new Date(feed.created_at).toLocaleDateString()}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'events' && (
+          <View>
+            {events.length === 0 ? (
+              <View style={styles.empty}>
+                <Ionicons name="calendar-outline" size={48} color="#475569" />
+                <Text style={styles.emptyText}>No upcoming events</Text>
+              </View>
+            ) : events.map((event: any) => (
+              <View key={event.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{event.title}</Text>
+                <Text style={styles.cardMeta}>{event.date ? new Date(event.date).toLocaleDateString() : 'TBD'}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'admin' && (
+          <View style={styles.adminGrid}>
+            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/schools' as any)}>
+              <Ionicons name="school" size={24} color="#3b82f6" />
+              <Text style={styles.adminLabel}>Schools</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/teachers' as any)}>
+              <Ionicons name="people" size={24} color="#10b981" />
+              <Text style={styles.adminLabel}>Teachers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/students' as any)}>
+              <Ionicons name="person" size={24} color="#f59e0b" />
+              <Text style={styles.adminLabel}>Students</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.adminCard} onPress={() => router.push('/(education)/emergency-console' as any)}>
+              <Ionicons name="warning" size={24} color="#ef4444" />
+              <Text style={styles.adminLabel}>Emergency</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
+  header: { paddingHorizontal: 16, paddingTop: 50, paddingBottom: 16, backgroundColor: '#1e293b' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  headerSub: { fontSize: 13, color: '#94a3b8', marginTop: 2 },
+  tabBar: { flexDirection: 'row', backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' },
+  tab: { flex: 1, paddingVertical: 14, alignItems: 'center' },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#3b82f6' },
+  tabText: { color: '#64748b', fontSize: 14, fontWeight: '600' },
+  tabTextActive: { color: '#fff' },
+  card: { backgroundColor: '#1e293b', borderRadius: 12, padding: 16, marginBottom: 12 },
+  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  cardContent: { color: '#cbd5e1', fontSize: 14, lineHeight: 20 },
+  cardMeta: { color: '#64748b', fontSize: 12, marginTop: 8 },
+  empty: { alignItems: 'center', paddingVertical: 60 },
+  emptyText: { color: '#64748b', fontSize: 16, marginTop: 12 },
+  adminGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  adminCard: { width: '47%', backgroundColor: '#1e293b', borderRadius: 12, padding: 20, alignItems: 'center', gap: 8 },
+  adminLabel: { color: '#fff', fontSize: 14, fontWeight: '600' },
+});

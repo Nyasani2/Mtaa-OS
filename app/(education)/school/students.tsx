@@ -1,11 +1,9 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
-
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
-import { useRouter } from "expo-router";
-import { useAuthStore } from "@/lib/auth/store/auth.store";
+import { useRouter } from 'expo-router';
+import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { Ionicons } from '@expo/vector-icons';
-
 export default function SchoolStudentsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -13,29 +11,26 @@ export default function SchoolStudentsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     try {
       setError(null);
-      const { supabase } = await import("@/lib/supabase");
+      const { supabase } = await import('@/lib/supabase');
       const { data, error: err } = await supabase
-        .from("education_students")
-        .select("*, user_profiles(full_name, avatar_url)")
-        .order("created_at", { ascending: false })
+        .from('education_students')
+        .select('*, user_profiles(full_name, avatar_url)')
+        .order('created_at', { ascending: false })
         .limit(50);
       if (err) throw err;
       setStudents(data || []);
     } catch (err: any) {
-      setError(err.message || "Failed to load students");
+      setError(err.message || 'Failed to load students');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
-
   useEffect(() => { load(); }, [load]);
   const onRefresh = () => { setRefreshing(true); load(); };
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -43,7 +38,6 @@ export default function SchoolStudentsScreen() {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -51,7 +45,7 @@ export default function SchoolStudentsScreen() {
           <Ionicons name="arrow-back" size={24} color="#e2e8f0" />
         </TouchableOpacity>
         <Text style={styles.title}>All Students</Text>
-        <TouchableOpacity onPress={() => router.push("/(education)/register/student" as any)}>
+        <TouchableOpacity onPress={() => router.push('/(education)/register/student' as any)}>
           <Ionicons name="add-circle" size={24} color="#60a5fa" />
         </TouchableOpacity>
       </View>
@@ -67,26 +61,25 @@ export default function SchoolStudentsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => router.push(`/(education as any)/student/${item.id}` as any)}>
-            <Text style={styles.cardTitle}>{item.user_profiles?.full_name || "Unnamed Student"}</Text>
-            <Text style={styles.cardBody}>Admission: {item.admission_number || "N/A"}</Text>
-            <Text style={styles.cardMeta}>{item.grade_level || ""} {item.section || ""}</Text>
+          <TouchableOpacity style={styles.card} onPress={() => router.push(`/(education)/student/${item.id}` as any)}>
+            <Text style={styles.cardTitle}>{item.user_profiles?.full_name || 'Unnamed Student'}</Text>
+            <Text style={styles.cardBody}>Admission: {item.admission_number || 'N/A'}</Text>
+            <Text style={styles.cardMeta}>{item.grade_level || ''} {item.section || ''}</Text>
           </TouchableOpacity>
         )}
       />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0f172a" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: "#1e293b" },
-  title: { color: "#e2e8f0", fontSize: 18, fontWeight: "700" },
-  errorText: { color: "#f87171", textAlign: "center", padding: 16 },
-  card: { backgroundColor: "#1e293b", marginHorizontal: 12, marginVertical: 6, padding: 16, borderRadius: 12 },
-  cardTitle: { color: "#e2e8f0", fontSize: 16, fontWeight: "600", marginBottom: 4 },
-  cardBody: { color: "#94a3b8", fontSize: 14 },
-  cardMeta: { color: "#64748b", fontSize: 12, marginTop: 4 },
-  empty: { alignItems: "center", marginTop: 80 },
-  emptyText: { color: "#64748b", marginTop: 12, fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 50, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
+  title: { color: '#e2e8f0', fontSize: 18, fontWeight: '700' },
+  errorText: { color: '#f87171', textAlign: 'center', padding: 16 },
+  card: { backgroundColor: '#1e293b', marginHorizontal: 12, marginVertical: 6, padding: 16, borderRadius: 12 },
+  cardTitle: { color: '#e2e8f0', fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  cardBody: { color: '#94a3b8', fontSize: 14 },
+  cardMeta: { color: '#64748b', fontSize: 12, marginTop: 4 },
+  empty: { alignItems: 'center', marginTop: 80 },
+  emptyText: { color: '#64748b', marginTop: 12, fontSize: 16 },
 });

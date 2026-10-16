@@ -1,10 +1,17 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { supabase } from '@/lib/supabase';
+
+const INTERESTS = [
+  'Music', 'Travel', 'Cooking', 'Fitness', 'Reading', 'Gaming', 
+  'Art', 'Photography', 'Hiking', 'Movies', 'Dancing', 'Technology',
+  'Faith', 'Business', 'Farming', 'Fashion', 'Sports'
+];
 
 export default function HookupProfileSetup() {
   const router = useRouter();
@@ -15,6 +22,7 @@ export default function HookupProfileSetup() {
   const [displayName, setDisplayName] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [maxPhotos, setMaxPhotos] = useState(3);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   // Step 2: Parental Reality
   const [hasChildren, setHasChildren] = useState(false);
@@ -26,6 +34,32 @@ export default function HookupProfileSetup() {
   const [numCoparents, setNumCoparents] = useState('0');
   const [openToPolygamy, setOpenToPolygamy] = useState<'yes' | 'no' | 'open'>('no');
 
+  // Step 4: Hobbies & Interests (FOR ASIS MATCHING)
+  const [interests, setInterests] = useState<string[]>([]);
+
+  const toggleInterest = (interest: string) => {
+    if (interests.includes(interest)) {
+      setInterests(interests.filter(i => i !== interest));
+    } else {
+      setInterests([...interests, interest]);
+    }
+  };
+
+  const pickImage = async () => {
+    if (photos.length >= 6) {
+      Alert.alert('Limit Reached', 'You can add a maximum of 6 photos.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setPhotos([...photos, result.assets[0].uri]);
+    }
+  };
+
   const handleSave = async () => {
     if (!displayName.trim() || !gender) {
       Alert.alert('Missing Info', 'Please provide your display name and gender.');
@@ -33,6 +67,10 @@ export default function HookupProfileSetup() {
     }
     if (hasChildren && (isNaN(Number(numChildren)) || Number(numChildren) < 0)) {
       Alert.alert('Invalid Input', 'Please enter a valid number of children.');
+      return;
+    }
+    if (interests.length < 3) {
+      Alert.alert('Missing Info', 'Please select at least 3 interests so ASIS can find compatible matches.');
       return;
     }
 
@@ -49,6 +87,7 @@ export default function HookupProfileSetup() {
         open_to_polygamy: gender === 'female' ? openToPolygamy === 'yes' : false,
         number_of_wives: gender === 'male' && isPolygamous ? Number(numWives) : 0,
         number_of_coparents: gender === 'male' ? Number(numCoparents) : 0,
+        interests: interests, // CRITICAL: Saved for ASIS compatibility matching
       });
 
       if (error) throw error;
@@ -72,41 +111,27 @@ export default function HookupProfileSetup() {
       {/* 1. Basic Identity */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>1. How should we call you?</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Your preferred name"
-          placeholderTextColor="#666"
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
+        <TextInput style={styles.input} placeholder="Your preferred name" placeholderTextColor="#666" value={displayName} onChangeText={setDisplayName} />
         
         <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Your Gender</Text>
         <View style={styles.row}>
           {(['male', 'female', 'other'] as const).map((g) => (
-            <TouchableOpacity
-              key={g}
-              style={[styles.chip, gender === g && styles.chipActive]}
-              onPress={() => setGender(g)}
-            >
-              <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>
-                {g.charAt(0).toUpperCase() + g.slice(1)}
-              </Text>
+            <TouchableOpacity key={g} style={[styles.chip, gender === g && styles.chipActive]} onPress={() => setGender(g)}>
+              <Text style={[styles.chipText, gender === g && styles.chipTextActive]}>{g.charAt(0).toUpperCase() + g.slice(1)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Max Photos Allowed (1-6)</Text>
-        <View style={styles.row}>
-          {[1, 2, 3, 4, 5, 6].map((num) => (
-            <TouchableOpacity
-              key={num}
-              style={[styles.chipSmall, maxPhotos === num && styles.chipActive]}
-              onPress={() => setMaxPhotos(num)}
-            >
-              <Text style={[styles.chipText, maxPhotos === num && styles.chipTextActive]}>{num}</Text>
-            </TouchableOpacity>
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Photos (Max 6)</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+          {photos.map((uri, i) => (
+            <Image key={i} source={{ uri }} style={styles.photoPreview} />
           ))}
-        </View>
+          <TouchableOpacity style={styles.addPhotoBtn} onPress={pickImage}>
+            <Ionicons name="camera" size={24} color="#8b5cf6" />
+            <Text style={styles.addPhotoText}>Add</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       {/* 2. Parental Reality */}
@@ -124,13 +149,7 @@ export default function HookupProfileSetup() {
         {hasChildren && (
           <View style={{ marginTop: 12 }}>
             <Text style={styles.label}>How many children?</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0"
-              keyboardType="numeric"
-              value={numChildren}
-              onChangeText={setNumChildren}
-            />
+            <TextInput style={styles.input} placeholder="0" keyboardType="numeric" value={numChildren} onChangeText={setNumChildren} />
           </View>
         )}
       </View>
@@ -138,7 +157,6 @@ export default function HookupProfileSetup() {
       {/* 3. Family Structure Transparency */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>3. Family Structure Transparency</Text>
-        
         {gender === 'male' && (
           <>
             <Text style={styles.subText}>Are you currently in a polygamous marriage?</Text>
@@ -150,44 +168,44 @@ export default function HookupProfileSetup() {
                 <Text style={[styles.chipText, !isPolygamous && styles.chipTextActive]}>No</Text>
               </TouchableOpacity>
             </View>
-            
             {isPolygamous && (
               <View style={{ marginTop: 12 }}>
-                <Text style={styles.label}>How many wives do you have?</Text>
+                <Text style={styles.label}>How many wives?</Text>
                 <TextInput style={styles.input} placeholder="0" keyboardType="numeric" value={numWives} onChangeText={setNumWives} />
-                <Text style={[styles.label, { marginTop: 12 }]}>How many co-parents (baby mamas)?</Text>
-                <TextInput style={styles.input} placeholder="0" keyboardType="numeric" value={numCoparents} onChangeText={setNumCoparents} />
-              </View>
-            )}
-            {!isPolygamous && (
-              <View style={{ marginTop: 12 }}>
-                <Text style={styles.label}>How many co-parents (baby mamas)?</Text>
+                <Text style={[styles.label, { marginTop: 12 }]}>How many co-parents?</Text>
                 <TextInput style={styles.input} placeholder="0" keyboardType="numeric" value={numCoparents} onChangeText={setNumCoparents} />
               </View>
             )}
           </>
         )}
-
         {gender === 'female' && (
           <>
             <Text style={styles.subText}>Are you open to polygamy or joining an existing family?</Text>
             <View style={styles.row}>
-              <TouchableOpacity style={[styles.chip, openToPolygamy === 'yes' && styles.chipActive]} onPress={() => setOpenToPolygamy('yes')}>
-                <Text style={[styles.chipText, openToPolygamy === 'yes' && styles.chipTextActive]}>Yes</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.chip, openToPolygamy === 'no' && styles.chipActive]} onPress={() => setOpenToPolygamy('no')}>
-                <Text style={[styles.chipText, openToPolygamy === 'no' && styles.chipTextActive]}>No</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.chip, openToPolygamy === 'open' && styles.chipActive]} onPress={() => setOpenToPolygamy('open')}>
-                <Text style={[styles.chipText, openToPolygamy === 'open' && styles.chipTextActive]}>Open to discuss</Text>
-              </TouchableOpacity>
+              {(['yes', 'no', 'open'] as const).map((opt) => (
+                <TouchableOpacity key={opt} style={[styles.chip, openToPolygamy === opt && styles.chipActive]} onPress={() => setOpenToPolygamy(opt)}>
+                  <Text style={[styles.chipText, openToPolygamy === opt && styles.chipTextActive]}>{opt === 'open' ? 'Open to discuss' : opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </>
         )}
+      </View>
 
-        {gender === '' && (
-          <Text style={styles.subText}>Please select your gender above to see family structure options.</Text>
-        )}
+      {/* 4. Hobbies & Interests (FOR ASIS MATCHING) */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>4. Hobbies & Interests</Text>
+        <Text style={styles.subText}>Select at least 3 to help ASIS find your compatible matches.</Text>
+        <View style={styles.row}>
+          {INTERESTS.map((interest) => {
+            const isSelected = interests.includes(interest);
+            return (
+              <TouchableOpacity key={interest} style={[styles.chip, isSelected && styles.chipActive]} onPress={() => toggleInterest(interest)}>
+                <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>{interest}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <TouchableOpacity style={[styles.continueBtn, loading && styles.continueBtnDisabled]} onPress={handleSave} disabled={loading}>
@@ -215,48 +233,16 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
   subText: { fontSize: 15, color: '#cbd5e1', marginBottom: 12 },
   label: { fontSize: 14, fontWeight: '600', color: '#94a3b8', marginBottom: 8 },
-  input: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#fff',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
+  input: { backgroundColor: '#1e293b', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: '#fff', borderWidth: 1, borderColor: '#334155' },
   row: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
-  chip: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
+  chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#334155' },
   chipActive: { backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' },
   chipText: { color: '#94a3b8', fontSize: 14, fontWeight: '600' },
   chipTextActive: { color: '#fff' },
-  chipSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  continueBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginTop: 16,
-    gap: 8,
-  },
+  photoPreview: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#1e293b', marginRight: 12 },
+  addPhotoBtn: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#8b5cf6', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  addPhotoText: { color: '#8b5cf6', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  continueBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#8b5cf6', borderRadius: 12, paddingVertical: 16, marginTop: 16, gap: 8 },
   continueBtnDisabled: { opacity: 0.6 },
   continueBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

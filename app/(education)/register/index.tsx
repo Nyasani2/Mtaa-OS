@@ -47,7 +47,7 @@ export default function RegistrationHub() {
   const { user, isAuthenticated } = useAuthStore();
 
   const navigateToForm = (type: string) => {
-    router.push(`/register/${type}` as any as any);
+    router.push(`/register/${type}` as any);
   };
 
   return (
@@ -59,7 +59,6 @@ export default function RegistrationHub() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Registration Hub</Text>
         <Text style={styles.headerSubtitle}>Choose your path to join the MTAA Education network</Text>
-
         {isAuthenticated && user && (
           <View style={styles.authBadge}>
             <Ionicons name="shield-checkmark" size={14} color="#10B981" />
@@ -92,10 +91,8 @@ export default function RegistrationHub() {
                     <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.7)" />
                   </View>
                 </View>
-
                 <Text style={styles.cardTitle}>{card.title}</Text>
                 <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-
                 <View style={styles.cardFeatures}>
                   {card.features.map((feat, idx) => (
                     <View key={idx} style={styles.featurePill}>
