@@ -64,7 +64,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { secure_buyer_id, items, shipping_address, payment_method, currency, notes, totals }: CheckoutRequest = await req.json()
+    const { items, shipping_address, payment_method, currency, notes, totals }: CheckoutRequest = await req.json()
+    const secure_buyer_id = authenticatedUserId
 
     // ─── VALIDATION ───
     if (!secure_buyer_id || !items?.length || !shipping_address || !totals) {

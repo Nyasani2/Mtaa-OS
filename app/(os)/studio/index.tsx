@@ -54,7 +54,7 @@ export default function StudioHomeScreen() {
         </Pressable>
         <Text style={styles.logo}>MStudio</Text>
         <View style={styles.headerRight}>
-          <Pressable onPress={() => router.push('/(os)/studio/upload-center' as any)} style={{ marginRight: 16 }}>
+          <Pressable onPress={() => router.push('/(os)/studio/upload-audio' as any)} style={{ marginRight: 16 }}>
             <Upload size={22} color="#fff" />
           </Pressable>
           <Pressable style={{ marginRight: 16 }}>
@@ -107,7 +107,7 @@ export default function StudioHomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Live Now</Text>
-              <Pressable onPress={() => router.push('/(os)/studio/live' as any)}>
+              <Pressable onPress={() => router.push('/(os)/studio/live-setup' as any)}>
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
@@ -198,7 +198,7 @@ export default function StudioHomeScreen() {
               <Text style={styles.emptyText}>No videos yet</Text>
               <Pressable
                 style={styles.uploadBtn}
-                onPress={() => router.push('/(os)/studio/upload-center' as any)}
+                onPress={() => router.push('/(os)/studio/upload-audio' as any)}
               >
                 <Text style={styles.uploadBtnText}>Upload First Video</Text>
               </Pressable>

@@ -32,6 +32,8 @@ serve(async (req) => {
     const { data: job, error: jobErr } = await supabase.from("mtruck_jobs").select("id, shipper_id, assigned_driver_id, status, final_rate, quoted_rate, currency, completed_at").eq("id", job_id).single();
     if (jobErr || !job) return new Response(JSON.stringify({ error: "Job not found" }), { status: 404 });
     if (job.status === "completed") return new Response(JSON.stringify({ error: "Already completed" }), { status: 409 });
+    if (caller_id !== job.shipper_id) return new Response(JSON.stringify({ error: "Unauthorized: not the shipper" }), { status: 403 });
+    if (caller_id !== job.shipper_id) return new Response(JSON.stringify({ error: "Unauthorized: not the shipper" }), { status: 403 });
 
     const rate = Number(final_rate ?? job.quoted_rate ?? 0);
     if (rate <= 0) return new Response(JSON.stringify({ error: "No valid rate" }), { status: 400 });
