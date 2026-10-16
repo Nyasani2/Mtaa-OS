@@ -181,15 +181,11 @@ export async function checkUserLiked(postId: string, userId: string) {
 
 export async function toggleLikePost(postId: string, userId: string) {
   const { data: existing } = await supabase.from('streets_post_likes').select('id').eq('post_id', postId).eq('user_id', userId).maybeSingle();
-
   if (existing) {
     await supabase.from('streets_post_likes').delete().eq('id', existing.id);
-    try { await supabase.rpc('decrement_post_likes', { post_id: postId }); } catch (e) {}
   } else {
     await supabase.from('streets_post_likes').insert({ post_id: postId, user_id: userId });
-    try { await supabase.rpc('increment_post_likes', { post_id: postId }); } catch (e) {}
   }
-  
   const { count } = await supabase.from('streets_post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
   return { liked: !existing, count: count || 0 };
 }
@@ -212,13 +208,11 @@ export async function addComment(postId: string, userId: string, content: string
     .select()
     .single();
   if (error) throw error;
-  try { await supabase.rpc('increment_post_comments', { post_id: postId }); } catch (e) {}
   return data;
 }
 
 // ─── SHARES & REPOSTS ───
 export async function sharePost(postId: string, userId: string) {
-  try { await supabase.rpc('increment_post_shares', { post_id: postId }); } catch (e) {}
   return { success: true, shares_count: 0 };
 }
 
@@ -243,7 +237,6 @@ export async function repostPost(postId: string, userId: string, caption?: strin
 
 // ─── VIEWS & ANALYTICS ───
 export async function incrementViewCount(postId: string) {
-  try { await supabase.rpc('increment_post_views', { post_id: postId }); } catch (e) {}
   return true;
 }
 
