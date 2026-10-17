@@ -12,6 +12,9 @@ import { useASIS } from '@/lib/asis-cse/asis-cse-provider';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 import { ASISSidebar } from '@/components/ASISSidebar';
 
+// Import the new ASIS Goddess Icon
+const ASIS_ICON = require('@/assets/images/asis-goddess-icon.png');
+
 export default function ASISChatScreen() {
   const [inputText, setInputText] = useState('');
   const [selectedMedia, setSelectedMedia] = useState<any>(null);
@@ -71,7 +74,6 @@ export default function ASISChatScreen() {
         const uri = recording.getURI();
         setRecording(null);
         Alert.alert('Recording Saved', `Audio saved at: ${uri}`);
-        // TODO: Integrate with voice engine to transcribe
       }
     } catch (err) { console.error('Failed to stop recording', err); }
   };
@@ -106,6 +108,10 @@ export default function ASISChatScreen() {
         <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuButton}>
           <Ionicons name="menu" size={26} color="#fff" />
         </TouchableOpacity>
+        
+        {/* ASIS Goddess Icon in Header */}
+        <Image source={ASIS_ICON} style={styles.headerIcon} resizeMode="cover" />
+        
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>ASIS</Text>
           <Text style={styles.headerSub}>Hi, {userName}!</Text>
@@ -121,7 +127,8 @@ export default function ASISChatScreen() {
           <View key={msg.id} style={[styles.messageBubble, msg.role === 'user' ? styles.messageUser : styles.messageAssistant]}>
             {msg.role === 'asis' && (
               <View style={styles.avatarContainer}>
-                <View style={styles.asisArrayAvatar}><Ionicons name="sparkles" size={12} color="#fff" /></View>
+                {/* ASIS Goddess Icon in Chat Bubbles */}
+                <Image source={ASIS_ICON} style={styles.asisArrayAvatar} resizeMode="cover" />
               </View>
             )}
             <View style={[styles.messageContent, msg.role === 'user' && styles.messageUserContent]}>
@@ -199,7 +206,9 @@ export default function ASISChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#1e293b', borderBottomWidth: 1, borderBottomColor: '#334155' },
-  menuButton: { padding: 4 }, headerCenter: { alignItems: 'center' },
+  menuButton: { padding: 4 },
+  headerIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#fbbf24', marginRight: 12 },
+  headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 11, color: '#60a5fa', marginTop: 2 },
   headerStatus: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -209,7 +218,7 @@ const styles = StyleSheet.create({
   messageBubble: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 16, gap: 8 },
   messageUser: { justifyContent: 'flex-end' }, messageAssistant: { justifyContent: 'flex-start' },
   avatarContainer: { marginBottom: 4 },
-  asisArrayAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#8b5cf6', justifyContent: 'center', alignItems: 'center' },
+  asisArrayAvatar: { width: 32, height: 32, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: '#fbbf24' },
   messageContent: { maxWidth: '75%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, backgroundColor: '#1e293b', borderBottomLeftRadius: 4 },
   messageUserContent: { backgroundColor: '#3b82f6', borderBottomRightRadius: 4, borderBottomLeftRadius: 16 },
   messageText: { color: '#fff', fontSize: 15, lineHeight: 20 },
