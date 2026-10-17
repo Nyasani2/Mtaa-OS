@@ -118,7 +118,7 @@ export class CodeTool extends BaseCognitiveTool {
   ];
 
   readonly permissions: any = [
-    { action: 'generate', level: 'read', requiresApproval: false, auditLog: false },
+    { action: 'generate', level: 'read', requiresApproval: false, auditLog: false, riskLevel: 'SAFE' },
     { action: 'analyze', level: 'read', requiresApproval: false, auditLog: false },
     { action: 'execute', level: 'write', requiresApproval: true, auditLog: true },
     { action: 'fix', level: 'write', requiresApproval: false, auditLog: true },

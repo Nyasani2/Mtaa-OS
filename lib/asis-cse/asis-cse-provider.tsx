@@ -1,8 +1,8 @@
 import { CognitiveKernel } from './asis-cse-kernel';
 import { Platform } from 'react-native';
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-import { initializeASIS, shutdownASIS, ASISSystem } from './asis-cse-init';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
+import { initializeASIS, shutdownASIS, ASISSystem } from './asis-cse-init';
 import { ASISMessage, ASISConversation, ASISProviderValue } from './asis-cse-types';
 
 const STORAGE_KEY = 'asis_conversations_v1';

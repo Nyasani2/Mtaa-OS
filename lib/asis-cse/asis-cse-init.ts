@@ -1,64 +1,26 @@
 // @ts-nocheck
 /**
- * ASIS CSE System Initialization v5
- * Calls the working v2 pipeline (response-engine-v2) for real answers
+ * ASIS CSE — Initialization & System Bootstrap
  */
 
-import type { CognitiveState, ASISMessage } from './asis-cse-types';
-import { processResponse, ResponseEngineInput } from './asis-cse-response-engine-v2';
-
-export interface ASISInitConfig {
-  userId?: string;
-  context?: 'mobile' | 'web' | 'desktop';
-  config?: {
-    enableTools?: boolean;
-    enableMetrics?: boolean;
-    enableDiagnostics?: boolean;
-    enableResearch?: boolean;
-  };
-}
-
-export interface ASISMetrics {
-  generateReport(): string;
-  recordEvent(name: string, value?: number): void;
-  getStats(): Record<string, any>;
-}
-
-export interface ASISClock {
-  getTimingReport(): string;
-  getTimestamp(): number;
-  getCycleNumber(): number;
-}
-
-export interface ASISDiagnostic {
-  generateReport(): string;
-  log(level: 'info' | 'warn' | 'error', message: string): void;
-  getLogs(): string[];
-}
-
-export interface ASISToolRegistry {
-  generateHealthReport(): string;
-  registerTool(name: string, tool: any): void;
-  getToolCount(): number;
-}
-
-export interface ASISEventBus {
-  publish(event: { type: string; payload?: any; source?: string }): void;
-  subscribe(type: string, handler: (event: any) => void): () => void;
-  getHistory(): any[];
-}
-
-export interface ASISMemory {
-  store(key: string, value: any): void;
-  retrieve(key: string): any;
-  getStats(): Record<string, any>;
-}
-
-export interface ASISKnowledge {
-  query(topic: string): any[];
-  addFact(fact: string, source?: string): void;
-  getStats(): Record<string, any>;
-}
+import { globalToolRegistry } from './asis-cse-tool-registry';
+import { BrowserTool } from './asis-cse-tool-browser';
+import { CodeTool } from './asis-cse-tool-code';
+import { TerminalTool } from './asis-cse-tool-terminal';
+import type { 
+  ASISMessage, 
+  ASISMetrics, 
+  ASISClock, 
+  ASISDiagnostic, 
+  ASISToolRegistry, 
+  ASISEventBus, 
+  ASISMemory, 
+  ASISKnowledge, 
+  CognitiveState,
+  ResponseEngineInput,
+  ASISInitConfig
+} from './asis-cse-types';
+import { processResponse } from './asis-cse-response-engine-v2';
 
 export interface ASISSystem {
   readonly id: string;
@@ -104,32 +66,17 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
   const metrics: ASISMetrics = {
     generateReport(): string {
       const totalEvents = eventLog.length;
-      const avgLatency = totalEvents > 0
-        ? eventLog.reduce((s, e) => s + (e.value || 0), 0) / totalEvents
-        : 0;
-      return `ASIS Metrics Report\n` +
-        `Instance: ${instanceId}\n` +
-        `Messages: ${history.length}\n` +
-        `Events: ${totalEvents}\n` +
-        `Avg Latency: ${avgLatency.toFixed(2)}ms\n` +
-        `Status: Active`;
+      const avgLatency = totalEvents > 0 ? eventLog.reduce((s, e) => s + (e.value || 0), 0) / totalEvents : 0;
+      return `ASIS Metrics Report\nInstance: ${instanceId}\nMessages: ${history.length}\nEvents: ${totalEvents}\nAvg Latency: ${avgLatency.toFixed(2)}ms\nStatus: Active`;
     },
-    recordEvent(name: string, value?: number): void {
-      eventLog.push({ name, value, time: Date.now() });
-    },
-    getStats(): Record<string, any> {
-      return { instanceId, messageCount: history.length, eventCount: eventLog.length };
-    },
+    recordEvent(name: string, value?: number): void { eventLog.push({ name, value, time: Date.now() }); },
+    getStats(): Record<string, any> { return { instanceId, messageCount: history.length, eventCount: eventLog.length }; },
   };
 
   const clock: ASISClock = {
     getTimingReport(): string {
       const now = new Date();
-      return `ASIS Clock Report\n` +
-        `System Time: ${now.toISOString()}\n` +
-        `Local Time: ${now.toLocaleString()}\n` +
-        `Epoch: ${now.getTime()}\n` +
-        `Cycle: ${globalCycleCounter}`;
+      return `ASIS Clock Report\nSystem Time: ${now.toISOString()}\nLocal Time: ${now.toLocaleString()}\nEpoch: ${now.getTime()}\nCycle: ${globalCycleCounter}`;
     },
     getTimestamp(): number { return Date.now(); },
     getCycleNumber(): number { return ++globalCycleCounter; },
@@ -138,26 +85,14 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
   const diagnostic: ASISDiagnostic = {
     generateReport(): string {
       const recent = diagLogs.slice(-5);
-      return `ASIS Diagnostic Report\n` +
-        `Instance: ${instanceId}\n` +
-        `Total Logs: ${diagLogs.length}\n` +
-        (recent.length > 0
-          ? recent.map((l: any) => `  [${l.level.toUpperCase()}] ${l.message}`).join('\n')
-          : '  No diagnostic events recorded.');
+      return `ASIS Diagnostic Report\nInstance: ${instanceId}\nTotal Logs: ${diagLogs.length}\n` + (recent.length > 0 ? recent.map((l: any) => `  [${l.level.toUpperCase()}] ${l.message}`).join('\n') : '  No diagnostic events recorded.');
     },
-    log(level: 'info' | 'warn' | 'error', message: string): void {
-      diagLogs.push({ level, message, time: Date.now() });
-    },
+    log(level: 'info' | 'warn' | 'error', message: string): void { diagLogs.push({ level, message, time: Date.now() }); },
     getLogs(): string[] { return diagLogs.map((l: any) => `[${l.level.toUpperCase()}] ${l.message}`); },
   };
 
   const toolRegistry: ASISToolRegistry = {
-    generateHealthReport(): string {
-      return `ASIS Tool Registry Health\n` +
-        `Instance: ${instanceId}\n` +
-        `Registered Tools: ${tools.size}\n` +
-        `Status: Operational`;
-    },
+    generateHealthReport(): string { return `ASIS Tool Registry Health\nInstance: ${instanceId}\nRegistered Tools: ${tools.size}\nStatus: Operational`; },
     registerTool(name: string, tool: any): void { tools.set(name, tool); },
     getToolCount(): number { return tools.size; },
   };
@@ -171,11 +106,7 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
     subscribe(type: string, handler: (event: any) => void): () => void {
       if (!subscribers.has(type)) subscribers.set(type, []);
       subscribers.get(type)!.push(handler);
-      return () => {
-        const list = subscribers.get(type) || [];
-        const idx = list.indexOf(handler);
-        if (idx > -1) list.splice(idx, 1);
-      };
+      return () => { const list = subscribers.get(type) || []; const idx = list.indexOf(handler); if (idx > -1) list.splice(idx, 1); };
     },
     getHistory(): any[] { return [...eventHistory]; },
   };
@@ -191,54 +122,24 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
       const lower = topic.toLowerCase();
       return knowledgeBase.filter((k: any) => k.fact.toLowerCase().includes(lower));
     },
-    addFact(fact: string, source?: string): void {
-      knowledgeBase.push({ fact, source: source || 'unknown', time: Date.now() });
-    },
+    addFact(fact: string, source?: string): void { knowledgeBase.push({ fact, source: source || 'unknown', time: Date.now() }); },
     getStats(): Record<string, any> { return { facts: knowledgeBase.length }; },
   };
 
   const system: ASISSystem = {
-    id: instanceId,
-    config,
-    metrics,
-    clock,
-    diagnostic,
-    toolRegistry,
-    eventBus,
-    memory,
-    knowledge,
-
+    id: instanceId, config, metrics, clock, diagnostic, toolRegistry, eventBus, memory, knowledge,
     async send(message: string): Promise<ASISMessage> {
       const startTime = Date.now();
       const cycle = clock.getCycleNumber();
       diagnostic.log('info', `[Cycle ${cycle}] Processing: ${message.slice(0, 50)}...`);
-
-      const userMsg: ASISMessage = {
-        id: `usr-${startTime}`,
-        role: 'user',
-        content: message,
-        timestamp: startTime,
-      };
-      history.push(userMsg);
+      history.push({ id: `usr-${startTime}`, role: 'user', content: message, timestamp: startTime });
 
       let responseContent: string;
       let metadata: Record<string, any> = { cycle };
-
       try {
-        const engineInput: ResponseEngineInput = {
-          query: message,
-          conversationTurn: history.length,
-        };
-        const response = await processResponse(engineInput);
+        const response = await processResponse({ query: message, conversationTurn: history.length });
         responseContent = response.text;
-        metadata = {
-          ...metadata,
-          pipeline: 'v2-response-engine',
-          latency: response.latencyMs,
-          tone: response.tone,
-          sources: response.sources,
-        };
-        diagnostic.log('info', `V2 pipeline responded in ${response.latencyMs}ms`);
+        metadata = { ...metadata, pipeline: 'v2-response-engine', latency: response.latencyMs, tone: response.tone, sources: response.sources };
       } catch (e: any) {
         diagnostic.log('warn', `V2 pipeline failed: ${e?.message || 'unknown'}`);
         responseContent = generateLocalResponse(message);
@@ -247,33 +148,22 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
 
       const endTime = Date.now();
       metrics.recordEvent('message_processed', endTime - startTime);
-
-      const asisMsg: ASISMessage = {
-        id: `asis-${endTime}`,
-        role: 'asis',
-        content: responseContent,
-        timestamp: endTime,
-        metadata,
-      };
+      const asisMsg: ASISMessage = { id: `asis-${endTime}`, role: 'asis', content: responseContent, timestamp: endTime, metadata };
       history.push(asisMsg);
-
-      eventBus.publish({
-        type: 'MESSAGE_PROCESSED',
-        payload: { latency: endTime - startTime, cycle },
-        source: 'ASISProvider',
-      });
-
+      eventBus.publish({ type: 'MESSAGE_PROCESSED', payload: { latency: endTime - startTime, cycle }, source: 'ASISProvider' });
       return asisMsg;
     },
-
     async process(input: string): Promise<any> { return this.send(input); },
     getHistory(): ASISMessage[] { return [...history]; },
-    getState(): Partial<CognitiveState> {
-      return { status: 'active', context: config.context || 'mobile', messageCount: history.length } as Partial<CognitiveState>;
-    },
+    getState(): Partial<CognitiveState> { return { status: 'active', context: config.context || 'mobile', messageCount: history.length }; },
     clearHistory(): void { history.length = 0; },
     destroy(): void { if (activeInstance?.id === instanceId) activeInstance = null; },
   };
+
+  // Register core JARVIS tools with the central execution gateway
+  globalToolRegistry.registerTool(new BrowserTool());
+  globalToolRegistry.registerTool(new CodeTool());
+  globalToolRegistry.registerTool(new TerminalTool());
 
   activeInstance = system;
   diagnostic.log('info', `ASIS instance ${instanceId} initialized`);
@@ -281,25 +171,12 @@ export function initializeASIS(config: ASISInitConfig = {}): ASISSystem {
 }
 
 export function getActiveASIS(): ASISSystem | null { return activeInstance; }
-
 export function getASISHealth(): string {
-  if (!activeInstance) {
-    return `ASIS Health Report\nStatus: Offline\nInstance: None\nRecommendation: Initialize ASIS.`;
-  }
+  if (!activeInstance) return `ASIS Health Report\nStatus: Offline\nInstance: None\nRecommendation: Initialize ASIS.`;
   const state = activeInstance.getState();
-  return `ASIS Health Report\n` +
-    `Status: ${state.status || 'Unknown'}\n` +
-    `Instance: ${activeInstance.id}\n` +
-    `Messages: ${state.messageCount || 0}\n` +
-    `Overall: Healthy`;
+  return `ASIS Health Report\nStatus: ${state.status || 'Unknown'}\nInstance: ${activeInstance.id}\nMessages: ${state.messageCount || 0}\nOverall: Healthy`;
 }
-
-export function shutdownASIS(): void {
-  if (activeInstance) activeInstance.destroy();
-  activeInstance = null;
-}
-
-// ─── Local Reasoning Engine (fallback) ─────────────────────────────────────
+export function shutdownASIS(): void { if (activeInstance) activeInstance.destroy(); activeInstance = null; }
 
 function generateLocalResponse(message: string): string {
   const lower = message.toLowerCase().trim();
@@ -313,10 +190,7 @@ function generateLocalResponse(message: string): string {
   if (mathMatch && /[\d]/.test(mathMatch[1]) && /[\+\-*/]/.test(mathMatch[1])) {
     try {
       const expr = mathMatch[1].replace(/\s+/g, '').replace(/\^/g, '**');
-      if (/^[\d+\-*/().**]+$/.test(expr)) {
-        const result = Function('"use strict"; return (' + expr + ')')();
-        return `The result is ${result}.`;
-      }
+      if (/^[\d+\-*/().**]+$/.test(expr)) return `The result is ${Function('"use strict"; return (' + expr + ')')()}.`;
     } catch {}
   }
   if (/who are you|what are you/.test(lower)) return `I am ASIS — the Artificial Sentience Intelligence System, built on Kamos Theory.`;

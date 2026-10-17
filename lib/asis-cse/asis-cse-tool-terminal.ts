@@ -77,9 +77,9 @@ export class TerminalTool extends BaseCognitiveTool {
   ];
 
   readonly permissions: any = [
-    { action: 'execute', level: 'admin', requiresApproval: true, auditLog: true },
-    { action: 'runScript', level: 'admin', requiresApproval: true, auditLog: true },
-    { action: 'checkCommand', level: 'read', requiresApproval: false, auditLog: false },
+    { action: 'execute', level: 'admin', requiresApproval: true, auditLog: true, riskLevel: 'ASK' },
+    { action: 'runScript', level: 'admin', requiresApproval: true, auditLog: true, riskLevel: 'ASK' },
+    { action: 'checkCommand', level: 'read', requiresApproval: false, auditLog: false, riskLevel: 'SAFE' },
   ];
 
   private blockedCommands = [
