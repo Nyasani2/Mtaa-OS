@@ -6,54 +6,39 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    // Service role client — bypasses ALL RLS, triggers, permissions
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
-    const body = await req.json()
-    const {
-      name,
-      category,
-      location,
-      description,
-      owner_id,
-      owner_name,
-      owner_email,
-    } = body
+    // 1. Verify Authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ error: 'No authorization header', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return new Response(JSON.stringify({ error: 'Invalid token', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    if (!name?.trim() || !owner_id) {
-      return new Response(
-        JSON.stringify({ error: 'Business name and owner_id are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const { name, category, location, description, owner_name, owner_email } = await req.json();
+
+    if (!name?.trim()) {
+      return new Response(JSON.stringify({ error: 'Business name is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Generate slug
-    const base = name
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .substring(0, 50)
-    const suffix = Math.random().toString(36).substring(2, 6)
-    const slug = `${base}-${suffix}`
+    // 2. SECURITY FIX: Force owner_id to be the authenticated user
+    const owner_id = user.id;
 
-    // Build settings JSONB
+    const base = name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').substring(0, 50);
+    const suffix = Math.random().toString(36).substring(2, 6);
+    const slug = `${base}-${suffix}`;
+
     const settings = {
       location: location?.trim() || null,
       description: description?.trim() || null,
       qr_payload: `mtaa://shop/${slug}`,
       created_via: 'app',
-    }
+    };
 
-    // Insert shop using service role (bypasses RLS + triggers)
     const { data: shop, error: shopErr } = await supabase
       .from('shops')
       .insert({
@@ -66,17 +51,13 @@ Deno.serve(async (req) => {
         settings,
       })
       .select()
-      .single()
+      .single();
 
     if (shopErr) {
-      console.error('[shop-create] Shop insert error:', shopErr)
-      return new Response(
-        JSON.stringify({ error: shopErr.message, detail: 'Failed to create shop' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error('[shop-create] Shop insert error:', shopErr);
+      return new Response(JSON.stringify({ error: shopErr.message, detail: 'Failed to create shop' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Insert owner as shop_staff
     const { error: staffErr } = await supabase
       .from('shop_staff')
       .insert({
@@ -85,22 +66,13 @@ Deno.serve(async (req) => {
         role: 'owner',
         name: owner_name || owner_email?.split('@')[0] || 'Owner',
         is_active: true,
-      })
+      });
 
-    if (staffErr) {
-      console.error('[shop-create] Staff insert error:', staffErr)
-      // Non-fatal — shop was created
-    }
+    if (staffErr) console.error('[shop-create] Staff insert error:', staffErr);
 
-    return new Response(
-      JSON.stringify({ success: true, shop }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify({ success: true, shop }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err: any) {
-    console.error('[shop-create] Unexpected error:', err)
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error('[shop-create] Unexpected error:', err);
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
-})
+});

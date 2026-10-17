@@ -7,74 +7,46 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const body = await req.json();
-    const user_id = body.user_id;
-    console.log("🔔 qr-generate called with user_id:", user_id);
-    
-    if (!user_id || typeof user_id !== 'string') {
-      return new Response(JSON.stringify({ error: "user_id is required and must be a string" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const supabaseAdmin = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // 1. Verify Authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ error: 'No authorization header', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     
-    if (!supabaseUrl || !supabaseKey) {
-      console.error("❌ Missing Supabase environment variables");
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) return new Response(JSON.stringify({ error: 'Invalid token', code: 'UNAUTHORIZED' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+    // 2. Force user_id from authenticated user
+    const user_id = user.id;
+    const { amount } = await req.json();
 
     const nonce = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 60000);
+    const expiresAt = new Date(Date.now() + 60000); // 1 minute expiry
 
-    console.log("📝 Attempting database insert...");
     const { data, error } = await supabaseAdmin
       .from('qr_idempotency_keys')
       .insert({
         nonce,
         user_id,
-        amount: 0.0, // Ensure it's a decimal
+        amount: amount || 0.0,
         expires_at: expiresAt.toISOString(),
         status: 'pending'
       })
-      .select();
+      .select()
+      .single();
 
-    if (error) {
-      console.error("❌ Database insert failed:", error);
-      return new Response(JSON.stringify({ 
-        error: "Database error", 
-        details: error.message,
-        hint: error.hint
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (error) throw error;
 
-    console.log("✅ QR code generated successfully");
-    return new Response(JSON.stringify({ 
-      success: true, 
-      payload: { type: 'mtaa_pay', nonce, exp: expiresAt.toISOString(), uid: user_id } 
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({
+      success: true,
+      payload: { type: 'mtaa_pay', nonce, exp: expiresAt.toISOString(), uid: user_id }
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (error: any) {
-    console.error("❌ Function crashed:", error);
-    return new Response(JSON.stringify({ error: "Internal server error: " + error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
