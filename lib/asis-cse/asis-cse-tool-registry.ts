@@ -1,325 +1,200 @@
 // @ts-nocheck
 /**
- * ASIS CSE — Tool Registry
- * Central registry for all cognitive tools
- * Discovery, routing, health monitoring, permission enforcement
+ * ASIS CSE — Central Tool Registry & Execution Gateway
+ * Enforces schema validation, risk classification, permission checks, and audit logging.
  */
 
-import { CognitiveTool, ToolExecutionRequest, ToolExecutionResult, BaseCognitiveTool } from './asis-cse-tool-types';
+import { 
+  CognitiveTool, 
+  ToolExecutionRequest, 
+  ToolExecutionResult, 
+  RiskLevel, 
+  ExecutionStatus 
+} from './asis-cse-tool-types';
 import { CognitiveEventBus, CognitiveEventType, EventPriority } from './asis-cse-event-system';
-import { MetricsEngine } from './asis-cse-metrics-engine';
-import { CognitiveContext } from './asis-cse-context';
 
-export interface ToolRegistryConfig {
-  autoRegisterDefaults: boolean;
-  healthCheckIntervalMs: number;
-  maxConcurrentExecutions: number;
-  defaultTimeoutMs: number;
-}
-
-export interface ToolHealthReport {
-  toolName: string;
-  available: boolean;
-  healthy: boolean;
-  score: number;
-  lastError?: string;
-  capabilities: string[];
-  executionCount: number;
-  errorCount: number;
-}
-
-export class ToolRegistry {
+class ToolRegistry {
   private tools: Map<string, CognitiveTool> = new Map();
-  private eventBus?: CognitiveEventBus;
-  private metricsEngine?: MetricsEngine;
-  private config: ToolRegistryConfig;
-  private activeExecutions = 0;
-  private healthCheckTimer?: any;
+  private riskPolicies: Map<string, RiskLevel> = new Map();
 
-  constructor(
-    config: Partial<ToolRegistryConfig> = {},
-    eventBus?: CognitiveEventBus,
-    metricsEngine?: MetricsEngine
-  ) {
-    this.config = {
-      autoRegisterDefaults: true,
-      healthCheckIntervalMs: 30000,
-      maxConcurrentExecutions: 10,
-      defaultTimeoutMs: 30000,
-      ...config,
-    };
-    this.eventBus = eventBus;
-    this.metricsEngine = metricsEngine;
-
-    if (this.config.autoRegisterDefaults) {
-      this.registerDefaults();
-    }
-
-    this.startHealthChecks();
-  }
-
-  register(tool: CognitiveTool): void {
-    if (this.tools.has(tool.name)) {
-      console.warn(`[ToolRegistry] Tool '${tool.name}' already registered. Overwriting.`);
-    }
+  /**
+   * Register a tool and its default risk policies per capability
+   */
+  registerTool(tool: CognitiveTool) {
     this.tools.set(tool.name, tool);
-    this.emitEvent(CognitiveEventType.KNOWLEDGE_UPDATED, {
-      type: 'tool_registered',
-      tool: tool.name,
-      capabilities: tool.capabilities.map((c) => c.name),
-    });
-  }
-
-  unregister(toolName: string): boolean {
-    const removed = this.tools.delete(toolName);
-    if (removed) {
-      this.emitEvent(CognitiveEventType.KNOWLEDGE_UPDATED, {
-        type: 'tool_unregistered',
-        tool: toolName,
-      });
+    
+    // Map default risk levels for each capability
+    for (const cap of tool.capabilities) {
+      const policyKey = `${tool.name}:${cap.name}`;
+      this.riskPolicies.set(policyKey, cap.defaultRiskLevel || 'MONITOR');
     }
-    return removed;
+    
+    console.log(`[ToolRegistry] Registered tool: ${tool.name} v${tool.version}`);
   }
 
-  get(toolName: string): CognitiveTool | undefined {
-    return this.tools.get(toolName);
-  }
+  /**
+   * Centralized execution gateway. NO tool should be called directly.
+   */
+  async executeTool(request: ToolExecutionRequest): Promise<ToolExecutionResult> {
+    const startTime = Date.now();
+    const tool = this.tools.get(request.toolName);
 
-  has(toolName: string): boolean {
-    return this.tools.has(toolName);
-  }
-
-  list(): string[] {
-    return Array.from(this.tools.keys());
-  }
-
-  listCapabilities(): Array<{ tool: string; capability: string; description: string }> {
-    const caps: Array<{ tool: string; capability: string; description: string }> = [];
-    this.tools.forEach((tool) => {
-      tool.capabilities.forEach((cap) => {
-        caps.push({ tool: tool.name, capability: cap.name, description: cap.description });
-      });
-    });
-    return caps;
-  }
-
-  findToolsForCapability(capabilityName: string): CognitiveTool[] {
-    return Array.from(this.tools.values()).filter((t) =>
-      t.capabilities.some((c) => c.name === capabilityName)
-    );
-  }
-
-  async execute(
-    toolName: string,
-    capability: string,
-    parameters: Record<string, any>,
-    context: CognitiveContext,
-    correlationId?: string
-  ): Promise<ToolExecutionResult> {
-    const tool = this.tools.get(toolName);
+    // 1. Tool Existence Check
     if (!tool) {
-      return {
-        success: false,
-        toolName,
-        capability,
-        data: null,
-        error: `Tool '${toolName}' not found in registry`,
-        executionTimeMs: 0,
-        metadata: {
-          correlationId: correlationId || `exec_${Date.now()}`,
-          timestamp: Date.now(),
-          permissionLevel: 'none',
-          auditLogged: true,
-        },
-      };
+      return this.createResult(request, 'failed', undefined, `Tool '${request.toolName}' not found`, startTime, 'BLOCK');
     }
 
-    if (this.activeExecutions >= this.config.maxConcurrentExecutions) {
-      return {
-        success: false,
-        toolName,
-        capability,
-        data: null,
-        error: `Max concurrent executions (${this.config.maxConcurrentExecutions}) reached`,
-        executionTimeMs: 0,
-        metadata: {
-          correlationId: correlationId || `exec_${Date.now()}`,
-          timestamp: Date.now(),
-          permissionLevel: 'none',
-          auditLogged: true,
-        },
-      };
+    // 2. Availability Check
+    const isAvailable = await tool.isAvailable();
+    if (!isAvailable) {
+      await this.logAudit(request, 'unavailable', 'Tool is currently unavailable', startTime);
+      return this.createResult(request, 'unavailable', undefined, 'Tool is currently unavailable', startTime, 'MONITOR');
     }
 
-    this.activeExecutions++;
+    // 3. Risk Assessment & Blocking
+    const riskLevel = this.assessRisk(request.toolName, request.capability, request.parameters);
+    if (riskLevel === 'BLOCK') {
+      await this.logAudit(request, 'denied', 'Action blocked by security policy', startTime);
+      return this.createResult(request, 'denied', undefined, 'Action blocked by central security policy', startTime, 'BLOCK');
+    }
 
-    const request: ToolExecutionRequest = {
-      toolName,
-      capability,
-      parameters,
-      context,
-      correlationId: correlationId || `exec_${Date.now()}`,
-      timeoutMs: this.config.defaultTimeoutMs,
-    };
+    // 4. Approval Enforcement
+    const requiresApproval = this.requiresApproval(request.toolName, request.capability);
+    if (requiresApproval && riskLevel === 'ASK' && !request.approvalToken) {
+      await this.logAudit(request, 'approval_required', 'Waiting for user approval', startTime);
+      return this.createResult(request, 'approval_required', undefined, 'Explicit user approval required for this action', startTime, 'ASK');
+    }
 
+    // 5. Execution
     try {
-      const result = await tool.execute(request);
-      this.activeExecutions = Math.max(0, this.activeExecutions - 1);
-      return result;
-    } catch (err: any) {
-      this.activeExecutions = Math.max(0, this.activeExecutions - 1);
+      // Enforce timeout if specified
+      let executionPromise = tool.execute(request);
+      if (request.timeoutMs) {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Execution timed out')), request.timeoutMs)
+        );
+        executionPromise = Promise.race([executionPromise, timeoutPromise]) as any;
+      }
+
+      const rawResult = await executionPromise;
+      const finalStatus: ExecutionStatus = rawResult.error ? 'failed' : 'succeeded';
+      
+      await this.logAudit(request, finalStatus, rawResult.error, startTime, rawResult.data);
+      
       return {
-        success: false,
-        toolName,
-        capability,
-        data: null,
-        error: err?.message || String(err),
-        executionTimeMs: 0,
+        ...rawResult,
+        status: finalStatus,
+        executionTimeMs: Date.now() - startTime,
         metadata: {
           correlationId: request.correlationId,
           timestamp: Date.now(),
-          permissionLevel: 'none',
+          riskLevel,
           auditLogged: true,
-        },
+        }
       };
+    } catch (error: any) {
+      const errorMsg = error.message || 'Unknown execution error';
+      const status: ExecutionStatus = errorMsg.includes('timed out') ? 'timed_out' : 'failed';
+      
+      await this.logAudit(request, status, errorMsg, startTime);
+      return this.createResult(request, status, undefined, errorMsg, startTime, riskLevel);
     }
   }
 
-  async executeByCapability(
-    capability: string,
-    parameters: Record<string, any>,
-    context: CognitiveContext,
-    correlationId?: string
-  ): Promise<ToolExecutionResult> {
-    const tools = this.findToolsForCapability(capability);
-    if (tools.length === 0) {
-      return {
-        success: false,
-        toolName: 'unknown',
-        capability,
-        data: null,
-        error: `No tool found with capability '${capability}'`,
-        executionTimeMs: 0,
-        metadata: {
-          correlationId: correlationId || `exec_${Date.now()}`,
-          timestamp: Date.now(),
-          permissionLevel: 'none',
-          auditLogged: true,
-        },
-      };
-    }
+  /**
+   * Dynamic risk assessment. Can be extended with a dedicated policy engine.
+   */
+  private assessRisk(toolName: string, capability: string, parameters: any): RiskLevel {
+    const policyKey = `${toolName}:${capability}`;
+    const defaultRisk = this.riskPolicies.get(policyKey) || 'MONITOR';
 
-    // Pick the healthiest tool
-    const tool = tools.sort((a, b) => b.getHealth().score - a.getHealth().score)[0];
-    return this.execute(tool.name, capability, parameters, context, correlationId);
-  }
-
-  getHealthReport(): ToolHealthReport[] {
-    return Array.from(this.tools.values()).map(async (tool) => {
-      const health = tool.getHealth();
-      return {
-        toolName: tool.name,
-        available: await typeof tool.isAvailable === "function" ? tool.isAvailable() : false,
-        healthy: health.healthy,
-        score: health.score,
-        lastError: health.lastError,
-        capabilities: tool.capabilities.map((c) => c.name),
-        executionCount: (tool as any).executionCount || 0,
-        errorCount: (tool as any).errorCount || 0,
-      };
-    });
-  }
-
-  generateHealthReport(): string {
-    const reports = this.getHealthReport();
-    const lines = [
-      '═══════════════════════════════════════',
-      '     ASIS CSE — TOOL HEALTH REPORT',
-      '═══════════════════════════════════════',
-      `Total Tools: ${reports.length}`,
-      `Healthy:     ${reports.filter((r) => r.healthy).length}`,
-      `Degraded:    ${reports.filter((r) => !r.healthy && r.available).length}`,
-      `Unavailable: ${reports.filter((r) => !r.available).length}`,
-      '',
-    ];
-
-    reports.forEach((r) => {
-      const icon = r.healthy ? '✅' : r.available ? '⚠️' : '❌';
-      lines.push(
-        `${icon} ${r.toolName.padEnd(16)} score=${(r.score * 100).toFixed(0)}% ` +
-        `execs=${r.executionCount} errs=${r.errorCount} ` +
-        `caps=[${r.capabilities.join(', ')}]`
-      );
-      if (r.lastError) lines.push(`   Last error: ${r.lastError.slice(0, 80)}`);
-    });
-
-    lines.push('═══════════════════════════════════════');
-    return lines.join('\n');
-  }
-
-  private registerDefaults(): void {
-    // Default tools are registered lazily by the system initializer
-    // This prevents import cycles — actual tool instances are injected
-    console.log('[ToolRegistry] Default registration mode: lazy (tools injected at init)');
-  }
-
-  private startHealthChecks(): void {
-    if (this.healthCheckTimer) return;
-    this.healthCheckTimer = setInterval(() => {
-      const unhealthy = this.getHealthReport().filter((r) => !r.healthy);
-      if (unhealthy.length > 0) {
-        this.emitEvent(CognitiveEventType.DIAGNOSTIC_ALERT, {
-          type: 'tool_health_degraded',
-          unhealthyTools: unhealthy.map((u) => u.toolName),
-          count: unhealthy.length,
-        });
+    // Hardcoded overrides for known dangerous patterns
+    if (toolName === 'terminal' && typeof parameters.command === 'string') {
+      if (parameters.command.includes('sudo') || parameters.command.includes('rm -rf')) {
+        return 'BLOCK';
       }
-    }, this.config.healthCheckIntervalMs);
-  }
-
-  stopHealthChecks(): void {
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer);
-      this.healthCheckTimer = undefined;
     }
+
+    return defaultRisk;
   }
 
-  destroy(): void {
-    this.stopHealthChecks();
-    this.tools.clear();
+  /**
+   * Check if the specific capability requires explicit user approval.
+   */
+  private requiresApproval(toolName: string, capability: string): boolean {
+    const tool = this.tools.get(toolName);
+    if (!tool) return false;
+    
+    const perm = tool.permissions.find(p => p.action === capability);
+    return perm?.requiresApproval ?? false;
   }
 
-  private emitEvent(type: CognitiveEventType, payload: any): void {
-    if (this.eventBus) {
-      this.eventBus.publish({
-        type,
-        payload,
-        source: 'ToolRegistry',
-        priority: EventPriority.NORMAL,
+  /**
+   * Emit audit event to the central event bus for persistence.
+   */
+  private async logAudit(request: ToolExecutionRequest, status: string, error?: string, startTime?: number, data?: any) {
+    const durationMs = startTime ? Date.now() - startTime : 0;
+    
+    // Redact sensitive data before logging
+    const safeParameters = { ...request.parameters };
+    if (safeParameters) {
+      Object.keys(safeParameters).forEach(key => {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey.includes('password') || lowerKey.includes('token') || lowerKey.includes('api_key') || lowerKey.includes('secret')) {
+          safeParameters[key] = '[REDACTED]';
+        }
       });
     }
+
+    CognitiveEventBus.emit(CognitiveEventType.TOOL_EXECUTION, {
+      priority: EventPriority.HIGH,
+      payload: {
+        correlationId: request.correlationId,
+        toolName: request.toolName,
+        capability: request.capability,
+        status,
+        error,
+        parameters: safeParameters,
+        timestamp: Date.now(),
+        durationMs,
+      }
+    }, request.context?.userId || 'anonymous');
+  }
+
+  /**
+   * Helper to construct a standardized failure/blocked result.
+   */
+  private createResult(
+    request: ToolExecutionRequest, 
+    status: ExecutionStatus, 
+    data: any, 
+    error: string | undefined, 
+    startTime: number, 
+    riskLevel: RiskLevel
+  ): ToolExecutionResult {
+    return {
+      status,
+      toolName: request.toolName,
+      capability: request.capability,
+      data,
+      error,
+      executionTimeMs: Date.now() - startTime,
+      metadata: {
+        correlationId: request.correlationId,
+        timestamp: Date.now(),
+        riskLevel,
+        auditLogged: true,
+      }
+    };
+  }
+
+  getToolHealth(): Record<string, any> {
+    const health: Record<string, any> = {};
+    for (const [name, tool] of this.tools.entries()) {
+      health[name] = tool.getHealth();
+    }
+    return health;
   }
 }
 
-// Singleton instance
-let globalRegistry: ToolRegistry | null = null;
-
-export function createToolRegistry(
-  config?: Partial<ToolRegistryConfig>,
-  eventBus?: CognitiveEventBus,
-  metricsEngine?: MetricsEngine
-): ToolRegistry {
-  if (!globalRegistry) {
-    globalRegistry = new ToolRegistry(config, eventBus, metricsEngine);
-  }
-  return globalRegistry;
-}
-
-export function getToolRegistry(): ToolRegistry | null {
-  return globalRegistry;
-}
-
-export function resetToolRegistry(): void {
-  globalRegistry?.destroy();
-  globalRegistry = null;
-}
+export const globalToolRegistry = new ToolRegistry();
