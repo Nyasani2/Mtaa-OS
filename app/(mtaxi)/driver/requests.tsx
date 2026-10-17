@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Vibration, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,7 +15,6 @@ export default function DriverRequestsScreen() {
   const fetchRequests = async () => {
     if (!user?.id) return;
     try {
-      // Fetch rides that are searching and match the driver's vehicle type (if applicable)
       const { data, error } = await supabase
         .from('mtaxi_rides')
         .select(`
@@ -26,7 +24,7 @@ export default function DriverRequestsScreen() {
           fare_estimate,
           distance_km,
           created_at,
-          passenger:user_id (full_name, phone)
+          passenger:passenger_id (full_name, phone)
         `)
         .eq('status', 'searching')
         .order('created_at', { ascending: false })
@@ -45,7 +43,6 @@ export default function DriverRequestsScreen() {
   useEffect(() => {
     fetchRequests();
     
-    // Subscribe to new ride requests in real-time
     const subscription = supabase
       .channel('mtaxi_requests')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mtaxi_rides', filter: 'status=eq.searching' }, (payload) => {
@@ -54,29 +51,21 @@ export default function DriverRequestsScreen() {
       })
       .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => { subscription.unsubscribe(); };
   }, [user?.id]);
 
   const handleAccept = async (rideId: string) => {
     Vibration.vibrate();
     try {
-      const { error } = await supabase
-        .from('mtaxi_rides')
-        .update({ 
-          status: 'accepted', 
-          driver_id: user?.id,
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', rideId);
+      // SECURITY FIX: Use Edge Function to accept ride securely
+      const { data, error } = await supabase.functions.invoke('mtaxi-accept', {
+        body: { ride_id: rideId, driver_id: user?.id }
+      });
 
-      if (error) throw error;
+      if (error || !data?.success) throw new Error(data?.error || 'Failed to accept ride');
 
       Alert.alert('Request Accepted', 'Navigating to pickup location...');
       setRequests(prev => prev.filter(r => r.id !== rideId));
-      
-      // Navigate to active ride screen
       router.push(`/(mtaxi)/driver-ride?id=${rideId}` as any);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to accept ride');
@@ -93,11 +82,7 @@ export default function DriverRequestsScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#3b82f6" /></View>;
   }
 
   return (
@@ -125,9 +110,7 @@ export default function DriverRequestsScreen() {
           requests.map((req) => (
             <View key={req.id} style={styles.requestCard}>
               <View style={styles.cardHeader}>
-                <View style={styles.typeBadge}>
-                  <Text style={styles.typeText}>MTaxi</Text>
-                </View>
+                <View style={styles.typeBadge}><Text style={styles.typeText}>MTaxi</Text></View>
                 <Text style={styles.fare}>KES {req.fare_estimate?.toLocaleString() || 0}</Text>
               </View>
               

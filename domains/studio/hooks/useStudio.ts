@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
@@ -20,7 +19,6 @@ export interface StudioVideo {
   created_at: string;
   creator_name?: string;
   creator_avatar?: string;
-  creator_handle?: string;
 }
 
 export function useStudio() {
@@ -36,8 +34,9 @@ export function useStudio() {
     setLoading(true);
     setError(null);
     try {
+      // FIX: Query studio_videos instead of studio_content
       let query = supabase
-        .from('studio_content')
+        .from('studio_videos')
         .select('*')
         .eq('status', 'published')
         .order('created_at', { ascending: false });
@@ -68,9 +67,9 @@ export function useStudio() {
   const fetchLive = useCallback(async () => {
     try {
       const { data, error: err } = await supabase
-        .from('studio_live_streams')
+        .from('streets_live_streams')
         .select('*')
-        .eq('status', 'live')
+        .eq('is_active', true)
         .order('started_at', { ascending: false });
       if (err) throw err;
       setLiveStreams((data || []) as any[]);
@@ -103,8 +102,9 @@ export function useStudio() {
     duration_seconds?: number;
   }) => {
     if (!currentUserId) return null;
+    // FIX: Insert into studio_videos with correct columns
     const { data, error: err } = await supabase
-      .from('studio_content')
+      .from('studio_videos')
       .insert({
         creator_id: currentUserId,
         title: payload.title,
@@ -126,35 +126,24 @@ export function useStudio() {
   }, [currentUserId]);
 
   const getCreatorProfile = useCallback(async (userId: string) => {
-    const { data: profile, error: pErr } = await supabase
+    const { data: profile } = await supabase
       .from('user_profiles')
-      .select('user_id, display_name, avatar_url, handle')
+      .select('user_id, display_name, avatar_url')
       .eq('user_id', userId)
       .single();
 
-    let prof = profile;
-    if (!prof) {
-      const { data: p2 } = await supabase
-        .from('user_profiles')
-        .select('user_id, display_name, avatar_url, handle')
-        .eq('id', userId)
-        .single();
-      prof = p2;
-    }
-    if (!prof) return null;
+    if (!profile) return null;
 
-    const uid = prof.user_id || userId;
     const { data: vids } = await supabase
-      .from('studio_content')
+      .from('studio_videos')
       .select('view_count')
-      .eq('creator_id', uid);
+      .eq('creator_id', userId);
     const totalViews = (vids || []).reduce((sum: number, v: any) => sum + (v.view_count || 0), 0);
 
     return {
-      user_id: uid,
-      display_name: prof.display_name,
-      avatar_url: prof.avatar_url,
-      handle: prof.handle,
+      user_id: userId,
+      display_name: profile.display_name,
+      avatar_url: profile.avatar_url,
       total_views: totalViews,
     };
   }, []);
