@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Share } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Share, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -30,9 +30,13 @@ export default function VideoCard({
 
   const handleShare = async () => {
     try {
+      const shareUrl = Platform.OS === 'web' 
+        ? `${window.location.origin}/studio/watch/${id}`
+        : `mtaaos://studio/watch/${id}`; // Deep link for mobile
+
       await Share.share({
-        message: `Check out this video: ${title}`,
-        url: thumbnail_url || '',
+        message: `Check out "${title}" by ${creator_name || 'Unknown'} on MTAA OS!`,
+        url: shareUrl,
         title: title,
       });
     } catch (error) {
@@ -48,7 +52,7 @@ export default function VideoCard({
       onPress={() => router.push(`/(os)/studio/watch/${id}` as any)}
     >
       <Image
-        source={{ uri: thumbnail_url || undefined }}
+        source={{ uri: thumbnail_url || 'https://via.placeholder.com/300x200?text=No+Thumbnail' }}
         style={styles.thumbnail}
         resizeMode="cover"
       />
@@ -59,7 +63,7 @@ export default function VideoCard({
           <Text style={styles.views}>{view_count.toLocaleString()} views</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+      <TouchableOpacity style={styles.shareBtn} onPress={handleShare} activeOpacity={0.7}>
         <Ionicons name="share-social" size={20} color="#fff" />
       </TouchableOpacity>
     </TouchableOpacity>
