@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { globalToolRegistry } from './asis-cse-tool-registry';
 /**
  * ASIS CSE — Action Engine (Engine 15)
  * Specification: 15_ACTION_ENGINE.md
@@ -148,58 +149,36 @@ export class ActionEngine implements CognitiveEngine {
       if (task.requiredResources?.includes('wallet')) perms.push('wallet-transact');
       if (task.requiredResources?.includes('memory-service')) perms.push('memory-write');
     }
-    return [...new Set(perms)];
+    return Array.from(new Set(perms));
   }
 
-  private async executeTask(task: Task, context: EngineContext): Promise<any> {
+  private async executeTask(task: any, context: any): Promise<any> {
     const taskStart = Date.now();
-
     try {
-      // Simulate task execution based on type
-      const result = await this.simulateExecution(task, context);
-
-      return {
-        taskId: task.id,
-        success: true,
-        type: task.type,
-        duration: Date.now() - taskStart,
-        output: result,
-        timestamp: Date.now(),
+      const toolName = task.toolName || task.type || 'browser';
+      const capability = task.capability || 'search';
+      const parameters = task.parameters || { query: task.description || task.name };
+      const request = {
+        toolName,
+        capability,
+        parameters,
+        context: context as any,
+        correlationId: task.id || 'unknown',
+        timeoutMs: task.estimatedDuration || 30000,
+        approvalToken: task.approvalToken,
       };
+      console.log(`[ActionEngine] Routing task ${task.id} through secure gateway: ${toolName}:${capability}`);
+      const result = await globalToolRegistry.executeTool(request);
+      if (result.status === 'approval_required') {
+        return { taskId: task.id, success: false, status: 'approval_required', message: result.error || 'Approval required.', requiresApproval: true, riskLevel: result.metadata.riskLevel, duration: Date.now() - taskStart };
+      }
+      if (result.status === 'denied' || result.status === 'failed' || result.status === 'timed_out') {
+        throw new Error(result.error || `Tool execution failed: ${result.status}`);
+      }
+      return { taskId: task.id, success: true, status: result.status, type: task.type, duration: result.executionTimeMs, output: result.data, timestamp: Date.now(), metadata: result.metadata };
     } catch (error) {
-      return {
-        taskId: task.id,
-        success: false,
-        type: task.type,
-        duration: Date.now() - taskStart,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now(),
-      };
+      return { taskId: task.id, success: false, type: task.type, duration: Date.now() - taskStart, error: error instanceof Error ? error.message : 'Unknown error', timestamp: Date.now() };
     }
-  }
-
-  private async simulateExecution(task: Task, context: EngineContext): Promise<any> {
-    // In production, this would interface with actual services
-    // For now, we simulate based on task type
-    const simulationDelay = Math.min(task.estimatedDuration || 1000, ACTION_TIMEOUT_MS);
-
-    await new Promise(resolve => setTimeout(resolve, Math.min(simulationDelay, 100))); // Cap at 100ms for responsiveness
-
-    const successProbability = task.priority || 0.8;
-    if (Math.random() > successProbability) {
-      throw new Error(`Simulated failure in ${task.name}: resource unavailable`);
-    }
-
-    return {
-      taskName: task.name,
-      status: 'completed',
-      simulatedOutput: `Executed ${task.description}`,
-      metadata: {
-        executedAt: Date.now(),
-        executor: 'action-engine',
-        contextId: context.sessionId,
-      },
-    };
   }
 
   private async executeFallback(failedTask: Task, fallbackPlan: any, context: EngineContext): Promise<any> {
@@ -262,7 +241,7 @@ export class ActionEngine implements CognitiveEngine {
   private summariseResources(results: any[]): any {
     const types = new Set(results.map((r: any) => r.type).filter(Boolean));
     return {
-      types: [...types],
+      types: Array.from(types),
       count: results.length,
       totalDuration: results.reduce((sum, r) => sum + (r.duration || 0), 0),
     };
