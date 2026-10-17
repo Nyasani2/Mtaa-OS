@@ -27,21 +27,30 @@ export function useASIS(): ASISProviderValue {
   return ctx;
 }
 
+// SAFE STORAGE: Prevents window.localStorage crashes on React Native
 function loadConversations(): ASISConversation[] {
   try {
-    const raw = (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.filter((conv: any) => isValidUUID(conv.id));
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.localStorage) {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed.filter((conv: any) => isValidUUID(conv.id));
+      }
     }
-  } catch {}
+  } catch (err) {
+    console.warn("Failed to load ASIS conversations:", err);
+  }
   return [];
 }
 
 function saveConversations(convs: ASISConversation[]) {
   try {
-    (Platform.OS === "web" && typeof window !== "undefined" ? window.localStorage : null)?.setItem(STORAGE_KEY, JSON.stringify(convs));
-  } catch {}
+    if (Platform.OS === "web" && typeof window !== "undefined" && window.localStorage) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+    }
+  } catch (err) {
+    console.warn("Failed to save ASIS conversations:", err);
+  }
 }
 
 interface ASISCSEProviderProps {
@@ -53,10 +62,15 @@ interface ASISCSEProviderProps {
 
 export function ASISCSEProvider({
   children,
-  userId = 'anonymous',
-  userName,
+  userId: propUserId,
+  userName: propUserName,
   autoInitialize = true,
 }: ASISCSEProviderProps) {
+  // Get real user from auth store, fallback to props, fallback to 'anonymous'
+  const { user } = useAuthStore();
+  const activeUserId = user?.id || propUserId || 'anonymous';
+  const activeUserName = user?.user_metadata?.display_name || user?.email?.split('@')[0] || propUserName || 'User';
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [systemStatus, setSystemStatus] = useState('Standby');
@@ -72,125 +86,183 @@ export function ASISCSEProvider({
   const healthIntervalRef = useRef<any>(null);
 
   const computeHealth = useCallback((): any => {
-    if (!systemRef.current) return { score: 0, status: 'Offline' };
+    if (!systemRef.current || !isInitialized) return { score: 0, status: 'Offline' };
     return { score: 1.0, status: 'Healthy' };
-  }, []);
+  }, [isInitialized]);
 
   useEffect(() => {
     if (!autoInitialize || isInitialized) return;
+
     const init = async () => {
       try {
-        systemRef.current = initializeASIS({ userId, context: 'web', config: { enableResearch: true } });
-        
-        // Initialize and start the Cognitive Kernel
-        try {
-          const kernel = new (await import('./asis-cse-kernel')).CognitiveKernel();
-          (globalThis as any).__asisKernelInstance = kernel;
-          await kernel.initialize();
-          kernel.start();
-          console.log('[ASIS Provider] Cognitive Kernel started.');
-        } catch (err) {
-          console.warn('[ASIS Provider] Kernel start failed:', err);
-        }
-
+        setSystemStatus('Initializing...');
+        systemRef.current = await initializeASIS();
         setIsInitialized(true);
         setSystemStatus('Online');
         setHealth(computeHealth());
-        const loaded = loadConversations();
-        if (loaded.length > 0) {
-          setConversations(loaded);
-          setCurrentConversation(loaded[0]);
+        
+        const existing = conversations[0];
+        if (existing) {
+          setCurrentConversation(existing);
         } else {
-          const conv: ASISConversation = { id: generateUUID(), title: 'New Conversation', messages: [{ id: generateUUID(), role: 'system', content: 'ASIS online.', timestamp: Date.now() }], createdAt: Date.now(), updatedAt: Date.now() };
-          setConversations([conv]);
-          setCurrentConversation(conv);
+          const newConv: any = {
+            id: generateUUID(),
+            title: 'New Conversation',
+            messages: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+          const updated = [...conversations, newConv];
+          setConversations(updated);
+          saveConversations(updated);
+          setCurrentConversation(newConv);
         }
-      } catch (err: any) {
-        console.error('[ASIS Provider] Initialization failed:', err);
-        setSystemStatus(`Error: ${err.message}`);
+      } catch (err) {
+        console.error("ASIS Initialization failed:", err);
+        setSystemStatus('Error');
       }
     };
+
     init();
+
     return () => {
-      if (healthIntervalRef.current) clearInterval(healthIntervalRef.current);
-      shutdownASIS();
+      if (systemRef.current) {
+        shutdownASIS();
+        systemRef.current = null;
+      }
+      if (healthIntervalRef.current) {
+        clearInterval(healthIntervalRef.current);
+      }
     };
-  }, [autoInitialize, userId, computeHealth]);
-
-  useEffect(() => { if (conversations.length > 0) saveConversations(conversations); }, [conversations]);
-
-  const updateConversation = useCallback((conv: ASISConversation) => {
-    setConversations((prev) => {
-      const updated = prev.map((c) => (c.id === conv.id ? conv : c));
-      saveConversations(updated);
-      return updated;
-    });
-    setCurrentConversation(conv);
-  }, []);
+  }, [autoInitialize, isInitialized]);
 
   const sendMessage = useCallback(async (content: string) => {
-    if (!systemRef.current || !currentConversation || processingRef.current) return;
+    if (!currentConversation || !systemRef.current || processingRef.current) return;
+    
     processingRef.current = true;
     setIsProcessing(true);
-    setSystemStatus('Processing...');
 
-    const userMsg: ASISMessage = { id: generateUUID(), role: 'user', content, timestamp: Date.now() };
-    const convWithUser = { ...currentConversation, messages: [...currentConversation.messages, userMsg], updatedAt: Date.now() };
-    updateConversation(convWithUser);
+    const userMsg: ASISMessage = {
+      id: generateUUID(),
+      role: 'user',
+      content,
+      timestamp: Date.now(),
+    };
+
+    const updatedMessages = [...currentConversation.messages, userMsg];
+    const updatedConv = { ...currentConversation, messages: updatedMessages, updatedAt: Date.now() };
+    
+    setCurrentConversation(updatedConv);
+    
+    const updatedConvs = conversations.map(c => c.id === updatedConv.id ? updatedConv : c);
+    setConversations(updatedConvs);
+    saveConversations(updatedConvs);
 
     try {
-      let result: any;
-        try {
-          // Timeout wrapper to prevent UI freeze
-          const kernelPromise = CognitiveKernel.execute({
-            identity: userId,
-            purpose: 'user_query',
-            query: content,
-            context: { 
-              conversationId: currentConversation?.id,
-              // PASS FULL HISTORY FOR MEMORY RETRIEVAL
-              history: currentConversation.messages.map(m => ({ role: m.role, content: m.content }))
-            }
-          });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 3000));
-          result = await Promise.race([kernelPromise, timeoutPromise]);
-        } catch (err) {
-          console.warn('[ASIS] Kernel timeout or error, using fallback:', err);
-          result = { response: "ASIS Cognitive Kernel is currently initializing. Please try again in a moment.", metadata: { engine: 'Fallback', confidence: 0.5 } };
-        }
-      
-      const asisMsg: ASISMessage = {
-        id: generateUUID(), role: 'asis', content: result.response, timestamp: Date.now(),
-        metadata: { engineName: result.metadata?.engine, confidence: result.metadata?.confidence }
+      // process expects a string based on existing types
+      const response = await systemRef.current.process(content);
+
+      const aiMsg: ASISMessage = {
+        id: generateUUID(),
+        role: 'asis',
+        content: typeof response === 'string' ? response : (response?.response || "I'm sorry, I couldn't process that request."),
+        timestamp: Date.now(),
       };
 
-      const finalConv = {
-        ...convWithUser,
-        messages: [...convWithUser.messages, asisMsg],
-        title: convWithUser.title === 'New Conversation' ? content.slice(0, 30) + '...' : convWithUser.title,
-        updatedAt: Date.now(),
+      const finalMessages = [...updatedMessages, aiMsg];
+      const finalConv = { ...updatedConv, messages: finalMessages, updatedAt: Date.now() };
+      
+      setCurrentConversation(finalConv);
+      const finalConvs = conversations.map(c => c.id === finalConv.id ? finalConv : c);
+      setConversations(finalConvs);
+      saveConversations(finalConvs);
+
+    } catch (err) {
+      console.error("ASIS Processing error:", err);
+      const errorMsg: ASISMessage = {
+        id: generateUUID(),
+        role: 'asis',
+        content: "I encountered an error processing your request. Please try again.",
+        timestamp: Date.now(),
       };
-      updateConversation(finalConv);
-      setActiveEngines(['LocalQwen', 'ReasoningV2']);
-      setSystemStatus('Online');
-    } catch (err: any) {
-      console.error('[ASIS] Processing error:', err);
-      setSystemStatus('Error');
+      const errorConvs = conversations.map(c => c.id === currentConversation.id ? { ...c, messages: [...c.messages, errorMsg] } : c);
+      setConversations(errorConvs);
+      saveConversations(errorConvs);
     } finally {
       processingRef.current = false;
       setIsProcessing(false);
     }
-  }, [currentConversation, updateConversation]);
+  }, [currentConversation, conversations]);
+
+  const newConversation = useCallback(() => {
+    const newConv: any = {
+      id: generateUUID(),
+      title: 'New Conversation',
+      messages: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    const updated = [newConv, ...conversations];
+    setConversations(updated);
+    saveConversations(updated);
+    setCurrentConversation(newConv);
+  }, [conversations]);
+
+  const switchConversation = useCallback((id: string) => {
+    const target = conversations.find(c => c.id === id);
+    if (target) {
+      setCurrentConversation(target);
+    }
+  }, [conversations]);
+
+  const clearConversation = useCallback(() => {
+    if (!currentConversation) return;
+    const cleared = { ...currentConversation, messages: [], updatedAt: Date.now() };
+    setCurrentConversation(cleared);
+    const updated = conversations.map(c => c.id === cleared.id ? cleared : c);
+    setConversations(updated);
+    saveConversations(updated);
+  }, [currentConversation, conversations]);
+
+  const deleteConversation = useCallback((id: string) => {
+    const updated = conversations.filter(c => c.id !== id);
+    setConversations(updated);
+    saveConversations(updated);
+    if (currentConversation?.id === id) {
+      setCurrentConversation(updated[0] || null);
+    }
+  }, [conversations, currentConversation]);
 
   const value: ASISProviderValue = {
-    isInitialized, isProcessing, systemStatus, activeEngines, toolHealth, health,
-    currentConversation, conversations, sendMessage,
-    clearConversation: () => {}, newConversation: () => {}, switchConversation: () => {},
-    deleteConversation: () => {}, getDiagnostics: () => 'OK', getMetrics: () => 'OK',
-    getClockReport: () => 'OK', getToolHealth: () => 'OK', shutdown: () => {},
+    isInitialized,
+    isProcessing,
+    systemStatus,
+    activeEngines,
+    toolHealth,
+    health,
+    conversations,
+    currentConversation,
+    sendMessage,
+    newConversation,
+    switchConversation,
+    clearConversation,
+    deleteConversation,
+    getDiagnostics: () => 'Diagnostics not yet implemented',
+    getMetrics: () => 'Metrics not yet implemented',
+    getClockReport: () => 'Clock report not yet implemented',
+    getToolHealth: () => toolHealth,
+    shutdown: () => {
+      if (systemRef.current) {
+        shutdownASIS();
+        systemRef.current = null;
+        setIsInitialized(false);
+      }
+    },
   };
 
-  return <ASISContext.Provider value={value}>{children}</ASISContext.Provider>;
+  return (
+    <ASISContext.Provider value={value}>
+      {children}
+    </ASISContext.Provider>
+  );
 }
-
-export default ASISCSEProvider;
