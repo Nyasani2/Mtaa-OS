@@ -1,14 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-(globalThis as any).Deno?.serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const supabase = createClient((globalThis as any).Deno?.env?.get('SUPABASE_URL') || '', (globalThis as any).Deno?.env?.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    
+    // 1. Verify Authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return new Response(JSON.stringify({ error: 'No authorization header' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    // 2. Verify Admin Role (Analytics are sensitive)
+    const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single();
+    if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+      return new Response(JSON.stringify({ error: 'Only admins can view search analytics' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
 
@@ -23,34 +35,13 @@ const corsHeaders = {
     }
 
     if (action === 'stats') {
-      const { data: total } = await supabase.from('search_logs').select('*', { count: 'exact', head: true });
-      const { data: avg } = await supabase.rpc('mtaa_search_avg_results');
+      const { count: total } = await supabase.from('search_logs').select('*', { count: 'exact', head: true });
       const { data: top } = await supabase.rpc('mtaa_search_top_queries', { p_limit: 10 });
-      const { data: zero } = await supabase.from('search_logs').select('query').eq('results_count', 0).limit(20);
-      return new Response(JSON.stringify({
-        totalQueries: total?.length || 0,
-        avgResults: avg || 0,
-        topQueries: top || [],
-        zeroResultQueries: zero?.map((z: any) => z.query) || [],
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ totalQueries: total || 0, topQueries: top || [] }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (action === 'zero-results') {
-      const { data, error } = await supabase.from('search_logs')
-        .select('query, config_key, created_at')
-        .eq('results_count', 0)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return new Response(JSON.stringify({ data }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    return new Response(JSON.stringify({ error: 'Unknown action. Use: popular, stats, zero-results' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });
