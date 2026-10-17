@@ -116,7 +116,7 @@ export default function StudioHomeScreen() {
                 <Pressable
                   key={s.id}
                   style={styles.liveCard}
-                  onPress={() => router.push(`/(os)/streets/live/${s.id}` as any)}
+                  onPress={() => router.push({ pathname: '/(os)/studio/live-viewer', params: { room_id: s.room_id } } as any)}
                 >
                   <View style={styles.liveThumb}>
                     <Text style={styles.liveBadge}>● LIVE</Text>

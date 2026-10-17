@@ -1,33 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { LiveKitRoom, VideoTrack, useTracks } from '@livekit/react-native';
+import { Track } from 'livekit-client';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/lib/auth/store/auth.store';
 
 export default function LiveSetupScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [cameraType, setCameraType] = useState<'front' | 'back'>('back');
   const [isLive, setIsLive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [roomName, setRoomName] = useState('');
+  const [token, setToken] = useState('');
 
-  useEffect(() => {
-    requestPermission();
-  }, []);
-
-  const goLive = async () => {
+  const startLiveStream = async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
+      const roomId = `room-${user.id}-${Date.now()}`;
       const { data, error } = await supabase.functions.invoke('generate-livekit-token', {
-        body: { room_id: `room-${user.id}-${Date.now()}`, user_id: user.id }
+        body: { room_id: roomId, user_id: user.id, is_host: true }
       });
+      
       if (error) throw error;
+      
+      setRoomName(roomId);
+      setToken(data.token);
       setIsLive(true);
-      Alert.alert('Broadcast Started', 'Your live stream is now active.');
+      
+      await supabase.from('streets_live_streams').insert({
+        host_id: user.id,
+        room_id: roomId,
+        is_active: true,
+        started_at: new Date().toISOString(),
+      });
+      
+      Alert.alert('Live!', 'You are now broadcasting live.');
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to start stream');
     } finally {
@@ -35,64 +45,78 @@ export default function LiveSetupScreen() {
     }
   };
 
-  if (!permission) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#ff0040" /></View>;
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.text}>We need your permission to show the camera</Text>
-        <TouchableOpacity style={styles.btn} onPress={requestPermission}>
-          <Text style={styles.btnText}>Grant Permission</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const endLiveStream = async () => {
+    try {
+      await supabase
+        .from('streets_live_streams')
+        .update({ is_active: false })
+        .eq('room_id', roomName);
+      
+      setIsLive(false);
+      setToken('');
+      setRoomName('');
+      router.back();
+    } catch (e: any) {
+      console.error('Failed to end stream:', e);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={cameraType} />
-      
-      <View style={styles.overlay}>
-        <View style={styles.topBar}>
-          <TouchableOpacity onPress={() => router.back()}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity>
-          {isLive && <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE</Text></View>}
-          <TouchableOpacity onPress={() => setCameraType(t => t === 'back' ? 'front' : 'back')}>
-            <Ionicons name="camera-reverse" size={28} color="#fff" />
+      {token ? (
+        <LiveKitRoom
+          serverUrl="wss://mtaa-os-8b03b45b.livekit.cloud"
+          token={token}
+          audio={true}
+          video={true}
+        >
+          <LocalVideoPreview />
+        </LiveKitRoom>
+      ) : (
+        <View style={styles.center}>
+          <Text style={styles.text}>Ready to go live?</Text>
+          <TouchableOpacity style={styles.goLiveBtn} onPress={startLiveStream} disabled={loading}>
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.goLiveText}>GO LIVE</Text>}
           </TouchableOpacity>
         </View>
-
-        <View style={styles.bottomBar}>
-          {!isLive ? (
-            <TouchableOpacity style={styles.goLiveBtn} onPress={goLive} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.goLiveText}>GO LIVE</Text>}
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.endBtn} onPress={() => { setIsLive(false); router.back(); }}>
-              <Text style={styles.endText}>END BROADCAST</Text>
-            </TouchableOpacity>
-          )}
+      )}
+      
+      {isLive && (
+        <View style={styles.overlay}>
+          <View style={styles.topBar}>
+            <TouchableOpacity onPress={endLiveStream}><Ionicons name="close" size={28} color="#fff" /></TouchableOpacity>
+            <View style={styles.liveBadge}><Text style={styles.liveText}>● LIVE</Text></View>
+            <View style={{ width: 28 }} />
+          </View>
         </View>
-      </View>
+      )}
+    </View>
+  );
+}
+
+function LocalVideoPreview() {
+  const tracks = useTracks([Track.Source.Camera]);
+  const localTrack = tracks.find((t) => t.participant.isLocal);
+  
+  if (!localTrack) return <View style={styles.center}><ActivityIndicator color="#fff" /></View>;
+  
+  return (
+    <View style={styles.localPreview}>
+      <VideoTrack trackRef={localTrack} style={styles.videoTrack} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  camera: { flex: 1 },
-  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'space-between', padding: 20, paddingTop: 60 },
+  localPreview: { position: 'absolute', bottom: 100, right: 10, width: 100, height: 150, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: '#fff', backgroundColor: '#222' },
+  videoTrack: { flex: 1, width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', padding: 20, paddingTop: 60 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   liveBadge: { backgroundColor: '#ff0040', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   liveText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  bottomBar: { alignItems: 'center', paddingBottom: 40 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  text: { color: '#fff', fontSize: 18, marginBottom: 24, fontWeight: '600' },
   goLiveBtn: { backgroundColor: '#ff0040', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 30 },
   goLiveText: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  endBtn: { backgroundColor: '#333', paddingHorizontal: 30, paddingVertical: 14, borderRadius: 30 },
-  endText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  text: { color: '#fff', fontSize: 16, marginBottom: 16 },
-  btn: { backgroundColor: '#ff0040', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
-  btnText: { color: '#fff', fontWeight: 'bold' }
 });
